@@ -13,7 +13,7 @@ See [AGENTS.md](AGENTS.md) and [release procedures](docs/CONTROLLED_RELEASES.md)
 ## Airport runway collection — current stage
 For now we store ONLY airports reporting a **non-closed asphalt/concrete runway of at least 1,200 metres**. Each meets **minimum Level 1 (Local)** runway criteria; no final categorization, operating permissions or other airport information is being gathered.
 
-[Permanent master airport register](data/airports/airport_register.csv): **1,383 airports: 1,382 runway-screened candidates across Groups 1–11 plus one fictional airport**.
+[Permanent master airport register](data/airports/airport_register.csv): **1,410 airports: 1,409 runway-screened candidates across Groups 1–12 plus one fictional airport**.
 
 | Group | Airports in runway-only master |
 | --- | ---: |
@@ -28,9 +28,12 @@ For now we store ONLY airports reporting a **non-closed asphalt/concrete runway 
 | 9 — Serbia, Slovakia, Slovenia, Spain, Sweden | 142 real + 1 fictional |
 | 10 — Switzerland, Turkey, Ukraine, United Kingdom, Vatican City | 215 |
 | 11 — Andorra, Åland Islands, Faroe Islands, Gibraltar, Guernsey, Isle of Man, Jersey, Svalbard and Jan Mayen, Greenland | 10 |
-| **Total** | **1,383** |
+| 12 — Asia: Afghanistan, Bahrain, Bangladesh, Bhutan, Brunei | 27 |
+| **Total** | **1,410** |
 
 **Important distinction:** Earlier discussions selected **110 airports** for Groups 1–3. The **162** airport candidates now in the master for those groups are a fresh, *runway-only* screen. The historical count of 110 and its 56 recovered names remain documented separately; it is not equivalent to the current screening count.
+
+Group 12 begins the **Asia region**, using alphabetical five-country groups without repeating previously screened whole countries.
 
 Turkey is **one whole country**, including both European and Asian territories; Group 10 contains 75 Turkish runway-qualified airports.
 
