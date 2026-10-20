@@ -13,7 +13,7 @@ See [AGENTS.md](AGENTS.md) and [release procedures](docs/CONTROLLED_RELEASES.md)
 ## Airport runway collection — current stage
 For now we store ONLY airports reporting a **non-closed asphalt/concrete runway of at least 1,200 metres**. Each meets **minimum Level 1 (Local)** runway criteria; no final categorization, operating permissions or other airport information is being gathered.
 
-[Permanent master airport register](data/airports/airport_register.csv): **2,685 airports: 2,684 runway-screened candidates across Groups 1–21 plus one fictional airport**.
+[Permanent master airport register](data/airports/airport_register.csv): **2,946 airports: 2,945 runway-screened candidates across Groups 1–22 plus one fictional airport**.
 
 | Group | Airports in runway-only master |
 | --- | ---: |
@@ -38,7 +38,8 @@ For now we store ONLY airports reporting a **non-closed asphalt/concrete runway 
 | 19 — Asia: Taiwan, Tajikistan, Thailand, Timor-Leste, Turkmenistan | 92 |
 | 20 — Asia: United Arab Emirates, Uzbekistan, Vietnam, Yemen; Hong Kong | 79 |
 | 21 — Asia geographic-code catch-up: Macao and British Indian Ocean Territory | 2 |
-| **Total** | **2,685** |
+| 22 — Oceania: Australia, Christmas Island, Cocos (Keeling) Islands, Fiji, Kiribati | 261 |
+| **Total** | **2,946** |
 
 **Important distinction:** Earlier discussions selected **110 airports** for Groups 1–3. The **162** airport candidates now in the master for those groups are a fresh, *runway-only* screen. The historical count of 110 and its 56 recovered names remain documented separately; it is not equivalent to the current screening count.
 
@@ -59,6 +60,8 @@ Group 19 adds 92 runway-qualified candidates using OurAirports geographic codes:
 Group 20 adds 79 runway-qualified candidates: United Arab Emirates 16, Uzbekistan 22, Vietnam 27, Yemen 12, Hong Kong 2. Hong Kong (HK) is a distinct OurAirports geographic source code. This adds missing Asian-country coverage and one separately coded territory; zero unresolved runway surfaces and no new duplicate identifiers.
 
 Group 21 adds two runway-qualified candidates from separately coded Asian jurisdictions: Macau International Airport (VMMC, Macao/MO, 3,213.8 m concrete) and Naval Support Facility Diego Garcia (FJDG, British Indian Ocean Territory/IO, 3,658.5 m concrete). These airport-source geography codes do not decide sovereignty. Military or civilian-access issues are explicitly deferred; Diego Garcia's runway qualification does not establish that it is usable by player airlines. Other outlying Australian Indian Ocean territories will be screened with Oceania, not duplicated in Asia.
+
+Group 22 starts **Oceania** with 261 runway-qualified candidates: Australia (whole country) 256, Christmas Island/CX 1, Cocos (Keeling) Islands/CC 1, Fiji 2 and Kiribati 1. Christmas Island and Cocos are kept as distinct source geographies, not double-counted under Australia. Australian Carrapateena Airport (YCPT) has a 1,600 m `BITUM`-reported runway; it remains on the unverified surface queue rather than being assumed asphalt. No Group 22 duplicate source identifiers were detected.
 
 Turkey is **one whole country**, including both European and Asian territories; Group 10 contains 75 Turkish runway-qualified airports.
 
