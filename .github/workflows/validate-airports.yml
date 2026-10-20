@@ -1,0 +1,27 @@
+name: Validate Airlinerra airport registers
+
+on:
+  push:
+    branches: [staging]
+    paths:
+      - 'data/airports/**'
+      - 'scripts/validate_airports.py'
+      - '.github/workflows/validate-airports.yml'
+  pull_request:
+    branches: [staging, main]
+
+permissions:
+  contents: read
+
+jobs:
+  airport-register:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate airport CSV
+        run: python scripts/validate_airports.py
