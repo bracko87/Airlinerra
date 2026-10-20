@@ -99,7 +99,7 @@ def main():
         "runways.csv SHA256: "+sha256(args.runways)+"\n"
         "Only operational and explicitly asphalt/concrete runway labels >=1200 m.\n"
         "Excluded airport.type=closed and runway.closed=1.\n"
-        "Group 12 covers European-associated jurisdictions and territories omitted from previous groups.\n"
+        "Group 12 starts Asia with five alphabetically selected countries; previous countries remain whole and are not duplicated.\n"
         "Current phase ends at runway qualification for minimum Level 1 (Local). Other airport information and final six-category ranking are DEFERRED.\n"
         "Records are qualified by runway only; not an operating-airport or game-activation authorization.\n"
         f"Screened count: {len(candidates)}; ambiguous surface queue: {len(surface_queue)}; duplicate identifiers: {len(duplicates)}.\n",encoding="utf-8")
