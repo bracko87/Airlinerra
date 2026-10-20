@@ -1,0 +1,26 @@
+ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible_runway_m,surface,eligible_runway_count,runway_ids
+302264,PG,Aropa Airport,AYIQ,AYIQ,1645.0,ASP,1,327502
+53,PG,Buka Airport,AYBK,AYBK,1562.1,ASP,1,238373
+55,PG,Daru Airport,AYDU,AYDU,1399.9,ASP,1,238369
+58,PG,Girua Airport,AYGR,AYGR,1671.8,ASP,1,238354
+56,PG,Goroka Airport,AYGA,AYGA,1645.9,ASP,2,238358;238359
+57,PG,Gurney Airport,AYGN,AYGN,1690.4,ASP,1,238357
+59,PG,Hoskins Airport,AYHK,AYHK,2025.1,ASP,1,238363
+61,PG,Kavieng Airport,AYKV,AYKV,1704.4,ASP,1,238364
+332564,PG,Komo Airport,PG-0094,AYXM,1828.8,ASP,1,356034
+62,PG,Madang Airport,AYMD,AYMD,1577.0,ASP,1,238366
+64,PG,Mendi Airport,AYMN,AYMN,1344.5,ASP,1,238370
+65,PG,Momote Airport,AYMO,AYMO,1870.3,ASP,1,238353
+63,PG,Mount Hagen Kagamuga Airport,AYMH,AYMH,2190.0,ASP,1,238368
+66,PG,Nadzab Tomodachi International Airport,AYNZ,AYNZ,2438.4,ASP,1,238355
+67,PG,Port Moresby Jacksons International Airport,AYPY,AYPY,2749.9,ASP,2,238361;238362
+307191,PG,Tagula Airport,AYTG,AYTG,2500.0,concrete,1,532971
+68,PG,Tokua Airport,AYTK,AYTK,1720.0,ASP,1,238372
+69,PG,Vanimo Airport,AYVN,AYVN,1760.2,ASP,1,238360
+70,PG,Wapenamanda Airport,AYWD,AYWD,1539.8,ASP,1,238371
+71,PG,Wewak International Airport,AYWK,AYWK,1595.3,ASP,1,238365
+3,SB,Honiara International Airport,AGGH,AGGH,2200.0,ASP,1,233754
+4,SB,Munda Airport,AGGM,AGGM,1399.9,ASP,1,233755
+4962,TO,Fua'amotu International Airport,NFTF,NFTF,2680.7,ASP,1,239206
+44571,TV,Funafuti International Airport,NGFU,NGFU,1536.2,ASP,1,260261
+4976,WS,Faleolo International Airport,NSFA,NSFA,3000.1,ASP,1,246224
