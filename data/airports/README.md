@@ -6,7 +6,7 @@ Only collect airports having **at least one runway 1,200 m or longer**, reported
 A matching airport can be considered **at least Level 1 (Local)**. This is only a lower-bound technical qualification, NOT a final assignment to Airlinerra's exact six tiers: Local, Regional, Medium, Large, Major Hub, Mega Hub. All other airport details are postponed.
 
 ## Canonical master
-- `airport_register.csv`: **3,544 airport records (3,543 screened real-world candidates + 1 fictional airport) across Groups 1–34**, with identifiers, country, name, longest reported qualifying runway, surface and minimum eligible level 1. This is not a list of operational or playable airports.
+- `airport_register.csv`: **3,656 airport records (3,655 screened real-world candidates + 1 fictional airport) across Groups 1–35**, with identifiers, country, name, longest reported qualifying runway, surface and minimum eligible level 1. This is not a list of operational or playable airports.
 - `fictional_airports.csv`: owner-defined airports outside OurAirports. **Aleksandrovo Airport (LYAL), Serbia** — fictional, runway 2,200 m asphalt, **assigned Level 1 / Local**. Protected from being erased by future runway-only screenings; no coordinates or additional data assumed.
 - `airport_register.csv` has `source_type` (`OURAIRPORTS` / `FICTIONAL`) and `assigned_category` (blank for screened real airports, `Local` for LYAL) to keep these records unambiguously separated.
 - Each group's `generated/groupN/groupN_technical_candidates.csv`: source screening that feeds the master.
@@ -53,11 +53,12 @@ A matching airport can be considered **at least Level 1 (Local)**. This is only 
 | 32 | Africa — Malawi, Mali, Mauritania, Mauritius, Morocco | 47 |
 | 33 | Africa — Mozambique, Namibia, Niger, Nigeria, Rwanda | 82 |
 | 34 | Africa — São Tomé and Príncipe, Senegal, Seychelles, Sierra Leone, Somalia | 25 |
-| **TOTAL** | | **3,544** |
+| 35 | Africa — South Africa, South Sudan, Sudan, Tanzania, Togo | 112 |
+| **TOTAL** | | **3,656** |
 
 **Historic Groups 1–3 selection: 110 airports (21/30/59).** The fresh runway-only screening produces **162 candidates** across those three groups (30/58/74), not 110. Do not conflate these two counts. The earlier list applied additional screening/selection rules; the current register is deliberately a broader technical pool. The separate 56-name historical recovery file remains on staging for reference, while 54 historic names were not recovered.
 
-Uncertain runway surfaces: Group 4 has 4 unresolved labels, Group 13 has 2 (Aurangabad macadam composite; Baramati unspecified paved), and Group 22 has 1 (Carrapateena Airport/YCPT, 1,599.9 m, source surface `BITUM`). All other groups screened so far have zero in their surface-review queues. Russia remains one country (RU) with 312 runway-qualified candidates. All seven unresolved cases remain outside the 3,544-record master.
+Uncertain runway surfaces: Group 4 has 4 unresolved labels, Group 13 has 2 (Aurangabad macadam composite; Baramati unspecified paved), and Group 22 has 1 (Carrapateena Airport/YCPT, 1,599.9 m, source surface `BITUM`). All other groups screened so far have zero in their surface-review queues. Russia remains one country (RU) with 312 runway-qualified candidates. All seven unresolved cases remain outside the 3,656-record master.
 
 Two Spanish airports from Group 9 were upgraded from surface-review candidates to the runway-qualified master using **official ENAIRE evidence only**: LENE (La Caminera, 1,400 m concrete) and LEDA (Lleida-Alguaire, 2,500 m asphalt). The original ambiguous source labels remain documented in `runway_surface_overrides.csv`; no unknown `paved`/`hard` surfaces are accepted without documentary confirmation.
 
@@ -109,6 +110,9 @@ Two Spanish airports from Group 9 were upgraded from surface-review candidates t
 
 **Group 16 collection note:** The five complete countries were screened without assigning final airport categories or confirming civilian access. North Korea's 34 records are only runway-qualified source candidates; this does not imply open commercial operations. The `OIBH` code conflict from Iran remains in the separate audit queue.
 
+
+**Group 35 Africa runway screening:** South Africa/ZA 81, South Sudan/SS 4, Sudan/SD 12, Tanzania/TZ 13 and Togo/TG 2, for **112** runway-qualified source candidates. Six ambiguous-material records are in the Group 35 surface-review queue; shorthand `BIT`, `COM`, `Hard`, `Tar`, and `Tarred` are not assumed asphalt/concrete. Group 35 has no duplicate identifiers. Earlier seven unresolved review cases and the Iranian OIBH code conflict remain unchanged. Civilian-access checks and final six-category assignments are deferred.
+
 ## Safe refresh
 - Group 4: `Refresh Group 4 technical airport screening`.
 - Group 5: `Refresh Group 5 technical airport screening`.
@@ -149,3 +153,5 @@ Two Spanish airports from Group 9 were upgraded from surface-review candidates t
 
 ## Future phase (not now)
 Civilian or military status, operating permissions, opening hours, equipment/aircraft eligibility, final six-category rankings, terminals, finances, game activation and Supabase database migrations are deferred.
+
+- Group 35: `Refresh Group 35 technical airport screening` (South Africa, South Sudan, Sudan, Tanzania, Togo; 112 candidates; six surface reviews; manual-only).

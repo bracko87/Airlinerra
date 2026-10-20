@@ -1,0 +1,12 @@
+Airlinerra Group 35 TECHNICAL SCREEN; never auto-import to gameplay.
+Source snapshot screened: 2026-10-20.
+Source: https://github.com/davidmegginson/ourairports-data
+Immutable Git blob SHA for airports.csv: 6ca86c226fe73c27f088facfca8df1436911322a
+Immutable Git blob SHA for runways.csv: 62fc9b5161add9da48588e63a814e89657f8d88a
+Entire ZA, SS, SD, TZ and TG source geographies screened without division.
+Rule: airport not closed; runway not closed; length at least 1200 m; explicitly asphalt or concrete surface label.
+Group 35: South Africa 81, South Sudan 4, Sudan 12, Tanzania 13, Togo 2.
+Surface review: 6 airport records with ambiguous surfaces: HTAR (BIT), HTLM (BIT), HTMU (Hard), ZA-0297 (Tarred), FAVR (COM), ZA-0114 (Tar).
+BIT and COM labels are held for verification rather than inferred asphalt/concrete. No Group 35 pavement overrides were used.
+Group 35 duplicate identifier findings: 0.
+Final six-category airport assignment and civilian/operational access remain deferred; minimum eligible level is 1.
