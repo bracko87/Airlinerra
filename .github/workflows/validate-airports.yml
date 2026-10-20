@@ -14,6 +14,7 @@ on:
       - 'scripts/screen_group7.py'
       - 'scripts/screen_group8.py'
       - 'scripts/screen_group9.py'
+      - 'scripts/screen_group10.py'
       - '.github/workflows/validate-airports.yml'
   pull_request:
     branches: [staging, main]
