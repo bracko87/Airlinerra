@@ -1,35 +1,41 @@
-# Airlinerra airport register — CURRENT PHASE: runway qualification only
+# Airlinerra airport collection — permanent runway-only register
 
-## Approved scope (2026-10-20)
-We are **collecting airports**, not evaluating whether they are currently usable by an airline. Include any airport with at least one runway that:
-- measures **1,200 metres or more**;
-- has **asphalt or concrete** as the explicitly reported surface (including accepted abbreviations);
-- is **not recorded as closed**; exclude an airport recorded closed.
-If a surface is merely "paved" or otherwise unclear, keep the airport in a separate surface-check queue.
+## Current phase
+Only collect airports having **at least one runway 1,200 m or longer**, reported **asphalt or concrete**, with both runway and airport not recorded closed. Facilities that say only "paved" are sent to a surface-check queue and not assumed eligible.
 
-Every matching airport is a **minimum Level 1 (Local) candidate**. There are still **exactly six** Airlinerra categories (1 Local, 2 Regional, 3 Medium, 4 Large, 5 Major Hub, 6 Mega Hub), but final categorization is NOT part of this phase. A candidate may later rank above Level 1.
+A matching airport can be considered **at least Level 1 (Local)**. This is only a lower-bound technical qualification, NOT a final assignment to Airlinerra's exact six tiers: Local, Regional, Medium, Large, Major Hub, Mega Hub. All other airport details are postponed.
 
-## Permanent storage
-- `airport_register.csv` — single permanent master register for runway-qualified airports. Holds only a source ID, country, airport name, identifiers, reported qualifying runway length and surface, a minimum-level flag (=1), and `RUNWAY_QUALIFIED` status. **It is not a list of active/playable game airports.**
-- `generated/group4/group4_technical_candidates.csv` — reproducible runway-screen output for Group 4; tracks source identifiers and eligible runways.
-- `generated/group4/group4_country_counts.csv` — screening totals by country.
-- `generated/group4/group4_surface_review.csv` — uncertain runway surfaces, outside the eligible register until confirmed.
-- `generated/group4/SOURCE.txt` — dataset provenance and checksums.
-- `group4_review.csv` and `group4_14_reconciliation.csv` — historical cross-check for 14 examples, **not 14 extra airports**.
-- `historical_approved_recovery.csv` — 56 earlier Group 1–3 airport names, kept separate from current runway-screened master until minimum-runway criteria are checked.
+## Canonical master
+- `airport_register.csv`: **560 runway-qualified airport records across Groups 1–5**, with identifiers, country, name, longest reported qualifying runway, surface and minimum eligible level 1. This is not a list of operational or playable airports.
+- Each group's `generated/groupN/groupN_technical_candidates.csv`: source screening that feeds the master.
+- Each group's `generated/groupN/groupN_country_counts.csv`: country-level counts.
+- `generated/groupN/groupN_surface_review.csv`: unclear pavement labels, excluded pending runway-surface verification.
+- `generated/groupN/SOURCE.txt`: snapshot checksums and audit trail.
+- `historical_approved_recovery.csv`: separate historical record of 56 name-level selections from earlier Groups 1–3 discussions; **do not add those as extra airports** unless already in a source screen.
+- `group4_14_reconciliation.csv`: all 14 older Group 4 candidates were already included in the Group 4 technical screen.
 
-## Current group inventory
-- Groups 1–3: previously discussed historical total **110** airports (21/30/59). **Not yet migrated into the runway-qualified master**. 56 names have been recovered separately; 54 not recovered.
-- Group 4: **307 airports in the runway-qualified master** (France 151, Georgia 10, Germany 93, Greece 42, Hungary 11). The additional four uncertain-surface facilities are NOT counted among the 307.
-- Group 5: pending.
+## Totals for the current runway-only definition
+| Group | Countries | Runway-qualified airports |
+| --- | --- | ---: |
+| 1 | Albania, Armenia, Austria, Azerbaijan | 30 |
+| 2 | Belarus, Belgium, Bosnia and Herzegovina, Bulgaria, Croatia | 58 |
+| 3 | Cyprus, Czechia, Denmark, Estonia, Finland | 74 |
+| 4 | France, Georgia, Germany, Greece, Hungary | 307 |
+| 5 | Iceland, Ireland, Italy, Kosovo, Latvia | 91 |
+| **TOTAL** | | **560** |
 
-The current count is a runway-only technical dataset, not a game-playability decision or a statement about civilian operation.
+**Historic Groups 1–3 selection: 110 airports (21/30/59).** The fresh runway-only screening produces **162 candidates** across those three groups (30/58/74), not 110. Do not conflate these two counts. The earlier list applied additional screening/selection rules; the current register is deliberately a broader technical pool. The separate 56-name historical recovery file remains on staging for reference, while 54 historic names were not recovered.
 
-## Not doing now — later phases
-We will later assess civilian/military access, operating permits, weight/aircraft restrictions, opening times, terminal/capacity/economic parameters, final six-category placements and any game activation. Do **not** exclude a runway-qualified candidate just because one of those future checks is missing.
-No Supabase database migration has been applied or approved for these airport records.
+Uncertain runway surfaces: Group 4 has 4 entries requiring a later material check; Group 5 and Groups 1–3 have 0 in their current output. These 4 are outside the master 560.
 
-## Reproducibility and release controls
-- To refresh Group 4, run GitHub workflow `Refresh Group 4 technical airport screening` on **staging**; it downloads OurAirports, screens qualifying runways, rebuilds `airport_register.csv`, and runs validation.
-- To validate locally, run `python scripts/validate_airports.py && python scripts/validate_historical_airports.py`.
-- Staging is for development/data collection; `main` remains untouched until an explicitly approved production release.
+## Safe refresh
+- Group 4: `Refresh Group 4 technical airport screening`.
+- Group 5: `Refresh Group 5 technical airport screening`.
+- Groups 1–3: `Backfill Groups 1-3 runway candidates`.
+- Each workflow downloads the same OurAirports data files, screens its group and **rebuilds the master by combining every group's screens**, deduplicating by source airport ID. It does not replace other groups' records.
+- `python scripts/rebuild_runway_register.py` rebuilds the permanent master from all completed group screens.
+- `python scripts/validate_airports.py && python scripts/validate_historical_airports.py` validates the master and the historical file.
+- Always use GitHub `staging`. Production `main` is unchanged without approved release.
+
+## Future phase (not now)
+Civilian or military status, operating permissions, opening hours, equipment/aircraft eligibility, final six-category rankings, terminals, finances, game activation and Supabase database migrations are deferred.
