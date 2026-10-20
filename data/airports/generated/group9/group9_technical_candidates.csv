@@ -27,11 +27,13 @@ ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible
 4015,ES,Jerez Airport,LEJR,LEJR,2300.0,ASP,1,238909
 4004,ES,Josep Tarradellas Barcelona-El Prat Airport,LEBL,LEBL,3352.8,ASP,3,238920;238921;238922
 4016,ES,La Calderera Airfield,LELA,LELA,1472.2,ASP,1,238878
+331318,ES,La Caminera Airfield,LENE,LENE,1399.9,Concrete,1,504658
 337036,ES,La Cuesta Aerodrome,ES-0276,LEDC,1942.2,ASP,1,337037
 3078,ES,La Gomera Airport,GCGM,GCGM,1499.9,ASP,1,238873
 3080,ES,La Palma Airport,GCLA,GCLA,2200.0,ASP,1,238891
 4014,ES,La Perdiz - Torre De Juan Abad Airfield,LEIZ,LEIZ,1528.6,ASP,1,238881
 4018,ES,León Airport,LELN,LELN,3000.1,ASP,1,238952
+308328,ES,Lleida-Alguaire Airport,LEDA,LEDA,2500.0,Asphalt,1,326350
 30083,ES,Logroño-Agoncillo Airport,LELO,LERJ,2200.0,CON,1,316372
 4044,ES,Madrid-Cuatro Vientos Airport,LECU,LECU,1499.9,ASP,1,238894
 3093,ES,Melilla Airport,GEML,GEML,1432.9,ASP,1,238882
