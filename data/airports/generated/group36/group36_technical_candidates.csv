@@ -1,0 +1,35 @@
+ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible_runway_m,surface,eligible_runway_count,runway_ids
+3110,EH,Dakhla Airport,GMMH,GMMH,2999.8,ASP,1,246221
+3112,EH,Laayoune Hassan I International Airport,GMML,GMML,2700.8,ASP,2,246219;246220
+3108,EH,Smara Airport,GMMA,GMMA,3000.1,ASP,1,246222
+2134,TN,Bizerte Sidi Ahmed Air Base,DTTB,DTTB,1211.6,CON,1,239220
+2139,TN,Djerba Zarzis International Airport,DTTJ,DTTJ,3100.1,ASP,1,239226
+2140,TN,El Borma Airport,DTTR,DTTR,2699.9,ASP,1,239224
+44483,TN,Enfidha - Hammamet International Airport,DTNH,DTNH,3300.1,ASPH,1,317548
+2136,TN,Gafsa Ksar International Airport,DTTF,DTTF,2899.9,ASP,1,239222
+6401,TN,Medenine Airport,DT70,DT70,1204.6,ASP,1,239223
+2132,TN,Monastir Habib Bourguiba International Airport,DTMB,DTMB,2949.9,ASP,1,239221
+2135,TN,Remada Air Base,DTTD,DTTD,2381.1,ASP,1,239214
+2141,TN,Sfax Thyna International Airport,DTTX,DTTX,3000.1,CON,1,239228
+2131,TN,Tabarka-Aïn Draham International Airport,DTKA,DTKA,2870.0,ASP,1,239227
+2142,TN,Tozeur Nefta International Airport,DTTZ,DTTZ,3225.1,ASP,1,239225
+2133,TN,Tunis Carthage International Airport,DTTA,DTTA,3200.1,ASP,2,239215;239216
+3263,UG,Entebbe International Airport,HUEN,HUEN,3657.6,ASP,2,239374;239375
+3264,UG,Gulu Airport,HUGU,HUGU,3143.7,ASP,1,239378
+3265,UG,Soroti Airport,HUSO,HUSO,1859.3,ASP,1,239376
+2893,ZM,Harry Mwanga Nkumbula International Airport,FLLI,FLHN,3000.1,ASP,1,246258
+2891,ZM,Kasompe Airport,FLKE,FLKE,1432.0,ASP,1,246262
+2894,ZM,Kenneth Kaunda International Airport,FLLS,FLKK,3961.8,ASP,1,246255
+2892,ZM,Lusaka City Airport,FLLC,FLLC,2009.9,ASP,1,246257
+2895,ZM,Mfuwe International Airport,FLMF,FLMF,2240.0,ASP,1,246264
+2897,ZM,Peter Zuze Air Force Base,FLND,FLND,2514.6,CON,2,246260;246261
+525659,ZM,Simon Mwansa Kapwepwe International Airport,FLSK,FLSK,3500.0,ASP,1,525660
+30427,ZM,Solwesi Airport,FLSW,FLSW,2699.9,ASP,1,327519
+2898,ZM,Southdowns Airport,FLSO,FLSO,2000.1,ASP,1,246265
+3014,ZW,Hwange National Park Airport,FVWN,FVWN,4599.7,ASP,1,246269
+3000,ZW,Joshua Mqabuko Nkomo International Airport,FVBU,FVJN,2588.1,ASP,2,246270;246271
+3013,ZW,Josiah Tungamirai Air Force Base,FVTL,FVTL,2671.9,ASP,1,246286
+3006,ZW,Kariba Airport,FVKB,FVKB,1649.9,ASP,1,246278
+27233,ZW,Mhangura Airport,FV77,FVGM,1556.9,ASP,1,246287
+3005,ZW,Robert Gabriel Mugabe International Airport,FVHA,FVRG,4725.0,ASP,1,246283
+3004,ZW,Victoria Falls International Airport,FVFA,FVFA,3999.9,ASP,1,246267
