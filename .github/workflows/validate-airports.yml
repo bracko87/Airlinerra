@@ -7,6 +7,8 @@ on:
       - 'data/airports/**'
       - 'scripts/validate_airports.py'
       - 'scripts/validate_historical_airports.py'
+      - 'scripts/rebuild_runway_register.py'
+      - 'scripts/screen_group4.py'
       - '.github/workflows/validate-airports.yml'
   pull_request:
     branches: [staging, main]
