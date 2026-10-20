@@ -1,0 +1,6 @@
+ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible_runway_m,surface,eligible_runway_count,runway_ids
+2905,RE,Roland Garros Airport,FMEE,FMEE,3200.1,ASP,2,238381;238382
+2906,RE,Saint-Pierre Pierrefonds Airport,FMEP,FMEP,2133.6,ASP,1,238383
+2877,SH,RAF Ascension Island,FHAW,FHAW,3053.8,ASP,1,238852
+318444,SH,Saint Helena International Airport,FHSH,FHSH,1950.1,ASP,1,318445
+2904,YT,Dzaoudzi Pamandzi International Airport,FMCZ,FMCZ,1929.4,ASP,1,237545
