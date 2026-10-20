@@ -1,27 +1,24 @@
-# Controlled releases — Airlinerra
+# Airlinerra — public-development single-branch process (effective 2026-10-20)
 
-## Branch roles
-- `staging`: integration and development branch. Always specify this branch when writing files.
-- `main`: protected production baseline. Do not modify outside approved releases.
+## Branch and repository status
+- The only active development branch is **`main`**. The old `staging` branch was fast-forwarded into `main` on 2026-10-20 and is retired from active use. Never commit to or open a PR against legacy `staging`.
+- The repository is intentionally **public during development**. A later switch to private does not remove already published or forked code.
+- **Public GitHub repository ≠ published game.** No Netlify production integration, live payment settings, or production Supabase migrations are authorized by this development workflow.
 
-## Workflow
-1. Read `AGENTS.md` and this document on `staging`.
-2. Work in small independent changes, on `staging` (or short-lived feature branches targeting staging).
-3. Validate and document changes before opening a release PR.
-4. For production, compare `staging...main`; review migration consequences, schema validation, tests and any UI screenshots.
-5. Release only following an explicit decision by the owner. Merge through PR to `main`.
-6. Use two manual release windows per day (morning and evening). No exact clock times have been set; do not invent them.
-7. Urgent releases require the same minimum validation and explicit approval, even outside the windows.
-8. Production deployment (when configured) is sourced ONLY from `main`.
+## Normal development
+1. Read `AGENTS.md` on `main`.
+2. Check the latest `main` commit and work on that branch only. Do not assume a default branch or use legacy `staging`.
+3. Validate data and code locally. For airport collection, run `python scripts/validate_airports.py`, `python scripts/validate_historical_airports.py`, and `python scripts/rebuild_runway_register.py`; confirm committed master and conflict files are unchanged when regenerated.
+4. Preserve existing airport groups, the fictional LYAL entry, all review queues and source IDs. Airport technical selection requires a non-closed asphalt/concrete runway of at least 1,200 m. Six eventual airport categories are fixed; current screening only assigns minimum Level 1.
+5. Commit to `main` only after validation. No PR/merge between development branches is necessary.
+6. Keep group-screening and backfill GitHub Actions as `workflow_dispatch` only; use them deliberately for exceptional source refreshes, not as a required paid or repeated validation step.
+7. Do not introduce production credentials, user records or financial information to this public source repository.
 
-## Release checklist
-- [ ] Review full file diff and confirm no unauthorized changes.
-- [ ] Run automated checks and fix failures.
-- [ ] In the current runway-only airport collection phase, confirm airport CSV integrity: >=1200 m, asphalt/concrete, runway open, minimum eligible Level 1; do NOT require final six-category, civilian approval or operational data yet.
-- [ ] Review Supabase migrations and rollback strategy; do not auto-apply production migrations.
-- [ ] Obtain explicit owner authorization.
-- [ ] Merge approved PR into `main` within release window (or validated urgent exception).
-- [ ] Verify deployed behavior and record release outcome.
+## Production launch — separate future decision
+- Do not automatically publish unfinished source just because it is on `main`. Before connecting Netlify to `main`, obtain owner authorization and confirm how automatic deployments will be controlled.
+- At launch, audit both working tree and Git history for exposed secrets, rotate any accidentally disclosed credentials, review data privacy, and change repository visibility as explicitly authorized in GitHub settings.
+- Once private, standard GitHub Actions may become metered again. Adjust CI policy and budget before turning on recurring checks.
+- Never treat making a repository private again as revoking already downloaded or forked code.
 
 ## Scope isolation
-Airlinerra project, repository, database and deployment must be independent from ProPeloton Manager and Game Control Center.
+Never modify Famioo, Tennis Legacy, ProPeloton Manager, Game Control Center, or other repositories as part of an Airlinerra migration.

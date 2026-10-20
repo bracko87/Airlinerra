@@ -1,12 +1,13 @@
 # Airlinerra
 
-Private Next Quest Studio repository for Airlinerra, a real-time browser airline-management game.
+Public development repository for Airlinerra, a real-time browser airline-management game. Source code is public during development and may become private when the game launches (public copies cannot be recalled).
 
-## Controlled development
-- **`staging`**: all normal changes, runway-data collection and testing.
-- **`main`**: production, changed only through a reviewed PR with testing and explicit owner approval.
-- Normal release windows are twice daily, manual (morning/evening); urgent releases require validation and owner approval.
-- Nothing in this repository changes ProPeloton Manager or the Game Control Center.
+## Development process — main only
+- **`main`** is the only active development branch. Routine code, runway collection, fixes and documentation changes go directly to `main`; do not use legacy `staging`.
+- The project is **not production-live** merely because it is public. No production app or database deployment is authorized by development pushes.
+- Run local validation regularly; group-specific GitHub Actions workflows are manual-only to avoid needless runs. Standard runners are free while the repository is public.
+- Before connecting a production deployment to `main`, confirm the deployment policy because subsequent pushes may publish immediately.
+- Nothing in this repository changes ProPeloton Manager or Game Control Center.
 
 See [AGENTS.md](AGENTS.md) and [release procedures](docs/CONTROLLED_RELEASES.md).
 

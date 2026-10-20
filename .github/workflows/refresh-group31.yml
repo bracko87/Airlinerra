@@ -16,10 +16,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
-      - name: Checkout staging
+      - name: Checkout main
         uses: actions/checkout@v4
         with:
-          ref: staging
+          ref: main
           persist-credentials: true
       - name: Python
         uses: actions/setup-python@v5
@@ -44,12 +44,12 @@ jobs:
           name: airlinerra-group31-technical-screen
           path: data/airports/generated/group31
           if-no-files-found: error
-      - name: Commit results to staging only
+      - name: Commit results to main development branch
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add data/airports/generated/group31 data/airports/airport_register.csv
           if ! git diff --cached --quiet; then
             git commit -m "data: refresh runway-qualified Group 31 and Level 1 register [skip ci]"
-            git push origin HEAD:staging
+            git push origin HEAD:main
           fi

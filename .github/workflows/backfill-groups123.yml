@@ -16,10 +16,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
-      - name: Checkout staging
+      - name: Checkout main
         uses: actions/checkout@v4
         with:
-          ref: staging
+          ref: main
           persist-credentials: true
       - name: Python
         uses: actions/setup-python@v5
@@ -47,12 +47,12 @@ jobs:
             data/airports/generated/group2
             data/airports/generated/group3
           if-no-files-found: error
-      - name: Commit all screened airport records to staging only
+      - name: Commit all screened airport records to main development branch
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add data/airports/generated/group1 data/airports/generated/group2 data/airports/generated/group3 data/airports/airport_register.csv
           if ! git diff --cached --quiet; then
             git commit -m "data: backfill Groups 1-3 runway-qualified airports [skip ci]"
-            git push origin HEAD:staging
+            git push origin HEAD:main
           fi

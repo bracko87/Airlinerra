@@ -2,25 +2,18 @@
 
 These rules apply to all contributors, automated agents and connected development tools.
 
-## GitHub Actions budget protection — MANDATORY from 2026-10-20
-- The repository is **private**, and standard GitHub-hosted workflow jobs can consume paid GitHub Actions minutes. This applies equally to the `staging` branch. DO NOT confuse "staging not deploying to production" with "staging builds are free".
-- For all current and future airport screening groups, **NEVER add `on.push` or `on.pull_request` targeting `staging`** to validation, refresh, or group-specific workflows. This includes workflow self-path triggers. These caused 96 paid runs in one day on 2026-10-20.
-- Add new group workflows **only with `workflow_dispatch`**, not automatic push/PR/schedule triggers. Existing airport screen workflows are manual-only; the master airport validator is manual or `pull_request` to `main` (release gate).
-- **Do not run manual Actions after every group.** Collect and validate groups locally, batch multiple group updates into one `staging` commit/push, and run paid CI only once per owner-approved batch or at release review. Never dispatch CI merely to see if a script changed successfully.
-- Run free local checks using `python scripts/validate_airports.py && python scripts/validate_historical_airports.py && python scripts/rebuild_runway_register.py`, then verify the canonical register contains only intended changes (`git diff --exit-code -- data/airports/airport_register.csv data/airports/airport_code_conflicts.csv` after rebuilding). No live secrets or production writes.
-- `workflow_dispatch` GitHub UI/API requires a workflow to exist on the repository's default branch. While these airport workflows exist only on `staging`, run the local validation commands instead of merging into `main` without owner approval. Preserve manual workflows for when a release is approved.
-- Never create one workflow run per screened group; continue the user's airport inventory work uninterrupted, staging-first, with exact six airport categories and the runway-only criteria defined below.
-- Changing the GitHub Actions budget is outside development scope. Do not change billing settings, turn off spending caps, or claim an estimate is an official GitHub bill.
-
-
-## Branch safety
-- All normal development, bug fixes, data curation, migrations, tests and documentation MUST target `staging`, explicitly.
-- The `main` branch represents production. NEVER commit or push ordinary changes directly to `main`.
-- Before a production release, compare `staging` to `main`, run required validation, and open a reviewed pull request.
-- Merge or deploy to `main` ONLY after explicit owner approval for that release.
-- Standard releases are grouped into two owner-operated manual release windows per day: morning and evening. Neither is automatic.
-- Urgent releases may happen outside those windows, but still require testing and explicit owner approval.
-- Never touch ProPeloton Manager or Game Control Center as part of Airlinerra changes.
+## Branch policy — public development, single branch (2026-10-20)
+- **Develop exclusively on `main`**. Repository visibility is currently public and normal coding, airport screening, corrections, and documentation updates go straight to `main`. Do not target, create, or merge from `staging`. The old `staging` branch is legacy and must not receive new work.
+- This supersedes older staging/release-window instructions in this repository. All contributors and other ChatGPT conversations must follow this document before coding.
+- The **repository being public does not make the game production-live**. Airport data collection remains a runway-only work-in-progress; no playable-world or Supabase deployment is authorized by this branch change.
+- Never write or commit real customer records, private user data, credentials, card details, Stripe secret keys, Supabase service-role keys, or Netlify environment secrets. Use secure hosted secret settings. Public commit history remains accessible even if this repository is later private.
+- Standard GitHub-hosted runners are free in public repositories; specialized larger runners, storage or third-party services may still have costs.
+- Keep group-refresh/backfill workflows **manual-only** (`workflow_dispatch`); never launch one paid/otherwise unnecessary workflow per group, and do not create automatic group-specific push triggers. Manually invoked group refreshes check out and commit to `main`; verify their resulting changes.
+- The airport-register validation workflow remains available for explicit/manual or PR validation; perform local verification of each data batch first: `python scripts/validate_airports.py && python scripts/validate_historical_airports.py && python scripts/rebuild_runway_register.py`, then verify generated master/conflict files match the intended committed data.
+- Preserve all previous airport groups, source evidence, runway qualifiers, fictional LYAL, and unresolved conflict/surface review queues. Do not overwrite or reclassify prior airport data merely due to this branch migration.
+- Do not turn on automatic production deployment from `main` or apply any Supabase/Stripe production changes until owner authorizes a specific launch. If deployment is connected to `main` later, a direct push may trigger that deployment; confirm and control it separately.
+- At launch, changing visibility from public to private is a GitHub account action; that change cannot retract copies or forks made while public, and private-repository Actions minutes can then be billed again.
+- No changes to any other repository (Famioo, ProPeloton Manager, Game Control Center, etc.) as part of Airlinerra work.
 
 ## Airport data — current phase: runway-only collection
 - Airlinerra retains EXACTLY six eventual airport categories: 1 Local, 2 Regional, 3 Medium, 4 Large, 5 Major Hub, 6 Mega Hub. Never substitute four categories.
@@ -48,7 +41,7 @@ These rules apply to all contributors, automated agents and connected developmen
 - Group 13 has four externally evidenced surface-label corrections in `runway_surface_overrides.csv` (Jiayuguan, Linyi Qiyang, Panzhihua, Shirdi); Aurangabad and Baramati remain surface-review candidates. Evidence-backed screen updates must not infer all `paved` surfaces are asphalt/concrete.
 - User-owned fictional airports may be added through `data/airports/fictional_airports.csv` and MUST be included when rebuilding the master. Their `source_type=FICTIONAL` must stay distinct from real screened airports. Aleksandrovo Airport, Serbia, code LYAL, has 2,200m asphalt and an explicitly assigned category Local (Level 1); do not lose it in a future group refresh. Source-screened real airports keep `assigned_category` blank.
 - No Supabase/game import, playable activation or production release in this phase. Final categorization of real screened airports is deferred. Database/schema work is deferred.
-- Always validate on staging before claiming technical-collection completion.
+- Always validate the `main` development branch before claiming technical-collection completion.
 ## Game rules
 - Real-time worlds: one real day is one in-game day. No historical eras.
 - New airlines start with USD 5,000,000 and zero aircraft.
