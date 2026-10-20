@@ -27,7 +27,7 @@ PAVEMENT={"ASP","ASPH","ASPHALT","ASPHALTE","ASPHALTED","CON","CONC","CONCRETE",
 UNCERTAIN=("PAVED","ASPH","CON","TARMAC","MACADAM","BITUM","TAR","HARD")
 
 def surface_type(value):
-    val=re.sub(r"\s+","",(value or "").upper())
+    val=re.sub(r"\s+","",(value or "").strip().strip(chr(39)+chr(34)).upper())
     if val in PAVEMENT: return "ELIGIBLE_LABEL"
     if re.search(r"[/+;&-]",val):
         bits=re.split(r"[/+;&-]",val)
