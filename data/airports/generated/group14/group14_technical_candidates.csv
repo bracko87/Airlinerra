@@ -98,6 +98,7 @@ ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible
 5677,JP,Miyako Airport,ROMY,ROMY,1999.5,ASP,1,237192
 5567,JP,Miyazaki Airport,RJFM,RJFM,2499.4,ASP,1,237200
 5557,JP,Monbetsu Airport,RJEB,RJEB,2000.1,ASP,1,237111
+299238,JP,Mount Fuji Shizuoka Airport,RJNS,RJNS,2200.0,asphalt concrete,1,330022
 5573,JP,Nagasaki Airport,RJFU,RJFU,2999.2,ASP,1,237194
 5581,JP,Nagoya Airport / JASDF Komaki Air Base,RJNA,RJNA,2740.2,ASP,1,237158
 5671,JP,Naha International Airport,ROAH,ROAH,2999.2,ASP,2,237220;334164
