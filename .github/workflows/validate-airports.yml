@@ -6,6 +6,7 @@ on:
     paths:
       - 'data/airports/**'
       - 'scripts/validate_airports.py'
+      - 'scripts/validate_historical_airports.py'
       - '.github/workflows/validate-airports.yml'
   pull_request:
     branches: [staging, main]
@@ -24,4 +25,4 @@ jobs:
         with:
           python-version: '3.12'
       - name: Validate airport CSV
-        run: python scripts/validate_airports.py
+        run: python scripts/validate_airports.py && python scripts/validate_historical_airports.py
