@@ -5,7 +5,6 @@ on:
     branches: [staging]
     paths:
       - 'scripts/screen_group4.py'
-      - 'scripts/rebuild_runway_register.py'
       - '.github/workflows/refresh-group4.yml'
   workflow_dispatch:
 
