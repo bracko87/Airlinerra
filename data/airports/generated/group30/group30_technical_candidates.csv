@@ -1,0 +1,28 @@
+ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible_runway_m,surface,eligible_runway_count,runway_ids
+35322,GA,Gamba Airport,GA-GAX,FOGX,1800.1,ASP,1,327469
+2957,GA,Koulamoutou Mabimbi Airport,FOGK,FOGK,1780.3,ASP,1,236075
+2966,GA,Libreville Leon M'ba International Airport,FOOL,FOOL,3000.5,ASP,1,236068
+2967,GA,M'Vengue El Hadj Omar Bongo Ondimba International Airport,FOON,FOON,3080.0,ASP,1,236074
+2965,GA,Makokou Airport,FOOK,FOOK,1795.9,ASP,1,236073
+31894,GA,Moanda Airport,FOOD,FOOD,1900.1,ASP,1,513661
+2958,GA,Mouilla Ville Airport,FOGM,FOGM,1795.6,ASP,1,236078
+2960,GA,Okondja Airport,FOGQ,FOGQ,1499.9,ASP,1,236071
+2964,GA,Omboue Hospital Airport,FOOH,FOOH,1610.9,ASP,1,236070
+2959,GA,Oyem Airport,FOGO,FOGO,1800.1,ASP,1,236072
+2963,GA,Port Gentil International Airport,FOOG,FOOG,1900.1,ASP,1,236069
+354173,GH,Ho Airport,DGAH,DGAH,1605.1,Asphalt,1,354174
+2090,GH,Kotoka International Airport,DGAA,DGAA,3403.1,ASP,1,236092
+2093,GH,Prempeh I International Airport,DGSI,DGSI,2320.1,ASP,1,236091
+2094,GH,Sunyani Airport,DGSN,DGSN,1400.3,ASP,1,236094
+2095,GH,Takoradi Airport,DGTK,DGTK,1751.1,ASP,1,236095
+2092,GH,Wa Airport,DGLW,DGLW,2015.3,ASP,1,236096
+2091,GH,Yakubu Tali International Airport,DGLE,DGLE,2438.1,ASP,1,236093
+3076,GM,Banjul International Airport,GBYD,GBYD,3600.0,ASP,1,236067
+3146,GN,Ahmed Sékou Touré International Airport,GUCY,GUCY,3299.8,ASP,1,236400
+316855,GN,Beyla Airport,GUBE,GUBE,1828.8,asphalt,1,316857
+3148,GN,Faranah Airport,GUFH,GUFH,2315.0,ASP,1,236398
+3147,GN,Fria Airport,GUFA,GUFA,1599.9,ASP,1,236401
+31557,GN,Kawass Airport,GUKR,GUKR,1560.0,ASP,1,349581
+597083,GN,Loila Airport,GN-0003,,1414.9,ASP,1,597084
+3097,GW,Osvaldo Vieira International Airport,GGOV,GGOV,3200.1,ASP,1,238375
+3156,GW,Quebo Airport,GG64,GG64,1206.4,ASP,1,238377
