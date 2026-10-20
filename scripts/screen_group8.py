@@ -11,17 +11,8 @@ import hashlib
 import pathlib
 import re
 
-COUNTRIES={"PL":"Poland","PT":"Portugal","RO":"Romania","RU":"Russia (European part)","SM":"San Marino"}
-# Approximate geographic filter for European Russia. Boundary cases will need
-# a later geographic review; screening does NOT include Russia east of 60°E.
-EUROPEAN_RUSSIA_EAST_LIMIT=60.0
-
-def in_geographic_scope(airport):
-    if airport.get("iso_country")!="RU": return True
-    try:
-        return float(airport.get("longitude_deg") or "") <= EUROPEAN_RUSSIA_EAST_LIMIT
-    except (ValueError,TypeError):
-        return False
+COUNTRIES={"PL":"Poland","PT":"Portugal","RO":"Romania","RU":"Russia","SM":"San Marino"}
+# Russia is ONE country for Airlinerra. No geographic/continental filtering.
 
 PAVEMENT={"ASP","ASPH","ASPHALT","ASPHALTE","ASPHALTED","CON","CONC","CONCRETE","BETON","BITUMEN","ASP/CON","CON/ASP","ASPH/CONC","CONC/ASPH","ASPHALT/CONCRETE","CONCRETE/ASPHALT","ASP-CON","CON-ASP"}
 UNCERTAIN=("PAVED","ASPH","CON","TARMAC","MACADAM","BITUM","TAR","HARD")
@@ -58,7 +49,7 @@ def main():
     p.add_argument("--runways",required=True,type=pathlib.Path)
     p.add_argument("--out",required=True,type=pathlib.Path)
     args=p.parse_args()
-    airports={r["id"]:r for r in load(args.airports) if r.get("iso_country") in COUNTRIES and r.get("type")!="closed" and in_geographic_scope(r)}
+    airports={r["id"]:r for r in load(args.airports) if r.get("iso_country") in COUNTRIES and r.get("type")!="closed"}
     eligible=collections.defaultdict(list)
     uncertain=collections.defaultdict(list)
     for runway in load(args.runways):
@@ -108,7 +99,7 @@ def main():
         "runways.csv SHA256: "+sha256(args.runways)+"\n"
         "Only operational and explicitly asphalt/concrete runway labels >=1200 m.\n"
         "Excluded airport.type=closed and runway.closed=1.\n"
-        "European Russia geographic screen uses longitude <= 60.0 degrees east, an approximate Urals boundary.\n"
+        "Russia treated as one whole country (RU): no European/Asian filter or longitude cutoff.\n"
         "Current phase ends at runway qualification for minimum Level 1 (Local). Other airport information and final six-category ranking are DEFERRED.\n"
         "Records are qualified by runway only; not an operating-airport or game-activation authorization.\n"
         f"Screened count: {len(candidates)}; ambiguous surface queue: {len(surface_queue)}; duplicate identifiers: {len(duplicates)}.\n",encoding="utf-8")
