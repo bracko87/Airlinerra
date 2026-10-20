@@ -1,0 +1,11 @@
+ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible_runway_m,surface,eligible_runway_count,runway_ids
+2559,FO,Vágar Airport,EKVG,EKVG,1799.8,ASP,1,235788
+2425,GG,Guernsey Airport,EGJB,EGJB,1583.1,ASP,1,236099
+4574,GI,Gibraltar Airport,LXGB,LXGB,1828.8,ASP,1,236097
+115,GL,Kangerlussuaq International Airport,BGSF,BGSF,2810.0,ASP,1,236105
+113,GL,Narsarsuaq Airport,BGBW,BGBW,1830.0,CON,1,236104
+114,GL,Nuuk International Airport,BGGH,BGGH,2199.7,ASPH,1,504924
+116,GL,Pituffik Space Base,BGTL,BGTL,3047.1,ASP,1,236106
+429724,GL,Qaqortoq Airport,GL-0012,BGQO,1500.8,ASP,1,603981
+2447,IM,Isle of Man Airport,EGNS,EGNS,2110.1,ASP,1,236593
+2426,JE,Jersey Airport,EGJJ,EGJJ,1705.1,ASP,1,237244

@@ -1,0 +1,11 @@
+country_iso,country,technical_candidates,minimum_eligible_level
+AD,Andorra,0,1
+AX,Åland Islands,0,1
+FO,Faroe Islands,1,1
+GI,Gibraltar,1,1
+GG,Guernsey,1,1
+IM,Isle of Man,1,1
+JE,Jersey,1,1
+SJ,Svalbard and Jan Mayen,0,1
+GL,Greenland,5,1
+TOTAL,TOTAL,10,1
