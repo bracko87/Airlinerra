@@ -750,6 +750,7 @@ source_airport_id,country_iso,airport_name,ident,gps_code,runway_length_m,runway
 34955,RU,Khotilovo Air Base,RU-0015,,2999.8,CON,1,RUNWAY_QUALIFIED
 6498,RU,Khrabrovo Airport,UMKK,UMKK,3350.1,CON,1,RUNWAY_QUALIFIED
 42990,RU,Kimry Airfield,UUEI,UUEI,1414.9,ASP,1,RUNWAY_QUALIFIED
+44739,RU,Kinel-Cherkassy Air Base,RU-0195,,2000.1,'concrete',1,RUNWAY_QUALIFIED
 35001,RU,Kirovsk-Apatity Airport,RU-10046,XLMK,2500.0,concrete,1,RUNWAY_QUALIFIED
 42330,RU,Klokovo Air Base,RU-10050,,1799.5,CON,1,RUNWAY_QUALIFIED
 31761,RU,Kostroma Sokerkino Airport,UUBA,UUBA,1699.9,CON,1,RUNWAY_QUALIFIED
