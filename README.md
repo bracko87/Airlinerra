@@ -1,40 +1,38 @@
 # Airlinerra
 
-Private Next Quest Studio repository for Airlinerra, a real-time airline-management browser game.
+Private Next Quest Studio repository for Airlinerra, a real-time browser airline-management game.
 
-## Controlled GitHub workflow
-- `staging`: all normal changes, tests and airport-data collection.
-- `main`: production only, after validated reviewed PR and explicit owner approval.
-- Standard releases: two **manual** windows each day (morning/evening). Validated urgent releases require explicit approval.
-- ProPeloton Manager and Game Control Center remain unaffected.
+## Controlled development
+- **`staging`**: all normal changes, runway-data collection and testing.
+- **`main`**: production, changed only through a reviewed PR with testing and explicit owner approval.
+- Normal release windows are twice daily, manual (morning/evening); urgent releases require validation and owner approval.
+- Nothing in this repository changes ProPeloton Manager or the Game Control Center.
 
-Read [AGENTS.md](AGENTS.md) and [CONTROLLED_RELEASES.md](docs/CONTROLLED_RELEASES.md) first.
+See [AGENTS.md](AGENTS.md) and [release procedures](docs/CONTROLLED_RELEASES.md).
 
-## Airport collection — runway-only phase
+## Airport runway collection — current stage
+For now we store ONLY airports reporting a **non-closed asphalt/concrete runway of at least 1,200 metres**. Each meets **minimum Level 1 (Local)** runway criteria; no final categorization, operating permissions or other airport information is being gathered.
 
-**No deeper airport research or final level assignments yet.**
+[Permanent master airport register](data/airports/airport_register.csv): **560 runway-qualified airport candidates, Groups 1–5 combined**.
 
-1. Minimum **1,200 m** runway.
-2. Asphalt or concrete.
-3. Runway and airport not recorded as closed.
-4. Qualified airport receives **minimum eligible level 1 (Local)**; its **final category is not assigned**.
+| Group | Airports in runway-only master |
+| --- | ---: |
+| 1 — Albania, Armenia, Austria, Azerbaijan | 30 |
+| 2 — Belarus, Belgium, Bosnia and Herzegovina, Bulgaria, Croatia | 58 |
+| 3 — Cyprus, Czechia, Denmark, Estonia, Finland | 74 |
+| 4 — France, Georgia, Germany, Greece, Hungary | 307 |
+| 5 — Iceland, Ireland, Italy, Kosovo, Latvia | 91 |
+| **Total** | **560** |
 
-Exactly six game levels remain in the design: Local, Regional, Medium, Large, Major Hub, Mega Hub.
+**Important distinction:** Earlier discussions selected **110 airports** for Groups 1–3. The **162** airport candidates now in the master for those groups are a fresh, *runway-only* screen. The historical count of 110 and its 56 recovered names remain documented separately; it is not equivalent to the current screening count.
 
-[Permanent runway-qualified airport register](data/airports/airport_register.csv) stores **307 Group 4 records**, not merely the two earlier operator-reviewed airports. The master contains no civilian-access approval or game-activation status.
-
-[Raw Group 4 screening](data/airports/generated/group4/group4_technical_candidates.csv) and [country totals](data/airports/generated/group4/group4_country_counts.csv) preserve the 307 candidates (FR 151 / GE 10 / DE 93 / GR 42 / HU 11), and [surface-review records](data/airports/generated/group4/group4_surface_review.csv) track four additional uncertain surfaces.
-
-[Historical Group 1–3 recovery](data/airports/historical_approved_recovery.csv) preserves 56 names of 110 previously discussed airports; these **do not count toward the current technical master** until runway-screened. The remaining 54 names still require recovery.
-
-[Airport data scope and reproducibility](data/airports/README.md) explains the current collection stage. [Previous 14-airport cross-check](data/airports/group4_14_reconciliation.csv) confirms those examples are already included in the 307.
+[Full airport-register documentation and source files](data/airports/README.md) · [Historical recovery file](data/airports/historical_approved_recovery.csv).
 
 Validate with:
 ```sh
-python scripts/validate_airports.py && python scripts/validate_historical_airports.py
+python scripts/validate_airports.py
+python scripts/validate_historical_airports.py
 ```
 
-**Later, not now:** civilian/military operations, restrictions, advanced airport information, final six-level assignments, and Supabase/game deployment.
-
-## Other game decisions
-Real-time worlds (one real day equals one in-game day); new airlines begin with $5,000,000 USD and zero aircraft; three-world architecture launching one world first.
+## Game premises
+One real day = one in-game day, no historical eras. Airlines begin with $5,000,000 USD and zero aircraft. Architecture supports three independent worlds, initially launching one.
