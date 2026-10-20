@@ -49,6 +49,13 @@ def main():
     p.add_argument("--out",required=True,type=pathlib.Path)
     args=p.parse_args()
     airports={r["id"]:r for r in load(args.airports) if r.get("iso_country") in COUNTRIES and r.get("type")!="closed"}
+    overrides={}
+    overrides_path=pathlib.Path(__file__).resolve().parents[1]/"data/airports/runway_surface_overrides.csv"
+    for override in load(overrides_path):
+        if override["group"]!="9": continue
+        if not override["source_url"].startswith("https://"):
+            raise ValueError("Runway surface override requires published aeronautical source")
+        overrides[override["ourairports_id"]]=override
     eligible=collections.defaultdict(list)
     uncertain=collections.defaultdict(list)
     for runway in load(args.runways):
@@ -59,7 +66,21 @@ def main():
         except ValueError: continue
         if length < 1200: continue
         kind=surface_type(runway.get("surface"))
-        if kind=="ELIGIBLE_LABEL": eligible[airport["id"]].append((length,runway))
+        source_runway=runway
+        override=overrides.get(airport["id"])
+        if override and kind!="ELIGIBLE_LABEL":
+            if airport.get("iso_country")!=override["country_iso"]:
+                raise ValueError("Override country mismatch")
+            code=(airport.get("gps_code") or airport.get("ident") or "")
+            if code!=override["airport_ident"]:
+                raise ValueError("Override airport identifier mismatch")
+            if abs(length-float(override["reference_runway_length_m"])) > 5:
+                raise ValueError("Override runway length mismatch")
+            kind=surface_type(override["verified_surface"])
+            if kind!="ELIGIBLE_LABEL":
+                raise ValueError("Invalid officially verified runway surface")
+            source_runway=dict(runway, surface=override["verified_surface"])
+        if kind=="ELIGIBLE_LABEL": eligible[airport["id"]].append((length,source_runway))
         elif kind=="CHECK_SURFACE": uncertain[airport["id"]].append((length,runway))
     approved_columns=["ourairports_id","iso_country","airport_name","ident","gps_code","longest_reported_eligible_runway_m","surface","eligible_runway_count","runway_ids"]
     candidates=[]
@@ -98,6 +119,7 @@ def main():
         "runways.csv SHA256: "+sha256(args.runways)+"\n"
         "Only operational and explicitly asphalt/concrete runway labels >=1200 m.\n"
         "Excluded airport.type=closed and runway.closed=1.\n"
+        "Official Spanish source corrections: LENE concrete, LEDA asphalt, citations in data/airports/runway_surface_overrides.csv.\n"
         "Russia treated as one whole country (RU): no European/Asian filter or longitude cutoff.\n"
         "Current phase ends at runway qualification for minimum Level 1 (Local). Other airport information and final six-category ranking are DEFERRED.\n"
         "Records are qualified by runway only; not an operating-airport or game-activation authorization.\n"
