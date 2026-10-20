@@ -9,6 +9,8 @@ on:
       - 'scripts/validate_historical_airports.py'
       - 'scripts/rebuild_runway_register.py'
       - 'scripts/screen_group4.py'
+      - 'scripts/screen_group5.py'
+      - 'scripts/screen_group6.py'
       - '.github/workflows/validate-airports.yml'
   pull_request:
     branches: [staging, main]
