@@ -6,7 +6,7 @@ Only collect airports having **at least one runway 1,200 m or longer**, reported
 A matching airport can be considered **at least Level 1 (Local)**. This is only a lower-bound technical qualification, NOT a final assignment to Airlinerra's exact six tiers: Local, Regional, Medium, Large, Major Hub, Mega Hub. All other airport details are postponed.
 
 ## Canonical master
-- `airport_register.csv`: **2,386 airport records (2,385 screened real-world candidates + 1 fictional airport) across Groups 1–17**, with identifiers, country, name, longest reported qualifying runway, surface and minimum eligible level 1. This is not a list of operational or playable airports.
+- `airport_register.csv`: **2,512 airport records (2,511 screened real-world candidates + 1 fictional airport) across Groups 1–18**, with identifiers, country, name, longest reported qualifying runway, surface and minimum eligible level 1. This is not a list of operational or playable airports.
 - `fictional_airports.csv`: owner-defined airports outside OurAirports. **Aleksandrovo Airport (LYAL), Serbia** — fictional, runway 2,200 m asphalt, **assigned Level 1 / Local**. Protected from being erased by future runway-only screenings; no coordinates or additional data assumed.
 - `airport_register.csv` has `source_type` (`OURAIRPORTS` / `FICTIONAL`) and `assigned_category` (blank for screened real airports, `Local` for LYAL) to keep these records unambiguously separated.
 - Each group's `generated/groupN/groupN_technical_candidates.csv`: source screening that feeds the master.
@@ -36,11 +36,12 @@ A matching airport can be considered **at least Level 1 (Local)**. This is only 
 | 15 | Asia — Kuwait, Kyrgyzstan, Laos, Lebanon, Malaysia | 51 |
 | 16 | Asia — Maldives, Mongolia, Myanmar, Nepal, North Korea | 79 |
 | 17 | Asia — Oman, Pakistan, Palestine, Philippines, Qatar | 116 |
-| **TOTAL** | | **2,386** |
+| 18 | Asia — Saudi Arabia, Singapore, South Korea, Sri Lanka, Syria | 126 |
+| **TOTAL** | | **2,512** |
 
 **Historic Groups 1–3 selection: 110 airports (21/30/59).** The fresh runway-only screening produces **162 candidates** across those three groups (30/58/74), not 110. Do not conflate these two counts. The earlier list applied additional screening/selection rules; the current register is deliberately a broader technical pool. The separate 56-name historical recovery file remains on staging for reference, while 54 historic names were not recovered.
 
-Uncertain runway surfaces: Group 4 has 4 unresolved labels and Group 13 has 2 (Aurangabad macadam composite; Baramati unspecified paved). All others screened so far (including Groups 14–17) have 0 in their surface-review queues. Russia remains one country (RU) with 312 runway-qualified candidates. All six unresolved sites remain outside the 2,386-record master.
+Uncertain runway surfaces: Group 4 has 4 unresolved labels and Group 13 has 2 (Aurangabad macadam composite; Baramati unspecified paved). All others screened so far (including Groups 14–18) have 0 in their surface-review queues. Russia remains one country (RU) with 312 runway-qualified candidates. All six unresolved sites remain outside the 2,512-record master.
 
 Two Spanish airports from Group 9 were upgraded from surface-review candidates to the runway-qualified master using **official ENAIRE evidence only**: LENE (La Caminera, 1,400 m concrete) and LEDA (Lleida-Alguaire, 2,500 m asphalt). The original ambiguous source labels remain documented in `runway_surface_overrides.csv`; no unknown `paved`/`hard` surfaces are accepted without documentary confirmation.
 
@@ -53,6 +54,8 @@ Two Spanish airports from Group 9 were upgraded from surface-review candidates t
 **Source airport-code conflict:** `airport_code_conflicts.csv` contains one unresolved clash in Iran: code `OIBH` occurs for source IDs `3350` (Bahregan Airport) and `5140` (Bastak Airport). Both match runway-only criteria and remain in the master with their original source identifiers. Codes must be resolved before operational/game import; never invent a replacement ICAO or collapse distinct source airport IDs. The rebuild script generates this conflict report and validation checks it.
 
 **Group 14 material clarification:** OurAirports labels Mount Fuji Shizuoka Airport's (RJNS) 2,200 m runway `asphalt concrete`. This is an explicit asphalt-based paving material and qualifies technically; the Group 14 screen accepts that exact label, and the canonical master/validator also recognize it through `scripts/airport_surface.py`. Generic `paved`, `hard` or unverified materials remain excluded. All of Kazakhstan is screened once, regardless of continent. No new source code conflicts arose; Iran's earlier `OIBH` collision remains in the separate audit file.
+
+**Group 18 collection note:** Saudi Arabia 64, Singapore 5, South Korea 28, Sri Lanka 10 and Syria 19 runway-qualified candidates were added to staging, for 126 total. There are no Group 18 ambiguous-surface entries or duplicate airport identifiers. Earlier unresolved surfaces from Groups 4 and 13 and the Iranian OIBH source-code conflict remain in their separate queues. No civilian-use verification or six-category assignment has been performed.
 
 **Group 17 collection note:** The five jurisdictions yielded Oman 9, Pakistan 51, Palestine 0, Philippines 53 and Qatar 3 qualifying runway-only records. Palestine's 0 indicates no matching OurAirports records under the current runway and surface criteria, not an assertion about the existence of airport facilities. The group has no newly flagged ambiguous surface labels or code duplications; the existing Iranian `OIBH` conflict remains on file.
 
@@ -73,6 +76,7 @@ Two Spanish airports from Group 9 were upgraded from surface-review candidates t
 - Group 15: `Refresh Group 15 technical airport screening` (Kuwait 2, Kyrgyzstan 10, Laos 8, Lebanon 4, Malaysia 27; no surface ambiguities or new code conflicts).
 - Group 16: `Refresh Group 16 technical airport screening` (Maldives 6, Mongolia 8, Myanmar 24, Nepal 7, North Korea 34; no unresolved runway surfaces or new duplicate airport identifiers).
 - Group 17: `Refresh Group 17 technical airport screening` (Oman 9, Pakistan 51, Palestine 0, Philippines 53, Qatar 3; no unresolved surface labels or duplicate identifiers).
+- Group 18: `Refresh Group 18 technical airport screening` (Saudi Arabia 64, Singapore 5, South Korea 28, Sri Lanka 10, Syria 19; zero unresolved surface labels and new duplicate identifiers).
 - Groups 1–3: `Backfill Groups 1-3 runway candidates`.
 - Each workflow downloads the same OurAirports data files, screens its group and rebuilds the master by combining every group's screens **and all `fictional_airports.csv` records**, deduplicating by source airport ID. It does not replace other groups' records.
 - `python scripts/rebuild_runway_register.py` rebuilds the permanent master **and `airport_code_conflicts.csv`** from all completed group screens.
