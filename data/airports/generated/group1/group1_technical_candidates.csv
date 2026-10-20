@@ -1,0 +1,31 @@
+ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible_runway_m,surface,eligible_runway_count,runway_ids
+31795,AL,Kukës International Airport,LAKU,LAKU,2197.9,ASPH,1,264033
+3971,AL,Kuçovë Air Base,LAKV,LAKV,2840.1,CON,1,232869
+3972,AL,Tirana International Airport Mother Teresa,LATI,LATI,3000.1,ASP,1,576733
+6445,AM,Erebuni Airport,UDYE,UDYE,2784.0,ASP,1,232875
+6444,AM,Shirak International Airport,UDSG,UDSG,3219.9,ASP,1,232880
+6443,AM,Stepanavan Airport,UDLS,UDLS,1998.0,ASP,1,232876
+6446,AM,Zvartnots International Airport,UDYZ,UDYZ,3849.9,ASP,1,232879
+29484,AT,Brumowski  Air Base,LOXT,LOXT,1399.9,ASPHALT,1,320980
+4430,AT,Graz Airport,LOWG,LOWG,2999.8,ASP,1,233574
+4436,AT,Hinterstoisser Air Base,LOXZ,LOXZ,2749.9,ASP,1,233582
+4431,AT,Innsbruck Airport,LOWI,LOWI,2000.1,ASP,1,233580
+4435,AT,Klagenfurt Airport,LOWK,LOWK,2720.0,CON,1,233585
+4432,AT,Linz-Hörsching Airport,LOWL,LOWL,3000.1,ASP,1,233586
+4433,AT,Salzburg Airport,LOWS,LOWS,2749.9,CON,1,233581
+4434,AT,Vienna International Airport,LOWW,LOWW,3600.0,ASP,2,233577;233578
+4429,AT,Wels Airfield,LOLW,LOLW,1389.9,ASP,1,233588
+77,AZ,Baku Kala Air Base,UB18,,2642.6,CON,1,232865
+76,AZ,Balakan Airport,UB16,UB0G,1208.8,ASP,1,232864
+78,AZ,Dollyar Air Base,UG11,,2493.9,CON,1,232858
+44952,AZ,Fuzuli International Airport,UBBF,UBBF,3000.1,ASP,1,350137
+300740,AZ,Gabala International Airport,UBBQ,UBBQ,3600.0,Asphalt/Concrete,1,349126
+6441,AZ,Ganja International Airport,UBBG,UBBG,3300.1,CON,1,232856
+6440,AZ,Heydar Aliyev International Airport,UBBB,UBBB,3999.9,ASP,2,232866;232867
+74,AZ,Khojaly Airport,UB13,UBBS,2177.8,ASP,1,232860
+75,AZ,Kyurdamir Air Base,UB14,,2499.4,CON,1,232861
+72,AZ,Lankaran International Airport,UBBL,UBBL,3303.1,ASP,1,232857
+6442,AZ,Nakhchivan International Airport,UBBN,UBBN,3299.8,ASP,2,232862;232863
+73,AZ,Nasosnaya Air Base,UB12,UBBI,2504.8,CON,1,232859
+508099,AZ,Zangilan International Airport,UBBZ,UBBZ,3000.1,ASPH,1,599623
+43883,AZ,Zaqatala International Airport,UBBY,UBBY,3000.1,Asphalt,1,349125

@@ -1,0 +1,8 @@
+Group 3 RUNWAY-ONLY screen. This is NOT the historically approved airport list.
+Generated at 2026-10-20T09:51:07.256125+00:00
+Source: https://github.com/davidmegginson/ourairports-data
+airports.csv SHA256: 0499dbd88de2fc735ac5c09f59796ccc3af544e17ffda807f793c0c6fe6c3d75
+runways.csv SHA256: eff294dc5c055e7bb48ef43cb3b564399f2741bbfbba0c18c085aea7b9ab988b
+Rule: open runway >=1200m; asphalt/concrete surface; not airport.type=closed.
+Minimum eligible level=1; final category and other data deferred.
+Result 74 airports; surface-review queue 0.
