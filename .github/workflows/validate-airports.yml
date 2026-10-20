@@ -1,45 +1,10 @@
 name: Validate Airlinerra airport registers
 
+# Paid runner usage is intentional only at release review, or when requested.
 on:
-  push:
-    branches: [staging]
-    paths:
-      - 'data/airports/**'
-      - 'scripts/validate_airports.py'
-      - 'scripts/validate_historical_airports.py'
-      - 'scripts/rebuild_runway_register.py'
-      - 'scripts/screen_group4.py'
-      - 'scripts/screen_group5.py'
-      - 'scripts/screen_group6.py'
-      - 'scripts/screen_group7.py'
-      - 'scripts/screen_group8.py'
-      - 'scripts/screen_group9.py'
-      - 'scripts/screen_group10.py'
-      - 'scripts/screen_group11.py'
-      - 'scripts/screen_group12.py'
-      - 'scripts/screen_group13.py'
-      - 'scripts/screen_group14.py'
-      - 'scripts/screen_group15.py'
-      - 'scripts/screen_group16.py'
-      - 'scripts/screen_group17.py'
-      - 'scripts/screen_group18.py'
-      - 'scripts/screen_group19.py'
-      - 'scripts/screen_group20.py'
-      - 'scripts/screen_group21.py'
-      - 'scripts/screen_group22.py'
-      - 'scripts/screen_group23.py'
-      - 'scripts/screen_group24.py'
-      - 'scripts/screen_group25.py'
-      - 'scripts/screen_group26.py'
-      - 'scripts/screen_group27.py'
-      - 'scripts/screen_group28.py'
-      - 'scripts/screen_group29.py'
-      - 'scripts/screen_group30.py'
-      - 'scripts/screen_group31.py'
-      - 'scripts/airport_surface.py'
-      - '.github/workflows/validate-airports.yml'
+  workflow_dispatch:
   pull_request:
-    branches: [staging, main]
+    branches: [main]
 
 permissions:
   contents: read
