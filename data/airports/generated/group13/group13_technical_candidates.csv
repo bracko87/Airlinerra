@@ -68,6 +68,7 @@ ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible
 27190,CN,Hulunbuir Hailar Airport,ZBLA,ZBLA,2599.9,CON,1,235153
 27239,CN,Jiamusi Songjiang International Airport,ZYJM,ZYJM,2500.0,CON,1,235167
 327450,CN,Jiansanjiang Shidi Airport,ZYJS,ZYJS,2500.0,CON,1,327689
+31699,CN,Jiayuguan International Airport,ZLJQ,ZLJQ,3000.1,Concrete,1,311467
 32400,CN,Jieyang Chaoshan International Airport,ZGOW,ZGOW,3200.1,CON,1,315146
 27219,CN,Jinan Yaoqiang International Airport,ZSJN,ZSJN,3600.3,CON,1,235156
 301010,CN,Jinchang Jinchuan Airport,ZLJC,ZLJC,3000.1,CON,1,350737
@@ -88,6 +89,7 @@ ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible
 327351,CN,Libo Airport,ZULB,ZULB,2300.0,Asphalt,1,333621
 31828,CN,Lijiang Sanyi International Airport,ZPLJ,ZPLJ,3000.1,ASPH,1,348923
 323216,CN,Linfen Yaodu Airport,ZBLF,ZBLF,2599.9,Asphalt,1,323481
+31871,CN,Linyi Qiyang Airport,ZSLY,ZSLY,3199.8,Concrete,1,348436
 327544,CN,Longnan Chengzhou Airport,ZLLN,ZLLN,2799.9,CON,1,327546
 31870,CN,Luoyang Beijiao Airport,ZHLY,ZHLY,2500.0,CON,1,354900
 322165,CN,Manzhouli Xijiao Airport,ZBMZ,ZBMZ,2799.9,CON,1,354919
@@ -102,6 +104,7 @@ ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible
 27220,CN,Ningbo Lishe International Airport,ZSNB,ZSNB,3200.1,CON,1,235200
 316547,CN,Ninglang Luguhu Airport,NLH,ZPNL,3400.0,CON,1,327466
 300513,CN,Ordos Ejin Horo International Airport,ZBDS,ZBDS,3200.1,ASPH,1,348405
+44126,CN,Panzhihua Bao'anying Airport,ZUZH,ZUZH,2799.9,Concrete,1,348921
 30788,CN,Qamdo Bangda Airport,ZUBD,ZUBD,4500.1,Asphalt,1,313778
 342096,CN,Qingdao Jiaodong International Airport,ZSQD,ZSQD,3600.0,CON,2,349624;349625
 318174,CN,Qinhuangdao Beidaihe Airport,ZBDH,ZBDH,2599.9,CON,1,354890
@@ -437,6 +440,7 @@ ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible
 26550,IN,Shaheed Bhagat Singh International Airport,VICG,VICG,3799.9,ASP,1,236697
 26492,IN,Shillong Airport,VEBI,VEBI,1828.8,CON,1,236757
 26576,IN,Shimla Airport,VISM,VISM,1229.9,ASP,1,236664
+327452,IN,Shirdi International Airport,VASD,VASD,2500.0,Asphalt,1,430644
 525168,IN,Shravasti Airport,VISV,VISV,1529.8,ASP,1,542979
 26509,IN,Silchar Airport,VEKU,VEKU,1826.7,ASP,1,236629
 331218,IN,Sindhudurg Airport,IN-0107,VOSR,2500.0,ASPH,1,608452

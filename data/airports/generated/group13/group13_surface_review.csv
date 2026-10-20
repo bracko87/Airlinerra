@@ -1,7 +1,3 @@
 ourairports_id,iso_country,airport_name,ident,longest_runway_m,reported_surface,decision
-31699,CN,Jiayuguan International Airport,ZLJQ,3000.1,paved,SURFACE_VERIFICATION_REQUIRED
-31871,CN,Linyi Qiyang Airport,ZSLY,3199.8,paved,SURFACE_VERIFICATION_REQUIRED
-44126,CN,Panzhihua Bao'anying Airport,ZUZH,2799.9,Paved,SURFACE_VERIFICATION_REQUIRED
 26433,IN,Aurangabad Airport,VAAU,2838.9,Macadam,SURFACE_VERIFICATION_REQUIRED
 46518,IN,Baramati Airport,IN-0024,1676.4,Paved,SURFACE_VERIFICATION_REQUIRED
-327452,IN,Shirdi International Airport,VASD,2500.0,Hard,SURFACE_VERIFICATION_REQUIRED
