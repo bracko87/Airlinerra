@@ -1,0 +1,36 @@
+ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible_runway_m,surface,eligible_runway_count,runway_ids
+4978,AS,Pago Pago International Airport,NSTU,NSTU,3048.0,ASP,1,232907
+4957,CK,Aitutaki Airport,NCAI,NCAI,1804.4,ASP,1,235441
+4958,CK,Rarotonga International Airport,NCRG,NCRG,2328.1,CON,1,235439
+5433,GU,Antonio B. Won Pat International Airport,PGUM,PGUM,3662.2,asphalt,2,236328;236329
+5430,MP,Rota International Airport,PGRO,PGRO,1828.8,ASP,1,235365
+5431,MP,Saipan International Airport,PGSN,PGSN,2651.8,ASP,1,235366
+5021,NC,La Tontouta International Airport,NWWW,NWWW,3250.1,ASP,1,237866
+5017,NC,Nouméa Magenta Airport,NWWM,NWWM,1250.0,ASP,1,237870
+27141,NF,Norfolk Island International Airport,YSNF,YSNF,1950.1,ASP,2,237874;237875
+4974,NU,Niue International Airport,NIUE,NIUE,2334.8,ASP,1,237873
+4997,PF,Ahe Airport,NTHE,NTHE,1239.9,ASP,1,235789
+4983,PF,Anaa Airport,NTGA,NTGA,1499.9,ASP,1,235800
+4999,PF,Aratika Nord Airport,NTKK,NTKK,1264.9,ASP,1,235793
+4994,PF,Arutua Airport,NTGU,NTGU,1300.9,ASP,1,235792
+5003,PF,Bora Bora Airport,NTTB,NTTB,1499.9,ASP,1,235811
+4979,PF,Fa'a'ā International Airport,NTAA,NTAA,3462.5,ASP,1,235795
+4987,PF,Fakarava Airport,NTGF,NTGF,1400.9,ASP,1,235818
+5007,PF,Hao Airport,NTTO,NTTO,3379.9,ASP,1,235798
+5002,PF,Hiva Oa-Atuona Airport,NTMN,NTMN,1214.9,ASP,1,235794
+5005,PF,Huahine-Fare Airport,NTTH,NTTH,1499.9,ASP,1,235802
+4991,PF,Makemo Airport,NTGM,NTGM,1499.6,ASP,1,235803
+5006,PF,Moorea Temae Airport,NTTM,NTTM,1229.9,ASP,1,235813
+5001,PF,Nuku Hiva Airport,NTMD,NTMD,1700.2,ASP,1,235809
+5009,PF,Raiatea Airport,NTTR,NTTR,1399.9,ASP,1,235806
+4982,PF,Raivavae Airport,NTAV,NTAV,1399.6,ASP,1,235791
+5004,PF,Rangiroa Airport,NTTG,NTTG,2100.1,ASP,1,235804
+4980,PF,Rurutu Airport,NTAR,NTAR,1449.9,ASP,1,235801
+4989,PF,Totegegie Airport,NTGJ,NTGJ,2000.1,ASP,1,235796
+4981,PF,Tubuai Airport,NTAT,NTAT,1499.9,ASP,1,235805
+5494,UM,Henderson Field,PMDY,PMDY,2409.1,ASP,1,237615
+5506,UM,Wake Island Airfield,PWAK,PWAK,3000.1,ASP,1,246223
+5011,VU,Bauerfield International Airport,NVVV,NVVV,2599.9,ASP,1,237885
+5010,VU,Santo Pekoa International Airport,NVSS,NVSS,1988.2,ASP,1,237887
+5012,VU,Whitegrass Airport,NVVW,NVVW,1229.9,ASP,1,237884
+4975,WF,Hihifo Airport,NLWW,NLWW,2100.1,ASP,1,246218
