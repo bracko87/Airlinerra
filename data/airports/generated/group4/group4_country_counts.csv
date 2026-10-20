@@ -1,7 +1,7 @@
-country_iso,country,technical_candidates,playable_approvals
-FR,France,151,0
-GE,Georgia,10,0
-DE,Germany,93,0
-GR,Greece,42,0
-HU,Hungary,11,0
-TOTAL,TOTAL,307,0
+country_iso,country,technical_candidates,minimum_eligible_level
+FR,France,151,1
+GE,Georgia,10,1
+DE,Germany,93,1
+GR,Greece,42,1
+HU,Hungary,11,1
+TOTAL,TOTAL,307,1
