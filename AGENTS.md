@@ -18,7 +18,7 @@ These rules apply to all contributors, automated agents and connected developmen
 - Military-only aerodromes are not playable unless civilian use is independently established.
 - Runway eligibility does not confer automatic approval; confirm civilian access and limits, and retain evidence.
 - Treat the earlier Group 4 figure of 307 strictly as unapproved runway-screening records.
-- Do not manufacture missing airport records. Groups 1–3 were previously reported as 110 approved (21+30+59) but individual rows need recovery before they can be imported into this repository.
+- Do not manufacture missing airport records. Groups 1–3 were previously reported as 110 approved (21+30+59) but 56 historical Local airport names are now recovered in `data/airports/historical_approved_recovery.csv`, while 54 remain to be recovered. Historical approval must NOT be treated as evidence of current runway or civilian-access eligibility. None have been imported as playable.
 - Keep permanent canonical records under `data/airports/`. `approved` means backed by specific reviewed evidence; `review` is never ingested as playable.
 - All generated SQL is reviewed and tested on staging before production; never infer that committing a migration executed it in Supabase.
 
