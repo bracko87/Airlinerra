@@ -1,0 +1,13 @@
+Airlinerra Group 32 TECHNICAL SCREEN; never auto-import to gameplay.
+UTC generated: 2026-10-20T18:06:06.090Z
+Original source: https://github.com/davidmegginson/ourairports-data
+airports.csv SHA256: 0499dbd88de2fc735ac5c09f59796ccc3af544e17ffda807f793c0c6fe6c3d75
+runways.csv SHA256: eff294dc5c055e7bb48ef43cb3b564399f2741bbfbba0c18c085aea7b9ab988b
+Only non-closed asphalt/concrete runway labels >=1200 m, except separately evidenced source corrections.
+Excluded airport.type=closed and runway.closed=1.
+Group 32: Malawi, Mali, Mauritania, Mauritius and Morocco.
+Mauritius official Agalega Island Airstrip (FIMA): DCA eAIP 2026 runway 3000 m rigid pavement; OIDC confirms concrete. Outdated source label Tarmac and length 1303 m superseded; evidence in runway_surface_overrides.csv (Group 32). The separate unqualified IAF Agalega source airport has no runway record; it was not duplicated.
+Published runway evidence: https://civil-aviation.govmu.org/eAIP/eAIPMauritius/final/2026-07-23-Extended/html/eAIP/AD-2.FIMA-en-GB.html
+Concrete confirmation: https://oidc.govmu.org/oidc/?page_id=36
+Airport geography and runway-only eligibility do not certify civilian access or any final Airlinerra six-category ranking.
+Screened count: 47; ambiguous surface queue: 0; duplicate identifiers: 0.
