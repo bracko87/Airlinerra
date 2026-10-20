@@ -1,11 +1,7 @@
 name: Refresh Group 10 technical airport screening
 
+# Batch airport curation is validated locally; this job runs only on explicit request.
 on:
-  push:
-    branches: [staging]
-    paths:
-      - 'scripts/screen_group10.py'
-      - '.github/workflows/refresh-group10.yml'
   workflow_dispatch:
 
 permissions:
