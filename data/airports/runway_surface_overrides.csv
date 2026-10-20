@@ -1,0 +1,3 @@
+group,ourairports_id,country_iso,airport_ident,reference_runway_length_m,previous_surface_label,verified_surface,source_url,verification_date,note
+9,331318,ES,LENE,1400,paved,Concrete,https://guiavfr.enaire.es/contenido_GuiaVFR/AD/LE_guiaVFR_LENE.html,2026-10-20,ENAIRE 08/26 1400m surface Hormigon
+9,308328,ES,LEDA,2500,hard,Asphalt,https://aip.enaire.es/AIP/contenido_AIP/AD/AD2/LEDA/LE_AD_2_LEDA_es.html,2026-10-20,ENAIRE AIP 13/31 2500m surface ASPH
