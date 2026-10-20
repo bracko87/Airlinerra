@@ -33,6 +33,7 @@ on:
       - 'scripts/screen_group26.py'
       - 'scripts/screen_group27.py'
       - 'scripts/screen_group28.py'
+      - 'scripts/screen_group29.py'
       - 'scripts/airport_surface.py'
       - '.github/workflows/validate-airports.yml'
   pull_request:

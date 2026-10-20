@@ -6,7 +6,7 @@ Only collect airports having **at least one runway 1,200 m or longer**, reported
 A matching airport can be considered **at least Level 1 (Local)**. This is only a lower-bound technical qualification, NOT a final assignment to Airlinerra's exact six tiers: Local, Regional, Medium, Large, Major Hub, Mega Hub. All other airport details are postponed.
 
 ## Canonical master
-- `airport_register.csv`: **3,198 airport records (3,197 screened real-world candidates + 1 fictional airport) across Groups 1–28**, with identifiers, country, name, longest reported qualifying runway, surface and minimum eligible level 1. This is not a list of operational or playable airports.
+- `airport_register.csv`: **3,280 airport records (3,279 screened real-world candidates + 1 fictional airport) across Groups 1–29**, with identifiers, country, name, longest reported qualifying runway, surface and minimum eligible level 1. This is not a list of operational or playable airports.
 - `fictional_airports.csv`: owner-defined airports outside OurAirports. **Aleksandrovo Airport (LYAL), Serbia** — fictional, runway 2,200 m asphalt, **assigned Level 1 / Local**. Protected from being erased by future runway-only screenings; no coordinates or additional data assumed.
 - `airport_register.csv` has `source_type` (`OURAIRPORTS` / `FICTIONAL`) and `assigned_category` (blank for screened real airports, `Local` for LYAL) to keep these records unambiguously separated.
 - Each group's `generated/groupN/groupN_technical_candidates.csv`: source screening that feeds the master.
@@ -47,11 +47,12 @@ A matching airport can be considered **at least Level 1 (Local)**. This is only 
 | 26 | Africa — Algeria, Angola, Benin, Botswana, Burkina Faso | 87 |
 | 27 | Africa — Burundi, Cabo Verde, Cameroon, Central African Republic, Chad | 23 |
 | 28 | Africa — Comoros, Republic of the Congo, Côte d'Ivoire, Democratic Republic of the Congo, Djibouti | 42 |
-| **TOTAL** | | **3,198** |
+| 29 | Africa — Egypt, Equatorial Guinea, Eritrea, Eswatini, Ethiopia | 82 |
+| **TOTAL** | | **3,280** |
 
 **Historic Groups 1–3 selection: 110 airports (21/30/59).** The fresh runway-only screening produces **162 candidates** across those three groups (30/58/74), not 110. Do not conflate these two counts. The earlier list applied additional screening/selection rules; the current register is deliberately a broader technical pool. The separate 56-name historical recovery file remains on staging for reference, while 54 historic names were not recovered.
 
-Uncertain runway surfaces: Group 4 has 4 unresolved labels, Group 13 has 2 (Aurangabad macadam composite; Baramati unspecified paved), and Group 22 has 1 (Carrapateena Airport/YCPT, 1,599.9 m, source surface `BITUM`). All other groups screened so far have zero in their surface-review queues. Russia remains one country (RU) with 312 runway-qualified candidates. All seven unresolved cases remain outside the 3,198-record master.
+Uncertain runway surfaces: Group 4 has 4 unresolved labels, Group 13 has 2 (Aurangabad macadam composite; Baramati unspecified paved), and Group 22 has 1 (Carrapateena Airport/YCPT, 1,599.9 m, source surface `BITUM`). All other groups screened so far have zero in their surface-review queues. Russia remains one country (RU) with 312 runway-qualified candidates. All seven unresolved cases remain outside the 3,280-record master.
 
 Two Spanish airports from Group 9 were upgraded from surface-review candidates to the runway-qualified master using **official ENAIRE evidence only**: LENE (La Caminera, 1,400 m concrete) and LEDA (Lleida-Alguaire, 2,500 m asphalt). The original ambiguous source labels remain documented in `runway_surface_overrides.csv`; no unknown `paved`/`hard` surfaces are accepted without documentary confirmation.
 
@@ -64,6 +65,8 @@ Two Spanish airports from Group 9 were upgraded from surface-review candidates t
 **Source airport-code conflict:** `airport_code_conflicts.csv` contains one unresolved clash in Iran: code `OIBH` occurs for source IDs `3350` (Bahregan Airport) and `5140` (Bastak Airport). Both match runway-only criteria and remain in the master with their original source identifiers. Codes must be resolved before operational/game import; never invent a replacement ICAO or collapse distinct source airport IDs. The rebuild script generates this conflict report and validation checks it.
 
 **Group 14 material clarification:** OurAirports labels Mount Fuji Shizuoka Airport's (RJNS) 2,200 m runway `asphalt concrete`. This is an explicit asphalt-based paving material and qualifies technically; the Group 14 screen accepts that exact label, and the canonical master/validator also recognize it through `scripts/airport_surface.py`. Generic `paved`, `hard` or unverified materials remain excluded. All of Kazakhstan is screened once, regardless of continent. No new source code conflicts arose; Iran's earlier `OIBH` collision remains in the separate audit file.
+
+**Group 29 Africa runway screening:** Egypt/EG 56, Equatorial Guinea/GQ 5, Eritrea/ER 2, Eswatini/SZ 2 and Ethiopia/ET 17, for **82** runway-qualified source candidates. The Group 29 surface review and duplicate airport identifier files have zero entries. Seven older ambiguous surfaces across Groups 4, 13 and 22 and the Iran `OIBH` duplicate airport-code conflict remain in their audit queues. Minimum technical runway qualification does not establish operating access or final six-tier classification.
 
 **Group 28 Africa runway screening:** Comoros/KM 3, Republic of the Congo/CG 8, Côte d'Ivoire/CI 7, Democratic Republic of the Congo/CD 22 and Djibouti/DJ 2, for **42** runway-qualified source candidates. Keep Congo's Republic/CG and Democratic Republic/CD as different countries and codes, without merging or double-counting. Group 28 has zero uncertain surface labels and zero duplicate source identifiers. Seven older unverified surface reports and Iran's OIBH identifier collision remain unresolved. No final categories, operating eligibility or playable activation have been approved.
 
@@ -117,6 +120,7 @@ Two Spanish airports from Group 9 were upgraded from surface-review candidates t
 - Group 26: `Refresh Group 26 technical airport screening` (Algeria 48, Angola 25, Benin 1, Botswana 11, Burkina Faso 2; no new surface or identifier conflicts).
 - Group 27: `Refresh Group 27 technical airport screening` (Burundi 1, Cabo Verde 5, Cameroon 10, Central African Republic 2, Chad 5; no new surface or identifier conflicts).
 - Group 28: `Refresh Group 28 technical airport screening` (Comoros 3, Republic of the Congo 8, Côte d'Ivoire 7, Democratic Republic of the Congo 22, Djibouti 2; no new surface or identifier conflicts).
+- Group 29: `Refresh Group 29 technical airport screening` (Egypt 56, Equatorial Guinea 5, Eritrea 2, Eswatini 2, Ethiopia 17; no new surface or identifier conflicts).
 - Groups 1–3: `Backfill Groups 1-3 runway candidates`.
 - Each workflow downloads the same OurAirports data files, screens its group and rebuilds the master by combining every group's screens **and all `fictional_airports.csv` records**, deduplicating by source airport ID. It does not replace other groups' records.
 - `python scripts/rebuild_runway_register.py` rebuilds the permanent master **and `airport_code_conflicts.csv`** from all completed group screens.
