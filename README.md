@@ -13,7 +13,7 @@ See [AGENTS.md](AGENTS.md) and [release procedures](docs/CONTROLLED_RELEASES.md)
 ## Airport runway collection — current stage
 For now we store ONLY airports reporting a **non-closed asphalt/concrete runway of at least 1,200 metres**. Each meets **minimum Level 1 (Local)** runway criteria; no final categorization, operating permissions or other airport information is being gathered.
 
-[Permanent master airport register](data/airports/airport_register.csv): **1,373 airports: 1,372 runway-screened candidates across Groups 1–10 plus one fictional airport**.
+[Permanent master airport register](data/airports/airport_register.csv): **1,383 airports: 1,382 runway-screened candidates across Groups 1–11 plus one fictional airport**.
 
 | Group | Airports in runway-only master |
 | --- | ---: |
@@ -27,13 +27,16 @@ For now we store ONLY airports reporting a **non-closed asphalt/concrete runway 
 | 8 — Poland, Portugal, Romania, Russia (entire country), San Marino | 397 |
 | 9 — Serbia, Slovakia, Slovenia, Spain, Sweden | 142 real + 1 fictional |
 | 10 — Switzerland, Turkey, Ukraine, United Kingdom, Vatican City | 215 |
-| **Total** | **1,373** |
+| 11 — Andorra, Åland Islands, Faroe Islands, Gibraltar, Guernsey, Isle of Man, Jersey, Svalbard and Jan Mayen, Greenland | 10 |
+| **Total** | **1,383** |
 
 **Important distinction:** Earlier discussions selected **110 airports** for Groups 1–3. The **162** airport candidates now in the master for those groups are a fresh, *runway-only* screen. The historical count of 110 and its 56 recovered names remain documented separately; it is not equivalent to the current screening count.
 
 Turkey is **one whole country**, including both European and Asian territories; Group 10 contains 75 Turkish runway-qualified airports.
 
 Russia is **one country** in Airlinerra: all qualifying Russian airports are included regardless of whether they are in Europe or Asia. Russia has 312 runway-qualified records within Group 8; no longitude cutoff applies.
+
+**Group 11 coverage note:** Åland's Mariehamn Airport (EFMA) is already counted under Finland in Group 3, and Svalbard Airport, Longyear (ENSB) is already counted under Norway in Group 7. Neither is duplicated. Greenland has five qualifying records and remains a single territory.
 
 Group 9 contains two Spain runway-surface verifications based on official ENAIRE aeronautical material, recorded in [runway surface evidence](data/airports/runway_surface_overrides.csv).
 
