@@ -21,6 +21,7 @@ on:
       - 'scripts/screen_group14.py'
       - 'scripts/screen_group15.py'
       - 'scripts/screen_group16.py'
+      - 'scripts/screen_group17.py'
       - 'scripts/airport_surface.py'
       - '.github/workflows/validate-airports.yml'
   pull_request:
