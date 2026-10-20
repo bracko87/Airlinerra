@@ -6,7 +6,9 @@ Only collect airports having **at least one runway 1,200 m or longer**, reported
 A matching airport can be considered **at least Level 1 (Local)**. This is only a lower-bound technical qualification, NOT a final assignment to Airlinerra's exact six tiers: Local, Regional, Medium, Large, Major Hub, Mega Hub. All other airport details are postponed.
 
 ## Canonical master
-- `airport_register.csv`: **1,157 runway-qualified airport records across Groups 1–9**, with identifiers, country, name, longest reported qualifying runway, surface and minimum eligible level 1. This is not a list of operational or playable airports.
+- `airport_register.csv`: **1,158 airport records (1,157 screened real-world candidates + 1 fictional airport) across Groups 1–9**, with identifiers, country, name, longest reported qualifying runway, surface and minimum eligible level 1. This is not a list of operational or playable airports.
+- `fictional_airports.csv`: owner-defined airports outside OurAirports. **Aleksandrovo Airport (LYAL), Serbia** — fictional, runway 2,200 m asphalt, **assigned Level 1 / Local**. Protected from being erased by future runway-only screenings; no coordinates or additional data assumed.
+- `airport_register.csv` has `source_type` (`OURAIRPORTS` / `FICTIONAL`) and `assigned_category` (blank for screened real airports, `Local` for LYAL) to keep these records unambiguously separated.
 - Each group's `generated/groupN/groupN_technical_candidates.csv`: source screening that feeds the master.
 - Each group's `generated/groupN/groupN_country_counts.csv`: country-level counts.
 - `generated/groupN/groupN_surface_review.csv`: unclear pavement labels, excluded pending runway-surface verification.
@@ -25,12 +27,12 @@ A matching airport can be considered **at least Level 1 (Local)**. This is only 
 | 6 | Liechtenstein, Lithuania, Luxembourg, Malta, Moldova | 11 |
 | 7 | Monaco, Montenegro, Netherlands, North Macedonia, Norway | 47 |
 | 8 | Poland, Portugal, Romania, Russia (entire country), San Marino | 397 |
-| 9 | Serbia, Slovakia, Slovenia, Spain, Sweden | 142 |
-| **TOTAL** | | **1,157** |
+| 9 | Serbia, Slovakia, Slovenia, Spain, Sweden | 142 source-screened + 1 fictional |
+| **TOTAL** | | **1,158** |
 
 **Historic Groups 1–3 selection: 110 airports (21/30/59).** The fresh runway-only screening produces **162 candidates** across those three groups (30/58/74), not 110. Do not conflate these two counts. The earlier list applied additional screening/selection rules; the current register is deliberately a broader technical pool. The separate 56-name historical recovery file remains on staging for reference, while 54 historic names were not recovered.
 
-Uncertain runway surfaces: Group 4 has 4 entries requiring a later material check; Groups 1–3 and 5–9 have 0 in their current output. Russia is included once as RU for the whole country, with 312 runway-qualified candidates. These 4 are outside the master 1,157.
+Uncertain runway surfaces: Group 4 has 4 entries requiring a later material check; Groups 1–3 and 5–9 have 0 in their current output. Russia is included once as RU for the whole country, with 312 runway-qualified candidates. These 4 are outside the master 1,158.
 
 Two Spanish airports from Group 9 were upgraded from surface-review candidates to the runway-qualified master using **official ENAIRE evidence only**: LENE (La Caminera, 1,400 m concrete) and LEDA (Lleida-Alguaire, 2,500 m asphalt). The original ambiguous source labels remain documented in `runway_surface_overrides.csv`; no unknown `paved`/`hard` surfaces are accepted without documentary confirmation.
 
@@ -42,7 +44,7 @@ Two Spanish airports from Group 9 were upgraded from surface-review candidates t
 - Group 8: `Refresh Group 8 technical airport screening` (**all of Russia included**, with no European/Asian separation or longitude cutoff).
 - Group 9: `Refresh Group 9 technical airport screening` (Spain includes official runway-surface corrections in `runway_surface_overrides.csv`).
 - Groups 1–3: `Backfill Groups 1-3 runway candidates`.
-- Each workflow downloads the same OurAirports data files, screens its group and **rebuilds the master by combining every group's screens**, deduplicating by source airport ID. It does not replace other groups' records.
+- Each workflow downloads the same OurAirports data files, screens its group and **rebuilds the master by combining every group's screens **and all fictional_airports.csv records****, deduplicating by source airport ID. It does not replace other groups' records.
 - `python scripts/rebuild_runway_register.py` rebuilds the permanent master from all completed group screens.
 - `python scripts/validate_airports.py && python scripts/validate_historical_airports.py` validates the master and the historical file.
 - Always use GitHub `staging`. Production `main` is unchanged without approved release.

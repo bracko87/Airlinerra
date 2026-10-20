@@ -32,4 +32,8 @@ jobs:
         with:
           python-version: '3.12'
       - name: Validate airport CSV
-        run: python scripts/validate_airports.py && python scripts/validate_historical_airports.py
+        run: |
+          python scripts/validate_airports.py
+          python scripts/validate_historical_airports.py
+          python scripts/rebuild_runway_register.py
+          git diff --exit-code -- data/airports/airport_register.csv
