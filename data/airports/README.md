@@ -4,7 +4,7 @@ This directory is the permanent, version-controlled source for approved airports
 Supabase will become the game's live database after its own Airlinerra project is provisioned; a committed migration is NOT an executed migration.
 
 ## Known historical state
-- Groups 1–3: 110 airports reported approved in prior conversation (21 + 30 + 59). **56 historically approved Local airport names recovered in `historical_approved_recovery.csv` (Groups 1/2/3: 9/11/36), without current-source verification. 54 individual records still missing. 0 imported into the playable master register.** Do not treat the count as a complete master CSV.
+- Groups 1–3: 110 airports reported approved in prior conversation (21 + 30 + 59). **56 historically approved Local airport names recovered in `historical_approved_recovery.csv` (Groups 1/2/3: 9/11/36), without current-source verification. 54 individual records still missing. No historical Group 1–3 airport imported into the playable master register yet.** Do not treat the count as a complete master CSV.
 - Group 4 preliminary register: 103 candidates across FR 37, GE 4, DE 26, GR 31, HU 5. Rows not yet recovered in this repository.
 - Group 4 broader screening: 307 technical runway-qualified records (FR 151, GE 10, DE 93, GR 42, HU 11). These are NOT approved. Screening source and snapshot must be reproduced before importing.
 - 14 additional Group 4 candidates are tracked in `group4_review.csv` with `REVIEW` status only.
@@ -34,4 +34,10 @@ Category assignment should be recorded only after the user-approved six-category
 4. Sync only APPROVED rows to the Airlinerra Supabase `airports` table, through separately approved migration/import job.
 5. Preserve excluded/review records for audit traceability.
 
-Files: `historical_approved_recovery.csv` preserves 56 previously approved Local names but they are NOT currently verified for gameplay. `group4_review.csv` is NOT imported into gameplay. `airport_register.csv` is the canonical approved export and is intentionally header-only until source records are recovered.
+Files: `historical_approved_recovery.csv` preserves 56 previously approved Local names but they are NOT currently verified for gameplay. `group4_review.csv` is NOT imported into gameplay. `airport_register.csv` is the canonical approved export; the first 2 operator-verified Group 4 Local airports (LHBC Békéscsaba and LHTL Tököl) are now approved on staging. Their civilian-access restrictions must be enforced at aircraft scheduling time.
+
+## Group 4 screening restored (2026-10-20)
+- Generated `generated/group4/group4_technical_candidates.csv` contains 307 runway-screening matches (FR 151, GE 10, DE 93, GR 42, HU 11), and `group4_surface_review.csv` contains four ambiguous-surface candidates. All 307 start UNVERIFIED for civilian access.
+- All 14 previously noted Local candidates have been matched in `group4_14_reconciliation.csv`; they are already included in 307 (not 14 additions on top).
+- Operator evidence overrides raw screening where there are discrepancies: LHTL's published physical runway is 1560 m concrete vs 1768 m originally reported in the raw airport dataset; canonical approved record uses 1560 m.
+- Currently **2** Group 4 airports have completed operator verification and entered the approved master register. The other 305 technically qualified records remain under review. These are GitHub data approvals, not changes to a deployed Supabase game database.
