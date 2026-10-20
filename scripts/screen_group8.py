@@ -108,6 +108,7 @@ def main():
         "runways.csv SHA256: "+sha256(args.runways)+"\n"
         "Only operational and explicitly asphalt/concrete runway labels >=1200 m.\n"
         "Excluded airport.type=closed and runway.closed=1.\n"
+        "European Russia geographic screen uses longitude <= 60.0 degrees east, an approximate Urals boundary.\n"
         "Current phase ends at runway qualification for minimum Level 1 (Local). Other airport information and final six-category ranking are DEFERRED.\n"
         "Records are qualified by runway only; not an operating-airport or game-activation authorization.\n"
         f"Screened count: {len(candidates)}; ambiguous surface queue: {len(surface_queue)}; duplicate identifiers: {len(duplicates)}.\n",encoding="utf-8")
