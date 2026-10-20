@@ -2,6 +2,17 @@
 
 These rules apply to all contributors, automated agents and connected development tools.
 
+## GitHub Actions budget protection — MANDATORY from 2026-10-20
+- The repository is **private**, and standard GitHub-hosted workflow jobs can consume paid GitHub Actions minutes. This applies equally to the `staging` branch. DO NOT confuse "staging not deploying to production" with "staging builds are free".
+- For all current and future airport screening groups, **NEVER add `on.push` or `on.pull_request` targeting `staging`** to validation, refresh, or group-specific workflows. This includes workflow self-path triggers. These caused 96 paid runs in one day on 2026-10-20.
+- Add new group workflows **only with `workflow_dispatch`**, not automatic push/PR/schedule triggers. Existing airport screen workflows are manual-only; the master airport validator is manual or `pull_request` to `main` (release gate).
+- **Do not run manual Actions after every group.** Collect and validate groups locally, batch multiple group updates into one `staging` commit/push, and run paid CI only once per owner-approved batch or at release review. Never dispatch CI merely to see if a script changed successfully.
+- Run free local checks using `python scripts/validate_airports.py && python scripts/validate_historical_airports.py && python scripts/rebuild_runway_register.py`, then verify the canonical register contains only intended changes (`git diff --exit-code -- data/airports/airport_register.csv data/airports/airport_code_conflicts.csv` after rebuilding). No live secrets or production writes.
+- `workflow_dispatch` GitHub UI/API requires a workflow to exist on the repository's default branch. While these airport workflows exist only on `staging`, run the local validation commands instead of merging into `main` without owner approval. Preserve manual workflows for when a release is approved.
+- Never create one workflow run per screened group; continue the user's airport inventory work uninterrupted, staging-first, with exact six airport categories and the runway-only criteria defined below.
+- Changing the GitHub Actions budget is outside development scope. Do not change billing settings, turn off spending caps, or claim an estimate is an official GitHub bill.
+
+
 ## Branch safety
 - All normal development, bug fixes, data curation, migrations, tests and documentation MUST target `staging`, explicitly.
 - The `main` branch represents production. NEVER commit or push ordinary changes directly to `main`.
