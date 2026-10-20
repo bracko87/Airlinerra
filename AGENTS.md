@@ -11,17 +11,17 @@ These rules apply to all contributors, automated agents and connected developmen
 - Urgent releases may happen outside those windows, but still require testing and explicit owner approval.
 - Never touch ProPeloton Manager or Game Control Center as part of Airlinerra changes.
 
-## Airport data
-- Airlinerra uses EXACTLY six airport classes in this order: Local, Regional, Medium, Large, Major Hub, Mega Hub. Never replace with a 4-tier system.
-- Airport categorization and airport eligibility are two separate review processes.
-- Baseline runway rule: at least one operational runway >= 1200 m with an asphalt or concrete surface. An unspecified 'paved' label needs verification.
-- Military-only aerodromes are not playable unless civilian use is independently established.
-- Runway eligibility does not confer automatic approval; confirm civilian access and limits, and retain evidence.
-- Treat the earlier Group 4 figure of 307 strictly as unapproved runway-screening records.
-- Do not manufacture missing airport records. Groups 1–3 were previously reported as 110 approved (21+30+59) but 56 historical Local airport names are now recovered in `data/airports/historical_approved_recovery.csv`, while 54 remain to be recovered. Historical approval must NOT be treated as evidence of current runway or civilian-access eligibility. None have been imported as playable.
-- Keep permanent canonical records under `data/airports/`. `approved` means backed by specific reviewed evidence; `review` is never ingested as playable.
-- All generated SQL is reviewed and tested on staging before production; never infer that committing a migration executed it in Supabase.
-
+## Airport data — current phase: runway-only collection
+- Airlinerra retains EXACTLY six eventual airport categories: 1 Local, 2 Regional, 3 Medium, 4 Large, 5 Major Hub, 6 Mega Hub. Never substitute four categories.
+- CURRENT OBJECTIVE: collect airports with at least one runway that is NOT recorded as closed, is >=1200 m long, and whose surface is explicitly asphalt or concrete.
+- Every matching airport can be **considered at least Level 1 (Local)**. This is a MINIMUM technical eligibility flag, NOT its final category. Longer runways do not imply a final higher level.
+- Airport-only collection does NOT require civilian access, military-use assessment, permissions, aircraft restrictions, operator hours, capacity, financial data, terminal facilities, ICAO validation or other operational information at this stage.
+- Do not reject runway-qualified airports for those future considerations. Record uncertain runway surfaces separately; do not assume plain "paved" means asphalt/concrete.
+- Canonical master: `data/airports/airport_register.csv`, containing only airport identifiers, runway length/surface, minimum_eligible_level=1 and runway_status=RUNWAY_QUALIFIED. Generated data under `data/airports/generated/group4/` supplies technical source evidence. Never count duplicate screens as additional airports.
+- Group 4 first full screen yielded 307 qualifying airport records across France, Georgia, Germany, Greece and Hungary, plus a separate queue for four uncertain-surface records. All 14 previously discovered examples are included in the 307.
+- Groups 1–3 were previously reported as 110 historically approved, but current canonical runway records from those groups have NOT been recovered. 56 historical Local names are preserved separately and must not be added to the master without checking the runway rule.
+- No Supabase/game import, playable activation, final six-category classification or production release in this phase. Database/schema work is deferred.
+- Always validate on staging before claiming technical-collection completion.
 ## Game rules
 - Real-time worlds: one real day is one in-game day. No historical eras.
 - New airlines start with USD 5,000,000 and zero aircraft.
