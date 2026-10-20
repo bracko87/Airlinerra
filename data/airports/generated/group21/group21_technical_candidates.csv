@@ -1,0 +1,3 @@
+ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible_runway_m,surface,eligible_runway_count,runway_ids
+2880,IO,Naval Support Facility Diego Garcia,FJDG,FJDG,3658.5,CON,1,236822
+26589,MO,Macau International Airport,VMMC,VMMC,3213.8,CON,1,237541
