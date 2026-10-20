@@ -1,0 +1,48 @@
+ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible_runway_m,surface,eligible_runway_count,runway_ids
+4613,ME,Podgorica Airport / Podgorica Golubovci Airbase,LYPG,LYPG,2500.0,ASP,1,246240
+4615,ME,Tivat Airport,LYTV,LYTV,2501.8,ASP,1,246227
+4572,MK,Ohrid St. Paul the Apostle Airport,LWOH,LWOH,2550.0,ASP,1,237565
+4573,MK,Skopje International Airport,LWSK,LWSK,2949.9,ASP,1,237566
+2513,NL,Amsterdam Airport Schiphol,EHAM,EHAM,3799.9,ASP,6,237924;237925;237926;237927;237928;237929
+2521,NL,De Kooy Airfield / Den Helder Naval Air Station,EHKD,EHKD,1275.0,CON,1,237930
+2518,NL,Eindhoven Airport,EHEH,EHEH,3000.1,ASP,1,237941
+2520,NL,Gilze Rijen Air Base,EHGR,EHGR,2767.9,ASP,2,237922;237923
+2519,NL,Groningen Airport Eelde,EHGG,EHGG,2500.0,ASP,1,237936
+2523,NL,Leeuwarden Air Base,EHLW,EHLW,2452.1,ASP,2,237938;237939
+2522,NL,Lelystad Airport,EHLE,EHLE,2699.9,ASPH,1,237920
+2515,NL,Maastricht Aachen Airport,EHBK,EHBK,2749.9,ASP,1,237921
+2524,NL,Rotterdam The Hague Airport,EHRD,EHRD,2200.0,ASP,1,237940
+2526,NL,Twente Airport,EHTW,EHTW,2987.3,ASP,1,237942
+2528,NL,Volkel Air Base,EHVK,EHVK,3027.0,ASP,2,237931;237932
+2529,NL,Woensdrecht Air Base,EHWO,EHWO,2443.0,ASP,1,237937
+2566,NO,Alta Airport,ENAT,ENAT,2183.9,ASP,1,237973
+2565,NO,"Andøya Airport, Andenes",ENAN,ENAN,2468.0,ASP,2,237977;237978
+2574,NO,Bardufoss Airport,ENDU,ENDU,2443.0,ASP,1,237975
+2570,NO,"Bergen Airport, Flesland",ENBR,ENBR,2990.1,ASP,1,237980
+2569,NO,Bodø Airport,ENBO,ENBO,2794.1,CON,1,237964
+2576,NO,"Fagernes Airport, Leirin",ENFG,,2048.9,ASP,1,237950
+2577,NO,Florø Airport,ENFL,ENFL,1263.1,ASP,1,237987
+2573,NO,Geilo Airport Dagali,ENDI,ENDI,1799.8,ASP,1,237974
+2575,NO,Harstad/Narvik Airport,ENEV,ENEV,2815.1,ASP,1,237963
+2579,NO,"Haugesund Airport, Karmøy",ENHD,ENHD,2120.5,ASP,1,237954
+29257,NO,"Hønefoss Airfield, Eggemoen",ENEG,ENEG,1764.8,Asphalt,1,270964
+2583,NO,"Kirkenes Airport, Høybuktmoen",ENKR,ENKR,2115.0,ASP,1,237952
+2572,NO,Kristiansand Airport,ENCN,ENCN,2035.1,ASP,1,237947
+2581,NO,"Kristiansund Airport, Kvernberget",ENKB,ENKB,2389.9,ASP,1,237960
+2587,NO,"Lakselv Airport, Banak",ENNA,ENNA,2788.0,ASP,1,237961
+2582,NO,"Lillestrøm Airfield, Kjeller",ENKJ,ENKJ,1621.8,ASP,1,237956
+2584,NO,Lista Airport,ENLI,ENLI,2989.8,CON,1,237953
+2585,NO,"Molde Airport, Årø",ENML,ENML,2109.8,ASP,1,237962
+2592,NO,"Moss Airport, Rygge",ENRY,ENRY,2442.1,ASP,1,237967
+2588,NO,Notodden Airport,ENNO,ENNO,1751.1,ASP,1,237979
+2578,NO,Oslo-Gardermoen International Airport,ENGM,ENGM,3600.0,ASP,2,237958;237959
+2591,NO,Røros Airport,ENRO,ENRO,1720.0,ASP,1,237981
+2600,NO,"Sandefjord Airport, Torp",ENTO,ENTO,2809.0,ASP,1,237976
+2598,NO,"Sandnessjøen Airport, Stokka",ENST,ENST,1407.9,ASP,1,237968
+2594,NO,Skien Airport,ENSN,ENSN,1400.9,ASP,1,237969
+2602,NO,"Stavanger Airport, Sola",ENZV,ENZV,2855.7,ASP,2,237970;237971
+2593,NO,"Svalbard Airport, Longyear",ENSB,ENSB,2318.9,ASP,1,238973
+2599,NO,Tromsø Airport,ENTC,ENTC,2450.9,ASP,1,237966
+2601,NO,"Trondheim Airport, Værnes",ENVA,ENVA,2759.0,ASP,1,237948
+2564,NO,Ålesund Airport,ENAL,ENAL,2314.0,ASP,1,237982
+2589,NO,Ørland Airport,ENOL,ENOL,3278.1,ASP,1,237965
