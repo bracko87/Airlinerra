@@ -50,6 +50,15 @@ def main():
     p.add_argument("--out",required=True,type=pathlib.Path)
     args=p.parse_args()
     airports={r["id"]:r for r in load(args.airports) if r.get("iso_country") in COUNTRIES and r.get("type")!="closed"}
+    overrides={}
+    override_path=pathlib.Path(__file__).resolve().parents[1]/"data/airports/runway_surface_overrides.csv"
+    for item in load(override_path):
+        if item["group"]!="13": continue
+        if not item["source_url"].startswith("https://"):
+            raise ValueError("Runway surface override requires published source evidence")
+        if item["ourairports_id"] in overrides:
+            raise ValueError("Duplicate override source airport ID")
+        overrides[item["ourairports_id"]]=item
     eligible=collections.defaultdict(list)
     uncertain=collections.defaultdict(list)
     for runway in load(args.runways):
@@ -60,7 +69,23 @@ def main():
         except ValueError: continue
         if length < 1200: continue
         kind=surface_type(runway.get("surface"))
-        if kind=="ELIGIBLE_LABEL": eligible[airport["id"]].append((length,runway))
+        source_runway=runway
+        override=overrides.get(airport["id"])
+        if override and kind!="ELIGIBLE_LABEL":
+            if airport["iso_country"]!=override["country_iso"]:
+                raise ValueError("Override country mismatch")
+            airport_code=airport.get("gps_code") or airport.get("ident") or ""
+            if airport_code!=override["airport_ident"]:
+                raise ValueError("Override code mismatch")
+            if abs(length-float(override["reference_runway_length_m"]))>5:
+                raise ValueError("Override runway length mismatch")
+            if (runway.get("surface") or "").strip().lower()!=override["previous_surface_label"].strip().lower():
+                raise ValueError("Override original reported surface mismatch")
+            kind=surface_type(override["verified_surface"])
+            if kind!="ELIGIBLE_LABEL":
+                raise ValueError("Override does not prove asphalt or concrete")
+            source_runway=dict(runway,surface=override["verified_surface"])
+        if kind=="ELIGIBLE_LABEL": eligible[airport["id"]].append((length,source_runway))
         elif kind=="CHECK_SURFACE": uncertain[airport["id"]].append((length,runway))
     approved_columns=["ourairports_id","iso_country","airport_name","ident","gps_code","longest_reported_eligible_runway_m","surface","eligible_runway_count","runway_ids"]
     candidates=[]
@@ -99,6 +124,7 @@ def main():
         "runways.csv SHA256: "+sha256(args.runways)+"\n"
         "Only operational and explicitly asphalt/concrete runway labels >=1200 m.\n"
         "Excluded airport.type=closed and runway.closed=1.\n"
+        "Group 13 verified surface corrections documented in data/airports/runway_surface_overrides.csv (with supporting URLs).\n"
         "Group 13 continues Asia with Cambodia, China, India, Indonesia and Iran; all countries screened whole.\n"
         "Current phase ends at runway qualification for minimum Level 1 (Local). Other airport information and final six-category ranking are DEFERRED.\n"
         "Records are qualified by runway only; not an operating-airport or game-activation authorization.\n"

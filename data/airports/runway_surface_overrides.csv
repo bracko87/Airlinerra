@@ -1,3 +1,7 @@
 group,ourairports_id,country_iso,airport_ident,reference_runway_length_m,previous_surface_label,verified_surface,source_url,verification_date,note
 9,331318,ES,LENE,1400,paved,Concrete,https://guiavfr.enaire.es/contenido_GuiaVFR/AD/LE_guiaVFR_LENE.html,2026-10-20,ENAIRE 08/26 1400m surface Hormigon
 9,308328,ES,LEDA,2500,hard,Asphalt,https://aip.enaire.es/AIP/contenido_AIP/AD/AD2/LEDA/LE_AD_2_LEDA_es.html,2026-10-20,ENAIRE AIP 13/31 2500m surface ASPH
+13,31699,CN,ZLJQ,3000,paved,Concrete,https://www.jyg.gov.cn/zfxxgk/fdzdgknr/zdlyxxgk/zdxmxx/art/2023/art_b4356c08a4464686a564eb31a93ce68b.html,2026-10-20,Jiayuguan municipal government 2023 runway concrete pavement project
+13,31871,CN,ZSLY,3200,paved,Concrete,https://bkso.baidu.com/item/%E4%B8%B4%E6%B2%82%E5%90%AF%E9%98%B3%E5%9B%BD%E9%99%85%E6%9C%BA%E5%9C%BA/64133088,2026-10-20,Published airport characteristics state 3200m concrete runway corroborated by Wikipedia
+13,44126,CN,ZUZH,2800,Paved,Concrete,https://zh.wikipedia.org/wiki/%E6%94%80%E6%9E%9D%E8%8A%B1%E4%BF%9D%E5%AE%89%E8%90%A5%E6%9C%BA%E5%9C%BA,2026-10-20,Published airport runway characteristics list 2800m concrete source CAAC attributed
+13,327452,IN,VASD,2500,Hard,Asphalt,https://aim-india.aai.aero/eaip/eaip-v2-04-2026/eAIP/IN-AD%202.1VASD-en-GB.html,2026-10-20,Official India AIP VASD AD 2.12 RWY 09/27 2500m asphalt
