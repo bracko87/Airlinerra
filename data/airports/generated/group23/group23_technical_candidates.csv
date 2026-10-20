@@ -1,0 +1,41 @@
+ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible_runway_m,surface,eligible_runway_count,runway_ids
+5499,FM,Chuuk International Airport,PTKK,PTKK,1830.6,ASP,1,235786
+5502,FM,Kosrae International Airport,PTSA,PTSA,1752.6,ASP,1,235784
+5500,FM,Pohnpei International Airport,PTPN,PTPN,2011.7,ASP,1,235785
+5503,FM,Yap International Airport,PTYA,PTYA,1828.8,ASP,1,235787
+5490,MH,Bucholz Army Air Field,PKWA,PKWA,2032.4,ASP,1,238387
+5489,MH,Dyess Army Air Field,PKRO,PKRO,1371.6,ASP,1,238384
+5487,MH,Eniwetok Airport,PKMA,PKMA,2347.0,ASP,1,238386
+5488,MH,Marshall Islands International Airport,PKMJ,PKMJ,2407.0,ASP,1,238385
+8,NR,Nauru International Airport,ANYN,ANYN,2150.1,ASP,1,237996
+5025,NZ,Ardmore Airport,NZAR,NZAR,1411.2,ASP,1,238016
+5023,NZ,Auckland International Airport,NZAA,NZAA,3635.0,CON,1,238096
+5026,NZ,Christchurch International Airport,NZCH,NZCH,3287.9,ASP,1,238074
+5028,NZ,Dunedin International Airport,NZDN,NZDN,1900.1,ASP,1,238041
+5030,NZ,Gisborne Airport,NZGS,NZGS,1310.0,ASP,1,238100
+5033,NZ,Hamilton International Airport,NZHN,NZHN,2058.9,ASP,1,238060
+5043,NZ,Hawke's Bay Airport,NZNR,NZNR,1749.9,ASPH,1,260393
+5032,NZ,Hokitika Airfield,NZHK,NZHK,1314.0,ASP,1,238071
+5041,NZ,Hood Airport,NZMS,NZMS,1250.0,ASP,1,238027
+5027,NZ,Inia William Tuuta Memorial Airport,NZCI,NZCI,1360.0,ASP,1,238053
+5045,NZ,Invercargill Airport,NZNV,NZNV,2210.1,ASP,1,238079
+5037,NZ,Kaitaia Airport,NZKT,NZKT,1402.1,ASP,1,238051
+5039,NZ,Mount Cook Airport,NZMC,NZMC,1571.9,ASP,1,238036
+5044,NZ,Nelson Airport,NZNS,NZNS,1347.2,ASP,1,238037
+5042,NZ,New Plymouth Airport,NZNP,NZNP,1310.0,ASP,1,238045
+5047,NZ,Oamaru Airport,NZOU,NZOU,1283.2,ASP,1,238050
+5049,NZ,Palmerston North Airport,NZPM,NZPM,1902.0,ASP,1,238020
+5050,NZ,Paraparaumu Airport,NZPP,NZPP,1350.0,ASP,1,238014
+5051,NZ,Queenstown Airport,NZQN,NZQN,1891.0,ASP,1,238105
+5065,NZ,RNZAF Base Auckland-Whenuapai,NZWP,NZWP,2031.5,ASP,2,238054;238055
+5046,NZ,RNZAF Base Ohakea,NZOH,NZOH,2446.9,ASP,2,238093;238095
+5052,NZ,Rotorua Regional Airport,NZRO,NZRO,1621.8,ASP,1,238021
+5024,NZ,Taupo Airport,NZAP,NZAP,1385.9,ASP,1,238035
+5055,NZ,Tauranga Airport,NZTG,NZTG,1825.1,ASP,2,238024;260399
+5056,NZ,Timaru Airport,NZTU,NZTU,1280.2,ASP,1,238102
+5068,NZ,Wanganui Airport,NZWU,NZWU,1378.0,ASP,2,238065;260401
+5063,NZ,Wellington International Airport,NZWN,NZWN,1936.1,ASP,1,238043
+5067,NZ,Westport Airport,NZWS,NZWS,1280.2,ASP,1,238088
+5062,NZ,Whakatāne Airport,NZWK,NZWK,1280.2,ASP,1,238070
+5058,NZ,Woodbourne Airport,NZWB,NZWB,1424.9,ASP,1,238090
+5501,PW,Roman Tmetuchl International Airport,PTRO,PTRO,2194.6,ASP,1,238374
