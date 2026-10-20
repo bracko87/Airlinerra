@@ -17,7 +17,7 @@
 ## Release checklist
 - [ ] Review full file diff and confirm no unauthorized changes.
 - [ ] Run automated checks and fix failures.
-- [ ] Confirm airport CSV integrity, valid six-class values and consistent approval status where relevant.
+- [ ] In the current runway-only airport collection phase, confirm airport CSV integrity: >=1200 m, asphalt/concrete, runway open, minimum eligible Level 1; do NOT require final six-category, civilian approval or operational data yet.
 - [ ] Review Supabase migrations and rollback strategy; do not auto-apply production migrations.
 - [ ] Obtain explicit owner authorization.
 - [ ] Merge approved PR into `main` within release window (or validated urgent exception).
