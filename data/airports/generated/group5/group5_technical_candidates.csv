@@ -1,0 +1,92 @@
+ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible_runway_m,surface,eligible_runway_count,runway_ids
+2536,IE,Casement Air Base,EIME,EIME,1829.1,ASP,2,235629;235630
+2530,IE,Cork International Airport,EICK,EICK,2133.0,ASP,1,235645
+2533,IE,Dublin Airport,EIDW,EIDW,3109.9,CON,3,235634;235636;356512
+2534,IE,Ireland West Airport Knock,EIKN,EIKN,2300.0,ASP,1,235637
+2535,IE,Kerry Airport,EIKY,EIKY,2000.1,ASP,1,235633
+2537,IE,Shannon Airport,EINN,EINN,3198.9,ASP,1,235639
+2539,IE,Waterford Airport,EIWF,EIWF,1432.9,ASP,1,235631
+117,IS,Akureyri International Airport,BIAR,BIAR,2699.9,ASP,1,236462
+119,IS,Egilsstaðir Airport,BIEG,BIEG,2150.1,ASP,1,236464
+120,IS,Hornafjörður Airport,BIHN,BIHN,1499.9,ASP,1,236467
+121,IS,Húsavík Airport,BIHU,BIHU,1605.1,ASP,1,236469
+123,IS,Keflavik International Airport,BIKF,BIKF,3065.1,ASP,2,236460;236461
+125,IS,Reykjavík Domestic Airport,BIRK,BIRK,1566.1,ASP,2,236457;236459
+32246,IS,Sauðárkrókur Airport,BIKR,BIKR,1887.0,asphalt,1,260097
+122,IS,Ísafjörður Airport,BIIS,BIIS,1399.9,ASP,1,236463
+4314,IT,Abruzzo Airport,LIBP,LIBP,2418.0,ASP,1,236975
+4330,IT,Alghero-Fertilia Airport,LIEA,LIEA,3000.1,ASP,1,237043
+4308,IT,Amendola Air Base,LIBA,LIBA,2660.0,ASP,1,236987
+4349,IT,Aosta Corrado Gex Airport,LIMW,LIMW,1246.0,ASP,1,237046
+29443,IT,Aviano Air Base,LIPA,LIPA,2606.3,ASP,1,253061
+4310,IT,Bari Karol Wojtyła International Airport,LIBD,LIBD,3000.1,ASP,1,237052
+4335,IT,Biella-Cerrione Airfield,LILE,LILE,1320.1,ASP,1,237006
+4354,IT,Bologna Guglielmo Marconi Airport,LIPE,LIPE,2802.9,ASP,1,237036
+4352,IT,Bolzano Airport,LIPB,LIPB,1739.8,ASP,1,237009
+4360,IT,Brescia Gabriele d'Annunzio Airport,LIPO,LIPO,2990.1,ASP,1,237064
+4315,IT,Brindisi Airport,LIBR,LIBR,3048.0,ASP,2,237057;237058
+4332,IT,Cagliari Elmas Airport,LIEE,LIEE,2802.9,ASP,1,237017
+4346,IT,Cameri Air Base,LIMN,LIMN,2992.5,ASP,1,237042
+4318,IT,Catania-Fontanarossa Airport,LICC,LICC,2435.0,ASP,1,237038
+4353,IT,Cervia Air Base,LIPC,LIPC,3050.1,ASP,1,237035
+4370,IT,Ciampino–G. B. Pastine International Airport,LIRA,LIRA,2202.5,ASP,1,236988
+298716,IT,Comiso Airport,LICB,LICB,2459.7,asphalt,1,298717
+4309,IT,Crotone Sant'Anna Pythagoras Airport,LIBC,LIBC,2000.1,ASP,1,237044
+4350,IT,Cuneo International Airport,LIMZ,LIMZ,2104.0,ASP,1,236982
+4331,IT,Decimomannu Air Base,LIED,LIED,2984.9,ASP,2,236976;236977
+317006,IT,Enrico Mattei Airfield,IT-0177,,1402.1,ASP,1,317009
+4321,IT,Falcone–Borsellino Airport,LICJ,LICJ,3326.0,ASP,2,236980;236981
+4362,IT,Federico Fellini International Airport,LIPR,LIPR,2995.6,ASP,1,236997
+4380,IT,"Florence Airport, Peretola",LIRQ,LIRQ,1560.0,ASP,1,236979
+4311,IT,Foggia Gino Lisa Airport,LIBF,LIBF,1734.9,ASP,1,237026
+29414,IT,Foligno Airfield,LIAF,LIAF,1399.9,asphalt,1,511103
+4357,IT,Forlì-Luigi Ridolfi International Airport,LIPK,LIPK,2410.1,ASP,1,237025
+4344,IT,Genoa Cristoforo Colombo Airport,LIMJ,LIMJ,2915.1,ASP,1,237011
+4358,IT,Ghedi Air Base,LIPL,LIPL,2991.0,ASP,1,237003
+4316,IT,Gioia del Colle Antonio Ramirez Air Base,LIBV,LIBV,3001.1,ASP,2,237031;237032
+4377,IT,Grazzanise Air Base,LIRM,LIRM,2991.0,ASP,1,237007
+4381,IT,Grosseto Corrado Baccarini Air Base / Grosseto Airport,LIRS,LIRS,2994.1,ASP,2,237054;237055
+4373,IT,Guidonia Air Base,LIRG,LIRG,1462.1,ASP,1,237051
+4341,IT,Il Caravaggio International Airport,LIME,LIME,2874.0,ASP,1,237060
+4363,IT,Istrana Air Base,LIPS,LIPS,2991.9,ASP,1,236992
+4307,IT,L'Aquila–Preturo Airport,LIAP,LIAP,1409.1,ASP,1,237070
+4317,IT,Lamezia Terme Sant'Eufemia International Airport,LICA,LICA,3016.9,ASP,1,237018
+4319,IT,Lampedusa Airport,LICD,LICD,1800.1,ASP,1,237028
+4376,IT,Latina Air Base,LIRL,LIRL,1699.9,ASP,1,237047
+4313,IT,Lecce Galatina Air Base / Galatina Fortunato Cesari Airport,LIBN,LIBN,1902.0,ASP,1,237056
+4367,IT,Marche Airport,LIPY,LIPY,2962.0,ASP,1,237002
+4340,IT,Milan Malpensa International Airport,LIMC,LIMC,3920.0,ASP,2,237000;237001
+4345,IT,Milano Linate Airport,LIML,LIML,2442.1,ASP,1,237040
+4378,IT,Naples International Airport,LIRN,LIRN,2628.0,ASP,1,237034
+4333,IT,Olbia Costa Smeralda Airport,LIEO,LIEO,2745.0,ASP,1,236993
+4322,IT,Palermo-Boccadifalco Airport,LICP,LICP,1224.1,ASP,1,237071
+4320,IT,Pantelleria Airport,LICG,LICG,1674.9,ASP,2,237048;237049
+4347,IT,Parma Airport,LIMP,LIMP,2122.0,ASP,1,237033
+4384,IT,Perugia San Francesco d'Assisi – Umbria International Airport,LIRZ,LIRZ,2199.1,ASP,1,576853
+4348,IT,Piacenza San Damiano Air Base,LIMS,LIMS,2995.6,ASP,1,236986
+4379,IT,Pisa International Airport,LIRP,LIRP,2993.1,ASP,2,237004;237005
+4371,IT,Pratica di Mare Air Base,LIRE,LIRE,2480.5,ASP,1,237013
+4323,IT,Reggio Calabria Airport,LICR,LICR,1996.1,ASP,2,237015;237016
+4327,IT,Reggio Emilia Airport,LIDE,LIDE,1210.1,ASP,1,237063
+4343,IT,Riviera Villanova d'Albenga International Airport,LIMG,LIMG,1432.0,ASP,1,236971
+4372,IT,Rome–Fiumicino Leonardo da Vinci International Airport,LIRF,LIRF,3901.7,ASP,3,236972;236973;236974
+4374,IT,Salerno Costa d'Amalfi Airport,LIRI,LIRI,1962.0,ASP,1,237069
+298755,IT,Scalea Airport,IT-0030,LICK,1499.9,asphalt,1,298757
+4369,IT,Siena-Ampugnano Airport,LIQS,LIQS,1392.9,ASP,1,237041
+4325,IT,Sigonella Navy Air Base,LICZ,LICZ,2461.9,ASP,2,236984;236985
+4312,IT,Taranto-Grottaglie Marcello Arlotta Airport,LIBG,LIBG,3200.1,ASP,1,237027
+4355,IT,Treviso Airport,LIPH,LIPH,2420.4,ASP,1,237008
+4361,IT,Trieste Airport,LIPQ,LIPQ,3000.1,ASP,1,237059
+4342,IT,Turin Airport,LIMF,LIMF,3300.1,ASP,1,237021
+4356,IT,Udine-Rivolto Air Base,LIPI,LIPI,2549.7,ASP,1,237014
+4337,IT,Varese-Venegono Airport,LILN,LILN,1420.1,ASP,1,236999
+4368,IT,Venice Marco Polo Airport,LIPZ,LIPZ,3300.1,ASP,2,237023;237024
+4366,IT,Verona Villafranca Valerio Catullo Airport,LIPX,LIPX,3067.5,ASP,1,236994
+4324,IT,Vincenzo Florio Airport Trapani-Birgi,LICT,LICT,2698.1,ASP,1,236983
+4383,IT,Viterbo Airport,LIRV,LIRV,1300.0,ASPH,1,237066
+31031,LV,Jūrmala Airport,EVTA,EVJA,2498.4,ASP,1,506781
+31028,LV,Lielvarde Air Base,EVGA,EVGA,2500.0,ASP,1,506804
+2757,LV,Liepāja International Airport,EVLA,EVLA,2001.9,ASP,1,237421
+2758,LV,Riga International Airport,EVRA,EVRA,3200.1,ASP,1,237422
+1651,XK,Gjakovë Air Base,XK-0010,,1799.5,ASP,1,246241
+4614,XK,Priština Adem Jashari International Airport,BKPR,BKPR,3040.1,ASP,1,246235
