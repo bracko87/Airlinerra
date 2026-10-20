@@ -60,12 +60,12 @@ def main():
         kind=surface_type(runway.get("surface"))
         if kind=="ELIGIBLE_LABEL": eligible[airport["id"]].append((length,runway))
         elif kind=="CHECK_SURFACE": uncertain[airport["id"]].append((length,runway))
-    approved_columns=["ourairports_id","iso_country","airport_name","ident","gps_code","iata_code","airport_type","longest_reported_eligible_runway_m","surface","eligible_runway_count","runway_ids","civilian_access","six_category","decision"]
+    approved_columns=["ourairports_id","iso_country","airport_name","ident","gps_code","longest_reported_eligible_runway_m","surface","eligible_runway_count","runway_ids"]
     candidates=[]
     for ident,matches in eligible.items():
         a=airports[ident]
         length,r=max(matches,key=lambda p:p[0])
-        candidates.append({"ourairports_id":ident,"iso_country":a["iso_country"],"airport_name":a.get("name",""),"ident":a.get("ident",""),"gps_code":a.get("gps_code",""),"iata_code":a.get("iata_code",""),"airport_type":a.get("type",""),"longest_reported_eligible_runway_m":round(length,1),"surface":r.get("surface",""),"eligible_runway_count":len(matches),"runway_ids":";".join(sorted((x.get("id","") for _,x in matches))),"civilian_access":"UNVERIFIED","six_category":"","decision":"TECHNICAL_SCREEN_ONLY"})
+        candidates.append({"ourairports_id":ident,"iso_country":a["iso_country"],"airport_name":a.get("name",""),"ident":a.get("ident",""),"gps_code":a.get("gps_code",""),"longest_reported_eligible_runway_m":round(length,1),"surface":r.get("surface",""),"eligible_runway_count":len(matches),"runway_ids":";".join(sorted((x.get("id","") for _,x in matches)))})
     candidates.sort(key=lambda a:(a["iso_country"],a["airport_name"],a["ourairports_id"]))
     args.out.mkdir(parents=True,exist_ok=True)
     write(args.out/"group4_technical_candidates.csv",approved_columns,candidates)
@@ -77,9 +77,9 @@ def main():
     surface_queue.sort(key=lambda a:(a["iso_country"],a["airport_name"]))
     write(args.out/"group4_surface_review.csv",["ourairports_id","iso_country","airport_name","ident","longest_runway_m","reported_surface","decision"],surface_queue)
     counts=collections.Counter(x["iso_country"] for x in candidates)
-    countrows=[{"country_iso":code,"country":name,"technical_candidates":counts[code],"playable_approvals":0} for code,name in COUNTRIES.items()]
-    countrows.append({"country_iso":"TOTAL","country":"TOTAL","technical_candidates":len(candidates),"playable_approvals":0})
-    write(args.out/"group4_country_counts.csv",["country_iso","country","technical_candidates","playable_approvals"],countrows)
+    countrows=[{"country_iso":code,"country":name,"technical_candidates":counts[code],"minimum_eligible_level":"1"} for code,name in COUNTRIES.items()]
+    countrows.append({"country_iso":"TOTAL","country":"TOTAL","technical_candidates":len(candidates),"minimum_eligible_level":"1"})
+    write(args.out/"group4_country_counts.csv",["country_iso","country","technical_candidates","minimum_eligible_level"],countrows)
     duplicates=[]
     for key in ("ident","gps_code"):
         seen=collections.defaultdict(list)
@@ -97,8 +97,8 @@ def main():
         "runways.csv SHA256: "+sha256(args.runways)+"\n"
         "Only operational and explicitly asphalt/concrete runway labels >=1200 m.\n"
         "Excluded airport.type=closed and runway.closed=1.\n"
-        "Further reviews: current official AIP, civilian availability, temporary NOTAMs, duplicate airports, operational limits, exact six categories.\n"
-        "Do not infer that the earlier count of 307, or the original list of 103, is verified without full source reconciliation.\n"
+        "Current phase ends at runway qualification for minimum Level 1 (Local). Other airport information and final six-category ranking are DEFERRED.\n"
+        "Records are qualified by runway only; not an operating-airport or game-activation authorization.\n"
         f"Screened count: {len(candidates)}; ambiguous surface queue: {len(surface_queue)}; duplicate identifiers: {len(duplicates)}.\n",encoding="utf-8")
     print("TECHNICAL SCREEN: "+str(len(candidates))+" airports; per-country "+str(dict(counts))+"; uncertain surface "+str(len(surface_queue)))
 
