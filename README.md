@@ -13,7 +13,7 @@ See [AGENTS.md](AGENTS.md) and [release procedures](docs/CONTROLLED_RELEASES.md)
 ## Airport runway collection — current stage
 For now we store ONLY airports reporting a **non-closed asphalt/concrete runway of at least 1,200 metres**. Each meets **minimum Level 1 (Local)** runway criteria; no final categorization, operating permissions or other airport information is being gathered.
 
-[Permanent master airport register](data/airports/airport_register.csv): **2,512 airports: 2,511 runway-screened candidates across Groups 1–18 plus one fictional airport**.
+[Permanent master airport register](data/airports/airport_register.csv): **2,604 airports: 2,603 runway-screened candidates across Groups 1–19 plus one fictional airport**.
 
 | Group | Airports in runway-only master |
 | --- | ---: |
@@ -35,7 +35,8 @@ For now we store ONLY airports reporting a **non-closed asphalt/concrete runway 
 | 16 — Asia: Maldives, Mongolia, Myanmar, Nepal, North Korea | 79 |
 | 17 — Asia: Oman, Pakistan, Palestine, Philippines, Qatar | 116 |
 | 18 — Asia: Saudi Arabia, Singapore, South Korea, Sri Lanka, Syria | 126 |
-| **Total** | **2,512** |
+| 19 — Asia: Taiwan, Tajikistan, Thailand, Timor-Leste, Turkmenistan | 92 |
+| **Total** | **2,604** |
 
 **Important distinction:** Earlier discussions selected **110 airports** for Groups 1–3. The **162** airport candidates now in the master for those groups are a fresh, *runway-only* screen. The historical count of 110 and its 56 recovered names remain documented separately; it is not equivalent to the current screening count.
 
@@ -50,6 +51,8 @@ Group 16 adds 79 runway-qualified candidates (Maldives 6, Mongolia 8, Myanmar 24
 Group 17 adds 116 runway-qualified candidates (Oman 9, Pakistan 51, Palestine 0, Philippines 53, Qatar 3). The Palestine zero represents no matching records under the current dataset/criteria and does not assert no airport exists. No unresolved runway surfaces or new duplicate identifiers were found.
 
 Group 18 adds 126 runway-qualified candidates (Saudi Arabia 64, Singapore 5, South Korea 28, Sri Lanka 10, Syria 19). No ambiguous runway surfaces or new source-code duplicates were found. These counts qualify runways only, without confirming civilian or commercial access.
+
+Group 19 adds 92 runway-qualified candidates using OurAirports geographic codes: Taiwan (TW) 15, Tajikistan 9, Thailand 48, Timor-Leste 4 and Turkmenistan 16. The group has no uncertain runway-surface labels or new identifier conflicts. The screening uses source geography only and does not decide political status, civilian access or commercial operation.
 
 Turkey is **one whole country**, including both European and Asian territories; Group 10 contains 75 Turkish runway-qualified airports.
 
