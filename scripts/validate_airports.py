@@ -50,7 +50,7 @@ def validate():
         except ValueError: raise ValueError(f"Row {line}: invalid length") from None
         if not math.isfinite(length) or length<1200:
             raise ValueError(f"Row {line}: runway shorter than 1200m")
-        if surface_type(row["runway_surface"])!="ELIGIBLE_LABEL":
+        if surface_type(row["runway_surface"].strip().strip(chr(39)+chr(34)))!="ELIGIBLE_LABEL":
             raise ValueError(f"Row {line}: unverified asphalt/concrete surface")
         if row["minimum_eligible_level"]!="1" or row["runway_status"]!="RUNWAY_QUALIFIED":
             raise ValueError(f"Row {line}: invalid runway-level marker")

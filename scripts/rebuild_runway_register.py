@@ -43,7 +43,7 @@ def build(target: pathlib.Path=REGISTER)->int:
             length=float(row["longest_reported_eligible_runway_m"])
             if not airport_id.isdigit() or not country or not name or length<1200:
                 raise ValueError(f"Invalid runway row {airport_id} in {group}")
-            if surface_type(row["surface"])!="ELIGIBLE_LABEL":
+            if surface_type(row["surface"].strip().strip(chr(39)+chr(34)))!="ELIGIBLE_LABEL":
                 raise ValueError(f"Invalid paved surface in {group}: {airport_id}")
             if airport_id in ids: raise ValueError(f"Duplicate source airport ID: {airport_id}")
             ids.add(airport_id)
@@ -79,7 +79,7 @@ def build(target: pathlib.Path=REGISTER)->int:
             codes.add((country,code))
         if len(country)!=2 or not row["airport_name"].strip():
             raise ValueError(f"Missing fictional country/name: {ident}")
-        if float(row["runway_length_m"])<1200 or surface_type(row["runway_surface"])!="ELIGIBLE_LABEL":
+        if float(row["runway_length_m"])<1200 or surface_type(row["runway_surface"].strip().strip(chr(39)+chr(34)))!="ELIGIBLE_LABEL":
             raise ValueError(f"Fictional airport fails Level-1 runway test: {ident}")
         if row["minimum_eligible_level"]!="1" or row["runway_status"]!="RUNWAY_QUALIFIED":
             raise ValueError(f"Fictional airport missing runway status: {ident}")
