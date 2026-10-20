@@ -1,71 +1,99 @@
 #!/usr/bin/env python3
-"""Validate Airlinerra's version-controlled airport registers (no network needed)."""
-from __future__ import annotations
-import csv
-import pathlib
-import sys
+"""Verify permanent Airlinerra airport data in runway-only collection phase.
 
-ROOT = pathlib.Path(__file__).resolve().parents[1]
-APPROVED = ROOT / "data/airports/airport_register.csv"
-REVIEW = ROOT / "data/airports/group4_review.csv"
-CATEGORIES = {"Local","Regional","Medium","Large","Major Hub","Mega Hub"}
-ALLOWED = {"APPROVED","REVIEW","EXCLUDED"}
-REQUIRED = {"country_iso","airport_name","icao","category","status"}
-def load(path: pathlib.Path):
-    with path.open(encoding="utf-8-sig",newline="") as f:
-        reader=csv.DictReader(f)
-        if not reader.fieldnames:
-            raise ValueError(f"{path}: missing header")
-        if len(reader.fieldnames) != len(set(reader.fieldnames)):
-            raise ValueError(f"{path}: repeated headers")
-        return reader.fieldnames, list(reader)
-def check(path, reviewed_only=False):
-    columns, rows = load(path)
-    missing=REQUIRED-set(columns)
-    if missing:
-        raise ValueError(f"{path}: missing fields {sorted(missing)}")
-    seen = set()
-    for i,row in enumerate(rows,2):
-        country=(row.get("country_iso") or "").strip()
-        icao=(row.get("icao") or "").strip().upper()
-        status=(row.get("status") or "").strip()
-        category=(row.get("category") or "").strip()
-        if len(country) != 2 or not country.isalpha() or country != country.upper():
-            raise ValueError(f"{path}:{i} invalid country ISO")
-        if not row.get("airport_name","").strip():
-            raise ValueError(f"{path}:{i} missing airport name")
-        if status not in ALLOWED:
-            raise ValueError(f"{path}:{i} invalid status {status}")
-        if reviewed_only and status!="REVIEW":
-            raise ValueError(f"{path}:{i} candidate must remain REVIEW")
-        if status=="APPROVED" and category not in CATEGORIES:
-            raise ValueError(f"{path}:{i} approved airports need exact six-class category")
-        if category and category not in CATEGORIES:
-            raise ValueError(f"{path}:{i} invalid six-class category {category}")
-        if icao:
-            key=(country,icao)
-            if key in seen:
-                raise ValueError(f"{path}:{i} duplicate ICAO {key}")
-            seen.add(key)
-        if status=="APPROVED":
-            required_approval={"source_url","verified_on","runway_surface","longest_eligible_runway_m","civilian_access"}
-            if not required_approval.issubset(columns):
-                raise ValueError(f"{path}:{i} missing required approval columns")
-            if any(not row.get(field,"").strip() for field in required_approval):
-                raise ValueError(f"{path}:{i} missing airport approval evidence")
-            if float(row["longest_eligible_runway_m"]) < 1200:
-                raise ValueError(f"{path}:{i} approved runway below 1200 m")
-            if row["civilian_access"].upper() not in ("YES","CONDITIONAL"):
-                raise ValueError(f"{path}:{i} civilian access not approved")
-            if not any(t in row["runway_surface"].lower() for t in ("asphalt","concrete")):
-                raise ValueError(f"{path}:{i} unverified surface")
-    return len(rows)
+This checks only the minimum-Level-1 candidate criteria. Final six-category
+ranking, civilian access, operational limits and playable status are DEFERRED.
+"""
+from __future__ import annotations
+
+import csv
+from pathlib import Path
+import sys
+from screen_group4 import surface_type
+
+ROOT = Path(__file__).resolve().parents[1]
+MASTER = ROOT / "data/airports/airport_register.csv"
+GROUP4 = ROOT / "data/airports/generated/group4/group4_technical_candidates.csv"
+HISTORICAL14 = ROOT / "data/airports/group4_review.csv"
+COLUMNS = {
+    "source_airport_id","country_iso","airport_name","ident","gps_code",
+    "runway_length_m","runway_surface","minimum_eligible_level","runway_status"
+}
+
+def read_csv(path):
+    with path.open("r",encoding="utf-8-sig",newline="") as stream:
+        reader=csv.DictReader(stream)
+        if not reader.fieldnames or len(reader.fieldnames)!=len(set(reader.fieldnames)):
+            raise ValueError(f"{path} missing or duplicate headers")
+        rows=list(reader)
+        if any(None in row for row in rows):
+            raise ValueError(f"{path}: extra CSV fields")
+        return set(reader.fieldnames),rows
+
+def validate():
+    columns,rows=read_csv(MASTER)
+    if columns != COLUMNS:
+        raise ValueError(f"Master must contain ONLY current-phase columns, got {sorted(columns)}")
+    if not rows:
+        raise ValueError("Master airport register must not be empty")
+    ids=set()
+    codes=set()
+    master={}
+    for line,row in enumerate(rows,2):
+        ident=row["source_airport_id"].strip()
+        country=row["country_iso"].strip()
+        airport_name=row["airport_name"].strip()
+        code=(row["gps_code"] or row["ident"]).strip()
+        if not ident or ident in ids:
+            raise ValueError(f"Row {line}: missing or duplicate source ID")
+        ids.add(ident)
+        master[ident]=row
+        if len(country)!=2 or not country.isalpha() or country.upper()!=country:
+            raise ValueError(f"Row {line}: invalid country")
+        if not airport_name:
+            raise ValueError(f"Row {line}: missing airport name")
+        if code:
+            key=(country,code)
+            if key in codes:
+                raise ValueError(f"Row {line}: duplicate airport code {key}")
+            codes.add(key)
+        try:
+            length=float(row["runway_length_m"])
+        except ValueError:
+            raise ValueError(f"Row {line}: invalid runway length") from None
+        if length < 1200 or length != length:
+            raise ValueError(f"Row {line}: runway shorter than 1200 m")
+        if surface_type(row["runway_surface"])!="ELIGIBLE_LABEL":
+            raise ValueError(f"Row {line}: runway surface is not verified asphalt/concrete label")
+        if row["minimum_eligible_level"]!="1" or row["runway_status"]!="RUNWAY_QUALIFIED":
+            raise ValueError(f"Row {line}: invalid Level-1 runway-only marker")
+
+    _,screened=read_csv(GROUP4)
+    screening={row["ourairports_id"]:row for row in screened}
+    if len(screening)!=len(screened):
+        raise ValueError("Group 4 source has duplicate airport source IDs")
+    for ident,raw in screening.items():
+        if ident not in master:
+            raise ValueError(f"Group 4 screened airport {ident} missing from permanent register")
+        canonical=master[ident]
+        if (canonical["country_iso"],canonical["airport_name"],canonical["runway_surface"]) != (
+            raw["iso_country"],raw["airport_name"],raw["surface"]):
+            raise ValueError(f"Airport {ident}: permanent data differs from technical screening")
+        if abs(float(canonical["runway_length_m"])-float(raw["longest_reported_eligible_runway_m"]))>0.01:
+            raise ValueError(f"Airport {ident}: runway length differs from technical screening")
+
+    _,prior=read_csv(HISTORICAL14)
+    for row in prior:
+        if row["status"]!="REVIEW":
+            raise ValueError("Older 14-airport notes must remain historical review records")
+        if not any(s["gps_code"]==row["icao"] or s["ident"]==row["icao"] for s in screened):
+            raise ValueError(f"Previously found airport missing from Group 4: {row['icao']}")
+    print(f"VALIDATED: {len(rows)} permanent minimum-Level-1 runway candidates; "
+          f"{len(screened)} screened Group 4 airports reconciled; "
+          f"{len(prior)} previous notes reconciled. Final airport ranking deferred.")
 
 if __name__=="__main__":
-    try:
-        a=check(APPROVED)
-        r=check(REVIEW,True)
-        print(f"VALIDATED: approved register {a} rows; Group 4 review {r} rows; exactly six possible classes")
-    except Exception as err:
-        print(f"VALIDATION FAILED: {err}",file=sys.stderr)
+    try: validate()
+    except Exception as e:
+        print("VALIDATION FAILED: "+str(e),file=sys.stderr)
         sys.exit(1)
