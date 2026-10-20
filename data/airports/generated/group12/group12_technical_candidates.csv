@@ -1,0 +1,28 @@
+ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible_runway_m,surface,eligible_runway_count,runway_ids
+5073,AF,Ahmad Shah Baba International Airport,OAKN,OAKN,3210.2,ASP,1,232780
+5070,AF,Bagram Airfield,OAIX,OAIX,3602.7,CON,2,232779;337570
+30795,AF,Bost Airport,OABT,OABT,2300.9,Asphalt,1,329139
+5069,AF,Herat - Khwaja Abdullah Ansari International Airport,OAHR,OAHR,3013.9,ASP,1,232777
+5071,AF,Jalalabad Airport,OAJL,OAJL,2213.5,ASP,1,232782
+5072,AF,Kabul International Airport,OAKB,OAKB,3500.0,ASP,1,232784
+332240,AF,Khost International Airport,OAKS,OAKS,2664.0,ASP,1,599171
+5078,AF,Kunduz Airport,OAUZ,OAUZ,1998.9,ASP,1,232783
+5075,AF,Mazar-i-Sharif International Airport,OAMS,OAMS,3000.1,ASP,1,271059
+5077,AF,Sheberghan Airport,OASG,OASG,1396.6,ASP,1,232785
+5076,AF,Shindand Air Base,OASD,OASD,2785.9,CON,1,232781
+32449,AF,Tarinkot Airport,OATN,OATN,2225.0,Concrete,1,329140
+26525,BD,Barisal Airport,VGBR,VGBR,1827.3,ASP,1,233683
+26526,BD,Cox's Bazar Airport,VGCB,VGCB,2069.6,ASP,1,233679
+26528,BD,Ishurdi Airport,VGIS,VGIS,1432.6,CON,1,233676
+26529,BD,Jessore Airport,VGJR,VGJR,2438.4,ASP,1,233675
+26532,BD,Osmany International Airport,VGSY,VGSY,2888.9,ASP,1,233674
+26531,BD,Saidpur Airport,VGSD,VGSD,1828.8,ASP,1,233678
+26527,BD,Shah Amanat International Airport,VGEG,VGEG,2940.1,Concrete,1,233677
+26530,BD,Shah Makhdum Airport,VGRJ,VGRJ,1828.8,ASP,1,233682
+26533,BD,Tejgaon Airport,VGTJ,VGTJ,2839.2,ASP,1,233680
+5079,BH,Bahrain International Airport,OBBI,OBBI,3956.0,ASP,2,233603;233604
+319189,BH,Sakhir Air Base,OBKH,OBKH,3200.1,ASPH,1,599004
+5080,BH,Sheik Isa Air Base,OBBS,OBBS,3799.9,ASP,1,233602
+26819,BN,Brunei International Airport,WBSB,WBSB,3657.6,ASP,1,234429
+308995,BT,Gelephu Airport,VQGP,VQGP,1499.9,Asphalt,1,308996
+26632,BT,Paro International Airport,VQPR,VQPR,2265.0,ASP,1,234387
