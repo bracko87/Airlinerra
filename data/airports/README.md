@@ -6,7 +6,7 @@ Only collect airports having **at least one runway 1,200 m or longer**, reported
 A matching airport can be considered **at least Level 1 (Local)**. This is only a lower-bound technical qualification, NOT a final assignment to Airlinerra's exact six tiers: Local, Regional, Medium, Large, Major Hub, Mega Hub. All other airport details are postponed.
 
 ## Canonical master
-- `airport_register.csv`: **560 runway-qualified airport records across Groups 1–5**, with identifiers, country, name, longest reported qualifying runway, surface and minimum eligible level 1. This is not a list of operational or playable airports.
+- `airport_register.csv`: **571 runway-qualified airport records across Groups 1–6**, with identifiers, country, name, longest reported qualifying runway, surface and minimum eligible level 1. This is not a list of operational or playable airports.
 - Each group's `generated/groupN/groupN_technical_candidates.csv`: source screening that feeds the master.
 - Each group's `generated/groupN/groupN_country_counts.csv`: country-level counts.
 - `generated/groupN/groupN_surface_review.csv`: unclear pavement labels, excluded pending runway-surface verification.
@@ -22,15 +22,17 @@ A matching airport can be considered **at least Level 1 (Local)**. This is only 
 | 3 | Cyprus, Czechia, Denmark, Estonia, Finland | 74 |
 | 4 | France, Georgia, Germany, Greece, Hungary | 307 |
 | 5 | Iceland, Ireland, Italy, Kosovo, Latvia | 91 |
-| **TOTAL** | | **560** |
+| 6 | Liechtenstein, Lithuania, Luxembourg, Malta, Moldova | 11 |
+| **TOTAL** | | **571** |
 
 **Historic Groups 1–3 selection: 110 airports (21/30/59).** The fresh runway-only screening produces **162 candidates** across those three groups (30/58/74), not 110. Do not conflate these two counts. The earlier list applied additional screening/selection rules; the current register is deliberately a broader technical pool. The separate 56-name historical recovery file remains on staging for reference, while 54 historic names were not recovered.
 
-Uncertain runway surfaces: Group 4 has 4 entries requiring a later material check; Group 5 and Groups 1–3 have 0 in their current output. These 4 are outside the master 560.
+Uncertain runway surfaces: Group 4 has 4 entries requiring a later material check; Group 6, Group 5 and Groups 1–3 have 0 in their current output. These 4 are outside the master 571.
 
 ## Safe refresh
 - Group 4: `Refresh Group 4 technical airport screening`.
 - Group 5: `Refresh Group 5 technical airport screening`.
+- Group 6: `Refresh Group 6 technical airport screening`.
 - Groups 1–3: `Backfill Groups 1-3 runway candidates`.
 - Each workflow downloads the same OurAirports data files, screens its group and **rebuilds the master by combining every group's screens**, deduplicating by source airport ID. It does not replace other groups' records.
 - `python scripts/rebuild_runway_register.py` rebuilds the permanent master from all completed group screens.
