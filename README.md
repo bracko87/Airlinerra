@@ -13,7 +13,7 @@ See [AGENTS.md](AGENTS.md) and [release procedures](docs/CONTROLLED_RELEASES.md)
 ## Airport runway collection — current stage
 For now we store ONLY airports reporting a **non-closed asphalt/concrete runway of at least 1,200 metres**. Each meets **minimum Level 1 (Local)** runway criteria; no final categorization, operating permissions or other airport information is being gathered.
 
-[Permanent master airport register](data/airports/airport_register.csv): **1,968 airports: 1,967 runway-screened candidates across Groups 1–13 plus one fictional airport**.
+[Permanent master airport register](data/airports/airport_register.csv): **2,140 airports: 2,139 runway-screened candidates across Groups 1–14 plus one fictional airport**.
 
 | Group | Airports in runway-only master |
 | --- | ---: |
@@ -30,11 +30,14 @@ For now we store ONLY airports reporting a **non-closed asphalt/concrete runway 
 | 11 — Andorra, Åland Islands, Faroe Islands, Gibraltar, Guernsey, Isle of Man, Jersey, Svalbard and Jan Mayen, Greenland | 10 |
 | 12 — Asia: Afghanistan, Bahrain, Bangladesh, Bhutan, Brunei | 27 |
 | 13 — Asia: Cambodia, China, India, Indonesia, Iran | 558 |
-| **Total** | **1,968** |
+| 14 — Asia: Iraq, Israel, Japan, Jordan, Kazakhstan (entire country) | 172 |
+| **Total** | **2,140** |
 
 **Important distinction:** Earlier discussions selected **110 airports** for Groups 1–3. The **162** airport candidates now in the master for those groups are a fresh, *runway-only* screen. The historical count of 110 and its 56 recovered names remain documented separately; it is not equivalent to the current screening count.
 
 Group 12 begins the **Asia region**, using alphabetical five-country groups without repeating previously screened whole countries. Group 13 adds 558 qualifying airports: Cambodia 7, China 166, India 176, Indonesia 128, Iran 81. Six initially ambiguous runway surfaces were checked; four gained published surface confirmation, while Aurangabad and Baramati remain pending. One duplicate source code (Iran's OIBH) is kept in a separate conflict queue, not silently corrected or treated as approval.
+
+Group 14 adds 172 runway-qualified airports: Iraq 15, Israel 17, Japan 106, Jordan 8, Kazakhstan 26. All of Kazakhstan is treated as one country. The original `asphalt concrete` material label for Mount Fuji Shizuoka Airport (RJNS, 2,200 m) now qualifies without assuming generic `paved` or `hard` surfaces are asphalt.
 
 Turkey is **one whole country**, including both European and Asian territories; Group 10 contains 75 Turkish runway-qualified airports.
 
