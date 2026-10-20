@@ -1,11 +1,7 @@
 name: Backfill Groups 1-3 runway candidates
 
+# Batch airport curation is validated locally; this job runs only on explicit request.
 on:
-  push:
-    branches: [staging]
-    paths:
-      - 'scripts/screen_groups123.py'
-      - '.github/workflows/backfill-groups123.yml'
   workflow_dispatch:
 
 permissions:
