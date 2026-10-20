@@ -13,7 +13,7 @@ See [AGENTS.md](AGENTS.md) and [release procedures](docs/CONTROLLED_RELEASES.md)
 ## Airport runway collection — current stage
 For now we store ONLY airports reporting a **non-closed asphalt/concrete runway of at least 1,200 metres**. Each meets **minimum Level 1 (Local)** runway criteria; no final categorization, operating permissions or other airport information is being gathered.
 
-[Permanent master airport register](data/airports/airport_register.csv): **3,437 airports: 3,436 runway-screened candidates across Groups 1–32 plus one fictional airport**.
+[Permanent master airport register](data/airports/airport_register.csv): **3,519 airports: 3,518 runway-screened candidates across Groups 1–33 plus one fictional airport**.
 
 | Group | Airports in runway-only master |
 | --- | ---: |
@@ -49,7 +49,8 @@ For now we store ONLY airports reporting a **non-closed asphalt/concrete runway 
 | 30 — Africa: Gabon, The Gambia, Ghana, Guinea, Guinea-Bissau | 27 |
 | 31 — Africa: Kenya, Lesotho, Liberia, Libya, Madagascar | 83 |
 | 32 — Africa: Malawi, Mali, Mauritania, Mauritius, Morocco | 47 |
-| **Total** | **3,437** |
+| 33 — Africa: Mozambique, Namibia, Niger, Nigeria, Rwanda | 82 |
+| **Total** | **3,519** |
 
 **Important distinction:** Earlier discussions selected **110 airports** for Groups 1–3. The **162** airport candidates now in the master for those groups are a fresh, *runway-only* screen. The historical count of 110 and its 56 recovered names remain documented separately; it is not equivalent to the current screening count.
 
@@ -92,6 +93,8 @@ Group 30 adds 27 runway-qualified candidates in Africa: Gabon 11, The Gambia 1, 
 Group 31 adds 83 runway-qualified candidates in Africa: Kenya 12, Lesotho 2, Liberia 2, Libya 46 and Madagascar 21. The Group 31 uncertain runway-surface and duplicate-identifier queues are empty. These are technical runway matches only, with operating permissions and six-category classification deferred.
 
 Group 32 adds **47** runway-qualified candidates: Malawi 6, Mali 7, Mauritania 9, Mauritius 4, Morocco 21. Mauritius's Agalega Island Airstrip/FIMA is included through a separately documented official runway correction: the Mauritius 2026 AIP shows a 3,000 m rigid runway, and the island development authority confirms concrete, superseding the outdated 1,303 m `Tarmac` source record. Evidence is recorded in [runway overrides](data/airports/runway_surface_overrides.csv). No uncertain surfaces or duplicate identifiers remain in Group 32. This does not certify civilian access or assign a final category.
+
+Group 33 adds **82** runway-qualified candidates: Mozambique 17, Namibia 17, Niger 9, Nigeria 36, Rwanda 3. Diori Hamani International Airport (DRRN) is included through [official ASECNA 2026 AIP evidence](https://aim.asecna.aero/html/eAIP/FR-_12AD-2.DRRN-fr-FR.html) showing its 09R/27L runway at 3,800 m with bituminous-concrete pavement. An airport-specific override in [runway surface evidence](data/airports/runway_surface_overrides.csv) corrects the outdated `BITUM` material and 3,000 m source value without accepting generic uncertain surfaces. Group 33 has no new ambiguous runway cases or code conflicts. These are technical minimum-Level-1 candidates, not commercial access or final six-tier category approvals.
 
 Turkey is **one whole country**, including both European and Asian territories; Group 10 contains 75 Turkish runway-qualified airports.
 
