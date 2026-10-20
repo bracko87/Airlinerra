@@ -1,0 +1,24 @@
+ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible_runway_m,surface,eligible_runway_count,runway_ids
+3170,BI,Bujumbura Melchior Ndadaye International Airport,HBBA,HBBA,3600.0,ASP,1,234430
+2873,CF,Bangui M'Poko International Airport,FEFF,FEFF,2599.9,ASP,1,235390
+2874,CF,Berbérati Airport,FEFT,FEFT,1659.9,ASP,1,235391
+2887,CM,Bafoussam Airport,FKKU,FKKU,2500.3,ASP,1,235273
+2888,CM,Bamenda Airport,FKKV,FKKV,2500.0,ASP,1,235271
+2882,CM,Douala International Airport,FKKD,FKKD,2849.9,ASP,1,235266
+2884,CM,Foumban Nkounja Airport,FKKM,FKKM,2099.8,ASP,1,235264
+2886,CM,Garoua International Airport,FKKR,FKKR,3362.6,ASP,1,235267
+2885,CM,N'Gaoundéré Airport,FKKN,FKKN,2699.9,ASP,1,235269
+2883,CM,Salak Airport,FKKL,FKKL,2100.1,ASP,1,235268
+2881,CM,Tiko Airport,FKKC,FKKC,1375.3,ASP,1,235272
+2890,CM,Yaoundé Nsimalen International Airport,FKYS,FKYS,3400.0,ASP,1,235265
+2889,CM,Yaoundé Ville Airport,FKKY,FKKY,1987.0,ASP,1,235270
+3150,CV,Amílcar Cabral International Airport,GVAC,GVAC,3279.6,ASP,1,235437
+3151,CV,Aristides Pereira International Airport,GVBA,GVBA,2100.1,ASP,1,235431
+3155,CV,Cesaria Evora International Airport,GVSV,GVSV,1999.8,ASP,1,235433
+3153,CV,Nelson Mandela International Airport,GVNP,GVNP,2100.1,ASP,1,260337
+3154,CV,Preguiça Airport,GVSN,GVSN,1399.9,ASP,1,235434
+2996,TD,Abeche Airport,FTTC,FTTC,2799.9,ASP,1,235108
+348668,TD,Amdjarass Airport,TD-0014,,3048.0,ASP,1,504807
+2999,TD,Faya-Largeau Airport,FTTY,FTTY,2799.9,ASP,1,235107
+2997,TD,Moundou Airport,FTTD,FTTD,1800.1,ASP,1,235109
+2998,TD,N'Djamena International Airport,FTTJ,FTTJ,2799.9,ASP,1,235110
