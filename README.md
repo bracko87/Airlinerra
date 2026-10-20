@@ -13,7 +13,7 @@ See [AGENTS.md](AGENTS.md) and [release procedures](docs/CONTROLLED_RELEASES.md)
 ## Airport runway collection — current stage
 For now we store ONLY airports reporting a **non-closed asphalt/concrete runway of at least 1,200 metres**. Each meets **minimum Level 1 (Local)** runway criteria; no final categorization, operating permissions or other airport information is being gathered.
 
-[Permanent master airport register](data/airports/airport_register.csv): **867 runway-qualified airport candidates, Groups 1–8 combined**.
+[Permanent master airport register](data/airports/airport_register.csv): **1,015 runway-qualified airport candidates, Groups 1–8 combined**.
 
 | Group | Airports in runway-only master |
 | --- | ---: |
@@ -24,12 +24,12 @@ For now we store ONLY airports reporting a **non-closed asphalt/concrete runway 
 | 5 — Iceland, Ireland, Italy, Kosovo, Latvia | 91 |
 | 6 — Liechtenstein, Lithuania, Luxembourg, Malta, Moldova | 11 |
 | 7 — Monaco, Montenegro, Netherlands, North Macedonia, Norway | 47 |
-| 8 — Poland, Portugal, Romania, European Russia, San Marino | 249 |
-| **Total** | **867** |
+| 8 — Poland, Portugal, Romania, Russia (entire country), San Marino | 397 |
+| **Total** | **1,015** |
 
 **Important distinction:** Earlier discussions selected **110 airports** for Groups 1–3. The **162** airport candidates now in the master for those groups are a fresh, *runway-only* screen. The historical count of 110 and its 56 recovered names remain documented separately; it is not equivalent to the current screening count.
 
-Russia is geographically filtered to longitude ≤60°E as a provisional European-territory cutoff; boundary locations may need later review.
+Russia is **one country** in Airlinerra: all qualifying Russian airports are included regardless of whether they are in Europe or Asia. Russia has 312 runway-qualified records within Group 8; no longitude cutoff applies.
 
 [Full airport-register documentation and source files](data/airports/README.md) · [Historical recovery file](data/airports/historical_approved_recovery.csv).
 
