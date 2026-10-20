@@ -1,0 +1,26 @@
+ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible_runway_m,surface,eligible_runway_count,runway_ids
+2990,SC,Alphonse Airport,FSAL,FSAL,1214.0,CON,1,238697
+30886,SC,Desroches Airport,FSDR,FSDR,1381.0,CON,1,254525
+2994,SC,Praslin Island Airport,FSPP,FSPP,1316.1,ASP,1,238698
+604235,SC,Providence Island Airport,SC-0009,,1307.9,concrete,1,604270
+2993,SC,Seychelles International Airport,FSIA,FSIA,2987.0,CON,1,238699
+3095,SL,Lungi International Airport,GFLL,GFLL,3199.8,ASP,1,238859
+325736,SN,Blaise Diagne International Airport,GOBD,GOBD,3500.0,ASP,1,325737
+3123,SN,Cap Skirring Airport,GOGS,GOGS,2003.5,ASP,1,238845
+3124,SN,Kaolack Airport,GOOK,GOOK,1599.9,ASP,1,238850
+6197,SN,Kolda Airport,GODK,GODK,1501.7,ASP,1,238840
+3128,SN,Kédougou Airport,GOTK,GOTK,1800.1,ASP,1,238849
+3125,SN,Léopold Sédar Senghor International Airport,GOOY,GOOY,3490.0,ASP,1,238842
+3126,SN,Saint Louis Airport,GOSS,GOSS,1898.9,ASP,1,238847
+3129,SN,Tambacounda Airport,GOTT,GOTT,2000.1,ASP,1,238851
+318894,SN,Thiès Airport,SN-0001,,1889.8,concrete,1,329636
+3122,SN,Ziguinchor Airport,GOGG,GOGG,1545.0,ASP,1,238848
+31899,SO,Aden Adde International Airport,HCMM,HCMM,3183.9,ASP,1,260240
+30792,SO,Bender Qassim International Airport,HCMF,HCMF,2400.0,ASP,1,323018
+3172,SO,Berbera Airport,HCMI,HCMI,4139.8,ASP,1,238871
+3171,SO,Egal International Airport,HCMH,HCMH,3700.0,ASP,1,238870
+31536,SO,Galcaio Airport,HCMR,HCMR,3005.0,ASP,1,599172
+319714,SO,Garowe Airport,HCMW,HCGR,2000.1,ASP,1,354105
+3173,SO,Kismayo Airport,HCMK,HCMK,3700.0,ASP,1,238872
+2968,ST,Principe Airport,FPPR,FPPR,1320.1,ASP,1,239212
+2969,ST,São Tomé International Airport,FPST,FPST,2219.9,ASP,1,239213

@@ -1,0 +1,12 @@
+Airlinerra Group 34 TECHNICAL SCREEN; never auto-import to gameplay.
+Source snapshot screened: 2026-10-20.
+Source: https://github.com/davidmegginson/ourairports-data
+Immutable Git blob SHA for airports.csv: 6ca86c226fe73c27f088facfca8df1436911322a
+Immutable Git blob SHA for runways.csv: 62fc9b5161add9da48588e63a814e89657f8d88a
+Entire ST, SN, SC, SL and SO source geographies screened without division.
+Rule: airport not closed; runway not closed; length at least 1200 m; explicit asphalt or concrete label.
+Do not infer generic paved/hard/BITUM surfaces to be asphalt or concrete.
+Group 34: São Tomé and Príncipe 2, Senegal 10, Seychelles 5, Sierra Leone 1, Somalia 7.
+No group-specific pavement overrides needed; country/geography source codes do not imply sovereignty claims.
+Airport operations, civilian access and final six-class categorization deferred.
+Screened count: 25; ambiguous surface queue: 0; duplicate identifiers: 0.

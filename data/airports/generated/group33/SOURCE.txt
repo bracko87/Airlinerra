@@ -1,0 +1,13 @@
+Airlinerra Group 33 TECHNICAL SCREEN; never auto-import to gameplay.
+UTC generated: 2026-10-20T18:41:17.685Z
+Original source: https://github.com/davidmegginson/ourairports-data
+airports.csv SHA256: 0499dbd88de2fc735ac5c09f59796ccc3af544e17ffda807f793c0c6fe6c3d75
+runways.csv SHA256: eff294dc5c055e7bb48ef43cb3b564399f2741bbfbba0c18c085aea7b9ab988b
+Only non-closed asphalt/concrete runway labels >=1200m except separately evidenced airport-specific corrections.
+Excluded airport.type=closed and runway.closed=1.
+Group 33: Mozambique, Namibia, Niger, Nigeria, Rwanda.
+Official 2026 ASECNA eAIP DRRN AD 2.12 verifies 3800m 09R/27L bituminous-concrete pavement and supersedes OurAirports BITUM 3000m for source airport 2125, runway 237876.
+Source verification: https://aim.asecna.aero/html/eAIP/FR-_12AD-2.DRRN-fr-FR.html
+Correction recorded in data/airports/runway_surface_overrides.csv; generic BITUM remains excluded.
+Airport status, civilian access and six-tier final classification are deferred.
+Screened count: 82; ambiguous surface queue: 0; duplicate identifiers: 0.

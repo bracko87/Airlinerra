@@ -6,7 +6,7 @@ Only collect airports having **at least one runway 1,200 m or longer**, reported
 A matching airport can be considered **at least Level 1 (Local)**. This is only a lower-bound technical qualification, NOT a final assignment to Airlinerra's exact six tiers: Local, Regional, Medium, Large, Major Hub, Mega Hub. All other airport details are postponed.
 
 ## Canonical master
-- `airport_register.csv`: **3,437 airport records (3,436 screened real-world candidates + 1 fictional airport) across Groups 1–32**, with identifiers, country, name, longest reported qualifying runway, surface and minimum eligible level 1. This is not a list of operational or playable airports.
+- `airport_register.csv`: **3,544 airport records (3,543 screened real-world candidates + 1 fictional airport) across Groups 1–34**, with identifiers, country, name, longest reported qualifying runway, surface and minimum eligible level 1. This is not a list of operational or playable airports.
 - `fictional_airports.csv`: owner-defined airports outside OurAirports. **Aleksandrovo Airport (LYAL), Serbia** — fictional, runway 2,200 m asphalt, **assigned Level 1 / Local**. Protected from being erased by future runway-only screenings; no coordinates or additional data assumed.
 - `airport_register.csv` has `source_type` (`OURAIRPORTS` / `FICTIONAL`) and `assigned_category` (blank for screened real airports, `Local` for LYAL) to keep these records unambiguously separated.
 - Each group's `generated/groupN/groupN_technical_candidates.csv`: source screening that feeds the master.
@@ -51,11 +51,13 @@ A matching airport can be considered **at least Level 1 (Local)**. This is only 
 | 30 | Africa — Gabon, The Gambia, Ghana, Guinea, Guinea-Bissau | 27 |
 | 31 | Africa — Kenya, Lesotho, Liberia, Libya, Madagascar | 83 |
 | 32 | Africa — Malawi, Mali, Mauritania, Mauritius, Morocco | 47 |
-| **TOTAL** | | **3,437** |
+| 33 | Africa — Mozambique, Namibia, Niger, Nigeria, Rwanda | 82 |
+| 34 | Africa — São Tomé and Príncipe, Senegal, Seychelles, Sierra Leone, Somalia | 25 |
+| **TOTAL** | | **3,544** |
 
 **Historic Groups 1–3 selection: 110 airports (21/30/59).** The fresh runway-only screening produces **162 candidates** across those three groups (30/58/74), not 110. Do not conflate these two counts. The earlier list applied additional screening/selection rules; the current register is deliberately a broader technical pool. The separate 56-name historical recovery file remains on staging for reference, while 54 historic names were not recovered.
 
-Uncertain runway surfaces: Group 4 has 4 unresolved labels, Group 13 has 2 (Aurangabad macadam composite; Baramati unspecified paved), and Group 22 has 1 (Carrapateena Airport/YCPT, 1,599.9 m, source surface `BITUM`). All other groups screened so far have zero in their surface-review queues. Russia remains one country (RU) with 312 runway-qualified candidates. All seven unresolved cases remain outside the 3,437-record master.
+Uncertain runway surfaces: Group 4 has 4 unresolved labels, Group 13 has 2 (Aurangabad macadam composite; Baramati unspecified paved), and Group 22 has 1 (Carrapateena Airport/YCPT, 1,599.9 m, source surface `BITUM`). All other groups screened so far have zero in their surface-review queues. Russia remains one country (RU) with 312 runway-qualified candidates. All seven unresolved cases remain outside the 3,544-record master.
 
 Two Spanish airports from Group 9 were upgraded from surface-review candidates to the runway-qualified master using **official ENAIRE evidence only**: LENE (La Caminera, 1,400 m concrete) and LEDA (Lleida-Alguaire, 2,500 m asphalt). The original ambiguous source labels remain documented in `runway_surface_overrides.csv`; no unknown `paved`/`hard` surfaces are accepted without documentary confirmation.
 
@@ -70,6 +72,10 @@ Two Spanish airports from Group 9 were upgraded from surface-review candidates t
 **Group 14 material clarification:** OurAirports labels Mount Fuji Shizuoka Airport's (RJNS) 2,200 m runway `asphalt concrete`. This is an explicit asphalt-based paving material and qualifies technically; the Group 14 screen accepts that exact label, and the canonical master/validator also recognize it through `scripts/airport_surface.py`. Generic `paved`, `hard` or unverified materials remain excluded. All of Kazakhstan is screened once, regardless of continent. No new source code conflicts arose; Iran's earlier `OIBH` collision remains in the separate audit file.
 
 **Group 32 Africa runway screening:** Malawi/MW 6, Mali/ML 7, Mauritania/MR 9, Mauritius/MU 4 and Morocco/MA 21, giving **47** qualifying airports. Official Mauritius [FIMA AIP](https://civil-aviation.govmu.org/eAIP/eAIPMauritius/final/2026-07-23-Extended/html/eAIP/AD-2.FIMA-en-GB.html) reports Agalega Island Airstrip runway 15/33 as 3,000 m rigid pavement; [OIDC](https://oidc.govmu.org/oidc/?page_id=36) confirms concrete. Group 32 airport 42756/FIMA is corrected from raw source `Tarmac` 1,303 m to official concrete 3,000 m via `runway_surface_overrides.csv`. A separate OurAirports IAF Agalega entry lacking a runway remains unqualified and is not duplicated. Group 32 has no other uncertain surfaces or duplicate IDs; seven earlier pending surface reviews and the Iranian OIBH code conflict remain. No civilian operational approval or final six-level category assigned.
+
+**Group 33 Africa runway screening:** Mozambique 17, Namibia 17, Niger 9, Nigeria 36, Rwanda 3; **82** candidates. The DRRN Niger 3,800 m bituminous-concrete runway is confirmed by [official ASECNA 2026 eAIP](https://aim.asecna.aero/html/eAIP/FR-_12AD-2.DRRN-fr-FR.html). No general reclassification of ambiguous `BITUM`. No new review flags or source identifier duplicates.
+
+**Group 34 Africa runway screening:** São Tomé and Príncipe/ST 2, Senegal/SN 10, Seychelles/SC 5, Sierra Leone/SL 1, Somalia/SO 7; **25** candidates. The `SO` source geographic grouping is followed without political interpretation. No ambiguous runway surface or duplicate airport identifier. Immutable raw-data blob hashes are in `generated/group34/SOURCE.txt`; runway qualification does not imply civilian access or assigned tier.
 
 **Group 31 Africa runway screening:** Kenya/KE 12, Lesotho/LS 2, Liberia/LR 2, Libya/LY 46 and Madagascar/MG 21, for **83** new runway-qualified source candidates. The Group 31 surface-review and duplicate-identifier audit files contain zero cases. Previously documented seven surface-review records and the Iranian OIBH identifier conflict remain open in separate queues. Civilian-access verification and Airlinerra's final six-category ranking are deferred.
 
@@ -133,11 +139,13 @@ Two Spanish airports from Group 9 were upgraded from surface-review candidates t
 - Group 30: `Refresh Group 30 technical airport screening` (Gabon 11, The Gambia 1, Ghana 7, Guinea 6, Guinea-Bissau 2; no new surface or identifier conflicts).
 - Group 31: `Refresh Group 31 technical airport screening` (Kenya 12, Lesotho 2, Liberia 2, Libya 46, Madagascar 21; no new surface or identifier conflicts).
 - Group 32: `Refresh Group 32 technical airport screening` (manual-only, `main` development; Malawi 6, Mali 7, Mauritania 9, Mauritius 4, Morocco 21; official FIMA evidence-based correction).
+- Group 33: `Refresh Group 33 technical airport screening` (manual-only; Mozambique 17, Namibia 17, Niger 9, Nigeria 36, Rwanda 3; DRRN ASECNA correction).
+- Group 34: `Refresh Group 34 technical airport screening` (manual-only; São Tomé and Príncipe 2, Senegal 10, Seychelles 5, Sierra Leone 1, Somalia 7).
 - Groups 1–3: `Backfill Groups 1-3 runway candidates`.
 - Each workflow downloads the same OurAirports data files, screens its group and rebuilds the master by combining every group's screens **and all `fictional_airports.csv` records**, deduplicating by source airport ID. It does not replace other groups' records.
 - `python scripts/rebuild_runway_register.py` rebuilds the permanent master **and `airport_code_conflicts.csv`** from all completed group screens.
 - `python scripts/validate_airports.py && python scripts/validate_historical_airports.py` validates the master and the historical file.
-- Always use GitHub `staging`. Production `main` is unchanged without approved release.
+- Use only the GitHub `main` branch for active development. `staging` is a legacy inactive branch; no production app or Supabase deployment is authorized.
 
 ## Future phase (not now)
 Civilian or military status, operating permissions, opening hours, equipment/aircraft eligibility, final six-category rankings, terminals, finances, game activation and Supabase database migrations are deferred.
