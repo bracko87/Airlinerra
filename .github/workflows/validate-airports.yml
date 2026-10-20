@@ -17,6 +17,7 @@ on:
       - 'scripts/screen_group10.py'
       - 'scripts/screen_group11.py'
       - 'scripts/screen_group12.py'
+      - 'scripts/screen_group13.py'
       - '.github/workflows/validate-airports.yml'
   pull_request:
     branches: [staging, main]
@@ -39,4 +40,4 @@ jobs:
           python scripts/validate_airports.py
           python scripts/validate_historical_airports.py
           python scripts/rebuild_runway_register.py
-          git diff --exit-code -- data/airports/airport_register.csv
+          git diff --exit-code -- data/airports/airport_register.csv data/airports/airport_code_conflicts.csv

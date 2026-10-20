@@ -6,6 +6,7 @@ import math
 import sys
 from pathlib import Path
 from screen_group4 import surface_type
+from rebuild_runway_register import CODE_CONFLICTS, CONFLICT_COLUMNS, code_conflicts
 
 ROOT=Path(__file__).resolve().parents[1]
 MASTER=ROOT/"data/airports/airport_register.csv"
@@ -42,10 +43,7 @@ def validate():
         master[ident]=row
         if len(country)!=2 or country!=country.upper() or not country.isalpha() or not name:
             raise ValueError(f"Row {line}: invalid country/name")
-        if code:
-            key=(country,code)
-            if key in codes: raise ValueError(f"Row {line}: duplicate airport code {key}")
-            codes.add(key)
+        if code: codes.add((country,code))
         try: length=float(row["runway_length_m"])
         except ValueError: raise ValueError(f"Row {line}: invalid length") from None
         if not math.isfinite(length) or length<1200:
@@ -64,6 +62,10 @@ def validate():
                 raise ValueError(f"Row {line}: fictional airport needs explicit six-tier category")
         else: raise ValueError(f"Row {line}: unknown airport source type {origin}")
 
+    conflict_cols,reported_conflicts=load(CODE_CONFLICTS)
+    expected_conflicts=code_conflicts(rows)
+    if conflict_cols!=set(CONFLICT_COLUMNS) or reported_conflicts!=expected_conflicts:
+        raise ValueError("Source airport-code conflict queue is stale or invalid")
     sources=sorted(GENERATED.glob("group*/group*_technical_candidates.csv"))
     if not sources: raise ValueError("Missing airport screening groups")
     seen=set()
@@ -111,7 +113,7 @@ def validate():
             raise ValueError("Prior Group 4 candidate must remain historic review")
         if not any(s["gps_code"]==row["icao"] or s["ident"]==row["icao"] for s in group4rows):
             raise ValueError(f"Old Group 4 airport lost: {row['icao']}")
-    print(f"VALIDATED {len(master)} airports: {screened} screened in {len(sources)} groups, {len(fictional)} fictional (LYAL Level 1), historic Group 4 preserved")
+    print(f"VALIDATED {len(master)} airports: {screened} screened in {len(sources)} groups, {len(fictional)} fictional (LYAL Level 1), historic Group 4 preserved; {len(expected_conflicts)} code conflicts queued")
 
 if __name__=="__main__":
     try:validate()
