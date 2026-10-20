@@ -1,0 +1,48 @@
+ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible_runway_m,surface,eligible_runway_count,runway_ids
+3101,MA,Al Massira Airport,GMAD,GMAD,3200.1,ASP,1,237612
+3106,MA,Bassatine Airport,GMFM,GMFM,2820.0,ASP,2,237603;237604
+31544,MA,Ben Slimane Airport,GMMB,GMMB,3073.9,ASP,1,254526
+29694,MA,Beni Mellal Airport,GMMD,GMMD,2489.9,ASP,1,260128
+300605,MA,Bouarfa Airport,GMFB,GMFB,3200.1,ASP,1,350944
+3119,MA,Cherif Al Idrissi Airport,GMTA,GMTA,3203.8,ASP,1,237606
+3103,MA,Fes Saïss International Airport,GMFF,GMFF,3200.1,ASP,1,237598
+3104,MA,Ifran Airport,GMFI,GMFI,2109.2,ASP,1,237592
+3100,MA,Inezgane Airport,GMAA,GMAA,2909.9,ASP,1,237610
+3116,MA,Kenitra Air Base,GMMY,GMMP,2436.9,CON,2,237600;237601
+3115,MA,Marrakesh Menara Airport,GMMX,GMMX,3099.8,ASP,1,237602
+3113,MA,Mohammed V International Airport,GMMN,GMMN,3720.1,ASP,2,237595;237596
+3105,MA,Moulay Ali Cherif Airport,GMFK,GMFK,3200.1,ASP,1,237605
+3114,MA,Nador Al Aaroui International Airport,GMMW,GMMW,2999.8,ASP,1,237590
+3117,MA,Ouarzazate International Airport,GMMZ,GMMZ,2999.8,ASP,1,237594
+3107,MA,Oujda Angads Airport,GMFO,GMFO,3000.1,ASP,1,335278
+3109,MA,Rabat-Salé Airport,GMME,GMME,3500.0,ASP,1,237593
+3120,MA,Sania Ramel Airport,GMTN,GMTN,3287.0,CON,1,511679
+3118,MA,Sidi Slimane Airport,GMSL,GMSL,3444.8,ASP,1,237599
+3102,MA,Tan Tan Airport,GMAT,GMAT,2000.1,ASP,1,237607
+3121,MA,Tangier Ibn Battuta Airport,GMTT,GMTT,3500.0,ASP,1,237609
+3067,ML,Gao International Airport,GAGO,GAGO,2500.0,ASP,1,237581
+3068,ML,Kayes Dag Dag Airport,GAKY,GAKD,2699.9,ASP,1,237579
+3066,ML,Modibo Keita International Airport,GABS,GABS,3199.8,ASP,1,237587
+3069,ML,Mopti Airport,GAMB,GAMB,2542.0,ASP,1,237586
+3070,ML,Sikasso (Dignangan) Airport,GASO,GASO,1601.7,ASP,1,237580
+3072,ML,Tessalit Airport,GATS,GATS,2499.7,ASP,1,237583
+3071,ML,Tombouktou Airport,GATB,GATB,2110.1,ASP,1,237585
+3137,MR,Atar International Airport,GQPA,GQPA,3003.8,ASP,1,237623
+3139,MR,Bir Moghrein Airport,GQPT,GQPT,2290.6,ASP,1,237620
+3134,MR,Kaédi Airport,GQNK,GQNK,2500.0,ASP,1,237619
+3132,MR,Kiffa Airport,GQNF,GQNF,2500.0,ASP,1,237625
+3138,MR,Nouadhibou International Airport,GQPP,GQPP,2426.5,ASP,1,237617
+323315,MR,Nouakchott–Oumtounsy International Airport,GQNO,GQNO,3400.0,concrete,2,323316;323318
+3133,MR,Néma Airport,GQNI,GQNI,2100.1,ASP,1,237621
+32135,MR,Tazadit Airport,GQPZ,GQPZ,2500.0,ASP,1,327691
+3131,MR,Tidjikja Airport,GQND,GQND,1599.9,ASP,1,237626
+42756,MU,Agalega Island Airstrip,MU-0001,FIMA,3000.0,Concrete,1,557030
+557052,MU,IAF Agalega,MU-0004,,2999.8,Asphalt,1,557054
+2879,MU,Sir Charles Gaetan Duval Airport,FIMR,FIMR,1287.2,ASP,1,237614
+2878,MU,Sir Seewoosagur Ramgoolam International Airport,FIMP,FIMP,3369.9,ASP,1,237613
+3015,MW,Chileka International Airport,FWCL,FWCL,2325.0,ASP,2,237560;237561
+3018,MW,Kamuzu International Airport,FWKI,FWKI,3539.9,ASP,1,237556
+3016,MW,Karonga Airport,FWKA,FWKA,1280.2,ASP,1,237562
+30183,MW,Nchalo Sucoma Airport,FWSU,FWSU,1249.7,Asphalt,1,319082
+3019,MW,Old Lilongwe Airport,FWLE,FWLE,1360.0,ASP,1,237557
+3021,MW,Zomba Airport,FWZA,FWZA,1249.7,ASP,1,237563
