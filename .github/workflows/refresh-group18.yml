@@ -1,0 +1,59 @@
+name: Refresh Group 18 technical airport screening
+
+on:
+  push:
+    branches: [staging]
+    paths:
+      - 'scripts/screen_group18.py'
+      - '.github/workflows/refresh-group18.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: group18-source-refresh
+  cancel-in-progress: false
+
+jobs:
+  screen-runways:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout staging
+        uses: actions/checkout@v4
+        with:
+          ref: staging
+          persist-credentials: true
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download current authoritative raw datasets
+        run: |
+          curl --fail --show-error --silent --location --retry 3 --max-time 180 https://raw.githubusercontent.com/davidmegginson/ourairports-data/main/airports.csv --output "${RUNNER_TEMP}/airports.csv"
+          curl --fail --show-error --silent --location --retry 3 --max-time 180 https://raw.githubusercontent.com/davidmegginson/ourairports-data/main/runways.csv --output "${RUNNER_TEMP}/runways.csv"
+          test -s "${RUNNER_TEMP}/airports.csv"
+          test -s "${RUNNER_TEMP}/runways.csv"
+      - name: Generate unapproved technical register
+        run: |
+          python scripts/screen_group18.py --airports "${RUNNER_TEMP}/airports.csv" --runways "${RUNNER_TEMP}/runways.csv" --out data/airports/generated/group18
+      - name: Build permanent minimum-Level-1 register
+        run: python scripts/rebuild_runway_register.py
+      - name: Validate permanent runway register
+        run: python scripts/validate_airports.py && python scripts/validate_historical_airports.py
+      - name: Publish review data as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: airlinerra-group18-technical-screen
+          path: data/airports/generated/group18
+          if-no-files-found: error
+      - name: Commit results to staging only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/airports/generated/group18 data/airports/airport_register.csv
+          if ! git diff --cached --quiet; then
+            git commit -m "data: refresh runway-qualified Group 18 and Level 1 register [skip ci]"
+            git push origin HEAD:staging
+          fi
