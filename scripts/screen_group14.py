@@ -14,7 +14,7 @@ import re
 COUNTRIES={"IQ":"Iraq","IL":"Israel","JP":"Japan","JO":"Jordan","KZ":"Kazakhstan"}
 # Screen full countries including all of Kazakhstan; no Europe/Asia split.
 
-PAVEMENT={"ASP","ASPH","ASPHALT","ASPHALTE","ASPHALTED","CON","CONC","CONCRETE","BETON","BITUMEN","ASP/CON","CON/ASP","ASPH/CONC","CONC/ASPH","ASPHALT/CONCRETE","CONCRETE/ASPHALT","ASP-CON","CON-ASP"}
+PAVEMENT={"ASP","ASPH","ASPHALT","ASPHALTE","ASPHALTED","ASPHALTCONCRETE","CON","CONC","CONCRETE","BETON","BITUMEN","ASP/CON","CON/ASP","ASPH/CONC","CONC/ASPH","ASPHALT/CONCRETE","CONCRETE/ASPHALT","ASP-CON","CON-ASP"}
 UNCERTAIN=("PAVED","ASPH","CON","TARMAC","MACADAM","BITUM","TAR","HARD")
 
 def surface_type(value):
@@ -100,6 +100,7 @@ def main():
         "Only operational and explicitly asphalt/concrete runway labels >=1200 m.\n"
         "Excluded airport.type=closed and runway.closed=1.\n"
         "Group 14 covers Iraq, Israel, Japan, Jordan and all of Kazakhstan; no geographic split.\n"
+        "The explicit material label asphalt concrete is eligible asphalt surfacing (e.g. RJNS), not an uncertain plain paved/hard label.\n"
         "Current phase ends at runway qualification for minimum Level 1 (Local). Other airport information and final six-category ranking are DEFERRED.\n"
         "Records are qualified by runway only; not an operating-airport or game-activation authorization.\n"
         f"Screened count: {len(candidates)}; ambiguous surface queue: {len(surface_queue)}; duplicate identifiers: {len(duplicates)}.\n",encoding="utf-8")

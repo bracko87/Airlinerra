@@ -9,7 +9,7 @@ import argparse
 import csv
 import pathlib
 from collections import defaultdict
-from screen_group4 import surface_type
+from airport_surface import surface_type
 
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 GENERATED=ROOT/"data/airports/generated"

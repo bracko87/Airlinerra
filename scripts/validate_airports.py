@@ -5,7 +5,7 @@ import csv
 import math
 import sys
 from pathlib import Path
-from screen_group4 import surface_type
+from airport_surface import surface_type
 from rebuild_runway_register import CODE_CONFLICTS, CONFLICT_COLUMNS, code_conflicts
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -28,6 +28,8 @@ def load(path):
     return set(reader.fieldnames),rows
 
 def validate():
+    if surface_type("asphalt concrete")!="ELIGIBLE_LABEL" or surface_type("paved")=="ELIGIBLE_LABEL":
+        raise ValueError("Runway material classification regression")
     cols,rows=load(MASTER)
     if cols!=COLUMNS or not rows: raise ValueError("Missing master fields or airport rows")
     ids=set()
