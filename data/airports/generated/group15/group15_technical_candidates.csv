@@ -1,0 +1,52 @@
+ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible_runway_m,surface,eligible_runway_count,runway_ids
+3549,KG,Batken Airport,UA30,UCFB,1799.8,ASP,1,237277
+6425,KG,Issyk-Kul International Airport,UCFL,UCFL,3799.9,ASP,1,237279
+41534,KG,Jalal-Abad Airport,KG-0001,UCFD,1739.8,concrete,1,271120
+6428,KG,Kant Air Base,UAFW,UAFW,2700.2,CON,1,237278
+32496,KG,Karakol International Airport,UAFP,UCFK,2500.0,ASP,1,271121
+41657,KG,Kyzyl-Kiya Airport,KG-0018,UAFS,1599.9,concrete,1,271129
+6426,KG,Manas International Airport,UAFM,UCFM,4200.1,CON,1,237280
+41535,KG,Naryn Airport,KG-0002,UAFN,2144.9,concrete,1,271125
+6427,KG,Osh International Airport,UAFO,UCFO,3212.0,ASP,1,237281
+41537,KG,Talas Airport,KG-0004,UAFT,1699.9,concrete,1,271124
+5220,KW,Kuwait International Airport,OKKK,OKKK,4579.9,ASPH,3,237383;237384;601917
+5221,KW,Udairi Army Air Field,OKDI,OKDI,1589.5,ASP,1,237382
+26582,LA,Ban Huoeisay Airport,VLHS,VLHS,1500.2,ASP,1,237411
+430434,LA,Bokeo International Airport,LA-0006,VLBK,2699.9,ASP,1,522817
+31868,LA,Luang Namtha Airport,VLLN,VLLN,1599.9,Asphalt,1,533482
+26583,LA,Luang Phabang International Airport,VLLB,VLLB,2500.0,ASP,1,237409
+26584,LA,Pakse International Airport,VLPS,VLPS,2400.0,CON,1,237412
+26586,LA,Savannakhet Airport,VLSK,VLSK,1633.1,CON,1,237410
+26588,LA,Wattay International Airport,VLVT,VLVT,3000.1,ASP,1,237408
+32703,LA,Xieng Khouang Airport,VLXK,VLXK,2607.6,ASP,1,256708
+5222,LB,Beirut Rafic Hariri International Airport,OLBA,OLBA,3799.9,CON,3,237416;237417;237418
+5224,LB,Rayak Air Base,OLRA,OLRA,2968.8,CON,1,237419
+5223,LB,Rene Mouawad Air Base,OLKA,OLKA,3000.1,CON,1,237415
+44936,LB,Wujah Al Hajar Air Base,Z19O,,1828.8,Concrete,1,316892
+26807,MY,Bintulu Airport,WBGB,WBGB,2745.0,ASP,1,237807
+26865,MY,Gong Kedak Airport,WMGK,WMGK,2011.7,ASP,1,237832
+26870,MY,Kerteh Airport,WMKE,WMKE,1355.1,ASP,1,237822
+26814,MY,Kota Kinabalu International Airport,WBKK,WBKK,3780.1,ASP,1,237830
+26869,MY,Kuantan Airport,WMKD,WMKD,2804.2,ASP,1,237809
+26808,MY,Kuching International Airport,WBGG,WBGG,3780.1,ASP,1,237827
+26815,MY,Labuan Airport,WBKL,WBKL,2745.0,ASP,1,237810
+26813,MY,Lahad Datu Airport,WBKD,WBKD,1371.0,ASP,1,237817
+26875,MY,Langkawi International Airport,WMKL,WMKL,3810.0,ASP,1,237813
+26809,MY,Limbang Airport,WBGJ,WBGJ,1500.2,ASP,1,237808
+26876,MY,Malacca International Airport,WMKM,WMKM,2135.1,ASP,1,237824
+26811,MY,Miri Airport,WBGR,WBGR,2745.0,ASP,1,237814
+350992,MY,Mukah Airport,WBGK,WBGK,1499.9,ASP,1,350993
+26818,MY,Mulu Airport,WBMU,WBMU,1499.9,ASP,1,237831
+26878,MY,Penang International Airport,WMKP,WMKP,3351.9,ASP,1,237823
+26867,MY,RMAF Butterworth Air Base,WMKB,WMKB,2438.4,ASP,1,237820
+26816,MY,Sandakan Airport,WBKS,WBKS,2500.0,ASP,1,237811
+26873,MY,Senai International Airport,WMKJ,WMKJ,3799.9,ASP,1,237812
+26812,MY,Sibu Airport,WBGS,WBGS,2754.2,ASP,1,237818
+26871,MY,Simpang Airport,WMKF,WMKF,1891.3,ASP,1,237826
+26879,MY,Sultan Abdul Aziz Shah International Airport,WMSA,WMSA,3782.0,ASP,1,237815
+26866,MY,Sultan Abdul Halim Airport,WMKA,WMKA,2744.7,ASP,1,237829
+26872,MY,Sultan Azlan Shah Airport,WMKI,WMKI,1919.9,ASP,1,237821
+26868,MY,Sultan Ismail Petra Airport,WMKC,WMKC,2400.0,ASP,1,237816
+26877,MY,Sultan Mahmud Airport,WMKN,WMKN,3479.9,ASP,1,237819
+26820,MY,Tanjung Manis Airport,WBTM,WBTM,1497.2,ASP,1,237806
+26817,MY,Tawau Airport,WBKW,WBKW,2682.2,ASP,1,237805
