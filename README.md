@@ -13,7 +13,7 @@ See [AGENTS.md](AGENTS.md) and [release procedures](docs/CONTROLLED_RELEASES.md)
 ## Airport runway collection — current stage
 For now we store ONLY airports reporting a **non-closed asphalt/concrete runway of at least 1,200 metres**. Each meets **minimum Level 1 (Local)** runway criteria; no final categorization, operating permissions or other airport information is being gathered.
 
-[Permanent master airport register](data/airports/airport_register.csv): **3,011 airports: 3,010 runway-screened candidates across Groups 1–24 plus one fictional airport**.
+[Permanent master airport register](data/airports/airport_register.csv): **3,046 airports: 3,045 runway-screened candidates across Groups 1–25 plus one fictional airport**.
 
 | Group | Airports in runway-only master |
 | --- | ---: |
@@ -41,7 +41,8 @@ For now we store ONLY airports reporting a **non-closed asphalt/concrete runway 
 | 22 — Oceania: Australia, Christmas Island, Cocos (Keeling) Islands, Fiji, Kiribati | 261 |
 | 23 — Oceania: Marshall Islands, Micronesia, Nauru, New Zealand, Palau | 40 |
 | 24 — Oceania: Papua New Guinea, Samoa, Solomon Islands, Tonga, Tuvalu | 25 |
-| **Total** | **3,011** |
+| 25 — Oceania catch-up: Vanuatu and 12 separately coded Pacific jurisdictions | 35 |
+| **Total** | **3,046** |
 
 **Important distinction:** Earlier discussions selected **110 airports** for Groups 1–3. The **162** airport candidates now in the master for those groups are a fresh, *runway-only* screen. The historical count of 110 and its 56 recovered names remain documented separately; it is not equivalent to the current screening count.
 
@@ -68,6 +69,8 @@ Group 22 starts **Oceania** with 261 runway-qualified candidates: Australia (who
 Group 23 adds 40 runway-qualified Oceania candidates: Marshall Islands 4, Micronesia 4, Nauru 1, New Zealand 30 and Palau 1. There are no new ambiguous runway-surface labels or duplicate identifiers. The unresolved Group 22 Carrapateena surface label remains excluded.
 
 Group 24 adds 25 runway-qualified Oceania candidates: Papua New Guinea 20, Samoa 1, Solomon Islands 2, Tonga 1 and Tuvalu 1. No ambiguous runway surfaces or duplicate source identifiers were found in this group. Results qualify runway dimensions/material only, with operating access and six-category classification deferred.
+
+Group 25 covers Vanuatu and 12 remaining Pacific jurisdictions, adding 35 qualifying airports: Vanuatu 3, American Samoa 1, Cook Islands 2, French Polynesia 19, Guam 1, New Caledonia 2, Niue 1, Norfolk Island 1, Northern Mariana Islands 2, Pitcairn Islands 0, Tokelau 0, Wallis and Futuna 1 and US Minor Outlying Islands 2. Zero matches do not imply no airfields exist. No new ambiguous runway surfaces or duplicate source identifiers were found; all are runway-only records pending operational evaluation and final six-tier classification.
 
 Turkey is **one whole country**, including both European and Asian territories; Group 10 contains 75 Turkish runway-qualified airports.
 

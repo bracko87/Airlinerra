@@ -6,7 +6,7 @@ Only collect airports having **at least one runway 1,200 m or longer**, reported
 A matching airport can be considered **at least Level 1 (Local)**. This is only a lower-bound technical qualification, NOT a final assignment to Airlinerra's exact six tiers: Local, Regional, Medium, Large, Major Hub, Mega Hub. All other airport details are postponed.
 
 ## Canonical master
-- `airport_register.csv`: **3,011 airport records (3,010 screened real-world candidates + 1 fictional airport) across Groups 1–24**, with identifiers, country, name, longest reported qualifying runway, surface and minimum eligible level 1. This is not a list of operational or playable airports.
+- `airport_register.csv`: **3,046 airport records (3,045 screened real-world candidates + 1 fictional airport) across Groups 1–25**, with identifiers, country, name, longest reported qualifying runway, surface and minimum eligible level 1. This is not a list of operational or playable airports.
 - `fictional_airports.csv`: owner-defined airports outside OurAirports. **Aleksandrovo Airport (LYAL), Serbia** — fictional, runway 2,200 m asphalt, **assigned Level 1 / Local**. Protected from being erased by future runway-only screenings; no coordinates or additional data assumed.
 - `airport_register.csv` has `source_type` (`OURAIRPORTS` / `FICTIONAL`) and `assigned_category` (blank for screened real airports, `Local` for LYAL) to keep these records unambiguously separated.
 - Each group's `generated/groupN/groupN_technical_candidates.csv`: source screening that feeds the master.
@@ -43,11 +43,12 @@ A matching airport can be considered **at least Level 1 (Local)**. This is only 
 | 22 | Oceania — Australia, Christmas Island, Cocos (Keeling) Islands, Fiji, Kiribati | 261 |
 | 23 | Oceania — Marshall Islands, Micronesia, Nauru, New Zealand, Palau | 40 |
 | 24 | Oceania — Papua New Guinea, Samoa, Solomon Islands, Tonga, Tuvalu | 25 |
-| **TOTAL** | | **3,011** |
+| 25 | Oceania source-code catch-up — Vanuatu and 12 Pacific jurisdictions | 35 |
+| **TOTAL** | | **3,046** |
 
 **Historic Groups 1–3 selection: 110 airports (21/30/59).** The fresh runway-only screening produces **162 candidates** across those three groups (30/58/74), not 110. Do not conflate these two counts. The earlier list applied additional screening/selection rules; the current register is deliberately a broader technical pool. The separate 56-name historical recovery file remains on staging for reference, while 54 historic names were not recovered.
 
-Uncertain runway surfaces: Group 4 has 4 unresolved labels, Group 13 has 2 (Aurangabad macadam composite; Baramati unspecified paved), and Group 22 has 1 (Carrapateena Airport/YCPT, 1,599.9 m, source surface `BITUM`). All other groups screened so far have zero in their surface-review queues. Russia remains one country (RU) with 312 runway-qualified candidates. All seven unresolved cases remain outside the 3,011-record master.
+Uncertain runway surfaces: Group 4 has 4 unresolved labels, Group 13 has 2 (Aurangabad macadam composite; Baramati unspecified paved), and Group 22 has 1 (Carrapateena Airport/YCPT, 1,599.9 m, source surface `BITUM`). All other groups screened so far have zero in their surface-review queues. Russia remains one country (RU) with 312 runway-qualified candidates. All seven unresolved cases remain outside the 3,046-record master.
 
 Two Spanish airports from Group 9 were upgraded from surface-review candidates to the runway-qualified master using **official ENAIRE evidence only**: LENE (La Caminera, 1,400 m concrete) and LEDA (Lleida-Alguaire, 2,500 m asphalt). The original ambiguous source labels remain documented in `runway_surface_overrides.csv`; no unknown `paved`/`hard` surfaces are accepted without documentary confirmation.
 
@@ -60,6 +61,8 @@ Two Spanish airports from Group 9 were upgraded from surface-review candidates t
 **Source airport-code conflict:** `airport_code_conflicts.csv` contains one unresolved clash in Iran: code `OIBH` occurs for source IDs `3350` (Bahregan Airport) and `5140` (Bastak Airport). Both match runway-only criteria and remain in the master with their original source identifiers. Codes must be resolved before operational/game import; never invent a replacement ICAO or collapse distinct source airport IDs. The rebuild script generates this conflict report and validation checks it.
 
 **Group 14 material clarification:** OurAirports labels Mount Fuji Shizuoka Airport's (RJNS) 2,200 m runway `asphalt concrete`. This is an explicit asphalt-based paving material and qualifies technically; the Group 14 screen accepts that exact label, and the canonical master/validator also recognize it through `scripts/airport_surface.py`. Generic `paved`, `hard` or unverified materials remain excluded. All of Kazakhstan is screened once, regardless of continent. No new source code conflicts arose; Iran's earlier `OIBH` collision remains in the separate audit file.
+
+**Group 25 Pacific jurisdiction catch-up:** Vanuatu/VU 3, American Samoa/AS 1, Cook Islands/CK 2, French Polynesia/PF 19, Guam/GU 1, New Caledonia/NC 2, Niue/NU 1, Norfolk Island/NF 1, Northern Mariana Islands/MP 2, Pitcairn Islands/PN 0, Tokelau/TK 0, Wallis and Futuna/WF 1, US Minor Outlying Islands/UM 2, for **35** source-qualified runway candidates. These 13 codes complete our planned Oceania country/territory screening roster, not an independent guarantee of exhaustive real-world coverage. Pitcairn/Tokelau have no matching qualifying records in the dataset, not an absence claim. Group 25 generated zero ambiguous-surface and zero duplicate-identifier review entries. The existing Group 22 Carrapateena surface case and Iranian OIBH identifier conflict remain unresolved and excluded from unsupported operating assumptions.
 
 **Group 24 Oceania screening:** Papua New Guinea/PG 20, Samoa/WS 1, Solomon Islands/SB 2, Tonga/TO 1 and Tuvalu/TV 1, for 25 new runway-qualified candidates. The Group 24 surface-review and duplicate-identifier queues are empty. Previously flagged Group 22 Carrapateena (`BITUM`) and the earlier Iranian `OIBH` code clash remain under review. No civilian accessibility or final six-tier category is established.
 
@@ -101,6 +104,7 @@ Two Spanish airports from Group 9 were upgraded from surface-review candidates t
 - Group 22: `Refresh Group 22 technical airport screening` (Australia 256, Christmas Island 1, Cocos (Keeling) Islands 1, Fiji 2, Kiribati 1; Carrapateena BITUM flagged for material confirmation).
 - Group 23: `Refresh Group 23 technical airport screening` (Marshall Islands 4, Micronesia 4, Nauru 1, New Zealand 30, Palau 1; no new surface or ID conflicts).
 - Group 24: `Refresh Group 24 technical airport screening` (Papua New Guinea 20, Samoa 1, Solomon Islands 2, Tonga 1, Tuvalu 1; no unresolved surfaces or duplicate identifiers).
+- Group 25: `Refresh Group 25 technical airport screening` (Vanuatu and 12 separately coded Pacific jurisdictions, 35 qualifying airports; no new unresolved surfaces or duplicate identifiers).
 - Groups 1–3: `Backfill Groups 1-3 runway candidates`.
 - Each workflow downloads the same OurAirports data files, screens its group and rebuilds the master by combining every group's screens **and all `fictional_airports.csv` records**, deduplicating by source airport ID. It does not replace other groups' records.
 - `python scripts/rebuild_runway_register.py` rebuilds the permanent master **and `airport_code_conflicts.csv`** from all completed group screens.
