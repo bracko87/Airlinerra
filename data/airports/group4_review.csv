@@ -1,0 +1,15 @@
+country_iso,airport_name,icao,reported_runway_m,status,category,civilian_access,restrictions,notes
+FR,Abbeville,LFOI,1250,REVIEW,,PUBLIC_USE_REPORTED,VERIFY,Source review required before playable approval
+FR,Arcachon-La Teste,LFCH,1346,REVIEW,,UNVERIFIED,VERIFY,Reported candidate
+FR,Blois-Le Breuil,LFOQ,1250,REVIEW,,UNVERIFIED,VERIFY,Reported candidate
+FR,Saumur-Saint-Florent,LFOD,1450,REVIEW,,UNVERIFIED,VERIFY,Reported candidate
+FR,Auch-Gers,LFDH,1900,REVIEW,,UNVERIFIED,VERIFY,Reported candidate
+DE,Frankfurt-Egelsbach,EDFE,1400,REVIEW,,CIVIL_OPERATIONS_REPORTED,AIRCRAFT_LIMITS_TO_VERIFY,Reported civilian candidate
+DE,Flensburg-Schaeferhaus,EDXF,1220,REVIEW,,UNVERIFIED,VERIFY,Reported candidate
+DE,Freiburg,EDTF,1338,REVIEW,,UNVERIFIED,VERIFY,Reported candidate
+DE,Hildesheim,EDVM,1220,REVIEW,,UNVERIFIED,VERIFY,Reported candidate
+DE,Speyer,EDRY,1677,REVIEW,,UNVERIFIED,VERIFY,Reported candidate
+DE,Schoenhagen,EDAZ,1510,REVIEW,,UNVERIFIED,VERIFY,Reported candidate
+GR,Kavala-Amygdaleon Lydia,LGKM,1330,REVIEW,,CIVIL_CONDITIONAL,MTOW_BELOW_5700_KG_PPR_REPORTED,Aircraft restrictions must be enforced
+HU,Bekescsaba,LHBC,1300,REVIEW,,UNVERIFIED,VERIFY,Reported candidate
+HU,Tokol,LHTL,1768,REVIEW,,UNVERIFIED,VERIFY,Temporary runway restrictions reported October 2026
