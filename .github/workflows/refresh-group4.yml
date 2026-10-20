@@ -5,6 +5,7 @@ on:
     branches: [staging]
     paths:
       - 'scripts/screen_group4.py'
+      - 'scripts/rebuild_runway_register.py'
       - '.github/workflows/refresh-group4.yml'
   workflow_dispatch:
 
@@ -38,6 +39,10 @@ jobs:
       - name: Generate unapproved technical register
         run: |
           python scripts/screen_group4.py --airports "${RUNNER_TEMP}/airports.csv" --runways "${RUNNER_TEMP}/runways.csv" --out data/airports/generated/group4
+      - name: Build permanent minimum-Level-1 register
+        run: python scripts/rebuild_runway_register.py
+      - name: Validate permanent runway register
+        run: python scripts/validate_airports.py && python scripts/validate_historical_airports.py
       - name: Publish review data as workflow artifact
         uses: actions/upload-artifact@v4
         with:
@@ -48,8 +53,8 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/airports/generated/group4
+          git add data/airports/generated/group4 data/airports/airport_register.csv
           if ! git diff --cached --quiet; then
-            git commit -m "data: refresh Group 4 technical screening (not playable) [skip ci]"
+            git commit -m "data: refresh runway-qualified Group 4 and Level 1 register [skip ci]"
             git push origin HEAD:staging
           fi
