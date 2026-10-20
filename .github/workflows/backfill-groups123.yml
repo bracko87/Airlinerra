@@ -1,0 +1,62 @@
+name: Backfill Groups 1-3 runway candidates
+
+on:
+  push:
+    branches: [staging]
+    paths:
+      - 'scripts/screen_groups123.py'
+      - '.github/workflows/backfill-groups123.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: airlinerra-airport-register-update
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout staging
+        uses: actions/checkout@v4
+        with:
+          ref: staging
+          persist-credentials: true
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download source datasets
+        run: |
+          curl --fail --show-error --silent --location --retry 3 --max-time 180 https://raw.githubusercontent.com/davidmegginson/ourairports-data/main/airports.csv --output "${RUNNER_TEMP}/airports.csv"
+          curl --fail --show-error --silent --location --retry 3 --max-time 180 https://raw.githubusercontent.com/davidmegginson/ourairports-data/main/runways.csv --output "${RUNNER_TEMP}/runways.csv"
+          test -s "${RUNNER_TEMP}/airports.csv"
+          test -s "${RUNNER_TEMP}/runways.csv"
+      - name: Screen previously documented Groups 1-3
+        run: |
+          python scripts/screen_groups123.py --airports "${RUNNER_TEMP}/airports.csv" --runways "${RUNNER_TEMP}/runways.csv" --out data/airports/generated
+      - name: Rebuild master without overwriting Groups 4 or 5
+        run: python scripts/rebuild_runway_register.py
+      - name: Validate complete master
+        run: python scripts/validate_airports.py && python scripts/validate_historical_airports.py
+      - name: Upload screening artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: airlinerra-groups123-technical-backfill
+          path: |
+            data/airports/generated/group1
+            data/airports/generated/group2
+            data/airports/generated/group3
+          if-no-files-found: error
+      - name: Commit all screened airport records to staging only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/airports/generated/group1 data/airports/generated/group2 data/airports/generated/group3 data/airports/airport_register.csv
+          if ! git diff --cached --quiet; then
+            git commit -m "data: backfill Groups 1-3 runway-qualified airports [skip ci]"
+            git push origin HEAD:staging
+          fi
