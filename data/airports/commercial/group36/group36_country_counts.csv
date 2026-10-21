@@ -1,0 +1,7 @@
+country_iso,country_name,runway_qualified_candidates,passenger_evidenced,cargo_eligible_evidenced,military_review,other_unknown_both,public_airport_service_unverified
+"TN","Tunisia","12","8","0","2","4","0"
+"UG","Uganda","3","1","1","0","2","0"
+"ZM","Zambia","9","5","1","1","4","0"
+"ZW","Zimbabwe","7","5","0","1","2","0"
+"EH","Western Sahara","3","2","0","0","1","0"
+"TOTAL","TOTAL","34","21","2","4","13","0"
