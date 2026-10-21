@@ -1,0 +1,7 @@
+country_iso,country_name,runway_qualified_candidates,passenger_evidenced,cargo_eligible_evidenced,military_review,other_unknown_both,public_airport_service_unverified
+"GA","Gabon","11","6","1","0","5","0"
+"GM","Gambia","1","1","1","0","0","0"
+"GH","Ghana","7","6","1","0","1","0"
+"GN","Guinea","6","1","0","0","5","0"
+"GW","Guinea-Bissau","2","1","0","0","1","0"
+"TOTAL","TOTAL","27","15","3","0","12","0"
