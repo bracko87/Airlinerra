@@ -1,0 +1,5 @@
+country_iso,missing_airport_code,missing_airport_name,issue,evidence_url,review_action
+"GA","FOGX","Gamba Airport","Technical source identifier GA-GAX has GPS code FOGX; preserve single airport ID when matching Afrijet Gamba service.","https://www.flightconnections.com/fr/vols-afrijet-j7","IDENTIFIER_ALIAS_CHECK"
+"GH","DGAH","Ho Airport","Present in runway roster but absent from 2025 GCAA domestic scheduled passenger traffic chart. Do not infer active service from runway.","https://www.gcaa.com.gh/web/wp-content/uploads/2026/03/Statistic-Domestic-Passenger-Movement-2025.-Chart.pdf","REGIONAL_ROUTE_CHECK"
+"GN","GUKR","Kawass Airport","Airport is runway eligible, but no individually documented scheduled commercial passenger or cargo service found.","","INDIVIDUAL_COMMERCIAL_SCREEN"
+"GW","GG64","Quebo Airport","Paved runway qualification does not establish commercial passenger or cargo authorization.","","VERIFY_AIP_OPERATOR_ACCESS"
