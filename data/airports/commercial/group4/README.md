@@ -7,11 +7,11 @@
 ```csv
 country_iso,country_name,runway_qualified_candidates,passenger_evidenced,cargo_eligible_evidenced,military_review,other_unknown_both,public_airport_service_unverified
 DE,Germany,93,21,19,18,72,0
-FR,France,151,53,32,19,98,0
+FR,France,151,53,30,19,98,0
 GE,Georgia,10,3,1,5,7,0
 GR,Greece,42,30,1,8,12,0
 HU,Hungary,11,2,1,3,9,0
-TOTAL,TOTAL,307,109,54,53,198,0
+TOTAL,TOTAL,307,109,52,53,198,0
 ```
 
 Counts overlap: military-review cases generally are in the both-unknown group. YES means evidence of real commercial passenger operations, positive freight/mail, or a supported commercial handling service, not universal legal rights, freighter aircraft capability, active scheduled flights or passenger/cargo *demand*. 2025 national traffic is historical activity, not a claimed 2026 schedule.
