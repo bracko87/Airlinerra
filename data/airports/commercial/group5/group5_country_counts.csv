@@ -1,0 +1,7 @@
+country_iso,country_name,runway_qualified_candidates,passenger_evidenced,cargo_eligible_evidenced,military_review,other_unknown_both,public_airport_service_unverified
+IE,Ireland,7,5,4,1,2,0
+IS,Iceland,8,6,1,0,2,0
+IT,Italy,70,39,31,17,30,0
+LV,Latvia,4,1,1,1,3,1
+XK,Kosovo,2,1,0,1,1,0
+TOTAL,TOTAL,91,52,37,20,38,1
