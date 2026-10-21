@@ -1,0 +1,11 @@
+country_iso,country_name,runway_qualified_candidates,passenger_evidenced,cargo_eligible_evidenced,military_review,other_unknown_both,public_airport_service_unverified
+AD,Andorra,0,0,0,0,0,0
+AX,Åland Islands,0,0,0,0,0,0
+FO,Faroe Islands,1,1,1,0,0,0
+GI,Gibraltar,1,1,1,0,0,0
+GG,Guernsey,1,1,1,0,0,0
+IM,Isle of Man,1,1,1,0,0,0
+JE,Jersey,1,1,1,0,0,0
+SJ,Svalbard and Jan Mayen,0,0,0,0,0,0
+GL,Greenland,5,5,5,0,0,0
+TOTAL,TOTAL,10,10,10,0,0,0
