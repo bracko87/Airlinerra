@@ -1,0 +1,5 @@
+country_iso,missing_airport_code,missing_airport_name,issue,evidence_url,review_action
+"CA","CYMX","Montreal Mirabel International Airport","Cargo-focused airport; passenger flight service must not be conflated with Trudeau CYUL; correct current commercial classification after checking airport reports.","https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2310025301","AIRPORT_ROLE_AUDIT"
+"CA","CYTR","CFB Trenton","Military base present in roster; historical passenger service not necessarily general public commercial flights.","https://tc.canada.ca/en/aviation","MILITARY_ACCESS_REVIEW"
+"CA","CYHZ","Halifax Stanfield International Airport","2025 passenger movements source available; cargo volumes should be obtained individually before freight YES.","https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2310025301","CARGO_SOURCE_AUDIT"
+"BQ","TNCE","F D Roosevelt Airport","Short runway commercial turboprop service only; aircraft-size restrictions to be evaluated separately.","","AIRCRAFT_TYPE_REVIEW"
