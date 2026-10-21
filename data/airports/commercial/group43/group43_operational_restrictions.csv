@@ -1,0 +1,3 @@
+source_airport_id,country_iso,airport_code,restriction_type,applies_to,direction,route_scope,condition,valid_until,evidence_url,source_date,review_status
+"4772","NI","MNFC","SPECIAL_OR_CONTROLLED_ACCESS","civil_passenger_and_freight","BOTH","ALL","Punta Huete historic strategic airfield; do not infer commercial airline permission from runway qualification.","UNKNOWN","","UNKNOWN","ACCESS_REVIEW"
+"5334","PA","MP26","RESTRICTED_ACCESS_UNVERIFIED","civil_passenger_and_freight","BOTH","ALL","Punta Cocos airfield civil/public access not established.","UNKNOWN","","UNKNOWN","ACCESS_REVIEW"
