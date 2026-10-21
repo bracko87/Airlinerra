@@ -1,0 +1,4 @@
+country_iso,missing_airport_code,missing_airport_name,issue,evidence_url,review_action
+"AU","YCPT","Carrapateena Airport","Previously documented BITUM surface ambiguity; preserve review queue. No automatic runway upgrade to asphalt/concrete.","https://www.airservicesaustralia.com/aip/","KEEP_TECHNICAL_SURFACE_REVIEW_OPEN"
+"AU","YSWS","Western Sydney International Airport","Present in screened roster; 2024–25 passenger history cannot prove commercial operation for a new airport. Future opening or official inaugural flights require separate verification.","https://www.westernsydney.com.au/","VERIFY_OPENING_BEFORE_PASSENGER_YES"
+"AU","YSSY","Sydney Kingsford Smith Airport","Present in roster; explicitly prevent duplicate counting due to alias with Sydney Airport in BITRE statistical tables.","https://www.bitre.gov.au/publications/2025/australian-infrastructure-and-transport-statistics-yearbook-2025/aviation","ALIAS_MATCH_NO_NEW_ID"
