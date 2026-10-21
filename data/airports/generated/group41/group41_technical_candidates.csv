@@ -1,0 +1,25 @@
+ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible_runway_m,surface,eligible_runway_count,runway_ids
+4633,DO,Cabo Rojo Airport,MDCR,MDCR,1508.8,ASP,1,235487
+4635,DO,Casa De Campo International Airport,MDLR,MDLR,2949.9,CON,1,235483
+4640,DO,Cibao International Airport,MDST,MDST,2619.8,ASP,1,235484
+4637,DO,Gregorio Luperon International Airport,MDPP,MDPP,3080.9,ASP,1,235491
+4634,DO,La Isabela International Airport,MDJB,MDJB,1649.6,ASP,1,235485
+4638,DO,Las Américas International Airport,MDSD,MDSD,3352.8,ASP,2,235489;603748
+4632,DO,Maria Montez International Airport,MDBH,MDBH,3000.1,ASP,1,235492
+4636,DO,Punta Cana International Airport,MDPC,MDPC,3100.1,ASP,2,235486;314313
+30673,DO,Samaná El Catey International Airport,MDCY,MDCY,3000.1,asphalt,1,298532
+4639,DO,San Isidro Air Base,MDSI,MDSI,2133.6,ASP,1,235490
+6367,GD,Maurice Bishop International Airport,TGPY,TGPY,2744.1,ASP,1,236098
+6365,GP,Marie-Galante Airport,TFFM,TFFM,1239.9,ASP,1,236324
+6366,GP,Maryse Condé International Airport,TFFR,TFFR,3504.9,ASP,1,236323
+4644,GT,La Aurora International Airport,MGGT,MGGT,2987.0,ASP,1,236389
+4649,GT,Mundo Maya International Airport,MGTK,MGMM,2999.8,CON,1,236396
+4645,GT,Puerto Barrios Airport,MGPB,MGPB,2706.6,CON,1,236393
+30610,GT,Quezaltenango Airport,MGQZ,MGQZ,2103.1,Asphalt,1,532964
+30649,GT,Quiché Airport,MGQC,MGQC,1246.6,ASP,1,336468
+4647,GT,Retalhuleu Airport,MGRT,MGRT,1543.8,ASP,1,236394
+4646,GT,Rubelsanto Airport,MGRB,MGRB,1429.5,ASP,1,236391
+4648,GT,San José Airport,MGSJ,MGSJ,2010.2,ASP,1,236397
+4820,SV,El Salvador International Airport Saint Óscar Arnulfo Romero y Galdámez,MSLP,MSLP,3200.4,ASP,1,235662
+4818,SV,El Tamarindo Airport,MSET,MSET,1341.1,ASP,1,235661
+4821,SV,Ilopango International Airport,MSSS,MSSS,2240.0,ASP,1,235665
