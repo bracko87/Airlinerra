@@ -1,0 +1,6 @@
+country_iso,missing_airport_code,missing_airport_name,issue,evidence_url,review_action
+"EC","ALL","Ecuador commercial airports","DGAC aggregate 2025 passenger/cargo data establishes Quito and Guayaquil cargo; other airports need individual traffic-row matching.","https://www.aviacioncivil.gob.ec/el-transporte-aereo-ecuatoriano-movilizo-a-8-millones-de-pasajeros-en-el-2025/","AIRPORT_LEVEL_SOURCE_JOIN"
+"GY","ALL","Guyana commercial airports","Verify current domestic service at Lethem and Ogle independently; positive international cargo facility evidence also needs matching.","https://cjairport-gy.com/","PASSENGER_CARGO_SOURCE_AUDIT"
+"GF","SOOA","Maripasoula Airport","Verify present scheduled passenger service and island/regional cargo independently; airport runway is eligible but commercial routes not automatically enabled.","https://www.airfrance.gf/","REGIONAL_ROUTE_REVIEW"
+"PY","SGES","Guarani International Airport","DINAC positive airport-specific 2025 cargo data confirmed; passenger service is provisional; verify regular scheduled airline service.","https://www.dinac.gov.py/v3/index.php/dinac/subdirecciones/sub-direccion-de-transporte-aereo/item/122-datos-estadisticos-de-movimiento","PASSENGER_VS_CARGO_ROLE"
+"FK","EGYP","Mount Pleasant Airport","Check limited authorized civil route access versus RAF military operations.","","DUAL_USE_ACCESS_REVIEW"
