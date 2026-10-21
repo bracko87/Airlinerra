@@ -1,0 +1,7 @@
+country_iso,country_name,runway_qualified_candidates,passenger_evidenced,cargo_eligible_evidenced,military_review,other_unknown_both,public_airport_service_unverified
+"BI","Burundi","1","1","1","0","0","0"
+"CV","Cabo Verde","5","5","5","0","0","0"
+"CM","Cameroon","10","6","3","0","4","0"
+"CF","Central African Republic","2","1","0","0","1","0"
+"TD","Chad","5","1","0","0","4","0"
+"TOTAL","TOTAL","23","14","9","0","9","0"
