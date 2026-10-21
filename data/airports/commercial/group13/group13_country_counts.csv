@@ -1,0 +1,7 @@
+country_iso,country_name,runway_qualified_candidates,passenger_evidenced,cargo_eligible_evidenced,military_review,other_unknown_both,public_airport_service_unverified
+KH,Cambodia,7,5,2,0,2,0
+CN,China,166,83,83,4,83,0
+IN,India,176,43,0,21,133,0
+ID,Indonesia,128,47,0,3,81,0
+IR,Iran,81,20,0,5,61,0
+TOTAL,TOTAL,558,198,85,33,360,0
