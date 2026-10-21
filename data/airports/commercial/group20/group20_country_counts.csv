@@ -1,7 +1,7 @@
 country_iso,country_name,runway_qualified_candidates,passenger_evidenced,cargo_eligible_evidenced,military_review,other_unknown_both,public_airport_service_unverified
-"AE","United Arab Emirates","16","7","4","4","9","0"
+"AE","United Arab Emirates","16","7","2","4","9","0"
 "UZ","Uzbekistan","22","11","0","2","11","0"
-"VN","Vietnam","27","22","0","3","5","0"
+"VN","Vietnam","27","5","3","0","22","0"
 "YE","Yemen","12","2","0","1","10","0"
 "HK","Hong Kong","2","1","1","1","1","0"
-"TOTAL","TOTAL","79","43","5","11","36","0"
+"TOTAL","TOTAL","79","26","6","8","53","0"
