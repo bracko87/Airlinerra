@@ -1,0 +1,3 @@
+country_iso,missing_airport_code,missing_airport_name,issue,evidence_url,review_action
+"MY","WMKK","Kuala Lumpur International Airport (KLIA)","Principal Malaysian international hub is missing from current 27 technical candidates. Verify runway and airport source identifier separately.","https://corporate.malaysiaairports.com.my/ms/media-centre/news/1678","SEPARATE_TECHNICAL_SOURCE_RUNWAY_AUDIT_BEFORE_REGISTER_CHANGE"
+"LA","VLSN","Sam Neua Airport","Scheduled airport named in Laos flight-route listing but absent from current eight technical candidates; verify actual qualifying asphalt/concrete runway before admission.","https://www.flightconnections.com/airports-in-laos-la","SEPARATE_TECHNICAL_SOURCE_RUNWAY_AUDIT_BEFORE_REGISTER_CHANGE"
