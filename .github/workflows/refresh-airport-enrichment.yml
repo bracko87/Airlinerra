@@ -1,0 +1,55 @@
+name: Refresh worldwide airport enrichment (manual only)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: airlinerra-enrichment-manual
+  cancel-in-progress: false
+
+jobs:
+  enrich-airports:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download pinned source snapshot
+        run: |
+          SHA=b529623d2a0b09a9be78d37fc7a7a5e1e16e3451
+          curl -fsSL --retry 3 "https://raw.githubusercontent.com/davidmegginson/ourairports-data/$SHA/airports.csv" -o "${RUNNER_TEMP}/airports.csv"
+          curl -fsSL --retry 3 "https://raw.githubusercontent.com/davidmegginson/ourairports-data/$SHA/runways.csv" -o "${RUNNER_TEMP}/runways.csv"
+          test -s "${RUNNER_TEMP}/airports.csv"
+          test -s "${RUNNER_TEMP}/runways.csv"
+      - name: Rebuild enriched source data without editing runway master
+        run: |
+          python scripts/enrich_airport_reference.py --airports "${RUNNER_TEMP}/airports.csv" --runways "${RUNNER_TEMP}/runways.csv" --source-commit b529623d2a0b09a9be78d37fc7a7a5e1e16e3451
+      - name: Validate enriched airport data
+        run: |
+          python scripts/validate_airport_enrichment.py
+          python scripts/validate_airports.py
+          python scripts/validate_historical_airports.py
+      - name: Publish audit artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: airlinerra-worldwide-airport-enrichment
+          path: data/airports/enriched
+          if-no-files-found: error
+      - name: Commit regenerated reference sidecars
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/airports/enriched/airport_identity.csv data/airports/enriched/qualifying_runways.csv data/airports/enriched/commercial_review_queue.csv data/airports/enriched/enrichment_exceptions.csv data/airports/enriched/country_counts.csv data/airports/enriched/SOURCE.txt
+          if ! git diff --cached --quiet; then
+            git commit -m "data: reproduce pinned airport enrichment [skip ci]"
+            git push origin HEAD:main
+          fi

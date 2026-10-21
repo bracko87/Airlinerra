@@ -1,6 +1,6 @@
 # Airlinerra — Airport enrichment and commercial-readiness roadmap
 
-Status: approved project direction (planning specification); **not yet implemented**.
+Status: **Phase A worldwide identifiers/coordinates/runway sidecars implemented 2026-10-21; Serbia commercial-evidence pilot implemented; global commercial eligibility, slot capacity, curfews and demand engine remain future work**.
 Source baseline: runway-qualified master `data/airports/airport_register.csv` (7,846 records as of 2026-10-21; includes fictional LYAL).
 Branch: `main` only. Keep original source group screens and master untouched until a validated migration is deliberately planned.
 This plan supersedes the prior runway-only **scope for future work**, but does not change the current official runway screening requirements or authorize a Supabase/game deployment.
@@ -76,3 +76,13 @@ Automated integrity gates: one stable primary key per airport; no dropped histor
 - **Phase D (deployment):** only after validation and owner's explicit authorization, create relational schema/migrations and import GitHub-versioned snapshots into Supabase for live multiplayer worlds. Keep GitHub as the reproducible reference-data source, Supabase as live operational/game-state storage.
 
 Airlinerra's **six** future airport categories remain exactly: Local, Regional, Medium, Large, Major Hub, Mega Hub. Commercial eligibility and group inclusion are NOT the final six-tier assignment.
+
+## Implementation checkpoint — 2026-10-21
+
+- Worldwide identity, location, code snapshots: `data/airports/enriched/airport_identity.csv` (7,846 airport records; 7,845 source coordinates, fictional LYAL blank).
+- Paved runway inventory: `data/airports/enriched/qualifying_runways.csv` (9,260 individual non-closed >=1200m source/override runways). This is *not* all physical runways and is not certification for arbitrary aircraft or the usable declared distances.
+- Code coverage: 5,409 source-reported ICAO entries and 5,179 source-reported IATA entries; these are **unverified identifiers**, not government certification.
+- Commercial operations: `data/airports/enriched/commercial_review_queue.csv` (7,846 unverified passenger/cargo entries; unknown does not imply 0 or NO). `data/airports/enriched/serbia_commercial_pilot.csv` holds documented observations for seven Serbia records.
+- Both source CSVs pinned to OurAirports commit `b529623d2a0b09a9be78d37fc7a7a5e1e16e3451`; regenerate with `scripts/enrich_airport_reference.py`, validate with `scripts/validate_airport_enrichment.py`.
+- Master `airport_register.csv` and fictional LYAL preserved unchanged; no Supabase updates or game activation.
+- **Priority source discrepancy:** Ponikve LYUZ operator says 1,830m usable asphalt vs old source candidate approximately 3,087m. Verify runway declared distances before the airplane/slot engine (see Serbia pilot).
