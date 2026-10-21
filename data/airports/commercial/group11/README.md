@@ -36,7 +36,7 @@ The **three machine-readable special cases** are Narsarsuaq (non-war heliport co
 
 - Andorra AD and Åland AX have no *additional* qualifying airports in their original source geographies. Mariehamn (EFMA) already belongs to FI (Group 3); do not double count.
 - Svalbard/Jan Mayen SJ has zero unique records in this group. Longyear/ENSB is already in Norwegian Group 7; do not double count. 
-- Four zero territories do **not** imply that there are no aviation facilities or heliports there.
+- Three zero territories do **not** imply that there are no aviation facilities or heliports there.
 - Neither technical runway availability nor passenger/freight history is sufficient by itself to set airport classification or game demand. Airlinerra has exactly six eventual tiers: Local, Regional, Medium, Large, Major Hub, Mega Hub.
 - The user-approved **NO WAR** world policy in `data/airports/commercial/SCENARIO_POLICY.md` remains in force: no war-based blanket airspace closures. Narsarsuaq's documented heliport transition is **not** a conflict closure and must still be considered.
 
