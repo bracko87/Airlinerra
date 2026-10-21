@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 COLS=("source_airport_id","country_iso","airport_name","source_ident","passenger_commercial_permission","cargo_commercial_permission","review_classification","passenger_evidence_url","cargo_evidence_url","access_evidence_url","verification_as_of","review_notes")
 ACCEPT={"YES","NO","UNKNOWN"}
-KINDS={"PASSENGER_AND_CARGO_EVIDENCED","PASSENGER_EVIDENCED_CARGO_UNKNOWN","PASSENGER_AND_FREIGHT_ELIGIBLE","PUBLIC_AIRPORT_SERVICE_UNVERIFIED","MILITARY_ACCESS_REVIEW","MILITARY_PRIOR_PERMISSION_REQUIRED","AIRPORT_CODE_AND_ACCESS_REVIEW","NEEDS_REVIEW"}
+KINDS={"PASSENGER_AND_CARGO_EVIDENCED","PASSENGER_EVIDENCED_CARGO_UNKNOWN","CARGO_EVIDENCED_PASSENGER_UNKNOWN","PASSENGER_AND_FREIGHT_ELIGIBLE","PUBLIC_AIRPORT_SERVICE_UNVERIFIED","MILITARY_ACCESS_REVIEW","MILITARY_PRIOR_PERMISSION_REQUIRED","AIRPORT_CODE_AND_ACCESS_REVIEW","NEEDS_REVIEW"}
 COUNT_COLS=("country_iso","country_name","runway_qualified_candidates","passenger_evidenced","cargo_eligible_evidenced","military_review","other_unknown_both","public_airport_service_unverified")
 def read(path):
     with open(path,newline="",encoding="utf-8-sig") as f:

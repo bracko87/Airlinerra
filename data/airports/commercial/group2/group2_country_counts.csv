@@ -1,0 +1,7 @@
+country_iso,country_name,runway_qualified_candidates,passenger_evidenced,cargo_eligible_evidenced,military_review,other_unknown_both,public_airport_service_unverified
+BA,Bosnia and Herzegovina,4,4,2,0,0,0
+BE,Belgium,14,5,4,8,8,0
+BG,Bulgaria,16,5,4,3,11,0
+BY,Belarus,14,4,0,7,10,0
+HR,Croatia,10,7,1,0,3,0
+TOTAL,TOTAL,58,25,11,18,32,0
