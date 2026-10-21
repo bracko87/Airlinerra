@@ -1,0 +1,3 @@
+source_airport_id,country_iso,airport_code,restriction_type,applies_to,direction,route_scope,condition,valid_until,evidence_url,source_date,review_status
+"354471","NE","NE-0003","MILITARY_CIVIL_ACCESS_UNVERIFIED","scheduled_public_passenger_and_freight","BOTH","ALL_CIVIL_COMMERCIAL","Military ownership/access requires independent AIP approval; technical runway acceptance is not civil operating authority.","UNKNOWN","","UNKNOWN","REQUIRE_CIVIL_ACCESS_REVIEW"
+"300565","NG","DNPM","MILITARY_CIVIL_ACCESS_UNVERIFIED","scheduled_public_passenger_and_freight","BOTH","ALL_CIVIL_COMMERCIAL","Military ownership/access requires independent AIP approval; technical runway acceptance is not civil operating authority.","UNKNOWN","","UNKNOWN","REQUIRE_CIVIL_ACCESS_REVIEW"
