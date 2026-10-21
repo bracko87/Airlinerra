@@ -1,0 +1,3 @@
+source_airport_id,country_iso,airport_code,restriction_type,applies_to,direction,route_scope,condition,valid_until,evidence_url,source_date,review_status
+"6081","EC","SETA","MILITARY_CIVIL_ACCESS_UNVERIFIED","public_commercial_airline","BOTH","ALL","Military air base; no unrestricted public commercial operating rights verified.","UNKNOWN","","UNKNOWN","ACCESS_REVIEW"
+"2512","FK","EGYP","MILITARY_DUAL_USE_ACCESS","public_commercial_airline","BOTH","ALL_EXCEPT_AUTHORIZED_CIVIL_SERVICE","RAF base accommodates authorized civil flights; review permitted routes/access for game operations.","UNKNOWN","","UNKNOWN","ACCESS_REVIEW"
