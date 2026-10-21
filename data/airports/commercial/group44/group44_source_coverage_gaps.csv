@@ -1,0 +1,6 @@
+country_iso,missing_airport_code,missing_airport_name,issue,evidence_url,review_action
+"KN","TKPN","Vance W Amory International Airport","Regional passenger service confirmed but airline-specific cargo movement not documented.","https://www.nevisisland.com/plan/flying-to-nevis","CARGO_EVIDENCE_REVIEW"
+"VC","TVSC","Canouan Airport","Passenger operator named; positive airport-specific freight handling unverified. Do not infer cargo from Argyle handlers.","https://svg-airport.com/airports/canouan","CARGO_EVIDENCE_REVIEW"
+"LC","TLPC","George F L Charles Airport","Authority airport cargo FAQ lists maximum 2270 kg, but latest validity and scope of limit unclear.","https://storage.slaspa.com/contentPages/view/faqs-2","VERIFY_CARGO_LIMIT"
+"LC","TLPL","Hewanorra International Airport","Air cargo handled but 2270 kg FAQ limitation scope/date unclear; freight tonnage and current restrictions need confirmation.","https://storage.slaspa.com/contentPages/view/faqs-3","VERIFY_CARGO_LIMIT"
+"PM","LFVP","Saint-Pierre Pointe-Blanche Airport","Cargo reception documented but per-year handled tonnage not available in reviewed airline sources.","https://www.airsaintpierre.com/contact","CARGO_VOLUME_REVIEW"
