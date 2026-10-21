@@ -1,0 +1,2 @@
+source_airport_id,country_iso,airport_code,restriction_type,applies_to,direction,route_scope,condition,valid_until,evidence_url,source_date,review_status
+"4639","DO","MDSI","MILITARY_NON_SCHEDULED_ACCESS","scheduled_passenger_airlines","BOTH","ALL_PUBLIC_SCHEDULED","San Isidro military air base; migration report expressly says it does not receive scheduled flights. Requires civil access review.","UNKNOWN","https://migracion.gob.do/en/dgm-served-7-5-million-passengers-passing-through-airports-and-ports/","2025-05-12","DOCUMENTED_RESTRICTION"
