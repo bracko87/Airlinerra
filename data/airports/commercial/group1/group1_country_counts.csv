@@ -1,0 +1,6 @@
+country_iso,country_name,runway_qualified_candidates,passenger_evidenced,cargo_eligible_evidenced,military_review,other_unknown_both,public_airport_service_unverified
+AL,Albania,3,1,1,1,2,1
+AM,Armenia,4,2,1,1,2,0
+AT,Austria,9,6,6,2,3,0
+AZ,Azerbaijan,14,1,1,4,13,7
+TOTAL,TOTAL,30,10,9,8,20,8
