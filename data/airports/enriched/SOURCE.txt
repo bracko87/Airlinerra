@@ -1,0 +1,8 @@
+Airlinerra identity/runway bulk enrichment 2026-10-21
+OurAirports source commit: b529623d2a0b09a9be78d37fc7a7a5e1e16e3451
+Source URLs:
+https://raw.githubusercontent.com/davidmegginson/ourairports-data/b529623d2a0b09a9be78d37fc7a7a5e1e16e3451/airports.csv
+https://raw.githubusercontent.com/davidmegginson/ourairports-data/b529623d2a0b09a9be78d37fc7a7a5e1e16e3451/runways.csv
+Source master: data/airports/airport_register.csv on main, 7846 records.
+Source-specific runways reflect the current source snapshot plus exactly recorded overrides from data/airports/runway_surface_overrides.csv.
+Not a commercial permission or operational access approval. Fictional LYAL coordinates intentionally blank.
