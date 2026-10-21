@@ -1,0 +1,7 @@
+country_iso,country_name,runway_qualified_candidates,passenger_evidenced,cargo_eligible_evidenced,military_review,other_unknown_both,public_airport_service_unverified
+"EG","Egypt","56","15","1","14","41","0"
+"GQ","Equatorial Guinea","5","3","0","0","2","0"
+"ER","Eritrea","2","1","0","0","1","0"
+"SZ","Eswatini","2","1","0","0","1","0"
+"ET","Ethiopia","17","16","1","1","1","0"
+"TOTAL","TOTAL","82","36","2","15","46","0"
