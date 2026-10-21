@@ -5,7 +5,7 @@ source_airport_id,country_iso,airport_name,source_ident,passenger_evidence_type,
 46251,RU,Akhtubinsk Air Base,RU-0380,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 30617,RU,Aldan Airport,UEEA,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 6505,RU,Alexei Leonov Kemerovo International Airport,UNEE,PUBLISHED_SUBSIDIZED_PASSENGER_ROUTE_2026,https://special.favt.gov.ru/dejatelnost-vozdushnye-perevozki-subsidirovanie-regiony/,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
-6510,RU,Alykel International Airport,UOOO,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
+6510,RU,Alykel International Airport,UOOO,RECORDED_PASSENGERS_2024,https://news.sgnorilsk.ru/2025/09/26/direktor-aeroporta-alykel-prokommentiroval-rekonstrukcziyu-vozdushnoj-gavani/,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 6511,RU,Anapa Vityazevo Airport,URKA,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 44331,RU,Ashuluk Airfield,RU-0101,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 6520,RU,Astrakhan Narimanovo Boris M. Kustodiev International Airport,URWA,PUBLISHED_SUBSIDIZED_PASSENGER_ROUTE_2026,https://special.favt.gov.ru/dejatelnost-vozdushnye-perevozki-subsidirovanie-regiony/,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
@@ -15,7 +15,7 @@ source_airport_id,country_iso,airport_name,source_ident,passenger_evidence_type,
 30804,RU,Balakovo Airport,UWSB,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 34945,RU,Balashov Air Base,RU-0010,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 6504,RU,Barnaul Gherman Titov International Airport,UNBB,RECORDED_PASSENGERS_2025,https://www.avia-adv.ru/stat/airports-ru-2025.htm,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
-26405,RU,Begishevo Airport,UWKE,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
+26405,RU,Begishevo Airport,UWKE,RECORDED_PASSENGERS_2025,https://www.rzd-partner.ru/aviation/news/passazhiropotok-v-aeroportakh-tatarstana-v-2025-godu-prevysil-6-millionov-chelovek/,AIRPORT_SPECIFIC_CARGO_OPERATOR_OR_HANDLING_EVIDENCE,https://www.nbc.aero/partners/trucking/,2026-10-21
 34948,RU,Belaya Air Base,UIIB,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 46139,RU,Belaya Kalitva Airfield,RU-0312,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 26398,RU,Belgorod International Airport,UUOB,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
@@ -30,7 +30,7 @@ source_airport_id,country_iso,airport_name,source_ident,passenger_evidence_type,
 343470,RU,Bovanenkovo Airport,USDB,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 6464,RU,Bratsk Airport,UIBB,PUBLISHED_SUBSIDIZED_PASSENGER_ROUTE_2026,https://special.favt.gov.ru/dejatelnost-vozdushnye-perevozki-subsidirovanie-regiony/,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 26393,RU,Bryansk International Airport,UUBP,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
-35174,RU,Bugulma Airport,UWKB,PUBLISHED_SUBSIDIZED_PASSENGER_ROUTE_2026,https://special.favt.gov.ru/dejatelnost-vozdushnye-perevozki-subsidirovanie-regiony/,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
+35174,RU,Bugulma Airport,UWKB,RECORDED_PASSENGERS_2025,https://www.rzd-partner.ru/aviation/news/passazhiropotok-v-aeroportakh-tatarstana-v-2025-godu-prevysil-6-millionov-chelovek/,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 43671,RU,Buguruslan Severny Airport,UWWB,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 34959,RU,Burevestnik Airport,UHSB,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 34960,RU,Buturlinovka Air Base,RU-0018,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
@@ -39,7 +39,7 @@ source_airport_id,country_iso,airport_name,source_ident,passenger_evidence_type,
 34961,RU,Chebenki Air Base,RU-0019,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 26406,RU,Cheboksary Airport,UWKS,PUBLISHED_SUBSIDIZED_PASSENGER_ROUTE_2026,https://special.favt.gov.ru/dejatelnost-vozdushnye-perevozki-subsidirovanie-regiony/,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 34963,RU,Chelyabinsk Shagol Airport,USCG,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
-30819,RU,Cherepovets Airport,ULWC,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
+30819,RU,Cherepovets Airport,ULWC,PUBLISHED_PASSENGER_SCHEDULE_2025,https://severstal-avia.ru/news/the-schedule-of-regular-flights-for-the-2025-summer-season/,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 44392,RU,Chernigovka Air Base,RU-0132,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 43008,RU,Chernyakhovsk Naval Air Base,RU-0060,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 30870,RU,Cherskiy Airport,UESS,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
@@ -59,13 +59,13 @@ source_airport_id,country_iso,airport_name,source_ident,passenger_evidence_type,
 42954,RU,Dudinka Airport,UROD,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 43669,RU,Dyagilevo Air Base,RU-10059,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 32517,RU,Dzemgi Airport,UHKD,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
-6521,RU,Elista Airport,URWI,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
+6521,RU,Elista Airport,URWI,RECORDED_PASSENGERS_2026,https://www.interfax-russia.ru/index.php/south-and-north-caucasus/news/passazhiropotok-aeroporta-elisty-za-9-mesyacev-snizilsya-na-19-na-fone-priostanovki-raboty-iz-za-kapremonta,AIRPORT_SPECIFIC_CARGO_OPERATOR_OR_HANDLING_EVIDENCE,https://www.interfax-russia.ru/index.php/south-and-north-caucasus/news/passazhiropotok-aeroporta-elisty-za-9-mesyacev-snizilsya-na-19-na-fone-priostanovki-raboty-iz-za-kapremonta,2026-10-21
 6490,RU,Emperor Nicholas II Murmansk Airport,ULMM,RECORDED_PASSENGERS_2025,https://www.avia-adv.ru/stat/airports-ru-2025.htm,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 34984,RU,Engels Air Base,RU-8602,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 43010,RU,Fedotovo Naval Air Base,RU-10056,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 339001,RU,Gagarin International Airport,UWSG,RECORDED_PASSENGERS_2025,https://www.avia-adv.ru/stat/airports-ru-2025.htm,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 44857,RU,Garovka Air Base,UHK2,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
-31522,RU,Gelendzhik Airport,URKG,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
+31522,RU,Gelendzhik Airport,URKG,RECORDED_PASSENGERS_2026,https://gelaero.ru/news/aeroport-gelendzhik-obsluzhil-300-000-passazhirov-s-nachala-2026-goda/,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 26395,RU,Golden Ring Yaroslavl International Airport,UUDL,PUBLISHED_SUBSIDIZED_PASSENGER_ROUTE_2026,https://special.favt.gov.ru/dejatelnost-vozdushnye-perevozki-subsidirovanie-regiony/,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 34986,RU,Gorelovo Aerodrome,RU-0845,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 42913,RU,Gorno-Altaysk Airport,UNBG,PUBLISHED_SUBSIDIZED_PASSENGER_ROUTE_2026,https://special.favt.gov.ru/dejatelnost-vozdushnye-perevozki-subsidirovanie-regiony/,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
@@ -114,7 +114,7 @@ source_airport_id,country_iso,airport_name,source_ident,passenger_evidence_type,
 31761,RU,Kostroma Sokerkino Airport,UUBA,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 46132,RU,Kotelnikovo Air Base,RU-0307,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 31780,RU,Kotlas Airport,ULKK,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
-6512,RU,Krasnodar Pashkovsky International Airport,URKK,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
+6512,RU,Krasnodar Pashkovsky International Airport,URKK,OPERATOR_DOCUMENTED_SERVICE_2026,https://www.interfax.ru/russia/1102504,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 42997,RU,Krasnokamensk Airport,UIAE,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 44425,RU,Krasnoyarsk Cheremshanka Airport,UNKM,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 6506,RU,Krasnoyarsk International Airport,UNKL,RECORDED_PASSENGERS_2025,https://www.avia-adv.ru/stat/airports-ru-2025.htm,AIRPORT_SPECIFIC_CARGO_OPERATOR_OR_HANDLING_EVIDENCE,https://team.kja.aero/media/sklad-vremennogo-hraneniya-gruzovogo-terminala-aeroporta-Krasnoyarsk-otkryt,2026-10-21
@@ -133,7 +133,7 @@ source_airport_id,country_iso,airport_name,source_ident,passenger_evidence_type,
 35029,RU,Lyambir Air Base,RU-6558,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 42979,RU,Magan Airport,UEMM,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 43689,RU,Magas Airport,URMS,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
-26371,RU,Magnitogorsk International Airport,USCM,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
+26371,RU,Magnitogorsk International Airport,USCM,RECORDED_PASSENGERS_2025,https://www.aviaport.ru/news/passazhiropotok-aeroporta-magnitogorska-v-2025g-prevysil-278-tys-chelovek-ostalsya-na-urovne-2024/,AIRPORT_SPECIFIC_CARGO_OPERATOR_OR_HANDLING_EVIDENCE,https://www.aviaport.ru/news/passazhiropotok-aeroporta-magnitogorska-v-2025g-prevysil-278-tys-chelovek-ostalsya-na-urovne-2024/,2026-10-21
 6513,RU,Makhachkala Uytash International Airport,URML,RECORDED_PASSENGERS_2025,https://www.avia-adv.ru/stat/airports-ru-2025.htm,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 46089,RU,Marinovka Air Base,RU-0298,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 35032,RU,Matrosovo Air Base,RU-7218,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
@@ -157,7 +157,7 @@ source_airport_id,country_iso,airport_name,source_ident,passenger_evidence_type,
 44611,RU,Nikolayevsk-na-Amure Airport,UHNN,PUBLISHED_SUBSIDIZED_PASSENGER_ROUTE_2026,https://favt.gov.ru/dejatelnost-vozdushnye-perevozki-subsidirovanie-1172/,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 32528,RU,Nizhneangarsk International Airport,UIUN,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 26374,RU,Nizhnevartovsk Airport,USNN,PUBLISHED_SUBSIDIZED_PASSENGER_ROUTE_2026,https://special.favt.gov.ru/dejatelnost-vozdushnye-perevozki-subsidirovanie-regiony/,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
-26403,RU,Nizhny Novgorod / Strigino International Airport,UWGG,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
+26403,RU,Nizhny Novgorod / Strigino International Airport,UWGG,RECORDED_PASSENGERS_2025,https://nta-pfo.ru/news/society/2026/news_731652/,AIRPORT_SPECIFIC_CARGO_OPERATOR_OR_HANDLING_EVIDENCE,https://nta-pfo.ru/news/society/2026/news_731652/,2026-10-21
 41838,RU,Nogliki Airport,UHSN,PUBLISHED_SUBSIDIZED_PASSENGER_ROUTE_2026,https://favt.gov.ru/dejatelnost-vozdushnye-perevozki-subsidirovanie-1172/,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 46163,RU,Novorossiya Airfield,RU-0333,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 6507,RU,Novosibirsk Tolmachevo Airport,UNNT,RECORDED_PASSENGERS_2025,https://www.aviaport.ru/news/aeroport-tolmachevo-podvel-itogi-raboty-za-pervoe-polugodie-2026-goda/,AIRPORT_SPECIFIC_CARGO_OPERATOR_OR_HANDLING_EVIDENCE,https://www.aviaport.ru/news/aeroport-tolmachevo-podvel-itogi-raboty-za-pervoe-polugodie-2026-goda/,2026-10-21
@@ -245,14 +245,14 @@ source_airport_id,country_iso,airport_name,source_ident,passenger_evidence_type,
 26402,RU,Syktyvkar Airport,UUYY,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 44866,RU,Taganrog Tsentralny Air Base,RU-0211,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 44865,RU,Taganrog Yuzhny Airport,URRT,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
-6488,RU,Talagi Airport,ULAA,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
+6488,RU,Talagi Airport,ULAA,RECORDED_PASSENGERS_2025,https://disclosure.1prime.ru/Portal/GetDocument.aspx?docId=4ac962b962ae41089795b5a98d7db133&emId=2901015817,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 327559,RU,Talakan Airport,UECT,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 35094,RU,Tambov Air Base,RU-4339,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 43005,RU,Tasayevo Airport,RU-0058,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 44619,RU,Tikhoretsk Air Base,RU-0164,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 6450,RU,Tiksi Airport,UEST,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 32471,RU,Tobolsk Airport,USTO,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
-342469,RU,Tobolsk Remezov Airport,USTJ,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
+342469,RU,Tobolsk Remezov Airport,USTJ,RECORDED_PASSENGERS_2025,https://ar-rmz.ru/about/news/aeroport-remezov-otmechaet-5-letie/,AIRPORT_SPECIFIC_CARGO_OPERATOR_OR_HANDLING_EVIDENCE,https://ar-rmz.ru/,2026-10-21
 32468,RU,Tomsk Kamov Airport,UNTT,RECORDED_PASSENGERS_2025,https://www.avia-adv.ru/stat/airports-ru-2025.htm,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 35099,RU,Totskoye Air Base,RU-8604,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
 44318,RU,Troekurovka Air Base,RU-0095,NOT_INDIVIDUALLY_VERIFIED,,NOT_INDIVIDUALLY_VERIFIED,,2026-10-21
