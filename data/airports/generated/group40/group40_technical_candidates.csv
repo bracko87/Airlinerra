@@ -1,0 +1,42 @@
+ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible_runway_m,surface,eligible_runway_count,runway_ids
+4799,CR,Chacarita Airport,MRCH,MRCH,1499.9,ASP,1,235386
+4806,CR,Daniel Oduber Quirós International Airport,MRLB,MRLB,2749.9,ASP,1,235375
+4803,CR,Finca 10 / Nuevo Palmar Sur Airport,MRFI,MRFI,1432.6,ASP,1,235372
+4804,CR,Golfito Airport,MRGF,MRGF,1399.9,ASP,1,235374
+4810,CR,Juan Santamaría International Airport,MROC,MROC,3012.0,ASP,1,235385
+4808,CR,Limón International Airport,MRLM,MRLM,1800.1,ASP,1,235369
+4807,CR,Los Chiles Airport,MRLC,MRLC,1300.0,ASP,1,235371
+4812,CR,Palmar Sur Airport,MRPM,MRPM,1392.9,ASP,1,235376
+4813,CR,Tobías Bolaños International Airport,MRPV,MRPV,1566.1,ASP,1,235380
+4854,CU,Abel Santamaria International Airport,MUSC,MUSC,3016.9,ASP,1,235424
+4858,CU,Alberto Delgado Airport,MUTD,MUTD,1801.1,ASP,1,235426
+4835,CU,Antonio Maceo International Airport,MUCU,MUCU,4002.0,ASP,2,235410;235411
+4828,CU,Carlos Manuel de Cespedes Airport,MUBY,MUBY,2099.2,ASP,1,235404
+4842,CU,Ciudad Libertad Airport,MULB,MULB,2065.0,ASP,1,235401
+4840,CU,Frank Pais International Airport,MUHG,MUHG,3238.2,ASP,1,235425
+4826,CU,Gustavo Rizo Airport,MUBA,MUBA,1850.1,CON,1,235420
+4860,CU,Hermanos Ameijeiras Airport,MUVT,MUVT,1820.0,ASP,1,235407
+4834,CU,Ignacio Agramonte International Airport,MUCM,MUCM,2999.8,ASP,1,235419
+4832,CU,Jaime Gonzalez Airport,MUCF,MUCF,2400.0,ASP,1,235397
+4831,CU,Jardines Del Rey Airport,MUCC,MUCC,2999.8,ASP,1,235393
+4855,CU,Joaquín de Agüero Airport,MUSL,MUSL,1799.8,ASP,1,235430
+4839,CU,José Martí International Airport,MUHA,MUHA,3999.9,ASP,1,235402
+4859,CU,Juan Gualberto Gomez International Airport,MUVR,MUVR,3502.2,ASP,1,235421
+4841,CU,Kawama Airport,MUKW,MUKW,1478.3,ASP,1,235427
+4827,CU,Las Brujas Airport,MUBR,MUBR,1799.8,ASP,1,235392
+4837,CU,Leeward Point Field,MUGM,MUGM,2438.4,ASP,1,235417
+4844,CU,Managua Airport,MUMG,MUMG,2845.0,ASP,1,235406
+4838,CU,Mariana Grajales Airport,MUGT,MUGT,2446.0,ASP,1,235422
+4829,CU,Máximo Gómez Airport,MUCA,MUCA,3532.0,ASP,1,235418
+4846,CU,Orestes Acosta Airport,MUMO,MUMO,1859.9,ASP,1,235394
+4851,CU,Playa Baracoa Airport,MUPB,MUPB,2305.2,ASP,1,235403
+4849,CU,Rafael Cabrera Airport,MUNG,MUNG,2500.0,ASP,2,235395;235396
+4853,CU,San Antonio de los Baños Airfield,MUSA,MUSA,3596.3,CON,3,235412;235413;235414
+4857,CU,Sancti Spiritus Airport,MUSS,MUSS,1799.8,ASP,1,235405
+4847,CU,Sierra Maestra International Airport,MUMZ,MUMZ,2400.3,ASP,1,235423
+4856,CU,Siguanea Airport,MUSN,MUSN,1799.8,ASP,1,235428
+4833,CU,Vilo Acuña International Airport,MUCL,MUCL,3008.1,ASP,1,235416
+6404,CW,Hato International Airport,TNCC,TNCC,3410.1,ASP,1,238001
+6362,DM,Douglas-Charles Airport,TDPD,TDPD,1936.1,ASP,1,235481
+4861,KY,Charles Kirkconnell International Airport,MWCB,MWCB,1828.8,ASP,1,235261
+4862,KY,Owen Roberts International Airport,MWCR,MWCR,2397.9,ASP,1,235262
