@@ -1,0 +1,7 @@
+country_iso,country_name,runway_qualified_candidates,passenger_evidenced,cargo_eligible_evidenced,military_review,other_unknown_both,public_airport_service_unverified
+"MV","Maldives","6","6","2","0","0","0"
+"MN","Mongolia","8","8","1","0","0","0"
+"MM","Myanmar","24","11","2","2","13","0"
+"NP","Nepal","7","7","6","0","0","0"
+"KP","North Korea","34","4","0","22","30","0"
+"TOTAL","TOTAL","79","36","11","24","43","0"
