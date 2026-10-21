@@ -1,0 +1,6 @@
+country_iso,missing_airport_code,missing_airport_name,issue,evidence_url,review_action
+"TN","DTNH","Enfidha-Hammamet International Airport","Some external services incorrectly use DTNZ for Enfidha; technical roster code DTNH must be retained.","https://www.icao.int/EURNAT/EUR%20and%20NAT%20Documents/EUR%20Documents/_eANP%20EUR%20Doc7754/Doc%207754%20EUR%20eANP%20Vol%20II_January%202025.pdf","AIRPORT_IDENTIFIER_AUDIT"
+"UG","HUGU","Gulu Airport","Runway eligible but specific scheduled civilian passenger timetable not confirmed.","https://caa.go.ug/statistics/","AIRPORT_SERVICE_REVIEW"
+"ZM","FLLS","Kenneth Kaunda International Airport","Zambia airport-specific freight terminal evidence found; tonnage remains unverified.","https://www.zacl.co.zm/corporate/commercial-services","CARGO_VOLUME_REVIEW"
+"ZW","FVHA","Robert Gabriel Mugabe International Airport","Airport historical source ident FVHA / GPS FVRG; ensure source ID is used rather than accidentally attributing unrelated Harare airfields.","https://www.airzimbabwe.aero/","ICAO_CODE_MAPPING"
+"EH","GMMA","Smara Airport","Runway eligible but no individually substantiated scheduled passenger or cargo flights.","https://www.onda.ma/en/Je-suis-Professionnel/Statistiques/Statistiques","AIRPORT_SERVICE_REVIEW"
