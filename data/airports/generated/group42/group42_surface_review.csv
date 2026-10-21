@@ -1,0 +1,3 @@
+ourairports_id,iso_country,airport_name,ident,longest_runway_m,reported_surface,decision
+314186,JM,Eastern Banana Estates Airstrip,JM-0016,1219.2,Rolled Asphalt,SURFACE_VERIFICATION_REQUIRED
+300697,MX,Sahuaripa Airport,MX-0013,1920.2,paved,SURFACE_VERIFICATION_REQUIRED
