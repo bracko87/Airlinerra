@@ -1,0 +1,7 @@
+country_iso,country_name,runway_qualified_candidates,passenger_evidenced,cargo_eligible_evidenced,military_review,other_unknown_both,public_airport_service_unverified
+MC,Monaco,0,0,0,0,0,0
+ME,Montenegro,2,2,2,0,0,0
+MK,North Macedonia,2,2,1,0,0,0
+NL,Netherlands,12,6,3,4,6,0
+NO,Norway,31,22,8,2,9,0
+TOTAL,TOTAL,47,32,14,6,15,0
