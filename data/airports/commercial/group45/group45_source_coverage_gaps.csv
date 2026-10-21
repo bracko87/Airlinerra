@@ -1,0 +1,5 @@
+country_iso,missing_airport_code,missing_airport_name,issue,evidence_url,review_action
+"US","ALL","United States group 45","Large-scale airport-by-airport FAA passenger data matching remains outstanding for every US airport, including provisional YES; many entries unreviewed individually.","https://www.faa.gov/airports/planning_capacity/passenger_allcargo_stats/passenger?year=all","FULL_FAA_AIRPORT_LEVEL_JOIN_REQUIRED"
+"US","CARGO","United States group 45","FAA all-cargo airport landed weight is a different measure from total goods handled; do not infer each airport commercial cargo YES.","https://www.faa.gov/airports/planning_capacity/passenger_allcargo_stats/passenger?year=all","AIRPORT_CARGO_AUDIT"
+"TC","MBNC","North Caicos Airport","No named current airline service confirmed; technical eligible runway does not establish commercial status.","https://tciairports.com/","REGIONAL_AIR_SERVICE_REVIEW"
+"TT","TTPP","Piarco International Airport","Authority provides approximate monthly cargo throughput and 24-hour cargo handling; verify precise annual figures.","https://tntairports.com/business/air-service-development/","CARGO_TONNAGE_RECONCILIATION"
