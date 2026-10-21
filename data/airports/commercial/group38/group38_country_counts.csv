@@ -1,0 +1,7 @@
+country_iso,country_name,runway_qualified_candidates,passenger_evidenced,cargo_eligible_evidenced,military_review,other_unknown_both,public_airport_service_unverified
+"AG","Antigua and Barbuda","2","2","1","0","0","0"
+"AI","Anguilla","1","1","0","0","0","0"
+"AW","Aruba","1","1","0","0","0","0"
+"BB","Barbados","1","1","0","0","0","0"
+"BS","Bahamas","24","22","0","0","2","0"
+"TOTAL","TOTAL","29","27","1","0","2","0"
