@@ -90,20 +90,20 @@ source_airport_id,country_iso,airport_name,source_ident,passenger_evidence_type,
 26751,ID,Denpasar I Gusti Ngurah Rai International Airport,WADD,HISTORICAL_PASSENGERS_PRE2020,,,https://en.wikipedia.org/wiki/List_of_the_busiest_airports_in_Indonesia,,2026-10-21
 26852,ID,Depati Amir Airport,WIPK,HISTORICAL_PASSENGERS_PRE2020,,,https://en.wikipedia.org/wiki/List_of_the_busiest_airports_in_Indonesia,,2026-10-21
 32634,ID,Domine Eduard Osok Airport,WASS,HISTORICAL_PASSENGERS_PRE2020,,,https://en.wikipedia.org/wiki/List_of_the_busiest_airports_in_Indonesia,,2026-10-21
-26755,ID,Dortheys Hiyo Eluay International Airport,WAJJ,HISTORICAL_PASSENGERS_PRE2020,,,https://en.wikipedia.org/wiki/List_of_the_busiest_airports_in_Indonesia,,2026-10-21
+26755,ID,Dortheys Hiyo Eluay International Airport,WAJJ,HISTORICAL_PASSENGERS_PRE2020,,86800,https://en.wikipedia.org/wiki/List_of_the_busiest_airports_in_Indonesia,https://id.scribd.com/document/1013084744/2544,2026-10-21
 26801,ID,El Tari Airport,WATT,HISTORICAL_PASSENGERS_PRE2020,,,https://en.wikipedia.org/wiki/List_of_the_busiest_airports_in_Indonesia,,2026-10-21
 26853,ID,Fatmawati Soekarno Airport,WIPL,HISTORICAL_PASSENGERS_PRE2020,,,https://en.wikipedia.org/wiki/List_of_the_busiest_airports_in_Indonesia,,2026-10-21
 26746,ID,Frans Kaisiepo Airport,WABB,HISTORICAL_PASSENGERS_PRE2020,,,https://en.wikipedia.org/wiki/List_of_the_busiest_airports_in_Indonesia,,2026-10-21
 26842,ID,H A S Hanandjoeddin International Airport,WIOD,HISTORICAL_PASSENGERS_PRE2020,,,https://en.wikipedia.org/wiki/List_of_the_busiest_airports_in_Indonesia,,2026-10-21
 26797,ID,H. Hasan Aroeboesman (Ende) Airport,WATE,HISTORICAL_PASSENGERS_PRE2020,,,https://en.wikipedia.org/wiki/List_of_the_busiest_airports_in_Indonesia,,2026-10-21
-26832,ID,Halim Perdanakusuma International Airport,WIHH,HISTORICAL_PASSENGERS_PRE2020,,,https://en.wikipedia.org/wiki/List_of_the_busiest_airports_in_Indonesia,,2026-10-21
+26832,ID,Halim Perdanakusuma International Airport,WIHH,HISTORICAL_PASSENGERS_PRE2020,,50000,https://en.wikipedia.org/wiki/List_of_the_busiest_airports_in_Indonesia,https://id.scribd.com/document/1013084744/2544,2026-10-21
 26806,ID,Haluoleo Airport,WAWW,HISTORICAL_PASSENGERS_PRE2020,,,https://en.wikipedia.org/wiki/List_of_the_busiest_airports_in_Indonesia,,2026-10-21
 26828,ID,Hang Nadim International Airport,WIDD,HISTORICAL_PASSENGERS_PRE2020,,,https://en.wikipedia.org/wiki/List_of_the_busiest_airports_in_Indonesia,,2026-10-21
 26824,ID,Husein Sastranegara International Airport,WICC,HISTORICAL_PASSENGERS_PRE2020,,,https://en.wikipedia.org/wiki/List_of_the_busiest_airports_in_Indonesia,,2026-10-21
 26777,ID,Iskandar Airport,WAOI,HISTORICAL_PASSENGERS_PRE2020,,,https://en.wikipedia.org/wiki/List_of_the_busiest_airports_in_Indonesia,,2026-10-21
 26767,ID,Jalaluddin Airport,WAMG,HISTORICAL_PASSENGERS_PRE2020,,,https://en.wikipedia.org/wiki/List_of_the_busiest_airports_in_Indonesia,,2026-10-21
 26790,ID,Jenderal Ahmad Yani Airport,WARS,HISTORICAL_PASSENGERS_PRE2020,,,https://en.wikipedia.org/wiki/List_of_the_busiest_airports_in_Indonesia,,2026-10-21
-26789,ID,Juanda International Airport,WARR,HISTORICAL_PASSENGERS_PRE2020,,,https://en.wikipedia.org/wiki/List_of_the_busiest_airports_in_Indonesia,,2026-10-21
+26789,ID,Juanda International Airport,WARR,HISTORICAL_PASSENGERS_PRE2020,,50400,https://en.wikipedia.org/wiki/List_of_the_busiest_airports_in_Indonesia,https://id.scribd.com/document/1013084744/2544,2026-10-21
 26762,ID,Juwata International Airport / Suharnoko Harbani AFB,WALR,HISTORICAL_PASSENGERS_PRE2020,,,https://en.wikipedia.org/wiki/List_of_the_busiest_airports_in_Indonesia,,2026-10-21
 26759,ID,Kalimarau Airport,WAQT,HISTORICAL_PASSENGERS_PRE2020,,,https://en.wikipedia.org/wiki/List_of_the_busiest_airports_in_Indonesia,,2026-10-21
 26800,ID,Komodo Airport,WATO,HISTORICAL_PASSENGERS_PRE2020,,,https://en.wikipedia.org/wiki/List_of_the_busiest_airports_in_Indonesia,,2026-10-21
@@ -119,9 +119,9 @@ source_airport_id,country_iso,airport_name,source_ident,passenger_evidence_type,
 26794,ID,Rendani Airport,WASR,HISTORICAL_PASSENGERS_PRE2020,,,https://en.wikipedia.org/wiki/List_of_the_busiest_airports_in_Indonesia,,2026-10-21
 26770,ID,Sam Ratulangi International Airport,WAMM,HISTORICAL_PASSENGERS_PRE2020,,,https://en.wikipedia.org/wiki/List_of_the_busiest_airports_in_Indonesia,,2026-10-21
 26781,ID,Sampit (H.Asan) Airport,WAOS,HISTORICAL_PASSENGERS_PRE2020,,,https://en.wikipedia.org/wiki/List_of_the_busiest_airports_in_Indonesia,,2026-10-21
-26835,ID,Soekarno-Hatta International Airport,WIII,HISTORICAL_PASSENGERS_PRE2020,,,https://en.wikipedia.org/wiki/List_of_the_busiest_airports_in_Indonesia,,2026-10-21
+26835,ID,Soekarno-Hatta International Airport,WIII,HISTORICAL_PASSENGERS_PRE2020,,236200,https://en.wikipedia.org/wiki/List_of_the_busiest_airports_in_Indonesia,https://id.scribd.com/document/1013084744/2544,2026-10-21
 26760,ID,Sultan Aji Muhammad Sulaiman Sepinggan International Airport,WALL,HISTORICAL_PASSENGERS_PRE2020,,,https://en.wikipedia.org/wiki/List_of_the_busiest_airports_in_Indonesia,,2026-10-21
-26745,ID,Sultan Hasanuddin International Airport,WAAA,HISTORICAL_PASSENGERS_PRE2020,,,https://en.wikipedia.org/wiki/List_of_the_busiest_airports_in_Indonesia,,2026-10-21
+26745,ID,Sultan Hasanuddin International Airport,WAAA,HISTORICAL_PASSENGERS_PRE2020,,39800,https://en.wikipedia.org/wiki/List_of_the_busiest_airports_in_Indonesia,https://id.scribd.com/document/1013084744/2544,2026-10-21
 26862,ID,Sultan Iskandar Muda International Airport,WITT,HISTORICAL_PASSENGERS_PRE2020,,,https://en.wikipedia.org/wiki/List_of_the_busiest_airports_in_Indonesia,,2026-10-21
 26855,ID,Sultan Mahmud Badaruddin II Airport,WIPP,HISTORICAL_PASSENGERS_PRE2020,,,https://en.wikipedia.org/wiki/List_of_the_busiest_airports_in_Indonesia,,2026-10-21
 26750,ID,Sultan Muhammad Salahuddin Airport,WADB,HISTORICAL_PASSENGERS_PRE2020,,,https://en.wikipedia.org/wiki/List_of_the_busiest_airports_in_Indonesia,,2026-10-21
@@ -129,48 +129,48 @@ source_airport_id,country_iso,airport_name,source_ident,passenger_evidence_type,
 26850,ID,Sultan Thaha Airport,WIPA,HISTORICAL_PASSENGERS_PRE2020,,,https://en.wikipedia.org/wiki/List_of_the_busiest_airports_in_Indonesia,,2026-10-21
 26847,ID,Supadio International Airport,WIOO,HISTORICAL_PASSENGERS_PRE2020,,,https://en.wikipedia.org/wiki/List_of_the_busiest_airports_in_Indonesia,,2026-10-21
 26779,ID,Syamsudin Noor International Airport,WAOO,HISTORICAL_PASSENGERS_PRE2020,,,https://en.wikipedia.org/wiki/List_of_the_busiest_airports_in_Indonesia,,2026-10-21
-26489,IN,Agartala - Maharaja Bir Bikram Airport,VEAT,RECORDED_PASSENGERS_FY2025_26_SECONDARY,1538175,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
-26504,IN,Bir Tikendrajit International Airport,VEIM,RECORDED_PASSENGERS_FY2025_26_SECONDARY,1366765,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
-26519,IN,Birsa Munda Airport,VERC,RECORDED_PASSENGERS_FY2025_26_SECONDARY,2701796,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
-26610,IN,Calicut International Airport,VOCL,RECORDED_PASSENGERS_FY2025_26_SECONDARY,3855618,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
-26618,IN,Chennai International Airport,VOMM,RECORDED_PASSENGERS_FY2025_26_SECONDARY,23017324,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
-26434,IN,Chhatrapati Shivaji Maharaj International Airport,VABB,RECORDED_PASSENGERS_FY2025_26_SECONDARY,55290095,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
-26609,IN,Cochin International Airport,VOCI,RECORDED_PASSENGERS_FY2025_26_SECONDARY,11302552,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
-26607,IN,Coimbatore International Airport,VOCB,RECORDED_PASSENGERS_FY2025_26_SECONDARY,3420745,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
-26554,IN,Dehradun Jolly Grant Airport,VIDN,RECORDED_PASSENGERS_FY2025_26_SECONDARY,1871115,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
-26453,IN,Dr. Babasaheb Ambedkar International Airport,VANP,RECORDED_PASSENGERS_FY2025_26_SECONDARY,3007734,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
-26444,IN,Goa Dabolim International Airport,VOGO,RECORDED_PASSENGERS_FY2025_26_SECONDARY,6126944,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
-26523,IN,INS Dega Airport (visakhapatnam international airport),VEVZ,RECORDED_PASSENGERS_FY2025_26_SECONDARY,2967744,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
-26555,IN,Indira Gandhi International Airport,VIDP,RECORDED_PASSENGERS_FY2025_26_SECONDARY,78701971,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
-26563,IN,Jaipur International Airport,VIJP,RECORDED_PASSENGERS_FY2025_26_SECONDARY,5627147,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
+26489,IN,Agartala - Maharaja Bir Bikram Airport,VEAT,RECORDED_PASSENGERS_FY2025_26_SECONDARY,1538175,5489,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,https://safeandsecure.in/airports/,2026-10-21
+26504,IN,Bir Tikendrajit International Airport,VEIM,RECORDED_PASSENGERS_FY2025_26_SECONDARY,1366765,6200,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,https://safeandsecure.in/airports/,2026-10-21
+26519,IN,Birsa Munda Airport,VERC,RECORDED_PASSENGERS_FY2025_26_SECONDARY,2701796,6662,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,https://safeandsecure.in/airports/,2026-10-21
+26610,IN,Calicut International Airport,VOCL,RECORDED_PASSENGERS_FY2025_26_SECONDARY,3855618,21246,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,https://safeandsecure.in/airports/,2026-10-21
+26618,IN,Chennai International Airport,VOMM,RECORDED_PASSENGERS_FY2025_26_SECONDARY,23017324,379154,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,https://safeandsecure.in/airports/,2026-10-21
+26434,IN,Chhatrapati Shivaji Maharaj International Airport,VABB,RECORDED_PASSENGERS_FY2025_26_SECONDARY,55290095,889900,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,https://safeandsecure.in/airports/,2026-10-21
+26609,IN,Cochin International Airport,VOCI,RECORDED_PASSENGERS_FY2025_26_SECONDARY,11302552,62000,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,https://safeandsecure.in/airports/,2026-10-21
+26607,IN,Coimbatore International Airport,VOCB,RECORDED_PASSENGERS_FY2025_26_SECONDARY,3420745,12140,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,https://safeandsecure.in/airports/,2026-10-21
+26554,IN,Dehradun Jolly Grant Airport,VIDN,RECORDED_PASSENGERS_FY2025_26_SECONDARY,1871115,1959,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,https://safeandsecure.in/airports/,2026-10-21
+26453,IN,Dr. Babasaheb Ambedkar International Airport,VANP,RECORDED_PASSENGERS_FY2025_26_SECONDARY,3007734,9018,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,https://safeandsecure.in/airports/,2026-10-21
+26444,IN,Goa Dabolim International Airport,VOGO,RECORDED_PASSENGERS_FY2025_26_SECONDARY,6126944,5460,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,https://safeandsecure.in/airports/,2026-10-21
+26523,IN,INS Dega Airport (visakhapatnam international airport),VEVZ,RECORDED_PASSENGERS_FY2025_26_SECONDARY,2967744,4399,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,https://safeandsecure.in/airports/,2026-10-21
+26555,IN,Indira Gandhi International Airport,VIDP,RECORDED_PASSENGERS_FY2025_26_SECONDARY,78701971,1109520,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,https://safeandsecure.in/airports/,2026-10-21
+26563,IN,Jaipur International Airport,VIJP,RECORDED_PASSENGERS_FY2025_26_SECONDARY,5627147,21762,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,https://safeandsecure.in/airports/,2026-10-21
 26565,IN,Jammu Airport,VIJU,RECORDED_PASSENGERS_FY2025_26_SECONDARY,1383717,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
-26517,IN,Jay Prakash Narayan Airport,VEPT,RECORDED_PASSENGERS_FY2025_26_SECONDARY,4386376,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
-329504,IN,Kannur International Airport,VOKN,RECORDED_PASSENGERS_FY2025_26_SECONDARY,1434168,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
-35145,IN,Kempegowda International Airport Bengaluru,VOBL,RECORDED_PASSENGERS_FY2025_26_SECONDARY,44470035,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
-26545,IN,Lal Bahadur Shastri International Airport,VEBN,RECORDED_PASSENGERS_FY2025_26_SECONDARY,4343347,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
+26517,IN,Jay Prakash Narayan Airport,VEPT,RECORDED_PASSENGERS_FY2025_26_SECONDARY,4386376,9136,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,https://safeandsecure.in/airports/,2026-10-21
+329504,IN,Kannur International Airport,VOKN,RECORDED_PASSENGERS_FY2025_26_SECONDARY,1434168,4152,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,https://safeandsecure.in/airports/,2026-10-21
+35145,IN,Kempegowda International Airport Bengaluru,VOBL,RECORDED_PASSENGERS_FY2025_26_SECONDARY,44470035,502509,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,https://safeandsecure.in/airports/,2026-10-21
+26545,IN,Lal Bahadur Shastri International Airport,VEBN,RECORDED_PASSENGERS_FY2025_26_SECONDARY,4343347,6034,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,https://safeandsecure.in/airports/,2026-10-21
 26569,IN,Leh Kushok Bakula Rimpochee Airport,VILH,RECORDED_PASSENGERS_FY2025_26_SECONDARY,1070313,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
-26501,IN,Lokpriya Gopinath Bordoloi International Airport,VEGT,RECORDED_PASSENGERS_FY2025_26_SECONDARY,6622784,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
-26616,IN,Madurai Airport,VOMD,RECORDED_PASSENGERS_FY2025_26_SECONDARY,1388062,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
+26501,IN,Lokpriya Gopinath Bordoloi International Airport,VEGT,RECORDED_PASSENGERS_FY2025_26_SECONDARY,6622784,26607,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,https://safeandsecure.in/airports/,2026-10-21
+26616,IN,Madurai Airport,VOMD,RECORDED_PASSENGERS_FY2025_26_SECONDARY,1388062,3495,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,https://safeandsecure.in/airports/,2026-10-21
 26462,IN,Maharana Pratap Airport,VAUD,RECORDED_PASSENGERS_FY2025_26_SECONDARY,1819531,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
 46512,IN,Maharshi Valmiki International Airport,IN-0025,RECORDED_PASSENGERS_FY2025_26_SECONDARY,923651,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
-26617,IN,Mangaluru International Airport,VOML,RECORDED_PASSENGERS_FY2025_26_SECONDARY,2548088,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
-342094,IN,Manohar International Airport,VOGA,RECORDED_PASSENGERS_FY2025_26_SECONDARY,5376516,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
-26496,IN,Netaji Subhash Chandra Bose International Airport,VECC,RECORDED_PASSENGERS_FY2025_26_SECONDARY,21102741,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
-26455,IN,Pune International Airport,VAPO,RECORDED_PASSENGERS_FY2025_26_SECONDARY,11005988,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
-26439,IN,Raja Bhoj International Airport,VABP,RECORDED_PASSENGERS_FY2025_26_SECONDARY,1581305,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
-35141,IN,Rajiv Gandhi International Airport,VOHS,RECORDED_PASSENGERS_FY2025_26_SECONDARY,30483885,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
+26617,IN,Mangaluru International Airport,VOML,RECORDED_PASSENGERS_FY2025_26_SECONDARY,2548088,2213,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,https://safeandsecure.in/airports/,2026-10-21
+342094,IN,Manohar International Airport,VOGA,RECORDED_PASSENGERS_FY2025_26_SECONDARY,5376516,3389,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,https://safeandsecure.in/airports/,2026-10-21
+26496,IN,Netaji Subhash Chandra Bose International Airport,VECC,RECORDED_PASSENGERS_FY2025_26_SECONDARY,21102741,165618,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,https://safeandsecure.in/airports/,2026-10-21
+26455,IN,Pune International Airport,VAPO,RECORDED_PASSENGERS_FY2025_26_SECONDARY,11005988,42293,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,https://safeandsecure.in/airports/,2026-10-21
+26439,IN,Raja Bhoj International Airport,VABP,RECORDED_PASSENGERS_FY2025_26_SECONDARY,1581305,2410,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,https://safeandsecure.in/airports/,2026-10-21
+35141,IN,Rajiv Gandhi International Airport,VOHS,RECORDED_PASSENGERS_FY2025_26_SECONDARY,30483885,165868,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,https://safeandsecure.in/airports/,2026-10-21
 26458,IN,Rajkot Airport,VARK,RECORDED_PASSENGERS_FY2025_26_SECONDARY,1088570,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
-26431,IN,Sardar Vallabh Patel International Airport,VAAH,RECORDED_PASSENGERS_FY2025_26_SECONDARY,13822287,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
-26550,IN,Shaheed Bhagat Singh International Airport,VICG,RECORDED_PASSENGERS_FY2025_26_SECONDARY,3926519,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
-26540,IN,Sri Guru Ram Das Ji International Airport,VIAR,RECORDED_PASSENGERS_FY2025_26_SECONDARY,2941017,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
-26578,IN,Srinagar International Airport,VISR,RECORDED_PASSENGERS_FY2025_26_SECONDARY,3372163,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
-26461,IN,Surat International Airport,VASU,RECORDED_PASSENGERS_FY2025_26_SECONDARY,1814572,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
-26459,IN,Swami Vivekananda Airport,VARP,RECORDED_PASSENGERS_FY2025_26_SECONDARY,2763498,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
-26629,IN,Thiruvananthapuram International Airport,VOTV,RECORDED_PASSENGERS_FY2025_26_SECONDARY,4694206,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
-26628,IN,Tiruchirappalli International Airport,VOTR,RECORDED_PASSENGERS_FY2025_26_SECONDARY,2221024,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
+26431,IN,Sardar Vallabh Patel International Airport,VAAH,RECORDED_PASSENGERS_FY2025_26_SECONDARY,13822287,118922,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,https://safeandsecure.in/airports/,2026-10-21
+26550,IN,Shaheed Bhagat Singh International Airport,VICG,RECORDED_PASSENGERS_FY2025_26_SECONDARY,3926519,14138,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,https://safeandsecure.in/airports/,2026-10-21
+26540,IN,Sri Guru Ram Das Ji International Airport,VIAR,RECORDED_PASSENGERS_FY2025_26_SECONDARY,2941017,3362,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,https://safeandsecure.in/airports/,2026-10-21
+26578,IN,Srinagar International Airport,VISR,RECORDED_PASSENGERS_FY2025_26_SECONDARY,3372163,9892,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,https://safeandsecure.in/airports/,2026-10-21
+26461,IN,Surat International Airport,VASU,RECORDED_PASSENGERS_FY2025_26_SECONDARY,1814572,6886,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,https://safeandsecure.in/airports/,2026-10-21
+26459,IN,Swami Vivekananda Airport,VARP,RECORDED_PASSENGERS_FY2025_26_SECONDARY,2763498,5080,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,https://safeandsecure.in/airports/,2026-10-21
+26629,IN,Thiruvananthapuram International Airport,VOTV,RECORDED_PASSENGERS_FY2025_26_SECONDARY,4694206,23033,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,https://safeandsecure.in/airports/,2026-10-21
+26628,IN,Tiruchirappalli International Airport,VOTR,RECORDED_PASSENGERS_FY2025_26_SECONDARY,2221024,6477,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,https://safeandsecure.in/airports/,2026-10-21
 26627,IN,Tirupati International Airport,VOTP,RECORDED_PASSENGERS_FY2025_26_SECONDARY,1196176,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
 26438,IN,Vadodara International Airport,VABO,RECORDED_PASSENGERS_FY2025_26_SECONDARY,1298410,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
-26620,IN,Veer Savarkar International Airport / INS Utkrosh,VOPB,RECORDED_PASSENGERS_FY2025_26_SECONDARY,1816485,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
+26620,IN,Veer Savarkar International Airport / INS Utkrosh,VOPB,RECORDED_PASSENGERS_FY2025_26_SECONDARY,1816485,7905,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,https://safeandsecure.in/airports/,2026-10-21
 26606,IN,Vijayawada International Airport,VOBZ,RECORDED_PASSENGERS_FY2025_26_SECONDARY,1411958,,https://en.wikipedia.org/wiki/List_of_busiest_airports_in_India,,2026-10-21
 5130,IR,Abadan Ayatollah Jami International Airport,OIAA,HISTORICAL_PASSENGERS_2019,898889,,https://en.wikipedia.org/wiki/List_of_the_busiest_airports_in_Iran,,2026-10-21
 5174,IR,Ayatollah Hashemi Rafsanjani International Airport,OIKK,HISTORICAL_PASSENGERS_2019,768096,,https://en.wikipedia.org/wiki/List_of_the_busiest_airports_in_Iran,,2026-10-21
@@ -197,3 +197,5 @@ source_airport_id,country_iso,airport_name,source_ident,passenger_evidence_type,
 513482,KH,Siem Reap-Angkor International Airport,VDSA,OPERATOR_DOCUMENTED_SERVICE,,,https://www.akp.gov.kh/post/detail/378331,https://english.sai-airport.com/hyysfw/38940.jhtml,2026-10-21
 26478,KH,Sihanouk International Airport,VDSV,OPERATOR_DOCUMENTED_SERVICE,,,https://data.mef.gov.kh/datasets/pd_6a8555f7911be0000713a2c1,,2026-10-21
 342098,KH,Techo International Airport,KH-0002,OPERATOR_DOCUMENTED_SERVICE,,,https://www.techoairport.com.kh/news/techo-intl-airport-welcome-first-flight-09-sep-2025,https://pnh.cambodia-airports.aero/cargo_process,2026-10-21
+3301,IN,Nashik International Airport,VAOZ,NOT_RECORDED_PREVIOUSLY,,4280,,https://safeandsecure.in/airports/,2026-10-21
+5171,IR,Payam International Airport,OIIP,OPERATOR_DOCUMENTED_HISTORIC_SERVICE,,,https://www.www.api.payamaviation.ir/en-US/douranPortal/5029/page/history-,https://www.www.api.payamaviation.ir/en-US/douranPortal/5029/page/history-,2026-10-21
