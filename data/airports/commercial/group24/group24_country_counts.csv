@@ -1,0 +1,7 @@
+country_iso,country_name,runway_qualified_candidates,passenger_evidenced,cargo_eligible_evidenced,military_review,other_unknown_both,public_airport_service_unverified
+"PG","Papua New Guinea","20","16","4","0","4","0"
+"WS","Samoa","1","1","1","0","0","0"
+"SB","Solomon Islands","2","2","2","0","0","0"
+"TO","Tonga","1","1","0","0","0","0"
+"TV","Tuvalu","1","1","0","0","0","0"
+"TOTAL","TOTAL","25","21","7","0","4","0"
