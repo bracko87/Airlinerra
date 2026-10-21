@@ -1,0 +1,27 @@
+ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible_runway_m,surface,eligible_runway_count,runway_ids
+4774,NI,Augusto C. Sandino (Managua) International Airport,MNMG,MNMG,2442.1,ASP,1,238004
+4770,NI,Bluefields Airport,MNBL,MNBL,2019.3,ASP,1,238006
+42164,NI,Corn Island Airport,MNCI,MNCI,1900.1,ASPHALT,1,353028
+316239,NI,Costa Esmeralda Airport,MNCE,MNCE,1524.9,Asphalt,1,316242
+4775,NI,Montelimar Airport,MNMR,MNMR,2036.1,ASP,1,238005
+4776,NI,Puerto Cabezas Airport,MNPC,MNPC,2478.0,ASP,1,238002
+4772,NI,Punta Huete (Panchito) Airport,MNFC,MNFC,3005.9,CON,1,238003
+4787,PA,Alonso Valderrama Airport,MPCE,MPCE,1499.9,ASP,1,238307
+5330,PA,Alvaro Berroa Airport,MP21,MP21,2000.1,ASP,1,238299
+4786,PA,"Bocas del Toro ""Isla Colón"" International Airport",MPBO,MPBO,1499.9,ASP,1,238306
+4790,PA,Enrique Adolfo Jimenez Airport,MPEJ,MPEJ,2699.9,CON,1,238303
+4789,PA,Enrique Malek International Airport,MPDA,MPDA,2599.9,ASP,1,238300
+4791,PA,Marcos A. Gelabert International Airport,MPMG,MPMG,1800.1,ASP,1,238305
+30768,PA,Panamá Pacífico International Airport,MPHO,MPPA,2590.8,ASP,1,256701
+5334,PA,Punta Cocos Airport,MP26,MPPU,1218.9,ASP,1,238309
+316552,PA,San José Island Airport,SIC,,1330.1,CON,1,346874
+31940,PA,Scarlett Martinez International Airport,MPSM,MPSM,2450.0,ASP,1,248465
+4793,PA,Tocumen International Airport,MPTO,MPTO,3049.8,CON,2,238295;238296
+6378,PR,Antonio Nery Juarbe Pol Airport,TJAB,TJAB,1211.6,ASP,1,238488
+6385,PR,Antonio Rivera Rodriguez Airport,TJVQ,TJVQ,1310.9,ASP,1,238492
+6382,PR,Eugenio Maria De Hostos Airport,TJMZ,TJMZ,1523.4,ASP,1,238491
+6381,PR,Fernando Luis Ribas Dominicci Airport,TJIG,TJIG,1620.6,ASP,1,238486
+6384,PR,Luis Munoz Marin International Airport,TJSJ,TJSJ,3048.6,ASP,2,238489;238490
+6383,PR,Mercedita International Airport,TJPS,TJPS,2104.3,ASP,1,238493
+6379,PR,Rafael Hernández International Airport,TJBQ,TJBQ,3566.8,ASP,1,238495
+5497,PR,Santa Isabel Airport,PR27,PR27,1219.2,ASP,1,238494
