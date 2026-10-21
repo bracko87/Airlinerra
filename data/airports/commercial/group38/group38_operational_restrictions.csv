@@ -1,0 +1,2 @@
+source_airport_id,country_iso,airport_code,restriction_type,applies_to,direction,route_scope,condition,valid_until,evidence_url,source_date,review_status
+"6359","AG","TAPA","FREIGHT_DIRECTION_LIMIT","cargo","EXPORT","VIRGIN_ATLANTIC_CARGO_STATION","Virgin Atlantic Cargo currently accepts inbound shipments at V C Bird but outbound cargo is embargoed until further notice.","UNKNOWN","https://www.virginatlanticcargo.com/gb/en/our-network/worldwide-offices/antigua.html","2026-10-21","CONFIRMED_CARRIER_RESTRICTION"
