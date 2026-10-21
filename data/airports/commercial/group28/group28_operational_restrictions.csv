@@ -1,0 +1,3 @@
+source_airport_id,country_iso,airport_code,restriction_type,applies_to,direction,route_scope,condition,valid_until,evidence_url,source_date,review_status
+"3062","CD","FZSA","MILITARY_OR_CONTROLLED_ACCESS","civil_public_passenger_and_cargo_permission","BOTH","ALL_PUBLIC_COMMERCIAL","Airport runway eligibility alone does not grant public airline rights. Verify national AIP and owner permission.","UNKNOWN","","UNKNOWN","REQUIRE_CIVIL_ACCESS_REVIEW"
+"31574","DJ","HDCH","MILITARY_OR_CONTROLLED_ACCESS","civil_public_passenger_and_cargo_permission","BOTH","ALL_PUBLIC_COMMERCIAL","Airport runway eligibility alone does not grant public airline rights. Verify national AIP and owner permission.","UNKNOWN","","UNKNOWN","REQUIRE_CIVIL_ACCESS_REVIEW"
