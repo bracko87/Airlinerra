@@ -1,0 +1,7 @@
+country_iso,country_name,runway_qualified_candidates,passenger_evidenced,cargo_eligible_evidenced,military_review,other_unknown_both,public_airport_service_unverified
+LI,Liechtenstein,0,0,0,0,0,0
+LT,Lithuania,6,4,4,2,2,0
+LU,Luxembourg,1,1,1,0,0,0
+MT,Malta,1,1,1,0,0,0
+MD,Moldova,3,1,2,0,1,0
+TOTAL,TOTAL,11,7,8,2,3,0
