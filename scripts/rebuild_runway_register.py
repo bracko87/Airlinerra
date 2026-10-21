@@ -57,7 +57,15 @@ def build(target: pathlib.Path=REGISTER)->int:
         group=path.parent.name
         with path.open(newline="",encoding="utf-8-sig") as f:
             group_rows=list(csv.DictReader(f))
-        if not group_rows: raise ValueError(f"Screen unexpectedly empty: {group}")
+        if not group_rows:
+            if group != "group49":
+                raise ValueError(f"Screen unexpectedly empty: {group}")
+            counts_path=path.parent/"group49_country_counts.csv"
+            with counts_path.open(newline="",encoding="utf-8-sig") as counts_file:
+                count_rows=list(csv.DictReader(counts_file))
+            if len(count_rows)!=2 or {x["country_iso"] for x in count_rows}!={"AQ","TOTAL"} or any(x["technical_candidates"]!="0" for x in count_rows):
+                raise ValueError("Group 49 requires AQ/TOTAL zero-count evidence")
+            continue
         for row in group_rows:
             airport_id=row["ourairports_id"].strip()
             country=row["iso_country"].strip()
