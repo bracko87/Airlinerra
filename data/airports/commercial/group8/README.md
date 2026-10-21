@@ -7,11 +7,11 @@ This file describes the **preliminary passenger/cargo evidence screening of 397 
 ```csv
 country_iso,country_name,runway_qualified_candidates,passenger_evidenced,cargo_eligible_evidenced,military_review,other_unknown_both,public_airport_service_unverified
 PL,Poland,35,15,2,13,20,0
-PT,Portugal,29,13,0,6,16,0
-RO,Romania,21,17,1,3,4,0
-RU,Russia,312,74,11,89,238,0
+PT,Portugal,29,13,7,6,15,0
+RO,Romania,21,17,3,3,4,0
+RU,Russia,312,84,16,89,228,0
 SM,San Marino,0,0,0,0,0,0
-TOTAL,TOTAL,397,119,14,111,278,0
+TOTAL,TOTAL,397,129,28,111,267,0
 ```
 
 **Interpretation:** `YES` means documented historic airport passenger traffic, a published future/ongoing subsidized passenger-route plan, or airport-level cargo service/traffic (identified separately in the Russia evidence-types CSV), not final authorization for a game airline, freighter fleet, international route, or night operation. `UNKNOWN` is **not** a `NO`, and technical paved runway alone is not enough to activate an airport. A military-labelled airport is a civilian-access review, not automatically banned.
@@ -22,44 +22,55 @@ Poland's ULC 2025 airport-by-airport passenger report identifies 15 airports in 
 - https://caa.gov.pl/aktualnosci/przewozy-w-polskich-portach-lotniczych-w-2025-roku
 - https://www.katowice-airport.com/en/our-airport/statistics/annual-statistics
 
-### Portugal — 29
-ANA confirms 2025 passenger activity at Lisbon, Porto, Faro, Madeira, Porto Santo, Ponta Delgada, Flores, Horta and Santa Maria; island-airport traffic in Graciosa, São Jorge, Pico and Lajes is independently confirmed by Azores regional statistics. Beja has a civilian airport terminal at an airbase, but its **current airport-specific commercial movements and regular scheduled access remain unknown**. Air-cargo evidence is deliberately UNKNOWN for all Portugal Group 8 airports until individual positive freight and handler data are verified: Portuguese national air-cargo totals cannot be distributed arbitrarily.
-- https://www.ana.pt/en/business/airlines/our-airports
-- https://srea.azores.gov.pt/2026/01/09/movimento-de-passageiros-aereos-dezembro-2025/
-- https://www.anac.pt/VPT/GENERICO/PUBLICACOESINAC/NEWSLETTERSDETRAFEGO/Paginas/NewslettersdeTrafego.aspx
+### Portugal — 29 (cargo recheck)
 
-### Romania — 21
-Romanian Airports Association 2025 Q1 airport-specific passenger graphic identifies 17 airports with observed passenger movements (including small/seasonal Arad and Tulcea). Bucharest airports' operator corroborates traffic at the two Bucharest airports. Cluj Airport's official 2025 financial/operational report documents **6,630.91 tonnes of freight/mail**, so it has a supported positive cargo marker. This is NOT the assertion that other Romanian airports lack cargo transport or facilities.
-- https://airportaar.ro/wp-content/uploads/2025/05/1-David-Ciceo-_Adunare-Gen.-AAR_MAI2025_FINAL.pdf
-- https://aeroporturibucuresti.ro/b2b/
+Portugal **now has 7 airports with cargo evidence**, compared with 0 before this targeted audit. ANA's own **2024** audited management report documents freight at Lisbon (191,892 tonnes), Porto (38,120 t), Faro (approximately 37 t) and the Beja civil terminal (approximately 2 t). Madeira's official airport operator lists dedicated cargo terminals and handlers; **do not misassign the aggregated Madeira Islands cargo volume to Madeira Airport alone**. Separately, airport-specific 2025 cargo/mail values for Ponta Delgada (7,449 t) and Horta (881 t) are presented by an independent site citing Eurostat, and should be verified against Eurostat original tables when those are imported.
+- https://www.ana.pt/sites/default/files/2025-05/ANA_RGC_2024_PT_Website.pdf
+- https://www.ana.pt/en/content-topic/airlines-0
+- https://aeroplano.de/flughafen-ponta-delgada/
+- https://aeroplano.de/flughafen-horta/
+
+These represent documented **past freight or available cargo handling**, not promises of frequent freighter operations, commercial cargo permissions for every aircraft, or daily/monthly cargo demand. Portugal still has 13 passenger-evidenced airports. Beja's very small 2024 cargo figure does not imply a scheduled passenger market.
+
+### Romania — 21 (cargo recheck)
+
+Romania now has **3** airports with documented cargo handling, up from 1: Cluj, Bucharest Henri Coandă and Timișoara. Bucharest's airport operator reports **43,947 tonnes** in 2025. Romania's national statistics show roughly **6,500 tonnes** at Timișoara, in addition to Cluj's 2025 reported freight/mail. All other airports remain `UNKNOWN` for cargo unless independently verified.
+- https://bucharestairports.ro/old/files/pages_files/BHCIA_WEBSITE_2024_-_2025.pdf
+- https://agerpres.ro/economic/2026/03/15/ins-transportul-aerian-de-marfuri-a-crescut-cu-10-5-in-2025--1537357
 - https://www.airportcluj.ro/wp-content/uploads/2026/01/Raport-activitate-AN_2025-.pdf
 
-### Russia — 312, a single whole-country review (corrected 2026-10-21)
+### Russia — 312, complete country (third-pass update)
 
-**Correction:** The original first-pass Group 8 review incorrectly reported passenger evidence for **only 5 airports** and **0 cargo airports**. Those were research-coverage counts, NOT an accurate estimate of the Russian commercial aviation network. A second, airport-specific review now records:
+Russia now has **84 passenger-evidenced airports** and **16 cargo-evidenced airports**, increased from 74 and 11 on the previous pass (and the originally underresearched 5 and 0).
 
-- **36** airports with positive actual **2025** passenger activity identified by individually matched airport name/code in an industry-compiled airport table. Historical observation is not a live 2026 flight schedule: https://www.avia-adv.ru/stat/airports-ru-2025.htm
-- **38 additional** airports appearing as an airport/city endpoint on Rosaviatsiya's **2026 subsidized passenger-route plan**. These routes have named carriers and published validity windows, but the route list alone does **not prove all flights were actually operated**, and it does not prove unrestricted commercial permissions: https://special.favt.gov.ru/dejatelnost-vozdushnye-perevozki-subsidirovanie-regiony/ and https://favt.gov.ru/dejatelnost-vozdushnye-perevozki-subsidirovanie-1172/
-- **74 unique passenger-evidenced airport records** in total. In addition, **11 airport records** have independently documented cargo terminals/handling providers; cargo processing capability is not evidence of dedicated scheduled freighter traffic or cargo tonnage.
-- The remaining **238** airports have neither passenger nor cargo evidence marked YES; their statuses are unverified, **not unsuitable**. **89** military-labelled candidates remain access reviews, overlapping the 238.
-- Only airports present among the exact **312 existing Russian source airport IDs** were counted. No missing airports were fabricated or dropped; Russia was never geographically divided.
+The airport-specific evidence sidecar distinguishes:
+- `PUBLISHED_SUBSIDIZED_PASSENGER_ROUTE_2026`: 37 airports
+- `NOT_INDIVIDUALLY_VERIFIED`: 228 airports
+- `RECORDED_PASSENGERS_2025`: 42 airports
+- `RECORDED_PASSENGERS_2024`: 1 airports
+- `PUBLISHED_PASSENGER_SCHEDULE_2025`: 1 airports
+- `RECORDED_PASSENGERS_2026`: 2 airports
+- `OPERATOR_DOCUMENTED_SERVICE_2026`: 1 airports
 
-The new `group8_russia_evidence_types.csv` records the specific verification tier and URL for each of the 312 Russian airport IDs. **Never interpret a 2026 subsidized flight PLAN as observed 2026 passengers**: it is a different evidence tier, explicitly labeled.
+The previous 2025 industry ranking, 2026 Rosaviatsiya regional subsidized-route lists, and airport-specific sources are not interchangeable: **a planned airline route is not actual flown passenger traffic**. The latest targeted pass upgraded Bugulma from route-plan evidence to **observed 2025 passenger traffic**, and added the previously missing airport records for Norilsk Alykel, Begishevo, Gelendzhik, Krasnodar Pashkovsky, Elista, Tobolsk Remezov, Arkhangelsk Talagi, Nizhny Novgorod Strigino, Magnitogorsk and Cherepovets. Cherepovets' evidence is a **2025 schedule** and its subsequent temporary suspension notice requires a 2026 access recheck, not automatic activation.
 
-**Cargo evidence sources and representative cases (all airport-specific):**
-- Sheremetyevo (UUEE) Moscow Cargo: https://www.moscow-cargo.com/index.php/en/about
-- Domodedovo (UUDD) cargo terminal: https://business.dme.ru/en/company/group/dc/
-- Vnukovo (UUWW) official 2026 cargo terminal tariffs: https://www.vnukovo.ru/uploads/content/news/2025/12/04.12.2025/01-437-ob-izmeneniyah-v-tarifah-na-uslugi-ooo-vnukovo-kargo.pdf
-- Pulkovo (ULLI) cargo terminal: https://pulkovoairport.ru/partners/cargo/
-- Novosibirsk Tolmachevo (UNNT) 2025 volume (22,838 t) reported by operator: https://www.aviaport.ru/news/aeroport-tolmachevo-podvel-itogi-raboty-za-pervoe-polugodie-2026-goda/
-- Koltsovo (USSS) published airport cargo terminal and customs facilities: https://ura.aero/en/partners/shippers/terminal/
-- Ufa (UWUU) airport cargo operator: https://www.airportufa.ru/partners/info/cargo/
-- Yakutsk (UEEE) cargo terminal and 2026 freight acceptance: https://yks.aero/cargo/services
-- Krasnoyarsk (UNKL) official airport cargo warehouse: https://team.kja.aero/media/sklad-vremennogo-hraneniya-gruzovogo-terminala-aeroporta-Krasnoyarsk-otkryt
-- Vladivostok (UHWW) specialist cargo terminal: https://air-cargo.ru/index.php?lang=ru
-- Khabarovsk (UHHH) airport cargo services: https://khv.aero/cargo/
+New positive Russian cargo evidence was found at **Begishevo, Elista, Nizhny Novgorod Strigino, Magnitogorsk and Tobolsk Remezov**. A documented cargo warehouse or positive freight/mail volumes is not proof of unrestricted dedicated freighter service.
 
-The Russian civil aerodrome registry, international-airport roster and 2026 airline schedules remain critical next data sources to match further airport names/codes, terminal facilities and **current** legal operating status. Government registry membership alone proves neither actual flights nor cargo operations. The regulatory review must also check restricted airspace and NOTAMs at game-route activation time; a historical short-lived interruption is not a permanent closure.
+Key airport-specific sources:
+- https://news.sgnorilsk.ru/2025/09/26/direktor-aeroporta-alykel-prokommentiroval-rekonstrukcziyu-vozdushnoj-gavani/
+- https://www.rzd-partner.ru/aviation/news/passazhiropotok-v-aeroportakh-tatarstana-v-2025-godu-prevysil-6-millionov-chelovek/
+- https://gelaero.ru/news/aeroport-gelendzhik-obsluzhil-300-000-passazhirov-s-nachala-2026-goda/
+- https://www.interfax.ru/russia/1102504
+- https://www.interfax-russia.ru/index.php/south-and-north-caucasus/news/passazhiropotok-aeroporta-elisty-za-9-mesyacev-snizilsya-na-19-na-fone-priostanovki-raboty-iz-za-kapremonta
+- https://ar-rmz.ru/about/news/aeroport-remezov-otmechaet-5-letie/
+- https://disclosure.1prime.ru/Portal/GetDocument.aspx?docId=4ac962b962ae41089795b5a98d7db133&emId=2901015817
+- https://nta-pfo.ru/news/society/2026/news_731652/
+- https://www.aviaport.ru/news/passazhiropotok-aeroporta-magnitogorska-v-2025g-prevysil-278-tys-chelovek-ostalsya-na-urovne-2024/
+- https://severstal-avia.ru/news/the-schedule-of-regular-flights-for-the-2025-summer-season/
+- https://www.nbc.aero/partners/trucking/
+- https://ar-rmz.ru/
+
+**228 of the 312 Russian airports** still have neither passenger nor cargo confirmation. That is an unverified research remainder, **not an estimate that those airports are not commercially viable**. 89 are flagged as military access reviews, overlapping these columns. Russia must always remain a **single complete country**. Future work: verify Rosaviatsiya civil certificates / airport-specific flight schedules and cargo facilities, including any current airspace/NOTAM restrictions, in batches of 40–60 airports. Airport code/geographic matching must be exact; country-level passenger totals are not assigned to individual unknown airports.
 
 ### San Marino — 0
 Zero runway-qualified candidates in original San Marino source geography; do not add nonqualifying airports to fill the count.
