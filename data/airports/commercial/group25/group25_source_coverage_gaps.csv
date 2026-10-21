@@ -1,0 +1,3 @@
+country_iso,missing_airport_code,missing_airport_name,issue,evidence_url,review_action
+"PF","NTAA","Tahiti-Faa'a","Existing roster entry; do not misinterpret inter-island Air Tahiti cargo network claims as individual cargo throughput figures.","https://www.airtahiti.com/en/web/air-tahiti-international/cargo","VERIFY_AIRPORT_SPECIFIC_CARGO_VOLUME"
+"UM","PWAK","Wake Island","Roster physically eligible but military access restrictions require AIP/owner verification.","https://www.faa.gov/airports/pacific/","MILITARY_ACCESS_REVIEW_NOT_A_MISSING_AIRPORT"
