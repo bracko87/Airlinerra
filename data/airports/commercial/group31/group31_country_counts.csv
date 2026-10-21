@@ -1,0 +1,7 @@
+country_iso,country_name,runway_qualified_candidates,passenger_evidenced,cargo_eligible_evidenced,military_review,other_unknown_both,public_airport_service_unverified
+"KE","Kenya","12","7","5","2","5","0"
+"LS","Lesotho","2","1","0","1","1","0"
+"LR","Liberia","2","1","1","0","1","0"
+"LY","Libya","46","8","3","2","38","0"
+"MG","Madagascar","21","10","0","0","11","0"
+"TOTAL","TOTAL","83","27","9","5","56","0"
