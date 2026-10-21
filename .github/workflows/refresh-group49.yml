@@ -1,0 +1,65 @@
+name: Refresh Group 49 technical airport screening
+
+# Batch airport curation is validated locally; this job runs only on explicit request.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: group49-source-refresh
+  cancel-in-progress: false
+
+jobs:
+  screen-runways:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: true
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download current authoritative raw datasets
+        run: |
+          curl --fail --show-error --silent --location --retry 3 --max-time 180 https://raw.githubusercontent.com/davidmegginson/ourairports-data/main/airports.csv --output "${RUNNER_TEMP}/airports.csv"
+          curl --fail --show-error --silent --location --retry 3 --max-time 180 https://raw.githubusercontent.com/davidmegginson/ourairports-data/main/runways.csv --output "${RUNNER_TEMP}/runways.csv"
+          test -s "${RUNNER_TEMP}/airports.csv"
+          test -s "${RUNNER_TEMP}/runways.csv"
+      - name: Generate unapproved technical register
+        run: |
+          python scripts/screen_group49.py --airports "${RUNNER_TEMP}/airports.csv" --runways "${RUNNER_TEMP}/runways.csv" --out data/airports/generated/group49
+      - name: Build permanent minimum-Level-1 register if candidates exist
+        run: |
+          python - <<'PY'
+          import csv, pathlib, subprocess, sys
+          path = pathlib.Path("data/airports/generated/group49/group49_technical_candidates.csv")
+          with path.open(newline="", encoding="utf-8") as f:
+              has_rows = any(csv.DictReader(f))
+          if has_rows:
+              subprocess.run([sys.executable, "scripts/rebuild_runway_register.py"], check=True)
+          else:
+              print("Zero qualifying Antarctica runways: master register unchanged.")
+          PY
+      - name: Validate permanent runway register
+        run: python scripts/validate_airports.py && python scripts/validate_historical_airports.py
+      - name: Publish review data as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: airlinerra-group49-technical-screen
+          path: data/airports/generated/group49
+          if-no-files-found: error
+      - name: Commit results to main development branch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/airports/generated/group49 data/airports/airport_register.csv
+          if ! git diff --cached --quiet; then
+            git commit -m "data: refresh runway-qualified Group 49 and Level 1 register [skip ci]"
+            git push origin HEAD:main
+          fi
