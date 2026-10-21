@@ -1,0 +1,2 @@
+source_airport_id,country_iso,airport_code,restriction_type,applies_to,direction,route_scope,condition,valid_until,evidence_url,source_date,review_status
+2877,SH,FHAW,LIMITED_ACCESS,civil_passenger_service,BOTH,ST_HELENA_ASCENSION_CHARTER_ONLY,Only St Helena charter exception confirmed; other public commercial service requires special authorization,UNKNOWN,https://www.ascension.gov.ac/travel-and-shipping/travel-by-air,UNKNOWN,CONFIRMED_RESTRICTION
