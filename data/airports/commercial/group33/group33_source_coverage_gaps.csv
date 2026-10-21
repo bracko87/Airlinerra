@@ -1,0 +1,7 @@
+country_iso,missing_airport_code,missing_airport_name,issue,evidence_url,review_action
+"NG","DNAA","Nnamdi Azikiwe International Airport","Cargo traffic not assessed; do not interpret Nigeria country-level cargo totals as Abuja airport confirmed freight.","https://www.ncaa.gov.ng/","AIRPORT_SPECIFIC_FREIGHT_AUDIT"
+"NG","DNMM","Murtala Muhammed International Airport","Lagos has known major freight activity, but dedicated official airport tonnage evidence is still required to classify cargo YES.","https://www.faan.gov.ng/","AIRPORT_SPECIFIC_FREIGHT_AUDIT"
+"NA","FYWH","Hosea Kutako International Airport","Confirm named airport freight movements and distinguish Windhoek Eros (FYWE) from Hosea Kutako (FYWH).","https://www.airports.com.na/","DUAL_AIRPORT_IDENTIFIER_REVIEW"
+"MZ","FQMA","Maputo Airport","Freight evidence requires airport-specific source; do not infer from LAM passenger destinations.","https://www.aeroportos.co.mz/","AIRPORT_CARGO_AUDIT"
+"RW","HRYR","Kigali International Airport","RwandAir cargo network requires matching Kigali airport-specific handling operations before cargo YES.","https://www.rwandair.com/","AIRPORT_CARGO_AUDIT"
+"NE","DRRN","Diori Hamani International Airport","Preserve technical 3800m asphalt correction from earlier Group 33 audit.","","PRESERVE_TECHNICAL_CORRECTION"
