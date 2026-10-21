@@ -1,0 +1,5 @@
+source_airport_id,country_iso,airport_code,restriction_type,applies_to,direction,route_scope,condition,valid_until,evidence_url,source_date,review_status
+"4842","CU","MULB","POSSIBLE_MILITARY_OR_CONTROLLED_ACCESS","civil_passenger_and_cargo","BOTH","ALL","Civil unrestricted commercial operation is not established. Verify national aeronautical information.","UNKNOWN","","UNKNOWN","ACCESS_REVIEW"
+"4837","CU","MUGM","POSSIBLE_MILITARY_OR_CONTROLLED_ACCESS","civil_passenger_and_cargo","BOTH","ALL","Civil unrestricted commercial operation is not established. Verify national aeronautical information.","UNKNOWN","","UNKNOWN","ACCESS_REVIEW"
+"4844","CU","MUMG","POSSIBLE_MILITARY_OR_CONTROLLED_ACCESS","civil_passenger_and_cargo","BOTH","ALL","Civil unrestricted commercial operation is not established. Verify national aeronautical information.","UNKNOWN","","UNKNOWN","ACCESS_REVIEW"
+"4853","CU","MUSA","POSSIBLE_MILITARY_OR_CONTROLLED_ACCESS","civil_passenger_and_cargo","BOTH","ALL","Civil unrestricted commercial operation is not established. Verify national aeronautical information.","UNKNOWN","","UNKNOWN","ACCESS_REVIEW"
