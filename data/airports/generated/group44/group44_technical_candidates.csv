@@ -1,0 +1,8 @@
+ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible_runway_m,surface,eligible_runway_count,runway_ids
+6386,KN,Robert L. Bradshaw International Airport,TKPK,TKPK,2317.1,ASP,1,238692
+6387,KN,Vance W. Amory International Airport,TKPN,TKPN,1218.0,ASP,1,238693
+6388,LC,George F. L. Charles Airport,TLPC,TLPC,1748.0,ASP,1,238959
+6389,LC,Hewanorra International Airport,TLPL,TLPL,2744.1,ASP,1,238960
+4245,PM,Saint-Pierre Pointe-Blanche Airport,LFVP,LFVP,1800.1,ASP,1,238691
+322383,VC,Argyle International Airport,TVSA,TVSA,2743.2,ASP,1,322384
+6413,VC,Canouan Airport,TVSC,TVSC,1798.3,ASP,1,246053
