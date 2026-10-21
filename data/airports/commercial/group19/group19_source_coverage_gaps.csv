@@ -1,0 +1,4 @@
+country_iso,missing_airport_code,missing_airport_name,issue,evidence_url,review_action
+"TH","VTBS","Suvarnabhumi Airport","Present in technical roster. Do not double count AOT Suvarnabhumi+Don Mueang combined statistics as another airport.","https://investor.airportthai.co.th/misc/statistic/2025/20241118-aot-traffic-calendar-2025-1m.pdf","KEEP_SOURCE_IDS_DISTINCT"
+"TW","RCTP","Taiwan Taoyuan International Airport","Present in technical roster; CAA airport trend statistics exclude Taoyuan from some aggregate tables. Ensure Taoyuan source is counted only once.","https://www.caa.gov.tw/Article.aspx?a=3381&lang=2","CHECK_STATISTICAL_SCOPE"
+"TM","UTAN","Balkanabat International Airport","Technical airport has ident TM-0002 and gps_code UTAN. Match the airline's Balkanabat timetable against UTAN before enabling operational imports.","https://turkmenistanairlines.tm/en/services/show/napravlenie-i-raspisanie-reysov","CHECK_AIRPORT_IDENTIFIER_ALIAS"
