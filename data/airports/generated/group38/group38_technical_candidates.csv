@@ -1,0 +1,30 @@
+ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible_runway_m,surface,eligible_runway_count,runway_ids
+336537,AG,Burton-Nibbs International Airport,AG-0001,TAPB,1859.3,ASP,1,599622
+6359,AG,V. C. Bird International Airport,TAPA,TAPA,2744.1,ASP,1,232759
+6407,AI,Clayton J. Lloyd International Airport,TQPF,TQPF,1664.8,ASP,1,233591
+6402,AW,Queen Beatrix International Airport,TNCA,TNCA,2743.2,ASP,1,232758
+6360,BB,Grantley Adams International Airport,TBPB,TBPB,3352.8,ASP,1,233605
+4925,BS,Andros Town Airport,MYAF,MYAF,1236.9,ASP,1,233655
+4936,BS,Arthur's Town Airport,MYCA,MYCA,2138.2,ASP,2,233652;247781
+4938,BS,Colonel Hill Airport,MYCI,MYCI,1237.8,ASP,1,233661
+4926,BS,Congo Town Airport,MYAK,MYAK,1615.4,ASP,1,233659
+4948,BS,Deadman's Cay Airport,MYLD,MYLD,1219.2,ASP,1,233645
+4939,BS,Exuma International Airport,MYEF,MYEF,2149.1,ASP,1,233663
+4942,BS,Governor's Harbour Airport,MYEM,MYEM,2445.7,ASP,1,233662
+4946,BS,Grand Bahama International Airport,MYGF,MYGF,3358.6,ASP,1,233656
+4947,BS,Inagua Airport,MYIG,MYIG,2139.7,ASPH,2,233647;249353
+4927,BS,Leonard M. Thompson International Airport,MYAM,MYAM,1859.3,ASP,1,233646
+4951,BS,Lynden Pindling International Airport,MYNN,MYNN,3460.4,ASP,2,233664;233665
+4950,BS,Mayaguana Airport,MYMM,MYMM,2224.1,ASP,1,233671
+4937,BS,New Bight Airport,MYCB,MYCB,1539.2,ASP,1,233667
+4943,BS,Normans Cay Airport,MYEN,MYEN,1433.5,ASP,1,233669
+4941,BS,North Eleuthera Airport,MYEH,MYEH,1834.9,ASP,1,233660
+4944,BS,Rock Sound International Airport,MYER,MYER,2198.5,ASP,1,233657
+4953,BS,Rum Cay International Airport,MYRP,MYRP,1371.6,ASP,1,233643
+4954,BS,San Salvador International Airport,MYSM,MYSM,2438.4,ASP,1,233653
+4930,BS,Sandy Point Airport,MYAS,MYAS,1371.6,ASP,1,233670
+4935,BS,South Bimini Airport,MYBS,MYBS,1648.7,ASP,1,233644
+4929,BS,Spring Point Airport,MYAP,MYAP,1524.0,ASP,1,233648
+4949,BS,Stella Maris Airport,MYLS,MYLS,1219.2,ASP,1,233651
+31990,BS,Torch Cay Airport,MYEY,MYTC,1615.4,ASP,1,353921
+4931,BS,Treasure Cay Airport,MYAT,MYAT,2133.9,ASP,1,233649
