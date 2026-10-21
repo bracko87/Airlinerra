@@ -1,0 +1,5 @@
+source_airport_id,country_iso,airport_code,restriction_type,applies_to,direction,route_scope,condition,valid_until,evidence_url,source_date,review_status
+"2134","TN","DTTB","MILITARY_AIRFIELD_ACCESS_UNVERIFIED","civil_passenger_and_cargo_operations","BOTH","ALL","Runway eligibility does not imply public civil commercial permission; review operator and AIP.","UNKNOWN","","UNKNOWN","CIVIL_ACCESS_REVIEW"
+"2135","TN","DTTD","MILITARY_AIRFIELD_ACCESS_UNVERIFIED","civil_passenger_and_cargo_operations","BOTH","ALL","Runway eligibility does not imply public civil commercial permission; review operator and AIP.","UNKNOWN","","UNKNOWN","CIVIL_ACCESS_REVIEW"
+"2897","ZM","FLND","MILITARY_AIRFIELD_ACCESS_UNVERIFIED","civil_passenger_and_cargo_operations","BOTH","ALL","Runway eligibility does not imply public civil commercial permission; review operator and AIP.","UNKNOWN","","UNKNOWN","CIVIL_ACCESS_REVIEW"
+"3013","ZW","FVTL","MILITARY_AIRFIELD_ACCESS_UNVERIFIED","civil_passenger_and_cargo_operations","BOTH","ALL","Runway eligibility does not imply public civil commercial permission; review operator and AIP.","UNKNOWN","","UNKNOWN","CIVIL_ACCESS_REVIEW"
