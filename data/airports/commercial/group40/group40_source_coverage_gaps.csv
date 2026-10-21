@@ -1,0 +1,6 @@
+country_iso,missing_airport_code,missing_airport_name,issue,evidence_url,review_action
+"CR","MRPV","Tobias Bolanos International Airport","Passenger charter/general aviation activity should be distinguished from scheduled airline service.","","CHARTER_VS_SCHEDULED_AUDIT"
+"CR","MRLB","Daniel Oduber Quiros International Airport","Confirm airport-specific cargo tonnes before classifying freight YES.","","FREIGHT_AUDIT"
+"CU","MUHA","Jose Marti International Airport","Cayman Airways lists its own Havana cargo office. This is proof of cargo-handling presence, not airport total freight volume.","https://www.caymanairways.com/our-cargo-offices","CARRIER_SPECIFIC_CARGO_REVIEW"
+"CU","MUGM","Leeward Point Field","Military/restricted-access facility; do not infer commercial access.","","MILITARY_ACCESS_REVIEW"
+"KY","MWCR","Owen Roberts International Airport","Verify annual freight tonnes separately from Cayman Airways cargo-office evidence.","https://www.caymanairways.com/our-cargo-offices","CARGO_MOVEMENT_AUDIT"
