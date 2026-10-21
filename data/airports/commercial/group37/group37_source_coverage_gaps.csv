@@ -1,0 +1,4 @@
+country_iso,missing_airport_code,missing_airport_name,issue,evidence_url,review_action
+RE,FMEP,Saint-Pierre Pierrefonds Airport,2024 passenger activity recorded but current 2026 scheduled service requires verification,https://www.pierrefonds.aeroport.fr/fileadmin/user_upload/PV_2025_11_21.pdf,CURRENT_SCHEDULE_REVIEW
+YT,FMCZ,Dzaoudzi Pamandzi International Airport,Airport-specific commercial air cargo volume and operations need further documentation,https://mayotte.aeroport.fr/domaines-application/prestations-et-services/,AIRPORT_CARGO_REVIEW
+SH,FHAW,RAF Ascension Island,Monthly St Helena passenger charter is limited exception and does not imply unrestricted civil airport use,https://www.ascension.gov.ac/travel-and-shipping/travel-by-air,LIMITED_COMMERCIAL_RIGHTS
