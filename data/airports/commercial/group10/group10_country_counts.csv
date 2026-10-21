@@ -1,7 +1,7 @@
 country_iso,country_name,runway_qualified_candidates,passenger_evidenced,cargo_eligible_evidenced,military_review,other_unknown_both,public_airport_service_unverified
 CH,Switzerland,17,5,2,5,12,0
 TR,Turkey,75,50,49,10,25,0
-UA,Ukraine,27,0,0,4,27,0
+UA,Ukraine,27,14,3,4,12,0
 GB,United Kingdom,96,43,29,28,53,0
 VA,Vatican City,0,0,0,0,0,0
-TOTAL,TOTAL,215,98,80,47,117,0
+TOTAL,TOTAL,215,112,83,47,102,0
