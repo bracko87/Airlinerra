@@ -1,0 +1,6 @@
+country_iso,country_name,runway_qualified_candidates,passenger_evidenced,cargo_eligible_evidenced,military_review,other_unknown_both,public_airport_service_unverified
+"KN","Saint Kitts and Nevis","2","2","1","0","0","0"
+"LC","Saint Lucia","2","2","2","0","0","0"
+"PM","Saint Pierre and Miquelon","1","1","1","0","0","0"
+"VC","Saint Vincent and the Grenadines","2","2","1","0","0","0"
+"TOTAL","TOTAL","7","7","5","0","0","0"
