@@ -74,7 +74,14 @@ def validate():
     screened=0
     for path in sources:
         _,raw_rows=load(path)
-        if not raw_rows: raise ValueError(f"Screen empty: {path}")
+        if not raw_rows:
+            if path.parent.name != "group49":
+                raise ValueError(f"Screen empty: {path}")
+            counts_path=path.parent/"group49_country_counts.csv"
+            count_cols,count_rows=load(counts_path)
+            if count_cols!={"country_iso","country","technical_candidates","minimum_eligible_level"} or len(count_rows)!=2 or any(r["technical_candidates"]!="0" for r in count_rows) or {r["country_iso"] for r in count_rows}!={"AQ","TOTAL"}:
+                raise ValueError("Group 49 empty screen needs verified AQ/TOTAL zero counts")
+            continue
         for original in raw_rows:
             ident=original["ourairports_id"]
             if ident in seen: raise ValueError(f"Duplicate source ID between groups: {ident}")
