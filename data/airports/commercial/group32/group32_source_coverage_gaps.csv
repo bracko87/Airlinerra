@@ -1,0 +1,5 @@
+country_iso,missing_airport_code,missing_airport_name,issue,evidence_url,review_action
+"MR","GQPZ","Tazadit Airport","Current Mauritania Airlines route lists Zouerate; verify mapping to Tazadit vs other Zouerate airfield before passenger YES.","https://www.mauritaniaairline.com/destinations","CITY_TO_AIRPORT_IDENTITY_CHECK"
+"MA","GMMN","Mohammed V International Airport","ONDA national airfreight total cannot be used alone as airport-specific freight count; require Casablanca-specific cargo source.","https://www.onda.ma/en/Je-suis-Professionnel/Statistiques/Statistiques","AIRPORT_CARGO_AUDIT"
+"MU","FIMA","Agalega Island Airstrip","Two Agalega candidate runways recorded; verify identity, access, and possible duplicate physical facility before flight activation.","","DUPLICATE_AIRFIELD_ACCESS_AUDIT"
+"ML","GAGO","Gao International Airport","Historical/civilian airline use not enough for current scheduled passenger YES; no-war simulation does not waive access verification.","","INDIVIDUAL_SERVICE_REVIEW"
