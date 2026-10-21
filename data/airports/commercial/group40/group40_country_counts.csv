@@ -1,7 +1,7 @@
-country_iso,country_name,runway_qualified_candidates,passenger_evidenced,cargo_eligible_evidenced,military_review,other_unknown_both,public_airport_service_unverified
-"CR","Costa Rica","9","6","1","0","3","0"
+"country_iso","country_name","runway_qualified_candidates","passenger_evidenced","cargo_eligible_evidenced","military_review","other_unknown_both","public_airport_service_unverified"
+"CR","Costa Rica","9","6","0","0","3","0"
 "CU","Cuba","28","15","1","4","13","0"
 "CW","Curaçao","1","1","0","0","0","0"
 "DM","Dominica","1","1","0","0","0","0"
 "KY","Cayman Islands","2","2","2","0","0","0"
-"TOTAL","TOTAL","41","25","4","4","16","0"
+"TOTAL","TOTAL","41","25","3","4","16","0"
