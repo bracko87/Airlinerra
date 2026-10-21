@@ -1,0 +1,5 @@
+country_iso,country_name,runway_qualified_candidates,passenger_evidenced,cargo_eligible_evidenced,military_review,other_unknown_both,public_airport_service_unverified
+"NI","Nicaragua","7","5","0","1","2","0"
+"PA","Panama","11","7","1","1","4","0"
+"PR","Puerto Rico","8","6","2","0","2","0"
+"TOTAL","TOTAL","26","18","3","2","8","0"
