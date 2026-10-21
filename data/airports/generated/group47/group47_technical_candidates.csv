@@ -1,0 +1,50 @@
+ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible_runway_m,surface,eligible_runway_count,runway_ids
+6084,EC,Carlos Concha Torres International Airport,SETN,SETN,2400.0,ASP,1,235505
+6051,EC,Chachoán Regional Airport,SEAM,SEAM,1925.1,ASP,1,235528
+6074,EC,Chimborazo Airport,SERB,SERB,1600.2,ASP,1,235527
+6083,EC,Ciudad de Catamayo Airport,SETM,SECA,2049.8,ASP,1,235515
+6063,EC,Coronel E Carvajal Airport,SEMC,SEMC,2500.0,ASP,1,235503
+6061,EC,Cotopaxi International Airport,SELT,SELT,3693.3,ASP,1,235524
+512426,EC,Cumbaratza Airport,SEBZ,SEBZ,1420.1,ASP,1,512427
+6065,EC,El Carmen Airport,SEMO,SEMO,1440.2,ASP,1,235516
+6066,EC,Eloy Alfaro International Airport,SEMT,SEMT,2859.9,ASP,1,235501
+6053,EC,Francisco De Orellana Airport,SECO,SECO,2060.4,ASP,1,235502
+6076,EC,General Ulpiano Paez International Airport,SESA,SESA,2630.1,ASP,1,235508
+41131,EC,General Villamil Airport,SEII,SEII,1499.9,ASP,1,253067
+6057,EC,Gualaquiza Airport,SEGZ,SEGZ,2012.0,ASP,1,235529
+6056,EC,José Joaquín de Olmedo International Airport,SEGU,SEGU,2790.1,ASP,1,235519
+309411,EC,Jumandy Airport,SEJD,SEJD,2500.0,ASP,1,327468
+6086,EC,Lieutenant Colonel Luis A. Mantilla International Airport,SETU,SETU,2460.0,ASP,1,235499
+6080,EC,Los Perales Airport,SESV,SESV,2202.8,ASP,1,235510
+6054,EC,Mariscal Lamar Airport,SECU,SECU,1900.1,ASP,1,235520
+308273,EC,Mariscal Sucre International Airport,SEQM,SEQM,4098.0,CON,1,308279
+6069,EC,Patuca Airport,SEPC,SEPC,1601.7,ASP,1,235539
+6072,EC,Quevedo Airport,SEQE,SEQE,1356.4,ASP,1,235493
+6071,EC,Reales Tamarindos Airport,SEPV,SEPV,2271.1,ASP,1,235504
+6078,EC,Rio Amazonas Airport,SESM,SESM,1539.8,ASP,1,235522
+2173,EC,San Carlos Costa Airport,SE08,SE08,1300.0,ASP,1,235495
+6079,EC,San Cristóbal Airport,SEST,SEST,1894.0,ASP,1,235537
+2174,EC,San Rafael Airport,SE09,SESR,1300.0,ASP,1,235497
+6075,EC,Santa Rosa - Artillery Colonel Victor Larrea International Airport,SERO,SERO,2628.9,ASP,1,235513
+6055,EC,Seymour Galapagos Ecological Airport,SEGS,SEGS,2400.9,ASP,1,235511
+6085,EC,Tarapoa Airport,SETR,SETR,1570.0,ASP,1,235500
+6081,EC,Taura Air Base,SETA,SETA,3052.6,ASP,1,235512
+2512,FK,Mount Pleasant Airport / RAF Mount Pleasant,EGYP,EGYP,2589.9,ASP,2,235782;235783
+6198,GF,Cayenne – Félix Eboué Airport,SOCA,SOCA,3196.1,ASP,1,235705
+31941,GF,Maripasoula Airport,SOOA,SOOA,1200.3,ASP,1,252296
+6356,GY,Cheddi Jagan International Airport,SYCJ,SYCJ,3359.8,ASP,2,236404;236405
+41513,GY,Eugene F. Correia International Airport,SYGO,SYEC,1280.5,concrete,1,309412
+6358,GY,Lethem Airport,SYLT,SYLT,1824.2,ASP,1,236403
+6357,GY,Linden Airport,SYLD,SYLD,1524.0,ASP,1,236402
+41567,PY,Doctor Juan Plate National Airport,VMI,SGVM,1205.5,CON,1,238114
+6094,PY,Don Carlos Miguel Gimenez Airport,SGPI,SGPI,1499.6,CON,1,238113
+6095,PY,Dr. Augusto Roberto Fuster International Airport,SGPJ,SGPJ,1800.8,ASP,1,238121
+6093,PY,Dr. Luis María Argaña International Airport,SGME,SGME,3500.0,CON,1,238116
+5508,PY,Estancia Pai Quara Airport,SG67,,1449.9,ASP,1,238120
+6091,PY,Guaraní International Airport,SGES,SGES,3399.7,ASP,1,238122
+6092,PY,Itaipú Airport,SGIB,SGIB,1520.0,ASP,1,238112
+6089,PY,Juan de Ayolas National Airport,SGAY,SGAY,1850.1,ASP,1,238117
+6090,PY,Lieutenant Colonel Carmelo Peralta National Airport,SGCO,SGCO,1850.1,ASP,1,238118
+6096,PY,Santa Teresa Airport,SGST,SGST,1796.8,ASP,1,238119
+6088,PY,Silvio Pettirossi International Airport,SGAS,SGAS,3351.9,ASP,1,238115
+29851,PY,Teniente Ramon A. Ayub Gonzalez International Airport,SGEN,SGEN,2200.0,ASP,1,260218
