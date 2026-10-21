@@ -1,0 +1,2 @@
+country_iso,missing_airport_code,missing_airport_name,issue,evidence_url,review_action
+BD,VGHS,Hazrat Shahjalal International Airport (Dhaka),"CAAB identifies Dhaka as the country's largest principal international airport, but it is absent from Group 12's 9 runway-qualified Bangladesh source IDs. Likely source runway screen omission; investigate actual >=1200m asphalt/concrete runway, source identifiers and any older airport id. No automatic admission or invented source ID.",https://new.caab.gov.bd/airportsf.html,SEPARATE_TECHNICAL_SOURCE_RUNWAY_AUDIT_BEFORE_REGISTER_CHANGE

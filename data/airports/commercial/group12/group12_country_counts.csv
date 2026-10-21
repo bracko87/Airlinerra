@@ -1,0 +1,7 @@
+country_iso,country_name,runway_qualified_candidates,passenger_evidenced,cargo_eligible_evidenced,military_review,other_unknown_both,public_airport_service_unverified
+AF,Afghanistan,12,8,1,2,4,0
+BH,Bahrain,3,1,1,2,2,0
+BD,Bangladesh,9,7,2,1,2,1
+BT,Bhutan,2,2,1,0,0,0
+BN,Brunei,1,1,1,0,0,0
+TOTAL,TOTAL,27,19,6,5,8,1
