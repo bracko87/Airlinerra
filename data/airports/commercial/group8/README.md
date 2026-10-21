@@ -9,12 +9,12 @@ country_iso,country_name,runway_qualified_candidates,passenger_evidenced,cargo_e
 PL,Poland,35,15,2,13,20,0
 PT,Portugal,29,13,0,6,16,0
 RO,Romania,21,17,1,3,4,0
-RU,Russia,312,5,0,89,307,0
+RU,Russia,312,74,11,89,238,0
 SM,San Marino,0,0,0,0,0,0
-TOTAL,TOTAL,397,50,3,111,347,0
+TOTAL,TOTAL,397,119,14,111,278,0
 ```
 
-**Interpretation:** `YES` means an independently documented commercial passenger service or airport-level cargo service/traffic, not final authorization for a game airline, freighter fleet, international route, or night operation. `UNKNOWN` is **not** a `NO`, and technical paved runway alone is not enough to activate an airport. A military-labelled airport is a civilian-access review, not automatically banned.
+**Interpretation:** `YES` means documented historic airport passenger traffic, a published future/ongoing subsidized passenger-route plan, or airport-level cargo service/traffic (identified separately in the Russia evidence-types CSV), not final authorization for a game airline, freighter fleet, international route, or night operation. `UNKNOWN` is **not** a `NO`, and technical paved runway alone is not enough to activate an airport. A military-labelled airport is a civilian-access review, not automatically banned.
 
 ### Poland — 35
 Poland's ULC 2025 airport-by-airport passenger report identifies 15 airports in this technical group with commercial passenger transport. The ULC reports Warsaw Chopin as Poland's largest air-cargo airport (64.1% of 2025 tonnage); Katowice's operator publishes 46,448 tonnes in 2025 and dedicated freighter services. Other cargo airports remain UNKNOWN in this initial pass, not 0.
@@ -34,21 +34,32 @@ Romanian Airports Association 2025 Q1 airport-specific passenger graphic identif
 - https://aeroporturibucuresti.ro/b2b/
 - https://www.airportcluj.ro/wp-content/uploads/2026/01/Raport-activitate-AN_2025-.pdf
 
-### Russia — 312, a single whole-country review
-Only **five source airports** were assigned positive passenger-service evidence in this first pass from individually grounded materials:
-- Sheremetyevo UUEE — airport operator: https://www.svo.aero/ru/press_center/press_releases
-- Pulkovo ULLI — 2026 airport passenger publication: https://pulkovoairport.ru/about/press_center/news/65919/
-- Domodedovo UUDD — commercial airport 2026 reporting: https://www.reuters.com/business/russia-sells-moscows-nationalised-domodedovo-airport-sheremetyevo-subsidiary-2026-01-29/
-- Vnukovo UUWW — official departure/arrival services: https://www.vnukovo.ru/en/
-- Ufa UWUU — 2025 airport passenger report and 2026 scheduled service: https://www.airportufa.ru/news/2025/mezhdunarodnyy-aeroport-ufa-podvel-itogi-2025-goda/
+### Russia — 312, a single whole-country review (corrected 2026-10-21)
 
-The other **307 Russian runway-qualified airports have not yet received individual passenger or cargo permission confirmations**. This is a conservative **research queue**, not a finding that 307 are unsuitable. Rosaviatsiya's September 2026 civil-aerodrome registry and list of airports open to international flights provide important follow-up *airport certification and international eligibility* evidence, but do not alone prove currently scheduled airline service or dedicated cargo facilities:
-- https://favt.gov.ru/dejatelnost-ajeroporty-i-ajerodromy-reestr-grajdanskih-ajerodromov-rf/
-- https://favt.gov.ru/dejatelnost-ajeroporty-i-ajerodromy-mezhdunarodnye-ajeroporty
+**Correction:** The original first-pass Group 8 review incorrectly reported passenger evidence for **only 5 airports** and **0 cargo airports**. Those were research-coverage counts, NOT an accurate estimate of the Russian commercial aviation network. A second, airport-specific review now records:
 
-**Russia needs finer internal research batches**, e.g. 40–60 airports per pass, without dividing its geographic country code or changing Group 8 ownership. Continue verifying licenses, airline schedules, cargo handler publications and airspace/NOTAM access individually. National 2025 passengers (Rosaviatsiya ~109m) **must never be assigned** to unverified individual airports.
+- **36** airports with positive actual **2025** passenger activity identified by individually matched airport name/code in an industry-compiled airport table. Historical observation is not a live 2026 flight schedule: https://www.avia-adv.ru/stat/airports-ru-2025.htm
+- **38 additional** airports appearing as an airport/city endpoint on Rosaviatsiya's **2026 subsidized passenger-route plan**. These routes have named carriers and published validity windows, but the route list alone does **not prove all flights were actually operated**, and it does not prove unrestricted commercial permissions: https://special.favt.gov.ru/dejatelnost-vozdushnye-perevozki-subsidirovanie-regiony/ and https://favt.gov.ru/dejatelnost-vozdushnye-perevozki-subsidirovanie-1172/
+- **74 unique passenger-evidenced airport records** in total. In addition, **11 airport records** have independently documented cargo terminals/handling providers; cargo processing capability is not evidence of dedicated scheduled freighter traffic or cargo tonnage.
+- The remaining **238** airports have neither passenger nor cargo evidence marked YES; their statuses are unverified, **not unsuitable**. **89** military-labelled candidates remain access reviews, overlapping the 238.
+- Only airports present among the exact **312 existing Russian source airport IDs** were counted. No missing airports were fabricated or dropped; Russia was never geographically divided.
 
-Dynamic airspace restrictions must be handled **at route time**, not by treating temporary suspensions as permanent closures. See `group8_operational_restrictions.csv` for historically reported Pulkovo/Ufa interruptions on 2026-10-16; both currently have evidence of passenger service, and neither row is a permanent closure.
+The new `group8_russia_evidence_types.csv` records the specific verification tier and URL for each of the 312 Russian airport IDs. **Never interpret a 2026 subsidized flight PLAN as observed 2026 passengers**: it is a different evidence tier, explicitly labeled.
+
+**Cargo evidence sources and representative cases (all airport-specific):**
+- Sheremetyevo (UUEE) Moscow Cargo: https://www.moscow-cargo.com/index.php/en/about
+- Domodedovo (UUDD) cargo terminal: https://business.dme.ru/en/company/group/dc/
+- Vnukovo (UUWW) official 2026 cargo terminal tariffs: https://www.vnukovo.ru/uploads/content/news/2025/12/04.12.2025/01-437-ob-izmeneniyah-v-tarifah-na-uslugi-ooo-vnukovo-kargo.pdf
+- Pulkovo (ULLI) cargo terminal: https://pulkovoairport.ru/partners/cargo/
+- Novosibirsk Tolmachevo (UNNT) 2025 volume (22,838 t) reported by operator: https://www.aviaport.ru/news/aeroport-tolmachevo-podvel-itogi-raboty-za-pervoe-polugodie-2026-goda/
+- Koltsovo (USSS) published airport cargo terminal and customs facilities: https://ura.aero/en/partners/shippers/terminal/
+- Ufa (UWUU) airport cargo operator: https://www.airportufa.ru/partners/info/cargo/
+- Yakutsk (UEEE) cargo terminal and 2026 freight acceptance: https://yks.aero/cargo/services
+- Krasnoyarsk (UNKL) official airport cargo warehouse: https://team.kja.aero/media/sklad-vremennogo-hraneniya-gruzovogo-terminala-aeroporta-Krasnoyarsk-otkryt
+- Vladivostok (UHWW) specialist cargo terminal: https://air-cargo.ru/index.php?lang=ru
+- Khabarovsk (UHHH) airport cargo services: https://khv.aero/cargo/
+
+The Russian civil aerodrome registry, international-airport roster and 2026 airline schedules remain critical next data sources to match further airport names/codes, terminal facilities and **current** legal operating status. Government registry membership alone proves neither actual flights nor cargo operations. The regulatory review must also check restricted airspace and NOTAMs at game-route activation time; a historical short-lived interruption is not a permanent closure.
 
 ### San Marino — 0
 Zero runway-qualified candidates in original San Marino source geography; do not add nonqualifying airports to fill the count.
