@@ -1,0 +1,7 @@
+country_iso,country_name,runway_qualified_candidates,passenger_evidenced,cargo_eligible_evidenced,military_review,other_unknown_both,public_airport_service_unverified
+"KM","Comoros","3","3","1","0","0","0"
+"CD","Democratic Republic of the Congo","22","10","0","1","12","0"
+"CG","Republic of the Congo","8","4","0","0","4","0"
+"CI","Côte d'Ivoire","7","5","1","0","2","0"
+"DJ","Djibouti","2","0","0","1","2","0"
+"TOTAL","TOTAL","42","22","2","2","20","0"
