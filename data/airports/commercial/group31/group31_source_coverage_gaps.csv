@@ -1,0 +1,4 @@
+country_iso,missing_airport_code,missing_airport_name,issue,evidence_url,review_action
+"KE","HKJK","Jomo Kenyatta International Airport","Kenya Gazette establishes licensed cargo routes; this does not prove positive cargo tonnage per listed airport, so distinguish permission from movement.","https://new.kenyalaw.org/akn/ke/officialGazette/2024-09-20/145/eng%402024-09-20/source.pdf","CARGO_MOVEMENT_AUDIT"
+"LY","HLLT","Tripoli International Airport","Libyan CAA AIP lists HLLT but Group 31 physical roster contains Mitiga HLLM only. Independently verify paved runway operational technical eligibility; no blind addition.","https://caa.gov.ly/ais/ad/","TECHNICAL_AIRPORT_AUDIT"
+"MG","FMMS","Sainte-Marie Airport","Named Madagascar Airlines domestic destination absent from Group 31 technical roster. Verify paved runway dimensions against 1200m criterion.","https://madagascarairlines.com/en/our-destinations","RUNWAY_ELIGIBILITY_REVIEW"
