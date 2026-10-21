@@ -1,0 +1,7 @@
+country_iso,country_name,runway_qualified_candidates,passenger_evidenced,cargo_eligible_evidenced,military_review,other_unknown_both,public_airport_service_unverified
+"MH","Marshall Islands","4","2","0","1","2","0"
+"FM","Micronesia","4","4","0","0","0","0"
+"NR","Nauru","1","1","0","0","0","0"
+"NZ","New Zealand","30","21","0","2","9","0"
+"PW","Palau","1","1","0","0","0","0"
+"TOTAL","TOTAL","40","29","0","3","11","0"
