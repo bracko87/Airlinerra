@@ -1,0 +1,7 @@
+country_iso,country_name,runway_qualified_candidates,passenger_evidenced,cargo_eligible_evidenced,military_review,other_unknown_both,public_airport_service_unverified
+"DO","Dominican Republic","10","8","6","1","2","0"
+"GD","Grenada","1","1","1","0","0","0"
+"GP","Guadeloupe","2","1","0","0","1","0"
+"GT","Guatemala","8","3","1","0","5","0"
+"SV","El Salvador","3","1","0","0","2","0"
+"TOTAL","TOTAL","24","14","8","1","10","0"
