@@ -1,0 +1,7 @@
+source_airport_id,country_iso,airport_code,restriction_type,applies_to,direction,route_scope,condition,valid_until,evidence_url,source_date,review_status
+"625","CA","CAJ7","MILITARY_OR_SPECIAL_ACCESS","public_commercial_airline_access","BOTH","ALL","Runway exists but public civil passenger/cargo access not established.","UNKNOWN","","UNKNOWN","REQUIRE_AUTHORIZATION"
+"1834","CA","CYOD","MILITARY_OR_SPECIAL_ACCESS","public_commercial_airline_access","BOTH","ALL","Runway exists but public civil passenger/cargo access not established.","UNKNOWN","","UNKNOWN","REQUIRE_AUTHORIZATION"
+"2003","CA","CYZX","MILITARY_OR_SPECIAL_ACCESS","public_commercial_airline_access","BOTH","ALL","Runway exists but public civil passenger/cargo access not established.","UNKNOWN","","UNKNOWN","REQUIRE_AUTHORIZATION"
+"978","CA","CFP7","MILITARY_OR_SPECIAL_ACCESS","public_commercial_airline_access","BOTH","ALL","Runway exists but public civil passenger/cargo access not established.","UNKNOWN","","UNKNOWN","REQUIRE_AUTHORIZATION"
+"39730","CA","CA-0084","MILITARY_OR_SPECIAL_ACCESS","public_commercial_airline_access","BOTH","ALL","Runway exists but public civil passenger/cargo access not established.","UNKNOWN","","UNKNOWN","REQUIRE_AUTHORIZATION"
+"355458","CA","CRHA","MILITARY_OR_SPECIAL_ACCESS","public_commercial_airline_access","BOTH","ALL","Runway exists but public civil passenger/cargo access not established.","UNKNOWN","","UNKNOWN","REQUIRE_AUTHORIZATION"
