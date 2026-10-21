@@ -1,0 +1,7 @@
+country_iso,country_name,runway_qualified_candidates,passenger_evidenced,cargo_eligible_evidenced,military_review,other_unknown_both,public_airport_service_unverified
+"AR","Argentina","120","31","2","2","89","0"
+"BO","Bolivia","23","15","0","1","8","0"
+"BR","Brazil","576","50","7","5","526","0"
+"CL","Chile","46","15","1","0","31","0"
+"CO","Colombia","76","23","1","0","53","0"
+"TOTAL","TOTAL","841","134","11","8","707","0"
