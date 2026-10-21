@@ -1,0 +1,7 @@
+country_iso,country_name,runway_qualified_candidates,passenger_evidenced,cargo_eligible_evidenced,military_review,other_unknown_both,public_airport_service_unverified
+CY,Cyprus,5,3,2,1,2,0
+CZ,Czechia,17,5,3,4,12,0
+DK,Denmark,12,6,2,0,6,0
+EE,Estonia,6,5,1,1,1,0
+FI,Finland,34,18,5,1,16,0
+TOTAL,TOTAL,74,37,13,7,37,0
