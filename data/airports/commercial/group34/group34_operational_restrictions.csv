@@ -1,0 +1,3 @@
+source_airport_id,country_iso,airport_code,restriction_type,applies_to,direction,route_scope,condition,valid_until,evidence_url,source_date,review_status
+"3125","SN","GOOY","HISTORICAL_OR_LIMITED_CIVIL_USE","scheduled_passenger_and_cargo_permissions","BOTH","ALL","Dakar's main passenger service transferred to GOBD; GOOY runway does not imply current unrestricted scheduled rights.","UNKNOWN","https://www.dakaraeroport.com/en","UNKNOWN","AIRPORT_ROLE_REVIEW"
+"604235","SC","SC-0009","REMOTE_AIRFIELD_ACCESS_UNVERIFIED","civil_public_passenger_and_cargo","BOTH","ALL","Providence Island runway physically eligible, commercial access and regular services not established.","UNKNOWN","","UNKNOWN","AIRFIELD_ACCESS_REVIEW"
