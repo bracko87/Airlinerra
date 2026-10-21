@@ -1,0 +1,4 @@
+country_iso,missing_airport_code,missing_airport_name,issue,evidence_url,review_action
+"CV","GVSF","São Filipe Airport (Fogo)","AAC cargo and passenger tables name Fogo, but the technical runway roster omits the airport. Independently verify minimum 1200 m paved runway before adding.","https://www.aac.cv/documento/opendoc/1727454387_en.pdf","TECHNICAL_ELIGIBILITY_REVIEW"
+"CV","GVMA","Maio Airport","Named in AAC traffic data but absent from Group 27 roster; independently check paved runway dimensions.","https://www.aac.cv/documento/opendoc/1741714529_en.pdf","TECHNICAL_ELIGIBILITY_REVIEW"
+"CM","FKKL","Salak Airport (Maroua)","Yearbook reports Maroua commercial airline activity, but military/dual-use access may need verification.","https://mintransports.cm/images/news/pdfs/8368812b20a3de079c5a52ba2aea30f1-TRANSTAT-MINT-2025-FR-Ok.pdf","ACCESS_REVIEW"
