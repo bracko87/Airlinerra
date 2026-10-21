@@ -1,0 +1,6 @@
+country_iso,missing_airport_code,missing_airport_name,issue,evidence_url,review_action
+"EG","HEBA","Alexandria Borg El Arab Airport","Existing roster source ident HEBA / GPS HEAX; verify airport mapping and not conflating former Alexandria El Nouzha services.","https://www.egyptair.com/en/fly/Pages/destinations.aspx","AIRPORT_ALIAS_REVIEW"
+"EG","HECP","Capital International Airport","Passenger service reported historically; confirm active 2026 schedules before activating game routes.","https://www.egyptair.com/en/fly/Pages/destinations.aspx","SCHEDULE_VERIFY"
+"EG","HEBR","Berenice International Airport","Roster source ident EES with GPS HEBR; passenger service and dual-use access require check.","https://www.egyptair.com/en/fly/Pages/destinations.aspx","IDENTIFIER_AND_ACCESS_REVIEW"
+"ET","HAJJ","Gerad Wilwal International Airport","Ethiopian passenger network lists Jijiga; confirm mapping to HAJJ against regional airport records.","https://corporate.ethiopianairlines.com/AboutEthiopian/Destinations","AIRPORT_MAPPING_CHECK"
+"ET","HAJK","Jinka Airport","Roster ident HAJK and gps_code HABC; verify current airport identifier and operator route mapping.","https://corporate.ethiopianairlines.com/AboutEthiopian/Destinations","AIRPORT_MAPPING_CHECK"
