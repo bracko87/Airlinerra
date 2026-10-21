@@ -1,0 +1,3 @@
+country_iso,missing_airport_code,missing_airport_name,issue,evidence_url,review_action
+"NP","VNBP","Bharatpur Airport","CAAN records domestic passenger and cargo activity but this airport is absent from the Group 16 technical roster. Separately confirm 1200m eligible paved runway.","https://caanepal.gov.np/storage/app/media/fm-homepage/Flight%20Movement%202025%20Jan-Nov-Edited.pdf","SEPARATE_TECHNICAL_RUNWAY_AUDIT"
+"NP","VNJP","Janakpur Airport","CAAN documents positive passenger and cargo movements; absent from Group 16 roster, requiring technical runway verification.","https://caanepal.gov.np/storage/app/media/fm-homepage/Flight%20Movement%202025%20Jan-Nov-Edited.pdf","SEPARATE_TECHNICAL_RUNWAY_AUDIT"
