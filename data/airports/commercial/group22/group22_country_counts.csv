@@ -1,7 +1,7 @@
 country_iso,country_name,runway_qualified_candidates,passenger_evidenced,cargo_eligible_evidenced,military_review,other_unknown_both,public_airport_service_unverified
-"AU","Australia","256","10","5","15","246","0"
+"AU","Australia","256","40","5","13","216","0"
 "CX","Christmas Island","1","1","0","0","0","0"
 "CC","Cocos (Keeling) Islands","1","1","0","0","0","0"
 "FJ","Fiji","2","2","0","0","0","0"
 "KI","Kiribati","1","1","0","0","0","0"
-"TOTAL","TOTAL","261","15","5","15","246","0"
+"TOTAL","TOTAL","261","45","5","13","216","0"
