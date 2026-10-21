@@ -1,0 +1,6 @@
+source_airport_id,country_iso,airport_code,restriction_type,applies_to,direction,route_scope,condition,valid_until,evidence_url,source_date,review_status
+"3216","KE","HKRE","MILITARY_OR_CONTROLLED_AIRFIELD","public_civil_passenger_and_cargo_access","BOTH","ALL","Paved runway criterion met but unrestricted civilian airline access unverified.","UNKNOWN","","UNKNOWN","AIP_AND_OPERATOR_CHECK"
+"28485","KE","HKNK","MILITARY_OR_CONTROLLED_AIRFIELD","public_civil_passenger_and_cargo_access","BOTH","ALL","Paved runway criterion met but unrestricted civilian airline access unverified.","UNKNOWN","","UNKNOWN","AIP_AND_OPERATOR_CHECK"
+"3023","LS","FXMU","MILITARY_OR_CONTROLLED_AIRFIELD","public_civil_passenger_and_cargo_access","BOTH","ALL","Paved runway criterion met but unrestricted civilian airline access unverified.","UNKNOWN","","UNKNOWN","AIP_AND_OPERATOR_CHECK"
+"4582","LY","HL56","MILITARY_OR_CONTROLLED_AIRFIELD","public_civil_passenger_and_cargo_access","BOTH","ALL","Paved runway criterion met but unrestricted civilian airline access unverified.","UNKNOWN","","UNKNOWN","AIP_AND_OPERATOR_CHECK"
+"4602","LY","HL77","MILITARY_OR_CONTROLLED_AIRFIELD","public_civil_passenger_and_cargo_access","BOTH","ALL","Paved runway criterion met but unrestricted civilian airline access unverified.","UNKNOWN","","UNKNOWN","AIP_AND_OPERATOR_CHECK"
