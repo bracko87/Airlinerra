@@ -1,0 +1,4 @@
+country_iso,missing_airport_code,missing_airport_name,issue,evidence_url,review_action
+"SA","OERJ","King Abdullah bin Abdulaziz Airport / Jazan identity review","Existing source OEGN is listed under Jizan; verify updated coding and airport relocation, not necessarily an omitted airport.","https://www.stats.gov.sa/en/w/news/191","AIRPORT_ALIAS_AND_REPLACEMENT_REVIEW"
+"LK","VCCK","Koggala Airport","Not present in Group 18 technical roster; verify asphalt/concrete >=1200m source runway before adding.","https://caa.lk/en/data-analysis/air-transport-statistics","SEPARATE_TECHNICAL_RUNWAY_AUDIT"
+"SY","OSDI","Damascus operating-history review","No-war scenario uses historic scheduled services but must independently confirm dated airport passenger statistics; existing airport present, not missing.","https://www.flightconnections.com/airports-in-syria-sy","HISTORICAL_TRAFFIC_VERIFICATION"
