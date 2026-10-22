@@ -1,0 +1,249 @@
+batch_id,batch_name,screening_group,country_iso,country_or_territory,runway_qualified_airports,provisional_traffic_tiers,real_airports_final_tier_assigned,traffic_research_status,next_action
+B01,Argentina + Brazil — imported (partial),46,AR,Argentina,121,38,0,PARTIAL_OFFICIAL_2025_TRAFFIC,Research remaining airports and verify access/cargo
+B01,Argentina + Brazil — imported (partial),46,BR,Brazil,576,138,0,PARTIAL_OFFICIAL_2025_TRAFFIC,Research remaining airports and verify access/cargo
+B02,Rest of South America,46,BO,Bolivia,23,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B02,Rest of South America,46,CL,Chile,46,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B02,Rest of South America,46,CO,Colombia,76,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B02,Rest of South America,47,EC,Ecuador,30,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B02,Rest of South America,47,FK,Falkland Islands (Islas Malvinas),1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B02,Rest of South America,47,GF,French Guiana,2,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B02,Rest of South America,47,GY,Guyana,4,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B02,Rest of South America,47,PY,Paraguay,12,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B02,Rest of South America,48,PE,Peru,42,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B02,Rest of South America,48,GS,South Georgia and South Sandwich Islands,0,0,0,NO_QUALIFYING_RUNWAY_IN_CURRENT_SCREEN,Keep zero record; do not invent service
+B02,Rest of South America,48,SR,Suriname,1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B02,Rest of South America,48,UY,Uruguay,7,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B02,Rest of South America,48,VE,Venezuela,67,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B03,Canada + Mexico,39,CA,Canada,280,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B03,Canada + Mexico,42,MX,Mexico,132,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B04,United States — bulk national dataset,45,US,United States,2879,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B05,Northern America & Caribbean A,38,AI,Anguilla,1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B05,Northern America & Caribbean A,38,AG,Antigua & Barbuda,2,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B05,Northern America & Caribbean A,38,AW,Aruba,1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B05,Northern America & Caribbean A,38,BS,Bahamas,24,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B05,Northern America & Caribbean A,38,BB,Barbados,1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B05,Northern America & Caribbean A,39,BZ,Belize,1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B05,Northern America & Caribbean A,39,BM,Bermuda,1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B05,Northern America & Caribbean A,39,VG,British Virgin Islands,1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B05,Northern America & Caribbean A,39,BQ,Caribbean Netherlands,2,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B05,Northern America & Caribbean A,40,KY,Cayman Islands,2,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B05,Northern America & Caribbean A,40,CR,Costa Rica,9,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B05,Northern America & Caribbean A,40,CU,Cuba,28,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B05,Northern America & Caribbean A,40,CW,Curaçao,1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B05,Northern America & Caribbean A,40,DM,Dominica,1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B06,Northern America & Caribbean B,41,DO,Dominican Republic,10,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B06,Northern America & Caribbean B,41,SV,El Salvador,3,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B06,Northern America & Caribbean B,41,GD,Grenada,1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B06,Northern America & Caribbean B,41,GP,Guadeloupe,2,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B06,Northern America & Caribbean B,41,GT,Guatemala,8,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B06,Northern America & Caribbean B,42,HT,Haiti,2,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B06,Northern America & Caribbean B,42,HN,Honduras,9,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B06,Northern America & Caribbean B,42,JM,Jamaica,4,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B06,Northern America & Caribbean B,42,MQ,Martinique,1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B06,Northern America & Caribbean B,43,MS,Montserrat,0,0,0,NO_QUALIFYING_RUNWAY_IN_CURRENT_SCREEN,Keep zero record; do not invent service
+B06,Northern America & Caribbean B,43,NI,Nicaragua,7,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B06,Northern America & Caribbean B,43,PA,Panama,11,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B06,Northern America & Caribbean B,43,PR,Puerto Rico,9,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B06,Northern America & Caribbean B,43,BL,Saint Barthélemy,0,0,0,NO_QUALIFYING_RUNWAY_IN_CURRENT_SCREEN,Keep zero record; do not invent service
+B06,Northern America & Caribbean B,44,MF,Saint Martin (French part),0,0,0,NO_QUALIFYING_RUNWAY_IN_CURRENT_SCREEN,Keep zero record; do not invent service
+B06,Northern America & Caribbean B,44,KN,St. Kitts & Nevis,2,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B06,Northern America & Caribbean B,44,LC,St. Lucia,2,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B06,Northern America & Caribbean B,44,PM,St. Pierre & Miquelon,1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B06,Northern America & Caribbean B,44,VC,St. Vincent & Grenadines,2,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B06,Northern America & Caribbean B,45,SX,Sint Maarten (Dutch part),1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B06,Northern America & Caribbean B,45,TT,Trinidad & Tobago,2,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B06,Northern America & Caribbean B,45,TC,Turks & Caicos Islands,4,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B06,Northern America & Caribbean B,45,VI,U.S. Virgin Islands,2,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B07,Europe A — groups 1–4,1,AL,Albania,3,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B07,Europe A — groups 1–4,1,AM,Armenia,4,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B07,Europe A — groups 1–4,1,AT,Austria,9,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B07,Europe A — groups 1–4,1,AZ,Azerbaijan,14,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B07,Europe A — groups 1–4,2,BY,Belarus,14,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B07,Europe A — groups 1–4,2,BE,Belgium,14,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B07,Europe A — groups 1–4,2,BA,Bosnia & Herzegovina,4,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B07,Europe A — groups 1–4,2,BG,Bulgaria,16,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B07,Europe A — groups 1–4,2,HR,Croatia,10,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B07,Europe A — groups 1–4,3,CY,Cyprus,5,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B07,Europe A — groups 1–4,3,CZ,Czechia,17,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B07,Europe A — groups 1–4,3,DK,Denmark,12,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B07,Europe A — groups 1–4,3,EE,Estonia,6,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B07,Europe A — groups 1–4,3,FI,Finland,34,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B07,Europe A — groups 1–4,4,FR,France,151,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B07,Europe A — groups 1–4,4,GE,Georgia,10,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B07,Europe A — groups 1–4,4,DE,Germany,93,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B07,Europe A — groups 1–4,4,GR,Greece,42,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B07,Europe A — groups 1–4,4,HU,Hungary,11,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B08,Europe B — groups 5–8,5,IS,Iceland,8,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B08,Europe B — groups 5–8,5,IE,Ireland,7,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B08,Europe B — groups 5–8,5,IT,Italy,70,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B08,Europe B — groups 5–8,5,XK,Kosovo,2,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B08,Europe B — groups 5–8,5,LV,Latvia,4,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B08,Europe B — groups 5–8,6,LI,Liechtenstein,0,0,0,NO_QUALIFYING_RUNWAY_IN_CURRENT_SCREEN,Keep zero record; do not invent service
+B08,Europe B — groups 5–8,6,LT,Lithuania,6,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B08,Europe B — groups 5–8,6,LU,Luxembourg,1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B08,Europe B — groups 5–8,6,MT,Malta,1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B08,Europe B — groups 5–8,6,MD,Moldova,3,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B08,Europe B — groups 5–8,7,MC,Monaco,0,0,0,NO_QUALIFYING_RUNWAY_IN_CURRENT_SCREEN,Keep zero record; do not invent service
+B08,Europe B — groups 5–8,7,ME,Montenegro,2,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B08,Europe B — groups 5–8,7,NL,Netherlands,12,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B08,Europe B — groups 5–8,7,MK,North Macedonia,2,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B08,Europe B — groups 5–8,7,NO,Norway,31,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B08,Europe B — groups 5–8,8,PL,Poland,35,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B08,Europe B — groups 5–8,8,PT,Portugal,29,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B08,Europe B — groups 5–8,8,RO,Romania,21,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B08,Europe B — groups 5–8,8,RU,Russia,312,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B08,Europe B — groups 5–8,8,SM,San Marino,0,0,0,NO_QUALIFYING_RUNWAY_IN_CURRENT_SCREEN,Keep zero record; do not invent service
+B09,Europe C — groups 9–11,9,RS,Serbia,6,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B09,Europe C — groups 9–11,9,SK,Slovakia,7,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B09,Europe C — groups 9–11,9,SI,Slovenia,5,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B09,Europe C — groups 9–11,9,ES,Spain,63,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B09,Europe C — groups 9–11,9,SE,Sweden,61,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B09,Europe C — groups 9–11,10,CH,Switzerland,17,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B09,Europe C — groups 9–11,10,TR,Turkey,75,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B09,Europe C — groups 9–11,10,UA,Ukraine,27,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B09,Europe C — groups 9–11,10,GB,United Kingdom,96,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B09,Europe C — groups 9–11,10,VA,Vatican City,0,0,0,NO_QUALIFYING_RUNWAY_IN_CURRENT_SCREEN,Keep zero record; do not invent service
+B09,Europe C — groups 9–11,11,AX,Åland Islands,0,0,0,NO_QUALIFYING_RUNWAY_IN_CURRENT_SCREEN,Keep zero record; do not invent service
+B09,Europe C — groups 9–11,11,AD,Andorra,0,0,0,NO_QUALIFYING_RUNWAY_IN_CURRENT_SCREEN,Keep zero record; do not invent service
+B09,Europe C — groups 9–11,11,FO,Faroe Islands,1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B09,Europe C — groups 9–11,11,GI,Gibraltar,1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B09,Europe C — groups 9–11,11,GL,Greenland,5,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B09,Europe C — groups 9–11,11,GG,Guernsey,1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B09,Europe C — groups 9–11,11,IM,Isle of Man,1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B09,Europe C — groups 9–11,11,JE,Jersey,1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B09,Europe C — groups 9–11,11,SJ,Svalbard and Jan Mayen,0,0,0,NO_QUALIFYING_RUNWAY_IN_CURRENT_SCREEN,Keep zero record; do not invent service
+B10,Asia A — groups 12–14,12,AF,Afghanistan,12,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B10,Asia A — groups 12–14,12,BH,Bahrain,3,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B10,Asia A — groups 12–14,12,BD,Bangladesh,9,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B10,Asia A — groups 12–14,12,BT,Bhutan,2,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B10,Asia A — groups 12–14,12,BN,Brunei,1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B10,Asia A — groups 12–14,13,KH,Cambodia,7,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B10,Asia A — groups 12–14,13,CN,China,166,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B10,Asia A — groups 12–14,13,IN,India,176,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B10,Asia A — groups 12–14,13,ID,Indonesia,128,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B10,Asia A — groups 12–14,13,IR,Iran,81,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B10,Asia A — groups 12–14,14,IQ,Iraq,15,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B10,Asia A — groups 12–14,14,IL,Israel,17,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B10,Asia A — groups 12–14,14,JP,Japan,106,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B10,Asia A — groups 12–14,14,JO,Jordan,8,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B10,Asia A — groups 12–14,14,KZ,Kazakhstan,26,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B11,Asia B — groups 15–18,15,KW,Kuwait,2,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B11,Asia B — groups 15–18,15,KG,Kyrgyzstan,10,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B11,Asia B — groups 15–18,15,LA,Laos,8,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B11,Asia B — groups 15–18,15,LB,Lebanon,4,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B11,Asia B — groups 15–18,15,MY,Malaysia,27,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B11,Asia B — groups 15–18,16,MV,Maldives,6,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B11,Asia B — groups 15–18,16,MN,Mongolia,8,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B11,Asia B — groups 15–18,16,MM,Myanmar (Burma),24,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B11,Asia B — groups 15–18,16,NP,Nepal,7,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B11,Asia B — groups 15–18,16,KP,North Korea,34,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B11,Asia B — groups 15–18,17,OM,Oman,9,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B11,Asia B — groups 15–18,17,PK,Pakistan,51,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B11,Asia B — groups 15–18,17,PS,Palestine,0,0,0,NO_QUALIFYING_RUNWAY_IN_CURRENT_SCREEN,Keep zero record; do not invent service
+B11,Asia B — groups 15–18,17,PH,Philippines,53,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B11,Asia B — groups 15–18,17,QA,Qatar,3,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B11,Asia B — groups 15–18,18,SA,Saudi Arabia,64,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B11,Asia B — groups 15–18,18,SG,Singapore,5,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B11,Asia B — groups 15–18,18,KR,South Korea,28,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B11,Asia B — groups 15–18,18,LK,Sri Lanka,10,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B11,Asia B — groups 15–18,18,SY,Syria,19,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B12,Asia C — groups 19–21,19,TW,Taiwan,15,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B12,Asia C — groups 19–21,19,TJ,Tajikistan,9,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B12,Asia C — groups 19–21,19,TH,Thailand,48,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B12,Asia C — groups 19–21,19,TL,Timor-Leste,4,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B12,Asia C — groups 19–21,19,TM,Turkmenistan,16,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B12,Asia C — groups 19–21,20,HK,Hong Kong,2,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B12,Asia C — groups 19–21,20,AE,United Arab Emirates,16,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B12,Asia C — groups 19–21,20,UZ,Uzbekistan,22,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B12,Asia C — groups 19–21,20,VN,Vietnam,27,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B12,Asia C — groups 19–21,20,YE,Yemen,12,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B12,Asia C — groups 19–21,21,IO,British Indian Ocean Territory,1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B12,Asia C — groups 19–21,21,MO,Macao,1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B13,Oceania & Pacific — groups 22–25,22,AU,Australia,256,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B13,Oceania & Pacific — groups 22–25,22,CX,Christmas Island,1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B13,Oceania & Pacific — groups 22–25,22,CC,Cocos (Keeling) Islands,1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B13,Oceania & Pacific — groups 22–25,22,FJ,Fiji,2,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B13,Oceania & Pacific — groups 22–25,22,KI,Kiribati,1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B13,Oceania & Pacific — groups 22–25,23,MH,Marshall Islands,4,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B13,Oceania & Pacific — groups 22–25,23,FM,Micronesia,4,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B13,Oceania & Pacific — groups 22–25,23,NR,Nauru,1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B13,Oceania & Pacific — groups 22–25,23,NZ,New Zealand,30,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B13,Oceania & Pacific — groups 22–25,23,PW,Palau,1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B13,Oceania & Pacific — groups 22–25,24,PG,Papua New Guinea,20,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B13,Oceania & Pacific — groups 22–25,24,WS,Samoa,1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B13,Oceania & Pacific — groups 22–25,24,SB,Solomon Islands,2,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B13,Oceania & Pacific — groups 22–25,24,TO,Tonga,1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B13,Oceania & Pacific — groups 22–25,24,TV,Tuvalu,1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B13,Oceania & Pacific — groups 22–25,25,AS,American Samoa,1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B13,Oceania & Pacific — groups 22–25,25,CK,Cook Islands,2,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B13,Oceania & Pacific — groups 22–25,25,PF,French Polynesia,19,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B13,Oceania & Pacific — groups 22–25,25,GU,Guam,1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B13,Oceania & Pacific — groups 22–25,25,NC,New Caledonia,2,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B13,Oceania & Pacific — groups 22–25,25,NU,Niue,1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B13,Oceania & Pacific — groups 22–25,25,NF,Norfolk Island,1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B13,Oceania & Pacific — groups 22–25,25,MP,Northern Mariana Islands,3,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B13,Oceania & Pacific — groups 22–25,25,PN,Pitcairn Islands,0,0,0,NO_QUALIFYING_RUNWAY_IN_CURRENT_SCREEN,Keep zero record; do not invent service
+B13,Oceania & Pacific — groups 22–25,25,TK,Tokelau,0,0,0,NO_QUALIFYING_RUNWAY_IN_CURRENT_SCREEN,Keep zero record; do not invent service
+B13,Oceania & Pacific — groups 22–25,25,UM,US Minor Outlying Islands,2,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B13,Oceania & Pacific — groups 22–25,25,VU,Vanuatu,3,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B13,Oceania & Pacific — groups 22–25,25,WF,Wallis & Futuna,1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B14,Africa A — groups 26–30,26,DZ,Algeria,48,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B14,Africa A — groups 26–30,26,AO,Angola,25,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B14,Africa A — groups 26–30,26,BJ,Benin,1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B14,Africa A — groups 26–30,26,BW,Botswana,11,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B14,Africa A — groups 26–30,26,BF,Burkina Faso,2,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B14,Africa A — groups 26–30,27,BI,Burundi,1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B14,Africa A — groups 26–30,27,CM,Cameroon,10,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B14,Africa A — groups 26–30,27,CV,Cape Verde,5,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B14,Africa A — groups 26–30,27,CF,Central African Republic,2,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B14,Africa A — groups 26–30,27,TD,Chad,5,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B14,Africa A — groups 26–30,28,KM,Comoros,3,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B14,Africa A — groups 26–30,28,CG,Congo - Brazzaville,8,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B14,Africa A — groups 26–30,28,CD,Congo - Kinshasa,22,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B14,Africa A — groups 26–30,28,CI,Côte d’Ivoire,7,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B14,Africa A — groups 26–30,28,DJ,Djibouti,2,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B14,Africa A — groups 26–30,29,EG,Egypt,56,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B14,Africa A — groups 26–30,29,GQ,Equatorial Guinea,5,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B14,Africa A — groups 26–30,29,ER,Eritrea,2,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B14,Africa A — groups 26–30,29,SZ,Eswatini,2,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B14,Africa A — groups 26–30,29,ET,Ethiopia,17,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B14,Africa A — groups 26–30,30,GA,Gabon,11,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B14,Africa A — groups 26–30,30,GM,Gambia,1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B14,Africa A — groups 26–30,30,GH,Ghana,7,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B14,Africa A — groups 26–30,30,GN,Guinea,6,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B14,Africa A — groups 26–30,30,GW,Guinea-Bissau,2,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B15,Africa B — groups 31–37,31,KE,Kenya,12,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B15,Africa B — groups 31–37,31,LS,Lesotho,2,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B15,Africa B — groups 31–37,31,LR,Liberia,2,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B15,Africa B — groups 31–37,31,LY,Libya,46,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B15,Africa B — groups 31–37,31,MG,Madagascar,21,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B15,Africa B — groups 31–37,32,MW,Malawi,6,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B15,Africa B — groups 31–37,32,ML,Mali,7,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B15,Africa B — groups 31–37,32,MR,Mauritania,9,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B15,Africa B — groups 31–37,32,MU,Mauritius,4,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B15,Africa B — groups 31–37,32,MA,Morocco,21,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B15,Africa B — groups 31–37,33,MZ,Mozambique,17,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B15,Africa B — groups 31–37,33,NA,Namibia,17,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B15,Africa B — groups 31–37,33,NE,Niger,9,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B15,Africa B — groups 31–37,33,NG,Nigeria,36,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B15,Africa B — groups 31–37,33,RW,Rwanda,3,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B15,Africa B — groups 31–37,34,ST,São Tomé & Príncipe,2,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B15,Africa B — groups 31–37,34,SN,Senegal,10,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B15,Africa B — groups 31–37,34,SC,Seychelles,5,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B15,Africa B — groups 31–37,34,SL,Sierra Leone,1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B15,Africa B — groups 31–37,34,SO,Somalia,7,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B15,Africa B — groups 31–37,35,ZA,South Africa,81,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B15,Africa B — groups 31–37,35,SS,South Sudan,4,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B15,Africa B — groups 31–37,35,SD,Sudan,12,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B15,Africa B — groups 31–37,35,TZ,Tanzania,13,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B15,Africa B — groups 31–37,35,TG,Togo,2,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B15,Africa B — groups 31–37,36,TN,Tunisia,12,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B15,Africa B — groups 31–37,36,UG,Uganda,3,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B15,Africa B — groups 31–37,36,EH,Western Sahara,3,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B15,Africa B — groups 31–37,36,ZM,Zambia,9,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B15,Africa B — groups 31–37,36,ZW,Zimbabwe,7,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B15,Africa B — groups 31–37,37,TF,French Southern Territories,0,0,0,NO_QUALIFYING_RUNWAY_IN_CURRENT_SCREEN,Keep zero record; do not invent service
+B15,Africa B — groups 31–37,37,YT,Mayotte,1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B15,Africa B — groups 31–37,37,RE,Réunion,2,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B15,Africa B — groups 31–37,37,SH,"Saint Helena, Ascension and Tristan da Cunha",2,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B16,Antarctica — no technical candidates,49,AQ,Antarctica,0,0,0,NO_QUALIFYING_RUNWAY_IN_CURRENT_SCREEN,Keep zero record; do not invent service
