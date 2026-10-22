@@ -47,3 +47,13 @@ These checks use published Brazilian DECEA aeronautical information. All commerc
 - The DECEA CGNA flight-plan report shows **9,504** 2025 SIFC flight plans, which is not comparable to ANAC flight-stage passenger/freight quantities and does not prove commercial airline service: https://portal.cgna.decea.mil.br/files/uploads/relatorios_trafego_aereo/planos_de_voo/2026/Relatorio_Comparativo_Trafego_Aereo_Planos_de_Voo_2.pdf
 
 No runway master mutations, deletions, gameplay permissions, or Supabase changes in this follow-up.
+
+## SIFC — ANAC independent resolution (22 October 2026)
+
+**Evidence resolution: authoritative 1,145 m, asphalt, runway 18/36.** ANAC Portaria nº 8681/SIA (25 July 2022), supporting aerodrome registration, identifies private Coroa do Avião, Igarassu/PE, CIAD **PE0013**, runway **18/36**, **1,145 × 30 m**, asphalt. ANAC's revision history dates the correction to 1,145 m to **13 March 2014**. Source: https://pergamum.anac.gov.br/pergamum/vinculos/PA2022-8681.pdf
+
+DECEA ROTAER current 10 September 2026 independently agrees on 18/36, **1,145 × 30 m**, asphalt, identifier **SIFC**: https://aisweb.decea.mil.br/?amdt=2109&codigo=SIFC&i=aerodromos
+
+Airlinerra technical candidate retains older OurAirports airport ID **335361**, runway ID **602402**, source length **1,318.6 m**. Based on corroborated official sources, that recorded length **is not an accepted present-day runway eligibility measurement**. The airport has no officially evidenced 1,200 m+ runway in the reviewed authority records. **TECHNICAL_DISQUALIFICATION_RECOMMENDED** pending controlled rebuild and cross-group validation; do not silently delete or reuse source IDs. No permission/status promotion and no production deployment.
+
+Next implementation action: add an airport/runway-specific official length exclusion to the source screening process, verify whether other qualifying runways exist, rebuild all technical master/group data with source traceability, and run documented validation before changing register totals.
