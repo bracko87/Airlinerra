@@ -4,12 +4,12 @@ Audit date: 2026-10-22; active Airlinerra branch: `main`.
 
 ## Technical and commercial scope
 
-* **576** source-ID-preserved technical runway-qualified airports are in Group 46 for Brazil.
-* **19** airport-specific 2025 passenger and freight observations were reliably matched by the **exact ICAO code** from the LAWINFRA aggregation of Brazil's official ANAC flight-stage dataset.
+* **577** source-ID-preserved technical runway-qualified airports are in Group 46 for Brazil.
+* **20** airport-specific 2025 passenger and freight observations were reliably matched by the **exact ICAO code** from the LAWINFRA aggregation of Brazil's official ANAC flight-stage dataset.
 * **557** Brazil technical airports are **not yet independently joined** to the full 2025 ANAC traffic files. An UNKNOWN review outcome is not a finding of no service.
-* Group 46 now records **50 preliminary passenger YES candidates**, of which **19 have confirmed 2025 passenger movements from this source**. The other 31 are *still provisional* and must not be labeled verified.
-* Group 46 now records **19 cargo YES** for Brazil, up from seven, after **12 newly evidenced positive cargo airports**. A cargo-positive airport may also be passenger-positive.
-* **SBEG Manaus Eduardo Gomes is missing entirely from the technical group** despite having 2025 passenger and freight traffic and an officially verified **2,700 x 45 m asphalt runway**. OurAirports source airport ID **5897** has an unverified runway row ID: add no new source row until original runway ID is retrieved from the upstream input.
+* Group 46 now records **51 preliminary passenger YES candidates**, of which **20 have confirmed 2025 passenger movements from this source**. The other 31 are *still provisional* and must not be labeled verified.
+* Group 46 now records **20 cargo YES** for Brazil, up from seven, after **13 newly evidenced positive cargo airports**. A cargo-positive airport may also be passenger-positive.
+* **SBEG Manaus Eduardo Gomes has now been restored to the technical group and master** with original OurAirports airport **5897**, runway **234094**, and official DECEA 2,700 x 45 m asphalt classification. It is distinct from SDNM and SBMN.
 
 ## Evidence and definitions
 
@@ -17,7 +17,7 @@ The airline-operations aggregate for 2025 is a *secondary presentation* of offic
 
 https://www.lawinfra.com.br/mapa?camada=aeroportos
 
-The 20 most-active airports displayed here provide 2025 rounded passenger-movement counts and 2025 cargo tonnage: `data/airports/commercial/group46/group46_anac_2025_top20_observed_activity.csv`. The site identifies passenger counts as paid + complimentary, all arrivals + departures, and cargo as paid + complimentary excluding mail/baggage, not unique travellers. **19/20 are present in our roster; SBEG is the missing one.**
+The 20 most-active airports displayed here provide 2025 rounded passenger-movement counts and 2025 cargo tonnage: `data/airports/commercial/group46/group46_anac_2025_top20_observed_activity.csv`. The site identifies passenger counts as paid + complimentary, all arrivals + departures, and cargo as paid + complimentary excluding mail/baggage, not unique travellers. **20/20 now have original source-ID matches in the restored roster.**
 
 Our 576-row machine-readable crosswalk of verified versus unverified 2025 evidence is `data/airports/commercial/group46/group46_brazil_2025_source_coverage.csv`. Rows with no source join remain explicitly unverified.
 
@@ -39,6 +39,6 @@ Brazil DECEA eAIP (AIP effective September 2026), SBEG AD 2.12: 2700 x 45 m, ASP
 
 https://aisweb.decea.mil.br/eaip/A%2016-2026_2026_09_03/eAIP/AD%202%20SBEG-pt-BR.html
 
-Original raw OurAirports SBEG runway surface string is `ASPH 71/F/C/X/T`, a compound code not directly accepted by the current Airlinerra surface filter. Its verified **Asphalt** surface qualifies once the source runway ID is safely reconciled. Do not confuse **SBEG** (Eduardo Gomes International Airport) with **SDNM** (Brigadeiro Eduardo Gomes) or **SBMN** (Ponta Pelada Manaus Air Base), which are different airports already in the roster.
+Original raw OurAirports SBEG runway surface string is `ASPH 71/F/C/X/T`, a compound code not directly accepted by the current Airlinerra surface filter. Its verified **Asphalt** has now been recorded as an airport-specific surface override tied to runway **234094**. Do not confuse **SBEG** (Eduardo Gomes International Airport) with **SDNM** (Brigadeiro Eduardo Gomes) or **SBMN** (Ponta Pelada Manaus Air Base), which are different airports already in the roster.
 
-No master airport records, six-category airport policy or gameplay database tables were modified as part of this passenger/cargo evidence pass. No deployment.
+The master technical register has been updated with one original-runway-ID-backed airport, SBEG. Existing airport records and six-category definitions have been preserved. No gameplay database changes or deployment. The official full 2025 ANAC statistical CSV remains unprocessed; ANAC monthly operator files were indexed but an attempted January fetch timed out. The 557 previously unverified Brazil technical airports still require direct row-level source reconciliation.
