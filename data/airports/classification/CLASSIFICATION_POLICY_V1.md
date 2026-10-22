@@ -35,3 +35,10 @@ The initial data covers the worldwide master, but the only imported comparable p
 Run `python scripts/build_airport_classification_review.py` after verified source changes. Run `python scripts/build_airport_classification_review.py --check` to confirm the committed review is reproducible. Unit tests: `python -m unittest discover -s tests -p test_airport_classification.py`.
 
 The next dataset milestones are airport-specific passenger and freight sources for **other countries**, verification of civilian access, identifier conflicts, consistent cargo thresholds and human review before promoting *any* real airport to a final tier. Supabase is unnecessary for this data-preparation phase.
+
+
+## Argentina ANAC official annual airport passengers (2025)
+
+The official [ANAC December 2025 report](https://docs.anac.gob.ar/index.php/s/pk8HDnYWX5X3aKL/download/Informe%20Mensual%20Diciembre%202025.pdf) (section **Pasajeros Totales por Aeropuerto**) lists 38 individually named airports and an aggregate **Otros**. The original quantities are in **thousands**, rounded; positive totals cover embarked/disembarked passengers from both regular and nonregular commercial flights, while the three most recent months were provisionally reported in the December 31, 2025 snapshot. Do not distribute **Otros** to unnamed airports. These totals use `ANAC_TOTAL_PAX_ROUNDED_1000` and produce **provisional** `PROVISIONAL_OFFICIAL_ANNUAL_TOTAL` tiers, not final categories or 2026 permissions. This inclusive Argentina passenger measure must NOT be treated as interchangeable with Brazil's **regular-only stage-endpoint** proxy. The original source-ID mapping is `commercial/group46/group46_argentina_anac_2025_official_passenger_totals.csv`.
+
+The SABE Aeroparque runway recovery increases the worldwide technical master from 8,152 to **8,153** including fictional LYAL, with Argentina **121** and Brazil **576**. Airports absent from positive named-source coverage remain **UNKNOWN, not NO**.

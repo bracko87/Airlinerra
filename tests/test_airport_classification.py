@@ -52,6 +52,18 @@ class ClassificationReviewTests(unittest.TestCase):
         self.assertEqual(rows[2]["decision_status"], "OWNER_ASSIGNED")
         self.assertNotIn("335361", [r["source_airport_id"] for r in rows])
 
+    def test_argentina_annual_total_stays_provisional(self):
+        arg = [{"source_airport_id": "5771", "year": "2025",
+                "passenger_total_estimate": "17738000", "source_url": "https://example.org/annual.pdf"}]
+        result = build_rows([airport("5771", country="AR"), airport("99", country="AR")], [], [], arg)
+        self.assertEqual(result[0]["provisional_category"], "Major Hub")
+        self.assertEqual(result[0]["decision_status"], "PROVISIONAL_OFFICIAL_ANNUAL_TOTAL")
+        self.assertEqual(result[0]["final_assigned_category"], "")
+        self.assertEqual(result[0]["passenger_measure"], "ANAC_TOTAL_PAX_ROUNDED_1000")
+        self.assertEqual(result[1]["decision_status"], "NEEDS_EVIDENCE")
+        with self.assertRaises(ValueError):
+            build_rows([airport("99", country="AR")], [], [], arg)
+
     def test_unexplained_exclusions_and_duplicates_fail(self):
         with self.assertRaises(ValueError):
             build_rows([airport("12")], [evidence("12"), evidence("999")], [])

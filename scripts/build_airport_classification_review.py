@@ -11,6 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 MASTER = ROOT / "data/airports/airport_register.csv"
 ANAC = ROOT / "data/airports/commercial/group46/group46_brazil_anac_2025_official_crosswalk.csv"
+AR_ANAC = ROOT / "data/airports/commercial/group46/group46_argentina_anac_2025_official_passenger_totals.csv"
 EXCLUSIONS = ROOT / "data/airports/reconciliation/BR_2026_OFFICIAL_RUNWAY_EXCLUSIONS.csv"
 OUTPUT = ROOT / "data/airports/classification/airport_classification_review.csv"
 CATEGORIES = ("Local", "Regional", "Medium", "Large", "Major Hub", "Mega Hub")
@@ -19,6 +20,7 @@ FIELDS = (
     "provisional_category", "decision_status", "passenger_activity_signal",
     "cargo_activity_signal", "regular_passenger_proxy", "nonregular_passenger_proxy",
     "regular_cargo_proxy_kg", "nonregular_cargo_proxy_kg", "evidence_year",
+    "annual_total_passenger_proxy", "passenger_measure", "evidence_source_url",
 )
 
 def records(path: Path) -> list[dict[str, str]]:
@@ -57,7 +59,8 @@ def provisional_tier(regular_passengers: int) -> str:
     return "Local"
 
 def build_rows(master: list[dict[str, str]], anac: list[dict[str, str]],
-               exclusions: list[dict[str, str]]) -> list[dict[str, str]]:
+               exclusions: list[dict[str, str]],
+               argentina: list[dict[str, str]] | None = None) -> list[dict[str, str]]:
     by_id: dict[str, dict[str, str]] = {}
     for source in anac:
         key = source["source_airport_id"]
@@ -66,6 +69,14 @@ def build_rows(master: list[dict[str, str]], anac: list[dict[str, str]],
         if source["year"] != "2025":
             raise ValueError(f"Unexpected ANAC traffic year for {key}")
         by_id[key] = source
+    argentina_by_id: dict[str, dict[str, str]] = {}
+    for source in argentina or []:
+        key = source["source_airport_id"]
+        if key in argentina_by_id or source["year"] != "2025":
+            raise ValueError(f"Invalid or duplicate Argentina source row: {key}")
+        if nonnegative(source["passenger_total_estimate"], f"Argentina pax at {key}") <= 0:
+            raise ValueError(f"Missing positive Argentina total at {key}")
+        argentina_by_id[key] = source
     excluded = {r["source_airport_id"] for r in exclusions}
     master_ids = [m["source_airport_id"] for m in master]
     if len(master_ids) != len(set(master_ids)):
@@ -77,6 +88,9 @@ def build_rows(master: list[dict[str, str]], anac: list[dict[str, str]],
         raise ValueError("ANAC crosswalk contains unexplained excluded airports")
     if active_brazil & excluded:
         raise ValueError("Officially excluded runway still in technical master")
+    active_argentina = {m["source_airport_id"] for m in master if m["country_iso"] == "AR"}
+    if set(argentina_by_id) - active_argentina:
+        raise ValueError("Argentina ANAC source row absent from technical master")
     result = []
     for m in master:
         ident = m["source_airport_id"]
@@ -93,6 +107,21 @@ def build_rows(master: list[dict[str, str]], anac: list[dict[str, str]],
                        cargo_activity_signal="NOT_APPLICABLE")
         elif m["source_type"] != "OURAIRPORTS":
             raise ValueError(f"Unknown source type for {ident}")
+        elif m["country_iso"] == "AR":
+            source = argentina_by_id.get(ident)
+            if source is None:
+                row.update(decision_status="EXISTING_FINAL_ASSIGNMENT" if final else "NEEDS_EVIDENCE",
+                           passenger_activity_signal="NO_NAMED_2025_TOTAL",
+                           cargo_activity_signal="NOT_RESEARCHED")
+            else:
+                annual = nonnegative(source["passenger_total_estimate"], f"Argentina pax at {ident}")
+                row.update(provisional_category=provisional_tier(annual),
+                           decision_status="EXISTING_FINAL_ASSIGNMENT" if final else "PROVISIONAL_OFFICIAL_ANNUAL_TOTAL",
+                           passenger_activity_signal="PASSENGER_TOTAL_REPORTED",
+                           cargo_activity_signal="NOT_RESEARCHED",
+                           annual_total_passenger_proxy=str(annual),
+                           passenger_measure="ANAC_TOTAL_PAX_ROUNDED_1000",
+                           evidence_year="2025", evidence_source_url=source["source_url"])
         elif m["country_iso"] != "BR":
             row.update(decision_status="EXISTING_FINAL_ASSIGNMENT" if final else "NEEDS_EVIDENCE",
                        passenger_activity_signal="NOT_RESEARCHED",
@@ -132,7 +161,7 @@ def main() -> None:
     parser.add_argument("--check", action="store_true", help="Check the committed review is reproducible")
     parser.add_argument("--out", type=Path, default=OUTPUT)
     args = parser.parse_args()
-    rows = build_rows(records(MASTER), records(ANAC), records(EXCLUSIONS))
+    rows = build_rows(records(MASTER), records(ANAC), records(EXCLUSIONS), records(AR_ANAC))
     content = render(rows)
     if args.check:
         if not args.out.exists() or args.out.read_text(encoding="utf-8") != content:
