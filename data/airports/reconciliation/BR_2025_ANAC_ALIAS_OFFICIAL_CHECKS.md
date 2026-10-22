@@ -27,3 +27,13 @@ These checks use published Brazilian DECEA aeronautical information. All commerc
 | 322529 | Cidade de Goiás (Goiás/GO) | BR-0135 | SD09 | **SD09** | DECEA's official AISWEB aerodrome page directly identifies Cidade de Goiás as SD09, private, with a 1,400.62 m asphalt runway. [Official AISWEB](https://aisweb.decea.mil.br/?codigo=SD09&i=aerodromos). No ANAC 2025 passenger/cargo service is inferred. |
 
 **Progress: 7 of 72 differing original/GPS identifier cases checked with cited official source material; 65 remain.** Original source IDs and both source identifiers are preserved. The source confirmation is not commercial eligibility and does not change UNKNOWN traffic results, permissions, or final airport category.
+
+## Further official DECEA checks — 2026-10-22 (next batch)
+
+| Source airport ID | Airport | Original ident | GPS code | Official identifier | Result and limitation |
+|---|---|---|---|---|---|
+| 322551 | Crixás | BR-0153 | SN9Z | **SN9Z** | Official DECEA AIP AD 1.3 lists Crixás/SN9Z as private. [DECEA amendment](https://aisweb.decea.mil.br/download/?p=AMDT&public=24217bb4-9837-4033-aadabde178f1c268.pdf). **Operational exception:** a 2026 NOTAM separately reports runway 04/22 closed until 19 December 2026 because of a hole; flag for later operational-status verification, without removing the underlying source-screened technical record. [Official NOTAM](https://aisweb.decea.mil.br/?i=notam&notam_id=13050264&view=single). |
+| 446 | Dionísio Cerqueira | BR-1951 | SND6 | **SND6** | DECEA eAIP AD 1.3 effective 1 October 2026 explicitly lists Dionísio Cerqueira/SND6. Its displayed classification fields are blank, so no inference about active service or permissions. [DECEA eAIP](https://aisweb.decea.mil.br/eaip/20-2026_2026_10_01/eAIP/AD%201.3-pt-BR.html). |
+| 335361 | Coroa do Avião | BR-0856 | SIFC | **SIFC** | Official DECEA AISWEB page identifies Coroa do Avião/SIFC, private. **Runway discrepancy:** its ROTAER entry reports 1,145 m asphalt, less than the Airlinerra 1,200 m threshold. This listing alone does not establish whether another qualifying runway exists. Flag as **technical runway recheck** and preserve existing airport until all runway/source IDs and current AIP evidence are compared. [DECEA AISWEB](https://aisweb.decea.mil.br/index.cfm?amdt=2109&codigo=SIFC&i=aerodromos). |
+
+**Cumulative identifier cases with official checks: 10 / 72; remaining: 62.** Identifier confirmation does not add ANAC 2025 flight observations or grant passenger/cargo permissions. The Crixás NOTAM and Coroa do Avião runway mismatch are review flags only, not automatic removals.
