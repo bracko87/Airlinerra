@@ -10,7 +10,7 @@ The previously announced **30-airport shortfall (7,816/7,846)** was an erroneous
 
 ## Verified omission: SUMU (Uruguay)
 
-Carrasco General Cesáreo L. Berisso International Airport (SUMU/MVD) has two active runways reported in OurAirports as surface **PEM**, which the source-runway material filter does not automatically treat as asphalt/concrete. Both runway lengths exceed 1,200 m (3,200 m and 2,250 m). Uruguay **DINACIA's July 2026 AIP, SUMU AD 2**, identifies the 3,200 m runway as **concreto asfáltico** (asphalt concrete). It passes Airlinerrra's documented surface and length rules. Source: https://www.dinacia.gub.uy/sites/default/files/aip/2026-07/Ad2-9%20esp.pdf ; original surface: https://ourairports.com/airports/SUMU/runways.html .
+Carrasco General Cesáreo L. Berisso International Airport (SUMU/MVD) has two active runways reported in OurAirports as surface **PEM**, which the source-runway material filter does not automatically treat as asphalt/concrete. Both runway lengths exceed 1,200 m (3,200 m and 2,250 m). Uruguay **DINACIA's July 2026 AIP, SUMU AD 2**, identifies the 3,200 m runway as **concreto asfáltico** (asphalt concrete). It passes Airlinerra's documented surface and length rules. Source: https://www.dinacia.gub.uy/sites/default/files/aip/2026-07/Ad2-9%20esp.pdf ; original surface: https://ourairports.com/airports/SUMU/runways.html .
 
 The airport operator reports **2,144,071 passengers in 2025**: https://aeropuertodecarrasco.com.uy/en/historic-passenger-record-at-carrasco-airport/ . Uruguay INE independently records **36,825 tonnes of scheduled-flight cargo in 2024**: https://www.gub.uy/instituto-nacional-estadistica/comunicacion/publicaciones/anuario-estadistico-nacional-2025-vol-102/47-transporte-15 .
 
