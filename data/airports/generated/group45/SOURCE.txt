@@ -9,4 +9,6 @@ Group 45 screens Sint Maarten, Trinidad and Tobago, Turks and Caicos Islands, en
 Explicit asphalt concrete is qualifying surfacing; unverified plain paved/hard is still excluded.
 Current phase ends at runway qualification for minimum Level 1 (Local). Other airport information and final six-category ranking are DEFERRED.
 Records are qualified by runway only; not an operating-airport or game-activation authorization.
-Screened count: 2585; ambiguous surface queue: 273; duplicate identifiers: 0.
+Initial 2026-10-21 screen: 2585; initial ambiguous surface queue: 273; duplicate identifiers: 0.
+
+2026-10-22 TECHNICAL BACKFILL: original OurAirports ID and runway record references from blob airports.csv 6ca86c226fe73c27f088facfca8df1436911322a; runways.csv 62fc9b5161add9da48588e63a814e89657f8d88a. FAA Order 5010.4 and chart-supplement legends confirm PEM mixed asphalt/concrete and -G/-F/-P runway condition, with -GRVD grooving. US +303 (including source 3451 KCID independent official concrete override), group total 2888, US 2879. Resolved 237 previous surface-review queue entries; 36 remain for additional evidence. Other countries in Group 45 unchanged. All initial airport IDs preserved. No gameplay activation.
