@@ -1,6 +1,6 @@
 # Airlinerra airport collection — permanent runway-only register
 
-> **Current global audit (22 October 2026):** The canonical master contains **8,152 airports**: **8,151 real-world runway-qualified airports across Groups 1–48 plus fictional LYAL**. A further 304 real airports have been recovered since the 7,846-record baseline (303 in Group 45 and Carrasco SUMU in Group 48). SUMU and KSEA are **already in the canonical register**; do not add them again. See [worldwide reconciliation](reconciliation/README.md). Sections describing only Groups 1–35 remain historical snapshots.
+> **Current global audit (22 October 2026):** The canonical master contains **8,153 airports**: **8,152 real-world runway-qualified airports across Groups 1–48 plus fictional LYAL**. A further 304 real airports have been recovered since the 7,846-record baseline (303 in Group 45 and Carrasco SUMU in Group 48, plus subsequent corrections). SUMU, KSEA and SBEG are **already in the canonical register**; do not add them again. See [worldwide reconciliation](reconciliation/README.md). Sections describing only Groups 1–35 remain historical snapshots.
 
 ## Current phase
 Only collect airports having **at least one runway 1,200 m or longer**, reported **asphalt or concrete**, with both runway and airport not recorded closed. Facilities that say only "paved" are sent to a surface-check queue and not assumed eligible.
