@@ -69,7 +69,9 @@ def main():
         kind=surface_type(runway.get("surface"))
         source_runway=runway
         override=overrides.get(airport["id"])
-        if override and kind=="CHECK_SURFACE":
+        if (override and kind!="ELIGIBLE_LABEL"
+                and (runway.get("surface") or "").strip().lower()==override["previous_surface_label"].strip().lower()
+                and abs(length-float(override["reference_runway_length_m"]))<=5):
             if airport["iso_country"]!=override["country_iso"]:
                 raise ValueError("Verified runway country mismatch")
             if (airport.get("gps_code") or airport.get("ident"))!=override["airport_ident"]:
