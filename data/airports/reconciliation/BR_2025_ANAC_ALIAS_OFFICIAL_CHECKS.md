@@ -57,3 +57,11 @@ DECEA ROTAER current 10 September 2026 independently agrees on 18/36, **1,145 ×
 Airlinerra technical candidate retains older OurAirports airport ID **335361**, runway ID **602402**, source length **1,318.6 m**. Based on corroborated official sources, that recorded length **is not an accepted present-day runway eligibility measurement**. The airport has no officially evidenced 1,200 m+ runway in the reviewed authority records. **TECHNICAL_DISQUALIFICATION_RECOMMENDED** pending controlled rebuild and cross-group validation; do not silently delete or reuse source IDs. No permission/status promotion and no production deployment.
 
 Next implementation action: add an airport/runway-specific official length exclusion to the source screening process, verify whether other qualifying runways exist, rebuild all technical master/group data with source traceability, and run documented validation before changing register totals.
+
+## Applied technical correction — 2026-10-22
+
+Officially corroborated **SIFC Coroa do Avião** runway 18/36 measures **1,145 m asphalt**, below the **1,200 m** screen minimum. The older OurAirports runway observation 1,318.6 m is preserved for audit with original airport ID **335361** and runway ID **602402** in `BR_2026_OFFICIAL_RUNWAY_EXCLUSIONS.csv`.
+
+The airport was excluded from `generated/group46/group46_technical_candidates.csv` and `airport_register.csv`, with other airports and fictional LYAL preserved. Updated technical counts: **Brazil 576**, worldwide **8,152 including LYAL**. The ANAC 2025 commercial review retains its 577-row historical evidence snapshot and should not be mistaken for the current eligible-airport total.
+
+Repo-side invariant checks confirmed a unique master ID list, 576 Brazil master rows, 576 Brazil Group 46 technical rows and continued presence of LYAL. Full repository-wide Python validators/rebuild still require execution; avoid claiming those executed here. Commercial source and review files remain historical evidence and must not silently relabel SIFC as technically qualified.
