@@ -6,10 +6,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from build_airport_classification_review import build_rows, provisional_tier
 
-def airport(ident, country="BR", source_type="OURAIRPORTS", category=""):
+def airport(ident, country="BR", source_type="OURAIRPORTS", category="", code=""):
     return {"source_airport_id": ident, "country_iso": country,
             "airport_name": f"Test {ident}", "assigned_category": category,
-            "source_type": source_type}
+            "source_type": source_type, "ident": code, "gps_code": code}
 
 def evidence(ident, rp="0", np="0", rc="0", nc="0"):
     return {"source_airport_id": ident, "year": "2025",
@@ -53,9 +53,10 @@ class ClassificationReviewTests(unittest.TestCase):
         self.assertNotIn("335361", [r["source_airport_id"] for r in rows])
 
     def test_argentina_annual_total_stays_provisional(self):
-        arg = [{"source_airport_id": "5771", "year": "2025",
+        arg = [{"source_airport_id": "5771", "icao_or_ident": "SABE", "year": "2025",
+                "reported_2025_thousands": "17.738", "metric": "ANAC_TOTAL_PAX_ROUNDED_1000",
                 "passenger_total_estimate": "17738000", "source_url": "https://example.org/annual.pdf"}]
-        result = build_rows([airport("5771", country="AR"), airport("99", country="AR")], [], [], arg)
+        result = build_rows([airport("5771", country="AR", code="SABE"), airport("99", country="AR")], [], [], arg)
         self.assertEqual(result[0]["provisional_category"], "Major Hub")
         self.assertEqual(result[0]["decision_status"], "PROVISIONAL_OFFICIAL_ANNUAL_TOTAL")
         self.assertEqual(result[0]["final_assigned_category"], "")
@@ -63,6 +64,19 @@ class ClassificationReviewTests(unittest.TestCase):
         self.assertEqual(result[1]["decision_status"], "NEEDS_EVIDENCE")
         with self.assertRaises(ValueError):
             build_rows([airport("99", country="AR")], [], [], arg)
+
+    def test_argentina_provenance_rejects_wrong_code_or_scale(self):
+        arg = {"source_airport_id": "5771", "icao_or_ident": "SABE", "year": "2025",
+               "reported_2025_thousands": "17.738", "metric": "ANAC_TOTAL_PAX_ROUNDED_1000",
+               "passenger_total_estimate": "17738000", "source_url": "https://example.org/annual.pdf"}
+        with self.assertRaisesRegex(ValueError, "code mismatch"):
+            build_rows([airport("5771", country="AR", code="SAEZ")], [], [], [arg])
+        with self.assertRaisesRegex(ValueError, "conversion mismatch"):
+            build_rows([airport("5771", country="AR", code="SABE")], [], [],
+                       [dict(arg, passenger_total_estimate="17738")])
+        with self.assertRaisesRegex(ValueError, "unsupported"):
+            build_rows([airport("5771", country="AR", code="SABE")], [], [],
+                       [dict(arg, metric="UNVERIFIED_METRIC")])
 
     def test_unexplained_exclusions_and_duplicates_fail(self):
         with self.assertRaises(ValueError):
