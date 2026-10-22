@@ -1,6 +1,6 @@
 # Airlinerra airport collection — permanent runway-only register
 
-> **Current global audit (22 October 2026):** The canonical master has **7,846 records**: **7,845 runway-qualified real-airport records across Groups 1–48 plus one owner-defined fictional airport (LYAL)**. The old 7,816 running tally omitted 30 in the calculation, not in the files. A separate confirmed source-material omission, Carrasco SUMU, requires source-ID reconciliation before it can be safely appended. See [worldwide reconciliation](reconciliation/README.md). Sections below describing only Groups 1–35 are retained as historical snapshots.
+> **Current global audit (22 October 2026):** The canonical master has **7,846 records**: **7,845 runway-qualified real-airport records across Groups 1–48 plus one owner-defined fictional airport (LYAL)**. The old 7,816 running tally omitted 30 in the calculation, not in the files. Confirmed source-material omissions include Carrasco SUMU and Seattle–Tacoma KSEA; both require original source-ID reconciliation before they can be safely appended. See [worldwide reconciliation](reconciliation/README.md). Sections below describing only Groups 1–35 are retained as historical snapshots.
 
 ## Current phase
 Only collect airports having **at least one runway 1,200 m or longer**, reported **asphalt or concrete**, with both runway and airport not recorded closed. Facilities that say only "paved" are sent to a surface-check queue and not assumed eligible.
