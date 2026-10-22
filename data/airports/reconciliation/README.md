@@ -1,4 +1,6 @@
-# Worldwide initial airport reconciliation — 22 October 2026
+# Worldwide airport reconciliation — 22 October 2026
+
+> **Latest verified master (22 October 2026): 8,153 total airport records — 8,152 real airports and fictional LYAL.** Brazil now includes restored Manaus Eduardo Gomes SBEG (source airport 5897, source runway 234094, 2,700 m asphalt). Group 46 technical roster 842 and Brazilian candidate total 577; Brazil passenger YES 51 (20 supported by 2025 airport traffic evidence), cargo YES 20. Earlier totals below describe prior audit snapshots, not current main.
 
 ## Verified register accounting
 
