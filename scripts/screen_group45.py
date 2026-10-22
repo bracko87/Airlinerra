@@ -17,14 +17,8 @@ COUNTRIES={"SX":"Sint Maarten (Dutch part)","TT":"Trinidad and Tobago","TC":"Tur
 PAVEMENT={"ASP","ASPH","ASPHALT","ASPHALTE","ASPHALTED","ASPHALTCONCRETE","CON","CONC","CONCRETE","BETON","BITUMEN","ASP/CON","CON/ASP","ASPH/CONC","CONC/ASPH","ASPHALT/CONCRETE","CONCRETE/ASPHALT","ASP-CON","CON-ASP"}
 UNCERTAIN=("PAVED","ASPH","CON","TARMAC","MACADAM","BITUM","TAR","HARD")
 
-def surface_type(value):
-    val=re.sub(r"\s+","",(value or "").strip().strip(chr(39)+chr(34)).upper())
-    if val in PAVEMENT: return "ELIGIBLE_LABEL"
-    if re.search(r"[/+;&-]",val):
-        bits=re.split(r"[/+;&-]",val)
-        if all(v in PAVEMENT for v in bits): return "ELIGIBLE_LABEL"
-    if val in ("BIT","COM") or any(v in val for v in UNCERTAIN): return "CHECK_SURFACE"
-    return "NOT_PAVED"
+# Shared material decoder includes officially documented FAA PEM / -G / -GRVD codes.
+from airport_surface import surface_type
 
 def load(path):
     with open(path,encoding="utf-8-sig",newline="") as handle:
@@ -69,7 +63,9 @@ def main():
         kind=surface_type(runway.get("surface"))
         source_runway=runway
         override=overrides.get(airport["id"])
-        if override and kind=="CHECK_SURFACE":
+        if (override and kind!="ELIGIBLE_LABEL"
+                and (runway.get("surface") or "").strip().lower()==override["previous_surface_label"].strip().lower()
+                and abs(length-float(override["reference_runway_length_m"]))<=5):
             if airport["iso_country"]!=override["country_iso"]:
                 raise ValueError("Verified runway country mismatch")
             if (airport.get("gps_code") or airport.get("ident"))!=override["airport_ident"]:
