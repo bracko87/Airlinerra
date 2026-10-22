@@ -18,7 +18,7 @@ The airport operator reports **2,144,071 passengers in 2025**: https://aeropuert
 
 ## Commercial evidence: major limitations
 
-Groups 45–48 include numerous classifications marked YES after code/name shortlist selection, **without individual airport-level traffic-source joins**. These entries are **provisional candidates**, not verified commercial permissions. In particular, the Group 45 US 172 passenger and 3 cargo counts, and Group 46 Brazil 50 passenger and 7 cargo counts, are *not* final national counts and should not restrict game routes or freight. See `commercial_verification_backlog.csv`.
+Groups 45–48 include numerous classifications marked YES after code/name shortlist selection, **without individual airport-level traffic-source joins**. These entries are **provisional candidates**, not verified commercial permissions. In particular, the Group 45 US 172 passenger count (the original 3 cargo short-list has now been corrected to 136 FAA-verified all-cargo airport matches), and Group 46 Brazil 50 passenger and 7 cargo counts, are *not* final national counts and should not restrict game routes or freight. See `commercial_verification_backlog.csv`.
 
 FAA authoritative 2025 all-airport passenger and all-cargo sheets: https://www.faa.gov/airports/planning_capacity/passenger_allcargo_stats/passenger?year=all . ANAC Brazil movement data is categorized by commercial passenger versus cargo operations and by charter / general aviation classes: https://www.gov.br/anac/pt-br/acesso-a-informacao/dados-abertos/areas-de-atuacao/operador-aeroportuario/dados-de-movimentacao-aeroportuaria/metadados-operador-aeroportuario-dados-de-movimentacao-aeroportuaria .
 
@@ -31,3 +31,7 @@ FAA authoritative 2025 all-airport passenger and all-cargo sheets: https://www.f
 5. Execute `python scripts/validate_airports.py && python scripts/validate_historical_airports.py && python scripts/rebuild_runway_register.py` on a complete checkout before accepting a technical register edit.
 
 No Supabase changes or playable-airport activation are authorized by this audit.
+
+## FAA all-cargo crosscheck (22 October 2026)
+
+Final FAA 2025 all-cargo landed-weight publication (released 22 September 2026) identifies 153 qualifying positive-airport records, with 136 exactly joined to US airports in Group 45 (133 newly marked cargo YES plus three already positive). The remaining codes include 14 unmatched US entries / crosswalk cases and three facilities classified in other jurisdiction groups (Puerto Rico, Guam). The list of 14 unmatched US sources is in `faa_2025_cargo_airports_missing_from_roster.csv`. The missing airports are **not** to be rejected from the game; verify runway-specific surface labels first. The 136 records are a verified lower-bound subset, **not** all US commercial cargo capability.
