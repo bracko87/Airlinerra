@@ -2,17 +2,17 @@ batch_id,batch_name,screening_group,country_iso,country_or_territory,runway_qual
 B01,Argentina + Brazil — imported (partial),46,AR,Argentina,121,38,0,PARTIAL_OFFICIAL_2025_TRAFFIC,Research remaining airports and verify access/cargo
 B01,Argentina + Brazil — imported (partial),46,BR,Brazil,576,138,0,PARTIAL_OFFICIAL_2025_TRAFFIC,Research remaining airports and verify access/cargo
 B02,Rest of South America,46,BO,Bolivia,23,0,0,OFFICIAL_2025_NATIONAL_MONTHLY_ONLY,"DGAC 2025 nationwide totals identified, still need per-airport annual 2025 evidence"
-B02,Rest of South America,46,CL,Chile,46,11,0,PARTIAL_OFFICIAL_2025_DOMESTIC_TRAFFIC,11 matched domestic-only lower-bound observations; seek full 2025 national/international totals
-B02,Rest of South America,46,CO,Colombia,76,0,0,OFFICIAL_DATA_PORTAL_LOCATED,Extract and reconcile official annual airport-level passenger/cargo data
-B02,Rest of South America,47,EC,Ecuador,30,0,0,PARTIAL_OFFICIAL_2025_CARGO_ONLY,Official annual cargo found for 2 airports; seek airport-specific passenger figures
+B02,Rest of South America,46,CL,Chile,46,12,0,PARTIAL_OFFICIAL_2025_MIXED_SCOPE_TRAFFIC,Santiago operator annual 2025 total added alongside 11 domestic-only floors; 34 remaining airports need evidence
+B02,Rest of South America,46,CO,Colombia,76,1,0,PARTIAL_OFFICIAL_2025_OPERATOR_TRAFFIC,Cartagena airport operator full-year passengers; 75 other airports need research
+B02,Rest of South America,47,EC,Ecuador,30,2,0,PARTIAL_OFFICIAL_2025_PASSENGER_AND_CARGO,"Quito and Guayaquil 2025 passenger signals imported, both independently sourced freight totals preserved; 28 others pending"
 B02,Rest of South America,47,FK,Falkland Islands (Islas Malvinas),1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
-B02,Rest of South America,47,GF,French Guiana,2,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
-B02,Rest of South America,47,GY,Guyana,4,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
-B02,Rest of South America,47,PY,Paraguay,12,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B02,Rest of South America,47,GF,French Guiana,2,1,0,PARTIAL_2025_AIRPORT_OPERATOR_TRAFFIC,Cayenne annual 2025 commercial passengers verified; Maripasoula pending
+B02,Rest of South America,47,GY,Guyana,4,1,0,PARTIAL_OFFICIAL_2025_PASSENGER_TRAFFIC,Cheddi Jagan government 2025 passenger source; three other airports pending
+B02,Rest of South America,47,PY,Paraguay,12,2,0,PARTIAL_OFFICIAL_2025_PASSENGER_TRAFFIC,DINAC Silvio Pettirossi and Guarani 2025 traffic; ten other airports pending
 B02,Rest of South America,48,PE,Peru,42,25,0,PARTIAL_OFFICIAL_2025_REGULAR_TRAFFIC,Review 17 unmatched runway-screened airports and 2025 cargo evidence
 B02,Rest of South America,48,GS,South Georgia and South Sandwich Islands,0,0,0,NO_QUALIFYING_RUNWAY_IN_CURRENT_SCREEN,Keep zero record; do not invent service
 B02,Rest of South America,48,SR,Suriname,1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
-B02,Rest of South America,48,UY,Uruguay,7,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B02,Rest of South America,48,UY,Uruguay,7,3,0,PARTIAL_OFFICIAL_2025_PASSENGER_TRAFFIC,DINACIA Carrasco Punta del Este Salto 2025 passengers; four other airports pending
 B02,Rest of South America,48,VE,Venezuela,67,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
 B03,Canada + Mexico,39,CA,Canada,280,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
 B03,Canada + Mexico,42,MX,Mexico,132,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence

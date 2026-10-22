@@ -18,6 +18,27 @@ def evidence(ident, rp="0", np="0", rc="0", nc="0"):
             "source_url": "https://example.org/anac.csv"}
 
 class ClassificationReviewTests(unittest.TestCase):
+    def test_b02_passengers_preserve_ecuador_cargo(self):
+        additional = {"source_airport_id": "1001", "country_iso": "EC",
+            "icao_or_ident": "SEXX", "official_airport_label": "Test", "year": "2025",
+            "passenger_estimate": "3813013", "metric": "EC_DGAC_2025_TOTAL_PAX",
+            "source_url": "https://example.org/passengers",
+            "qualification_note": "Official total"}
+        cargo = [{"source_airport_id": "1001", "country_iso": "EC",
+            "icao_or_ident": "SEXX", "year": "2025",
+            "metric": "EC_DGAC_ANNUAL_CARGO_TONNES",
+            "annual_cargo_tonnes": "26991.92",
+            "source_url": "https://example.org/cargo"}]
+        row = build_rows([airport("1001", country="EC", code="SEXX")], [], [],
+            ecuador_cargo=cargo, b02_additional=[additional])[0]
+        self.assertEqual(row["provisional_category"], "Large")
+        self.assertEqual(row["annual_total_passenger_proxy"], "3813013")
+        self.assertEqual(row["annual_cargo_tonnes_proxy"], "26991.92")
+        self.assertEqual(row["final_assigned_category"], "")
+        with self.assertRaisesRegex(ValueError, "code/source ID mismatch"):
+            build_rows([airport("1001", country="EC", code="WRONG")], [], [],
+                ecuador_cargo=cargo, b02_additional=[additional])
+
     def test_six_tiers_and_boundaries(self):
         edges = [(1, "Local"), (9_999, "Local"), (10_000, "Regional"),
                  (99_999, "Regional"), (100_000, "Medium"), (999_999, "Medium"),

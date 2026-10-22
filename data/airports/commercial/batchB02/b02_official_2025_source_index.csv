@@ -1,14 +1,14 @@
 country_iso,country_or_territory,official_2025_source_url,source_research_note
 BO,Bolivia,https://www.dgac.gob.bo/wp-content/uploads/2026/06/INFORME-DE-ESTADISTICA-DICIEMBRE.pdf,"2025 annual national total 5,552,973 airline passengers transported, NOT an airport-by-airport traffic crosswalk"
-CL,Chile,https://concesiones.mop.gob.cl/uploads/sites/4/2025/09/2025_4T_publicar.pdf,2025 official MOP/JAC quarterly DOMESTIC ONLY observation crosswalk for 11/46 airports; whole-airport passenger/cargo research pending
-CO,Colombia,https://www.aerocivil.gov.co/atencion/estadisticas-de-las-actividades-aeronauticas/boletines-operacionales,Aerocivil airport operational traffic bulletins; annual 2025 airport import pending
-EC,Ecuador,https://www.aviacioncivil.gob.ec/el-transporte-aereo-ecuatoriano-movilizo-a-8-millones-de-pasajeros-en-el-2025/,Official 2025 cargo for Quito SEQM and Guayaquil SEGU imported; 2025 individual passenger airport counts pending
+CL,Chile,https://ala.aero/es/2026/01/aeropuerto-internacional-de-santiago-de-chile-supero-los-265-millones-de-pasajeros-en-2025-y-marca-record-de-trafico/,Santiago full 2025 operator total plus separate prior Chile 11 domestic-only floors; other airports pending
+CO,Colombia,https://aeropuertocartagena.com.co/historico-aeropuerto-internacional-rafael-nunez-de-cartagena-supero-los-7-7-millones-de-pasajeros-movilizados-en-2025/,2025 Cartagena airport operator total; rest of Colombia passenger and cargo pending
+EC,Ecuador,https://www.aviacioncivil.gob.ec/subdireccion-zonal-del-litoral-de-la-dgac-realizo-la-rendicion-de-cuentas-2025/,2025 DGAC Guayaquil and Quiport Quito passenger figures added; prior 2025 annual freight for both retained
 FK,Falkland Islands,,Airport-specific 2025 passenger/cargo source not yet confirmed
-GF,French Guiana,,Airport-specific 2025 passenger/cargo source not yet confirmed
-GY,Guyana,,Airport-specific 2025 passenger/cargo source not yet confirmed
-PY,Paraguay,,Airport-specific 2025 passenger/cargo source not yet confirmed
+GF,French Guiana,https://www.guyane.aeroport.fr/wp-content/uploads/2026/02/Dossier-de-consultation.pdf,2025 Cayenne passenger graph verified; Maripasoula unmatched
+GY,Guyana,https://dpi.gov.gy/guyanas-aviation-sector-records-unprecedented-growth-between-2020-and-2025/,2025 Cheddi Jagan government airport movements found; other airports unmatched
+PY,Paraguay,https://mdn.dinac.gov.py/estadisticas/ResumenEstadisticoTransporteAereoComercial-2025_Enero-Diciembre.pdf,2025 DINAC Silvio Pettirossi mixed passenger count and Guarani regular domestic count; rest pending
 PE,Peru,https://cdn.www.gob.pe/uploads/document/file/10074446/8207018-informe-anual-movimiento-general-de-pasajeros-en-los-aeropuertos-del-peru-ano-2025.pdf?v=1780349699,"Official DGAC/MINCETUR 2025 regular passenger source page 22: 25 matches imported, 17 master airports still unknown"
 GS,South Georgia and South Sandwich Islands,,Zero runway-qualified in present technical screen; no traffic research needed
 SR,Suriname,,Airport-specific 2025 passenger/cargo source not yet confirmed
-UY,Uruguay,,Airport-specific 2025 passenger/cargo source not yet confirmed
+UY,Uruguay,https://dinacia.gub.uy/sites/default/files/2026-03/BOLETIN%20ESTADISTICO%20A%C3%91O%202025.pdf,2025 DINACIA Carrasco Laguna del Sauce and Salto passenger airport tables; internal discrepancy noted
 VE,Venezuela,,Airport-specific 2025 passenger/cargo source not yet confirmed

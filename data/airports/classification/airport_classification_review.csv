@@ -1521,7 +1521,7 @@ source_airport_id,country_iso,airport_name,final_assigned_category,provisional_c
 6001,CL,Chacalluta International Airport,,Medium,PROVISIONAL_DOMESTIC_FLOOR,DOMESTIC_OBSERVED_OFFICIAL_2025,NOT_RESEARCHED,,,,,2025,,CHILE_MOP_2025_DOMESTIC_ONLY_ROUNDED_1000,,323000,https://concesiones.mop.gob.cl/uploads/sites/4/2025/09/2025_4T_publicar.pdf
 29774,CL,Chamonate Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6037,CL,Chañaral Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
-6015,CL,Comodoro Arturo Merino Benítez International Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
+6015,CL,Comodoro Arturo Merino Benítez International Airport,,Major Hub,PROVISIONAL_B02_2025_AIRPORT_TRAFFIC,2025_AIRPORT_PAX_REPORTED,NOT_RESEARCHED,,,,,2025,26517871,CL_OPERATOR_2025_TOTAL_PAX,,,https://ala.aero/es/2026/01/aeropuerto-internacional-de-santiago-de-chile-supero-los-265-millones-de-pasajeros-en-2025-y-marca-record-de-trafico/
 6028,CL,Coposa Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6002,CL,Desierto de Atacama Airport,,Medium,PROVISIONAL_DOMESTIC_FLOOR,DOMESTIC_OBSERVED_OFFICIAL_2025,NOT_RESEARCHED,,,,,2025,,CHILE_MOP_2025_DOMESTIC_ONLY_ROUNDED_1000,,322000,https://concesiones.mop.gob.cl/uploads/sites/4/2025/09/2025_4T_publicar.pdf
 6012,CL,Diego Aracena International Airport,,Medium,PROVISIONAL_DOMESTIC_FLOOR,DOMESTIC_OBSERVED_OFFICIAL_2025,NOT_RESEARCHED,,,,,2025,,CHILE_MOP_2025_DOMESTIC_ONLY_ROUNDED_1000,,809000,https://concesiones.mop.gob.cl/uploads/sites/4/2025/09/2025_4T_publicar.pdf
@@ -1790,7 +1790,7 @@ source_airport_id,country_iso,airport_name,final_assigned_category,provisional_c
 6149,CO,Pitalito Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6153,CO,Puerto Berrio Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6145,CO,Puerto Bolívar Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
-6109,CO,Rafael Nuñez International Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
+6109,CO,Rafael Nuñez International Airport,,Large,PROVISIONAL_B02_2025_AIRPORT_TRAFFIC,2025_AIRPORT_PAX_REPORTED,NOT_RESEARCHED,,,,,2025,7756298,CO_OPERATOR_2025_TOTAL_PAX,,,https://aeropuertocartagena.com.co/historico-aeropuerto-internacional-rafael-nunez-de-cartagena-supero-los-7-7-millones-de-pasajeros-movilizados-en-2025/
 317261,CO,Ríohacha Highway Strip,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6137,CO,San Bernardo Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6126,CO,San Luis Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
@@ -2052,12 +2052,12 @@ source_airport_id,country_iso,airport_name,final_assigned_category,provisional_c
 6076,EC,General Ulpiano Paez International Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 41131,EC,General Villamil Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6057,EC,Gualaquiza Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
-6056,EC,José Joaquín de Olmedo International Airport,,,CARGO_ONLY_REVIEW,NOT_RESEARCHED,ANNUAL_CARGO_TONNES_REPORTED,,,,,2025,,,26991.92,,https://www.aviacioncivil.gob.ec/el-transporte-aereo-ecuatoriano-movilizo-a-8-millones-de-pasajeros-en-el-2025/
+6056,EC,José Joaquín de Olmedo International Airport,,Large,PROVISIONAL_B02_2025_AIRPORT_TRAFFIC,2025_AIRPORT_PAX_REPORTED,ANNUAL_CARGO_TONNES_REPORTED,,,,,2025,3813013,EC_DGAC_2025_TOTAL_PAX,26991.92,,https://www.aviacioncivil.gob.ec/subdireccion-zonal-del-litoral-de-la-dgac-realizo-la-rendicion-de-cuentas-2025/
 309411,EC,Jumandy Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6086,EC,Lieutenant Colonel Luis A. Mantilla International Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6080,EC,Los Perales Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6054,EC,Mariscal Lamar Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
-308273,EC,Mariscal Sucre International Airport,,,CARGO_ONLY_REVIEW,NOT_RESEARCHED,ANNUAL_CARGO_TONNES_REPORTED,,,,,2025,,,397798.54,,https://www.aviacioncivil.gob.ec/el-transporte-aereo-ecuatoriano-movilizo-a-8-millones-de-pasajeros-en-el-2025/
+308273,EC,Mariscal Sucre International Airport,,Large,PROVISIONAL_B02_2025_AIRPORT_TRAFFIC,2025_AIRPORT_PAX_REPORTED,ANNUAL_CARGO_TONNES_REPORTED,,,,,2025,5400000,EC_OPERATOR_2025_ROUNDED_PAX,397798.54,,https://www.quiport.com/asi-fue-2025-para-el-aeropuerto-de-quito-expansion-liderazgo-regional-eficiencia-operativa-y-reconocimientos/
 6069,EC,Patuca Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6072,EC,Quevedo Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6071,EC,Reales Tamarindos Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
@@ -2527,7 +2527,7 @@ source_airport_id,country_iso,airport_name,final_assigned_category,provisional_c
 3088,GE,Telavi Kurdgelauri Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 3090,GE,Vaziani Air Base,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 3092,GE,Vladislav Ardzinba Sukhum International Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
-6198,GF,Cayenne – Félix Eboué Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
+6198,GF,Cayenne – Félix Eboué Airport,,Medium,PROVISIONAL_B02_2025_AIRPORT_TRAFFIC,2025_AIRPORT_PAX_REPORTED,NOT_RESEARCHED,,,,,2025,531457,GF_AIRPORT_2025_COMMERCIAL_PAX,,,https://www.guyane.aeroport.fr/wp-content/uploads/2026/02/Dossier-de-consultation.pdf
 31941,GF,Maripasoula Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 2425,GG,Guernsey Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 354173,GH,Ho Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
@@ -2610,7 +2610,7 @@ source_airport_id,country_iso,airport_name,final_assigned_category,provisional_c
 5433,GU,Antonio B. Won Pat International Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 3097,GW,Osvaldo Vieira International Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 3156,GW,Quebo Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
-6356,GY,Cheddi Jagan International Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
+6356,GY,Cheddi Jagan International Airport,,Medium,PROVISIONAL_B02_2025_AIRPORT_TRAFFIC,2025_AIRPORT_PAX_REPORTED,NOT_RESEARCHED,,,,,2025,973016,GY_GOV_2025_AIRPORT_TOTAL_PAX,,,https://dpi.gov.gy/guyanas-aviation-sector-records-unprecedented-growth-between-2020-and-2025/
 41513,GY,Eugene F. Correia International Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6358,GY,Lethem Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6357,GY,Linden Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
@@ -4221,12 +4221,12 @@ source_airport_id,country_iso,airport_name,final_assigned_category,provisional_c
 6095,PY,Dr. Augusto Roberto Fuster International Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6093,PY,Dr. Luis María Argaña International Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 5508,PY,Estancia Pai Quara Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
-6091,PY,Guaraní International Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
+6091,PY,Guaraní International Airport,,Local,PROVISIONAL_B02_2025_AIRPORT_TRAFFIC,2025_AIRPORT_PAX_REPORTED,NOT_RESEARCHED,,,,,2025,3247,PY_DINAC_2025_REGULAR_PAX,,,https://mdn.dinac.gov.py/estadisticas/ResumenEstadisticoTransporteAereoComercial-2025_Enero-Diciembre.pdf
 6092,PY,Itaipú Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6089,PY,Juan de Ayolas National Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6090,PY,Lieutenant Colonel Carmelo Peralta National Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6096,PY,Santa Teresa Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
-6088,PY,Silvio Pettirossi International Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
+6088,PY,Silvio Pettirossi International Airport,,Large,PROVISIONAL_B02_2025_AIRPORT_TRAFFIC,2025_AIRPORT_PAX_REPORTED,NOT_RESEARCHED,,,,,2025,1323613,PY_DINAC_2025_MIXED_PAX,,,https://mdn.dinac.gov.py/estadisticas/ResumenEstadisticoTransporteAereoComercial-2025_Enero-Diciembre.pdf
 29851,PY,Teniente Ramon A. Ayub Gonzalez International Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 5309,QA,Al Udeid Air Base,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 5308,QA,Doha International Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
@@ -7907,10 +7907,10 @@ fictional:RS:LYAL,RS,Aleksandrovo Airport,Local,,OWNER_ASSIGNED,NOT_APPLICABLE,N
 21170,US,Zapata County Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 19132,US,Zelienople Municipal Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 21442,US,Zephyrhills Municipal Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
-6246,UY,Capitan Corbeta CA Curbelo International Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
-6247,UY,Carrasco General Cesáreo L. Berisso International Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
+6246,UY,Capitan Corbeta CA Curbelo International Airport,,Medium,PROVISIONAL_B02_2025_AIRPORT_TRAFFIC,2025_AIRPORT_PAX_REPORTED,NOT_RESEARCHED,,,,,2025,119183,UY_DINACIA_2025_COMMERCIAL_PAX,,,https://dinacia.gub.uy/sites/default/files/2026-03/BOLETIN%20ESTADISTICO%20A%C3%91O%202025.pdf
+6247,UY,Carrasco General Cesáreo L. Berisso International Airport,,Large,PROVISIONAL_B02_2025_AIRPORT_TRAFFIC,2025_AIRPORT_PAX_REPORTED,NOT_RESEARCHED,,,,,2025,2084836,UY_DINACIA_2025_COMMERCIAL_PAX,,,https://dinacia.gub.uy/sites/default/files/2026-03/BOLETIN%20ESTADISTICO%20A%C3%91O%202025.pdf
 30868,UY,Colonia Laguna de Los Patos International Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
-6248,UY,Nueva Hesperides International Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
+6248,UY,Nueva Hesperides International Airport,,Local,PROVISIONAL_B02_2025_AIRPORT_TRAFFIC,2025_AIRPORT_PAX_REPORTED,NOT_RESEARCHED,,,,,2025,7887,UY_DINACIA_2025_COMMERCIAL_PAX,,,https://dinacia.gub.uy/sites/default/files/2026-03/BOLETIN%20ESTADISTICO%20A%C3%91O%202025.pdf
 6245,UY,Santa Bernardina International Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 30253,UY,Tydeo Larre Borges Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6244,UY,Ángel S. Adami International Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,

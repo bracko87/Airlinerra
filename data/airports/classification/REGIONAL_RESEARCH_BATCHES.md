@@ -17,7 +17,7 @@ Instead of one country or many small GitHub Actions runs, research related count
 | Batch | Scope | Source codes | Real airports | Provisional today | Status |
 |---|---|---:|---:|---:|---|
 | B01 | Argentina + Brazil — imported (partial) | 2 | 697 | 176 | Partially researched |
-| B02 | Rest of South America | 13 | 311 | 36 | In progress: Peru + Chile domestic + Ecuador cargo |
+| B02 | Rest of South America | 13 | 311 | 47 | In progress: 47 provisional passenger proposals across eight areas |
 | B03 | Canada + Mexico | 2 | 412 | 0 | Queued |
 | B04 | United States — bulk national dataset | 1 | 2,879 | 0 | Queued |
 | B05 | Northern America & Caribbean A | 14 | 75 | 0 | Queued |
@@ -101,7 +101,7 @@ Kenya (KE, 12) · Lesotho (LS, 2) · Liberia (LR, 2) · Libya (LY, 46) · Madaga
 
 Antarctica (AQ, 0)
 
-### B02 source and status\n\nCombined updates now include **25 Peru regular-passenger estimates**, **11 Chile domestic-only quarterly estimates** and **two Ecuador annual cargo figures**. See [B02 source index](../commercial/batchB02/b02_official_2025_source_index.csv) and [report](../commercial/batchB02/B02_RESEARCH_REPORT.md). B02 is **in progress**, not complete.\n\n## Execution order
+### B02 source and status\n\nCombined updates now include **25 Peru regular-passenger estimates**, **11 Chile domestic-only quarterly estimates** and **two Ecuador annual cargo figures**. See [B02 source index](../commercial/batchB02/b02_official_2025_source_index.csv) and [report](../commercial/batchB02/B02_RESEARCH_REPORT.md). B02 remains **in progress**: 47 of 311 airports have passenger proposals, while 264 still lack source-matched passenger counts.\n\n## Execution order
 
 1. **B02 — Rest of South America**: Bolivia, Chile, Colombia, Ecuador, Falkland Islands, French Guiana, Guyana, Paraguay, Peru, South Georgia/South Sandwich Islands, Suriname, Uruguay, Venezuela. Investigate bulk official traffic datasets; keep any unmatched airports UNKNOWN.
 2. **B03 and B04 — Canada/Mexico + United States**: source-led national bulk research, not thousands of manual airport lookups. United States is a standalone batch because of its scale.

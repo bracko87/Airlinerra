@@ -32,3 +32,26 @@ Finish country-source downloads, per-airport annual statistics and source-ID cro
 - Q4: https://concesiones.mop.gob.cl/uploads/sites/4/2025/09/2025_4T_publicar.pdf
 
 Bolivia's official December 2025 national traffic report confirms **5,552,973 airline passengers transported** January–December countrywide but does not provide a reconciled 2025 per-airport annual arrivals/departures table, so **zero Bolivian provisional categories were generated**. Official source: https://www.dgac.gob.bo/wp-content/uploads/2026/06/INFORME-DE-ESTADISTICA-DICIEMBRE.pdf
+
+
+## Consolidated October 22 research addition: 11 airport-specific traffic observations
+
+**47/311** B02 runway-qualified airports now have provisional passenger tiers (**15.1% evidence coverage**), up from 36. These are NOT final game-category assignments, flight access permissions, or an assertion that Batch B02 is complete. Another **264 airports** retain UNKNOWN passenger-tier status. Airport IDs and code crosswalks plus separate measurement metrics and URLs are in [the new evidence file](b02_additional_2025_verified_airport_totals.csv).
+
+| Country | 2025 airport evidence | Passengers | Scope and caveat |
+|---|---|---:|---|
+| Chile | Santiago SCEL | 26,517,871 | Airport operator annual domestic+international total; preexisting 11 other airport domestic-only floors remain separate |
+| Colombia | Cartagena SKCG | 7,756,298 | Airport concession operator annual domestic+international traffic |
+| Ecuador | Quito SEQM | approximately 5,400,000 | Rounded Quiport figure, not exact; independent 397,798.54 tonnes cargo retained |
+| Ecuador | Guayaquil SEGU | 3,813,013 | Official DGAC 2,217,260 international + 1,595,753 domestic; independent 26,991.92 tonnes cargo retained |
+| French Guiana | Cayenne SOCA | 531,457 | Airport consultation report 2025 commercial traffic |
+| Guyana | Cheddi Jagan SYCJ | 973,016 | Government airport-specific 2025 figure |
+| Paraguay | Silvio Pettirossi SGAS | 1,323,613 | DINAC 1,285,104 regular + 38,509 nonregular; a mixed-service measure |
+| Paraguay | Guarani SGES | 3,247 | DINAC domestic regular arrived + departed Jan-May 2025; both endpoint traffic counts are not unique passengers nationally |
+| Uruguay | Carrasco SUMU | 2,084,836 | DINACIA 1,041,789 arrivals + 1,043,047 departures, different scope from airport operator's reported 2,144,071 |
+| Uruguay | Punta del Este SULS | 119,183 | DINACIA detailed 57,972 arrivals + 61,211 departures; summary table elsewhere in bulletin incorrectly overstates total |
+| Uruguay | Salto SUSO | 7,887 | DINACIA airport commercial 2025 movements |
+
+Unmatched airport counts after this import: Bolivia 23; Chile 34; Colombia 75; Ecuador 28; Falklands 1; French Guiana 1; Guyana 3; Paraguay 10; Peru 17; Suriname 1; Uruguay 4; Venezuela 67; South Georgia and the South Sandwich Islands 0 runway matches. No-match means **UNKNOWN**, never proof of no flights, nor an automatic Local category.
+
+Source-specific data definitions must remain independent. Cargo remains independent of passenger tier decisions. The code includes an identity validation for B02 extra source IDs and a regression test for retaining Ecuador annual cargo evidence. Full Python classification and runway validations must pass before B02 could be called technically validated. No Supabase/game deployment is needed or authorized.

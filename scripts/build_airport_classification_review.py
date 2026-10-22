@@ -16,6 +16,7 @@ AR_ANAC = ROOT / "data/airports/commercial/group46/group46_argentina_anac_2025_o
 PE_ANNUAL = ROOT / "data/airports/commercial/batchB02/b02_peru_2025_official_regular_passenger_totals.csv"
 EC_CARGO = ROOT / "data/airports/commercial/batchB02/b02_ecuador_2025_official_airport_cargo.csv"
 CL_DOMESTIC = ROOT / "data/airports/commercial/batchB02/b02_chile_2025_official_domestic_quarterly_totals.csv"
+B02_ADDITIONAL = ROOT / "data/airports/commercial/batchB02/b02_additional_2025_verified_airport_totals.csv"
 EXCLUSIONS = ROOT / "data/airports/reconciliation/BR_2026_OFFICIAL_RUNWAY_EXCLUSIONS.csv"
 OUTPUT = ROOT / "data/airports/classification/airport_classification_review.csv"
 CATEGORIES = ("Local", "Regional", "Medium", "Large", "Major Hub", "Mega Hub")
@@ -68,7 +69,8 @@ def build_rows(master: list[dict[str, str]], anac: list[dict[str, str]],
                argentina: list[dict[str, str]] | None = None,
                peru: list[dict[str, str]] | None = None,
                ecuador_cargo: list[dict[str, str]] | None = None,
-               chile_domestic: list[dict[str, str]] | None = None) -> list[dict[str, str]]:
+               chile_domestic: list[dict[str, str]] | None = None,
+               b02_additional: list[dict[str, str]] | None = None) -> list[dict[str, str]]:
     by_id: dict[str, dict[str, str]] = {}
     for source in anac:
         key = source["source_airport_id"]
@@ -127,6 +129,19 @@ def build_rows(master: list[dict[str, str]], anac: list[dict[str, str]],
                for q in range(1, 5)):
             raise ValueError(f"Chile official quarterly provenance missing: {sid}")
         chile_by_id[sid] = src
+    b02_by_id: dict[str, dict[str, str]] = {}
+    supported_metrics = {"CL_OPERATOR_2025_TOTAL_PAX", "CO_OPERATOR_2025_TOTAL_PAX", "EC_OPERATOR_2025_ROUNDED_PAX", "EC_DGAC_2025_TOTAL_PAX", "GF_AIRPORT_2025_COMMERCIAL_PAX", "GY_GOV_2025_AIRPORT_TOTAL_PAX", "PY_DINAC_2025_MIXED_PAX", "PY_DINAC_2025_REGULAR_PAX", "UY_DINACIA_2025_COMMERCIAL_PAX"}
+    for src in b02_additional or []:
+        sid = src["source_airport_id"]
+        if (sid in b02_by_id or src["country_iso"] not in {"CL", "CO", "EC", "GF", "GY", "PY", "UY"}
+                or src["year"] != "2025" or src["metric"] not in supported_metrics):
+            raise ValueError(f"Invalid or duplicate B02 2025 airport evidence: {sid}")
+        pax = src["passenger_estimate"]
+        if not re.fullmatch(r"[0-9]+", pax) or nonnegative(pax, f"B02 pax at {sid}") <= 0:
+            raise ValueError(f"Invalid B02 passenger count at {sid}")
+        if not src["source_url"].startswith("https://") or not src["qualification_note"]:
+            raise ValueError(f"Missing B02 official/source provenance at {sid}")
+        b02_by_id[sid] = src
     excluded = {r["source_airport_id"] for r in exclusions}
     master_ids = [m["source_airport_id"] for m in master]
     if len(master_ids) != len(set(master_ids)):
@@ -158,8 +173,15 @@ def build_rows(master: list[dict[str, str]], anac: list[dict[str, str]],
                              evidence["icao_or_ident"] not in {airport.get("ident"), airport.get("gps_code")}):
                 raise ValueError(f"{label} official airport code/source ID mismatch: {sid}")
     if (set(peru_by_id) - set(master_ids) or set(ecuador_by_id) - set(master_ids) or
-            set(chile_by_id) - set(master_ids)):
+            set(chile_by_id) - set(master_ids) or set(b02_by_id) - set(master_ids)):
         raise ValueError("B02 evidence references unknown technical airport source IDs")
+    for airport in master:
+        src = b02_by_id.get(airport["source_airport_id"])
+        if src and (airport["country_iso"] != src["country_iso"] or
+                    src["icao_or_ident"] not in {airport.get("ident"), airport.get("gps_code")}):
+            raise ValueError(f"B02 airport code/source ID mismatch: {airport['source_airport_id']}")
+    if set(b02_by_id) & (set(peru_by_id) | set(chile_by_id) | set(argentina_by_id) | set(by_id)):
+        raise ValueError("B02 additional evidence overlaps another passenger source")
     result = []
     for m in master:
         ident = m["source_airport_id"]
@@ -191,6 +213,19 @@ def build_rows(master: list[dict[str, str]], anac: list[dict[str, str]],
                            annual_total_passenger_proxy=str(annual),
                            passenger_measure="ANAC_TOTAL_PAX_ROUNDED_1000",
                            evidence_year="2025", evidence_source_url=source["source_url"])
+        elif ident in b02_by_id:
+            src = b02_by_id[ident]
+            annual = nonnegative(src["passenger_estimate"], f"B02 pax at {ident}")
+            # Ecuador freight evidence must survive the additional passenger source.
+            cargo_source = ecuador_by_id.get(ident)
+            row.update(provisional_category=provisional_tier(annual),
+                       decision_status="EXISTING_FINAL_ASSIGNMENT" if final else "PROVISIONAL_B02_2025_AIRPORT_TRAFFIC",
+                       passenger_activity_signal="2025_AIRPORT_PAX_REPORTED",
+                       cargo_activity_signal="ANNUAL_CARGO_TONNES_REPORTED" if cargo_source else "NOT_RESEARCHED",
+                       annual_total_passenger_proxy=str(annual),
+                       annual_cargo_tonnes_proxy=cargo_source["annual_cargo_tonnes"] if cargo_source else "",
+                       evidence_year="2025", passenger_measure=src["metric"],
+                       evidence_source_url=src["source_url"])
         elif m["country_iso"] == "PE" and ident in peru_by_id:
             src = peru_by_id[ident]
             annual = nonnegative(src["regular_passenger_estimate"], f"Peru pax at {ident}")
@@ -260,7 +295,8 @@ def main() -> None:
     parser.add_argument("--out", type=Path, default=OUTPUT)
     args = parser.parse_args()
     rows = build_rows(records(MASTER), records(ANAC), records(EXCLUSIONS), records(AR_ANAC),
-                      records(PE_ANNUAL), records(EC_CARGO), records(CL_DOMESTIC))
+                      records(PE_ANNUAL), records(EC_CARGO), records(CL_DOMESTIC),
+                      records(B02_ADDITIONAL))
     content = render(rows)
     if args.check:
         if not args.out.exists() or args.out.read_text(encoding="utf-8") != content:
