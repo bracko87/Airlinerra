@@ -9,4 +9,6 @@ Group 46 screens Argentina, Bolivia, Brazil, Chile and Colombia using runway-onl
 Explicit asphalt concrete is qualifying surfacing; unverified plain paved/hard is still excluded.
 Current phase ends at runway qualification for minimum Level 1 (Local). Other airport information and final six-category ranking are DEFERRED.
 Records are qualified by runway only; not an operating-airport or game-activation authorization.
-Screened count: 841; ambiguous surface queue: 1; duplicate identifiers: 0.
+Initial screen: 841; ambiguous surface queue: 1; duplicate identifiers: 0.
+2026-10-22 official runway correction: SBEG airport id 5897, runway id 234094, 2700 x 45m Asphalt (DECEA eAIP AD 2.12), surface raw ASPH 71/F/C/X/T; correction in runway_surface_overrides.csv.
+Current cumulative screen after correction: 842; unresolved ambiguous surface queue: 0; duplicate identifiers: 0.
