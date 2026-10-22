@@ -46,3 +46,7 @@ jobs:
           assert any(r['ident']=='LYAL' and r['source_type']=='FICTIONAL' for r in master), 'LYAL lost'
           print('PASS: 8152 unique technical airports; Brazil 576; SIFC excluded; original runway evidence preserved; LYAL intact')
           PY
+      - name: Validate provisional airport classification review
+        run: |
+          python -m unittest discover -s tests -p test_airport_classification.py
+          python scripts/build_airport_classification_review.py --check

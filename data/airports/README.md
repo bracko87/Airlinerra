@@ -1,6 +1,6 @@
 # Airlinerra airport collection — permanent runway-only register
 
-> **Current global audit (22 October 2026):** The canonical master contains **8,153 airports**: **8,152 real-world runway-qualified airports across Groups 1–48 plus fictional LYAL**. A further 304 real airports have been recovered since the 7,846-record baseline (303 in Group 45 and Carrasco SUMU in Group 48, plus subsequent corrections). SUMU, KSEA and SBEG are **already in the canonical register**; do not add them again. See [worldwide reconciliation](reconciliation/README.md). Sections describing only Groups 1–35 remain historical snapshots.
+> **Current global audit (22 October 2026):** The canonical master contains **8,152 airports**: **8,151 real-world runway-qualified airports across Groups 1–49 plus fictional LYAL**. A further 304 real airports have been recovered since the 7,846-record baseline (303 in Group 45 and Carrasco SUMU in Group 48, plus subsequent corrections). SUMU, KSEA and SBEG are **already in the canonical register**; do not add them again. See [worldwide reconciliation](reconciliation/README.md). Sections describing only Groups 1–35 remain historical snapshots.
 
 ## Current phase
 Only collect airports having **at least one runway 1,200 m or longer**, reported **asphalt or concrete**, with both runway and airport not recorded closed. Facilities that say only "paved" are sent to a surface-check queue and not assumed eligible.
@@ -157,3 +157,7 @@ Two Spanish airports from Group 9 were upgraded from surface-review candidates t
 Civilian or military status, operating permissions, opening hours, equipment/aircraft eligibility, final six-category rankings, terminals, finances, game activation and Supabase database migrations are deferred.
 
 - Group 35: `Refresh Group 35 technical airport screening` (South Africa, South Sudan, Sudan, Tanzania, Togo; 112 candidates; six surface reviews; manual-only).
+
+
+## Phase A: provisional airport categories (22 October 2026)
+See [six-tier review policy](classification/CLASSIFICATION_POLICY_V1.md) and [full worldwide classification review](classification/airport_classification_review.csv). Source-based regular passenger observations yield **138 provisional Brazilian tiers**; **5 nonregular-only** and **5 cargo-only** airports require special review. All other real airports remain without approved final categories. The technical master and its protected LYAL record were not changed.
