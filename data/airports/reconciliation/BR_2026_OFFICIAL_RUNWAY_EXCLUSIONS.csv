@@ -1,0 +1,2 @@
+source_airport_id,country_iso,airport_name,ident,gps_code,source_runway_id,previous_source_length_m,verified_official_length_m,runway_surface,disposition,source_anac,source_decea,verification_date
+335361,BR,Coroa do Avião Airport,BR-0856,SIFC,602402,1318.6,1145,asphalt,EXCLUDED_BELOW_1200M,https://pergamum.anac.gov.br/pergamum/vinculos/PA2022-8681.pdf,https://aisweb.decea.mil.br/?amdt=2109&codigo=SIFC&i=aerodromos,2026-10-22
