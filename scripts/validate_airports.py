@@ -28,7 +28,9 @@ def load(path):
     return set(reader.fieldnames),rows
 
 def validate():
-    if surface_type("asphalt concrete")!="ELIGIBLE_LABEL" or surface_type("paved")=="ELIGIBLE_LABEL":
+    if (surface_type("asphalt concrete")!="ELIGIBLE_LABEL"
+        or any(surface_type(v)!="ELIGIBLE_LABEL" for v in ("PEM","CONC-G","ASPH-G","CONC-GRVD","ASPH-CONC-F"))
+        or any(surface_type(v)=="ELIGIBLE_LABEL" for v in ("paved","ASPH-GRVL","BITUM","ASPH-TURF","DIRT"))):
         raise ValueError("Runway material classification regression")
     cols,rows=load(MASTER)
     if cols!=COLUMNS or not rows: raise ValueError("Missing master fields or airport rows")
