@@ -69,7 +69,9 @@ def main():
         kind=surface_type(runway.get("surface"))
         source_runway=runway
         override=overrides.get(airport["id"])
-        if (override and kind!="ELIGIBLE_LABEL"
+        # A source-specific AIP correction supersedes generic FAA-coded PEM.
+        # Only apply it to the matching runway length; SUMU has two PEM runways.
+        if (override
                 and (runway.get("surface") or "").strip().lower()==override["previous_surface_label"].strip().lower()
                 and abs(length-float(override["reference_runway_length_m"]))<=5):
             if airport["iso_country"]!=override["country_iso"]:
