@@ -17,7 +17,7 @@ Instead of one country or many small GitHub Actions runs, research related count
 | Batch | Scope | Source codes | Real airports | Provisional today | Status |
 |---|---|---:|---:|---:|---|
 | B01 | Argentina + Brazil — imported (partial) | 2 | 697 | 176 | Partially researched |
-| B02 | Rest of South America | 13 | 311 | 58 | In progress: 49 first-party/authority/operator-derived proposals + 9 secondary Colombia proposals |
+| B02 | Rest of South America | 13 | 311 | 94 | In progress: 36 newly sourced Aerocivil regular proposals plus previously recorded 58 |
 | B03 | Canada + Mexico | 2 | 412 | 0 | Queued |
 | B04 | United States — bulk national dataset | 1 | 2,879 | 0 | Queued |
 | B05 | Northern America & Caribbean A | 14 | 75 | 0 | Queued |
@@ -101,7 +101,7 @@ Kenya (KE, 12) · Lesotho (LS, 2) · Liberia (LR, 2) · Libya (LY, 46) · Madaga
 
 Antarctica (AQ, 0)
 
-### B02 source and status\n\nCombined updates now include **25 Peru regular-passenger estimates**, **11 Chile domestic-only quarterly estimates** and **two Ecuador annual cargo figures**. See [B02 source index](../commercial/batchB02/b02_official_2025_source_index.csv) and [report](../commercial/batchB02/B02_RESEARCH_REPORT.md). B02 remains **in progress**: 58 of 311 airports have candidate passenger tiers (including 9 SECONDARY Aerocivil-attributed Colombia values and 2 separately scoped 2025 Guyana/Suriname passenger floors), while 253 still lack annual passenger evidence. Full primary-source reconciliation remains open.\n\n## Execution order
+### B02 source and status\n\nCombined updates now include **25 Peru regular-passenger estimates**, **11 Chile domestic-only quarterly estimates** and **two Ecuador annual cargo figures**. See [B02 source index](../commercial/batchB02/b02_official_2025_source_index.csv) and [report](../commercial/batchB02/B02_RESEARCH_REPORT.md). B02 remains **in progress**: 94 of 311 airports have candidate passenger tiers; the new 36 Colombia records use official Aerocivil 2025 regular-flight endpoint totals, while the prior 10 Colombia proposals retain their original other-scope passenger measures with new official regular-traffic sidecars. 217 still have no passenger tier. Nine earlier Colombia passenger totals remain explicitly secondary and not reconciled to all-service totals. Full primary-source reconciliation remains open.\n\n## Execution order
 
 1. **B02 — Rest of South America**: Bolivia, Chile, Colombia, Ecuador, Falkland Islands, French Guiana, Guyana, Paraguay, Peru, South Georgia/South Sandwich Islands, Suriname, Uruguay, Venezuela. Investigate bulk official traffic datasets; keep any unmatched airports UNKNOWN.
 2. **B03 and B04 — Canada/Mexico + United States**: source-led national bulk research, not thousands of manual airport lookups. United States is a standalone batch because of its scale.

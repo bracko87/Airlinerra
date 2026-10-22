@@ -19,6 +19,7 @@ CL_DOMESTIC = ROOT / "data/airports/commercial/batchB02/b02_chile_2025_official_
 B02_ADDITIONAL = ROOT / "data/airports/commercial/batchB02/b02_additional_2025_verified_airport_totals.csv"
 GY_CARGO = ROOT / "data/airports/commercial/batchB02/b02_guyana_2025_official_cargo.csv"
 PE_CARGO = ROOT / "data/airports/commercial/batchB02/b02_peru_2025_official_airport_cargo.csv"
+CO_AEROCIVIL = ROOT / "data/airports/commercial/batchB02/b02_colombia_2025_aerocivil_regular_airport_endpoints.csv"
 EXCLUSIONS = ROOT / "data/airports/reconciliation/BR_2026_OFFICIAL_RUNWAY_EXCLUSIONS.csv"
 OUTPUT = ROOT / "data/airports/classification/airport_classification_review.csv"
 CATEGORIES = ("Local", "Regional", "Medium", "Large", "Major Hub", "Mega Hub")
@@ -74,7 +75,8 @@ def build_rows(master: list[dict[str, str]], anac: list[dict[str, str]],
                chile_domestic: list[dict[str, str]] | None = None,
                b02_additional: list[dict[str, str]] | None = None,
                guyana_cargo: list[dict[str, str]] | None = None,
-               peru_cargo: list[dict[str, str]] | None = None) -> list[dict[str, str]]:
+               peru_cargo: list[dict[str, str]] | None = None,
+               colombia_regular: list[dict[str, str]] | None = None) -> list[dict[str, str]]:
     by_id: dict[str, dict[str, str]] = {}
     for source in anac:
         key = source["source_airport_id"]
@@ -167,6 +169,28 @@ def build_rows(master: list[dict[str, str]], anac: list[dict[str, str]],
                 or not src["source_url"].startswith("https://") or not src["qualification_note"]):
             raise ValueError(f"Invalid Peru cargo value/source: {sid}")
         peru_cargo_by_id[sid] = src
+    colombia_by_id: dict[str, dict[str, str]] = {}
+    for src in colombia_regular or []:
+        sid = src["source_airport_id"]
+        if (sid in colombia_by_id or src["country_iso"] != "CO" or src["year"] != "2025"
+                or src["metric"] != "CO_AEROCIVIL_2025_REGULAR_FLIGHT_ENDPOINTS"
+                or not re.fullmatch(r"[A-Z]{3}", src["iata_code"])
+                or not src["source_url"].startswith("https://www.datos.gov.co/")
+                or not src["code_crosswalk_source_url"].startswith("https://")
+                or not src["qualification_note"]):
+            raise ValueError(f"Invalid Colombia Aerocivil evidence/source: {sid}")
+        origin = nonnegative(src["regular_departures_pax"], f"CO departures at {sid}")
+        dest = nonnegative(src["regular_arrivals_pax"], f"CO arrivals at {sid}")
+        pax = nonnegative(src["regular_passenger_endpoints"], f"CO annual regular pax at {sid}")
+        cargo_out = nonnegative(src["regular_departures_cargo_mail_kg"], f"CO cargo+mail departures at {sid}")
+        cargo_in = nonnegative(src["regular_arrivals_cargo_mail_kg"], f"CO cargo+mail arrivals at {sid}")
+        cargo = nonnegative(src["regular_cargo_mail_endpoint_kg"], f"CO regular cargo+mail at {sid}")
+        dep_months = nonnegative(src["observed_departure_months"], f"CO months at {sid}")
+        arr_months = nonnegative(src["observed_arrival_months"], f"CO months at {sid}")
+        if (pax <= 0 or origin + dest != pax or cargo_out + cargo_in != cargo
+                or not 1 <= dep_months <= 12 or not 1 <= arr_months <= 12):
+            raise ValueError(f"Colombia Aerocivil sum/period mismatch at {sid}")
+        colombia_by_id[sid] = src
     excluded = {r["source_airport_id"] for r in exclusions}
     master_ids = [m["source_airport_id"] for m in master]
     if len(master_ids) != len(set(master_ids)):
@@ -199,7 +223,8 @@ def build_rows(master: list[dict[str, str]], anac: list[dict[str, str]],
                 raise ValueError(f"{label} official airport code/source ID mismatch: {sid}")
     if (set(peru_by_id) - set(master_ids) or set(ecuador_by_id) - set(master_ids) or
             set(chile_by_id) - set(master_ids) or set(b02_by_id) - set(master_ids) or
-            set(guyana_cargo_by_id) - set(master_ids) or set(peru_cargo_by_id) - set(master_ids)):
+            set(guyana_cargo_by_id) - set(master_ids) or set(peru_cargo_by_id) - set(master_ids) or
+            set(colombia_by_id) - set(master_ids)):
         raise ValueError("B02 evidence references unknown technical airport source IDs")
     for airport in master:
         src = b02_by_id.get(airport["source_airport_id"])
@@ -216,6 +241,11 @@ def build_rows(master: list[dict[str, str]], anac: list[dict[str, str]],
         if src and (airport["country_iso"] != "PE" or
                     src["icao_or_ident"] not in {airport.get("ident"), airport.get("gps_code")}):
             raise ValueError(f"Peru cargo code/source ID mismatch: {airport['source_airport_id']}")
+    for airport in master:
+        src = colombia_by_id.get(airport["source_airport_id"])
+        if src and (airport["country_iso"] != "CO" or
+                    src["icao_or_ident"] not in {airport.get("ident"), airport.get("gps_code")}):
+            raise ValueError(f"Colombia official code/source ID mismatch: {airport['source_airport_id']}")
     if set(b02_by_id) & (set(peru_by_id) | set(chile_by_id) | set(argentina_by_id) | set(by_id)):
         raise ValueError("B02 additional evidence overlaps another passenger source")
     result = []
@@ -337,6 +367,26 @@ def build_rows(master: list[dict[str, str]], anac: list[dict[str, str]],
                 row["decision_status"] = "CARGO_ONLY_REVIEW"
                 row["evidence_year"] = src["year"]
                 row["evidence_source_url"] = src["source_url"]
+    for row in result:
+        src = colombia_by_id.get(row["source_airport_id"])
+        if not src:
+            continue
+        if row["regular_passenger_proxy"] or row["regular_cargo_proxy_kg"]:
+            raise ValueError(f"Conflicting Colombia regular proxy: {row['source_airport_id']}")
+        row["regular_passenger_proxy"] = src["regular_passenger_endpoints"]
+        # Official field is cargo PLUS mail kg, not freight-only or cargo authorization.
+        row["regular_cargo_proxy_kg"] = src["regular_cargo_mail_endpoint_kg"]
+        if int(src["regular_cargo_mail_endpoint_kg"]) > 0 and row["cargo_activity_signal"] == "NOT_RESEARCHED":
+            row["cargo_activity_signal"] = "REGULAR_CARGO_MAIL_OBSERVED_OFFICIAL_2025"
+        if not row["provisional_category"]:
+            row.update(
+                provisional_category=provisional_tier(int(src["regular_passenger_endpoints"])),
+                decision_status="PROVISIONAL_B02_AEROCIVIL_REGULAR_ENDPOINT",
+                passenger_activity_signal="REGULAR_OBSERVED_OFFICIAL_2025",
+                evidence_year="2025",
+                passenger_measure="CO_AEROCIVIL_2025_REGULAR_ENDPOINT_PAX",
+                evidence_source_url=src["source_url"],
+            )
     if len(result) != len(master):
         raise ValueError("Classification review did not preserve every master airport")
     return result
@@ -355,7 +405,8 @@ def main() -> None:
     args = parser.parse_args()
     rows = build_rows(records(MASTER), records(ANAC), records(EXCLUSIONS), records(AR_ANAC),
                       records(PE_ANNUAL), records(EC_CARGO), records(CL_DOMESTIC),
-                      records(B02_ADDITIONAL), records(GY_CARGO), records(PE_CARGO))
+                      records(B02_ADDITIONAL), records(GY_CARGO), records(PE_CARGO),
+                      records(CO_AEROCIVIL))
     content = render(rows)
     if args.check:
         if not args.out.exists() or args.out.read_text(encoding="utf-8") != content:

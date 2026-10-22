@@ -1,6 +1,6 @@
 # Airlinerra — B02 South America: consolidated evidence ledger (2026-10-22)
 
-**Latest progress: 58/311 runway-qualified airports have candidate passenger tiers** (49 first-party/authority/operator-derived observations including two scoped passenger floors and 9 separately flagged secondary-source Colombia proposals), while **253 remain UNKNOWN** for passenger-tier evidence. This is **18.6% traffic-tier evidence coverage, NOT a completed batch**. All real-airport final category fields remain blank and no flight access or cargo rights are granted. Batch scope: 13 South American country/territory codes outside Argentina and Brazil, 311 eligible real records in the 8,153-airport master.
+**Latest progress: 94/311 runway-qualified airports have candidate passenger tiers**, up from 58 following 36 new Colombia official regular-flight endpoint proposals; **217 remain without positive source-matched passenger tier evidence**. This is **30.2% provisional coverage, NOT a completed batch**. The nine previously entered secondary Colombia totals still retain a separate measurement definition, while a new official regular-flight proxy is stored independently. All real-airport final category fields remain blank and no flight access or cargo rights are granted. Batch scope: 13 South American country/territory codes outside Argentina and Brazil, 311 eligible real records in the 8,153-airport master.
 
 ## Verified work imported
 
@@ -101,3 +101,28 @@ Peru's [Transport Ministry statement of 23 December 2025](https://www.gob.pe/ins
 The [B02 measurement discrepancy queue](b02_2025_metric_reconciliation_queue.csv) lists **three unresolved source-scope conflicts**: Lima's DGAC/regular-passenger proxy versus ACI-LAC airport passenger headline; Ecuador national 2025 DGAC cargo 424,790.46 versus 434,368 tonnes in its later fiscal-accountability statement; and Guayaquil national DGAC 26,991.92 tonnes versus coastal DGAC 31,957.59 tonnes implied by separate national/international figures. **Do not merge or overwrite any of these sources** without reconciling reporting scope and definitions.
 
 The classification generator now accepts the already-committed Suriname `SR` airport observation and correctly validates decimal Ecuador cargo `annual_cargo_tonnes`. Both previously blocked deterministic reconstruction. Tests were added for these regressions and independent Peru cargo evidence. The future Supabase handoff now exports published capacity evidence as a separate file, with `game_slot_capacity_approved=false` on every such record.
+
+
+## 2026-10-22 consolidated Colombia Aerocivil direct-data pass — 46 airports, 36 new tiers
+
+The [Aerocivil official commercial origin-destination open-data table](https://www.datos.gov.co/Transporte/Transporte-A-reo-Comercial-Tr-fico-Origen-Destino-/gb6w-ynu4) is published by Aerocivil and contains year/month, flight type, IATA source/destination, `pasajeros` and `carga_correo_kg`. Its **2025 `tipo_vuelo='R'` (regular flights)** records are aggregated separately by `origen` and `destino` using the public Socrata SoQL API. For each matched runway-qualified **Colombian** airport, the endpoint proxy is **regular departing passengers + regular arriving passengers** and **regular outgoing cargo-plus-mail kilograms + regular incoming cargo-plus-mail kilograms**. These are source-defined *airport endpoint* observations; one domestic traveler may appear at both endpoints and totals **must not be added across airports as distinct national passengers**. The source excludes nonregular/charter flights and is NOT a reconciled all-service total.
+
+Source filters and aggregation (same request independently with `origen` and `destino`):
+
+```text
+GET https://www.datos.gov.co/resource/gb6w-ynu4.json
+?$select=origen,sum(pasajeros) as pax,sum(carga_correo_kg) as cargo_kg,count(distinct n_mero_de_mes) as months
+&$where=a_o=2025 and tipo_vuelo='R'
+&$group=origen
+&$limit=1500
+```
+
+The two queries produced 594 departure and 610 arrival distinct IATA endpoint codes (each below the 1,500-row query cap); after [ICAO/IATA mapping from the public Colombia airport-code list](https://en.wikipedia.org/wiki/List_of_airports_in_Colombia) and **exact source-ID / country / ICAO verification** against the 8,153-row master, **46 of Colombia's 76 runway-qualified airports** have positive Aerocivil regular passenger evidence. Of those, **36 previously had no provisional tier** and now receive `PROVISIONAL_B02_AEROCIVIL_REGULAR_ENDPOINT`; the ten previously categorized airports preserve their original tier and original reported 2025 operator/secondary full or rounded total, while the additional regular endpoint number is independently populated in `regular_passenger_proxy`.
+
+There are **43** positive 2025 *regular cargo-plus-mail* endpoint kg observations stored in `regular_cargo_proxy_kg` and `REGULAR_CARGO_MAIL_OBSERVED_OFFICIAL_2025`. This must **not** be interpreted as freight-only tons, airport cargo capacity, separate cargo rights or in-game capacity. Three crosswalked airports have zero positive regular cargo+mail kg in this particular published metric; no absence of other cargo service is inferred.
+
+Original ICAO/IATA matched 64 of the 76 Colombian master airports; the other 12 remain an identifier-evidence queue, not a traffic=0 conclusion. Within these 64, only the 46 with positive source-matched regular passenger counts generate tier proposals. **Thirty Colombian airports have no provisional passenger tier**, and 217 B02 airports remain without a provisional tier worldwide.
+
+[Country official 2025 crosswalk](b02_colombia_2025_aerocivil_regular_airport_endpoints.csv) preserves original Airlinerra source IDs, IATA and ICAO codes, year, source URLs, source-defined measure, departures/arrivals and their sums, cargo+mail kg and monthly coverage. **Important:** for the already-tiered ten Colombian airports, Aerocivil *regular-only* passengers are lower than certain published airport operator/secondary full-service totals. These are different metrics and must NOT be silently reconciled or overwritten. Bogotá SKBO is one example: 38,594,428 regular endpoint observations versus the prior 45,470,711 secondary-attributed all-service figure, pending authority/measure reconciliation.
+
+B02 source coverage is now **94/311 (30.2%)**. No final category was assigned to a real airport, no original runway-qualified airport was removed, and neither cargo evidence nor provisional airport tiers activate route permissions. The complete Python/GitHub Actions validation suite must still run on the new commit.

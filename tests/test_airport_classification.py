@@ -120,6 +120,64 @@ class ClassificationReviewTests(unittest.TestCase):
             build_rows([airport("6217", country="PE", code="WRONG")], [], [],
                        peru_cargo=[carg])
 
+    def test_colombia_official_regular_endpoints_added_without_game_final(self):
+        source = {"source_airport_id": "123", "country_iso": "CO",
+                  "icao_or_ident": "SKXX", "iata_code": "ABC", "year": "2025",
+                  "regular_departures_pax": "620000",
+                  "regular_arrivals_pax": "580000",
+                  "regular_passenger_endpoints": "1200000",
+                  "regular_departures_cargo_mail_kg": "1000",
+                  "regular_arrivals_cargo_mail_kg": "500",
+                  "regular_cargo_mail_endpoint_kg": "1500",
+                  "observed_departure_months": "12", "observed_arrival_months": "12",
+                  "metric": "CO_AEROCIVIL_2025_REGULAR_FLIGHT_ENDPOINTS",
+                  "source_url": "https://www.datos.gov.co/resource/gb6w-ynu4.json",
+                  "code_crosswalk_source_url": "https://en.wikipedia.org/wiki/List_of_airports_in_Colombia",
+                  "qualification_note": "Regular routes, not all-service airport totals"}
+        row = build_rows([airport("123", country="CO", code="SKXX")], [], [],
+                         colombia_regular=[source])[0]
+        self.assertEqual(row["provisional_category"], "Large")
+        self.assertEqual(row["decision_status"], "PROVISIONAL_B02_AEROCIVIL_REGULAR_ENDPOINT")
+        self.assertEqual(row["regular_passenger_proxy"], "1200000")
+        self.assertEqual(row["regular_cargo_proxy_kg"], "1500")
+        self.assertEqual(row["cargo_activity_signal"], "REGULAR_CARGO_MAIL_OBSERVED_OFFICIAL_2025")
+        self.assertEqual(row["final_assigned_category"], "")
+        with self.assertRaisesRegex(ValueError, "sum/period mismatch"):
+            build_rows([airport("123", country="CO", code="SKXX")], [], [],
+                       colombia_regular=[dict(source, regular_arrivals_pax="580001")])
+        with self.assertRaisesRegex(ValueError, "official code/source ID mismatch"):
+            build_rows([airport("123", country="CO", code="WRONG")], [], [],
+                       colombia_regular=[source])
+
+    def test_colombia_regular_evidence_preserves_existing_secondary_tier_scope(self):
+        original = {"source_airport_id": "123", "country_iso": "CO",
+                    "icao_or_ident": "SKXX", "official_airport_label": "Test",
+                    "year": "2025", "passenger_estimate": "2100000",
+                    "metric": "CO_AEROCIVIL_2025_SECONDARY_ATTRIBUTED_PAX",
+                    "source_url": "https://example.org/secondary",
+                    "qualification_note": "Secondary source only"}
+        regular = {"source_airport_id": "123", "country_iso": "CO",
+                   "icao_or_ident": "SKXX", "iata_code": "ABC", "year": "2025",
+                   "regular_departures_pax": "600000",
+                   "regular_arrivals_pax": "400000",
+                   "regular_passenger_endpoints": "1000000",
+                   "regular_departures_cargo_mail_kg": "0",
+                   "regular_arrivals_cargo_mail_kg": "0",
+                   "regular_cargo_mail_endpoint_kg": "0",
+                   "observed_departure_months": "12", "observed_arrival_months": "12",
+                   "metric": "CO_AEROCIVIL_2025_REGULAR_FLIGHT_ENDPOINTS",
+                   "source_url": "https://www.datos.gov.co/resource/gb6w-ynu4.json",
+                   "code_crosswalk_source_url": "https://en.wikipedia.org/wiki/List_of_airports_in_Colombia",
+                   "qualification_note": "Regular routes, not all-service airport totals"}
+        row = build_rows([airport("123", country="CO", code="SKXX")], [], [],
+                         b02_additional=[original], colombia_regular=[regular])[0]
+        self.assertEqual(row["provisional_category"], "Large")
+        self.assertEqual(row["annual_total_passenger_proxy"], "2100000")
+        self.assertEqual(row["regular_passenger_proxy"], "1000000")
+        self.assertEqual(row["decision_status"], "PROVISIONAL_B02_SECONDARY_REPORTED_2025")
+        self.assertEqual(row["cargo_activity_signal"], "NOT_RESEARCHED")
+        self.assertEqual(row["final_assigned_category"], "")
+
     def test_six_tiers_and_boundaries(self):
         edges = [(1, "Local"), (9_999, "Local"), (10_000, "Regional"),
                  (99_999, "Regional"), (100_000, "Medium"), (999_999, "Medium"),
