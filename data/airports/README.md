@@ -1,6 +1,6 @@
 # Airlinerra airport collection — permanent runway-only register
 
-> **Current global audit (22 October 2026):** The canonical master has **7,846 records**: **7,845 runway-qualified real-airport records across Groups 1–48 plus one owner-defined fictional airport (LYAL)**. The old 7,816 running tally omitted 30 in the calculation, not in the files. Confirmed source-material omissions include Carrasco SUMU and Seattle–Tacoma KSEA; both require original source-ID reconciliation before they can be safely appended. See [worldwide reconciliation](reconciliation/README.md). Sections below describing only Groups 1–35 are retained as historical snapshots.
+> **Current global audit (22 October 2026):** The canonical master contains **8,150 airports**: **8,149 real-world runway-qualified airports across Groups 1–48 plus fictional LYAL**. A further 304 real airports have been recovered since the 7,846-record baseline (303 in Group 45 and Carrasco SUMU in Group 48). SUMU and KSEA are **already in the canonical register**; do not add them again. See [worldwide reconciliation](reconciliation/README.md). Sections describing only Groups 1–35 remain historical snapshots.
 
 ## Current phase
 Only collect airports having **at least one runway 1,200 m or longer**, reported **asphalt or concrete**, with both runway and airport not recorded closed. Facilities that say only "paved" are sent to a surface-check queue and not assumed eligible.
@@ -8,7 +8,7 @@ Only collect airports having **at least one runway 1,200 m or longer**, reported
 A matching airport can be considered **at least Level 1 (Local)**. This is only a lower-bound technical qualification, NOT a final assignment to Airlinerra's exact six tiers: Local, Regional, Medium, Large, Major Hub, Mega Hub. All other airport details are postponed.
 
 ## Canonical master
-- `airport_register.csv`: **7,846 current airport records (7,845 screened real-world candidates across Groups 1–48 + 1 fictional airport)**, with identifiers, country, name, longest reported qualifying runway, surface and minimum eligible level 1. This is not a list of operational or playable airports.
+- `airport_register.csv`: **8,150 current airport records (8,149 real-world candidates across Groups 1–48 + 1 fictional airport)**, with identifiers, country, name, longest reported qualifying runway, surface and minimum eligible level 1. This is not a list of operational or playable airports.
 - `fictional_airports.csv`: owner-defined airports outside OurAirports. **Aleksandrovo Airport (LYAL), Serbia** — fictional, runway 2,200 m asphalt, **assigned Level 1 / Local**. Protected from being erased by future runway-only screenings; no coordinates or additional data assumed.
 - `airport_register.csv` has `source_type` (`OURAIRPORTS` / `FICTIONAL`) and `assigned_category` (blank for screened real airports, `Local` for LYAL) to keep these records unambiguously separated.
 - Each group's `generated/groupN/groupN_technical_candidates.csv`: source screening that feeds the master.
