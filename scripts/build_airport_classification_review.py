@@ -74,8 +74,14 @@ def build_rows(master: list[dict[str, str]], anac: list[dict[str, str]],
         key = source["source_airport_id"]
         if key in argentina_by_id or source["year"] != "2025":
             raise ValueError(f"Invalid or duplicate Argentina source row: {key}")
-        if nonnegative(source["passenger_total_estimate"], f"Argentina pax at {key}") <= 0:
-            raise ValueError(f"Missing positive Argentina total at {key}")
+        annual = nonnegative(source["passenger_total_estimate"], f"Argentina pax at {key}")
+        if annual <= 0 or source.get("metric") != "ANAC_TOTAL_PAX_ROUNDED_1000":
+            raise ValueError(f"Missing or unsupported Argentina annual total at {key}")
+        thousands = source.get("reported_2025_thousands", "")
+        if not thousands or not thousands.replace(".", "").isdigit():
+            raise ValueError(f"Malformed Argentina ANAC thousands figure at {key}")
+        if annual != int(thousands.replace(".", "")) * 1_000:
+            raise ValueError(f"Argentina rounded-thousands conversion mismatch at {key}")
         argentina_by_id[key] = source
     excluded = {r["source_airport_id"] for r in exclusions}
     master_ids = [m["source_airport_id"] for m in master]
@@ -91,6 +97,12 @@ def build_rows(master: list[dict[str, str]], anac: list[dict[str, str]],
     active_argentina = {m["source_airport_id"] for m in master if m["country_iso"] == "AR"}
     if set(argentina_by_id) - active_argentina:
         raise ValueError("Argentina ANAC source row absent from technical master")
+    for airport in master:
+        if airport["country_iso"] != "AR":
+            continue
+        source = argentina_by_id.get(airport["source_airport_id"])
+        if source and source["icao_or_ident"] not in {airport.get("ident"), airport.get("gps_code")}:
+            raise ValueError(f"Argentina ANAC airport code mismatch for {airport['source_airport_id']}")
     result = []
     for m in master:
         ident = m["source_airport_id"]
