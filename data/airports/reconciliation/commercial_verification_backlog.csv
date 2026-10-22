@@ -5,4 +5,4 @@ group,country,technical_airports,previous_passenger_yes,previous_cargo_yes,verif
 "46","BO","23","15","0","PROVISIONAL_NOT_FINAL","Match DGAC Bolivia airport-specific passenger and cargo movements","https://www.dgac.gob.bo/"
 "46","CL","46","15","1","PROVISIONAL_NOT_FINAL","Join JAC monthly airport-level passenger and cargo tables","https://www.jac.gob.cl/estadisticas2/informes-estadisticos-mensuales-del-trafico-aereo/"
 "46","CO","76","23","1","PROVISIONAL_NOT_FINAL","Join Aerocivil Colombia airport-specific commercial activity records","https://www.aerocivil.gov.co/"
-"48","UY","6","2","0","MISSING_QUALIFIED_CARRASCO","Resolve SUMU source ID from original OurAirports input then refresh group and master","https://www.dinacia.gub.uy/sites/default/files/aip/2026-07/Ad2-9%20esp.pdf"
+"48","UY","7","3","1","CARRASCO_ADDED_TO_MAIN","SUMU source 6247 confirmed in Group 48 and master; continue source-specific verification for other airport traffic.","https://www.dinacia.gub.uy/sites/default/files/aip/2026-07/Ad2-9%20esp.pdf"
