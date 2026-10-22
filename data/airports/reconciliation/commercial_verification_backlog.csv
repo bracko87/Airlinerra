@@ -1,0 +1,8 @@
+group,country,technical_airports,previous_passenger_yes,previous_cargo_yes,verification_status,required_action,authoritative_source
+45,US,2576,172,3,PROVISIONAL_NOT_FINAL,Join FAA CY2025 all-airport enplanements and all-cargo data by airport identifier; verify charter versus scheduled and general aviation,https://www.faa.gov/airports/planning_capacity/passenger_allcargo_stats/passenger?year=all
+46,BR,576,50,7,PROVISIONAL_NOT_FINAL,Join ANAC monthly commercial movements by ICAO and service category; private fields remain unknown without records,https://www.gov.br/anac/pt-br/acesso-a-informacao/dados-abertos/areas-de-atuacao/operador-aeroportuario/dados-de-movimentacao-aeroportuaria/metadados-operador-aeroportuario-dados-de-movimentacao-aeroportuaria
+46,AR,120,31,2,PROVISIONAL_NOT_FINAL,Join ANAC Argentina airport-level passenger and cargo movement tables,https://consultas-publicas.anac.gob.ar/estadisticas-dnta/
+46,BO,23,15,0,PROVISIONAL_NOT_FINAL,Match DGAC Bolivia airport-specific passenger and cargo movements,https://www.dgac.gob.bo/
+46,CL,46,15,1,PROVISIONAL_NOT_FINAL,Join JAC monthly airport-level passenger and cargo tables,https://www.jac.gob.cl/estadisticas2/informes-estadisticos-mensuales-del-trafico-aereo/
+46,CO,76,23,1,PROVISIONAL_NOT_FINAL,Join Aerocivil Colombia airport-specific commercial activity records,https://www.aerocivil.gov.co/
+48,UY,6,2,0,MISSING_QUALIFIED_CARRASCO,Resolve SUMU source ID from original OurAirports input then refresh group and master,https://www.dinacia.gub.uy/sites/default/files/aip/2026-07/Ad2-9%20esp.pdf
