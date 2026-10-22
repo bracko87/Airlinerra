@@ -9,4 +9,6 @@ Group 48 screens Peru, South Georgia and the South Sandwich Islands, Suriname, U
 Explicit asphalt concrete is qualifying surfacing; unverified plain paved/hard is still excluded.
 Current phase ends at runway qualification for minimum Level 1 (Local). Other airport information and final six-category ranking are DEFERRED.
 Records are qualified by runway only; not an operating-airport or game-activation authorization.
-Screened count: 116; ambiguous surface queue: 1; duplicate identifiers: 0.
+Initial 2026-10-21 screen: 116; ambiguous surface queue: 1; duplicate identifiers: 0.
+
+2026-10-22 TECHNICAL BACKFILL: SUMU Carrasco original OurAirports source airport ID 6247, runway ID 246026. DINACIA SUMU AIP AD 2.9-12 documents 07/25 3200m asphalt-concrete runway; airport-specific override recorded in data/airports/runway_surface_overrides.csv. New Uruguay total 7; Group 48 total 117. All 116 existing source IDs preserved, one remaining independent Peru surface-review case; no gameplay activation.
