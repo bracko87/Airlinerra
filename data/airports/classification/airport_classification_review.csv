@@ -1732,7 +1732,7 @@ source_airport_id,country_iso,airport_name,final_assigned_category,provisional_c
 31624,CN,Zhoushan Putuoshan International Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 27236,CN,Ürümqi Tianshan International Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6162,CO,Alberto Lleras Camargo Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
-6110,CO,Alfonso Bonilla Aragon International Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
+6110,CO,Alfonso Bonilla Aragon International Airport,,Large,PROVISIONAL_B02_SECONDARY_REPORTED_2025,2025_AIRPORT_PAX_REPORTED,NOT_RESEARCHED,,,,,2025,6903591,CO_AEROCIVIL_2025_SECONDARY_ATTRIBUTED_PAX,,,https://mundinoticias.com.co/el-aeropuerto-internacional-simon-bolivar-de-santa-marta-se-consolida-como-el-quinto-mas-importante-del-pais-en-movilidad-de-pasajeros/
 6176,CO,Alfonso López Pumarejo Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6130,CO,Alfredo Vásquez Cobo International Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6159,CO,Almirante Padilla Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
@@ -1741,7 +1741,7 @@ source_airport_id,country_iso,airport_name,final_assigned_category,provisional_c
 6134,CO,Baracoa Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6141,CO,Benito Salas Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6103,CO,Buenavista Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
-6108,CO,Camilo Daza International Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
+6108,CO,Camilo Daza International Airport,,Large,PROVISIONAL_B02_SECONDARY_REPORTED_2025,2025_AIRPORT_PAX_REPORTED,NOT_RESEARCHED,,,,,2025,1570545,CO_AEROCIVIL_2025_SECONDARY_ATTRIBUTED_PAX,,,https://mundinoticias.com.co/el-aeropuerto-internacional-simon-bolivar-de-santa-marta-se-consolida-como-el-quinto-mas-importante-del-pais-en-movilidad-de-pasajeros/
 6169,CO,Captain Ernesto Esguerra Cubides Air Base,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6125,CO,Cicuco Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6114,CO,Coveñas Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
@@ -1749,10 +1749,10 @@ source_airport_id,country_iso,airport_name,final_assigned_category,provisional_c
 6178,CO,El Alcaravan - Yopal Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6116,CO,El Bagre Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6172,CO,El Caraño Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
-6104,CO,El Dorado International Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
+6104,CO,El Dorado International Airport,,Major Hub,PROVISIONAL_B02_SECONDARY_REPORTED_2025,2025_AIRPORT_PAX_REPORTED,NOT_RESEARCHED,,,,,2025,45470711,CO_AEROCIVIL_2025_SECONDARY_ATTRIBUTED_PAX,,,https://mundinoticias.com.co/el-aeropuerto-internacional-simon-bolivar-de-santa-marta-se-consolida-como-el-quinto-mas-importante-del-pais-en-movilidad-de-pasajeros/
 6099,CO,El Eden Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6132,CO,Enrique Olaya Herrera Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
-6105,CO,Ernesto Cortissoz International Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
+6105,CO,Ernesto Cortissoz International Airport,,Large,PROVISIONAL_B02_SECONDARY_REPORTED_2025,2025_AIRPORT_PAX_REPORTED,NOT_RESEARCHED,,,,,2025,3260194,CO_AEROCIVIL_2025_SECONDARY_ATTRIBUTED_PAX,,,https://mundinoticias.com.co/el-aeropuerto-internacional-simon-bolivar-de-santa-marta-se-consolida-como-el-quinto-mas-importante-del-pais-en-movilidad-de-pasajeros/
 6139,CO,Fabio Alberto Leon Bentley Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6107,CO,Gerardo Tobar López Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6152,CO,German Olano Air Base,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
@@ -1763,11 +1763,11 @@ source_airport_id,country_iso,airport_name,final_assigned_category,provisional_c
 6123,CO,Guaymaral Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6151,CO,Guillermo León Valencia Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6118,CO,Gustavo Artunduaga Paredes Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
-6163,CO,Gustavo Rojas Pinilla International Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
+6163,CO,Gustavo Rojas Pinilla International Airport,,Large,PROVISIONAL_B02_SECONDARY_REPORTED_2025,2025_AIRPORT_PAX_REPORTED,NOT_RESEARCHED,,,,,2025,2521155,CO_AEROCIVIL_2025_SECONDARY_ATTRIBUTED_PAX,,,https://mundinoticias.com.co/el-aeropuerto-internacional-simon-bolivar-de-santa-marta-se-consolida-como-el-quinto-mas-importante-del-pais-en-movilidad-de-pasajeros/
 6168,CO,Gustavo Vargas Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6160,CO,Jorge E. Gonzalez Torres Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6129,CO,Jorge Isaac Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
-6158,CO,Jose Maria Córdova International Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
+6158,CO,Jose Maria Córdova International Airport,,Major Hub,PROVISIONAL_B02_SECONDARY_REPORTED_2025,2025_AIRPORT_PAX_REPORTED,NOT_RESEARCHED,,,,,2025,14242539,CO_AEROCIVIL_2025_SECONDARY_ATTRIBUTED_PAX,,,https://mundinoticias.com.co/el-aeropuerto-internacional-simon-bolivar-de-santa-marta-se-consolida-como-el-quinto-mas-importante-del-pais-en-movilidad-de-pasajeros/
 6106,CO,José Celestino Mutis Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6144,CO,Juan Jose Rondon Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 354456,CO,Juanchaco Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
@@ -1782,9 +1782,9 @@ source_airport_id,country_iso,airport_name,final_assigned_category,provisional_c
 6170,CO,Marandúa Air Base,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6119,CO,Marco Fidel Suarez Air Base,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6157,CO,Mariquita Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
-6148,CO,Matecaña International Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
+6148,CO,Matecaña International Airport,,Large,PROVISIONAL_B02_SECONDARY_REPORTED_2025,2025_AIRPORT_PAX_REPORTED,NOT_RESEARCHED,,,,,2025,2636158,CO_AEROCIVIL_2025_SECONDARY_ATTRIBUTED_PAX,,,https://mundinoticias.com.co/el-aeropuerto-internacional-simon-bolivar-de-santa-marta-se-consolida-como-el-quinto-mas-importante-del-pais-en-movilidad-de-pasajeros/
 6147,CO,Obando Cesar Gaviria Trujillo Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
-6102,CO,Palonegro Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
+6102,CO,Palonegro Airport,,Large,PROVISIONAL_B02_SECONDARY_REPORTED_2025,2025_AIRPORT_PAX_REPORTED,NOT_RESEARCHED,,,,,2025,2039037,CO_AEROCIVIL_2025_SECONDARY_ATTRIBUTED_PAX,,,https://mundinoticias.com.co/el-aeropuerto-internacional-simon-bolivar-de-santa-marta-se-consolida-como-el-quinto-mas-importante-del-pais-en-movilidad-de-pasajeros/
 6156,CO,Paz de Ariporo Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6124,CO,Perales Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6149,CO,Pitalito Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
@@ -1798,7 +1798,7 @@ source_airport_id,country_iso,airport_name,final_assigned_category,provisional_c
 6121,CO,Santa Ana Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6171,CO,Santiago Perez Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6120,CO,Santiago Vila Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
-6161,CO,Simón Bolívar International Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
+6161,CO,Simón Bolívar International Airport,,Large,PROVISIONAL_B02_SECONDARY_REPORTED_2025,2025_AIRPORT_PAX_REPORTED,NOT_RESEARCHED,,,,,2025,3787551,CO_AEROCIVIL_2025_SECONDARY_ATTRIBUTED_PAX,,,https://mundinoticias.com.co/el-aeropuerto-internacional-simon-bolivar-de-santa-marta-se-consolida-como-el-quinto-mas-importante-del-pais-en-movilidad-de-pasajeros/
 6165,CO,Tibú Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6166,CO,Tolemaida Air Base,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6100,CO,Tres De Mayo Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,

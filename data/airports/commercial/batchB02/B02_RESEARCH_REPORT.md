@@ -1,6 +1,6 @@
-# Airlinerra — B02 South America: first official evidence batch (2026-10-22)
+# Airlinerra — B02 South America: consolidated evidence ledger (2026-10-22)
 
-**Batch scope:** 13 South American countries/territories outside Argentina and Brazil, **311 runway-qualified real airport rows** from the 8,153-airport master. This is **an in-progress batch, not a completed regional commercial audit**.
+**Latest progress: 56/311 runway-qualified airports have candidate passenger tiers** (47 first-party/authority/operator-derived proposals and 9 separately flagged secondary-source Colombia proposals), while **255 remain UNKNOWN** for passenger-tier evidence. This is **18.0% traffic-tier evidence coverage, NOT a completed batch**. All real-airport final category fields remain blank and no flight access or cargo rights are granted. Batch scope: 13 South American country/territory codes outside Argentina and Brazil, 311 eligible real records in the 8,153-airport master.
 
 ## Verified work imported
 
@@ -55,3 +55,28 @@ Bolivia's official December 2025 national traffic report confirms **5,552,973 ai
 Unmatched airport counts after this import: Bolivia 23; Chile 34; Colombia 75; Ecuador 28; Falklands 1; French Guiana 1; Guyana 3; Paraguay 10; Peru 17; Suriname 1; Uruguay 4; Venezuela 67; South Georgia and the South Sandwich Islands 0 runway matches. No-match means **UNKNOWN**, never proof of no flights, nor an automatic Local category.
 
 Source-specific data definitions must remain independent. Cargo remains independent of passenger tier decisions. The code includes an identity validation for B02 extra source IDs and a regression test for retaining Ecuador annual cargo evidence. Full Python classification and runway validations must pass before B02 could be called technically validated. No Supabase/game deployment is needed or authorized.
+
+
+## Colombia — 2025 Aerocivil-attributed SECONDARY top-airport comparison
+
+The [PSMV / Corporación Pro Santa Marta Vital comparative table reproduced March–April 2026](https://mundinoticias.com.co/el-aeropuerto-internacional-simon-bolivar-de-santa-marta-se-consolida-como-el-quinto-mas-importante-del-pais-en-movilidad-de-pasajeros/) attributes the 2025 airport totals to Aerocivil. It supplies **nine additional positive B02 airport identities** beyond the already imported Cartagena SKCG airport-operator record. Until the underlying Aerocivil 2025 source dataset is directly acquired and airport-level scope reconciled, these nine values carry the distinct `CO_AEROCIVIL_2025_SECONDARY_ATTRIBUTED_PAX` passenger metric and `PROVISIONAL_B02_SECONDARY_REPORTED_2025` review status. They are **not claimed as directly verified first-party official traffic observations**.
+
+| Airport (ICAO) | Secondary-attributed 2025 passenger number | Draft category only |
+|---|---:|---|
+| Bogotá El Dorado (SKBO) | 45,470,711 | Major Hub |
+| Rionegro José María Córdova (SKRG) | 14,242,539 | Major Hub |
+| Cali Alfonso Bonilla Aragón (SKCL) | 6,903,591 | Large |
+| Santa Marta Simón Bolívar (SKSM) | 3,787,551 | Large |
+| Barranquilla Ernesto Cortissoz (SKBQ) | 3,260,194 | Large |
+| Pereira Matecaña (SKPE) | 2,636,158 | Large |
+| San Andrés Gustavo Rojas Pinilla (SKSP) | 2,521,155 | Large |
+| Bucaramanga Palonegro (SKBG) | 2,039,037 | Large |
+| Cúcuta Camilo Daza (SKCC) | 1,570,545 | Large |
+
+**Reconciliation conflicts must remain visible.** The same PSMV table reports Cartagena SKCG **7,659,279** passengers, while its separately sourced airport-operator record in this repository is **7,756,298**. We retain the operator record without overwriting it; different methods/scopes are possible and must be checked at source. The Cali 2025 total above of **6,903,591** is also marginally different from a separate Aerocivil-attributed secondary report citing **6,905,419**. Neither discrepancy is resolved by treating a secondhand publication as an official aviation-authority crosswalk.
+
+New Colombia candidate coverage: **10/76**, including 9 secondary claims. Total B02 passenger candidate coverage: **56/311 (18.0%)**, leaving **255** records without a provisional passenger tier. Continued priority: direct bulk Aerocivil source import, JAC Chile airport-level 2025 totals, Ecuador DGAC airport report, remaining B02 country source mapping, and independent passenger/cargo permission verification. The existing technical runway criteria, exact six provisional tiers, fictional LYAL and final assigned categories are unchanged.
+
+**Chile official bulk discovery:** [JAC monthly traffic documentation](https://jac-mtt.github.io/jac-docs/docs/series/trafico-aereo/) describes the downloadable national traffic series, including separate 2025 domestic/international airports, chargeable/free passengers, freight tons and directional movement fields. [2025 source page](https://www.jac.gob.cl/estadisticas2/informes-estadisticos-mensuales-del-trafico-aereo/) also links airport breakdowns. Use the CSV/xlsx in a future data-ingestion run and match the original airport IDs; do not overwrite the prior 11 domestic-only lower bounds until the full records are independently matched.
+
+**CI:** GitHub's airport validation workflow remains manual-only. A browser attempt was blocked by lack of an authenticated workflow-write GitHub session, so the new commits have **not** been certified by a fresh GitHub Actions run. Perform the full Python CI check before claiming technical completion.

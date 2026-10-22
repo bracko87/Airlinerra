@@ -39,6 +39,19 @@ class ClassificationReviewTests(unittest.TestCase):
             build_rows([airport("1001", country="EC", code="WRONG")], [], [],
                 ecuador_cargo=cargo, b02_additional=[additional])
 
+    def test_secondary_colombia_evidence_not_final_or_primary(self):
+        source = {"source_airport_id": "1991", "country_iso": "CO",
+                  "icao_or_ident": "SKXX", "official_airport_label": "Test Colombia",
+                  "year": "2025", "passenger_estimate": "14242539",
+                  "metric": "CO_AEROCIVIL_2025_SECONDARY_ATTRIBUTED_PAX",
+                  "source_url": "https://example.org/report",
+                  "qualification_note": "Attribution to Aerocivil by second-party reporting"}
+        row = build_rows([airport("1991", country="CO", code="SKXX")], [], [],
+                         b02_additional=[source])[0]
+        self.assertEqual(row["provisional_category"], "Major Hub")
+        self.assertEqual(row["decision_status"], "PROVISIONAL_B02_SECONDARY_REPORTED_2025")
+        self.assertEqual(row["final_assigned_category"], "")
+
     def test_six_tiers_and_boundaries(self):
         edges = [(1, "Local"), (9_999, "Local"), (10_000, "Regional"),
                  (99_999, "Regional"), (100_000, "Medium"), (999_999, "Medium"),

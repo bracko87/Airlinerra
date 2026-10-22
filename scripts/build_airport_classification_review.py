@@ -130,7 +130,7 @@ def build_rows(master: list[dict[str, str]], anac: list[dict[str, str]],
             raise ValueError(f"Chile official quarterly provenance missing: {sid}")
         chile_by_id[sid] = src
     b02_by_id: dict[str, dict[str, str]] = {}
-    supported_metrics = {"CL_OPERATOR_2025_TOTAL_PAX", "CO_OPERATOR_2025_TOTAL_PAX", "EC_OPERATOR_2025_ROUNDED_PAX", "EC_DGAC_2025_TOTAL_PAX", "GF_AIRPORT_2025_COMMERCIAL_PAX", "GY_GOV_2025_AIRPORT_TOTAL_PAX", "PY_DINAC_2025_MIXED_PAX", "PY_DINAC_2025_REGULAR_PAX", "UY_DINACIA_2025_COMMERCIAL_PAX"}
+    supported_metrics = {"CL_OPERATOR_2025_TOTAL_PAX", "CO_OPERATOR_2025_TOTAL_PAX", "EC_OPERATOR_2025_ROUNDED_PAX", "EC_DGAC_2025_TOTAL_PAX", "GF_AIRPORT_2025_COMMERCIAL_PAX", "GY_GOV_2025_AIRPORT_TOTAL_PAX", "PY_DINAC_2025_MIXED_PAX", "PY_DINAC_2025_REGULAR_PAX", "UY_DINACIA_2025_COMMERCIAL_PAX", "CO_AEROCIVIL_2025_SECONDARY_ATTRIBUTED_PAX"}
     for src in b02_additional or []:
         sid = src["source_airport_id"]
         if (sid in b02_by_id or src["country_iso"] not in {"CL", "CO", "EC", "GF", "GY", "PY", "UY"}
@@ -219,7 +219,9 @@ def build_rows(master: list[dict[str, str]], anac: list[dict[str, str]],
             # Ecuador freight evidence must survive the additional passenger source.
             cargo_source = ecuador_by_id.get(ident)
             row.update(provisional_category=provisional_tier(annual),
-                       decision_status="EXISTING_FINAL_ASSIGNMENT" if final else "PROVISIONAL_B02_2025_AIRPORT_TRAFFIC",
+                       decision_status=("EXISTING_FINAL_ASSIGNMENT" if final else
+                           "PROVISIONAL_B02_SECONDARY_REPORTED_2025" if src["metric"] == "CO_AEROCIVIL_2025_SECONDARY_ATTRIBUTED_PAX" else
+                           "PROVISIONAL_B02_2025_AIRPORT_TRAFFIC"),
                        passenger_activity_signal="2025_AIRPORT_PAX_REPORTED",
                        cargo_activity_signal="ANNUAL_CARGO_TONNES_REPORTED" if cargo_source else "NOT_RESEARCHED",
                        annual_total_passenger_proxy=str(annual),
