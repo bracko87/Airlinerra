@@ -129,7 +129,10 @@ def build(target: pathlib.Path=REGISTER)->int:
         writer.writerows(conflicts)
     target.parent.mkdir(parents=True,exist_ok=True)
     with target.open("w",newline="",encoding="utf-8") as f:
-        writer=csv.DictWriter(f,fieldnames=COLUMNS)
+        # The committed airport_register.csv uses LF. Python csv defaults to CRLF,
+        # which makes a no-op rebuild appear to replace all 8,152 airport rows.
+        # Keep airport_code_conflicts.csv on its existing CRLF convention.
+        writer=csv.DictWriter(f,fieldnames=COLUMNS,lineterminator="\n")
         writer.writeheader()
         writer.writerows(records)
     print(f"MASTER: {len(records)} airports; {len(records)-len(custom)} screened, {len(custom)} fictional; {len(screens)} groups; {len(conflicts)} source-code conflicts for review")
