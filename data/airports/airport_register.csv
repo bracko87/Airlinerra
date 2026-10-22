@@ -2574,7 +2574,7 @@ source_airport_id,country_iso,airport_name,ident,gps_code,runway_length_m,runway
 4259,GR,Kastoria National Airport Aristotle,LGKA,LGKA,2698.1,ASP,1,RUNWAY_QUALIFIED,OURAIRPORTS,
 4268,GR,Kavala Alexander the Great International Airport,LGKV,LGKV,3000.5,ASP,1,RUNWAY_QUALIFIED,OURAIRPORTS,
 4263,GR,Kavala Amygdaleon Lydia Airfield,LGKM,LGKM,1330.1,ASP,1,RUNWAY_QUALIFIED,OURAIRPORTS,
-4261,GR,Kefalonia International Airport Anna Pollatou,LGKF,LGKF,2436.0,ASP,1,RUNWAY_QUALIFIED,OURAIRPORTS,
+4261,GR,"Kefalonia International Airport ""Anna Pollatou""",LGKF,LGKF,2436.0,ASP,1,RUNWAY_QUALIFIED,OURAIRPORTS,
 4260,GR,Kithira Airport,LGKC,LGKC,1461.2,ASP,1,RUNWAY_QUALIFIED,OURAIRPORTS,
 4264,GR,Kos International Airport Ippokratis,LGKO,LGKO,2389.9,ASP,1,RUNWAY_QUALIFIED,OURAIRPORTS,
 4269,GR,Kozani National Airport Filippos,LGKZ,LGKZ,1822.1,ASP,1,RUNWAY_QUALIFIED,OURAIRPORTS,
