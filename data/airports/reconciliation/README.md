@@ -6,7 +6,7 @@ Source-group file row counts on `main`, Groups 1–48: **7,845 real airport cand
 
 The previously announced **30-airport shortfall (7,816/7,846)** was an erroneous running subtotal. It is **not** a backlog of thirty missing airports, and there is no basis to create a fictional Group 49 to make up that difference.
 
-**Technical roster coverage ≠ completeness of worldwide qualifying airports.** An omitted qualifying airport has been found in Uruguay.
+**Technical roster coverage ≠ completeness of worldwide qualifying airports.** Omitted qualifying airports have been confirmed in Uruguay and the United States.
 
 ## Verified omission: SUMU (Uruguay)
 
@@ -35,3 +35,7 @@ No Supabase changes or playable-airport activation are authorized by this audit.
 ## FAA all-cargo crosscheck (22 October 2026)
 
 Final FAA 2025 all-cargo landed-weight publication (released 22 September 2026) identifies 153 qualifying positive-airport records, with 136 exactly joined to US airports in Group 45 (133 newly marked cargo YES plus three already positive). The remaining codes include 14 unmatched US entries / crosswalk cases and three facilities classified in other jurisdiction groups (Puerto Rico, Guam). The list of 14 unmatched US sources is in `faa_2025_cargo_airports_missing_from_roster.csv`. The missing airports are **not** to be rejected from the game; verify runway-specific surface labels first. The 136 records are a verified lower-bound subset, **not** all US commercial cargo capability.
+
+## Additional verified runway omission: Seattle–Tacoma (KSEA)
+
+The Group 45 US technical screen and worldwide register omit **KSEA**. OurAirports represents the three active runways with surface label `PEM`, not a qualifying explicit concrete/asphalt label. The **Port of Seattle** states all three active runways are concrete/grooved and measures the longest 16L/34R at **11,901 ft (about 3,627 m)**: https://www.portseattle.org/page/sea-airport-basics . The Port also reports **427,971 tonnes of air cargo for 2025** and passenger air-carrier activity; the FAA final CY2025 all-cargo report independently lists SEA as a cargo airport. KSEA qualifies for correction once its original OurAirports airport/runway numeric IDs are reconciled. Do not infer those IDs.
