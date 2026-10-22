@@ -2,6 +2,8 @@
 
 Status: **Phase A worldwide identifiers/coordinates/runway sidecars implemented 2026-10-21; Serbia commercial-evidence pilot implemented; global commercial eligibility, slot capacity, curfews and demand engine remain future work**.
 Source baseline: runway-qualified master `data/airports/airport_register.csv` (7,846 records as of 2026-10-21; includes fictional LYAL).
+
+**Latest canonical master (2026-10-22): 8,153 airports (8,152 real + fictional LYAL).** The 7,846 baseline above is historical, as is the existing detailed source geometry enrichment. A **new reference-only, non-operational GitHub-to-future-Supabase handoff** is specified in [migration/README.md](migration/README.md), implemented by `scripts/prepare_airport_reference_handoff.py` and tested by `tests/test_airport_reference_handoff.py`. It emits repeatable airport/access/traffic/runway-source CSVs with manifest hashes; it does not create tables, apply Supabase SQL, grant permissions or deploy the game. Refresh pinned-source geometry against the current 8,153 airport master before importing complete coordinates/runways.
 Branch: `main` only. Keep original source group screens and master untouched until a validated migration is deliberately planned.
 This plan supersedes the prior runway-only **scope for future work**, but does not change the current official runway screening requirements or authorize a Supabase/game deployment.
 
