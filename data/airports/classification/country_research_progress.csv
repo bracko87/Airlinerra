@@ -1,15 +1,15 @@
 batch_id,batch_name,screening_group,country_iso,country_or_territory,runway_qualified_airports,provisional_traffic_tiers,real_airports_final_tier_assigned,traffic_research_status,next_action
 B01,Argentina + Brazil — imported (partial),46,AR,Argentina,121,38,0,PARTIAL_OFFICIAL_2025_TRAFFIC,Research remaining airports and verify access/cargo
 B01,Argentina + Brazil — imported (partial),46,BR,Brazil,576,138,0,PARTIAL_OFFICIAL_2025_TRAFFIC,Research remaining airports and verify access/cargo
-B02,Rest of South America,46,BO,Bolivia,23,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
-B02,Rest of South America,46,CL,Chile,46,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
-B02,Rest of South America,46,CO,Colombia,76,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
-B02,Rest of South America,47,EC,Ecuador,30,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B02,Rest of South America,46,BO,Bolivia,23,0,0,OFFICIAL_DATA_PORTAL_LOCATED,Extract and reconcile official annual airport-level passenger/cargo data
+B02,Rest of South America,46,CL,Chile,46,0,0,OFFICIAL_DATA_PORTAL_LOCATED,Extract and reconcile official annual airport-level passenger/cargo data
+B02,Rest of South America,46,CO,Colombia,76,0,0,OFFICIAL_DATA_PORTAL_LOCATED,Extract and reconcile official annual airport-level passenger/cargo data
+B02,Rest of South America,47,EC,Ecuador,30,0,0,PARTIAL_OFFICIAL_2025_CARGO_ONLY,Official annual cargo found for 2 airports; seek airport-specific passenger figures
 B02,Rest of South America,47,FK,Falkland Islands (Islas Malvinas),1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
 B02,Rest of South America,47,GF,French Guiana,2,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
 B02,Rest of South America,47,GY,Guyana,4,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
 B02,Rest of South America,47,PY,Paraguay,12,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
-B02,Rest of South America,48,PE,Peru,42,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
+B02,Rest of South America,48,PE,Peru,42,25,0,PARTIAL_OFFICIAL_2025_REGULAR_TRAFFIC,Review 17 unmatched runway-screened airports and 2025 cargo evidence
 B02,Rest of South America,48,GS,South Georgia and South Sandwich Islands,0,0,0,NO_QUALIFYING_RUNWAY_IN_CURRENT_SCREEN,Keep zero record; do not invent service
 B02,Rest of South America,48,SR,Suriname,1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence
 B02,Rest of South America,48,UY,Uruguay,7,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence

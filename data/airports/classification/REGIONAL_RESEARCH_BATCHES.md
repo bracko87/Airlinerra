@@ -6,8 +6,8 @@
 
 - All **49 runway-screening groups** cover **248 country/territory source codes**; **232** have eligible airport records, **16** have no qualifying runway in the current dataset.
 - Master: **8,153 airports** (**8,152 real** and fictional LYAL). The historic green CI run #60 certified 8,152 records *before* SABE Aeroparque was restored; do not claim that CI result validates the current master.
-- **Argentina and Brazil** are the only countries with imported official 2025 traffic evidence used for provisional tier proposals: Argentina **38/121**, Brazil **138/576**. They are **PARTIALLY RESEARCHED**, not fully done.
-- The other **230 country/territory codes with eligible real airports are NOT STARTED** for this comparable traffic-evidence workflow. **0 real airports** have owner-approved final six-tier assignments; fictional LYAL is Local.
+- **Argentina, Brazil and Peru** have imported official 2025 passenger evidence used for provisional tiers: Argentina **38/121**, Brazil **138/576**, Peru **25/42**. Ecuador has two documented 2025 annual cargo-volume figures, but no traffic-based passenger categories. They are **PARTIALLY RESEARCHED**, not fully done.
+- The other **230 country/territory codes with eligible real airports initially had no imported traffic tiers**; **Peru now has 25 provisional regular-passenger tiers**, Ecuador has two annual cargo records without passenger tiers, and other B02 countries remain queued. **0 real airports** have owner-approved final six-tier assignments; fictional LYAL is Local.
 - All 8,152 runway-qualified real airports still require eventual gameplay access and cargo/passenger rules to be established. Missing traffic evidence means **UNKNOWN**, not NO, not Local.
 
 ## Larger research batches
@@ -17,7 +17,7 @@ Instead of one country or many small GitHub Actions runs, research related count
 | Batch | Scope | Source codes | Real airports | Provisional today | Status |
 |---|---|---:|---:|---:|---|
 | B01 | Argentina + Brazil — imported (partial) | 2 | 697 | 176 | Partially researched |
-| B02 | Rest of South America | 13 | 311 | 0 | Queued |
+| B02 | Rest of South America | 13 | 311 | 25 | In progress: PE regular + EC cargo |
 | B03 | Canada + Mexico | 2 | 412 | 0 | Queued |
 | B04 | United States — bulk national dataset | 1 | 2,879 | 0 | Queued |
 | B05 | Northern America & Caribbean A | 14 | 75 | 0 | Queued |
@@ -101,7 +101,7 @@ Kenya (KE, 12) · Lesotho (LS, 2) · Liberia (LR, 2) · Libya (LY, 46) · Madaga
 
 Antarctica (AQ, 0)
 
-## Execution order
+### B02 source and status\n\nThe first combined update imported **25 Peru airport regular passenger estimates** and **two Ecuador airport annual cargo figures**. See [B02 source index](../commercial/batchB02/b02_official_2025_source_index.csv) and [report](../commercial/batchB02/B02_RESEARCH_REPORT.md). B02 is **in progress**, not complete.\n\n## Execution order
 
 1. **B02 — Rest of South America**: Bolivia, Chile, Colombia, Ecuador, Falkland Islands, French Guiana, Guyana, Paraguay, Peru, South Georgia/South Sandwich Islands, Suriname, Uruguay, Venezuela. Investigate bulk official traffic datasets; keep any unmatched airports UNKNOWN.
 2. **B03 and B04 — Canada/Mexico + United States**: source-led national bulk research, not thousands of manual airport lookups. United States is a standalone batch because of its scale.

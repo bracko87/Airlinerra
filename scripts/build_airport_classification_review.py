@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import csv
 import io
+import re
 from collections import Counter
 from pathlib import Path
 
@@ -12,6 +13,8 @@ ROOT = Path(__file__).resolve().parents[1]
 MASTER = ROOT / "data/airports/airport_register.csv"
 ANAC = ROOT / "data/airports/commercial/group46/group46_brazil_anac_2025_official_crosswalk.csv"
 AR_ANAC = ROOT / "data/airports/commercial/group46/group46_argentina_anac_2025_official_passenger_totals.csv"
+PE_ANNUAL = ROOT / "data/airports/commercial/batchB02/b02_peru_2025_official_regular_passenger_totals.csv"
+EC_CARGO = ROOT / "data/airports/commercial/batchB02/b02_ecuador_2025_official_airport_cargo.csv"
 EXCLUSIONS = ROOT / "data/airports/reconciliation/BR_2026_OFFICIAL_RUNWAY_EXCLUSIONS.csv"
 OUTPUT = ROOT / "data/airports/classification/airport_classification_review.csv"
 CATEGORIES = ("Local", "Regional", "Medium", "Large", "Major Hub", "Mega Hub")
@@ -20,7 +23,7 @@ FIELDS = (
     "provisional_category", "decision_status", "passenger_activity_signal",
     "cargo_activity_signal", "regular_passenger_proxy", "nonregular_passenger_proxy",
     "regular_cargo_proxy_kg", "nonregular_cargo_proxy_kg", "evidence_year",
-    "annual_total_passenger_proxy", "passenger_measure", "evidence_source_url",
+    "annual_total_passenger_proxy", "passenger_measure", "annual_cargo_tonnes_proxy", "evidence_source_url",
 )
 
 def records(path: Path) -> list[dict[str, str]]:
@@ -60,7 +63,9 @@ def provisional_tier(regular_passengers: int) -> str:
 
 def build_rows(master: list[dict[str, str]], anac: list[dict[str, str]],
                exclusions: list[dict[str, str]],
-               argentina: list[dict[str, str]] | None = None) -> list[dict[str, str]]:
+               argentina: list[dict[str, str]] | None = None,
+               peru: list[dict[str, str]] | None = None,
+               ecuador_cargo: list[dict[str, str]] | None = None) -> list[dict[str, str]]:
     by_id: dict[str, dict[str, str]] = {}
     for source in anac:
         key = source["source_airport_id"]
@@ -83,6 +88,26 @@ def build_rows(master: list[dict[str, str]], anac: list[dict[str, str]],
         if annual != int(thousands.replace(".", "")) * 1_000:
             raise ValueError(f"Argentina rounded-thousands conversion mismatch at {key}")
         argentina_by_id[key] = source
+    peru_by_id: dict[str, dict[str, str]] = {}
+    for src in peru or []:
+        sid = src["source_airport_id"]
+        if sid in peru_by_id or src["country_iso"] != "PE" or src["year"] != "2025" or src["metric"] != "PERU_DGAC_REGULAR_PAX_ROUNDED_1000":
+            raise ValueError(f"Invalid or duplicate Peru 2025 regular-passenger evidence: {sid}")
+        thousands = src["reported_2025_thousands"]
+        if not re.fullmatch(r"[0-9]+", thousands) or int(thousands) <= 0:
+            raise ValueError(f"Malformed Peru annual thousands figure: {sid}")
+        if nonnegative(src["regular_passenger_estimate"], f"Peru regular passengers at {sid}") != int(thousands) * 1000:
+            raise ValueError(f"Peru annual thousands conversion mismatch: {sid}")
+        peru_by_id[sid] = src
+    ecuador_by_id: dict[str, dict[str, str]] = {}
+    for src in ecuador_cargo or []:
+        sid = src["source_airport_id"]
+        if sid in ecuador_by_id or src["country_iso"] != "EC" or src["year"] != "2025" or src["metric"] != "EC_DGAC_ANNUAL_CARGO_TONNES":
+            raise ValueError(f"Invalid or duplicate Ecuador cargo evidence: {sid}")
+        tonnes = src["annual_cargo_tonnes"]
+        if not re.fullmatch(r"[0-9]+\\.[0-9]{2}", tonnes) or int(tonnes.replace(".", "")) <= 0:
+            raise ValueError(f"Invalid Ecuador cargo tonnes: {sid}")
+        ecuador_by_id[sid] = src
     excluded = {r["source_airport_id"] for r in exclusions}
     master_ids = [m["source_airport_id"] for m in master]
     if len(master_ids) != len(set(master_ids)):
@@ -103,6 +128,17 @@ def build_rows(master: list[dict[str, str]], anac: list[dict[str, str]],
         source = argentina_by_id.get(airport["source_airport_id"])
         if source and source["icao_or_ident"] not in {airport.get("ident"), airport.get("gps_code")}:
             raise ValueError(f"Argentina ANAC airport code mismatch for {airport['source_airport_id']}")
+    for airport in master:
+        sid = airport["source_airport_id"]
+        for evidence, expected_country, label in (
+            (peru_by_id.get(sid), "PE", "Peru"),
+            (ecuador_by_id.get(sid), "EC", "Ecuador"),
+        ):
+            if evidence and (airport["country_iso"] != expected_country or
+                             evidence["icao_or_ident"] not in {airport.get("ident"), airport.get("gps_code")}):
+                raise ValueError(f"{label} official airport code/source ID mismatch: {sid}")
+    if set(peru_by_id) - set(master_ids) or set(ecuador_by_id) - set(master_ids):
+        raise ValueError("B02 evidence references unknown technical airport source IDs")
     result = []
     for m in master:
         ident = m["source_airport_id"]
@@ -134,6 +170,25 @@ def build_rows(master: list[dict[str, str]], anac: list[dict[str, str]],
                            annual_total_passenger_proxy=str(annual),
                            passenger_measure="ANAC_TOTAL_PAX_ROUNDED_1000",
                            evidence_year="2025", evidence_source_url=source["source_url"])
+        elif m["country_iso"] == "PE" and ident in peru_by_id:
+            src = peru_by_id[ident]
+            annual = nonnegative(src["regular_passenger_estimate"], f"Peru pax at {ident}")
+            row.update(provisional_category=provisional_tier(annual),
+                       decision_status="EXISTING_FINAL_ASSIGNMENT" if final else "PROVISIONAL_OFFICIAL_REGULAR_TRAFFIC",
+                       passenger_activity_signal="REGULAR_OBSERVED_OFFICIAL_2025",
+                       cargo_activity_signal="NOT_RESEARCHED",
+                       regular_passenger_proxy=str(annual),
+                       evidence_year="2025",
+                       passenger_measure="PERU_DGAC_REGULAR_PAX_ROUNDED_1000",
+                       evidence_source_url=src["source_url"])
+        elif m["country_iso"] == "EC" and ident in ecuador_by_id:
+            src = ecuador_by_id[ident]
+            row.update(decision_status="EXISTING_FINAL_ASSIGNMENT" if final else "CARGO_ONLY_REVIEW",
+                       passenger_activity_signal="NOT_RESEARCHED",
+                       cargo_activity_signal="ANNUAL_CARGO_TONNES_REPORTED",
+                       annual_cargo_tonnes_proxy=src["annual_cargo_tonnes"],
+                       evidence_year="2025",
+                       evidence_source_url=src["source_url"])
         elif m["country_iso"] != "BR":
             row.update(decision_status="EXISTING_FINAL_ASSIGNMENT" if final else "NEEDS_EVIDENCE",
                        passenger_activity_signal="NOT_RESEARCHED",
@@ -173,7 +228,8 @@ def main() -> None:
     parser.add_argument("--check", action="store_true", help="Check the committed review is reproducible")
     parser.add_argument("--out", type=Path, default=OUTPUT)
     args = parser.parse_args()
-    rows = build_rows(records(MASTER), records(ANAC), records(EXCLUSIONS), records(AR_ANAC))
+    rows = build_rows(records(MASTER), records(ANAC), records(EXCLUSIONS), records(AR_ANAC),
+                      records(PE_ANNUAL), records(EC_CARGO))
     content = render(rows)
     if args.check:
         if not args.out.exists() or args.out.read_text(encoding="utf-8") != content:

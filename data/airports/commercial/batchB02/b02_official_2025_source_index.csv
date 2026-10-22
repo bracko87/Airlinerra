@@ -1,0 +1,14 @@
+country_iso,country_or_territory,official_2025_source_url,source_research_note
+BO,Bolivia,https://www.dgac.gob.bo/anuario-estadistico-dta/,Official 2025 monthly national summaries found; airport-specific annual table not yet crosswalked
+CL,Chile,https://www.jac.gob.cl/estadisticas-historicas/,JAC historic airport-level passengers and cargo database identified; 2025 full-year crosswalk pending
+CO,Colombia,https://www.aerocivil.gov.co/atencion/estadisticas-de-las-actividades-aeronauticas/boletines-operacionales,Aerocivil airport operational traffic bulletins; annual 2025 airport import pending
+EC,Ecuador,https://www.aviacioncivil.gob.ec/el-transporte-aereo-ecuatoriano-movilizo-a-8-millones-de-pasajeros-en-el-2025/,Official 2025 cargo for Quito SEQM and Guayaquil SEGU imported; 2025 individual passenger airport counts pending
+FK,Falkland Islands,,Airport-specific 2025 passenger/cargo source not yet confirmed
+GF,French Guiana,,Airport-specific 2025 passenger/cargo source not yet confirmed
+GY,Guyana,,Airport-specific 2025 passenger/cargo source not yet confirmed
+PY,Paraguay,,Airport-specific 2025 passenger/cargo source not yet confirmed
+PE,Peru,https://cdn.www.gob.pe/uploads/document/file/10074446/8207018-informe-anual-movimiento-general-de-pasajeros-en-los-aeropuertos-del-peru-ano-2025.pdf?v=1780349699,"Official DGAC/MINCETUR 2025 regular passenger source page 22: 25 matches imported, 17 master airports still unknown"
+GS,South Georgia and South Sandwich Islands,,Zero runway-qualified in present technical screen; no traffic research needed
+SR,Suriname,,Airport-specific 2025 passenger/cargo source not yet confirmed
+UY,Uruguay,,Airport-specific 2025 passenger/cargo source not yet confirmed
+VE,Venezuela,,Airport-specific 2025 passenger/cargo source not yet confirmed

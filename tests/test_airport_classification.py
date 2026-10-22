@@ -78,6 +78,37 @@ class ClassificationReviewTests(unittest.TestCase):
             build_rows([airport("5771", country="AR", code="SABE")], [], [],
                        [dict(arg, metric="UNVERIFIED_METRIC")])
 
+    def test_peru_regular_annual_and_ecuador_cargo_do_not_grant_final_tier(self):
+        peru = [{"source_airport_id":"6217","country_iso":"PE","icao_or_ident":"SPIM",
+                 "year":"2025","metric":"PERU_DGAC_REGULAR_PAX_ROUNDED_1000",
+                 "reported_2025_thousands":"27219","regular_passenger_estimate":"27219000",
+                 "source_url":"https://example.org/official-peru.pdf"}]
+        cargo = [{"source_airport_id":"308273","country_iso":"EC","icao_or_ident":"SEQM",
+                  "year":"2025","metric":"EC_DGAC_ANNUAL_CARGO_TONNES",
+                  "annual_cargo_tonnes":"397798.54","source_url":"https://example.org/dgac"}]
+        result = build_rows([airport("6217",country="PE",code="SPIM"),
+                             airport("308273",country="EC",code="SEQM")],
+                            [],[],None,peru,cargo)
+        self.assertEqual(result[0]["provisional_category"],"Major Hub")
+        self.assertEqual(result[0]["decision_status"],"PROVISIONAL_OFFICIAL_REGULAR_TRAFFIC")
+        self.assertEqual(result[0]["final_assigned_category"],"")
+        self.assertEqual(result[1]["decision_status"],"CARGO_ONLY_REVIEW")
+        self.assertEqual(result[1]["annual_cargo_tonnes_proxy"],"397798.54")
+        self.assertEqual(result[1]["provisional_category"],"")
+
+    def test_b02_mismatched_codes_or_units_are_rejected(self):
+        peru = [{"source_airport_id":"6217","country_iso":"PE","icao_or_ident":"SPIM",
+                 "year":"2025","metric":"PERU_DGAC_REGULAR_PAX_ROUNDED_1000",
+                 "reported_2025_thousands":"27219","regular_passenger_estimate":"27219000",
+                 "source_url":"https://example.org/official-peru.pdf"}]
+        airport_row=airport("6217",country="PE",code="SPIM")
+        with self.assertRaisesRegex(ValueError, "conversion mismatch"):
+            build_rows([airport_row], [], [], None, [dict(peru[0],regular_passenger_estimate="27219")])
+        with self.assertRaisesRegex(ValueError, "code/source ID mismatch"):
+            build_rows([airport("6217",country="PE",code="SPZO")], [], [], None, peru)
+        with self.assertRaisesRegex(ValueError, "unknown technical"):
+            build_rows([airport("99",country="PE",code="SPIM")], [], [], None, peru)
+
     def test_unexplained_exclusions_and_duplicates_fail(self):
         with self.assertRaises(ValueError):
             build_rows([airport("12")], [evidence("12"), evidence("999")], [])
