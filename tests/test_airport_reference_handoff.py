@@ -29,6 +29,7 @@ class ReferenceHandoffTests(unittest.TestCase):
         self.review = "data/airports/classification/airport_classification_review.csv"
         self.group = "data/airports/generated/group1/group1_technical_candidates.csv"
         self.commercial = "data/airports/commercial/group1/group1_commercial_review.csv"
+        self.capacity = "data/airports/operations/b02_2025_published_capacity_evidence.csv"
         base = dict(runway_length_m="2200.0", runway_surface="ASP",
                     minimum_eligible_level="1", runway_status="RUNWAY_QUALIFIED")
         put(self.root, self.master, [
@@ -68,6 +69,15 @@ class ReferenceHandoffTests(unittest.TestCase):
                  review_notes="Provisional only"),
         ])
 
+        put(self.root, self.capacity, [
+            dict(source_airport_id="123", country_iso="PE", icao_or_ident="SPXX",
+                 airport_name="Test Peru", as_of_date="2025-12-23",
+                 metric="PE_MTC_2025_DUAL_RUNWAY_PUBLISHED_MOVEMENTS_CAPACITY",
+                 observed_capacity_per_hour="52", unit="movements_per_hour",
+                 scope="two_runways_combined", source_url="https://example.org/mtc",
+                 qualification_note="Published capacity only, not game slots"),
+        ])
+
     def tearDown(self):
         self.tmp.cleanup()
 
@@ -81,7 +91,12 @@ class ReferenceHandoffTests(unittest.TestCase):
         self.assertFalse(manifest["gameplay_activation_authorized"])
         self.assertEqual(set(payloads), {"airport_reference.csv", "airport_traffic_review.csv",
                                          "airport_access_review.csv",
-                                         "airport_runway_source_links.csv", "snapshot_manifest.json"})
+                                         "airport_runway_source_links.csv", "airport_capacity_evidence.csv",
+                                         "snapshot_manifest.json"})
+        capacity = decode(payloads["airport_capacity_evidence.csv"])
+        self.assertEqual(manifest["published_capacity_evidence_count"], 1)
+        self.assertEqual(capacity[0]["observed_capacity_per_hour"], "52")
+        self.assertEqual(capacity[0]["game_slot_capacity_approved"], "false")
         airports = decode(payloads["airport_reference.csv"])
         self.assertTrue(all(r["game_active"] == "false" for r in airports))
         self.assertEqual(next(r for r in airports if r["source_type"] == "FICTIONAL")["final_assigned_category"], "Local")
@@ -94,6 +109,12 @@ class ReferenceHandoffTests(unittest.TestCase):
                          {"800", "801"})
         self.assertEqual(json.loads(payloads["snapshot_manifest.json"])["output_sha256"],
                          manifest["output_sha256"])
+
+    def test_capacity_code_mismatch_rejected(self):
+        path = self.root / self.capacity
+        path.write_text(path.read_text().replace("123,PE,SPXX", "123,PE,WRONG"))
+        with self.assertRaisesRegex(ValueError, "Capacity source airport/country/code mismatch"):
+            build_snapshot(self.root)
 
     def test_duplicate_runway_id_rejected(self):
         path = self.root / self.group

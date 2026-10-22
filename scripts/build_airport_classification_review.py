@@ -18,6 +18,7 @@ EC_CARGO = ROOT / "data/airports/commercial/batchB02/b02_ecuador_2025_official_a
 CL_DOMESTIC = ROOT / "data/airports/commercial/batchB02/b02_chile_2025_official_domestic_quarterly_totals.csv"
 B02_ADDITIONAL = ROOT / "data/airports/commercial/batchB02/b02_additional_2025_verified_airport_totals.csv"
 GY_CARGO = ROOT / "data/airports/commercial/batchB02/b02_guyana_2025_official_cargo.csv"
+PE_CARGO = ROOT / "data/airports/commercial/batchB02/b02_peru_2025_official_airport_cargo.csv"
 EXCLUSIONS = ROOT / "data/airports/reconciliation/BR_2026_OFFICIAL_RUNWAY_EXCLUSIONS.csv"
 OUTPUT = ROOT / "data/airports/classification/airport_classification_review.csv"
 CATEGORIES = ("Local", "Regional", "Medium", "Large", "Major Hub", "Mega Hub")
@@ -72,7 +73,8 @@ def build_rows(master: list[dict[str, str]], anac: list[dict[str, str]],
                ecuador_cargo: list[dict[str, str]] | None = None,
                chile_domestic: list[dict[str, str]] | None = None,
                b02_additional: list[dict[str, str]] | None = None,
-               guyana_cargo: list[dict[str, str]] | None = None) -> list[dict[str, str]]:
+               guyana_cargo: list[dict[str, str]] | None = None,
+               peru_cargo: list[dict[str, str]] | None = None) -> list[dict[str, str]]:
     by_id: dict[str, dict[str, str]] = {}
     for source in anac:
         key = source["source_airport_id"]
@@ -112,7 +114,7 @@ def build_rows(master: list[dict[str, str]], anac: list[dict[str, str]],
         if sid in ecuador_by_id or src["country_iso"] != "EC" or src["year"] != "2025" or src["metric"] != "EC_DGAC_ANNUAL_CARGO_TONNES":
             raise ValueError(f"Invalid or duplicate Ecuador cargo evidence: {sid}")
         tonnes = src["annual_cargo_tonnes"]
-        if not re.fullmatch(r"[0-9]+\\.[0-9]{2}", tonnes) or int(tonnes.replace(".", "")) <= 0:
+        if not re.fullmatch(r"[0-9]+\.[0-9]{2}", tonnes) or int(tonnes.replace(".", "")) <= 0:
             raise ValueError(f"Invalid Ecuador cargo tonnes: {sid}")
         ecuador_by_id[sid] = src
     chile_by_id: dict[str, dict[str, str]] = {}
@@ -135,7 +137,7 @@ def build_rows(master: list[dict[str, str]], anac: list[dict[str, str]],
     supported_metrics = {"CL_OPERATOR_2025_TOTAL_PAX", "CO_OPERATOR_2025_TOTAL_PAX", "EC_OPERATOR_2025_ROUNDED_PAX", "EC_DGAC_2025_TOTAL_PAX", "GF_AIRPORT_2025_COMMERCIAL_PAX", "GY_GOV_2025_AIRPORT_TOTAL_PAX", "PY_DINAC_2025_MIXED_PAX", "PY_DINAC_2025_REGULAR_PAX", "UY_DINACIA_2025_COMMERCIAL_PAX", "CO_AEROCIVIL_2025_SECONDARY_ATTRIBUTED_PAX", "GY_BOS_2025_ARR_DEP_MINIMUM", "SR_AIRPORT_2025_INTL_PASSENGER_FLOOR"}
     for src in b02_additional or []:
         sid = src["source_airport_id"]
-        if (sid in b02_by_id or src["country_iso"] not in {"CL", "CO", "EC", "GF", "GY", "PY", "UY"}
+        if (sid in b02_by_id or src["country_iso"] not in {"CL", "CO", "EC", "GF", "GY", "PY", "SR", "UY"}
                 or src["year"] != "2025" or src["metric"] not in supported_metrics):
             raise ValueError(f"Invalid or duplicate B02 2025 airport evidence: {sid}")
         pax = src["passenger_estimate"]
@@ -154,6 +156,17 @@ def build_rows(master: list[dict[str, str]], anac: list[dict[str, str]],
         if kg <= 0 or tonnes * 1000 != kg or not src["source_url"].startswith("https://"):
             raise ValueError(f"Guyana approximate cargo unit/source mismatch: {sid}")
         guyana_cargo_by_id[sid] = src
+    peru_cargo_by_id: dict[str, dict[str, str]] = {}
+    for src in peru_cargo or []:
+        sid = src["source_airport_id"]
+        if (sid in peru_cargo_by_id or src["country_iso"] != "PE" or src["year"] != "2025"
+                or src["metric"] != "PE_CORPAC_ACILAC_2025_CARGO_TONNES"):
+            raise ValueError(f"Invalid Peru 2025 cargo source: {sid}")
+        tonnes = src["annual_cargo_tonnes"]
+        if (not re.fullmatch(r"[0-9]+", tonnes) or int(tonnes) <= 0
+                or not src["source_url"].startswith("https://") or not src["qualification_note"]):
+            raise ValueError(f"Invalid Peru cargo value/source: {sid}")
+        peru_cargo_by_id[sid] = src
     excluded = {r["source_airport_id"] for r in exclusions}
     master_ids = [m["source_airport_id"] for m in master]
     if len(master_ids) != len(set(master_ids)):
@@ -186,7 +199,7 @@ def build_rows(master: list[dict[str, str]], anac: list[dict[str, str]],
                 raise ValueError(f"{label} official airport code/source ID mismatch: {sid}")
     if (set(peru_by_id) - set(master_ids) or set(ecuador_by_id) - set(master_ids) or
             set(chile_by_id) - set(master_ids) or set(b02_by_id) - set(master_ids) or
-            set(guyana_cargo_by_id) - set(master_ids)):
+            set(guyana_cargo_by_id) - set(master_ids) or set(peru_cargo_by_id) - set(master_ids)):
         raise ValueError("B02 evidence references unknown technical airport source IDs")
     for airport in master:
         src = b02_by_id.get(airport["source_airport_id"])
@@ -198,6 +211,11 @@ def build_rows(master: list[dict[str, str]], anac: list[dict[str, str]],
         if src and (airport["country_iso"] != "GY" or
                     src["icao_or_ident"] not in {airport.get("ident"), airport.get("gps_code")}):
             raise ValueError(f"Guyana cargo code/source ID mismatch: {airport['source_airport_id']}")
+    for airport in master:
+        src = peru_cargo_by_id.get(airport["source_airport_id"])
+        if src and (airport["country_iso"] != "PE" or
+                    src["icao_or_ident"] not in {airport.get("ident"), airport.get("gps_code")}):
+            raise ValueError(f"Peru cargo code/source ID mismatch: {airport['source_airport_id']}")
     if set(b02_by_id) & (set(peru_by_id) | set(chile_by_id) | set(argentina_by_id) | set(by_id)):
         raise ValueError("B02 additional evidence overlaps another passenger source")
     result = []
@@ -308,6 +326,17 @@ def build_rows(master: list[dict[str, str]], anac: list[dict[str, str]],
                 row["decision_status"] = "CARGO_ONLY_REVIEW"
                 row["evidence_year"] = src["year"]
                 row["evidence_source_url"] = src["source_url"]
+    for row in result:
+        src = peru_cargo_by_id.get(row["source_airport_id"])
+        if src:
+            if row["annual_cargo_tonnes_proxy"] or row["regular_cargo_proxy_kg"] or row["nonregular_cargo_proxy_kg"]:
+                raise ValueError(f"Conflicting Peru annual cargo signal: {row['source_airport_id']}")
+            row["annual_cargo_tonnes_proxy"] = src["annual_cargo_tonnes"]
+            row["cargo_activity_signal"] = "ANNUAL_CARGO_TONNES_REPORTED"
+            if row["decision_status"] == "NEEDS_EVIDENCE":
+                row["decision_status"] = "CARGO_ONLY_REVIEW"
+                row["evidence_year"] = src["year"]
+                row["evidence_source_url"] = src["source_url"]
     if len(result) != len(master):
         raise ValueError("Classification review did not preserve every master airport")
     return result
@@ -326,7 +355,7 @@ def main() -> None:
     args = parser.parse_args()
     rows = build_rows(records(MASTER), records(ANAC), records(EXCLUSIONS), records(AR_ANAC),
                       records(PE_ANNUAL), records(EC_CARGO), records(CL_DOMESTIC),
-                      records(B02_ADDITIONAL), records(GY_CARGO))
+                      records(B02_ADDITIONAL), records(GY_CARGO), records(PE_CARGO))
     content = render(rows)
     if args.check:
         if not args.out.exists() or args.out.read_text(encoding="utf-8") != content:

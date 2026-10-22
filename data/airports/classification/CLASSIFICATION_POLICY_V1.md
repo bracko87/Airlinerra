@@ -58,3 +58,8 @@ Nine 2025 Colombian main-airport passenger counts are provisionally tiered from 
 ## B02 minimum passenger and rounded cargo source metrics
 
 The B02 2025 `GY_BOS_2025_ARR_DEP_MINIMUM` and `SR_AIRPORT_2025_INTL_PASSENGER_FLOOR` source measurements now produce `PROVISIONAL_B02_PARTIAL_PASSENGER_FLOOR` tier proposals. They indicate only the **minimum** tier established by reported subset activity (international-only or official arrivals/departures), not a reconciled complete annual airport count. The independent `GY_CJIA_2025_ROUNDED_CARGO_KG` source is a roughly 14.43 million kg cargo movement estimate in 2025 and is stored as `annual_cargo_tonnes_proxy=14430` with status `ANNUAL_ROUNDED_CARGO_TONNES_REPORTED`. This does not grant freight route rights or overwrite passenger evidence. See [B02 research report](../commercial/batchB02/B02_RESEARCH_REPORT.md).
+
+
+## Independent Peru cargo and published infrastructure evidence (2026-10-22)
+
+The 2025 CORPAC/ACI-LAC `PE_CORPAC_ACILAC_2025_CARGO_TONNES` **267156 tonnes** for source airport 6217 is a separate cargo signal and **does not overwrite** the DGAC 2025 regular passenger estimate, grant cargo permissions or alter the provisional six-tier proposal. Lima's Ministry of Transport published **52 runway aircraft movements/hour** after restoration of two-runway operations on 23 December 2025; this is **not** an Airlinerra game slot budget and is stored separately in dated operations evidence, exported to the portable reference handoff with `game_slot_capacity_approved=false`. Source-scope disputes in B02's [reconciliation queue](../commercial/batchB02/b02_2025_metric_reconciliation_queue.csv) remain OPEN.

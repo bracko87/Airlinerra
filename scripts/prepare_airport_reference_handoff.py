@@ -34,6 +34,11 @@ TRAFFIC_FIELDS = (
     "passenger_measure", "annual_cargo_tonnes_proxy", "domestic_passenger_floor_proxy",
     "evidence_source_url",
 )
+CAPACITY_FIELDS = (
+    "airport_key", "source_airport_id", "country_iso", "icao_or_ident",
+    "airport_name", "as_of_date", "metric", "observed_capacity_per_hour", "unit",
+    "scope", "source_url", "qualification_note", "game_slot_capacity_approved",
+)
 ACCESS_FIELDS = (
     "airport_key", "source_airport_id", "passenger_permission_review",
     "cargo_permission_review", "review_classification", "passenger_evidence_url",
@@ -193,7 +198,32 @@ def build_snapshot(root: Path) -> tuple[dict[str, bytes], dict[str, object]]:
             if t["provisional_category"]:
                 b02_count += 1
 
+    # Published capacity is a separate evidence stream: NEVER a player slot budget.
+    capacity_raw = load_csv(root, AIRPORTS / "operations/b02_2025_published_capacity_evidence.csv", used)
+    capacity_out: list[dict[str, str]] = []
+    capacity_seen: set[tuple[str, str, str]] = set()
+    for src in capacity_raw:
+        sid = src["source_airport_id"]
+        m = master.get(sid)
+        if not m or m["country_iso"] != src["country_iso"] or src["icao_or_ident"] not in {m["ident"], m["gps_code"]}:
+            raise ValueError(f"Capacity source airport/country/code mismatch: {sid}")
+        key = (sid, src["as_of_date"], src["metric"])
+        if key in capacity_seen:
+            raise ValueError(f"Duplicate capacity evidence key: {key}")
+        capacity_seen.add(key)
+        if (not re.fullmatch(r"[0-9]+", src["observed_capacity_per_hour"])
+                or int(src["observed_capacity_per_hour"]) <= 0
+                or src["unit"] != "movements_per_hour"
+                or not src["source_url"].startswith("https://")):
+            raise ValueError(f"Invalid published capacity evidence: {sid}")
+        capacity_out.append({
+            "airport_key": f"{m['source_type']}:{sid}",
+            **{name: src[name] for name in CAPACITY_FIELDS if name not in {"airport_key", "game_slot_capacity_approved"}},
+            "game_slot_capacity_approved": "false",
+        })
+
     payloads = {
+        "airport_capacity_evidence.csv": render(CAPACITY_FIELDS, capacity_out),
         "airport_reference.csv": render(REFERENCE_FIELDS, reference_out),
         "airport_traffic_review.csv": render(TRAFFIC_FIELDS, traffic_out),
         "airport_access_review.csv": render(ACCESS_FIELDS, access_out),
@@ -208,6 +238,7 @@ def build_snapshot(root: Path) -> tuple[dict[str, bytes], dict[str, object]]:
         "airport_count": len(master),
         "technical_runway_reference_count": len(runway_out),
         "commercial_review_count": len(reviews),
+        "published_capacity_evidence_count": len(capacity_out),
         "b02_qualified_airports": b02_total,
         "b02_provisional_passenger_tiers": b02_count,
         "final_real_airport_assignments": 0,

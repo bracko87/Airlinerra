@@ -72,6 +72,54 @@ class ClassificationReviewTests(unittest.TestCase):
             build_rows([airport("1991", country="GY", code="SYXX")], [], [],
                        guyana_cargo=[{**cargo, "annual_cargo_kg_rounded": "14000000"}])
 
+    def test_sur_unverified_2025_traffic_is_allowed_as_partial_floor(self):
+        source = {"source_airport_id": "6195", "country_iso": "SR",
+                  "icao_or_ident": "SMJP", "year": "2025",
+                  "metric": "SR_AIRPORT_2025_INTL_PASSENGER_FLOOR",
+                  "passenger_estimate": "519171",
+                  "source_url": "https://example.org/airport.pdf",
+                  "qualification_note": "International-only annual passenger observation"}
+        row = build_rows([airport("6195", country="SR", code="SMJP")], [], [],
+                         b02_additional=[source])[0]
+        self.assertEqual(row["provisional_category"], "Medium")
+        self.assertEqual(row["decision_status"], "PROVISIONAL_B02_PARTIAL_PASSENGER_FLOOR")
+        self.assertEqual(row["final_assigned_category"], "")
+
+    def test_ecuador_two_decimal_cargo_passes_valid_source_format(self):
+        source = {"source_airport_id": "308273", "country_iso": "EC",
+                  "icao_or_ident": "SEQM", "year": "2025",
+                  "metric": "EC_DGAC_ANNUAL_CARGO_TONNES",
+                  "annual_cargo_tonnes": "397798.54",
+                  "source_url": "https://example.org/dgac"}
+        row = build_rows([airport("308273", country="EC", code="SEQM")], [], [],
+                         ecuador_cargo=[source])[0]
+        self.assertEqual(row["annual_cargo_tonnes_proxy"], "397798.54")
+        self.assertEqual(row["decision_status"], "CARGO_ONLY_REVIEW")
+
+    def test_peru_passenger_cargo_independent_and_crosswalked(self):
+        pe = {"source_airport_id": "6217", "country_iso": "PE",
+              "icao_or_ident": "SPIM", "year": "2025",
+              "metric": "PERU_DGAC_REGULAR_PAX_ROUNDED_1000",
+              "reported_2025_thousands": "27219",
+              "regular_passenger_estimate": "27219000",
+              "source_url": "https://example.org/dgac"}
+        carg = {"source_airport_id": "6217", "country_iso": "PE",
+                "icao_or_ident": "SPIM", "year": "2025",
+                "metric": "PE_CORPAC_ACILAC_2025_CARGO_TONNES",
+                "annual_cargo_tonnes": "267156",
+                "source_url": "https://example.org/corpac",
+                "qualification_note": "CORPAC cites ACI-LAC 2025 airport airfreight"}
+        row = build_rows([airport("6217", country="PE", code="SPIM")], [], [],
+                         peru=[pe], peru_cargo=[carg])[0]
+        self.assertEqual(row["provisional_category"], "Major Hub")
+        self.assertEqual(row["regular_passenger_proxy"], "27219000")
+        self.assertEqual(row["annual_cargo_tonnes_proxy"], "267156")
+        self.assertEqual(row["cargo_activity_signal"], "ANNUAL_CARGO_TONNES_REPORTED")
+        self.assertEqual(row["final_assigned_category"], "")
+        with self.assertRaisesRegex(ValueError, "Peru cargo code/source ID mismatch"):
+            build_rows([airport("6217", country="PE", code="WRONG")], [], [],
+                       peru_cargo=[carg])
+
     def test_six_tiers_and_boundaries(self):
         edges = [(1, "Local"), (9_999, "Local"), (10_000, "Regional"),
                  (99_999, "Regional"), (100_000, "Medium"), (999_999, "Medium"),
