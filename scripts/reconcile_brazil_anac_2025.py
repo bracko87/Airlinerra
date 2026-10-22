@@ -162,10 +162,23 @@ def main():
         ap.error("--anac-csv requires an existing ANAC official CSV; do not commit the large raw source into git")
     airports, codes = source_airports()
     with args.anac_csv.open("r", encoding=args.encoding, errors="replace", newline="") as f:
-        reader = csv.DictReader(f, delimiter=";")
-        if not reader.fieldnames:
-            raise ValueError("Empty ANAC file")
-        totals, matched = aggregate(reader, reader.fieldnames, codes)
+        # ANAC can prefix exports with an "Atualizado em" metadata line.
+        # Locate the actual column header before parsing the rows.
+        header = None
+        for line_no, line in enumerate(f, 1):
+            if line_no > 30:
+                break
+            fields = next(csv.reader([line], delimiter=";"), [])
+            try:
+                columns(fields)
+            except ValueError:
+                continue
+            header = fields
+            break
+        if header is None:
+            raise ValueError("ANAC column header not found within first 30 lines")
+        reader = csv.DictReader(f, fieldnames=header, delimiter=";")
+        totals, matched = aggregate(reader, header, codes)
     write_crosswalk(args.output, airports, totals, DATA_URL)
     print(f"Wrote {len(airports)} Brazil airport audit rows to {args.output}; "
           f"2025 airline flight-stage matches: {matched}; "
