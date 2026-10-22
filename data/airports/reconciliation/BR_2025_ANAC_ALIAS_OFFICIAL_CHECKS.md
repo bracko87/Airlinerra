@@ -37,3 +37,13 @@ These checks use published Brazilian DECEA aeronautical information. All commerc
 | 335361 | Coroa do Avião | BR-0856 | SIFC | **SIFC** | Official DECEA AISWEB page identifies Coroa do Avião/SIFC, private. **Runway discrepancy:** its ROTAER entry reports 1,145 m asphalt, less than the Airlinerra 1,200 m threshold. This listing alone does not establish whether another qualifying runway exists. Flag as **technical runway recheck** and preserve existing airport until all runway/source IDs and current AIP evidence are compared. [DECEA AISWEB](https://aisweb.decea.mil.br/index.cfm?amdt=2109&codigo=SIFC&i=aerodromos). |
 
 **Cumulative identifier cases with official checks: 10 / 72; remaining: 62.** Identifier confirmation does not add ANAC 2025 flight observations or grant passenger/cargo permissions. The Crixás NOTAM and Coroa do Avião runway mismatch are review flags only, not automatic removals.
+
+## Technical discrepancy follow-up — Coroa do Avião SIFC
+
+- OurAirports source ID **335361**, runway source ID **602402**, current screened runway **1,318.6 m asphalt**.
+- DECEA AISWEB ROTAER record (last updated 10 September 2026) for SIFC, Igarassu/PE, CIAD PE0013, shows **one** runway **18/36, 1,145 × 30 m asphalt**: https://aisweb.decea.mil.br/?amdt=2109&codigo=SIFC&i=aerodromos
+- That official published length is **55 m below** the Airlinerra threshold of 1,200 m, conflicting with the raw source. Prior 2014 Brazilian government technical discussion also referenced ANAC 1,145 m versus an older ROTAER 1,255 m; this establishes that runway-length reporting has varied historically, so the review must track effective source dates: https://www.gov.br/transportes/pt-br/centrais-de-conteudo/parecer-sac_coroa-do-aviao-1.pdf
+- **Disposition: OFFICIAL_RUNWAY_LENGTH_CONFLICT — RECHECK_REQUIRED.** Do not assert current runway-qualified status based only on the older source length. Before changing the master or Group 46, independently reconcile runway ID 602402, current ANAC private-aerodrome registry and current AIP/ROTAER, preserving an evidence trail for any removal or override.
+- The DECEA CGNA flight-plan report shows **9,504** 2025 SIFC flight plans, which is not comparable to ANAC flight-stage passenger/freight quantities and does not prove commercial airline service: https://portal.cgna.decea.mil.br/files/uploads/relatorios_trafego_aereo/planos_de_voo/2026/Relatorio_Comparativo_Trafego_Aereo_Planos_de_Voo_2.pdf
+
+No runway master mutations, deletions, gameplay permissions, or Supabase changes in this follow-up.
