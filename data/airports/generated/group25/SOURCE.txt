@@ -10,3 +10,5 @@ Explicit asphalt concrete is qualifying surfacing; unverified plain paved/hard i
 Current phase ends at runway qualification for minimum Level 1 (Local). Other airport information and final six-category ranking are DEFERRED.
 Records are qualified by runway only; not an operating-airport or game-activation authorization.
 Screened count: 35; ambiguous surface queue: 0; duplicate identifiers: 0.
+
+2026-10-22 SOURCE-ID TECHNICAL RECOVERY: FAA Chart Supplement confirms PGWT open qualifying runway in mixed asphalt/concrete (PEM). Restore source airport ID 5434 with underlying OurAirports runway ID 235364; this airport was mistakenly omitted by earlier Group 25 surface handling. Entire initial airport roster preserved. FAA 2025 TNI positive passenger record documented separately in commercial review. No gameplay activation.
