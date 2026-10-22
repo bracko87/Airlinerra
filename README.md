@@ -14,9 +14,11 @@ See [AGENTS.md](AGENTS.md) and [release procedures](docs/CONTROLLED_RELEASES.md)
 ## Airport runway collection — current stage
 For now we store ONLY airports reporting a **non-closed asphalt/concrete runway of at least 1,200 metres**. Each meets **minimum Level 1 (Local)** runway criteria; no final categorization, operating permissions or other airport information is being gathered.
 
-[Permanent master airport register](data/airports/airport_register.csv): **3,656 airports: 3,655 runway-screened candidates across Groups 1–35 plus one fictional airport**.
+[Permanent master airport register](data/airports/airport_register.csv): **8,152 airports: 8,151 real runway-qualified candidates across 49 groups plus fictional LYAL**. Final gameplay categories remain unassigned for real airports. A [separate six-tier classification review](data/airports/classification/CLASSIFICATION_POLICY_V1.md) now holds preliminary traffic-based proposals without changing the master.
 
-| Group | Airports in runway-only master |
+The table below is a **historical Groups 1–35 snapshot**, not the worldwide total.
+
+| Group | Airports in historic Groups 1–35 |
 | --- | ---: |
 | 1 — Albania, Armenia, Austria, Azerbaijan | 30 |
 | 2 — Belarus, Belgium, Bosnia and Herzegovina, Bulgaria, Croatia | 58 |
@@ -53,7 +55,7 @@ For now we store ONLY airports reporting a **non-closed asphalt/concrete runway 
 | 33 — Africa: Mozambique, Namibia, Niger, Nigeria, Rwanda | 82 |
 | 34 — Africa: São Tomé and Príncipe, Senegal, Seychelles, Sierra Leone, Somalia | 25 |
 | 35 — Africa: South Africa, South Sudan, Sudan, Tanzania, Togo | 112 |
-| **Total** | **3,656** |
+| **Historical Groups 1–35 subtotal** | **3,656** |
 
 **Important distinction:** Earlier discussions selected **110 airports** for Groups 1–3. The **162** airport candidates now in the master for those groups are a fresh, *runway-only* screen. The historical count of 110 and its 56 recovered names remain documented separately; it is not equivalent to the current screening count.
 
