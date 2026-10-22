@@ -27,3 +27,9 @@ Official FAA data: https://www.faa.gov/airports/planning_capacity/passenger_allc
 See source crosswalk: `data/airports/commercial/group45/group45_faa_2025_passenger_crosswalk.csv`. No airport IDs, source runways, six-tier definitions, or cargo classifications changed in this quality check.
 
 The 1,612 explicit NO_MATCH plus one other non-commercial/ambiguous row account for the 1,613 rows without a positive P/CS or GA classification. 
+
+## Disposition of the 66 initially unmatched FAA LOCIDs (22 October 2026)
+
+FAA entries were originally unmatched to **the US Group 45** source IDs, not necessarily absent worldwide. The subsequent original-OurAirports-ID and runway audit found **13 already present elsewhere in the worldwide technical register** (including the VA/DCA versus US-DC designation case), **33 below the 1,200m technical minimum**, **17 with runway surface not meeting asphalt/concrete criteria**, **1 without a documented open runway**, and **2 qualifying omissions restored in MP and PR**.
+
+**Restored:** `PGWT/TNI` source 5434 runway 235364 (2,621.3m asphalt/concrete), and `TJRV/RVR` source 42321 runway 254009 (3,352.8m asphalt/concrete). Both are separately FAA passenger YES in their territorial Group 25 and Group 43 commercial reviews, with cargo UNKNOWN. Worldwide canonical register total is now **8,152 (8,151 real + fictional LYAL)**. The U.S. country totals of 2,879 technical airports and 450 P/CS matches are unchanged because neither addition is coded US. Details: `data/airports/reconciliation/faa_2025_unmatched_runway_audit.csv`.
