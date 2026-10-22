@@ -25,3 +25,24 @@ jobs:
           python scripts/validate_historical_airports.py
           python scripts/rebuild_runway_register.py
           git diff --exit-code -- data/airports/airport_register.csv data/airports/airport_code_conflicts.csv
+      - name: Verify Brazil SIFC exclusion and master totals
+        run: |
+          python - <<'PY'
+          import csv
+          from pathlib import Path
+          def read(path):
+              with Path(path).open(encoding='utf-8-sig',newline='') as f:
+                  return list(csv.DictReader(f))
+          master=read('data/airports/airport_register.csv')
+          br=read('data/airports/generated/group46/group46_technical_candidates.csv')
+          br=[r for r in br if r['iso_country']=='BR']
+          excluded=read('data/airports/reconciliation/BR_2026_OFFICIAL_RUNWAY_EXCLUSIONS.csv')
+          ids=[r['source_airport_id'] for r in master]
+          assert len(master)==8152 and len(set(ids))==8152, 'Wrong worldwide technical master total/duplicates'
+          assert len(br)==576 and len({r['ourairports_id'] for r in br})==576, 'Wrong Brazil technical screen'
+          assert len([r for r in master if r['country_iso']=='BR'])==576, 'Brazil master/group mismatch'
+          assert '335361' not in ids and all(r['ourairports_id']!='335361' for r in br), 'SIFC incorrectly eligible'
+          assert any(r['source_airport_id']=='335361' and r['source_runway_id']=='602402' and r['verified_official_length_m']=='1145' for r in excluded), 'SIFC exclusion evidence missing'
+          assert any(r['ident']=='LYAL' and r['source_type']=='FICTIONAL' for r in master), 'LYAL lost'
+          print('PASS: 8152 unique technical airports; Brazil 576; SIFC excluded; original runway evidence preserved; LYAL intact')
+          PY
