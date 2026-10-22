@@ -109,6 +109,25 @@ class ClassificationReviewTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unknown technical"):
             build_rows([airport("99",country="PE",code="SPIM")], [], [], None, peru)
 
+    def test_chile_domestic_floor_is_not_full_airport_total(self):
+        chile = [{"source_airport_id":"6018","country_iso":"CL","icao_or_ident":"SCFA",
+                  "year":"2025","metric":"CHILE_MOP_2025_DOMESTIC_ONLY_ROUNDED_1000",
+                  "quarter1_domestic_thousands":"325","quarter2_domestic_thousands":"330",
+                  "quarter3_domestic_thousands":"353","quarter4_domestic_thousands":"359",
+                  "annual_domestic_thousands":"1367","annual_domestic_estimate":"1367000",
+                  **{f"source_quarter{i}":"https://concesiones.mop.gob.cl/government.pdf" for i in range(1,5)}}]
+        a = airport("6018",country="CL",code="SCFA")
+        result = build_rows([a],[],[],None,None,None,chile)[0]
+        self.assertEqual(result["provisional_category"],"Large")
+        self.assertEqual(result["decision_status"],"PROVISIONAL_DOMESTIC_FLOOR")
+        self.assertEqual(result["domestic_passenger_floor_proxy"],"1367000")
+        self.assertEqual(result["regular_passenger_proxy"],"")
+        self.assertEqual(result["final_assigned_category"],"")
+        with self.assertRaisesRegex(ValueError, "scale mismatch"):
+            build_rows([a],[],[],None,None,None,[dict(chile[0],annual_domestic_estimate="1367")])
+        with self.assertRaisesRegex(ValueError, "code/source ID mismatch"):
+            build_rows([airport("6018",country="CL",code="SCCC")],[],[],None,None,None,chile)
+
     def test_unexplained_exclusions_and_duplicates_fail(self):
         with self.assertRaises(ValueError):
             build_rows([airport("12")], [evidence("12"), evidence("999")], [])

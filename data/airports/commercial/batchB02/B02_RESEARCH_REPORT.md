@@ -20,3 +20,15 @@
 ## B02 backlog
 
 Finish country-source downloads, per-airport annual statistics and source-ID crosswalks for Chile, Colombia, Bolivia, Ecuador's passenger aviation, and the remaining territories. The whole B02 research batch is **PARTIALLY COMPLETED** only. Do not claim the source index establishes 2025 per-airport movement for unverified sources.
+
+
+## Chile official 2025 four-quarter domestic evidence (follow-up)
+
+**11/46 Chile runway-qualified airports** now have a source-ID- and ICAO-code-matched **domestic-only lower-bound passenger estimate** for calendar 2025. The data are from Ministry of Public Works/Dirección General de Concesiones quarterly reports, Gráfico 13 (underlying JAC statistics), all quantities in **thousands**. Each rounded quarter was summed, preserving the individual source observations in [the Chile crosswalk](b02_chile_2025_official_domestic_quarterly_totals.csv). These are not the full airport totals, exclude international air traffic, and do not cover Santiago Arturo Merino Benítez/SCEL. The provisional category is a **minimum floor only**, not a final game category; absence of traffic at the other 35 Chile airports remains UNKNOWN.
+
+- Q1: https://concesiones.mop.gob.cl/uploads/sites/4/2025/06/INFORME-TRIMESTRAL-1-2025.pdf
+- Q2: https://concesiones.mop.gob.cl/uploads/sites/4/2025/09/INF2_2025VF.pdf
+- Q3: https://concesiones.mop.gob.cl/uploads/sites/4/2025/09/2025_3T_vf.pdf
+- Q4: https://concesiones.mop.gob.cl/uploads/sites/4/2025/09/2025_4T_publicar.pdf
+
+Bolivia's official December 2025 national traffic report confirms **5,552,973 airline passengers transported** January–December countrywide but does not provide a reconciled 2025 per-airport annual arrivals/departures table, so **zero Bolivian provisional categories were generated**. Official source: https://www.dgac.gob.bo/wp-content/uploads/2026/06/INFORME-DE-ESTADISTICA-DICIEMBRE.pdf

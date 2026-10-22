@@ -1,8 +1,8 @@
 batch_id,batch_name,screening_group,country_iso,country_or_territory,runway_qualified_airports,provisional_traffic_tiers,real_airports_final_tier_assigned,traffic_research_status,next_action
 B01,Argentina + Brazil — imported (partial),46,AR,Argentina,121,38,0,PARTIAL_OFFICIAL_2025_TRAFFIC,Research remaining airports and verify access/cargo
 B01,Argentina + Brazil — imported (partial),46,BR,Brazil,576,138,0,PARTIAL_OFFICIAL_2025_TRAFFIC,Research remaining airports and verify access/cargo
-B02,Rest of South America,46,BO,Bolivia,23,0,0,OFFICIAL_DATA_PORTAL_LOCATED,Extract and reconcile official annual airport-level passenger/cargo data
-B02,Rest of South America,46,CL,Chile,46,0,0,OFFICIAL_DATA_PORTAL_LOCATED,Extract and reconcile official annual airport-level passenger/cargo data
+B02,Rest of South America,46,BO,Bolivia,23,0,0,OFFICIAL_2025_NATIONAL_MONTHLY_ONLY,"DGAC 2025 nationwide totals identified, still need per-airport annual 2025 evidence"
+B02,Rest of South America,46,CL,Chile,46,11,0,PARTIAL_OFFICIAL_2025_DOMESTIC_TRAFFIC,11 matched domestic-only lower-bound observations; seek full 2025 national/international totals
 B02,Rest of South America,46,CO,Colombia,76,0,0,OFFICIAL_DATA_PORTAL_LOCATED,Extract and reconcile official annual airport-level passenger/cargo data
 B02,Rest of South America,47,EC,Ecuador,30,0,0,PARTIAL_OFFICIAL_2025_CARGO_ONLY,Official annual cargo found for 2 airports; seek airport-specific passenger figures
 B02,Rest of South America,47,FK,Falkland Islands (Islas Malvinas),1,0,0,NOT_STARTED,Find official airport-level passenger/cargo evidence

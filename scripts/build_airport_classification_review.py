@@ -15,6 +15,7 @@ ANAC = ROOT / "data/airports/commercial/group46/group46_brazil_anac_2025_officia
 AR_ANAC = ROOT / "data/airports/commercial/group46/group46_argentina_anac_2025_official_passenger_totals.csv"
 PE_ANNUAL = ROOT / "data/airports/commercial/batchB02/b02_peru_2025_official_regular_passenger_totals.csv"
 EC_CARGO = ROOT / "data/airports/commercial/batchB02/b02_ecuador_2025_official_airport_cargo.csv"
+CL_DOMESTIC = ROOT / "data/airports/commercial/batchB02/b02_chile_2025_official_domestic_quarterly_totals.csv"
 EXCLUSIONS = ROOT / "data/airports/reconciliation/BR_2026_OFFICIAL_RUNWAY_EXCLUSIONS.csv"
 OUTPUT = ROOT / "data/airports/classification/airport_classification_review.csv"
 CATEGORIES = ("Local", "Regional", "Medium", "Large", "Major Hub", "Mega Hub")
@@ -23,7 +24,8 @@ FIELDS = (
     "provisional_category", "decision_status", "passenger_activity_signal",
     "cargo_activity_signal", "regular_passenger_proxy", "nonregular_passenger_proxy",
     "regular_cargo_proxy_kg", "nonregular_cargo_proxy_kg", "evidence_year",
-    "annual_total_passenger_proxy", "passenger_measure", "annual_cargo_tonnes_proxy", "evidence_source_url",
+    "annual_total_passenger_proxy", "passenger_measure", "annual_cargo_tonnes_proxy",
+    "domestic_passenger_floor_proxy", "evidence_source_url",
 )
 
 def records(path: Path) -> list[dict[str, str]]:
@@ -65,7 +67,8 @@ def build_rows(master: list[dict[str, str]], anac: list[dict[str, str]],
                exclusions: list[dict[str, str]],
                argentina: list[dict[str, str]] | None = None,
                peru: list[dict[str, str]] | None = None,
-               ecuador_cargo: list[dict[str, str]] | None = None) -> list[dict[str, str]]:
+               ecuador_cargo: list[dict[str, str]] | None = None,
+               chile_domestic: list[dict[str, str]] | None = None) -> list[dict[str, str]]:
     by_id: dict[str, dict[str, str]] = {}
     for source in anac:
         key = source["source_airport_id"]
@@ -108,6 +111,22 @@ def build_rows(master: list[dict[str, str]], anac: list[dict[str, str]],
         if not re.fullmatch(r"[0-9]+\\.[0-9]{2}", tonnes) or int(tonnes.replace(".", "")) <= 0:
             raise ValueError(f"Invalid Ecuador cargo tonnes: {sid}")
         ecuador_by_id[sid] = src
+    chile_by_id: dict[str, dict[str, str]] = {}
+    for src in chile_domestic or []:
+        sid = src["source_airport_id"]
+        if (sid in chile_by_id or src["country_iso"] != "CL" or src["year"] != "2025" or
+                src["metric"] != "CHILE_MOP_2025_DOMESTIC_ONLY_ROUNDED_1000"):
+            raise ValueError(f"Invalid or duplicate Chile source row: {sid}")
+        quarters = [nonnegative(src[f"quarter{q}_domestic_thousands"], f"Chile Q{q} at {sid}")
+                    for q in range(1, 5)]
+        annual_thousands = nonnegative(src["annual_domestic_thousands"], f"Chile total at {sid}")
+        annual = nonnegative(src["annual_domestic_estimate"], f"Chile annual at {sid}")
+        if any(n <= 0 for n in quarters) or annual_thousands != sum(quarters) or annual != sum(quarters) * 1000:
+            raise ValueError(f"Chile quarterly-to-annual scale mismatch: {sid}")
+        if any(not src[f"source_quarter{q}"].startswith("https://concesiones.mop.gob.cl/")
+               for q in range(1, 5)):
+            raise ValueError(f"Chile official quarterly provenance missing: {sid}")
+        chile_by_id[sid] = src
     excluded = {r["source_airport_id"] for r in exclusions}
     master_ids = [m["source_airport_id"] for m in master]
     if len(master_ids) != len(set(master_ids)):
@@ -133,11 +152,13 @@ def build_rows(master: list[dict[str, str]], anac: list[dict[str, str]],
         for evidence, expected_country, label in (
             (peru_by_id.get(sid), "PE", "Peru"),
             (ecuador_by_id.get(sid), "EC", "Ecuador"),
+            (chile_by_id.get(sid), "CL", "Chile"),
         ):
             if evidence and (airport["country_iso"] != expected_country or
                              evidence["icao_or_ident"] not in {airport.get("ident"), airport.get("gps_code")}):
                 raise ValueError(f"{label} official airport code/source ID mismatch: {sid}")
-    if set(peru_by_id) - set(master_ids) or set(ecuador_by_id) - set(master_ids):
+    if (set(peru_by_id) - set(master_ids) or set(ecuador_by_id) - set(master_ids) or
+            set(chile_by_id) - set(master_ids)):
         raise ValueError("B02 evidence references unknown technical airport source IDs")
     result = []
     for m in master:
@@ -189,6 +210,16 @@ def build_rows(master: list[dict[str, str]], anac: list[dict[str, str]],
                        annual_cargo_tonnes_proxy=src["annual_cargo_tonnes"],
                        evidence_year="2025",
                        evidence_source_url=src["source_url"])
+        elif m["country_iso"] == "CL" and ident in chile_by_id:
+            src = chile_by_id[ident]
+            domestic = nonnegative(src["annual_domestic_estimate"], f"Chile domestic at {ident}")
+            row.update(provisional_category=provisional_tier(domestic),
+                       decision_status="EXISTING_FINAL_ASSIGNMENT" if final else "PROVISIONAL_DOMESTIC_FLOOR",
+                       passenger_activity_signal="DOMESTIC_OBSERVED_OFFICIAL_2025",
+                       cargo_activity_signal="NOT_RESEARCHED",
+                       domestic_passenger_floor_proxy=str(domestic),
+                       passenger_measure="CHILE_MOP_2025_DOMESTIC_ONLY_ROUNDED_1000",
+                       evidence_year="2025", evidence_source_url=src["source_quarter4"])
         elif m["country_iso"] != "BR":
             row.update(decision_status="EXISTING_FINAL_ASSIGNMENT" if final else "NEEDS_EVIDENCE",
                        passenger_activity_signal="NOT_RESEARCHED",
@@ -229,7 +260,7 @@ def main() -> None:
     parser.add_argument("--out", type=Path, default=OUTPUT)
     args = parser.parse_args()
     rows = build_rows(records(MASTER), records(ANAC), records(EXCLUSIONS), records(AR_ANAC),
-                      records(PE_ANNUAL), records(EC_CARGO))
+                      records(PE_ANNUAL), records(EC_CARGO), records(CL_DOMESTIC))
     content = render(rows)
     if args.check:
         if not args.out.exists() or args.out.read_text(encoding="utf-8") != content:

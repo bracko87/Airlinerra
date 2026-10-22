@@ -1,6 +1,6 @@
 country_iso,country_or_territory,official_2025_source_url,source_research_note
-BO,Bolivia,https://www.dgac.gob.bo/anuario-estadistico-dta/,Official 2025 monthly national summaries found; airport-specific annual table not yet crosswalked
-CL,Chile,https://www.jac.gob.cl/estadisticas-historicas/,JAC historic airport-level passengers and cargo database identified; 2025 full-year crosswalk pending
+BO,Bolivia,https://www.dgac.gob.bo/wp-content/uploads/2026/06/INFORME-DE-ESTADISTICA-DICIEMBRE.pdf,"2025 annual national total 5,552,973 airline passengers transported, NOT an airport-by-airport traffic crosswalk"
+CL,Chile,https://concesiones.mop.gob.cl/uploads/sites/4/2025/09/2025_4T_publicar.pdf,2025 official MOP/JAC quarterly DOMESTIC ONLY observation crosswalk for 11/46 airports; whole-airport passenger/cargo research pending
 CO,Colombia,https://www.aerocivil.gov.co/atencion/estadisticas-de-las-actividades-aeronauticas/boletines-operacionales,Aerocivil airport operational traffic bulletins; annual 2025 airport import pending
 EC,Ecuador,https://www.aviacioncivil.gob.ec/el-transporte-aereo-ecuatoriano-movilizo-a-8-millones-de-pasajeros-en-el-2025/,Official 2025 cargo for Quito SEQM and Guayaquil SEGU imported; 2025 individual passenger airport counts pending
 FK,Falkland Islands,,Airport-specific 2025 passenger/cargo source not yet confirmed
