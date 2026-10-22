@@ -52,6 +52,26 @@ class ClassificationReviewTests(unittest.TestCase):
         self.assertEqual(row["decision_status"], "PROVISIONAL_B02_SECONDARY_REPORTED_2025")
         self.assertEqual(row["final_assigned_category"], "")
 
+    def test_guyana_partial_passenger_floor_and_independent_rounded_cargo(self):
+        gle = {"source_airport_id": "1991", "country_iso": "GY", "icao_or_ident": "SYXX",
+               "year": "2025", "metric": "GY_BOS_2025_ARR_DEP_MINIMUM",
+               "passenger_estimate": "73119", "source_url": "https://example.org/bos",
+               "qualification_note": "Incomplete passenger service scope"}
+        cargo = {"source_airport_id": "1991", "country_iso": "GY", "icao_or_ident": "SYXX",
+                 "year": "2025", "annual_cargo_kg_rounded": "14430000",
+                 "annual_cargo_tonnes_approx": "14430", "metric": "GY_CJIA_2025_ROUNDED_CARGO_KG",
+                 "source_url": "https://example.org/dpi"}
+        row = build_rows([airport("1991", country="GY", code="SYXX")], [], [],
+                         b02_additional=[gle], guyana_cargo=[cargo])[0]
+        self.assertEqual(row["provisional_category"], "Regional")
+        self.assertEqual(row["decision_status"], "PROVISIONAL_B02_PARTIAL_PASSENGER_FLOOR")
+        self.assertEqual(row["cargo_activity_signal"], "ANNUAL_ROUNDED_CARGO_TONNES_REPORTED")
+        self.assertEqual(row["annual_cargo_tonnes_proxy"], "14430")
+        self.assertEqual(row["final_assigned_category"], "")
+        with self.assertRaisesRegex(ValueError, "unit/source mismatch"):
+            build_rows([airport("1991", country="GY", code="SYXX")], [], [],
+                       guyana_cargo=[{**cargo, "annual_cargo_kg_rounded": "14000000"}])
+
     def test_six_tiers_and_boundaries(self):
         edges = [(1, "Local"), (9_999, "Local"), (10_000, "Regional"),
                  (99_999, "Regional"), (100_000, "Medium"), (999_999, "Medium"),

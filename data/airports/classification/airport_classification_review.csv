@@ -2610,8 +2610,8 @@ source_airport_id,country_iso,airport_name,final_assigned_category,provisional_c
 5433,GU,Antonio B. Won Pat International Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 3097,GW,Osvaldo Vieira International Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 3156,GW,Quebo Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
-6356,GY,Cheddi Jagan International Airport,,Medium,PROVISIONAL_B02_2025_AIRPORT_TRAFFIC,2025_AIRPORT_PAX_REPORTED,NOT_RESEARCHED,,,,,2025,973016,GY_GOV_2025_AIRPORT_TOTAL_PAX,,,https://dpi.gov.gy/guyanas-aviation-sector-records-unprecedented-growth-between-2020-and-2025/
-41513,GY,Eugene F. Correia International Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
+6356,GY,Cheddi Jagan International Airport,,Medium,PROVISIONAL_B02_2025_AIRPORT_TRAFFIC,2025_AIRPORT_PAX_REPORTED,ANNUAL_ROUNDED_CARGO_TONNES_REPORTED,,,,,2025,973016,GY_GOV_2025_AIRPORT_TOTAL_PAX,14430,,https://dpi.gov.gy/guyanas-aviation-sector-records-unprecedented-growth-between-2020-and-2025/
+41513,GY,Eugene F. Correia International Airport,,Regional,PROVISIONAL_B02_PARTIAL_PASSENGER_FLOOR,2025_AIRPORT_PAX_REPORTED,NOT_RESEARCHED,,,,,2025,73119,GY_BOS_2025_ARR_DEP_MINIMUM,,,https://statisticsguyana.gov.gy/subjects/demography-vital-and-social-statistics/summary-of-arrivals-and-departures-guyana-2015-to-2026/
 6358,GY,Lethem Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 6357,GY,Linden Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 26535,HK,Hong Kong International Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
@@ -4757,7 +4757,7 @@ fictional:RS:LYAL,RS,Aleksandrovo Airport,Local,,OWNER_ASSIGNED,NOT_APPLICABLE,N
 31536,SO,Galcaio Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 319714,SO,Garowe Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 3173,SO,Kismayo Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
-6195,SR,Johan Adolf Pengel International Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
+6195,SR,Johan Adolf Pengel International Airport,,Medium,PROVISIONAL_B02_PARTIAL_PASSENGER_FLOOR,2025_AIRPORT_PAX_REPORTED,NOT_RESEARCHED,,,,,2025,519171,SR_AIRPORT_2025_INTL_PASSENGER_FLOOR,,,https://usercontent.one/wp/www.japi-airport.com/wp-content/uploads/2026/01/PBM-Stats-2020-2025.pdf
 3247,SS,Juba International Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 3248,SS,Malakal International Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,
 300862,SS,Paloich Airport,,,NEEDS_EVIDENCE,NOT_RESEARCHED,NOT_RESEARCHED,,,,,,,,,,

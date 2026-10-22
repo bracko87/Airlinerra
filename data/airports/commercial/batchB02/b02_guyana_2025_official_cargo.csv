@@ -1,0 +1,2 @@
+source_airport_id,country_iso,icao_or_ident,year,annual_cargo_kg_rounded,annual_cargo_tonnes_approx,metric,source_url,qualification_note
+6356,GY,SYCJ,2025,14430000,14430,GY_CJIA_2025_ROUNDED_CARGO_KG,https://dpi.gov.gy/guyanas-aviation-sector-records-unprecedented-growth-between-2020-and-2025/,Airport reported approximately 14.43 million kg cargo imports+exports during 2025; tonnes are approx from rounded million kg. Not certified scheduled cargo availability.

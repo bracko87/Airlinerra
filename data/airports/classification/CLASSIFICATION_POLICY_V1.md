@@ -53,3 +53,8 @@ The Chile MOP / Dirección General de Concesiones quarterly 2025 **Gráfico 13**
 ## Secondary-source Colombia evidence status (2026-10-22)
 
 Nine 2025 Colombian main-airport passenger counts are provisionally tiered from a public PSMV table attributing its comparison figures to Aerocivil. Their specific `CO_AEROCIVIL_2025_SECONDARY_ATTRIBUTED_PAX` metric has `PROVISIONAL_B02_SECONDARY_REPORTED_2025` status, not `PROVISIONAL_B02_2025_AIRPORT_TRAFFIC`, to prevent secondhand reports being treated as directly source-reconciled official observations. First-party underlying Aerocivil dataset and conflicting Cartagena/Cali totals still require auditing. Missing 2025 official observations remain UNKNOWN; **none of these tiers is a final user-authorized category or route permission**. See [B02 report](../commercial/batchB02/B02_RESEARCH_REPORT.md).
+
+
+## B02 minimum passenger and rounded cargo source metrics
+
+The B02 2025 `GY_BOS_2025_ARR_DEP_MINIMUM` and `SR_AIRPORT_2025_INTL_PASSENGER_FLOOR` source measurements now produce `PROVISIONAL_B02_PARTIAL_PASSENGER_FLOOR` tier proposals. They indicate only the **minimum** tier established by reported subset activity (international-only or official arrivals/departures), not a reconciled complete annual airport count. The independent `GY_CJIA_2025_ROUNDED_CARGO_KG` source is a roughly 14.43 million kg cargo movement estimate in 2025 and is stored as `annual_cargo_tonnes_proxy=14430` with status `ANNUAL_ROUNDED_CARGO_TONNES_REPORTED`. This does not grant freight route rights or overwrite passenger evidence. See [B02 research report](../commercial/batchB02/B02_RESEARCH_REPORT.md).
