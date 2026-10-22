@@ -1,6 +1,6 @@
 # Airlinerra airport collection — permanent runway-only register
 
-> **Current global audit (22 October 2026):** The canonical master contains **8,152 airports**: **8,151 real-world runway-qualified airports across Groups 1–49 plus fictional LYAL**. A further 304 real airports have been recovered since the 7,846-record baseline (303 in Group 45 and Carrasco SUMU in Group 48, plus subsequent corrections). SUMU, KSEA and SBEG are **already in the canonical register**; do not add them again. See [worldwide reconciliation](reconciliation/README.md). Sections describing only Groups 1–35 remain historical snapshots.
+> **Current global audit (22 October 2026):** The canonical master contains **8,153 airports**: **8,152 real-world runway-qualified airports across Groups 1–49 plus fictional LYAL**. A further 304 real airports have been recovered since the 7,846-record baseline (303 in Group 45 and Carrasco SUMU in Group 48, plus subsequent corrections). SUMU, KSEA and SBEG are **already in the canonical register**; do not add them again. See [worldwide reconciliation](reconciliation/README.md). Sections describing only Groups 1–35 remain historical snapshots.
 
 ## Current phase
 Only collect airports having **at least one runway 1,200 m or longer**, reported **asphalt or concrete**, with both runway and airport not recorded closed. Facilities that say only "paved" are sent to a surface-check queue and not assumed eligible.
@@ -8,7 +8,7 @@ Only collect airports having **at least one runway 1,200 m or longer**, reported
 A matching airport can be considered **at least Level 1 (Local)**. This is only a lower-bound technical qualification, NOT a final assignment to Airlinerra's exact six tiers: Local, Regional, Medium, Large, Major Hub, Mega Hub. All other airport details are postponed.
 
 ## Canonical master
-- `airport_register.csv`: **8,152 current airport records (8,151 real-world candidates across Groups 1–48 + 1 fictional airport)**, with identifiers, country, name, longest reported qualifying runway, surface and minimum eligible level 1. This is not a list of operational or playable airports.
+- `airport_register.csv`: **8,153 current airport records (8,152 real-world candidates across Groups 1–48 + 1 fictional airport)**, with identifiers, country, name, longest reported qualifying runway, surface and minimum eligible level 1. This is not a list of operational or playable airports.
 - `fictional_airports.csv`: owner-defined airports outside OurAirports. **Aleksandrovo Airport (LYAL), Serbia** — fictional, runway 2,200 m asphalt, **assigned Level 1 / Local**. Protected from being erased by future runway-only screenings; no coordinates or additional data assumed.
 - `airport_register.csv` has `source_type` (`OURAIRPORTS` / `FICTIONAL`) and `assigned_category` (blank for screened real airports, `Local` for LYAL) to keep these records unambiguously separated.
 - Each group's `generated/groupN/groupN_technical_candidates.csv`: source screening that feeds the master.
@@ -161,3 +161,7 @@ Civilian or military status, operating permissions, opening hours, equipment/air
 
 ## Phase A: provisional airport categories (22 October 2026)
 See [six-tier review policy](classification/CLASSIFICATION_POLICY_V1.md) and [full worldwide classification review](classification/airport_classification_review.csv). Source-based regular passenger observations yield **138 provisional Brazilian tiers**; **5 nonregular-only** and **5 cargo-only** airports require special review. All other real airports remain without approved final categories. The technical master and its protected LYAL record were not changed.
+
+
+## 2026-10-22: Argentina SABE runway recovery and ANAC annual-passenger evidence
+ANAC AIP confirms Buenos Aires Aeroparque Jorge Newbery (SABE; original OurAirports airport ID 5771 and runway ID 233011) has a 2,350m concrete runway. The raw PEM ambiguity is handled by a specific surface override. This recovers the omitted airport; the technical master is now **8,153 including LYAL**. Group 46 still totals 842, redistributed as Argentina 121, Bolivia 23, Brazil 576, Chile 46, Colombia 76. The [38 airport-specific official ANAC 2025 passenger totals](commercial/group46/group46_argentina_anac_2025_official_passenger_totals.csv) are rounded thousands, not permissions or final categories. The previous 8,152-airport green run is superseded for this new data.

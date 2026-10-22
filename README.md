@@ -14,7 +14,7 @@ See [AGENTS.md](AGENTS.md) and [release procedures](docs/CONTROLLED_RELEASES.md)
 ## Airport runway collection — current stage
 For now we store ONLY airports reporting a **non-closed asphalt/concrete runway of at least 1,200 metres**. Each meets **minimum Level 1 (Local)** runway criteria; no final categorization, operating permissions or other airport information is being gathered.
 
-[Permanent master airport register](data/airports/airport_register.csv): **8,152 airports: 8,151 real runway-qualified candidates across 49 groups plus fictional LYAL**. Final gameplay categories remain unassigned for real airports. A [separate six-tier classification review](data/airports/classification/CLASSIFICATION_POLICY_V1.md) now holds preliminary traffic-based proposals without changing the master.
+[Permanent master airport register](data/airports/airport_register.csv): **8,153 airports: 8,152 real runway-qualified candidates across 49 groups plus fictional LYAL**. Final gameplay categories remain unassigned for real airports. A [separate six-tier classification review](data/airports/classification/CLASSIFICATION_POLICY_V1.md) now holds preliminary traffic-based proposals without changing the master.
 
 The table below is a **historical Groups 1–35 snapshot**, not the worldwide total.
 
@@ -123,3 +123,6 @@ python scripts/validate_historical_airports.py
 
 ## Game premises
 One real day = one in-game day, no historical eras. Airlines begin with $5,000,000 USD and zero aircraft. Architecture supports three independent worlds, initially launching one.
+
+
+**2026-10-22 technical recovery:** Buenos Aires Aeroparque Jorge Newbery (SABE) was missing despite its official concrete runway; source ID 5771/runway 233011 restored. Total **8,153** including fictional LYAL, with Argentina **121** and Brazil **576**. The [Argentina ANAC annual traffic evidence](data/airports/commercial/group46/group46_argentina_anac_2025_official_passenger_totals.csv) is for provisional classification only.

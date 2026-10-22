@@ -38,13 +38,15 @@ jobs:
           br=[r for r in br if r['iso_country']=='BR']
           excluded=read('data/airports/reconciliation/BR_2026_OFFICIAL_RUNWAY_EXCLUSIONS.csv')
           ids=[r['source_airport_id'] for r in master]
-          assert len(master)==8152 and len(set(ids))==8152, 'Wrong worldwide technical master total/duplicates'
+          assert len(master)==8153 and len(set(ids))==8153, 'Wrong worldwide technical master total/duplicates'
           assert len(br)==576 and len({r['ourairports_id'] for r in br})==576, 'Wrong Brazil technical screen'
           assert len([r for r in master if r['country_iso']=='BR'])==576, 'Brazil master/group mismatch'
+          assert len([r for r in master if r['country_iso']=='AR'])==121, 'Argentina missing SABE'
+          assert any(r['source_airport_id']=='5771' and r['ident']=='SABE' and r['runway_length_m']=='2350.0' and r['runway_surface']=='Concrete' for r in master), 'SABE correction absent'
           assert '335361' not in ids and all(r['ourairports_id']!='335361' for r in br), 'SIFC incorrectly eligible'
           assert any(r['source_airport_id']=='335361' and r['source_runway_id']=='602402' and r['verified_official_length_m']=='1145' for r in excluded), 'SIFC exclusion evidence missing'
           assert any(r['ident']=='LYAL' and r['source_type']=='FICTIONAL' for r in master), 'LYAL lost'
-          print('PASS: 8152 unique technical airports; Brazil 576; SIFC excluded; original runway evidence preserved; LYAL intact')
+          print('PASS: 8153 unique technical airports; Brazil 576; SIFC excluded; original runway evidence preserved; LYAL intact')
           PY
       - name: Validate provisional airport classification review
         run: |

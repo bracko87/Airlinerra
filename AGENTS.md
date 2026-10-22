@@ -16,6 +16,8 @@ These rules apply to all contributors, automated agents and connected developmen
 - No changes to any other repository (Famioo, ProPeloton Manager, Game Control Center, etc.) as part of Airlinerra work.
 
 ## Airport data — current phase: runway-only collection
+- **Current 2026-10-22 correction:** SABE Aeroparque Jorge Newbery source airport 5771/runway 233011 restored through ANAC official 2350m concrete runway AIP evidence; original PEM label preserved in source-specific override. New working master 8,153 (8,152 real + fictional LYAL), AR 121, BR 576, 49 groups. Previous 8,152 green run is a historical checkpoint. Data remains pre-production and real final six-tier classifications are NOT approved.
+
 - Airlinerra retains EXACTLY six eventual airport categories: 1 Local, 2 Regional, 3 Medium, 4 Large, 5 Major Hub, 6 Mega Hub. Never substitute four categories.
 - CURRENT OBJECTIVE: collect airports with at least one runway that is NOT recorded as closed, is >=1200 m long, and whose surface is explicitly asphalt or concrete.
 - Never split Russia into European/Asian regions. RU includes the entire country for collection, naming, totals and gameplay design.

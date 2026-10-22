@@ -1,6 +1,7 @@
 ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible_runway_m,surface,eligible_runway_count,runway_ids
 29849,AR,28 de Noviembre Airport,SAWT,SAWT,1932.4,ASP,1,263483
 39008,AR,Aeroclub San Martín,AR-0333,SAMI,1350.0,ASP,1,263767
+5771,AR,Aeroparque Jorge Newbery,SABE,SABE,2350.0,Concrete,1,233011
 20,AR,Aeródromo Estancia Don Panos,SA10,SA10,1499.9,CON,1,232910
 5827,AR,Almirante Marco Andres Zar Airport,SAVT,SAVT,2560.0,CON,1,232964
 42,AR,Andalgalá Airport,SA35,SA35,1530.1,ASP,1,233015
@@ -8,7 +9,6 @@ ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible
 5826,AR,Antoine de Saint Exupéry Airport,SAVN,SAVN,1799.8,ASP,1,233010
 31,AR,Apóstoles Airport,SA23,SA23,1850.1,ASP,1,232962
 5796,AR,Area De Material Airport,SAOC,SAOC,2265.0,ASP,2,232980;263908
-5847,AR,Ástor Piazzola International Airport,SAZM,SAZM,2200.0,ASP,1,232970
 5856,AR,Aviador C. Campos Airport,SAZY,SAZY,2500.9,ASP,1,232986
 42805,AR,Bahía Dorada Airport,AR-0335,,1870.9,ASP,1,263818
 17,AR,Bell Ville Airport,SA05,SA05,1662.1,ASP,1,233069
@@ -119,13 +119,14 @@ ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible
 5800,AR,Villa Reynolds Airport,SAOR,SAOR,2400.0,ASP,2,232950;232951
 39057,AR,Villa Rumipal Airport,AR-0382,,1253.0,ASP,1,263795
 5785,AR,Zapala Airport,SAHZ,SAHZ,2200.0,ASP,1,233063
+5847,AR,Ástor Piazzola International Airport,SAZM,SAZM,2200.0,ASP,1,232970
 333229,BO,Alcantarí International Airport,SLAL,SLAL,3600.0,Asphalt,1,333230
 6179,BO,Bermejo Airport,SLBJ,SLBJ,1499.9,ASP,1,233706
 39486,BO,Caigua Airport,SLCI,SLCI,1556.9,Concrete,1,515601
-6182,BO,Capitán Aníbal Arab Airport,SLCO,SLCO,2000.1,ASP,1,233700
-6187,BO,Capitán Av. Salvador Ogaya G. airport,SLPS,SLPS,2000.1,ASP,1,233691
 6186,BO,Capitan Nicolas Rojas Airport,SLPO,SLPO,2782.8,ASP,1,233694
 6190,BO,Capitan Oriel Lea Plaza Airport,SLTJ,SLTJ,3050.1,ASP,1,233697
+6182,BO,Capitán Aníbal Arab Airport,SLCO,SLCO,2000.1,ASP,1,233700
+6187,BO,Capitán Av. Salvador Ogaya G. airport,SLPS,SLPS,2000.1,ASP,1,233691
 6181,BO,Chimore Airport,SLHI,SLHI,1463.3,ASP,1,576736
 6184,BO,El Alto International Airport,SLLP,SLLP,3999.9,CON,1,233698
 6183,BO,El Trompillo Airport,SLET,SLET,2773.1,ASP,1,233693
@@ -144,17 +145,16 @@ ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible
 6194,BO,Yacuiba Airport,SLYA,SLYA,2100.1,ASP,1,233705
 399,BR,9 de Maio - Teixeira de Freitas Airport,SNTF,SNTF,1460.0,ASPH,1,233876
 37059,BR,Aba Airport,SNDH,SNDH,1530.1,ASP,1,261958
-408,BR,Açu Airport,SNUC,SNUC,1499.9,ASP,1,234213
 321014,BR,Adolino Bedin Regional Airport,SBSO,SBSO,1699.9,ASP,1,321015
 430386,BR,Aero Jerusalém Airport,SJ39,SJ39,1499.9,ASP,1,430387
 36642,BR,Aerocampo Airport,SJKA,SJKA,1684.9,ASP,1,261759
 413,BR,Aeroclube da Bahia Airport,SNVR,SNVR,1300.0,ASP,1,233872
 217,BR,Aeroclube de Itapeva Airport,SDYW,SDH4,1300.0,ASP,1,233920
 170,BR,Aeroclube de Itápolis Airport,SDIO,SDIO,1300.0,ASP,1,234211
-462,BR,Aeródromo de Fazenda Jatobá,SSHX,SSHX,1270.1,ASP,1,233912
-483,BR,Aeródromo Fazenda Milano,SSNW,SI4N,1399.9,ASP,1,233890
 609222,BR,Aeroparque Bela Vista,SJ1V,SJ1V,1800.5,ASP,1,609223
 404,BR,Aeroporto Brigadeiro Firmino Ayres,SNTS,SNTS,1599.9,ASP,1,234264
+483,BR,Aeródromo Fazenda Milano,SSNW,SI4N,1399.9,ASP,1,233890
+462,BR,Aeródromo de Fazenda Jatobá,SSHX,SSHX,1270.1,ASP,1,233912
 599462,BR,Agriter Agronegócios Airport,BR-3268,SD13,1399.9,ASP,1,603854
 599968,BR,Agro Basso Airport,BR-3270,SD02,1200.3,ASP,1,603859
 507025,BR,Agronova Airport,SJ92,SJ92,1350.0,ASP,1,507026
@@ -164,19 +164,19 @@ ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible
 209,BR,Alagoinhas Airport,BR-2158,,1580.1,ASP,1,233783
 5914,BR,Altamira Interstate Airport,SBHT,SBHT,2003.1,ASP,1,234104
 5859,BR,Amapá Airport,SBAM,SBAM,1524.9,ASP,1,234207
-5860,BR,Anápolis Airbase,SBAN,SBAN,3300.1,ASP,2,234100;234101
-567,BR,Anápolis Airport,SWNS,SWNS,1841.9,ASP,1,234321
 157,BR,Andradina Airport,SDDN,SDDN,1499.9,ASP,1,234197
 37796,BR,André Antônio Maggi Airport,SWBG,SWBG,1499.9,ASP,1,260562
 351532,BR,Antenor Duarte Vilela Airport,SDP7,SDP7,1399.9,ASP,1,351533
+5860,BR,Anápolis Airbase,SBAN,SBAN,3300.1,ASP,2,234100;234101
+567,BR,Anápolis Airport,SWNS,SWNS,1841.9,ASP,1,234321
 5862,BR,Aracaju - Santa Maria Airport,SBAR,SBAR,2200.0,ASP,1,234085
 275,BR,Aracati Dragão do Mar Regional Airport,SBAC,SBAC,1800.1,ASP,1,233778
-5865,BR,Araçatuba Airport,SBAU,SBAU,2119.9,ASP,1,234276
-538,BR,Araguaína Airport,SWGN,SWGN,1804.1,ASP,1,234272
 268,BR,Araguari Airport,SNAG,SNAG,1499.9,ASP,1,234252
 259,BR,Araguatins Airport,SJGU,SJGU,1499.9,ASP,1,233766
+538,BR,Araguaína Airport,SWGN,SWGN,1804.1,ASP,1,234272
 5861,BR,Araraquara Airport,SBAQ,SBAQ,1800.5,ASP,1,234021
 265,BR,Araripina Airport,SNAB,SNAB,1245.1,ASP,1,233805
+5865,BR,Araçatuba Airport,SBAU,SBAU,2119.9,ASP,1,234276
 267,BR,Arcoverde Airport,SNAE,SNAE,1300.0,ASP,1,234060
 36747,BR,Ariquemes Airport,SJOG,SJOG,1306.1,ASP,1,260557
 38046,BR,Arraias Airport,BR-2149,,1499.9,ASP,1,261744
@@ -185,6 +185,7 @@ ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible
 5875,BR,Atlas Brasil Cantanhede International Airport,SBBV,SBBV,2699.9,ASP,1,234236
 199,BR,Avaré-Arandu Airport,SDRR,SDRR,1480.1,ASP,1,234332
 35892,BR,Aviação Estrela Bôscoli Airport,SICO,SWSL,1300.0,ASP,1,261709
+408,BR,Açu Airport,SNUC,SNUC,1499.9,ASP,1,234213
 279,BR,Bacabal Airport,SNBI,SNBI,1599.9,ASP,1,233807
 5870,BR,Bacacheri Airport,SBBI,SBBI,1389.9,ASP,1,234033
 5917,BR,Bahia - Jorge Amado Airport,SBIL,SBIL,1577.0,ASP,1,234018
@@ -192,8 +193,8 @@ ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible
 284,BR,Balsas Airport,SNBS,SNBS,1478.0,ASP,1,234288
 29683,BR,Bandeirantes Airport,SSBR,SSBR,1300.0,ASP,1,261715
 287,BR,Barra Airport,SNBX,SNBX,1300.0,ASP,1,233792
-5876,BR,Barra do Garças Airport,SBBW,SBBW,1598.1,ASP,1,234275
 518348,BR,Barra Grande Airport,SI8W,SI8W,1224.4,ASP,1,518349
+5876,BR,Barra do Garças Airport,SBBW,SBBW,1598.1,ASP,1,234275
 5889,BR,Bartolomeu Lisandro Airport,SBCP,SBCP,1544.1,ASPH,1,234131
 5978,BR,Base de Aviação de Taubaté,SBTA,SBTA,1880.6,ASP,1,233941
 5874,BR,Bauru Airport,SBBU,SBBU,1499.9,ASP,1,234223
@@ -214,23 +215,23 @@ ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible
 5955,BR,Brigadeiro Lysias Rodrigues Airport,SBPJ,SBPJ,2500.0,ASP,1,233891
 593137,BR,Brisanet Airport,SS3E,SS3E,1450.2,ASP,1,593138
 29741,BR,Buritirama Airport,SNTQ,SNTQ,1599.9,ASP,1,261915
+526159,BR,CEA-Caçapava Airport,BR-1886,SWPW,1380.1,ASP,1,526160
 5879,BR,Cabo Frio Airport,SBCB,SBCB,2550.0,ASP,1,233789
-551,BR,Cáceres Airport,SWKC,SWKC,1850.1,ASP,1,233784
 316571,BR,Cachoeira Alta Airport,BR-0039,,1434.7,ASP,1,316572
 45617,BR,Cacoal Airport,SSKW,SSKW,2100.1,ASPH,1,264370
 526485,BR,Caiapo Airport,SWIS,SWIS,1399.9,ASP,1,526494
 247,BR,Calcário Vale do Araguaia Airport,SIZO,SIZO,1499.9,ASP,1,234000
 502,BR,Campo Alegre de Lourdes Airport,SSRK,SSRK,1499.9,ASP,1,233795
 289,BR,Campo Belo Airport,SNCA,SNCA,1420.1,ASP,1,233922
-602647,BR,Campo de Bagatelle Airport,BR-3282,SD58,1400.6,ASP,1,602648
-286,BR,Campo de Boi Airport,BR-2169,,1449.9,ASP,1,234067
-5945,BR,Campo de Marte Airport,SBMT,SBMT,1599.9,ASP,1,234040
-5880,BR,Campo de Provas Brigadeiro Veloso,SBCC,SBCC,2599.0,ASP,1,234189
 5858,BR,Campo Délio Jardim de Mattos Airport,SBAF,SBAF,2001.0,CON,1,234363
 6000,BR,Campo Fontenelle,SBYS,SBYS,2110.1,ASP,3,234054;234055;234056
 5883,BR,Campo Grande Airport,SBCG,SBCG,2599.9,CON,1,234167
 471,BR,Campo Mourão Airport,SSKM,SSKM,1370.1,ASP,1,234341
 36334,BR,Campo Verde Airport,SIWJ,SDLZ,1350.0,ASP,1,261721
+602647,BR,Campo de Bagatelle Airport,BR-3282,SD58,1400.6,ASP,1,602648
+286,BR,Campo de Boi Airport,BR-2169,,1449.9,ASP,1,234067
+5945,BR,Campo de Marte Airport,SBMT,SBMT,1599.9,ASP,1,234040
+5880,BR,Campo de Provas Brigadeiro Veloso,SBCC,SBCC,2599.0,ASP,1,234189
 38037,BR,Campos de Júlio Airport,BR-3118,,1350.0,ASP,1,261722
 238,BR,Candote Airport,SIUW,SWCC,1300.0,ASP,1,233916
 442,BR,Canela Airport,SSCN,SSCN,1260.0,ASP,1,234248
@@ -248,7 +249,6 @@ ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible
 555,BR,Catalão Airport,SWKT,SWKT,1399.9,ASP,1,233809
 5900,BR,Cataratas International Airport,SBFI,SBFI,2705.1,ASP,1,234159
 417,BR,Caxambu Airport,SNXB,SNXB,1499.9,ASP,1,234160
-526159,BR,CEA-Caçapava Airport,BR-1886,SWPW,1380.1,ASP,1,526160
 5873,BR,Chafei Amsei Airport,SBBT,SNBA,1800.1,ASP,1,233958
 37415,BR,Chapadão do Sul Airport,SSCD,SSCD,2000.1,ASP,1,260567
 290,BR,Cibrasa Airport,SNCI,SNCI,1350.0,ASP,1,234051
@@ -277,6 +277,7 @@ ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible
 322551,BR,Crixás Airport,BR-0153,SN9Z,1220.4,ASP,1,594078
 5895,BR,Cruzeiro do Sul Airport,SBCZ,SBCZ,2400.0,ASP,1,234353
 5891,BR,Curitiba-Afonso Pena International Airport,SBCT,SBCT,2218.0,ASP,2,234163;234164
+551,BR,Cáceres Airport,SWKC,SWKC,1850.1,ASP,1,233784
 554,BR,Danilson Municipal Airport,SWKO,SWKO,1599.9,ASP,1,234043
 30255,BR,De Piatã Airport,SNPI,SNPI,1350.0,ASP,1,261723
 528357,BR,De Santana Airport,SN3O,SN3O,1202.4,ASP,1,528358
@@ -294,18 +295,17 @@ ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible
 172,BR,Doutor José Augusto de Arruda Botelho Airport,SDJA,SDJA,1399.9,ASP,1,233942
 507771,BR,Dr. Luciano de Arruda Coelho Regional Airport,SN6L,SN6L,1800.1,ASP,1,507772
 158,BR,Dracena Airport,SDDR,SDDR,1499.9,ASP,1,234178
+5909,BR,EMBRAER - Unidade Gavião Peixoto Airport,SBGP,SBGP,3000.1,ASPH,2,233901;506596
 5913,BR,Edu Chaves Field,SBGW,SBGW,1551.1,ASP,1,234077
 5897,BR,Eduardo Gomes International Airport,SBEG,SBEG,2700.0,Asphalt,1,234094
 532,BR,Eirunepé Airport,SWEI,SWEI,2300.0,ASP,1,234066
 335048,BR,Embaixador Airport,BR-0741,SSOM,1399.0,ASP,1,599782
-5909,BR,EMBRAER - Unidade Gavião Peixoto Airport,SBGP,SBGP,3000.1,ASPH,2,233901;506596
 449,BR,Erechim Airport,SSER,SSER,1279.9,ASP,1,234151
 36474,BR,Estância Santa Rita Airport,SJCY,SJCY,1599.9,ASP,1,261755
 5998,BR,Eurico de Aguiar Salles International Airport,SBVT,SBVT,2058.0,ASPH,2,234357;330846
 36431,BR,Fazenda Acalanto Airport,SJAX,SNEK,1360.0,ASP,1,260558
 38174,BR,Fazenda Adriana Airport,SWYW,SWYW,2160.1,ASP,1,261438
 37038,BR,Fazenda Agronol Airport,SNBB,SJVW,1800.1,ASP,1,261761
-233,BR,Fazenda Água Preta Airport,SIPG,SIPG,1449.9,ASP,1,233987
 534,BR,Fazenda Alvorada Airport,SWFQ,SWFQ,1800.1,ASP,1,233816
 598985,BR,Fazenda Americana Airport,SS6B,SS6B,1799.8,ASP,1,598986
 37714,BR,Fazenda Araguaia Airport,SSWP,SJO8,1499.9,ASP,1,261746
@@ -337,14 +337,13 @@ ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible
 610618,BR,Fazenda Delfin Airport,SJD1,SJD1,1300.3,ASP,1,610619
 329038,BR,Fazenda Dois Irmãos Airport,BR-0353,SNDI,1499.9,ASP,1,329039
 36593,BR,Fazenda Dois Netos Airport,BR-2628,,1300.0,ASP,1,261713
-418,BR,Fazenda dos Castanhais Airport,SNXG,SNXG,1399.9,ASP,1,233863
-37826,BR,Fazenda Duas Âncoras Airport,BR-3041,SS6D,1499.9,ASP,1,261004
 38013,BR,Fazenda Duas Barras Airport,BR-3112,,1250.0,ASP,1,261696
+37826,BR,Fazenda Duas Âncoras Airport,BR-3041,SS6D,1499.9,ASP,1,261004
 344008,BR,Fazenda Eldorado Airport,SD3Z,SD3Z,1399.9,ASP,1,344009
 160,BR,Fazenda Entre Rios Airport,SDEO,SDEO,1499.9,ASP,1,234180
 44718,BR,Fazenda Espinhaço II Airport,SDQZ,SDQZ,1399.9,ASP,1,261732
-42735,BR,Fazenda Estrela d’Alva Airport,BR-3178,,1520.0,ASP,1,261751
 36326,BR,Fazenda Estrela do Aripuanã Airport,SIWA,SIWA,1350.0,ASP,1,261720
+42735,BR,Fazenda Estrela d’Alva Airport,BR-3178,,1520.0,ASP,1,261751
 37356,BR,Fazenda Flexas Airport,BR-2887,,1549.9,ASP,1,261753
 37811,BR,Fazenda Fronteira do Guaporé Airport,SWCF,SDE4,1499.9,ASP,1,261747
 36541,BR,Fazenda Gaia Airport,SJFV,SJFV,1268.0,ASP,1,261700
@@ -352,8 +351,8 @@ ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible
 342839,BR,Fazenda Garrote II Airport,BR-1484,SD4P,1499.9,ASP,1,351380
 600,BR,Fazenda Ilha Camargo Airport,SWYK,SWYK,1380.1,ASP,1,234177
 35815,BR,Fazenda Irmãos Munaretto Airport,SDYF,SDYF,1300.0,ASP,1,261703
-453,BR,Fazenda Itamaratí Airport,BR-2187,,2040.0,ASP,1,234220
 545,BR,Fazenda Itamarati Norte Airport,SWIN,SWIN,2000.1,ASP,1,234175
+453,BR,Fazenda Itamaratí Airport,BR-2187,,2040.0,ASP,1,234220
 343175,BR,Fazenda Jamaica Airport,BR-1504,SWNZ,1449.9,ASP,1,343177
 237,BR,Fazenda Jaó Airport,SIRN,SIRN,1449.9,ASP,1,233999
 37526,BR,Fazenda Júlio Martins Airport,SSJM,SSJM,1499.9,ASP,1,261740
@@ -362,8 +361,8 @@ ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible
 37776,BR,Fazenda Lapa do Lobo Airport,BR-3018,,1534.1,ASP,1,261752
 347691,BR,Fazenda Malanda Airport,SDG3,SDG3,1399.9,ASP,1,347785
 398,BR,Fazenda Mamoneira Airport,SNTD,SNTD,1330.1,ASP,1,233962
-570387,BR,Fazenda Maná Airport,SS2N,SS2N,1200.6,ASP,1,570388
 504972,BR,Fazenda Manga Airport,SJ3V,SJ3V,1300.0,ASP,1,504973
+570387,BR,Fazenda Maná Airport,SS2N,SS2N,1200.6,ASP,1,570388
 518720,BR,Fazenda Marape Airport,SIE2,SIE2,1400.6,ASP,1,518721
 511,BR,Fazenda Menina Airport,SSUY,SSUK,1320.1,ASP,1,233917
 187,BR,Fazenda Morro Vermelho Airport,SDMV,SDMV,1551.1,ASPH,1,234202
@@ -383,8 +382,8 @@ ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible
 37829,BR,Fazenda Piratininga Airport,SWDE,SDPH,1399.9,ASP,1,261733
 525703,BR,Fazenda Planalto das Emas Airport,BR-1881,SWIE,1499.9,ASP,1,525719
 35666,BR,Fazenda Portobello Airport,SDPA,SDPA,1270.1,ASPH,1,262209
-342379,BR,Fazenda Progresso Airport,BR-1463,SSFW,1239.9,Asphalt,1,608894
 35990,BR,Fazenda Progresso Airport,SIGY,SWUV,1420.1,ASP,1,261382
+342379,BR,Fazenda Progresso Airport,BR-1463,SSFW,1239.9,Asphalt,1,608894
 36726,BR,Fazenda Reata Airport,SJNL,SJNL,1517.9,ASP,1,261750
 384,BR,Fazenda Rebeca Airport,SNRE,SJCR,1300.0,ASP,1,233974
 509401,BR,Fazenda Recreio Airport,SN4H,SN4H,1499.9,ASP,1,509402
@@ -398,8 +397,8 @@ ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible
 332342,BR,Fazenda Santa Clara Airport,BR-0502,SDQH,1499.9,ASP,1,332343
 343941,BR,Fazenda Santa Cruz Airport,SBOD,SBOD,1499.9,ASP,1,343942
 218,BR,Fazenda Santa Helena Airport,SDZH,SDZH,1399.9,ASP,1,233934
-184,BR,Fazenda Santa Luíza Airport,SDLU,SDLU,1399.9,ASP,1,234266
 42243,BR,Fazenda Santa Luzia Airport,SWXP,SNBW,1499.9,ASP,1,261745
+184,BR,Fazenda Santa Luíza Airport,SDLU,SDLU,1399.9,ASP,1,234266
 332909,BR,Fazenda Santa Maria Airport,BR-0538,SDWG,2050.1,ASP,1,332910
 38088,BR,Fazenda Santa Maria do Guaporé Airport,SWTK,SWTK,1300.0,ASP,1,261712
 317302,BR,Fazenda Santa Marina Airport,SWTG,SWTG,1530.1,ASP,1,323893
@@ -407,30 +406,32 @@ ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible
 348240,BR,Fazenda Santa Rita Airport,SDJ3,SDJ3,1300.0,ASP,1,348241
 36170,BR,Fazenda Santa Vergínia Airport,SIOT,SIOT,1549.9,Asphalt,1,262500
 149,BR,Fazenda Santo Antônio Airport,SDAS,SDAS,1279.9,ASP,1,233963
-434,BR,Fazenda São Cristóvão Airport,BR-2185,SD03,1490.2,ASP,1,234380
-175,BR,Fazenda São Joaquim O.B. Airport,SDJQ,SDJQ,1399.9,ASP,1,233910
-307,BR,Fazenda São José do Parnaíba Airport,SNFI,SNFI,1499.9,ASP,1,233961
-191,BR,Fazenda São José O.B. Airport,SDOB,SDOB,1239.9,ASP,1,234099
-219,BR,Fazenda São Marcos Airport,SDZM,SD3K,1399.9,ASP,1,234317
 343305,BR,Fazenda Savana Airport,BR-1528,SSBJ,1399.9,ASP,1,343306
 252,BR,Fazenda Serra Azul Airport,SJCQ,SJCQ,1499.9,ASP,1,234008
-38083,BR,Fazenda Sete de Setembro Airport,BR-3137,,1499.9,ASP,1,261743
 349949,BR,Fazenda Sete Povos II Airport,SDM9,SDM9,1499.9,ASP,1,349950
+38083,BR,Fazenda Sete de Setembro Airport,BR-3137,,1499.9,ASP,1,261743
 37881,BR,Fazenda Shalon Airport,SWFZ,SDSH,1460.0,ASP,1,261737
 579,BR,Fazenda Simarelli Airport,SWSG,SWSG,1499.9,ASP,1,233848
 430391,BR,Fazenda Sinimbu Airport,SJ3D,SJ3D,1499.9,ASP,1,430392
+434,BR,Fazenda São Cristóvão Airport,BR-2185,SD03,1490.2,ASP,1,234380
+175,BR,Fazenda São Joaquim O.B. Airport,SDJQ,SDJQ,1399.9,ASP,1,233910
+191,BR,Fazenda São José O.B. Airport,SDOB,SDOB,1239.9,ASP,1,234099
+307,BR,Fazenda São José do Parnaíba Airport,SNFI,SNFI,1499.9,ASP,1,233961
+219,BR,Fazenda São Marcos Airport,SDZM,SD3K,1399.9,ASP,1,234317
 331426,BR,Fazenda Terra Prometida Airport,SDNT,SDNT,1210.1,ASP,1,331427
 37866,BR,Fazenda Tombador Airport,BR-3059,,1293.0,ASP,1,261702
 514,BR,Fazenda Torrão de Ouro Airport,BR-2194,,1560.0,ASP,1,233899
-42242,BR,Fazenda Três Companheiros Airport,SWQL,SWQL,1239.9,ASP,1,260552
 35603,BR,Fazenda Triângulo Airport,BR-2274,,1424.9,ASP,1,261736
+42242,BR,Fazenda Três Companheiros Airport,SWQL,SWQL,1239.9,ASP,1,260552
 587,BR,Fazenda Tucunaré Airport,SWTU,SWTU,1499.9,ASP,1,233838
-599964,BR,Fazenda Vale do Juruena 2 Airport,SD10,SD10,1700.5,ASP,1,599967
+36816,BR,Fazenda VR Airport,SJRB,SJRB,1399.9,ASP,1,261730
 37351,BR,Fazenda Vale Sereno Airport,SNYH,SNYH,1399.9,ASP,1,261910
 46209,BR,Fazenda Vale Verde Airport,SDNA,SDNA,1300.0,ASP,1,269396
+599964,BR,Fazenda Vale do Juruena 2 Airport,SD10,SD10,1700.5,ASP,1,599967
 36338,BR,Fazenda Vargem das Flores Airport,SIWN,SIWN,1399.9,ASP,1,261727
 406,BR,Fazenda Veredão Airport,BR-2183,,1499.9,ASP,1,234295
-36816,BR,Fazenda VR Airport,SJRB,SJRB,1399.9,ASP,1,261730
+418,BR,Fazenda dos Castanhais Airport,SNXG,SNXG,1399.9,ASP,1,233863
+233,BR,Fazenda Água Preta Airport,SIPG,SIPG,1449.9,ASP,1,233987
 5902,BR,Fernando de Noronha Airport,SBFN,SBFN,1845.0,ASP,1,234199
 36848,BR,Fly Ville Airport,SJSH,SJSH,1335.0,ASP,1,337911
 569,BR,Fonte Boa Airport,SWOB,SWOB,1270.1,ASP,1,233761
@@ -438,8 +439,8 @@ ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible
 177,BR,Formosa do Rio Preto Airport,SDKJ,SDKJ,1399.9,ASP,1,233889
 5887,BR,Forquilhinha - Criciúma  Airport,SBCM,SSIM,1488.0,ASP,1,234377
 450,BR,Foz do Areia Airport,SSFA,SSFA,1499.9,ASP,1,234235
-5922,BR,Francisco de Assis Airport,SBJF,SBJF,1535.0,ASP,1,234354
 5919,BR,Francisco Vilela do Amaral Airport,SBIT,SBIT,1749.9,ASP,1,234146
+5922,BR,Francisco de Assis Airport,SBJF,SBJF,1535.0,ASP,1,234354
 5940,BR,Frank Miloye Milenkowichi–Marília State Airport,SBML,SBML,1499.9,ASP,1,234335
 37902,BR,Frederico Carlos Müller Airport,SWHP,SWHP,1587.4,ASP,1,262520
 370,BR,Freitas Melro Airport,BR-2179,,1499.9,ASP,1,234320
@@ -454,10 +455,10 @@ ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible
 5962,BR,Governador Jorge Teixeira de Oliveira International Airport,SBPV,SBPV,2400.0,ASP,1,234311
 5931,BR,Governor José Richa Airport,SBLO,SBLO,2100.1,ASP,1,234245
 29922,BR,Guadalupe Airport,SNGD,SNGD,1599.9,ASP,1,261916
-460,BR,Guaíra Airport,SSGY,SSGY,1300.0,ASP,1,234316
 5907,BR,Guajará-Mirim Airport,SBGM,SBGM,1795.0,ASP,1,234225
 315,BR,Guanambi Airport,SNGI,SNGI,1699.9,ASP,1,234019
 318,BR,Guaxupé Airport,SNGX,SNGX,1480.1,ASP,1,233924
+460,BR,Guaíra Airport,SSGY,SSGY,1300.0,ASP,1,234316
 537,BR,Gurupi Airport,SWGI,SWGI,1699.9,ASP,1,234142
 5901,BR,Hercílio Luz International Airport,SBFL,SBFL,2400.0,ASP,2,234239;234240
 507225,BR,Hospital de Amor Airport,SI8M,SI8M,1300.0,ASP,1,507226
@@ -483,14 +484,18 @@ ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible
 422,BR,Ituiutaba Airport,SNYB,SNYB,1800.1,ASP,1,234342
 37362,BR,Iturama Airport,SNYU,SNYU,1615.1,ASP,1,261757
 171,BR,Ituverava Airport,SDIV,SDIV,1350.0,ASP,1,234360
+331068,BR,JN Resort Airport,BR-0404,SDJR,1499.9,ASP,1,331073
 5898,BR,Jacareacanga Airport,SBEK,SBEK,1599.9,ASP,1,233764
 328,BR,Jacobina Airport,SNJB,SNJB,1250.0,ASP,1,234241
 272,BR,Janaúba Airport,SNAP,SNAP,1499.9,ASP,1,233978
-550,BR,Jataí Airport,SWJW,SWJW,1499.9,ASP,1,234254
 253,BR,Jatapu Airport,SJCW,SJCW,1345.1,ASP,1,233967
+550,BR,Jataí Airport,SWJW,SWJW,1499.9,ASP,1,234254
 331,BR,Jequié Airport,SNJK,SNJK,1279.9,ASP,1,234117
 547,BR,Ji-Paraná Airport,SBJI,SBJI,1800.1,ASP,1,234031
-331068,BR,JN Resort Airport,BR-0404,SDJR,1499.9,ASP,1,331073
+336997,BR,Jorge Luiz Stocco Airport,SJOY,SJOY,1499.9,ASP,1,595242
+192,BR,Jornalista Benedito Pimentel Airport,SDOU,SDOU,1499.9,ASP,1,234081
+183,BR,José Boso Municipal Airport,SDLP,SDLP,1264.0,ASP,1,234046
+363,BR,José Figueiredo Municipal Airport,SNOS,SNOS,1499.9,ASP,1,234261
 466,BR,João Batista Bos Filho Airport,SSIJ,SSIJ,1280.2,ASP,1,233956
 5934,BR,João Correa da Rocha Airport,SBMA,SBMA,2000.1,ASP,1,234150
 329,BR,João Durval Carneiro Airport,SDIY,SDIY,1499.9,ASP,1,234014
@@ -498,14 +503,10 @@ ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible
 334,BR,João Pinheiro Airport,SNJP,SNJP,1300.0,ASP,1,233777
 250,BR,João Silva Airport,SJBY,SJBY,1499.9,ASP,1,233998
 5956,BR,João Simões Lopes Neto International Airport,SBPK,SBPK,1980.0,CON,1,234108
-336997,BR,Jorge Luiz Stocco Airport,SJOY,SJOY,1499.9,ASP,1,595242
-192,BR,Jornalista Benedito Pimentel Airport,SDOU,SDOU,1499.9,ASP,1,234081
-183,BR,José Boso Municipal Airport,SDLP,SDLP,1264.0,ASP,1,234046
-363,BR,José Figueiredo Municipal Airport,SNOS,SNOS,1499.9,ASP,1,234261
 176,BR,Juazeiro Airport,BR-2155,,1300.0,ASP,1,233798
-37928,BR,Juína Airport,SWJN,SWJN,1599.9,ASP,1,261756
 37933,BR,Juruena Airport,BR-3086,,1640.1,ASP,1,261758
 487,BR,Juvenal Loureiro Cardoso Airport,SBPO,SBPO,1620.9,ASP,1,234216
+37928,BR,Juína Airport,SWJN,SWJN,1599.9,ASP,1,261756
 5929,BR,Lages Airport,SBLJ,SBLJ,1530.1,ASP,1,234035
 5933,BR,Lagoa Santa Air Base,SBLS,SBLS,1840.1,ASP,1,234116
 5925,BR,Lauro Carneiro de Loyola Airport,SBJV,SBJV,1640.1,ASP,1,234210
@@ -523,11 +524,7 @@ ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible
 32338,BR,Maracás Airport,SNMJ,SNMJ,1300.0,ASP,1,260555
 45622,BR,Marcelo Pires Halzhausen Airport,SNAX,SNAX,1688.9,ASPH,1,264379
 5971,BR,Marechal Cunha Machado International Airport,SBSL,SBSL,2386.0,ASP,2,234052;234053
-5995,BR,Mário de Almeida Franco Airport,SBUR,SBUR,1759.0,ASP,1,233782
-201,BR,Mário Pereira Lopes–São Carlos International Airport,SDSC,SDSC,1460.0,ASP,1,234187
-5939,BR,Mário Ribeiro Airport,SBMK,SBMK,2100.1,ASP,1,234113
 421,BR,Maxaranguape Airport,SNXX,SNXX,2200.0,ASP,1,234181
-30491,BR,Mélio Viana Public Airport,SNVI,SNVI,1300.0,ASP,1,261728
 510270,BR,Meta Agro Airport,SJG6,SJG6,1300.0,ASP,1,510271
 36628,BR,Michels Aviação Agrícola LTDA Airport,BR-2643,,1300.0,ASP,1,261704
 499,BR,Mimoso do Oeste Airport,SSQZ,SSQZ,1300.0,ASP,1,233898
@@ -535,7 +532,6 @@ ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible
 5935,BR,Minaçu Airport,SBMC,SWIQ,1275.0,ASP,1,234165
 5947,BR,Ministro Victor Konder International Airport,SBNF,SBNF,1800.1,ASP,1,234118
 352,BR,Mocambinho Airport,SNMK,SNMK,1520.0,ASP,1,233785
-36616,BR,Módulo Aguapei Airport,SJIZ,SWNM,1399.9,ASP,1,261734
 350,BR,Monte Alegre Airport,SNMA,SNMA,1424.9,ASP,1,234144
 5936,BR,Monte Dourado - Serra do Areão Airport,SBMD,SBMD,1800.1,ASP,1,234042
 30159,BR,Monte Santo de Minas Airport,BR-2223,,1270.1,ASP,1,261701
@@ -543,6 +539,11 @@ ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible
 379,BR,Mucugê Airport,SNQU,SNQU,1399.9,ASP,1,233833
 353,BR,Mucuri Airport,SNMU,SNMU,1399.9,ASPH,1,234195
 36081,BR,Municipal Bom Futuro Airport,SILC,SILC,1730.0,ASP,1,260528
+201,BR,Mário Pereira Lopes–São Carlos International Airport,SDSC,SDSC,1460.0,ASP,1,234187
+5939,BR,Mário Ribeiro Airport,SBMK,SBMK,2100.1,ASP,1,234113
+5995,BR,Mário de Almeida Franco Airport,SBUR,SBUR,1759.0,ASP,1,233782
+30491,BR,Mélio Viana Public Airport,SNVI,SNVI,1300.0,ASP,1,261728
+36616,BR,Módulo Aguapei Airport,SJIZ,SWNM,1399.9,ASP,1,261734
 37068,BR,Nagib Demachki Airport,SNEB,SNEB,1300.0,ASP,1,261907
 359,BR,Nanuque Airport,SNNU,SNNU,1220.1,ASP,1,234358
 5949,BR,Natal Air Force Base,SBNT,SBNT,2599.9,ASP,3,234338;234339;234340
@@ -554,29 +555,28 @@ ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible
 358,BR,Nova Ponte Airport,BR-2176,SSYD,1499.9,ASP,1,234344
 510743,BR,Novo Aeroporto de Bom Jesus da Lapa,SN3Y,SN3Y,1549.9,ASP,1,510747
 565,BR,Novo Campo Airport,SWNK,SWNK,1599.9,ASP,1,234198
-400,BR,Óbidos Municipal Airport,SNTI,SNTI,1520.0,ASP,1,234329
 441,BR,Olavo Cecco Rigon Airport,SSCK,SSCK,1480.1,ASP,1,234281
-574,BR,Oriçanga de Abreu Airport,SWPZ,SWPZ,1499.9,ASP,1,234238
 364,BR,Oriximiná Airport,SNOX,SNOX,1599.9,ASP,1,234023
+574,BR,Oriçanga de Abreu Airport,SWPZ,SWPZ,1499.9,ASP,1,234238
 5924,BR,Orlando Bezerra de Menezes Airport,SBJU,SBJU,1940.1,ASP,1,234012
 439,BR,Orlando Chesini Ometto Airport,SSBY,SSBY,1399.9,ASP,1,234172
-509,BR,Orlando de Carvalho Airport,SSUM,SSUM,1430.1,ASP,1,234200
 31882,BR,Orlando Villas Boas Regional Airport,SWXM,SWXM,1858.1,ASP,1,261738
+509,BR,Orlando de Carvalho Airport,SSUM,SSUM,1430.1,ASP,1,234200
 365,BR,Ouricuri Airport,BR-2178,,1399.9,ASP,1,234324
-486,BR,Padre Israel Airport,SSOL,SSOL,1499.9,ASP,1,233993
-5869,BR,Pampulha - Carlos Drummond de Andrade Airport,SBBH,SBBH,2539.9,ASP,1,234312
-367,BR,Pará de Minas Airport,SNPA,SNPA,1260.0,ASPH,1,233880
-489,BR,Paranaguá Airport,SSPG,SSPG,1455.1,ASP,1,234204
-494,BR,Paranaíba Airport,SSPN,SSPN,1320.1,ASP,1,233892
-490,BR,Paranavaí Airport,SSPI,SSPI,1499.9,ASP,1,234064
-571,BR,Parintins Airport,SWPI,SWPI,1800.1,ASP,1,234376
-5952,BR,Parnaíba - Prefeito Doutor João Silva Filho International Airport,SBPB,SBPB,2100.1,ASP,1,234026
-369,BR,Patos de Minas Airport,SNPD,SNPD,1699.9,ASP,1,233776
-451,BR,Paulo Abdala Airport,SSFB,SSFB,1320.1,ASP,1,234369
-5991,BR,Paulo Afonso Airport,SBUF,SBUF,1800.1,ASP,1,234269
 36837,BR,PCH Buriti Airport,SJRW,SJRW,1599.9,ASP,1,260566
 36836,BR,PCH Garganta da Jararaca Airport,SJRV,SJRV,1599.9,ASP,1,260565
 316501,BR,PCH Paranatinga II Airport,SWXE,SWXE,1599.9,ASP,1,316502
+486,BR,Padre Israel Airport,SSOL,SSOL,1499.9,ASP,1,233993
+5869,BR,Pampulha - Carlos Drummond de Andrade Airport,SBBH,SBBH,2539.9,ASP,1,234312
+489,BR,Paranaguá Airport,SSPG,SSPG,1455.1,ASP,1,234204
+490,BR,Paranavaí Airport,SSPI,SSPI,1499.9,ASP,1,234064
+494,BR,Paranaíba Airport,SSPN,SSPN,1320.1,ASP,1,233892
+571,BR,Parintins Airport,SWPI,SWPI,1800.1,ASP,1,234376
+5952,BR,Parnaíba - Prefeito Doutor João Silva Filho International Airport,SBPB,SBPB,2100.1,ASP,1,234026
+367,BR,Pará de Minas Airport,SNPA,SNPA,1260.0,ASPH,1,233880
+369,BR,Patos de Minas Airport,SNPD,SNPD,1699.9,ASP,1,233776
+451,BR,Paulo Abdala Airport,SSFB,SSFB,1320.1,ASP,1,234369
+5991,BR,Paulo Afonso Airport,SBUF,SBUF,1800.1,ASP,1,234269
 428,BR,Pedro Rabelo de Souza Airport,SNZR,SNZR,1499.9,ASP,1,233878
 323824,BR,Pedro Vieira Moreira Airport,BR-0263,SJZA,1599.9,ASP,1,536457
 195,BR,Penápolis Airport,SDPN,SDPN,1499.9,ASP,1,234347
@@ -593,20 +593,20 @@ ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible
 340053,BR,Planalto Serrano Regional Airport,SNCP,SNCP,1802.0,ASPH,1,354330
 508,BR,Plínio Alarcom Airport,SBTG,SBTG,2000.1,ASP,1,234171
 38023,BR,Poconé Airport,SWPK,SWPK,1300.0,ASP,1,261716
-5953,BR,Poços de Caldas - Embaixador Walther Moreira Salles Airport,SBPC,SBPC,1514.9,ASP,1,234152
 517,BR,Ponta Grossa Airport - Comandante Antonio Amilton Beraldo,SBPG,SBPG,1430.1,ASP,1,234083
 5941,BR,Ponta Pelada Airport / Manaus Air Base,SBMN,SBMN,2169.9,ASP,1,234135
 5959,BR,Ponta Porã Airport,SBPP,SBPP,2000.1,ASP,1,234097
 592,BR,Porangatu Airport,SWWA,SWWA,1499.9,ASP,1,233840
 347848,BR,Porto Alegre do Norte Airport,SDH2,SDH2,1599.9,ASP,1,347849
 5951,BR,Porto Alegre-Salgado Filho International Airport,SBPA,SBPA,3200.1,ASP,1,234351
-355,BR,Porto de Moz Airport,SNMZ,SNMZ,1310.0,ASP,1,234082
 493,BR,Porto Murtinho Airport,SSPM,SSPM,1300.0,ASP,1,233904
 5958,BR,Porto Nacional Airport,SBPN,SDPE,1699.9,ASP,1,234034
 255,BR,Porto Primavera Airport,BR-1941,SD53,1499.9,ASP,1,234262
 5961,BR,Porto Seguro International Airport,SBPS,SBPS,2000.1,ASPH,1,234148
+355,BR,Porto de Moz Airport,SNMZ,SNMZ,1310.0,ASP,1,234082
 37082,BR,Pousada Thaimaçu Airport,SNFJ,SNFJ,1300.0,ASP,1,261906
 425,BR,Pouso Alegre Airport,SNZA,SNZA,1279.9,ASP,1,234318
+5953,BR,Poços de Caldas - Embaixador Walther Moreira Salles Airport,SBPC,SBPC,1514.9,ASP,1,234152
 336,BR,Prefeito Octávio de Almeida Neves Airport,SNJR,SNJR,1399.9,ASP,1,234250
 5920,BR,Prefeito Renato Moreira Airport,SBIZ,SBIZ,1798.0,ASP,1,234156
 5923,BR,Presidente Castro Pinto International Airport,SBJP,SBJP,2514.9,ASP,1,234373
@@ -626,9 +626,9 @@ ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible
 386,BR,Remanso Airport,SNRM,SNRM,1350.0,ASP,1,233839
 200,BR,Resende Airport,SDRS,SDRS,1300.0,ASP,1,234096
 5964,BR,Rio Branco-Plácido de Castro International Airport,SBRB,SBRB,2158.0,ASP,1,233810
-5906,BR,Rio de Janeiro Galeão – Tom Jobim International Airport,SBGL,SBGL,3999.9,CON,2,234161;234162
-313262,BR,Rio Grande do Norte/São Gonçalo do Amarante–Governador Aluízio Alves International Airport,SBSG,SBSG,3000.1,ASP,1,313263
 44713,BR,Rio Grande Regional Airport,SJRG,SJRG,1499.9,ASP,1,260554
+313262,BR,Rio Grande do Norte/São Gonçalo do Amarante–Governador Aluízio Alves International Airport,SBSG,SBSG,3000.1,ASP,1,313263
+5906,BR,Rio de Janeiro Galeão – Tom Jobim International Airport,SBGL,SBGL,3999.9,CON,2,234161;234162
 5866,BR,Romeu Zema Airport,SBAX,SBAX,1900.1,ASP,1,234048
 5992,BR,Rubem Berta Airport,SBUG,SBUG,1499.9,ASP,1,234280
 354308,BR,Ruy Barbosa Airport,BR-1701,SSLS,1268.0,ASP,1,354319
@@ -648,14 +648,21 @@ ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible
 5948,BR,Santo Ângelo Airport,SBNM,SBNM,1624.9,ASP,1,234020
 5967,BR,Santos Dumont Airport,SBRJ,SBRJ,1323.1,ASP,2,234258;234259
 5976,BR,Santos Nero Moura Air Base / Guarujá Airport,SBST,SBST,1389.9,ASP,1,234348
+5957,BR,Senador Nilo Coelho Airport,SBPL,SBPL,2760.0,ASP,1,234361
+5982,BR,Senador Petrônio Portela Airport,SBTE,SBTE,2200.0,ASP,1,234147
+541476,BR,Senhor do Bonfim Airport,SJ09,SJO9,1549.9,ASP,1,541486
+5884,BR,Serafin Enoss Bertaso Airport,SBCH,SBCH,2059.8,ASP,1,234072
+45606,BR,Serra da Capivara Airport,SWKQ,SWKQ,1649.9,ASPH,1,264373
+43320,BR,Serra do Cipó Airport,SNLG,SNLG,1260.0,ASP,1,261699
+156,BR,Sorocaba Airport,SDCO,SDCO,1630.1,ASP,1,234298
 503,BR,São Borja Airport,SSSB,SSSB,1499.9,ASP,1,234285
 536,BR,São Félix do Araguaia Airport,SWFX,SWFX,1449.9,ASP,1,233808
 310,BR,São Félix do Xingu Airport,SNFX,SNFX,1599.9,ASP,1,234158
 5990,BR,São Gabriel da Cachoeira Airport,SBUA,SBUA,2599.9,ASP,1,234265
-35589,BR,São João da Boa Vista Municipal Airport,SDJV,SDJV,1250.0,ASP,1,260553
 30374,BR,São Joaquim da Barra Airport,SDJO,SDJO,1374.0,ASP,1,262357
 32340,BR,São José Airport,SNSH,SNSH,1499.9,ASP,1,261912
 509397,BR,São José das Borboletas Airport,SN4Q,SN4Q,1499.9,ASP,1,509398
+35589,BR,São João da Boa Vista Municipal Airport,SDJV,SDJV,1250.0,ASP,1,260553
 354,BR,São Mateus - Ernesto Bonomo Airport,SNMX,SNMX,1350.0,ASPH,1,234028
 588,BR,São Miguel do Araguaia Airport,SWUA,SWUA,1499.9,ASP,1,233775
 484,BR,São Miguel do Oeste Hélio Wasum Airport,SSOE,SSOE,1260.0,ASP,1,234201
@@ -664,15 +671,8 @@ ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible
 37436,BR,São Pedro,SSDK,SSDK,1280.2,concrete,1,261146
 376,BR,São Sebastião do Paraíso Airport,SNPY,SNPY,1599.9,ASP,1,233933
 583,BR,São Vicente Airport,SWTI,SWTI,1350.0,ASP,1,233959
-5957,BR,Senador Nilo Coelho Airport,SBPL,SBPL,2760.0,ASP,1,234361
-5982,BR,Senador Petrônio Portela Airport,SBTE,SBTE,2200.0,ASP,1,234147
-541476,BR,Senhor do Bonfim Airport,SJ09,SJO9,1549.9,ASP,1,541486
-5884,BR,Serafin Enoss Bertaso Airport,SBCH,SBCH,2059.8,ASP,1,234072
-45606,BR,Serra da Capivara Airport,SWKQ,SWKQ,1649.9,ASPH,1,264373
-43320,BR,Serra do Cipó Airport,SNLG,SNLG,1260.0,ASP,1,261699
 285,BR,Sócrates Mariani Bittencourt Airport,SSXH,SSXH,1740.1,ASP,1,234234
 302,BR,Sócrates Rezende Airport,SNED,SNED,1339.9,ASP,1,233866
-156,BR,Sorocaba Airport,SDCO,SDCO,1630.1,ASP,1,234298
 5988,BR,Tabatinga International Airport,SBTT,SBTT,2150.1,ASP,1,234374
 38096,BR,Taguatinga Airport,SWTY,SWTY,1399.9,ASP,1,261641
 5882,BR,Tancredo Neves International Airport,SBCF,SBCF,3600.0,ASP,1,234190
@@ -689,13 +689,13 @@ ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible
 5981,BR,Toledo - Luiz Dalcanale Filho Municipal Airport,SBTD,SBTD,1670.0,ASP,1,234022
 5986,BR,Torres Airport,SBTR,SSTE,1506.9,ASP,1,233811
 405,BR,Tranquilo Testolin Airport,SNXV,SNXV,1499.9,ASP,1,233814
-506,BR,Três Barras Airport,SSTB,SSTB,1370.1,ASP,1,234088
-274,BR,Três Marias Airport,SNAS,SNAS,1499.9,ASP,1,234074
 323614,BR,Trimonte Jorge Mussi Airport,SNAO,SNAO,1295.1,ASP,1,512075
 5979,BR,Trombetas Airport,SBTB,SBTB,1599.9,ASP,1,234242
+506,BR,Três Barras Airport,SSTB,SSTB,1370.1,ASP,1,234088
+274,BR,Três Marias Airport,SNAS,SNAS,1499.9,ASP,1,234074
 5989,BR,Tucuruí Airport,SBTU,SBTU,2000.1,CON/ASP,1,234330
-204,BR,Tupã Airport,SDTP,SDTP,1499.9,ASP,1,234134
 511425,BR,Tupirama Airport,SJL8,SJL8,1499.9,ASP,1,511426
+204,BR,Tupã Airport,SDTP,SDTP,1499.9,ASP,1,234134
 5877,BR,Umberto Modiano Airport,SBBZ,SSBZ,1300.0,ASP,1,234027
 5980,BR,Una-Comandatuba Airport,SBTC,SBTC,1900.1,ASP,1,233871
 595,BR,Uruaçu Airport,SWWU,SWWU,1439.9,ASP,1,233852
@@ -708,25 +708,26 @@ ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible
 411,BR,Utinga Airport,SNUT,SNUT,1420.1,ASP,1,233843
 5867,BR,Val de Cans/Júlio Cezar Ribeiro International Airport,SBBE,SBBE,2799.9,ASP,2,233992;324528
 412,BR,Valença Airport,SNVB,SNVB,1800.1,ASP,1,233815
-5894,BR,Várzea Grande–Marechal Rondon International Airport,SBCY,SBCY,2300.0,ASP,1,234047
 264,BR,Veracel Airport,SJXS,SJXS,1499.9,ASP,1,234010
 512,BR,Videira Airport,SSVI,SSVI,1400.3,ASP,1,234103
 36925,BR,Vila Pitinga Airport,SJVP,SJVP,1599.9,ASP,1,261754
 5927,BR,Viracopos International Airport,SBKP,SBKP,3240.0,ASP,1,234355
 137,BR,Vista Alegre Airport,SB29,,1499.9,ASP,1,233818
+5894,BR,Várzea Grande–Marechal Rondon International Airport,SBCY,SBCY,2300.0,ASP,1,234047
 420,BR,Xique-Xique Airport,SNXQ,SNXQ,1420.1,ASP,1,233797
 30067,BR,Yolanda Penteado Airport,SDLL,SDLL,1332.0,ASP,1,262409
 525712,BR,Zirondi Airport,BR-1883,SSZD,1399.9,ASP,1,527673
 5942,BR,Zumbi dos Palmares International Airport,SBMO,SBMO,2602.1,ASP,1,234076
+400,BR,Óbidos Municipal Airport,SNTI,SNTI,1520.0,ASP,1,234329
 6013,CL,Almirante Schroeders Airport,SCDW,SCDW,1495.0,ASP,1,235236
 6018,CL,Andrés Sabella Gálvez International Airport,SCFA,SCFA,2799.9,ASP,1,235233
 6003,CL,Balmaceda Airport,SCBA,SCBA,2500.9,ASP,1,235215
 6004,CL,Barriles Airport,SCBE,SCBE,1639.8,ASP,1,235220
 30301,CL,Cabo Juan Román Airfield,SCAS,SCAS,1270.1,ASP,1,264767
-6027,CL,Cañal Bajo Carlos Hott Siebert Airport,SCJO,SCJO,1950.1,ASP,1,235232
 1639,CL,Canchones West Airport,SC1A,SC1A,3098.3,CON,1,235239
 6019,CL,Captain Fuentes Martinez Airport,SCFM,SCFM,2500.0,ASP,1,235217
 6025,CL,Carriel Sur International Airport,SCIE,SCIE,2599.9,ASP,2,235230;321352
+6027,CL,Cañal Bajo Carlos Hott Siebert Airport,SCJO,SCJO,1950.1,ASP,1,235232
 6001,CL,Chacalluta International Airport,SCAR,SCAR,2799.9,ASP,1,235229
 29774,CL,Chamonate Airport,SCHA,SCHA,1659.9,ASP,1,264754
 6037,CL,Chañaral Airport,SCRA,SCRA,1214.6,ASP,1,235224
@@ -800,8 +801,8 @@ ourairports_id,iso_country,airport_name,ident,gps_code,longest_reported_eligible
 6168,CO,Gustavo Vargas Airport,SKTM,SKTM,1999.8,ASP,1,235352
 6160,CO,Jorge E. Gonzalez Torres Airport,SKSJ,SKSJ,1492.6,ASP,1,235305
 6129,CO,Jorge Isaac Airport,SKLM,SKLM,1486.2,ASP,1,235346
-6106,CO,José Celestino Mutis Airport,SKBS,SKBS,1211.0,ASP,1,235359
 6158,CO,Jose Maria Córdova International Airport,SKRG,SKRG,3440.0,ASP,1,235296
+6106,CO,José Celestino Mutis Airport,SKBS,SKBS,1211.0,ASP,1,235359
 6144,CO,Juan Jose Rondon Airport,SKPA,SKPA,1640.4,ASP,1,235361
 354456,CO,Juanchaco Airport,SKJC,SKJC,1220.1,Asphalt,1,354457
 6112,CO,La Florida Airport,SKCO,SKCO,1599.9,ASP,1,235308
