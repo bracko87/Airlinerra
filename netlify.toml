@@ -2,7 +2,6 @@
 # The approved, static, prelaunch website is deployed only from website/.
 [build]
   publish = "website"
-  command = ""
 
 [[headers]]
   for = "/*"
