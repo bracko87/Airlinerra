@@ -1,0 +1,63 @@
+{
+  "as_of": "2026-10-23",
+  "status": "PREPRODUCTION_TECHNICAL_SECOND_PASS_NOT_COMMERCIAL_APPROVAL",
+  "original_8153_master_unchanged": true,
+  "master_airports": 8153,
+  "original_3140_shortlist_unchanged": true,
+  "original_scheduled_shortlist": 3140,
+  "remaining_runway_qualified_real_screened": 5012,
+  "all_screened_source_scheduled_service": "no",
+  "all_screened_airports_source_types_not_reclassified": true,
+  "review_status_counts": {
+    "HOLD_MILITARY_ACCESS": 266,
+    "OUTSIDE_TECHNICAL_SCOPE": 693,
+    "CIVILIAN_PERMISSION_REVIEW": 3904,
+    "HOLD_SPECIALIZED_USE": 147,
+    "CIVILIAN_EVIDENCE_REVIEW": 2
+  },
+  "candidates_total": 3906,
+  "candidates_by_proposed_category": {
+    "Regional": 1459,
+    "Local": 2447
+  },
+  "review_holds_total": 413,
+  "unselected_outside_technical_scope": 693,
+  "proposed_new_local": 2447,
+  "proposed_new_regional": 1459,
+  "original_local": 104,
+  "original_regional": 103,
+  "combined_local_provisional": 2551,
+  "combined_regional_provisional": 1562,
+  "combined_local_regional_provisional": 4113,
+  "source_screened_for_technical_tiers": 4319,
+  "new_candidates_civilian_permissions_not_validated": 3904,
+  "new_candidates_with_prior_civilian_evidence": 2,
+  "review_needed_military": 266,
+  "review_needed_specialized": 147,
+  "countries_represented_in_second_pass": 157,
+  "initial_medium_large_major_mega_unchanged": true,
+  "owner_approval_of_game_categories": false,
+  "commercial_operation_approved": false,
+  "production_or_supabase_activation": false,
+  "pinned_identity_snapshot": "7642873dc9f33273cd43159d45b78bb4c9980338",
+  "original_source_master_git_sha": "9382f967e1373959677cb34c8684c64b444686ea",
+  "sources": {
+    "identity": "data/airports/identity/airport_identity_worldwide.csv",
+    "master": "data/airports/airport_register.csv",
+    "military": "data/airports/identity/military_use_review_queue.csv",
+    "civilian": "data/airports/identity/military_use_civilian_evidence.csv"
+  },
+  "files": {
+    "screen": "screened_5012.csv",
+    "candidates": "candidates_local_regional.csv",
+    "holds": "review_holds.csv",
+    "countries": "country_summary.csv"
+  },
+  "classification_rule": "small_airport length 1200-<1800 Local; small_airport length 1800-<3000 Regional; medium_airport length <2400 Regional; other cases outside Local/Regional expansion. Military / specialized-use name or review-queue holds unless existing positive civilian evidence. These are reversible game category proposals only.",
+  "cautions": [
+    "scheduled_service=no is not evidence of forbidden commercial charter or cargo activity, but requires permissions review",
+    "not all technically suitable airports may support passenger airlines",
+    "military-name matches and specialized names are triage flags, not verified exclusions",
+    "only source-derived IDs and source-reported codes are carried into expansion, no new fictitious official codes"
+  ]
+}
