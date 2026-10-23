@@ -57,6 +57,9 @@
     "width_game_status": "SIMULATION_ESTIMATE_COMPLETE_NOT_AERONAUTICAL_CERTIFICATION",
     "identifier_status": "7_GPS_15_ICAO_29_IATA_NOT_REPORTED_DO_NOT_FABRICATE",
     "source_width_anomalies_flagged": 1,
-    "source_width_anomalies_note": "Nay Pyi Taw International Airport source-reported representative 152.4m; needs separate source review before any aircraft performance use"
+    "source_width_anomalies_note": "Nay Pyi Taw International Airport source-reported representative 152.4m; needs separate source review before any aircraft performance use",
+    "game_identifier_fallback_file": "data/airports/startup/missing_identifier_game_handling_3140.csv",
+    "game_identifier_optional_source_gaps": 51,
+    "game_identifier_fallback": "USE_STABLE_SOURCE_AIRPORT_ID_NEVER_INVENT_ICAO_IATA_GPS"
   }
 }
