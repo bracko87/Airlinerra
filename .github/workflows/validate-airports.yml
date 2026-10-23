@@ -57,3 +57,4 @@ jobs:
         run: |
           python -m unittest discover -s tests -p test_airport_startup_3140.py
           python -m unittest discover -s tests -p test_airport_local_regional_expansion.py
+          python -m unittest discover -s tests -p test_airport_game_admission.py
