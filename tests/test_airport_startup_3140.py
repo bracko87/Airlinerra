@@ -131,9 +131,9 @@ class Startup3140Tests(unittest.TestCase):
     def test_external_research_overlay_preserves_pinned_fields(self):
         # Do not replace OurAirports source blanks with research: join by stable source ID.
         enrichments = read(S / "researched_field_enrichments_3140.csv")
-        self.assertEqual(55, len(enrichments))
+        self.assertEqual(57, len(enrichments))
         self.assertEqual(52, sum(e["field"] == "municipality" for e in enrichments))
-        self.assertEqual(3, sum(e["field"] == "runway_width_m" for e in enrichments))
+        self.assertEqual(5, sum(e["field"] == "runway_width_m" for e in enrichments))
         self.assertEqual(len(enrichments),
                          len({(e["source_airport_id"], e["field"]) for e in enrichments}))
         airports = {r["source_airport_id"]: r for r in self.ports}
@@ -164,8 +164,8 @@ class Startup3140Tests(unittest.TestCase):
         self.assertEqual(3088, self.audit["municipality_present"])
         self.assertEqual(87, self.audit["without_any_open_width"])
         self.assertEqual(52, self.audit["research_enrichment"]["municipality_rows"])
-        self.assertEqual(3, self.audit["research_enrichment"]["official_width_rows"])
-        self.assertEqual(84, self.audit["research_enrichment"]["width_airports_pending"])
+        self.assertEqual(5, self.audit["research_enrichment"]["official_width_rows"])
+        self.assertEqual(82, self.audit["research_enrichment"]["width_airports_pending"])
 
 if __name__ == "__main__":
     unittest.main()
