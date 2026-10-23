@@ -52,3 +52,12 @@ These rules apply to all contributors, automated agents and connected developmen
 - Real-time worlds: one real day is one in-game day. No historical eras.
 - New airlines start with USD 5,000,000 and zero aircraft.
 - Initial architecture supports three worlds; launch with one.
+
+
+## 2026-10-23 — Commercial airport startup shortlist, separate from 8,153-row runway master
+- Owner-directed immediate scope: focus on 3,140 **real** source-reported scheduled-service airports before reviewing the 5,012 other real airports for possible additional commercial cargo/charter candidates. Preserve fictional LYAL separately.
+- The stable startup sidecar is `data/airports/startup/airports_3140.csv`; all 4,738 linked raw runway observations are in `data/airports/startup/runways_3140.csv`, source exceptions in `data/airports/startup/exceptions_3140.csv`, and counts/source pins in `data/airports/startup/summary.json`. See `data/airports/startup/README.md`.
+- Do NOT misrepresent all 3,140 as authority-certified for commercial operations: the signal is source `scheduled_service=yes`, which does not itself grant civilian permissions. Fourteen military-name candidates have separate positive civilian evidence worldwide, 12 within the 3,140. The 28 other military-name candidates in the shortlist remain review candidates. Unknown civilian status is not proof of military-only.
+- The six `proposed_category` values and `game_slots_per_hour_baseline` are **explicitly provisional design estimates** based on physical runway traits and source airport types. They are NOT approved final `assigned_category`, actual slot-coordination allocations, terminal gate capacities, or live traffic. **Never copy provisional values into the canonical master or production gameplay without a later owner approval.**
+- Maintain missing-data/contradiction transparency: 52 source municipalities, 7 GPS, 15 ICAO, 29 IATA identifiers, 87 airport-level runway widths, eight raw-source surface discrepancies (six existing overrides plus CID/SBEG official cross-references), and one source heliport-type anomaly. Do not fabricate missing codes, site coordinates, widths, or military exclusions.
+- Validate startup source ID joins with `python -m unittest discover -s tests -p test_airport_startup_3140.py`. A JS structural audit of the committed CSV/JSON records passed on 2026-10-23; GitHub Actions/Python suite has not been demonstrated passing at this checkpoint. No Supabase import, production rollout, or route generation is authorized.
