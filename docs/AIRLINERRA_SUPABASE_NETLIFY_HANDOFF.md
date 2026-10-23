@@ -48,3 +48,8 @@ The exact October 19 homepage, including original artwork and `styles.css`, has 
 - Not yet verified: actual Netlify deployment, real browser cross-origin REST fetch, user account login, aircraft/game simulation, commercial approvals.
 
 Use GitHub for controlled source code/data versioning and Supabase private schema for querying/verifying airport records. Never expose the research schema via the public API or activate airports from source flags. Additional commercial eligibility research is pending.
+
+## Additional safety migration (same day)
+- Applied `airlinerra_block_unapproved_world_airport_activation`: server-side PostgreSQL trigger rejects attempted activation without independently verified identity/runway/civilian/commercial access **and** owner approval **and** a reviewed final airport tier.
+- Negative test attempted to activate unapproved source airport `OURAIRPORTS:5230`; PostgreSQL returned the expected error, and the active airport count remained **zero**.
+- Supabase migration history now contains both schema/setup and activation-guard migrations. This does not implement authentication, registration, paid memberships, or simulated flights.
