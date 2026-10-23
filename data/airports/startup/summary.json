@@ -41,7 +41,7 @@
     "file": "data/airports/startup/researched_field_enrichments_3140.csv",
     "municipality_rows": 52,
     "municipality_candidate_effective_coverage": 3140,
-    "municipality_further_confirmation": 1,
+    "municipality_further_confirmation": 0,
     "official_width_rows": 5,
     "width_airports_pending": 82,
     "original_ourairports_missing_values_untouched": true,
