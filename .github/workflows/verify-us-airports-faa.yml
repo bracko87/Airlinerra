@@ -27,8 +27,12 @@ jobs:
           python-version: "3.12"
       - name: Validate independent FAA matching rules
         run: python -m unittest discover -s tests -p test_airport_us_faa_verification.py -v
+      - name: Validate Part 139 class and certification joins
+        run: python -m unittest discover -s tests -p test_airport_us_part139_nasr.py -v
       - name: Verify 2077 US candidate airports with October 2026 FAA NASR
         run: python scripts/verify_us_airports_faa.py
+      - name: Run Part 139 certificate crosswalk from identical October 2026 NASR
+        run: python scripts/verify_us_part139_nasr.py
       - name: Verify output never marks airports playable
         run: |
           python - <<'PY'
@@ -43,6 +47,18 @@ jobs:
           assert all(x["playable"] == "NO" and x["commercial_approval_status"] == "NOT_VERIFIED" for x in rows)
           assert summary["approved_for_game"] == 0 and summary["candidate_count"] == 2077
           print("PASS: 2077 records FAA-screened; none authorized for gameplay")
+          with (d/"us_part139_nasr_2026_10_01.csv").open(newline="", encoding="utf-8") as f:
+              cert_rows = list(csv.DictReader(f))
+          cert_summary = json.loads((d/"us_part139_nasr_summary.json").read_text())
+          assert len(cert_rows) == 2077
+          assert len({x["source_airport_id"] for x in cert_rows}) == 2077
+          assert {x["source_airport_id"] for x in cert_rows} == {x["source_airport_id"] for x in rows}
+          assert all(x["playable"] == "NO" and x["final_game_approval"] == "NO" and
+                     x["commercial_operator_permission"] == "UNVERIFIED" for x in cert_rows)
+          assert cert_summary["eligible_for_game"] == 0
+          assert cert_summary["physically_and_public_use_qualified"] == 1929
+          assert cert_summary["total_candidates"] == 2077
+          print("PASS: 2077 FAA Part 139 fields recorded; none approved for routes")
           PY
       - name: Save FAA review files to research repository main
         run: |
@@ -50,6 +66,8 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/airports/local_regional_expansion/us_verification/us_faa_review_2026_10_01.csv
           git add data/airports/local_regional_expansion/us_verification/us_faa_summary_2026_10_01.json
+          git add data/airports/local_regional_expansion/us_verification/us_part139_nasr_2026_10_01.csv
+          git add data/airports/local_regional_expansion/us_verification/us_part139_nasr_summary.json
           if ! git diff --cached --quiet; then
             git commit -m "Add independent FAA NASR Oct 2026 audit of 2077 US airport candidates"
             git push origin HEAD:main
@@ -63,4 +81,6 @@ jobs:
           path: |
             data/airports/local_regional_expansion/us_verification/us_faa_review_2026_10_01.csv
             data/airports/local_regional_expansion/us_verification/us_faa_summary_2026_10_01.json
+            data/airports/local_regional_expansion/us_verification/us_part139_nasr_2026_10_01.csv
+            data/airports/local_regional_expansion/us_verification/us_part139_nasr_summary.json
           retention-days: 30
