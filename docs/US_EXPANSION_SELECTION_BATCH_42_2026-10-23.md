@@ -37,3 +37,7 @@ Airlinerra has exactly six game categories: Local, Regional, Medium, Large, Majo
 | LQR | KS | `OURAIRPORTS:20370` | 1280.5 | [Source](https://www.cityoflarned.org/187/Larned---Pawnee-County-Airport) | Larned/Pawnee County city lists LQR public-use nontowered airport with 100LL 24h credit card and tie-downs. Page reproduces FAA information from December 2013 and is not current commercial-operator certification. | 2026-10-23 21:13:57.731199+00 |
 | N23 | NY | `OURAIRPORTS:20602` | 1280.5 | [Source](https://www.airnav.com/airport/N23) | FAA October 2026 N23 in New York, nontowered public-use small airport. Commercial charter, cargo and scheduled service unverified; airport-specific owner confirmation needed. | 2026-10-23 21:13:57.731199+00 |
 | RWN | IN | `OURAIRPORTS:20975` | 1280.5 | [Source](https://www.in.gov/indot/multimodal/aviation/indiana-public-use-airports/) | INDOT 2026 public-use airport directory identifies Arens Field RWN in Indiana (distinct from other 'Arens' entities), but directory is not proof of scheduled airline or commercial charter rights. | 2026-10-23 21:13:57.731199+00 |
+
+## Evidence ledger — airports 26–50
+
+The [supplemental Batch 42 ledger](US_EXPANSION_SELECTION_BATCH_42_PART_2_2026-10-23.md) contains the remaining 25 airport-specific Supabase-verified URLs, notes, and review timestamps. Together these files document all 50 Batch 42 records. No gameplay approvals were made.
