@@ -1,0 +1,17 @@
+# This repository keeps airport research in data/. Do not publish that directory.
+# The approved, static, prelaunch website is deployed only from website/.
+[build]
+  publish = "website"
+  command = ""
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Frame-Options = "DENY"
+
+[[redirects]]
+  from = "/health"
+  to = "/health.html"
+  status = 200
