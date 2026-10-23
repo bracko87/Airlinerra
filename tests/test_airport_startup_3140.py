@@ -266,5 +266,32 @@ class Startup3140Tests(unittest.TestCase):
         self.assertEqual(0, summary["width_airports_pending"])
         self.assertEqual(87, summary["width_source_data_still_missing"])
 
+
+    def test_missing_official_codes_have_nonfabricated_game_keys(self):
+        missing = read(S / "missing_identifier_game_handling_3140.csv")
+        self.assertEqual(51, len(missing))
+        self.assertEqual({"gps_code": 7, "icao_code": 15, "iata_code": 29},
+                         dict(Counter(r["identifier_field"] for r in missing)))
+        by_id = {p["source_airport_id"]: p for p in self.ports}
+        pairs = set()
+        for r in missing:
+            key = (r["source_airport_id"], r["identifier_field"])
+            self.assertNotIn(key, pairs)
+            pairs.add(key)
+            port = by_id[r["source_airport_id"]]
+            self.assertEqual(port["country_iso"], r["country_iso"])
+            self.assertEqual(port["airport_name"], r["airport_name"])
+            self.assertEqual("", port[r["identifier_field"]])
+            self.assertEqual("", r["official_code_value"])
+            self.assertEqual(port[r["identifier_field"] + "_status"],
+                             r["source_status"])
+            self.assertEqual("NOT_REPORTED", r["source_status"])
+            self.assertEqual(r["source_airport_id"], r["game_internal_airport_key"])
+            self.assertEqual("OPTIONAL_SOURCE_CODE_USE_INTERNAL_ID", r["game_handling"])
+            self.assertEqual("NOT_VERIFIED_NO_OFFICIAL_CODE_INVENTED",
+                             r["assignment_verification"])
+        self.assertEqual(51,
+                         self.audit["research_enrichment"]["game_identifier_optional_source_gaps"])
+
 if __name__ == "__main__":
     unittest.main()
