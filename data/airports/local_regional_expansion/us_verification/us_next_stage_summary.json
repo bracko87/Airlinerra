@@ -1,0 +1,26 @@
+{
+  "as_of": "2026-10-23",
+  "faa_cycle": "2026-10-01",
+  "source": "data/airports/local_regional_expansion/us_verification/us_commercial_suitability_2077.csv",
+  "us_candidates_total": 2077,
+  "faa_physical_public_use_qualified": 1929,
+  "faapass_without_flagged_runway_tier_or_state_conflicts_pending_operator_review": 1889,
+  "faapass_with_source_runway_tier_or_state_conflicts": 40,
+  "access_identity_pavement_closed_holds": 148,
+  "issues_total_unique_airports": 188,
+  "game_commercial_approval_total": 0,
+  "part139_extraction": {
+    "script": "scripts/verify_us_part139_nasr.py",
+    "manual_workflow": ".github/workflows/verify-us-airports-faa.yml",
+    "status": "PREPARED_NOT_EXECUTED",
+    "expected_outputs": [
+      "us_part139_nasr_2026_10_01.csv",
+      "us_part139_nasr_summary.json"
+    ]
+  },
+  "queues": {
+    "research": "data/airports/local_regional_expansion/us_verification/us_operator_permission_review_1889.csv",
+    "targeted_issues": "data/airports/local_regional_expansion/us_verification/us_targeted_followup_queue.csv"
+  },
+  "reminder": "Public-use airport and current paved runway do not establish actual operator, cargo or scheduled commercial permissions. All remain nonplayable."
+}
