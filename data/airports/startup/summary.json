@@ -61,5 +61,24 @@
     "game_identifier_fallback_file": "data/airports/startup/missing_identifier_game_handling_3140.csv",
     "game_identifier_optional_source_gaps": 51,
     "game_identifier_fallback": "USE_STABLE_SOURCE_AIRPORT_ID_NEVER_INVENT_ICAO_IATA_GPS"
+  },
+  "consolidated_current_status": {
+    "file": "data/airports/startup/airports_3140_current_status.csv",
+    "total_rows": 3140,
+    "country_geographies": 229,
+    "municipality_game_coverage": 3140,
+    "municipality_external_research_rows": 52,
+    "game_width_coverage": 3140,
+    "game_width_estimated_rows": 82,
+    "missing_identifier_field_count": 51,
+    "airports_missing_any_identifier": 40,
+    "airports_missing_all_three_identifiers": 4,
+    "military_name_civilian_permission_review": 28,
+    "raw_runway_discrepancies_with_existing_evidence": 8,
+    "source_airport_type_anomaly": 1,
+    "classification_is_provisional": true,
+    "actual_airport_slots_verified": false,
+    "civilian_access_approval_not_inferred": true,
+    "gameplay_activation_performed": false
   }
 }
