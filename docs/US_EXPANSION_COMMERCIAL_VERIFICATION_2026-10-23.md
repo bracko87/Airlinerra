@@ -1,6 +1,6 @@
 # Airlinerra — U.S. expansion airport commercial verification (2026-10-23)
 
-**Status: Database review queue created and 13 individually sourced airport reviews recorded. No airport is approved for gameplay.**
+**Status: Review queue created, 13 individual operator reviews recorded, and official September 3, 2026 FAA Part 139 certification crosswalk imported and verified. No airport is approved for gameplay.**
 
 The priority research scope is the **1,929 U.S. airports** in cohort `EXPANSION_3906` already matched by immutable OurAirports ID to 2026-10-01 FAA NASR records. Each has an `EXACT_FAA_IDENTIFIER_AND_WITHIN_5KM` match, FAA-reported open public use and runway screening. **FAA public use is not equivalent to permission for scheduled air carrier flights, charter rights, cargo service, Part 139 certification or game suitability.** Supabase working table `airlinerra.airport_access_reviews` continues to keep final commercial permission unverified.
 
@@ -54,21 +54,23 @@ Four initial operator evidence records were added for three airports, followed b
 | Ardmore Municipal **ADM** | [Oklahoma aviation authority](https://oklahoma.gov/aerospace/airports/find-an-airport/ardmore-municipal.html) confirms runway, terminal, tower and services (page updated 2023) | Historical facility source needs current aircraft/Part 139 and service check |
 | Enid Woodring **WDG** | [Oklahoma aviation authority](https://oklahoma.gov/aerospace/airports/find-an-airport/enid-woodring-regional.html) confirms runway and terminal services (page updated 2023) | Current charter, cargo and Part 139 independently unresolved |
 
-**Database checkpoint:** `airport_commercial_verification` has **1,929** rows, **13** with `independent_review_at` set and linked operator/authority pages. `airport_evidence` contains **14** new `PRIMARY_OPERATOR_SOURCE_REPORTED` entries. Every reviewed airport remains `NOT_APPROVED`. The official September 3, 2026 FAA Part 139 XLSX has a verified [FAA publication page](https://www.faa.gov/airports/airport_safety/part139_cert/part_139_airport_certification_status_list), but direct file downloading returned binary data inaccessible to the current importer, so **0 of 1,929 Part 139 statuses were marked checked**. It would be misleading to use an older public PDF as if it were September 2026 certification evidence.
+**Database checkpoint:** `airport_commercial_verification` has **1,929** rows, **13** with individual operator/authority evidence, and **14** newly created `PRIMARY_OPERATOR_SOURCE_REPORTED` evidence entries. The FAA's official September 3, 2026 Part 139 XLSX was subsequently imported in full: **517 official rows, 50 exact FAA state+LOC-ID expansion matches (42 without an inactive marker, 8 explicitly inactive), 1,879 expansion airports not listed**. The complete source import, status code definitions, class limitations and follow-up tasks are documented in [FAA Part 139 crosswalk](FAA_PART139_CROSSWALK_2026-09-03.md). All airports remain NOT_APPROVED.
 
-These individual source pages do not all identify a separately dated publication/effective record. Database evidence preserves that limitation and records the date they were checked (2026-10-23). Part 139 for all 1,929 remains **NOT_CHECKED**. Work must resume from the verified September file, not from guesses or stale proxy lists.
+These individual source pages do not all identify a separately dated publication/effective record. Database evidence preserves that limitation and records the date they were checked (2026-10-23). Part 139 source matching is now **COMPLETE for all 1,929** using the published September spreadsheet. Airport operating permission, actual scheduled service, charter rights, cargo capability and aircraft compatibility remain separate **UNVERIFIED / NOT_CHECKED** tasks.
 
-## Regulatory crosswalk still required
+## Regulatory crosswalk completed — next service verification
 
-FAA's [Part 139 Airport Certification Status List](https://www.faa.gov/airports/airport_safety/part139_cert/part_139_airport_certification_status_list) links an official **September 3, 2026 .xlsx** file. The September spreadsheet was identified but **not machine-parsed or joined into the database yet**, therefore no certification results were assumed or fabricated. FAA confirms that Part 139 governs specified U.S. scheduled/unscheduled passenger air carrier operations; many smaller GA and charter operations are outside the Part 139 trigger (FAA [scope guidance](https://www.faa.gov/airports/airport_safety/part139_cert/airports-affected)). Absence from this certification list **does not mean every commercial flight is prohibited**.
+The [official FAA Part 139 September 3 spreadsheet](https://www.faa.gov/airports/airport_safety/part139_cert/part_139_airport_certification_status_list) was successfully parsed in a fixed-source, validated import and written to private Supabase tables: 517 source airport entries, exactly 50 matched to our 1,929 U.S. expansion records, with exact FAA state + LOC ID matching, class I–IV, ARFF index and inactive status. See [full crosswalk and its remaining restrictions](FAA_PART139_CROSSWALK_2026-09-03.md).
 
-Next evidence tasks in order:
+**Next evidence tasks:**
 
-1. Validate official FAA Part 139 status XLSX and match by actual FAA location identifier + state and operator identity; mark certificate class, ARFF index, inactive status and effective date only on unambiguous matches; otherwise `NOT_CHECKED`.
-2. Research the **128 long-runway group** using operators/AIPs and distinguish scheduled air carrier rights, unscheduled small-aircraft charters, actual cargo capability and appropriate aircraft operating conditions.
-3. Independently review **45 poor/failed surface reports**, **two unreported conditions**, and PR/MR ownership and access restrictions; do not declare permanent ineligibility from runway condition or owner code alone.
-4. Progress to the **890 medium**, **486 small-aircraft**, then **315 fair-condition** airports; preserve `UNKNOWN` and exact official evidence citations.
-5. Only after verified source-backed review propose gameplay decisions and *separately* assess exactly the six categories: Local, Regional, Medium, Large, Major Hub, Mega Hub. Passenger and cargo approvals are independent.
+1. Verify actual scheduled service and aircraft constraints for the eight Class I matched airports not marked inactive.
+2. Verify small scheduled carrier activity for the single Class II and single non-inactive Class III matches.
+3. Check the 32 non-inactive Class IV matches for unscheduled large-air-carrier flights, smaller charters and cargo; never infer scheduled service from Class IV.
+4. Individually investigate the eight official FAA rows marked inactive and their current operator restrictions.
+5. Continue operator and cargo/charter evidence for the 1,879 unlisted airports, the 45 poor/failed runway conditions and the 63 ownership special cases. **Not on Part 139 is not a universal commercial-airport prohibition.**
+
+Maintain exactly six **Airlinerra gameplay categories** independently of FAA's four regulatory classes and never activate airports automatically.
 
 ## Verification queries
 
