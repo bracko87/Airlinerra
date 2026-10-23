@@ -84,3 +84,17 @@ To close the **game-design data gap** promptly, the owner authorized averages fo
 - **Identifier gaps are not numeric:** 7 GPS, 15 ICAO and 29 IATA source blanks remain. [missing_identifier_game_handling_3140.csv](missing_identifier_game_handling_3140.csv) explicitly documents all 51 unreported field instances and the stable `source_airport_id` game fallback. Never average, guess or generate fake official codes. These identifiers are optional *database attributes*, not substitutes for the internal airport ID.
 
 **Tests:** `python -m unittest discover -s tests -p test_airport_startup_3140.py` now verifies complete coverage, donor averages, roundings, provenance, original-source immutability and official/estimated separation. The manual `.github/workflows/validate-airports.yml` includes this test in its next run. This startup sidecar does **not** activate airports or change any canonical master, gameplay category, slot allocation, or production data.
+
+
+## One-file current-status export (23 October 2026)
+
+[airports_3140_current_status.csv](airports_3140_current_status.csv) is the owner-friendly **3,140-row consolidated review table**, keyed by `source_airport_id`, combining the raw commercial shortlist, the municipality research overlay, the 3,140-row game-planning width table, and the original exceptional-review ledger. It covers 229 source countries/geographies.
+
+Key column distinctions:
+- `municipality_for_game` is sourced directly for 3,088 airports; 52 candidate localities are external research, marked by `municipality_provenance`. These are usable initial locality display values, not a claim every place matches a formally regulated municipality boundary.
+- `game_reference_runway_width_m` is filled for 3,140 airports (3,053 source reported, 5 official researched, 82 game averages). `game_runway_width_provenance` makes the difference explicit; a single representative reference runway does not describe every runway at a multi-runway airport.
+- `gps_code`, `icao_code`, and `iata_code` remain blank when unreported (7, 15, 29 missing fields respectively). **40 distinct airports** have at least one of these code gaps; four are missing all three. Airport source ID is the unique internal join key; blank codes must not be fabricated.
+- `military_access_review` flags **28** airports needing separate positive civilian-operation evidence; `runway_source_discrepancy_review` flags eight raw-source inconsistencies with supporting override/correction records; `source_airport_type_review` flags Narsarsuaq's source heliport anomaly.
+- `proposed_category` and `game_slots_per_hour_baseline` are **preliminary game-design values**, not certified airport categories or actual coordinated movement slots. `commercial_eligibility_status` remains non-approved across this entire shortlist; no production activation has taken place.
+
+This is a review/export convenience file, **not a new operationally verified airport master**. The 8,153-row original master, 4,738 original source runway records and original exception history remain immutable.
