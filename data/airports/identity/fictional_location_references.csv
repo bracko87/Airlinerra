@@ -1,0 +1,2 @@
+source_airport_id,country_iso,place_name,municipality,region,district,province,reference_latitude_deg,reference_longitude_deg,coordinate_kind,source_url,note
+fictional:RS:LYAL,RS,Aleksandrovo,Nova Crnja,Banat,Central Banat,Vojvodina,45.63778,20.59159,SETTLEMENT_CENTER_NOT_AIRPORT_SITE,https://mapcarta.com/13914886,Owner specifies Aleksandrovo Serbia Banat; settlement centre is approximate context NOT actual runway location

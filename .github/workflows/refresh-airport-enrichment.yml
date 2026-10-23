@@ -1,4 +1,4 @@
-name: Refresh worldwide airport enrichment (manual only)
+name: Refresh worldwide airport codes and coordinates (manual only)
 
 on:
   workflow_dispatch:
@@ -7,49 +7,63 @@ permissions:
   contents: write
 
 concurrency:
-  group: airlinerra-enrichment-manual
+  group: airlinerra-identity-worldwide-manual
   cancel-in-progress: false
 
 jobs:
-  enrich-airports:
+  worldwide-identity:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
-      - name: Checkout main
+      - name: Checkout Airlinerra main
         uses: actions/checkout@v4
         with:
           ref: main
+          fetch-depth: 0
           persist-credentials: true
-      - uses: actions/setup-python@v5
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Download pinned source snapshot
+      - name: Pin current global OurAirports airport source and download once
+        shell: bash
         run: |
-          SHA=b529623d2a0b09a9be78d37fc7a7a5e1e16e3451
-          curl -fsSL --retry 3 "https://raw.githubusercontent.com/davidmegginson/ourairports-data/$SHA/airports.csv" -o "${RUNNER_TEMP}/airports.csv"
-          curl -fsSL --retry 3 "https://raw.githubusercontent.com/davidmegginson/ourairports-data/$SHA/runways.csv" -o "${RUNNER_TEMP}/runways.csv"
-          test -s "${RUNNER_TEMP}/airports.csv"
-          test -s "${RUNNER_TEMP}/runways.csv"
-      - name: Rebuild enriched source data without editing runway master
+          set -euo pipefail
+          SHA="$(git ls-remote https://github.com/davidmegginson/ourairports-data.git refs/heads/main | cut -f1)"
+          [[ "$SHA" =~ ^[0-9a-f]{40}$ ]]
+          echo "OURAIRPORTS_SOURCE_SHA=$SHA" >> "$GITHUB_ENV"
+          curl --fail --silent --show-error --location --retry 3 --max-time 160 "https://raw.githubusercontent.com/davidmegginson/ourairports-data/$SHA/airports.csv" --output "$RUNNER_TEMP/ourairports-airports.csv"
+          test -s "$RUNNER_TEMP/ourairports-airports.csv"
+      - name: Run isolated source/identity regression tests
+        run: python -m unittest discover -s tests -p test_airport_identity_worldwide.py
+      - name: Rebuild all 8153 airport source-ID matches in one pass
+        shell: bash
         run: |
-          python scripts/enrich_airport_reference.py --airports "${RUNNER_TEMP}/airports.csv" --runways "${RUNNER_TEMP}/runways.csv" --source-commit b529623d2a0b09a9be78d37fc7a7a5e1e16e3451
-      - name: Validate enriched airport data
+          set -euo pipefail
+          python scripts/refresh_airport_identity_worldwide.py --airports "$RUNNER_TEMP/ourairports-airports.csv" --source-commit "$OURAIRPORTS_SOURCE_SHA"
+          python scripts/refresh_airport_identity_worldwide.py --airports "$RUNNER_TEMP/ourairports-airports.csv" --source-commit "$OURAIRPORTS_SOURCE_SHA" --check
+      - name: Validate original airport master remains untouched
         run: |
-          python scripts/validate_airport_enrichment.py
           python scripts/validate_airports.py
           python scripts/validate_historical_airports.py
-      - name: Publish audit artifact
+          git diff --exit-code -- data/airports/airport_register.csv data/airports/fictional_airports.csv
+      - name: Publish source-ID audit and remaining exceptions
         uses: actions/upload-artifact@v4
         with:
-          name: airlinerra-worldwide-airport-enrichment
-          path: data/airports/enriched
+          name: airlinerra-8153-worldwide-airport-identity
+          path: |
+            data/airports/identity/airport_identity_worldwide.csv
+            data/airports/identity/identity_exceptions.csv
+            data/airports/identity/identity_summary.json
           if-no-files-found: error
-      - name: Commit regenerated reference sidecars
+      - name: Commit one consolidated non-operational identity refresh to main
+        shell: bash
         run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/airports/enriched/airport_identity.csv data/airports/enriched/qualifying_runways.csv data/airports/enriched/commercial_review_queue.csv data/airports/enriched/enrichment_exceptions.csv data/airports/enriched/country_counts.csv data/airports/enriched/SOURCE.txt
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/airports/identity/airport_identity_worldwide.csv data/airports/identity/identity_exceptions.csv data/airports/identity/identity_summary.json
           if ! git diff --cached --quiet; then
-            git commit -m "data: reproduce pinned airport enrichment [skip ci]"
+            git commit -m "data: refresh worldwide airport IDs codes and coordinates [skip ci]"
             git push origin HEAD:main
           fi

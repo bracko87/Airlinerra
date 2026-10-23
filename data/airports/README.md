@@ -1,5 +1,7 @@
 # Airlinerra airport collection — permanent runway-only register
 
+> **Owner-approved next research priority (2026-10-23):** a single global GPS/ICAO/IATA/latitude-longitude audit, plus evidence-backed exclusion of military-only airports from future playable selection. See [identity/README.md](identity/README.md). Neither missing IATA/ICAO/GPS identifiers nor military-looking names alone proves an airport cannot support civilian commercial aviation. Original runway-qualified master stays as historical/technical inventory.
+
 > **Future migration planning:** [GitHub-to-Supabase reference-data handoff](migration/README.md) provides an offline, validation-gated portable snapshot. It is not a database import and grants no real-airport gameplay access.
 
 > **Current global audit (22 October 2026):** The canonical master contains **8,153 airports**: **8,152 real-world runway-qualified airports across Groups 1–49 plus fictional LYAL**. A further 304 real airports have been recovered since the 7,846-record baseline (303 in Group 45 and Carrasco SUMU in Group 48, plus subsequent corrections). SUMU, KSEA and SBEG are **already in the canonical register**; do not add them again. See [worldwide reconciliation](reconciliation/README.md). Sections describing only Groups 1–35 remain historical snapshots.

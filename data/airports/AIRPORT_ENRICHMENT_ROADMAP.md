@@ -7,6 +7,10 @@ Source baseline: runway-qualified master `data/airports/airport_register.csv` (7
 Branch: `main` only. Keep original source group screens and master untouched until a validated migration is deliberately planned.
 This plan supersedes the prior runway-only **scope for future work**, but does not change the current official runway screening requirements or authorize a Supabase/game deployment.
 
+## Identity priority update (2026-10-23)
+
+The owner selected four immediate fields: GPS code, ICAO code, IATA code, and real-airport latitude/longitude. One independent global 8,153-row source-ID join is now prepared at [identity/README.md](identity/README.md) and through the manual-only refresh-airport-enrichment workflow; skip country-by-country identity collection. Preserve unassigned/unreported code statuses rather than inventing values; evaluate actual civilian aviation operations independently. Exclude *confirmed military-only* sites from gameplay, not from the immutable technical research master. A military-looking name alone is not proof. Aleksandrovo LYAL is in Central Banat, Serbia, but the settlement centroid must not be misrepresented as exact runway coordinates. No Supabase or live gameplay activation.
+
 ## Decision: one worldwide automated data pass, followed by grouped verification
 
 **Do not try to manually research ~8,000 airports in a single operation.**

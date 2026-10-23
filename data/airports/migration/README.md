@@ -54,3 +54,8 @@ No Supabase database, SQL migration, automated production trigger, credentials o
 
 
 **Colombia direct-data milestone:** the latest [official Aerocivil 2025 regular endpoint crosswalk](../commercial/batchB02/b02_colombia_2025_aerocivil_regular_airport_endpoints.csv) adds independently labeled regular-passenger and cargo-plus-mail evidence for 46 eligible airports. Historical 10 other-scope passenger tiers remain unchanged; 36 new provisional tiers were generated. The migration handoff retains `regular_passenger_proxy` and `regular_cargo_proxy_kg` independently of `annual_total_passenger_proxy`, and does not treat mail-augmented cargo kg as pure freight or live cargo rights.
+
+
+## Next worldwide identity import (2026-10-23)
+
+The research-first [identity policy](../identity/README.md) distinguishes available ICAO, IATA and GPS codes from unreported codes; requires source-backed real-airport coordinates; and records owner-specified LYAL municipality/region with village-centre location **separate from fictional airport coordinates**. Confirmed military-only sites remain historical source records but are excluded from game candidacy. The manual-only worldwide identity workflow builds a new all-airport dataset and a precise exceptions list. The old 7,846-airport enrichment snapshot is historical. Import new identities to Supabase **only after** a dedicated authorized migration has been validated; absence of an IATA code alone does not trigger deletion.
