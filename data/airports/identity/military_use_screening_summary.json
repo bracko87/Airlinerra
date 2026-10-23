@@ -1,0 +1,24 @@
+{
+  "as_of": "2026-10-23",
+  "master_airports": 8153,
+  "real_airports": 8152,
+  "original_name_screen_candidates": 529,
+  "additional_name_screen_candidates": 106,
+  "total_name_screen_candidates": 635,
+  "country_codes": 99,
+  "civilian_evidence_confirmed": 14,
+  "civilian_passenger_or_permitted_charter": 12,
+  "confirmed_military_only_exclusions": 0,
+  "still_need_individual_official_evidence": 621,
+  "priorities": {
+    "P1_POSSIBLE_MIXED_USE": 11,
+    "P2_SPECIALIZED_BASE": 32,
+    "P3_BASE_NAME_ONLY": 486,
+    "P4_EXPANDED_NAME_REVIEW": 106
+  },
+  "gameplay_activation_performed": false,
+  "review_queue_includes_name_based_candidates_only": true,
+  "not_yet_a_complete_verified_worldwide_military_only_inventory": true,
+  "source_exclusion_policy": "do not exclude without dated, attributable primary authority/operator evidence",
+  "source_civilian_policy": "positive civil-access evidence disproves military-only categorization but does not independently authorize new commercial services"
+}
