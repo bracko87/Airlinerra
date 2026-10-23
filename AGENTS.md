@@ -2,6 +2,13 @@
 
 These rules apply to all contributors, automated agents and connected development tools.
 
+## Central research database — 2026-10-23
+
+- **Supabase Airlinerra project `hwllkabgzaynalahvkpz` is the central working airport research database**, private schema `airlinerra`. GitHub `main` remains the version-controlled source archive for original CSVs, agency evidence, code, and reproducibility. See [verified import inventory and remaining backfill](docs/AIRLINERRA_SUPABASE_CENTRAL_DATABASE_2026-10-23.md).
+- The current master has 8,153 airports and its source-identity keys must remain stable. The central research catalog has versioned source rows; read `research_source_snapshots` to determine which files have actually been imported. **Do not assume a new GitHub CSV was automatically imported** or that all historic group/source files have already been mirrored.
+- The read-only `airport_research_overview` and `airport_research_backlog` private views give the current non-sorted airport review queue. Research work may now proceed directly in this isolated Supabase project, preserving original provenance and NULL/UNKNOWN states. Do not create duplicate databases or discard source records.
+- Airport code gaps, name-only military hints, runway technical qualification, historical traffic, and tentative six-level categories do not constitute gameplay admission. `airport_world_activation` remains empty. No live game account/airline, public research API access or payment-related deployment is authorized.
+
 ## Branch policy — public development, single branch (2026-10-20)
 - **Develop exclusively on `main`**. Repository visibility is currently public and normal coding, airport screening, corrections, and documentation updates go straight to `main`. Do not target, create, or merge from `staging`. The old `staging` branch is legacy and must not receive new work.
 - This supersedes older staging/release-window instructions in this repository. All contributors and other ChatGPT conversations must follow this document before coding.
