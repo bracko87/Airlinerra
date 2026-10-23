@@ -1,5 +1,8 @@
 # Airlinerra — future Supabase airport handoff
 
+> **23 October 2026 implementation notice:** The isolated Airlinerra Supabase project is now the central working airport research database, with an 8,153-row master, 34,119 versioned research-source rows, and 11,304 normalized runway observations. This document below describes the *earlier pre-import plan* and is retained as historical planning notes. For the verified current status, limitations, and remaining repository-wide source sync, read [central database status](../../../docs/AIRLINERRA_SUPABASE_CENTRAL_DATABASE_2026-10-23.md). Do not use the older 'no database migration' statement as the current status.
+
+
 **Preparation only (22 October 2026). No database migration, schema deployment, game activation or production release.** GitHub remains the authoritative source for collected airport research. This handoff is a portable, reproducible reference-data export for a *later*, explicitly approved Airlinerra Supabase project.
 
 ## Reference data stored in GitHub
