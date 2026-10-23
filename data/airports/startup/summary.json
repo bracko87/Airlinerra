@@ -80,5 +80,26 @@
     "actual_airport_slots_verified": false,
     "civilian_access_approval_not_inferred": true,
     "gameplay_activation_performed": false
+  },
+  "game_identifier_resolution": {
+    "status": "ALL_3140_AIRPORTS_HAVE_GAME_VALUES_ORIGINAL_BLANK_CODES_PRESERVED",
+    "source_missing_gps": 7,
+    "source_missing_icao": 15,
+    "source_missing_iata": 29,
+    "source_missing_field_total": 51,
+    "distinct_airports_affected": 40,
+    "recovered_government_published_location_indicators_for_game_gps": 3,
+    "secondary_published_icao_codes_not_regulator_validated": 4,
+    "fictional_game_only_identifier_values": 44,
+    "airports_with_at_least_one_fictional_identifier": 33,
+    "effective_game_gps": 3140,
+    "effective_game_icao": 3140,
+    "effective_game_iata": 3140,
+    "existing_real_source_icao_iata_values_unchanged": true,
+    "fictional_values_are_not_authority_assigned": true,
+    "code_resolution_file": "data/airports/startup/game_code_resolutions_3140.csv",
+    "game_airport_codes_file": "data/airports/startup/game_airport_codes_3140.csv",
+    "consolidated_file": "data/airports/startup/airports_3140_current_status.csv",
+    "clearance_for_commercial_flights": false
   }
 }
