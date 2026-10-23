@@ -1,5 +1,8 @@
 # Airlinerra
 
+> **Central airport database:** The isolated Airlinerra Supabase project now stores the working 8,153-airport registry, normalized runway observations, six-tier research evidence and source-versioned import catalog. GitHub `main` is the versioned research and code archive, not the only working database. See [Supabase import and remaining work](docs/AIRLINERRA_SUPABASE_CENTRAL_DATABASE_2026-10-23.md). No airports are live for gameplay.
+
+
 Public development repository for Airlinerra, a real-time browser airline-management game. Source code is public during development and may become private when the game launches (public copies cannot be recalled).
 
 ## Development process — main only
