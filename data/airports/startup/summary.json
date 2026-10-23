@@ -42,8 +42,8 @@
     "municipality_rows": 52,
     "municipality_candidate_effective_coverage": 3140,
     "municipality_further_confirmation": 1,
-    "official_width_rows": 3,
-    "width_airports_pending": 84,
+    "official_width_rows": 5,
+    "width_airports_pending": 82,
     "original_ourairports_missing_values_untouched": true,
     "source_reported_identifier_gaps_untouched": true,
     "status": "RESEARCH_OVERLAY_NOT_PRODUCTION_APPROVED"
