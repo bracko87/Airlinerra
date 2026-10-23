@@ -35,3 +35,11 @@ The one pass produces:
 ## Boundaries
 
 This is **research-only**, never activation. The new workflow retains workflow_dispatch/manual-only, has no scheduled or push trigger, and does not deploy Supabase, alter airport runway criteria, promote final six-tier classifications or activate routes. The older data/airports/enriched/ sidecars are a historical 7,846-airport snapshot; this new output is scoped to the 8,153-row master. Supabase migration can later join new identities by stable airport source ID and pinned source SHA.
+
+## Military-use screening queue (2026-10-23)
+
+The first **worldwide name-based screening**, run against the **8,153-airport canonical master**, produced [military_use_review_queue.csv](military_use_review_queue.csv): **529 source-ID-matched real facilities in 92 country codes**. The initial review order is: **11** airport names suggesting international/mixed use (P1), **32** specialized RAF/naval/army names (P2), and **486** other name-indicated air bases (P3). These are **screening candidates, not confirmed exclusions**.
+
+Every row explicitly records `civilian_commercial_status=UNVERIFIED`, `military_only_verified=NO`, and `gameplay_decision=NOT_ACTIVE_PENDING_REVIEW`. No row is copied into [verified_military_only.csv](verified_military_only.csv) without a dated aviation-authority or airport-operator source establishing military-only status. The master technical inventory is immutable; independently verified military-only exclusions affect **future game candidacy only**.
+
+**Limitation:** name matching cannot discover every military-only airfield or resolve dual-use eligibility. Extend verification later with source airport type, official AIP/operator/civil access records, and scheduled/cargo evidence, in **one worldwide evidence crosswalk** instead of arbitrary small batches. Zero military-only exclusions are confirmed at this checkpoint. All airports remain non-operational in the game.
