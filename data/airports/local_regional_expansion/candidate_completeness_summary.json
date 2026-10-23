@@ -1,0 +1,60 @@
+{
+  "as_of": "2026-10-23",
+  "status": "DATA_COMPLETENESS_AUDIT_ONLY_NOT_COMMERCIAL_APPROVAL",
+  "total": {
+    "candidate_total": 3906,
+    "unique_airport_ids": 3906,
+    "overlap_original_3140": 0,
+    "identity_join": 3906,
+    "master_join": 3906,
+    "region_present": 3906,
+    "municipality_missing": 158,
+    "coordinates_present": 3906,
+    "gps_missing": 229,
+    "icao_missing": 2091,
+    "iata_missing": 2184,
+    "any_code_missing": 2337,
+    "all_three_codes_missing": 199,
+    "master_runway_qualified": 3906,
+    "qualifying_runway_detail_matched": 3688,
+    "qualifying_runway_detail_missing": 218,
+    "qualifying_width_present": 3655,
+    "qualifying_width_unresolved": 251,
+    "width_missing_in_matched_details": 33,
+    "category_matches_screening_rule": 3906,
+    "civilian_permission_review": 3904,
+    "civilian_evidence_review": 2,
+    "commercially_approved": 0,
+    "playable": 0
+  },
+  "categories_provisional": {
+    "Regional": 1459,
+    "Local": 2447
+  },
+  "task_queues": {
+    "VERIFY_IATA_OR_GAME_ONLY_CODE": 2184,
+    "VERIFY_CIVILIAN_COMMERCIAL_ACCESS": 3906,
+    "VERIFY_FULL_RUNWAY_INVENTORY": 3906,
+    "REVIEW_FINAL_CATEGORY_AND_CAPACITY": 3906,
+    "VERIFY_ICAO_OR_GAME_ONLY_CODE": 2091,
+    "VERIFY_GPS_OR_GAME_ONLY_CODE": 229,
+    "RESEARCH_MUNICIPALITY": 158,
+    "RESEARCH_WIDTH_OR_LABEL_ESTIMATE": 251,
+    "RECONCILE_RUNWAY_DETAIL_JOIN": 218
+  },
+  "source_files": [
+    "data/airports/local_regional_expansion/candidates_local_regional.csv",
+    "data/airports/identity/airport_identity_worldwide.csv",
+    "data/airports/airport_register.csv",
+    "data/airports/enriched/qualifying_runways.csv",
+    "data/airports/startup/airports_3140_current_status.csv"
+  ],
+  "restrictions": [
+    "No master or original 3140 changes",
+    "Runway details use different pinned snapshot than master; unjoined rows do not prove no runways",
+    "Source codes blank when unreported; do not treat game-only codes as official",
+    "Provisional 6/10 slot estimates are movement game design values, not real airport slots",
+    "Do not activate airports without independently verified civilian/commercial access and owner approval"
+  ],
+  "approval_count_verified": 0
+}
