@@ -1,6 +1,6 @@
 # Airlinerra — U.S. expansion airport commercial verification (2026-10-23)
 
-**Status: Database review queue created and first three operator reviews recorded. No airport is approved for gameplay.**
+**Status: Database review queue created and 13 individually sourced airport reviews recorded. No airport is approved for gameplay.**
 
 The priority research scope is the **1,929 U.S. airports** in cohort `EXPANSION_3906` already matched by immutable OurAirports ID to 2026-10-01 FAA NASR records. Each has an `EXACT_FAA_IDENTIFIER_AND_WITHIN_5KM` match, FAA-reported open public use and runway screening. **FAA public use is not equivalent to permission for scheduled air carrier flights, charter rights, cargo service, Part 139 certification or game suitability.** Supabase working table `airlinerra.airport_access_reviews` continues to keep final commercial permission unverified.
 
@@ -31,15 +31,32 @@ Across the whole group, FAA ownership codes are `PU` 1,859, `PR` 66, and `MR` 4.
 
 The queue uses FAA *reported* conditions from source date 2026-10-01. These are neither a fresh field inspection nor proof of airline performance for any specific aircraft. Longer runway length is used for ordering research, not automatic admission, certification or promotion to a higher of the six Airlinerra levels.
 
-### First individual primary-operator research saved
+### Individually reviewed airport records — 13 airports
 
-Four new dated-as-retrieved research evidence records were added to `airlinerra.airport_evidence`, linked to the corresponding commercial-verification rows:
+Four initial operator evidence records were added for three airports, followed by ten additional dated/source-linked evidence records for ten further airports. This covers **13 distinct airports with 14 individual evidence records**. Each source distinguishes actual airline service from facilities and permissive general aviation descriptions:
 
 1. **Scottsdale Airport (SDL; `OURAIRPORTS:21045`)**: City describes a GA reliever **without commercial commuter/airline service** ([official city general info](https://www.scottsdaleaz.gov/scottsdale-airport/general-information)). The city [airport business directory](https://www.scottsdaleaz.gov/scottsdale-airport/airport-airpark-businesses) lists **aircraft-charter businesses**. Scheduled airline: operator reports none. Charter providers: identified; airport-specific permits, aircraft compatibility and routes not independently approved. Cargo: not checked.
 2. **Crater Lake–Klamath Regional (LMT; `OURAIRPORTS:3646`)**: City [passenger page](https://klamathfalls.city/157/Passengers) says no current commercial-airline service. This does not prove that charter, cargo, or restored scheduled operations are illegal/impossible; those require separate research.
 3. **Mojave Air & Space Port (MHV; `OURAIRPORTS:20507`)**: Airport operator [contracts and leasing](https://www.mojaveairport.com/contracts-leasing) describes its runway as accommodating large cargo aircraft and offers warehousing/logistics infrastructure. This is **facility capability evidence only**, not proof of active commercial cargo operations, operating authorization, scheduled airline service or a game route.
 
-These individual source pages do not all identify a separately dated publication/effective record. Database evidence preserves that limitation and records the date they were checked (2026-10-23). Part 139 for all 1,929 remains **NOT_CHECKED**.
+### Ten additional authority-backed airport reviews
+
+| Airport / FAA code | Official source and narrow finding | Remaining decision |
+| --- | --- | --- |
+| Donaldson Field **GYH** | [SC Aeronautics, updated Aug 18 2026](https://aeronautics.sc.gov/airports/donaldson-fld-airport): A26 remark restricts air carrier operations with over 30 seats **except with 24-hour prior permission**; taxiway restrictions also apply | Verify permitted aircraft, prior-permission process, Part 139 and commercial operations; not a blanket exclusion |
+| Francis S. Gabreski **FOK** | [Suffolk County](https://suffolkcountyny.gov/Departments/Economic-Development-and-Planning/Francis-S-Gabreski-Airport/Airport-History) reports civil air taxi/corporate traffic and a military rescue wing | Mixed use; neither automatically military-only nor airline-certified |
+| Reno-Stead **RTS** | [Reno-Tahoe Airport Authority](https://www.renoairport.com/airport-authority/stead-airport/) describes general aviation | No inference of scheduled passenger/cargo operations |
+| Phoenix Goodyear **GYR** | [City of Phoenix](https://www.phoenix.gov/administration/departments/aviation.html) reports general aviation, maintenance, large-aircraft MRO, training and corporate operations | Aircraft servicing is not a passenger/cargo route |
+| TSTC Waco **CNW** | [Texas State Technical College](https://www.tstc.edu/tstc-waco-airport/) describes educational use and two major paved runways | Training and infrastructure are not operator permission |
+| Phoenix Deer Valley **DVT** | [Municipal operator](https://www.deervalleyairport.com/about-dvt-airport/) says airport serves civil aviation *except commercial passenger service*, while [FAA flight deck](https://www.faa.gov/flight_deck/dvt) references a ramp reserved for commercial air carrier and passenger air taxi aircraft | Scope **conflict** flagged for direct clarification; no automatic permission/ban |
+| Central Colorado Regional **AEJ** | [Town of Buena Vista](https://buenavistaco.gov/2679/Voluntary-Noise-Abatement) explicitly reports **no scheduled commercial flights**; GA/air ambulance uses separately | On-demand charter not ruled out by this finding |
+| Stennis International **HSA** | [Hancock County port authority](https://www.portairspace.com/logistics) reports large freighter capable runway and FBO ground cargo support | Cargo-capable is not proof of active cargo routes or carrier permission |
+| Ardmore Municipal **ADM** | [Oklahoma aviation authority](https://oklahoma.gov/aerospace/airports/find-an-airport/ardmore-municipal.html) confirms runway, terminal, tower and services (page updated 2023) | Historical facility source needs current aircraft/Part 139 and service check |
+| Enid Woodring **WDG** | [Oklahoma aviation authority](https://oklahoma.gov/aerospace/airports/find-an-airport/enid-woodring-regional.html) confirms runway and terminal services (page updated 2023) | Current charter, cargo and Part 139 independently unresolved |
+
+**Database checkpoint:** `airport_commercial_verification` has **1,929** rows, **13** with `independent_review_at` set and linked operator/authority pages. `airport_evidence` contains **14** new `PRIMARY_OPERATOR_SOURCE_REPORTED` entries. Every reviewed airport remains `NOT_APPROVED`. The official September 3, 2026 FAA Part 139 XLSX has a verified [FAA publication page](https://www.faa.gov/airports/airport_safety/part139_cert/part_139_airport_certification_status_list), but direct file downloading returned binary data inaccessible to the current importer, so **0 of 1,929 Part 139 statuses were marked checked**. It would be misleading to use an older public PDF as if it were September 2026 certification evidence.
+
+These individual source pages do not all identify a separately dated publication/effective record. Database evidence preserves that limitation and records the date they were checked (2026-10-23). Part 139 for all 1,929 remains **NOT_CHECKED**. Work must resume from the verified September file, not from guesses or stale proxy lists.
 
 ## Regulatory crosswalk still required
 
