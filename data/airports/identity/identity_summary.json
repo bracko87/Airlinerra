@@ -1,0 +1,19 @@
+{
+  "airports": 8153,
+  "confirmed_military_only_excluded": 0,
+  "coordinates_source_reported": 8152,
+  "exceptions": {},
+  "format_version": 1,
+  "gameplay_activation_performed": false,
+  "gps_codes_available": 7777,
+  "military_name_review_hints": 529,
+  "output_sha256": {
+    "airport_identity_worldwide.csv": "b130a69785eb3d3a1f88df36022ad3896d6be6964b6a50cf7d1151dd05592de3",
+    "identity_exceptions.csv": "a943acb2b9c9494b411c9b778add3c00a261e8e331da38a8e6e20008c788cfde"
+  },
+  "real_airports": 8152,
+  "source_commit": "11e4de2834aff6ab54c1f8fc89b8679ea3d08418",
+  "source_data_sha256": "13f1f1a6298635c816b5bedfd47f8290339cc54730b38274b475fcb261daae4c",
+  "source_iata_reported": 5301,
+  "source_icao_reported": 5520
+}
