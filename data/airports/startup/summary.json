@@ -36,5 +36,16 @@
   "category_is_approved": false,
   "commercial_permissions_verified_for_all": false,
   "gameplay_activation_performed": false,
-  "missing_field_entries": 227
+  "missing_field_entries": 227,
+  "research_enrichment": {
+    "file": "data/airports/startup/researched_field_enrichments_3140.csv",
+    "municipality_rows": 52,
+    "municipality_candidate_effective_coverage": 3140,
+    "municipality_further_confirmation": 1,
+    "official_width_rows": 3,
+    "width_airports_pending": 84,
+    "original_ourairports_missing_values_untouched": true,
+    "source_reported_identifier_gaps_untouched": true,
+    "status": "RESEARCH_OVERLAY_NOT_PRODUCTION_APPROVED"
+  }
 }
