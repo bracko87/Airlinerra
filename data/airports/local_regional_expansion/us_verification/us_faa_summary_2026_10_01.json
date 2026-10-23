@@ -1,0 +1,25 @@
+{
+  "as_of": "2026-10-01",
+  "candidate_count": 2077,
+  "faa_source": "https://www.faa.gov/air_traffic/flight_info/aeronav/Aero_Data/NASR_Subscription/2026-10-01/",
+  "faa_zip_url": "https://nfdc.faa.gov/webContent/28DaySub/extra/01_Oct_2026_APT_CSV.zip",
+  "faa_zip_sha256": "aba48ea877f249d9b8cd63988b14b3432a6a09ad1fbe9561a5e6443c99c03dd0",
+  "faa_base_rows": 19427,
+  "faa_runway_rows": 23191,
+  "statuses": {
+    "FAA_AIRPORT_NOT_OPEN_HOLD": 1,
+    "FAA_NON_PUBLIC_USE_ACCESS_HOLD": 115,
+    "FAA_NO_CONFIRMED_1200M_ASPHALT_CONCRETE_RUNWAY_HOLD": 13,
+    "FAA_PHYSICAL_AND_PUBLIC_USE_VERIFIED_COMMERCIAL_REVIEW": 1929,
+    "HOLD_NO_UNAMBIGUOUS_FAA_MATCH": 19
+  },
+  "approved_for_game": 0,
+  "output_status": "INDEPENDENT_FAA_SCREEN_REQUIRES_COMMERCIAL_AND_OWNER_REVIEW",
+  "notes": [
+    "Open public-use FAA airports with qualifying pavement are NOT necessarily commercially approved.",
+    "Source airports without unambiguous coordinate+identifier match remain on hold.",
+    "FAA no-runway/closed/private findings require source-conflict resolution, not silent deletion.",
+    "All six Airlinerra tiers and the original 3,140 airport shortlist remain unchanged.",
+    "No live game/Supabase writes; no fictional official codes created."
+  ]
+}
