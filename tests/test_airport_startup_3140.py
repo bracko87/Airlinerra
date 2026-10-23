@@ -293,5 +293,70 @@ class Startup3140Tests(unittest.TestCase):
         self.assertEqual(51,
                          self.audit["research_enrichment"]["game_identifier_optional_source_gaps"])
 
+
+    def test_consolidated_3140_status_report_is_source_transparent(self):
+        report = read(S / "airports_3140_current_status.csv")
+        widths = read(S / "game_runway_widths_3140.csv")
+        corrections = read(S / "researched_field_enrichments_3140.csv")
+        self.assertEqual(3140, len(report))
+        self.assertEqual(3140, len({r["source_airport_id"] for r in report}))
+        by_id = {p["source_airport_id"]: p for p in self.ports}
+        by_width = {w["source_airport_id"]: w for w in widths}
+        researched_cities = {e["source_airport_id"]: e["researched_value"]
+                             for e in corrections if e["field"] == "municipality"}
+        seen_gaps = 0
+        missing_some = 0
+        missing_all = 0
+        for r in report:
+            source = by_id[r["source_airport_id"]]
+            width = by_width[r["source_airport_id"]]
+            self.assertEqual(source["airport_name"], r["airport_name"])
+            self.assertEqual(source["country_iso"], r["country_iso"])
+            self.assertEqual(source["latitude_deg"], r["latitude_deg"])
+            self.assertEqual(source["longitude_deg"], r["longitude_deg"])
+            city = source["municipality"] or researched_cities[r["source_airport_id"]]
+            self.assertEqual(city, r["municipality_for_game"])
+            self.assertEqual(
+                "OURAIRPORTS_SOURCE_REPORTED" if source["municipality"]
+                else "EXTERNAL_RESEARCHED_LOCALITY_CANDIDATE",
+                r["municipality_provenance"])
+            self.assertEqual(width["game_runway_width_m"],
+                             r["game_reference_runway_width_m"])
+            self.assertEqual(width["width_provenance"],
+                             r["game_runway_width_provenance"])
+            self.assertEqual(source["proposed_category"], r["proposed_category"])
+            self.assertEqual(source["category_status"], r["category_status"])
+            self.assertEqual(source["game_slots_per_hour_baseline"],
+                             r["game_slots_per_hour_baseline"])
+            self.assertEqual(source["commercial_eligibility_status"],
+                             r["commercial_eligibility_status"])
+            self.assertEqual("NOT_ACTIVE_RESEARCH_ONLY", r["gameplay_status"])
+            gaps = [name for name in ("gps_code", "icao_code", "iata_code")
+                    if not source[name]]
+            seen_gaps += len(gaps)
+            missing_some += bool(gaps)
+            missing_all += len(gaps) == 3
+            self.assertEqual(";".join(gaps),
+                             r["missing_official_identifier_fields"])
+            for name in ("gps_code", "icao_code", "iata_code"):
+                self.assertEqual(source[name], r[name])
+                self.assertEqual(source[name + "_status"], r[name + "_status"])
+        self.assertEqual(51, seen_gaps)
+        self.assertEqual(40, missing_some)
+        self.assertEqual(4, missing_all)
+        self.assertEqual(28, sum(
+            r["military_access_review"] == "PENDING_CIVILIAN_ACCESS_EVIDENCE"
+            for r in report))
+        self.assertEqual(8, sum(
+            r["runway_source_discrepancy_review"] == "SOURCE_OVERRIDE_EVIDENCE_EXISTS"
+            for r in report))
+        self.assertEqual(1, sum(
+            r["source_airport_type_review"] == "SOURCE_MARKED_HELIPORT_REVIEW"
+            for r in report))
+        snapshot = self.audit["consolidated_current_status"]
+        self.assertEqual(3140, snapshot["total_rows"])
+        self.assertEqual(40, snapshot["airports_missing_any_identifier"])
+        self.assertEqual(4, snapshot["airports_missing_all_three_identifiers"])
+
 if __name__ == "__main__":
     unittest.main()
