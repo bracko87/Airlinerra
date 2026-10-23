@@ -60,3 +60,4 @@ jobs:
           python -m unittest discover -s tests -p test_airport_game_admission.py
           python -m unittest discover -s tests -p test_airport_us_faa_verification.py
           python -m unittest discover -s tests -p test_airport_us_commercial_suitability.py
+          python -m unittest discover -s tests -p test_airport_us_part139_nasr.py
