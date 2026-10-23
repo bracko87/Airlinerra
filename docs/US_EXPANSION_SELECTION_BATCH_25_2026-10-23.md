@@ -1,0 +1,83 @@
+# Airlinerra — US Expansion Individual Airport Research Batch 25
+_Research performed October 23, 2026; live verification in Supabase `hwllkabgzaynalahvkpz` private schema `airlinerra`._
+
+## Verified progress
+- **50** individual airport-source reviews saved in two successful 25-row SQL updates. Each airport has `independent_review_at`, an airport-specific external source URL, an evidence-scoped note and a next-action status.
+- Live read-back confirmed **443 / 1,929** FAA-matched candidates with a first airport-specific review; **1,486** await this research.
+- **0 game admission approvals changed**, no world activation, original 3,140 airport cohort untouched and no change to six Airlinerra game categories.
+- This is an individual **first-pass source review**. A review may only establish general aviation activity, fuel, an FBO or a restriction. It is NOT a general finding of commercial suitability.
+
+## Highlights and operating restrictions
+- **CPK Chesapeake Regional**: the airport explicitly identifies on-field Jet Air Charter, an FAA Part 135 operator, but any use in the game still needs relevant operator/aircraft restrictions assessed. https://www.chesapeakeairport.com/flight-service/
+- **CGF Cuyahoga County**: county authority explicitly lists aircraft charter/taxi and Flexjet's global operations center. https://cuyahogacounty.gov/publicworks/services/county-airport
+- **HBI Asheboro Regional**: city explicitly lists charter service via airport-managed facilities. https://asheboronc.gov/business/asheboro_regional_airport.php
+- **IKV Ankeny**: airport operator identifies Exec 1 Aviation offering aircraft charter. https://ankenyregionalairport.com/aviation-info/fixed-base-operator/
+- **IIB Independence**: city airport site expressly lists charter flights. https://www.independenceia.gov/163/Municipal-Airport
+- **ISW Alexander Field, Wisconsin Rapids**: local government confirms Wings Air Charter operating people/package charter and says no scheduled airline flights. https://grandrapidswi.gov/community-info/airport/
+- **CPK shipments**: airport operator specifically states it does not process shipments of any kind; do not infer general cargo handling from runway size.
+- **EOK Keokuk**: city explicitly directs passengers seeking scheduled airlines to Southeast Iowa Regional; no scheduled airline claimed at EOK. https://cityofkeokuk.org/keokuk-municipal-airport/
+- **1R8 Bay Minette**: temporary October 2026 airport notice reports Jet A/avgas unavailable and restriction of nighttime VFR airport operations; these restrictions require current NOTAM checks. https://www.iflightplanner.com/Airports/1R8
+- **AXS Altus/Quartz Mountain**: city website says runway lights are out of service while waiting for equipment; require current NOTAM check. https://www.altusok.gov/page/airport
+- **JYO Leesburg**: in the Washington DC Special Flight Rules Area. Treat aircraft access/flight rules and customs prior arrangements separately from runway eligibility. https://www.leesburgva.gov/departments/airport/airport-services/pilot-information
+- **CUT Custer County**: airport elevation ~5,620 feet and limited services; aircraft performance/restriction considerations relevant.
+- **OKZ** is Kaolin Field near Sandersville Georgia, not a different Johnson County airport; source FAA Oct 2026. https://www.airnav.com/airport/OKZ
+- **CPP** is Greene County Regional Georgia, formerly FAA code 3J7; source FAA Oct 2026. https://www.airnav.com/airport/CPP
+
+## All 50 airport-specific records
+| FAA | State | First-pass evidence category | Source finding and unresolved qualification | Source |
+|---|---|---|---|---|
+| 1R8 | AL | FUEL_AND_NIGHT_VFR_RESTRICTION | Current Bay Minette NOTAM notices list temporary aviation fuel unavailable Oct20-26 and VFR night airport restriction Oct22-30; do not approve unqualified 24h operations. | [Source](https://www.iflightplanner.com/Airports/1R8) |
+| CMD | AL | TRAINING_AND_SKYDIVE | October FAA-derived Cullman Regional Folsom has 5500ft asphalt runway, training and skydiving activity, fuel and public GA, not proof of commercial airline. | [Source](https://www.airnav.com/airport/CMD) |
+| PRN | AL | GA_FBO_ONLY | FAA October Mac Crenshaw Memorial public airfield Greenville AL, 5501ft runway and weekday attendance; no named commercial air carrier. | [Source](https://www.airnav.com/airport/PRN) |
+| M18 | AR | TEMP_RUNWAY_INSPECTION | Hope city confirms airport two 5501ft and 5301ft concrete runways, self-service fuel. Oct 2026 notice shows runway inspection work and permanent west taxiway closure, check current NOTAM. | [Source](https://www.hopear.gov/25064/hope-municipal-airport-m-18) |
+| BXK | AZ | GA_SKYDIVE_FUEL | City of Buckeye confirms airport with aircraft maintenance, skydiving, fuel and runway 5500ft, no verified commercial passenger/cargo operator. | [Source](https://www.buckeyeaz.gov/residents/buckeye-municipal-airport) |
+| GED | DE | CUSTOMS_LANDING_RIGHTS | FAA Oct Delaware Coastal public airport in Georgetown has US customs landing rights, FBO staffed 0800-1800, wildlife warnings; no named charter/cargo carrier. | [Source](https://www.airnav.com/airport/GED) |
+| CPP | GA | GA_FBO_ONLY | FAA October public Greene County Regional at Greensboro has paved runway, fuel and daytime staffing; no charter/cargo airline identified. | [Source](https://www.airnav.com/airport/CPP) |
+| JES | GA | GA_BUSINESS | Wayne County development authority states county Jesup Wayne County airport supports corporate jets, fuel and pilot terminal; no carrier independently established. | [Source](https://www.connectinwayne.com/transportation.php) |
+| OKZ | GA | GA_FBO_ONLY | FAA October Kaolin Field Sandersville record confirms public airport, runway and 100LL/Jet A fuel and weekday FBO; charter operator not established. | [Source](https://www.airnav.com/airport/OKZ) |
+| CBF | IA | GA_FBO_ONLY | Iowa DOT Council Bluffs field documents 5500ft concrete runway and Revv Aviation aircraft maintenance/flight training FBO, not proven current revenue charter. | [Source](https://secure.iowadot.gov/aviation/data_driven/publications/mapinfosys/AirportDirectory.aspx?FAACode=CBF) |
+| EOK | IA | NO_SCHEDULED_AIRLINE | Keokuk city confirms public GA field up to large business jets; scheduled commercial flights are available at another airport 20 minutes away, not at EOK. | [Source](https://cityofkeokuk.org/keokuk-municipal-airport/) |
+| IIB | IA | CHARTER_ADVERTISED | Independence city expressly offers charter flights from Independence Municipal alongside pilot training, fuel and hangars; operating certificate still not cross-checked. | [Source](https://www.independenceia.gov/163/Municipal-Airport) |
+| IKV | IA | CHARTER_SUPPORTED | Ankeny Regional Airport authority lists Exec 1 Aviation FBO offering aircraft charter, repairs, fuel and flight instruction; independent operator certification pending. | [Source](https://ankenyregionalairport.com/aviation-info/fixed-base-operator/) |
+| EUL | ID | CHARTER_ADVERTISED | City Caldwell/airport FBO current listing identifies Qmulus and Silverhawk aircraft charter services; FAA operator certificate and fleet restrictions still pending. | [Source](https://airnav.com/airport/EUL) |
+| SZT | ID | GA_FBO_ONLY | Bonner County public Sandpoint field lists Jet A/100LL, major engine and airframe services and 5501ft runway, no commercial charter provider. | [Source](https://www.bonnercountyid.gov/sandpoint-airport/) |
+| C09 | IL | GA_FBO_ONLY | Current Oct2026 Morris Municipal airport-source profile shows FBO, Jet A/100LL and 5501ft paved runway; no charter airline identified. | [Source](https://www.iflightplanner.com/Airports/C09) |
+| FRH | IN | GA_ONLY_EVIDENCE | October FAA record confirms French Lick public airport staffed Mon-Sat, turbulence warnings for runway 08/26, no commercial charter identified. | [Source](https://www.airnav.com/airport/FRH) |
+| HNB | IN | GA_CORPORATE | Dubois County Airport Authority identifies Huntingburg as full-service general aviation airfield with FBO, fuel and business jets; no certificated charter airline established. | [Source](https://www.huntingburgairport.com/) |
+| RID | IN | CARGO_HANDLING | Richmond city airport lists freight offload and delivery by arrangement and 5502ft asphalt runway; no cargo airline routes established. | [Source](https://www.richmondindiana.gov/resources/municipal-airport) |
+| ESN | MD | GA_CONTROLLED_FIELD | FAA Oct Easton Newnam Field public airport with tower 0600-2200, Jet A/100LL, aviation FBO, no specific commercial carrier independently established. | [Source](https://www.airnav.com/airport/esn/index.html) |
+| DMO | MO | GA_BUSINESS | Sedalia city confirms regional business/general aviation FBO and runway accommodating business jets, 100LL/Jet A and major repairs; named carrier not established. | [Source](https://www.sedalia.com/connect/departments/airport/) |
+| LXT | MO | GA_CORPORATE | Lee's Summit city says airport expanded 5500ft main runway for corporate/business aviation; named charter/cargo carrier not established. | [Source](https://cityofls.net/kclsregional/about-us) |
+| MYJ | MO | GA_FBO_ONLY | October FAA-based Mexico Memorial record confirms Jet A/100LL/Mogas, attended airport and paved 5501ft runway; cargo/charter airline unconfirmed. | [Source](https://www.airnav.com/airport/MYJ) |
+| SIK | MO | GA_ONLY_EVIDENCE | FAA-derived Oct2026 Sikeston Memorial Municipal public-use airport with attended facility and paved runway; commercial-service carrier unconfirmed. | [Source](https://www.airnav.com/airport/SIK) |
+| 0R0 | MS | GA_FBO_ONLY | Airport-specific FAA-based Columbia Marion County profile identifies public operational GA airport, Jet A/100LL and on-field FBO; no charter airline confirmed. | [Source](https://www.iflightplanner.com/Airports/0R0) |
+| CPC | NC | GA_ONLY_EVIDENCE | Columbus County confirms active public Columbus County Municipal/Regional at Whiteville with county operator; scheduled airline or charter operator not established. | [Source](https://www.columbusco.org/airport-information) |
+| GWW | NC | GA_EXECUTIVE | Wayne County Executive Jetport airport operator confirms active public GWW, seasonal staffing and instrument operations; certificated charter operator unconfirmed. | [Source](https://wayneexec.com/flightinfo/) |
+| HBI | NC | CHARTER_SUPPORTED | City of Asheboro explicitly lists available aircraft charter service at Cardinal Air-operated regional airport, alongside fuel and maintenance. | [Source](https://asheboronc.gov/business/asheboro_regional_airport.php) |
+| HNZ | NC | GA_FBO_ONLY | Henderson Oxford airport operator flyHNZ explicitly lists FBO, aircraft maintenance and pilot training; passenger/cargo operator not established. | [Source](https://www.flyhnz.com/) |
+| JNX | NC | CHARTER_ACTIVITY_NO_SCHEDULED | Johnston County airport authority FAQ states private charter flights operate but scheduled commercial airline service does not; medical and corporate aviation also present. | [Source](https://www.johnstonnc.gov/jnx/faqs.cfm) |
+| MRN | NC | GA_ONLY_EVIDENCE | Foothills Regional Airport Authority identifies active field managed by Morganton/Lenoir/Burke/Caldwell, published FBO hours, no named certificated charter/cargo airline. | [Source](https://www.foothillsairport.com/airport-authority-board-and-staff) |
+| ONX | NC | GA_CORPORATE | Currituck County confirms publicly owned GA field actively supporting corporate aircraft, no specific charter airline identified. | [Source](https://currituckcountync.gov/airport/) |
+| RUQ | NC | GA_BUSINESS | Rowan County authority lists Mid Carolina Regional FBO, business GA, 5500ft runway and maintenance/avionics; no named charter carrier confirmed. | [Source](https://www.rowancountync.gov/151/About-Us) |
+| IUA | NY | GA_FBO_ONLY | FAA October Canandaigua public airport staffed daytime with after-hours FBO on call, fuel/airport services; no named charter operator demonstrated. | [Source](https://www.airnav.com/airport/IUA) |
+| CGF | OH | CHARTER_SUPPORTED | Cuyahoga County expressly lists aircraft charter/taxi and Flexjet Global Operations Center at airport; operating restrictions and individual operator rights pending. | [Source](https://cuyahogacounty.gov/publicworks/services/county-airport) |
+| HAO | OH | WILDLIFE_GA | FAA October Butler County Regional Hogan Field with daytime/evening FBO, Jet A, aircraft repairs and deer/bird hazards, no carrier demonstrated. | [Source](https://www.airnav.com/airport/HAO) |
+| AXS | OK | RUNWAY_LIGHTING_ISSUE | Altus city says public regional business airport with Jet A, training, repairs; notice says runway lights currently out of service awaiting regulator parts, verify NOTAM. | [Source](https://www.altusok.gov/page/airport) |
+| IDI | PA | GA_FBO_ONLY | PennDOT confirms Indiana County Jimmy Stewart Field, 5502ft asphalt runway, airport FBO, 100LL and Jet A; no current charter/cargo operator identified. | [Source](https://www.pa.gov/agencies/penndot/traveling-in-pa/airports/indiana-county-airport-jimmy-stewart-field) |
+| AIK | SC | GA_FBO_ONLY | FAA October Aiken Regional airport publicly owned, paved runway, Jet A/100LL and maintenance; named carrier not found in source. | [Source](https://www.airnav.com/airport/AIK) |
+| SMS | SC | GA_ONLY_EVIDENCE | South Carolina Aeronautics Aug2026 Sumter Airport public-use record confirms operating hours and runway; charter operator not independently established. | [Source](https://aeronautics.sc.gov/airports/sumter-airport) |
+| CUT | SD | HIGH_ALTITUDE_GA | FAA October Custer County public GA airport at 5620ft elevation with unattended periods and limited runway support; carrier/charter operator unconfirmed. | [Source](https://www.airnav.com/airport/CUT) |
+| THA | TN | GA_FBO_ONLY | FAA Oct2026 Tullahoma Regional William Northern field has Jet A, major maintenance and staffed hours; current passenger/charter carrier not identified. | [Source](https://www.airnav.com/airport/THA) |
+| F17 | TX | GA_FBO_ONLY | City of Center confirms 5501ft paved municipal runway, Jet A/100LL, weekday FBO, after-hours by notice; no charter operator established. | [Source](https://centertexas.org/center-municipal-airport) |
+| JAS | TX | GA_ONLY_EVIDENCE | FAA Oct Jasper County Bell Field public airport, staffed daily with paved runway, no named certificated charter or airline identified. | [Source](https://www.airnav.com/airport/JAS) |
+| PWG | TX | GA_FBO_ONLY | FAA October McGregor Executive, Waco area, public airport and manned FBO, no charter/cargo airline independently identified. | [Source](https://www.airnav.com/airport/PWG) |
+| CPK | VA | PART135_CHARTER_SUPPORTED | Chesapeake Regional authority explicitly identifies FAA-certified Part 135 charter operator Jet Air Charter offering Lear 45 charters; source also says airport does not process shipments of any kind. | [Source](https://www.chesapeakeairport.com/flight-service/) |
+| FCI | VA | GA_CORPORATE | Chesterfield County says executive airport FCI serves corporate and private aviation, with FBO standards and support; no current commercial operator demonstrated. | [Source](https://www.chesterfield.gov/airport) |
+| JYO | VA | DC_SFRA_RESTRICTION | Leesburg town confirms executive airport runway 5500ft and 70000lb dual-wheel capacity, US customs by prior reservation; within Washington DC SFRA requires compliance with special VFR rules. | [Source](https://www.leesburgva.gov/departments/airport/airport-services/pilot-information) |
+| EPH | WA | MEDICAL_AND_FIREFIGHTING | Washington DOT Ephrata Municipal profile reports air ambulance and aerial firefighting/glider activity; no verified passenger airline or cargo operator. | [Source](https://wsdot.wa.gov/travel/aviation/airports-list/ephrata-municipal) |
+| ISW | WI | CHARTER_SUPPORTED | Municipal ownership consortium states Wings Air Charter LLC at Alexander Field offers charter for people and packages, while scheduled airlines do not operate. | [Source](https://grandrapidswi.gov/community-info/airport/) |
+
+## Remaining gates
+These 50 still have `game_admission_status=NOT_APPROVED`. `independent_review_at` is a first public-source research pass, **not** confirmation of current scheduled airline, certificated charter, or air cargo route rights, and not assurance of aircraft compatibility. Future final game admission decisions require aircraft restrictions, airport access, noise restrictions, current NOTAMs, commercial service and relevant operator permissions. Six game categories remain Local, Regional, Medium, Large, Major Hub, Mega Hub.
+
+Next: another 50 independent airport-specific reviews, with a distinct final-eligibility queue prioritizing demonstrated charter/cargo candidates.
