@@ -167,5 +167,104 @@ class Startup3140Tests(unittest.TestCase):
         self.assertEqual(5, self.audit["research_enrichment"]["official_width_rows"])
         self.assertEqual(82, self.audit["research_enrichment"]["width_airports_pending"])
 
+
+    def test_simulation_width_coverage_and_average_provenance(self):
+        # Planning values deliberately do not rewrite physical source observations.
+        import math
+        detailed = read(S / "game_runway_widths_3140.csv")
+        imputed = read(S / "estimated_runway_widths_3140.csv")
+        official = read(S / "researched_field_enrichments_3140.csv")
+        official_ids = {e["source_airport_id"] for e in official
+                        if e["field"] == "runway_width_m"}
+        self.assertEqual(5, len(official_ids))
+        self.assertEqual(3140, len(detailed))
+        self.assertEqual(82, len(imputed))
+        self.assertEqual(len(detailed), len({r["source_airport_id"] for r in detailed}))
+        self.assertEqual(len(imputed), len({r["source_airport_id"] for r in imputed}))
+        self.assertEqual({"OURAIRPORTS_SOURCE_REPORTED": 3053,
+                          "OFFICIAL_RESEARCHED": 5,
+                          "GAME_ESTIMATE_AVERAGE": 82},
+                         dict(Counter(r["width_provenance"] for r in detailed)))
+        airport_by_id = {r["source_airport_id"]: r for r in self.ports}
+        width_by_id = {r["source_airport_id"]: r for r in detailed}
+        self.assertEqual(set(airport_by_id), set(width_by_id))
+        imputed_by_id = {r["source_airport_id"]: r for r in imputed}
+        original_missing = {r["source_airport_id"] for r in self.ports
+                            if r["source_open_runways_with_width"] == "0"}
+        self.assertEqual(87, len(original_missing))
+        self.assertEqual(original_missing - official_ids, set(imputed_by_id))
+        source_runways = {r["source_runway_id"]: r for r in self.runways}
+        by_country_bucket = defaultdict(list)
+        by_bucket = defaultdict(list)
+
+        def bucket(length):
+            if length < 1800:
+                return "1200-1799"
+            if length < 2400:
+                return "1800-2399"
+            if length < 3000:
+                return "2400-2999"
+            return "3000+"
+
+        for rw in self.runways:
+            if rw["is_open"] != "YES" or rw["qualifies_paved_1200m"] != "YES":
+                continue
+            try:
+                width = float(rw["width_m"])
+            except ValueError:
+                continue
+            if not 10 <= width <= 100:
+                continue
+            nation = airport_by_id[rw["source_airport_id"]]["country_iso"]
+            length_bucket = bucket(float(rw["length_m"]))
+            by_country_bucket[(nation, length_bucket)].append(width)
+            by_bucket[length_bucket].append(width)
+
+        for airport_id, row in width_by_id.items():
+            airport = airport_by_id[airport_id]
+            self.assertEqual(airport["airport_name"], row["airport_name"])
+            self.assertEqual(airport["country_iso"], row["country_iso"])
+            self.assertEqual("SIMULATION_PLANNING_ONLY_NOT_REAL_WORLD_DISPATCH",
+                             row["usage_restriction"])
+            self.assertGreater(float(row["game_runway_width_m"]), 0)
+            self.assertIn(row["reference_runway_id"], source_runways)
+            self.assertEqual(airport_id, source_runways[row["reference_runway_id"]]
+                             ["source_airport_id"])
+            if airport_id in imputed_by_id:
+                self.assertEqual(row, imputed_by_id[airport_id])
+                self.assertEqual("GAME_ESTIMATE_AVERAGE", row["width_provenance"])
+                ref_length = float(row["reference_runway_length_m"] or
+                                   airport["source_screen_runway_length_m"])
+                length_bucket = bucket(ref_length)
+                peers = by_country_bucket[(airport["country_iso"], length_bucket)]
+                if len(peers) >= 3:
+                    sample = peers
+                    method = "SAME_COUNTRY_AND_LENGTH_BAND_MEAN_ROUNDED_5M"
+                else:
+                    sample = by_bucket[length_bucket]
+                    method = "WORLDWIDE_LENGTH_BAND_MEAN_ROUNDED_5M"
+                mean = sum(sample) / len(sample)
+                estimate = max(20, min(60, math.floor(mean / 5 + 0.5) * 5))
+                self.assertEqual(method, row["estimate_method"])
+                self.assertEqual(len(sample), int(row["donor_runway_count"]))
+                self.assertAlmostEqual(mean, float(row["donor_raw_mean_width_m"]),
+                                       delta=0.011)
+                self.assertEqual(float(estimate), float(row["game_runway_width_m"]))
+                self.assertFalse(row["evidence_url"])
+            elif airport_id in official_ids:
+                self.assertEqual("OFFICIAL_RESEARCHED", row["width_provenance"])
+                self.assertTrue(row["evidence_url"])
+            else:
+                self.assertEqual("OURAIRPORTS_SOURCE_REPORTED",
+                                 row["width_provenance"])
+                self.assertEqual("NONE", row["estimate_method"])
+                rw = source_runways[row["reference_runway_id"]]
+                self.assertEqual(float(rw["width_m"]), float(row["game_runway_width_m"]))
+        summary = self.audit["research_enrichment"]
+        self.assertEqual(3140, summary["airports_with_effective_game_width"])
+        self.assertEqual(82, summary["width_airports_estimated_for_simulation"])
+        self.assertEqual(0, summary["width_airports_pending"])
+        self.assertEqual(87, summary["width_source_data_still_missing"])
+
 if __name__ == "__main__":
     unittest.main()
