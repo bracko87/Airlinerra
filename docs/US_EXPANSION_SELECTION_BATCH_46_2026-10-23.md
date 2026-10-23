@@ -81,3 +81,11 @@ Every record remains `game_admission_status=NOT_APPROVED`. Airlinerra has exactl
 | EVM | MN | `OURAIRPORTS:19780` | [Source](https://mndot.net/aero/airportdirectory/documents/2024_Airport_Directory_and_Travel_Guide_23JAN24_lowres.pdf) | MnDOT 2024 airport directory identifies Eveleth EVM, 24h self-service 100LL/Jet A, no FBO/businesses then listed and good-neighbor limit on runway 14/32 touch-and-go operations. Source historical, current services require confirmation. | 2026-10-23 21:38:38.094862+00 |
 | EZZ | MO | `OURAIRPORTS:19792` | [Source](https://www.airnav.com/airport/EZZ) | FAA October 2026 Cameron Memorial EZZ at Cameron Missouri, daytime weekday/irregular Saturday staffing, AWOS, RNAV approach and pilot-activated MIRL/PAPI/REIL. No verified current commercial carrier routes. | 2026-10-23 21:38:38.094862+00 |
 | F00 | TX | `OURAIRPORTS:19793` | [Source](https://www.cityofbonham.org/371/Jones-Field-Airport) | Bonham city runs Jones Field F00 4,000x75ft asphalt with Jet A/100LL, local mechanic and private business, training, crop-dusting activity. Aircraft movements not proof of scheduled passenger or freight operators. | 2026-10-23 21:38:38.094862+00 |
+
+## Source evidence ledger — airports 45–47
+
+| FAA | State | Immutable key | Evidence | Individual finding | Reviewed UTC |
+|---|---|---|---|---|---|
+| FNB | NE | `OURAIRPORTS:19884` | [Source](https://www.airnav.com/airport/FNB) | FAA-derived 2026 Brenner Field FNB in Falls City Nebraska, public-use general aviation airport with approximately 4,000ft runway from candidate screen; current commercial passenger, charter, cargo authorization and ground services not verified. | 2026-10-23 21:38:38.094862+00 |
+| FSW | IA | `OURAIRPORTS:19902` | [Source](https://iowadot.gov/modes-travel/aviation/airport-information) | Iowa DOT 2025-26 directory Fort Madison Municipal FSW 4,000x75ft runway, unattended/on call and ONLY self-service 100LL listed. No scheduled airline or certificated cargo/charter evidence. | 2026-10-23 21:38:38.094862+00 |
+| FWC | IL | `OURAIRPORTS:19908` | [Source](https://cityoffairfieldillinois.com/airport/) | Fairfield Illinois city confirms FWC 4,000x75ft paved main and ~2,000ft crosswind runway, after-hours self-service fuel, tie-downs and agricultural aviation. No proof of scheduled passenger/air cargo rights. | 2026-10-23 21:38:38.094862+00 |
