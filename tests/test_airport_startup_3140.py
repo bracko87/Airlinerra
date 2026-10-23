@@ -127,5 +127,45 @@ class Startup3140Tests(unittest.TestCase):
         self.assertEqual(5012, self.audit["other_real_airports_not_reviewed"])
         self.assertEqual(4738, self.audit["runways_total_source_rows"])
 
+
+    def test_external_research_overlay_preserves_pinned_fields(self):
+        # Do not replace OurAirports source blanks with research: join by stable source ID.
+        enrichments = read(S / "researched_field_enrichments_3140.csv")
+        self.assertEqual(55, len(enrichments))
+        self.assertEqual(52, sum(e["field"] == "municipality" for e in enrichments))
+        self.assertEqual(3, sum(e["field"] == "runway_width_m" for e in enrichments))
+        self.assertEqual(len(enrichments),
+                         len({(e["source_airport_id"], e["field"]) for e in enrichments}))
+        airports = {r["source_airport_id"]: r for r in self.ports}
+        missing_cities = {r["source_airport_id"] for r in self.ports
+                          if not r["municipality"]}
+        mapped_cities = {e["source_airport_id"] for e in enrichments
+                         if e["field"] == "municipality"}
+        self.assertEqual(missing_cities, mapped_cities)
+        for e in enrichments:
+            port = airports[e["source_airport_id"]]
+            self.assertEqual(port["country_iso"], e["country_iso"])
+            self.assertEqual(port["airport_name"], e["airport_name"])
+            self.assertTrue(e["researched_value"])
+            self.assertTrue(e["evidence_url"].startswith("https://"))
+            self.assertTrue(e["evidence_basis"])
+            self.assertIn(e["resolution_status"],
+                          {"SOURCE_CROSS_REFERENCED", "NEEDS_SECONDARY_CONFIRMATION",
+                           "OFFICIAL_AERONAUTICAL_REFERENCE"})
+            if e["field"] == "municipality":
+                self.assertEqual("", port["municipality"])
+            else:
+                self.assertEqual("runway_width_m", e["field"])
+                self.assertEqual("0", port["source_open_runways_with_width"])
+                self.assertGreater(float(e["researched_value"]), 0)
+                self.assertEqual("OFFICIAL_AERONAUTICAL_REFERENCE", e["resolution_status"])
+        self.assertEqual(1, sum(e["resolution_status"] == "NEEDS_SECONDARY_CONFIRMATION"
+                                for e in enrichments))
+        self.assertEqual(3088, self.audit["municipality_present"])
+        self.assertEqual(87, self.audit["without_any_open_width"])
+        self.assertEqual(52, self.audit["research_enrichment"]["municipality_rows"])
+        self.assertEqual(3, self.audit["research_enrichment"]["official_width_rows"])
+        self.assertEqual(84, self.audit["research_enrichment"]["width_airports_pending"])
+
 if __name__ == "__main__":
     unittest.main()
