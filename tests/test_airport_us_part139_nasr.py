@@ -68,6 +68,31 @@ class Part139Tests(unittest.TestCase):
         self.assertEqual("NO_INDEPENDENT_FAA_MATCH_CANNOT_INFER_CERTIFICATION",
                          rows[-1]["part139_nasr_evidence_status"])
 
+    def test_duplicate_site_number_with_other_airport_identifier_is_safe(self):
+        audit, base = self._source_fixture()
+        duplicate = dict(base[0])
+        duplicate["ARPT_ID"] = "DIFFERENT"
+        duplicate["FAR_139_TYPE_CODE"] = "II B"
+        base.append(duplicate)
+        rows = s.build(audit, base, "testzip", {"faa_zip_sha256": "testzip"})
+        self.assertEqual(2077, len(rows))
+        self.assertEqual("I", rows[0]["faa_part139_class"])
+        self.assertEqual("A", rows[0]["faa_arff_index"])
+        self.assertEqual("NO", rows[0]["playable"])
+
+    def test_duplicate_exact_site_and_airport_identifier_stays_on_hold(self):
+        audit, base = self._source_fixture()
+        duplicate = dict(base[0])
+        duplicate["FAR_139_TYPE_CODE"] = "IV A"
+        base.append(duplicate)
+        rows = s.build(audit, base, "testzip", {"faa_zip_sha256": "testzip"})
+        self.assertEqual("AMBIGUOUS_FAA_SITE_IDENTIFIER_CERTIFICATION_HOLD",
+                         rows[0]["part139_nasr_evidence_status"])
+        self.assertEqual("", rows[0]["faa_part139_class"])
+        self.assertEqual("HOLD_CERT_CLASS_NOT_EVIDENCED",
+                         rows[0]["scheduled_31_plus_passenger_seats_cert_indicator"])
+        self.assertEqual("NO", rows[0]["playable"])
+
     def test_hash_mismatch_fails_closed(self):
         audit, base = self._source_fixture()
         with self.assertRaisesRegex(ValueError, "differs"):
