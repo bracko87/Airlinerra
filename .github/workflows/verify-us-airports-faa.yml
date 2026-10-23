@@ -1,0 +1,66 @@
+name: Verify US airport candidates against FAA
+
+# Explicit/manual owner-directed verification; no scheduled or push triggers.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: airlinerra-us-faa-verification
+  cancel-in-progress: false
+
+jobs:
+  verify-us-airports:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: true
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate independent FAA matching rules
+        run: python -m unittest discover -s tests -p test_airport_us_faa_verification.py -v
+      - name: Verify 2077 US candidate airports with October 2026 FAA NASR
+        run: python scripts/verify_us_airports_faa.py
+      - name: Verify output never marks airports playable
+        run: |
+          python - <<'PY'
+          import csv, json
+          from pathlib import Path
+          d = Path("data/airports/local_regional_expansion/us_verification")
+          with (d/"us_faa_review_2026_10_01.csv").open(newline="", encoding="utf-8") as f:
+              rows = list(csv.DictReader(f))
+          summary = json.loads((d/"us_faa_summary_2026_10_01.json").read_text())
+          assert len(rows) == 2077
+          assert len({x["source_airport_id"] for x in rows}) == 2077
+          assert all(x["playable"] == "NO" and x["commercial_approval_status"] == "NOT_VERIFIED" for x in rows)
+          assert summary["approved_for_game"] == 0 and summary["candidate_count"] == 2077
+          print("PASS: 2077 records FAA-screened; none authorized for gameplay")
+          PY
+      - name: Save FAA review files to research repository main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/airports/local_regional_expansion/us_verification/us_faa_review_2026_10_01.csv
+          git add data/airports/local_regional_expansion/us_verification/us_faa_summary_2026_10_01.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Add independent FAA NASR Oct 2026 audit of 2077 US airport candidates"
+            git push origin HEAD:main
+          else
+            echo "No changes to verified FAA research output"
+          fi
+      - name: Upload independent verification outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: airlinerra-us-faa-2077-2026-10-01
+          path: |
+            data/airports/local_regional_expansion/us_verification/us_faa_review_2026_10_01.csv
+            data/airports/local_regional_expansion/us_verification/us_faa_summary_2026_10_01.json
+          retention-days: 30
