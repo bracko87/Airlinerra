@@ -358,5 +358,105 @@ class Startup3140Tests(unittest.TestCase):
         self.assertEqual(40, snapshot["airports_missing_any_identifier"])
         self.assertEqual(4, snapshot["airports_missing_all_three_identifiers"])
 
+
+    def test_game_airport_codes_are_complete_distinct_and_auditable(self):
+        import re
+        rows = read(S / "game_airport_codes_3140.csv")
+        resolutions = read(S / "game_code_resolutions_3140.csv")
+        report = read(S / "airports_3140_current_status.csv")
+        self.assertEqual(3140, len(rows))
+        self.assertEqual(3140, len(report))
+        self.assertEqual(51, len(resolutions))
+        self.assertEqual(3140, len({r["source_airport_id"] for r in rows}))
+        self.assertEqual(51, len({(r["source_airport_id"], r["identifier_field"])
+                                  for r in resolutions}))
+        self.assertEqual(
+            {"FICTIONAL_GAME_ONLY": 44,
+             "GOVERNMENT_LOCATION_INDICATOR_REUSED_FOR_GAME_GPS": 3,
+             "PUBLISHED_SECONDARY_ICAO_NOT_REGULATOR_VALIDATED": 4},
+            dict(Counter(r["code_provenance"] for r in resolutions)))
+        self.assertEqual(33, sum(r["contains_fictional_code"] == "YES"
+                                 for r in rows))
+        self.assertEqual(40, sum(int(r["identifier_resolution_count"]) > 0
+                                 for r in rows))
+        self.assertEqual(51, sum(int(r["identifier_resolution_count"])
+                                 for r in rows))
+        source = {r["source_airport_id"]: r for r in self.ports}
+        res = {(r["source_airport_id"], r["identifier_field"]): r
+               for r in resolutions}
+        consolidated = {r["source_airport_id"]: r for r in report}
+        all_source = {field: set() for field in
+                      ("gps_code", "icao_code", "iata_code")}
+        for airport in self.identity:
+            for field in all_source:
+                if airport[field]:
+                    all_source[field].add(airport[field])
+            ident = airport["source_ident"]
+            if re.fullmatch("[A-Z]{4}", ident):
+                all_source["icao_code"].add(ident)
+            elif re.fullmatch("[A-Z]{3}", ident):
+                all_source["iata_code"].add(ident)
+        for field in ("gps_code", "icao_code", "iata_code"):
+            effective = "game_" + field
+            values = [r[effective] for r in rows]
+            self.assertEqual(3140, len(set(values)))
+        fict = 0
+        for row in rows:
+            airport_id = row["source_airport_id"]
+            record = source[airport_id]
+            self.assertEqual(record["airport_name"], row["airport_name"])
+            self.assertEqual(record["country_iso"], row["country_iso"])
+            self.assertEqual(airport_id, consolidated[airport_id]["source_airport_id"])
+            resolved = 0
+            synthetic = False
+            for field in ("gps_code", "icao_code", "iata_code"):
+                game_field = "game_" + field
+                origin_field = "game_" + field.replace("_code", "_origin")
+                game_code = row[game_field]
+                self.assertTrue(game_code)
+                self.assertEqual(game_code, consolidated[airport_id][game_field])
+                self.assertEqual(row[origin_field],
+                                 consolidated[airport_id][origin_field])
+                if record[field]:
+                    self.assertEqual(record[field], game_code)
+                    self.assertEqual("ORIGINAL_SOURCE_REPORTED", row[origin_field])
+                    self.assertNotIn((airport_id, field), res)
+                else:
+                    resolved += 1
+                    entry = res[(airport_id, field)]
+                    self.assertEqual(entry["game_code"], game_code)
+                    self.assertEqual(entry["code_provenance"], row[origin_field])
+                    self.assertEqual("NOT_REPORTED", entry["source_assignment_status"])
+                    self.assertEqual("SIMULATION_ONLY_NOT_OFFICIAL_FOR_FLIGHT_PLANNING",
+                                     entry["operational_use"])
+                    self.assertRegex(game_code,
+                                     r"^[A-Z]{3}$" if field == "iata_code"
+                                     else r"^[A-Z]{4}$")
+                    if entry["game_only_flag"] == "YES":
+                        fict += 1
+                        synthetic = True
+                        self.assertEqual("FICTIONAL_GAME_ONLY",
+                                         entry["code_provenance"])
+                        self.assertEqual("", entry["evidence_url"])
+                        self.assertNotIn(game_code, all_source[field])
+                    else:
+                        self.assertTrue(entry["evidence_url"].startswith("https://"))
+                        self.assertNotEqual("YES",
+                                            entry["official_assignment_verified"])
+                        self.assertNotEqual("FICTIONAL_GAME_ONLY",
+                                             entry["code_provenance"])
+            self.assertEqual(resolved, int(row["identifier_resolution_count"]))
+            self.assertEqual("YES" if synthetic else "NO",
+                             row["contains_fictional_code"])
+            self.assertEqual(row["contains_fictional_code"],
+                             consolidated[airport_id]["contains_fictional_code"])
+        self.assertEqual(44, fict)
+        totals = self.audit["game_identifier_resolution"]
+        self.assertEqual(3140, totals["effective_game_gps"])
+        self.assertEqual(3140, totals["effective_game_icao"])
+        self.assertEqual(3140, totals["effective_game_iata"])
+        self.assertEqual(44, totals["fictional_game_only_identifier_values"])
+        self.assertFalse(totals["fictional_values_are_not_authority_assigned"] is False)
+
 if __name__ == "__main__":
     unittest.main()
