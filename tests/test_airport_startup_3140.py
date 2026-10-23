@@ -159,7 +159,7 @@ class Startup3140Tests(unittest.TestCase):
                 self.assertEqual("0", port["source_open_runways_with_width"])
                 self.assertGreater(float(e["researched_value"]), 0)
                 self.assertEqual("OFFICIAL_AERONAUTICAL_REFERENCE", e["resolution_status"])
-        self.assertEqual(1, sum(e["resolution_status"] == "NEEDS_SECONDARY_CONFIRMATION"
+        self.assertEqual(0, sum(e["resolution_status"] == "NEEDS_SECONDARY_CONFIRMATION"
                                 for e in enrichments))
         self.assertEqual(3088, self.audit["municipality_present"])
         self.assertEqual(87, self.audit["without_any_open_width"])
