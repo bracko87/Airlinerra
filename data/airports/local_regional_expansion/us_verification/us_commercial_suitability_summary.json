@@ -1,0 +1,48 @@
+{
+  "date": "2026-10-23",
+  "faa_cycle": "2026-10-01",
+  "status": "COMMERCIAL_SUITABILITY_TRIAGE_ONLY_NOT_OPERATOR_AUTHORIZATION",
+  "total_airports": 2077,
+  "physically_and_public_use_qualified": 1929,
+  "technical_or_access_holds": 148,
+  "review_tracks": {
+    "PUBLIC_USE_PAVED_SMALL_AIRCRAFT_OPS_REVIEW": 1929,
+    "HOLD_NONPUBLIC_AIRPORT_ACCESS": 115,
+    "HOLD_NO_QUALIFIED_FAA_PAVEMENT": 13,
+    "HOLD_AMBIGUOUS_OR_MISSING_FAA_MATCH": 19,
+    "HOLD_NOT_OPEN": 1
+  },
+  "qualified_by_original_proposed_tier": {
+    "Local": 1407,
+    "Regional": 522
+  },
+  "verified_faa_local_identifiers": 2058,
+  "source_gps_missing_resolved_as_distinct_faa_local_identifier": 86,
+  "source_all_three_codes_missing_with_verified_faa_local_identifier": 69,
+  "faa_runway_width_present_among_physical_pass": 1929,
+  "category_rule_difference_review_count": 17,
+  "runway_length_source_difference_at_least_100m_among_pass": 38,
+  "runway_length_source_difference_at_least_250m_among_pass": 26,
+  "faa_state_vs_source_state_difference": 2,
+  "output_game_activation_count": 0,
+  "rules": {
+    "small_charter_9_or_fewer_seats": "FAA public use + qualifying pavement supports only preliminary feasibility; no operator authorization or actual transport service implied.",
+    "scheduled_more_than_9_seats": "Part 139 AOC review required as applicable for scheduled air-carrier passenger operations, subject to exceptions such as Alaska.",
+    "unscheduled_31_plus_passenger_seats": "Part 139 AOC generally required; exceptions must be reviewed.",
+    "atr42_scheduled": "Not cleared by current data; review Part 139 Class I and performance.",
+    "cargo": "Flight-specific operator and airport access evidence needed; no blanket grant from public-use status.",
+    "code_resolution": "FAA LID is official national identifier, never automatically ICAO/IATA.",
+    "all_airports": "Manual owner approval and actual aircraft suitability required before game deployment."
+  },
+  "sources": [
+    "https://www.faa.gov/air_traffic/flight_info/aeronav/Aero_Data/NASR_Subscription/2026-10-01/",
+    "https://www.faa.gov/airports/airport_safety/part139_cert/airports-affected",
+    "https://www.faa.gov/airports/airport_safety/part139_cert/classes-of-airports"
+  ],
+  "preserved": [
+    "original 3140 unchanged",
+    "8153 technical master unchanged",
+    "source and game-only code separation",
+    "no Supabase or active routes"
+  ]
+}
