@@ -8,6 +8,7 @@ This is a **pre-production commercial candidate dataset**, built strictly from a
 - [runways_3140.csv](runways_3140.csv): all 4,738 corresponding **OurAirports runway records** (including closed runways) with runway end identifiers, source length/width in feet and metres, surface, lighting, closure, and conservative asphalt/concrete >=1,200 m match. This is a source inventory, **not** an aeronautical-surveyed current runway chart.
 - [exceptions_3140.csv](exceptions_3140.csv): an auditable list of source-missing or conflicting fields. A missing GPS/ICAO/IATA allocation does not prove that an airport is military-only, closed, or commercially ineligible; do not invent codes.
 - [summary.json](summary.json): source pins and aggregate counts.
+- [additional_official_runway_evidence.csv](additional_official_runway_evidence.csv): Iowa DOT confirmation of KCID's two asphalt/concrete runways and Brazil DECEA official AIP confirmation of SBEG's asphalt runway, resolving two nonstandard raw source surface-label cases. Earlier official corrections remain in `data/airports/runway_surface_overrides.csv`.
 
 ## Provenance
 
@@ -49,7 +50,7 @@ Categories are deliberately separated from the existing canonical master `assign
 | at least one raw-source open 1,200m asphalt/concrete runway | 3,132 | 8 source/master discrepancies |
 | independently approved civilian commercial operations | **not established worldwide** | 3,140 cannot be treated as approved |
 
-The eight raw runway/qualified-master disagreements require source-specific reconciliation (some already have dated official overrides), not arbitrary downgrading of the runway master. The source can legitimately omit assigned codes, municipality or runway width; do not falsely mark those values as *verified zero*. No production import, Supabase mutation, playable activation, or route simulation is performed.
+The eight raw runway/qualified-master disagreements have different source-reported surface labels. **Six** correspond to pre-existing individual runway surface override records, and the remaining **two** (KCID and SBEG) now have dated official source cross-references in `additional_official_runway_evidence.csv`. The raw-source discrepancy flags are intentionally retained for source transparency; they do **not** mean that all eight airports have invalid runways. Individual physical runway data should be read with these evidence overlays rather than blindly replacing official values with unparsed OurAirports labels. The source can legitimately omit assigned codes, municipality or runway width; do not falsely mark those values as *verified zero*. No production import, Supabase mutation, playable activation, or route simulation is performed.
 
 ## Validation and future refresh
 
