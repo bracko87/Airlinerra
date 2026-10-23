@@ -61,3 +61,4 @@ jobs:
           python -m unittest discover -s tests -p test_airport_us_faa_verification.py
           python -m unittest discover -s tests -p test_airport_us_commercial_suitability.py
           python -m unittest discover -s tests -p test_airport_us_part139_nasr.py
+          python -m unittest discover -s tests -p test_airport_us_priority_queues.py
