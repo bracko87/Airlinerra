@@ -89,3 +89,13 @@ Every record remains `game_admission_status=NOT_APPROVED`. Airlinerra has exactl
 | FNB | NE | `OURAIRPORTS:19884` | [Source](https://www.airnav.com/airport/FNB) | FAA-derived 2026 Brenner Field FNB in Falls City Nebraska, public-use general aviation airport with approximately 4,000ft runway from candidate screen; current commercial passenger, charter, cargo authorization and ground services not verified. | 2026-10-23 21:38:38.094862+00 |
 | FSW | IA | `OURAIRPORTS:19902` | [Source](https://iowadot.gov/modes-travel/aviation/airport-information) | Iowa DOT 2025-26 directory Fort Madison Municipal FSW 4,000x75ft runway, unattended/on call and ONLY self-service 100LL listed. No scheduled airline or certificated cargo/charter evidence. | 2026-10-23 21:38:38.094862+00 |
 | FWC | IL | `OURAIRPORTS:19908` | [Source](https://cityoffairfieldillinois.com/airport/) | Fairfield Illinois city confirms FWC 4,000x75ft paved main and ~2,000ft crosswind runway, after-hours self-service fuel, tie-downs and agricultural aviation. No proof of scheduled passenger/air cargo rights. | 2026-10-23 21:38:38.094862+00 |
+
+## Source evidence ledger — airports 48–50
+
+| FAA | State | Immutable key | Evidence | Individual finding | Reviewed UTC |
+|---|---|---|---|---|---|
+| GYB | TX | `OURAIRPORTS:19995` | [Source](https://www.airnav.com/airport/GYB) | FAA Oct 2026 Giddings-Lee County GYB Texas, weekday 0800-1700 attendance, AWOS, RNAV 17 and trees/deer near runway approaches. Owner-confirmed charter/cargo/scheduled routes unavailable. | 2026-10-23 21:38:38.094862+00 |
+| H79 | MO | `OURAIRPORTS:20017` | [Source](https://www.iflightplanner.com/Airports/H79) | FAA Oct 2026 Eldon Model Airpark H79 Missouri with 100LL and Jet A, RNAV 18/36; runway 18 PAPI, runway 36 PAPI and both REILs out of service in current reported NOTAMs. Active FAA confirmation required. | 2026-10-23 21:38:38.094862+00 |
+| H88 | MO | `OURAIRPORTS:20018` | [Source](https://www.fredericktownmo.org/regional_airport.html) | Fredericktown city describes A. Paul Vance Fredericktown Regional H88 with 4,000ft runway supporting small jets and manager contact; Regional airport name is not scheduled service or an Airlinerra category. | 2026-10-23 21:38:38.094862+00 |
+
+All 50 remain NOT_APPROVED. First-pass source research does not certify scheduled, charter or cargo service or aircraft model eligibility. Next Batch 47 should select 50 new unreviewed airport keys. Airlinerra tiers remain Local, Regional, Medium, Large, Major Hub, Mega Hub.
