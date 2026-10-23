@@ -56,3 +56,4 @@ jobs:
       - name: Validate startup airport data and game planning widths
         run: |
           python -m unittest discover -s tests -p test_airport_startup_3140.py
+          python -m unittest discover -s tests -p test_airport_local_regional_expansion.py
