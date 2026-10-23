@@ -94,29 +94,41 @@ def build(audit, faa_base, source_hash, source_summary):
         raise ValueError("FAA APT_BASE wrong cycle or truncated")
     if source_summary.get("faa_zip_sha256") != source_hash:
         raise ValueError("Downloaded NASR cycle differs from previously verified FAA screening ZIP")
+    # FAA SITE_NO can repeat for distinct FAA airport records. Never reject
+    # the entire NASR archive based on SITE_NO alone; disambiguate on the
+    # verified FAA identifier already matched to the source coordinates.
     by_site = {}
     for rec in faa_base:
         site = rec["SITE_NO"].strip()
-        if site in by_site:
-            # Airport/site identity must be unique; ambiguous records must be held.
-            raise ValueError("Duplicate FAA site number in APT_BASE: " + site)
-        by_site[site] = rec
+        by_site.setdefault(site, []).append(rec)
     result = []
     for airport in audit:
         has_verified_match = airport["faa_match_status"] == "EXACT_FAA_IDENTIFIER_AND_WITHIN_5KM"
         key = airport.get("faa_site_number", "").strip()
-        rec = by_site.get(key) if has_verified_match else None
-        if has_verified_match and (not rec or rec.get("ARPT_ID", "").strip() != airport["faa_identifier"]):
+        expected_id = airport.get("faa_identifier", "").strip()
+        matches = ([rec for rec in by_site.get(key, [])
+                    if rec.get("ARPT_ID", "").strip() == expected_id]
+                   if has_verified_match else [])
+        # Zero matches after a previously verified identity implies changed
+        # source input; stop instead of reusing an unrelated site's certificate.
+        if has_verified_match and not matches:
             raise ValueError("FAA site/identifier mismatch: " + airport["source_airport_id"])
+        ambiguous = has_verified_match and len(matches) > 1
+        rec = matches[0] if len(matches) == 1 else None
         raw = rec.get("FAR_139_TYPE_CODE", "") if rec else ""
         klass, arff, status = parse_class(raw)
-        if not rec:
+        if ambiguous:
+            status = "AMBIGUOUS_FAA_SITE_IDENTIFIER_CERTIFICATION_HOLD"
+        elif not rec:
             status = "NO_INDEPENDENT_FAA_MATCH_CANNOT_INFER_CERTIFICATION"
         potential = CLASS_PERMITTED.get(klass, ("HOLD_CERT_CLASS_NOT_EVIDENCED",) * 3)
         physical = airport["overall_review_status"] == "FAA_PHYSICAL_AND_PUBLIC_USE_VERIFIED_COMMERCIAL_REVIEW"
         if not physical:
             potential = ("HOLD_AIRPORT_ACCESS_OR_PAVEMENT",) * 3
-        if klass and not physical:
+        if ambiguous:
+            followup = ("Multiple NASR APT_BASE records share the same FAA SITE_NO and ARPT_ID. "
+                        "Certification cannot be assigned without independent manual adjudication.")
+        elif klass and not physical:
             followup = "FAA Part 139 indicator exists but airport failed separate public-use/pavement gate; research conflict."
         elif klass:
             followup = ("FAA Part 139 class is a preliminary service-type indicator only; verify current AOC, "
