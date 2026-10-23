@@ -1,0 +1,28 @@
+{
+  "as_of": "2026-10-23",
+  "status": "STRICT_GAME_ADMISSION_GATE_NOT_PLAYABLE",
+  "all_candidate_count": 3906,
+  "gameplay_approved": 0,
+  "gameplay_on_hold": 3906,
+  "hold_reasons": {
+    "HOLD_INDEPENDENT_VERIFICATION": 3903,
+    "HOLD_IDENTITY_AND_PAVEMENT_CONFLICT": 1,
+    "HOLD_PRIVATE_COMMERCIAL_PERMISSION": 1,
+    "HOLD_COMMERCIAL_PERMISSION": 1
+  },
+  "evidence_reviewed": 3,
+  "original_3140_unchanged": true,
+  "technical_master_8153_unchanged": true,
+  "runway_minimum_m": 1200,
+  "accepted_pavements": [
+    "asphalt",
+    "concrete",
+    "explicit asphalt concrete"
+  ],
+  "missing_official_codes_allowed_with_separate_game_only_fallbacks": true,
+  "manual_owner_final_approval_required": true,
+  "notes": [
+    "BR-2772 and SWPX are nearby separate Belterra records; do not conflate.",
+    "No Supabase imports, no game activation, no final category change."
+  ]
+}
