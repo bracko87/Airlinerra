@@ -1,12 +1,12 @@
-# Airlinerra — Batch 50 — complete in Supabase; GitHub ledger pending
+# Airlinerra — Batch 50 — completed and verified (2026-10-24)
 
-Verified database checkpoint: 1,693 of 1,929 reviewed, 236 pending, zero gameplay approvals. All 50 Batch 50 records are complete in Supabase. The remaining report entries have not yet been published here.
+Verified database checkpoint: 1,693 of 1,929 reviewed, 236 pending, zero gameplay approvals. All 50 Batch 50 records are complete in Supabase. All 50 individual records are published below and were read back from Supabase and GitHub.
 
 Initial ten candidate FAA IDs from the unreviewed queue: 2A2 AR, 2A6 AR, 2E5 TX, 2F0 TX, 2G2 OH, 2J3 GA, 2J5 GA, 2K4 OK, 2M0 KY, and 2R0 MS. All have FAA-derived airport-specific research from October 2026. Notable holds: 2A2 maximum 12,500lb aircraft and 50ft runway with displaced threshold; 2F0 poor-condition crosswind runway, displaced thresholds and nonstandard lights.
 
-**Do not mark Batch 50 complete or start Batch 51 before Supabase verifies 50 new distinct airport records.** No gameplay approvals or activation.
+**Batch 50 is complete and independently verified: 50 unique airport keys, 50 saved source records, and zero gameplay approvals.**
 
-## Ten researched records — NOT YET saved in Supabase
+## Saved source reviews — airports 1–10
 
 | FAA | State | Immutable key | Airport | Airport-specific evidence | First-pass finding |
 |---|---|---|---|---|---|
@@ -21,7 +21,7 @@ Initial ten candidate FAA IDs from the unreviewed queue: 2A2 AR, 2A6 AR, 2E5 TX,
 | 2M0 | KY | `OURAIRPORTS:18602` | Princeton-Caldwell County | [FAA-derived source](https://www.airnav.com/airport/2M0) | Unattended, 24/7 card 100LL; no repair services, RNAV published, no Jet A verified. |
 | 2R0 | MS | `OURAIRPORTS:18613` | Waynesboro Municipal | [FAA-derived source](https://www.airnav.com/airport/2R0) | Staff weekdays 0600-1200 with after-hours callout and pilot-controlled runway lights. |
 
-Every record remains pending database persistence, read-back, and commercial permission verification. DO NOT count any as reviewed yet.
+These 10 records were saved and read back from Supabase along with the next 40 records. Commercial carrier rights remain a separate verification step.
 
 ## Saved Supabase evidence records 11–20
 
