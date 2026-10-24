@@ -1,12 +1,12 @@
 # Airlinerra — U.S. Expansion Batch 52 (2026-10-24)
 
-**IN PROGRESS — NOT COMPLETE.** The latest verified completed batch is Batch 51: 1,743 of 1,929 reviewed, 186 unreviewed, and zero game admissions. Batch 52 has begun, but repeated safety-check blocks prevent database writes and full queue retrieval. At least the first source review for `OURAIRPORTS:18682` / 3DW was saved by a confirmed one-row SQL update; a fresh aggregate/readback must establish the exact new total. **Do not count all ten below as reviewed.**
+**IN PROGRESS — NOT COMPLETE.** The latest verified completed batch is Batch 51: 1,743 of 1,929 reviewed, 186 unreviewed, and zero game admissions. Batch 52 has begun but subsequent database writes are blocked by safety checks. The first source review for `OURAIRPORTS:18682` / 3DW was saved and the aggregate was read back: **1,744 reviewed, 185 remaining, zero gameplay approvals**. Other nine records in this report remain awaiting Supabase persistence. **Do not count all ten below as reviewed.**
 
 These ten airport keys were obtained from the actual unreviewed queue before the access blockage. Their research evidence is first-pass and does NOT grant commercial-service clearance.
 
 | FAA | State | Immutable key | Airport | Evidence | Airport-specific finding and hold | Persistence |
 |---|---|---|---|---|---|---|
-| 3DW | MO | `OURAIRPORTS:18682` | Downtown Airport, Springfield | [FAA-derived](https://www.airnav.com/airport/3DW) | 4,037×50ft asphalt, 8,000lb single-wheel capacity, nonstandard lights; distinct from Springfield-Branson scheduled SGF | Saved (single-row return); pending final readback |
+| 3DW | MO | `OURAIRPORTS:18682` | Downtown Airport, Springfield | [FAA-derived](https://www.airnav.com/airport/3DW) | 4,037×50ft asphalt, 8,000lb single-wheel capacity, nonstandard lights; distinct from Springfield-Branson scheduled SGF | Saved; aggregate readback 1,744 confirmed |
 | 3GV | MO | `OURAIRPORTS:18700` | East Kansas City, Grain Valley | [FAA-derived](https://www.airnav.com/airport/3GV) | 4,507×44ft main runway, 11,000lb single-wheel, 303ft displaced RW09, nonstandard lights and deficient safety areas; privately owned | Not saved |
 | 3I2 | WV | `OURAIRPORTS:18703` | Mason County, Point Pleasant | [FAA-derived](https://www.airnav.com/airport/3I2) | Weekday attendance 10:00–14:00, PAPI/REIL/MIRL runway 07/25, AWOS | Not saved |
 | 3R2 | LA | `OURAIRPORTS:18731` | Le Gros Memorial, Crowley | [FAA-derived](https://www.airnav.com/airport/3R2) | Weekday staffing 08:00–17:00, runway 04/22 lighting and REIL, no certified airline verified | Not saved |
