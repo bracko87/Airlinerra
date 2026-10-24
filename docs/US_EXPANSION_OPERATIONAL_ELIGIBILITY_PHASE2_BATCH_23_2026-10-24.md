@@ -102,3 +102,8 @@ Full independent individual findings, dated evidence, actions and audit timestam
 | MJD | Picayune Municipal Mississippi city advertises GA terminal/hangars and county manager; no currently verified passenger charter/cargo flight operator. | Verify owner commercial-use standards, ground support and specific carrier certificate. |
 | MJX | Ocean County New Jersey airport pilot information names Ocean Aire charter service; current operator certificate, aircraft and actual flights remain to be validated. | Verify Ocean Aire current Part135 fleet, permit, runway rating, airport noise and operator rights. |
 | MKJ | Mountain Empire at Rural Retreat Virginia is state-designated Regional Business but in Appalachian terrain; no named certificated carrier and type-specific mountain ap... | Confirm FAA runway LDA, elevation/obstacles/weather and certified operator/owner access. |
+
+
+## Continued airport-specific review (records 26–50)
+
+[Open the supplemental ledger of 25 individually verified findings and follow-up actions](US_EXPANSION_OPERATIONAL_ELIGIBILITY_PHASE2_BATCH_23_ACTIONS_PART_2_2026-10-24.md). Together with the 25 expanded findings above, this completes the 50 detailed Batch 23 assessments.
