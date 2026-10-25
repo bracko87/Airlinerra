@@ -43,7 +43,7 @@ Batch ID `US_EXPANSION_PHASE3_OPERATIONAL_BATCH_21_2026_10_25`. Assessment date:
 - **M36 — Frank Federer Memorial Airport:** FAA-derived Oct remarks list about 12000lb single-wheel loading and displaced thresholds on both directions. Subtraction leaves landing portions materially below 1200m on each end unless authoritative declared distances establish otherwise; restricted PAPI and lack of Jet A add dispatch obstacles. **Next:** Keep hold for official RW02/RW20 usable LDA and applicable minimum policy, airplane wheel limits, PAPI obstruction geometry and owner-approved licensed operator.
 - **M45 — Alpine County Airport:** Current FAA-derived screening rates the narrow paved high-mountain runway POOR. Winter closure/conditions, density altitude and terrain demand actual pavement repair and airframe-specific performance assessment; nominal length cannot override these constraints. **Next:** Retain hold for fresh resurfacing/strength report, snow/NOTAM and obstacle/climb performance, commercial airport authorization and certified operator.
 - **M46 — Colstrip Airport:** Rosebud County airport authority states that Colstrip has no on-site fuel and no maintenance, despite lighting and pilot facilities. Airport physical runway length cannot substitute for reliable Jet A, emergency handling or a certified commercial operator. **Next:** Retain hold pending present airport manager fuel and off-field refueling logistics, snow/NOTAM, declared LDA/loading, owner commercial consent and named licensed carrier.
-- **MAE — Madera Municipal Airport:** FAA-derived October cycle flags severely faded thresholds/centerline markings and published 15000lb single-wheel load, although Jet A+ and 100LL may be available with weekday staffing. Marking condition and weight limits require actual aircraft safety checks. **Next:** Retain hold for runway re-marking inspection/NOTAM, gear-specific 15000lb bearing and usable LDA, staffed fuel service and licensed city-permitted operator.
+- **MAE — Madera Municipal Airport:** Madera City airport page lists RW12/30 5544x150ft asphalt with differing single-wheel figures RW12 35000lb and RW30 30000lb, whereas FAA-effective Oct 2026 runway reference presents S-30/30000lb for the runway. The more conservative FAA rating governs pending owner pavement engineering reconciliation. FAA notes rubber buildup obscuring RW30 centerline marking, parachute jumping, ultralights and crop-duster traffic. These are material aircraft/marking/traffic checks, not proof of airline certification. **Next:** Hold pending FAA-versus-city runway loading reconciliation, rubber buildup/marking inspection, current parachute/ultralight activity NOTAM, direction-specific LDA, Madera city charter/cargo permission and current licensed carrier.
 
 ## Complete 20-airport individual source and follow-up ledger
 
@@ -243,11 +243,11 @@ Batch ID `US_EXPANSION_PHASE3_OPERATIONAL_BATCH_21_2026_10_25`. Assessment date:
 
 **Decision:** Retain operational hold · `RUNWAY_AIRCRAFT_OR_ACCESS_RECHECK` · `OURAIRPORTS:20469`
 
-**Runway/restriction:** Richard Arthur Field M95 Alabama 5009x80ft grooved asphalt with faded threshold markings
+**Runway/restriction:** Madera Municipal MAE California RW12/30 ~5545x150ft asphalt FAIR, published S-30 FAA weight rating
 
-**Individual finding:** FAA-derived October cycle flags severely faded thresholds/centerline markings and published 15000lb single-wheel load, although Jet A+ and 100LL may be available with weekday staffing. Marking condition and weight limits require actual aircraft safety checks.
+**Individual finding:** Madera City airport page lists RW12/30 5544x150ft asphalt with differing single-wheel figures RW12 35000lb and RW30 30000lb, whereas FAA-effective Oct 2026 runway reference presents S-30/30000lb for the runway. The more conservative FAA rating governs pending owner pavement engineering reconciliation. FAA notes rubber buildup obscuring RW30 centerline marking, parachute jumping, ultralights and crop-duster traffic. These are material aircraft/marking/traffic checks, not proof of airline certification.
 
-**Still required:** Retain hold for runway re-marking inspection/NOTAM, gear-specific 15000lb bearing and usable LDA, staffed fuel service and licensed city-permitted operator.
+**Still required:** Hold pending FAA-versus-city runway loading reconciliation, rubber buildup/marking inspection, current parachute/ultralight activity NOTAM, direction-specific LDA, Madera city charter/cargo permission and current licensed carrier.
 
 **Evidence:** [Source 1](https://www.madera.gov/business-building-development/airport-mae/pilot-landing-information/)
 
@@ -300,6 +300,10 @@ Batch ID `US_EXPANSION_PHASE3_OPERATIONAL_BATCH_21_2026_10_25`. Assessment date:
 8. **Larned/Pawnee County LQR:** an owner web page citing **2013 FAA information** must not be mistaken for a current 2026 runway and air-service authorization. Fuel availability must be rechecked.
 9. **Ellington LUG and Mission Field LVM:** owner-reported existing charter/fuel capacity is useful but does not independently prove chosen fleet approval, runway aircraft strength, current licensed Part 135 activity or reliable weather dispatch. Preserve each pending aviation gate.
 10. Exactly **six pre-agreed airport categories** are used in Airlinerra. None were assigned here. An airport cannot enter gameplay without an **operational asphalt/concrete runway with a suitable 1200m usable directional LDA**, width/strength, airplane performance, current dated NOTAM, actual fuel/emergency handling, airport-owner commercial permission and a properly certified commercial operator.
+
+### Madera Municipal MAE — runway evidence reconciliation
+
+The airport in the Batch 21 ledger is **Madera Municipal (MAE, California), not Richard Arthur Field (M95, Alabama)**. The source link identifies Madera, and the record now correctly assesses **RW12/30 ~5545x150ft asphalt**. Madera's city page presents direction-specific single-wheel figures of **35,000lb RW12 / 30,000lb RW30**, while the FAA October-cycle published airport record reports **S-30**; until engineering confirms which governs, use the more conservative 30,000lb runway figure. Reported RW30 rubber buildup obscures markings, with parachute/ultralight and crop-dusting traffic. **Still held**, with no aircraft or gameplay clearance. Sources: https://www.madera.gov/business-building-development/airport-mae/pilot-landing-information/ and https://www.airnav.com/airport/KMAE
 
 ## Read-back verification and next steps
 
