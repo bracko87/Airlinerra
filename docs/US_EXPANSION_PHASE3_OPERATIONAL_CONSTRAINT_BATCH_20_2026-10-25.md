@@ -47,7 +47,7 @@ Batch key: `US_EXPANSION_PHASE3_OPERATIONAL_BATCH_20_2026_10_25`. Assessment 202
 
 ## Twenty individually documented airport assessments
 
-### 78 — Abilene Municipal Airport
+### K78 — Abilene Municipal Airport
 
 **Decision:** Retain operational constraint hold · `RUNWAY_AIRCRAFT_OR_ACCESS_RECHECK` · `OURAIRPORTS:20264`
 
