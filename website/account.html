@@ -125,6 +125,28 @@
           </fieldset>
         </form>
         <p class="panel-note">Profile editing remains unavailable until a verified development account and database are connected.</p>
+        <div class="profile-divider" aria-hidden="true"></div>
+        <section id="airline-onboarding" hidden aria-label="Create your airline">
+          <h3>Create your airline</h3>
+          <p class="panel-note" id="airline-onboarding-note">Only registration-open worlds and separately approved airports can appear here.</p>
+          <form id="airline-onboarding-form" autocomplete="off">
+            <fieldset disabled>
+              <label for="onboarding-world">Game world</label>
+              <select id="onboarding-world" required><option value="">Choose a world</option></select>
+              <label for="onboarding-airport">Home airport</label>
+              <select id="onboarding-airport" required><option value="">Choose an approved airport</option></select>
+              <label for="onboarding-airline-name">Airline name</label>
+              <input id="onboarding-airline-name" maxlength="80" minlength="3" required
+                placeholder="Your airline name" autocomplete="off" />
+              <p class="panel-note" id="onboarding-policy-label"></p>
+              <p class="panel-note">Read the current <a id="onboarding-terms" href="#" target="_blank" rel="noopener">Terms</a> and <a id="onboarding-privacy" href="#" target="_blank" rel="noopener">Privacy Policy</a> before accepting them.</p>
+              <label class="checkbox-label"><input id="onboarding-accept-terms" type="checkbox" required /> I have read and accept the linked Terms.</label>
+              <label class="checkbox-label"><input id="onboarding-accept-privacy" type="checkbox" required /> I have read and accept the linked Privacy Policy.</label>
+              <button class="primary-button" type="submit">Create airline</button>
+            </fieldset>
+          </form>
+          <p id="onboarding-result" class="panel-note" role="status" aria-live="polite"></p>
+        </section>
       </section>
       <div class="account-bottom">
         <button type="button" class="preview-link" data-screen="worlds">Preview game worlds</button>
