@@ -7,7 +7,10 @@ do $roles$
 begin
  if has_table_privilege('anon','public.airlinerra_player_profiles','SELECT')
     or has_table_privilege('anon','public.airlinerra_player_profiles','INSERT')
-    or has_table_privilege('authenticated','public.airlinerra_player_profiles','DELETE') then
+    or has_table_privilege('authenticated','public.airlinerra_player_profiles','DELETE')
+    or has_column_privilege('authenticated','public.airlinerra_player_profiles','user_id','UPDATE')
+    or has_column_privilege('authenticated','public.airlinerra_player_profiles','created_at','UPDATE')
+    or has_column_privilege('authenticated','public.airlinerra_player_profiles','updated_at','UPDATE') then
    raise exception 'Excessive API profile privileges';
  end if;
  if has_function_privilege('authenticated',
@@ -45,6 +48,13 @@ begin
     insert into public.airlinerra_player_profiles (user_id,display_name)
     values ('33333333-3333-4333-8333-333333333333','Impostor');
     raise exception 'Cross-account profile insertion was allowed';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    update public.airlinerra_player_profiles
+       set user_id='22222222-2222-4222-8222-222222222222'
+     where user_id='11111111-1111-4111-8111-111111111111';
+    raise exception 'Profile ownership identifier could be reassigned';
   exception when insufficient_privilege then null;
   end;
   begin
