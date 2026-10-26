@@ -223,7 +223,7 @@ test('SQL is still review-only with a closed-world trigger, airport FK and idemp
   const sql=await readFile(path.join(root,'docs/sql/airlinerra_game_identity_schema_prelaunch.sql'),'utf8');
   assert.match(sql,/REVIEW ONLY, NOT APPLIED/);
   assert.match(sql,/approved_game_airports/);
-  assert.match(sql,/references airlinerra_game\.approved_game_airports\(world_id,source_airport_id\)/);
+  assert.match(sql,/references airlinerra_game\.approved_game_airports\(world_id,airport_key\)/);
   assert.match(sql,/airlinerra_airline_world_gate/);
   assert.match(sql,/w\.state in \('registration_open','active'\)/);
   assert.match(sql,/start_account_trial_once/);
