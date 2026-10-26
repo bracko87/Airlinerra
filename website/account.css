@@ -1,0 +1,35 @@
+:root{color-scheme:light;--navy:#082a56;--deep:#071e3c;--orange:#ff6b17;--ink:#142133;--muted:#64748b;--line:#dfe7ef}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:radial-gradient(ellipse at 85% 0%,#fff2e9,transparent 44%),linear-gradient(150deg,#f5f9ff,#fff 55%);color:var(--ink);min-height:100vh}
+button,input{font:inherit}button{cursor:pointer}a{color:inherit;text-decoration:none}
+button:focus-visible,a:focus-visible{outline:3px solid var(--orange);outline-offset:3px}
+.account-header{width:min(1200px,calc(100% - 44px));height:88px;margin:0 auto;display:flex;justify-content:space-between;align-items:center}
+.brand img{width:190px;height:auto;display:block}.back-link{font-size:14px;font-weight:650;color:var(--navy)}
+.account-layout{width:min(1200px,calc(100% - 44px));margin:60px auto 80px;display:grid;grid-template-columns:minmax(0,1fr) minmax(360px,470px);gap:clamp(34px,7vw,100px);align-items:start}
+.intro{padding-top:42px}.eyebrow{font-size:11px;font-weight:800;letter-spacing:.17em;color:#6d7f95}
+h1{font-size:clamp(37px,5vw,65px);line-height:1.13;letter-spacing:-.06em;color:var(--deep);margin:22px 0}
+h1 span{color:var(--orange)}.intro>p:not(.prelaunch-banner){line-height:1.8;color:#58697b;font-size:16px;max-width:570px}
+.prelaunch-banner{background:#fff6ed;border:1px solid #ffd4b3;border-left:4px solid var(--orange);padding:16px 18px;border-radius:9px;line-height:1.65;font-size:14px;max-width:600px;margin:32px 0}
+.intro-benefits{margin-top:36px;display:grid;gap:21px;font-size:14px;font-weight:650;color:var(--navy)}
+.intro-benefits>div{display:flex;gap:16px;align-items:center}.benefit-number{display:grid;place-items:center;width:42px;height:42px;background:#eaf1fa;border-radius:12px;color:var(--navy);font-size:12px;font-weight:800}
+.account-card{background:#fff;border:1px solid var(--line);border-radius:21px;padding:clamp(22px,4vw,38px);box-shadow:0 28px 70px rgba(8,42,86,.1)}
+.account-card-heading h2{font-size:29px;letter-spacing:-.04em;color:var(--deep);margin:14px 0 6px}
+.account-card-heading p{margin:0 0 24px;color:var(--muted);font-size:14px;line-height:1.65}
+.account-tabs{display:flex;flex-wrap:wrap;gap:6px;border-bottom:1px solid var(--line);padding-bottom:12px}
+.tab{background:transparent;border:0;border-radius:7px;padding:10px 11px;color:#536277;font-size:12px;font-weight:700}
+.tab[aria-current=page]{background:#eaf2fb;color:var(--navy)}.tab:hover{background:#f1f5fa}
+.account-panel{padding-top:22px;min-height:254px}.account-panel[hidden]{display:none}
+.account-panel fieldset{margin:0;padding:0;border:0;display:grid;gap:10px;opacity:.74}
+.account-panel label{font-size:13px;font-weight:700;color:#36475a;margin-top:8px}
+.account-panel input:not([type=checkbox]){min-height:46px;border:1px solid #cbd6e3;padding:10px 13px;border-radius:9px;background:#f6f8fa;width:100%}
+.account-panel input:disabled{cursor:not-allowed}.primary-button{margin-top:15px;padding:13px;border:none;border-radius:9px;background:#eaa273;color:#fff;font-weight:800}
+.primary-button:disabled{cursor:not-allowed}.panel-note{font-size:13px;line-height:1.7;color:var(--muted);margin:17px 0 5px}
+.checkbox-label{display:flex;align-items:center;gap:10px;line-height:1.5;font-size:12px!important;font-weight:500!important}
+.account-panel h3{margin:2px 0 8px;font-size:20px;color:var(--deep)}
+.world-list{display:grid;gap:10px;margin-top:16px}.world-entry{border:1px solid var(--line);padding:14px;border-radius:10px;background:#fafcfe;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.world-entry strong{color:var(--navy);font-size:14px}.world-entry span{font-size:11px;color:#64748b}.world-entry div{display:grid;gap:4px}
+.account-bottom{border-top:1px solid var(--line);padding-top:18px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.account-bottom span{font-size:11px;color:#6c7d90}.preview-link{border:0;background:transparent;color:var(--navy);text-decoration:underline;font-size:12px;font-weight:750}
+.account-footer{text-align:center;font-size:12px;color:#708096;padding-bottom:35px}
+@media(max-width:900px){.account-layout{grid-template-columns:1fr;margin-top:18px;gap:35px}.intro{padding-top:12px}.intro-benefits{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.intro-benefits>div{align-items:flex-start}.account-card{max-width:650px}}
+@media(max-width:580px){.account-header{height:72px}.brand img{width:151px}.back-link{font-size:12px}.account-layout{width:calc(100% - 30px)}.intro-benefits{grid-template-columns:1fr}.account-card{padding:22px}.account-bottom{align-items:flex-start;flex-direction:column}h1{font-size:40px}}
