@@ -40,7 +40,7 @@ test('screens, input validation and fixed callback URLs', () => {
   assert.throws(() => validatedPassword('short'), /12 to 128/);
   assert.throws(() => validatedPassword('a'.repeat(129)), /12 to 128/);
   assert.equal(validatedDisplayName('  Sky Pilot '), 'Sky Pilot');
-  assert.throws(() => validatedDisplayName('<script>'), /display name/);
+  assert.throws(() => validatedDisplayName('<script>'), /display name/i);
   assert.equal(authRedirect('http://localhost:5187','verify'),
     'http://localhost:5187/account.html?screen=verify');
   assert.equal(authRedirect('http://localhost:5187','reset'),
