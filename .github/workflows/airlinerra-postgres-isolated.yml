@@ -49,6 +49,14 @@ jobs:
             sudo apt-get install -y postgresql-client
           fi
           psql --version
+      - name: Verify disposable PostgreSQL target before any DDL
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = "127.0.0.1"
+          test "$PGPORT" = "5432"
+          test "$PGDATABASE" = "airlinerra_disposable"
+          test "$PGUSER" = "postgres"
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/disposable_database_preflight.sql
       - name: Create isolated Supabase Auth stubs and schema
         run: |
           set -euo pipefail
@@ -83,3 +91,14 @@ jobs:
         run: |
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/airline_activation_postconditions.sql
+      - name: Save database test diagnostics
+        if: always()
+        shell: bash
+        run: |
+          echo "## Airlinerra isolated PostgreSQL test" >> "$GITHUB_STEP_SUMMARY"
+          echo "Database target: disposable service on localhost; no external Supabase secrets." >> "$GITHUB_STEP_SUMMARY"
+          echo "Run: ${GITHUB_RUN_ID}, attempt: ${GITHUB_RUN_ATTEMPT}." >> "$GITHUB_STEP_SUMMARY"
+          if command -v psql >/dev/null 2>&1 && test "$PGDATABASE" = "airlinerra_disposable" && test "$PGHOST" = "127.0.0.1" && pg_isready -q; then
+            psql -X -qAt -v ON_ERROR_STOP=1 -c "select 'airlines=' || count(*) from airlinerra_game.airlines;" >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
+            psql -X -qAt -v ON_ERROR_STOP=1 -c "select 'ledger=' || count(*) from airlinerra_game.airline_ledger;" >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
+          fi
