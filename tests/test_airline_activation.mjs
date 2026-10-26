@@ -160,6 +160,10 @@ test('SQL drafts have valid tagged delimiters and fail-closed operator gates',as
   assert.match(activation,/if found then\s+if v_existing_name <> v_airline_name/);
   assert.match(activation,/credit_starting_cash_once\(v_existing_airline\)/);
   assert.match(activation,/start_account_trial_once\(p_player_id\)/);
+  assert.match(activation,/v_entitlement_state <> 'trial'/);
+  assert.match(activation,/v_trial_end <> v_trial_start \+ interval '168 hours'/);
+  assert.match(activation,/v_trial_end <= now\(\)/);
+
   assert.match(activation,/revoke all on function airlinerra_game\.create_airline_once/);
   assert.match(foundation,/airlinerra_one_startup_credit_per_airline/);
   assert.match(foundation,/interval '168 hours'/);
