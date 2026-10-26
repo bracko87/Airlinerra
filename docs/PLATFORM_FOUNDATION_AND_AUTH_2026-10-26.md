@@ -15,7 +15,7 @@
 
 ## 2. Domain, DNS, and email: order matters
 
-**Preferred domain candidate:** `airlinerra.com` if actually available and acceptable at registrar checkout. Alternative: `airlinerra.net` if needed. **Neither domain's availability, ownership, purchase, or final renewal cost has been verified.** Require explicit owner authorization for actual registration/payment and keep registrar access owner-controlled with MFA/auto-renew.
+**Preferred domain:** `airlinerra.com`. **Availability snapshot 2026-10-26:** Namecheap's live search displayed this exact domain as **available**, and advertised a conditional **$6.48 first-year new-customer promotion** (code `NEWCOM648`). This is *not* a completed reservation or purchase. Regular/renewal pricing and any checkout fees were not verified; registrar status may change at any time. Alternative `airlinerra.net` was not independently checked. Require explicit owner agreement on registrar and final checkout terms before registration/payment; keep registrar access owner-controlled with MFA/auto-renew.
 
 After purchase:
 1. Establish authoritative DNS and connect `airlinerra.com` and `www.airlinerra.com` to the existing isolated Netlify site; verify HTTPS, redirect/canonical URL, existing `/health`, and no exposure of repository `data/`.
