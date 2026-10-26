@@ -35,7 +35,12 @@ export const INSERT_CONSENT_SQL = [
 export const EXISTING_CONSENT_SQL = [
   'select accepted_at from airlinerra_game.account_consents',
   'where player_id = $1::uuid and terms_version = $2::text',
-  'and privacy_version = $3::text'
+  'and privacy_version = $3::text',
+  'and exists (select 1 from auth.users u where u.id = $1::uuid',
+  'and u.email_confirmed_at is not null',
+  'and coalesce(u.is_anonymous, false) = false',
+  'and u.deleted_at is null',
+  'and (u.banned_until is null or u.banned_until <= now()))'
 ].join(' ');
 
 export function validatedPolicyAcceptance(value) {
