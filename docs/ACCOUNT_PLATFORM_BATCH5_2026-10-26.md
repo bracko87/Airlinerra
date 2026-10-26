@@ -47,7 +47,7 @@ Verify replay, paid account, and another world cannot reset trial
 ## Verification levels — do not confuse them
 
 1. **Committed to GitHub and fetched back:** yes. Test assets are present on `main`.
-2. **Source/static checks:** should be performed for workflow references, SQL quote balance and no production API references before considering a workflow validated.
+2. **Source/static checks:** 17 of 17 checks completed against ten independently re-fetched GitHub files, confirming manual-only dispatch, PostgreSQL 17 isolation, workflow references, paired dollar quotes, identity/consent gates, concurrency assertions, RLS test coverage, and the paid-account SQL fix. These checks do **not** establish SQL execution correctness.
 3. **Node test suite:** configured to execute on the runner; not yet reported green.
 4. **Real PostgreSQL DDL, role/RLS and two-connection concurrency test:** the workflow is ready, but **not executed yet**. No claim of actual database-level pass or race-proof operation may be made before the manual run finishes green.
 5. **Real Supabase Auth and email tests:** not covered by the minimal Auth stub. Require an independently approved development Supabase setup, SMTP and configured redirects.
