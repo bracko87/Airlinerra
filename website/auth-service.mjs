@@ -8,6 +8,7 @@ import {
   PUBLIC_AUTH_ENABLED, normalizedEmail, validatedPassword,
   validatedDisplayName, authRedirect
 } from './auth-rules.mjs';
+import { createRecoveryIntentGate } from './recovery-intent.mjs';
 
 export const FORGOT_REPLY = 'If an account exists for this address, a recovery email will be sent.';
 export const REGISTER_REPLY = 'If registration succeeds, check your email for a confirmation link.';
@@ -24,6 +25,11 @@ export function parseAuthCallback(rawSearch, screen) {
   if (screen !== 'verify' && screen !== 'reset') return null;
   if (code) {
     if (!/^[A-Za-z0-9._~-]{3,2048}$/.test(code)) throw new Error('Invalid account confirmation link.');
+    // PKCE code exchange alone does not reveal whether this was a recovery
+    // link. A spoofed reset screen must NEVER authorize updateUser().
+    // Until a recovery-specific PKCE proof is integrated, only OTP links
+    // verified with type=recovery may enable the reset screen.
+    if (screen === 'reset') throw new Error('Recovery-specific verification is required.');
     return { kind: 'pkce', code, purpose: screen };
   }
   if (hash) {
@@ -38,6 +44,7 @@ export function parseAuthCallback(rawSearch, screen) {
 
 export function createAuthService({ supabase, origin, enabled = PUBLIC_AUTH_ENABLED }) {
   if (!supabase || !supabase.auth) throw new Error('Supabase Auth client required.');
+  const recoveryIntent = createRecoveryIntentGate();
   const requireEnabled = () => {
     if (!enabled) throw new Error('Airlinerra account registration and sign-in are not yet open.');
   };
@@ -45,6 +52,7 @@ export function createAuthService({ supabase, origin, enabled = PUBLIC_AUTH_ENAB
   return {
     async register({ email, password, displayName, termsAccepted }) {
       requireEnabled();
+      recoveryIntent.clear();
       if (termsAccepted !== true) throw new Error('Accept the current terms and privacy notice.');
       const { error } = await supabase.auth.signUp({
         email: normalizedEmail(email),
@@ -62,6 +70,7 @@ export function createAuthService({ supabase, origin, enabled = PUBLIC_AUTH_ENAB
 
     async signIn({ email, password }) {
       requireEnabled();
+      recoveryIntent.clear();
       if (typeof password !== 'string' || !password) throw new Error('Enter your password.');
       const { data, error } = await supabase.auth.signInWithPassword({
         email: normalizedEmail(email), password
@@ -72,6 +81,7 @@ export function createAuthService({ supabase, origin, enabled = PUBLIC_AUTH_ENAB
 
     async requestPasswordReset(email) {
       requireEnabled();
+      recoveryIntent.clear();
       const cleanEmail = normalizedEmail(email);
       try {
         // Intentionally return identical messaging for unknown user, rate limit
@@ -87,11 +97,15 @@ export function createAuthService({ supabase, origin, enabled = PUBLIC_AUTH_ENAB
 
     async completeCallback(callback) {
       requireEnabled();
+      recoveryIntent.clear();
       if (!callback || !['verify', 'reset'].includes(callback.purpose)) {
         throw new Error('Invalid account confirmation link.');
       }
       let result;
       if (callback.kind === 'pkce') {
+        if (callback.purpose === 'reset') {
+          throw new Error('Recovery-specific verification is required.');
+        }
         if (typeof callback.code !== 'string' || !/^[A-Za-z0-9._~-]{3,2048}$/.test(callback.code)) {
           throw new Error('Invalid account confirmation link.');
         }
@@ -109,12 +123,19 @@ export function createAuthService({ supabase, origin, enabled = PUBLIC_AUTH_ENAB
       }
       if (result.error) throw result.error;
       if (!result.data?.session) throw new Error('Session verification could not be completed.');
+      if (callback.purpose === 'reset') {
+        // Only an actual verifyOtp(type:'recovery') succeeds on this path.
+        // Bind the one-use authorization to the server-verified Auth user.
+        await recoveryIntent.markAfterVerifiedOtp(supabase.auth);
+      }
       return { purpose: callback.purpose, sessionEstablished: true };
     },
 
     async updatePassword(password) {
       requireEnabled();
-      const { error } = await supabase.auth.updateUser({ password: validatedPassword(password) });
+      const cleanPassword = validatedPassword(password);
+      await recoveryIntent.consumeForPasswordUpdate(supabase.auth);
+      const { error } = await supabase.auth.updateUser({ password: cleanPassword });
       if (error) throw error;
       // Sign out all sessions after the credential change. JWTs remain
       // valid until expiry; server-side sensitive actions must verify session.
@@ -132,6 +153,7 @@ export function createAuthService({ supabase, origin, enabled = PUBLIC_AUTH_ENAB
 
     async signOut() {
       requireEnabled();
+      recoveryIntent.clear();
       const { error } = await supabase.auth.signOut({ scope: 'local' });
       if (error) throw error;
     }
