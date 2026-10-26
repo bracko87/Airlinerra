@@ -1,0 +1,32 @@
+name: Airlinerra account foundation tests
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  account-foundation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run offline Auth regression tests
+        working-directory: website
+        run: npm test
+      - name: Verify static account preview build
+        working-directory: website
+        run: npm run build
+      - name: Confirm built files and default closed flags
+        run: |
+          test -f dist/account.html
+          test -f dist/account.js
+          test -f dist/auth-rules.mjs
+          test -f dist/auth-service.mjs
+          test -f dist/auth-client.mjs
+          grep -q 'PUBLIC_AUTH_ENABLED = false' dist/auth-rules.mjs
