@@ -162,7 +162,7 @@ async function main(){
       "update public.airlinerra_game_worlds set state='registration_open' where id in (1,2)"
     );
     await database.query(
-      "insert into airlinerra_game.approved_game_airports(world_id,airport_key,approval_reference) values (1,'OURAIRPORTS:101','CI-SYNTHETIC-ONLY'),(2,'FICTIONAL:fictional:RS:LYAL','CI-SYNTHETIC-ONLY')"
+      "insert into airlinerra_game.approved_game_airports(world_id,airport_key,approval_reference,airport_name,airport_code,country_iso) values (1,'OURAIRPORTS:101','CI-SYNTHETIC-ONLY','Synthetic Founding Airport','CI01','DE'),(2,'FICTIONAL:fictional:RS:LYAL','CI-SYNTHETIC-ONLY','Synthetic Aleksandrovo','LYAL','RS')"
     );
     await database.query(
       "update airlinerra_game.platform_release_gate set enabled=true where id=true"
