@@ -10,6 +10,6 @@
     "build": "node dev-scripts/build.mjs",
     "dev": "node dev-scripts/dev.mjs",
     "start": "node dev-scripts/dev.mjs",
-    "test": "node --test ../tests/test_account_foundation.mjs ../tests/test_player_lifecycle.mjs ../tests/test_airline_activation.mjs ../tests/test_airline_http_handler.mjs ../tests/test_legal_consent.mjs ../tests/test_legal_consent_http.mjs ../tests/test_onboarding_flow.mjs ../tests/test_recovery_intent.mjs ../tests/test_world_airport_readiness.mjs ../tests/test_local_account_gateway.mjs ../tests/test_local_account_stack.mjs"
+    "test": "node --test ../tests/test_account_foundation.mjs ../tests/test_player_lifecycle.mjs ../tests/test_airline_activation.mjs ../tests/test_airline_http_handler.mjs ../tests/test_legal_consent.mjs ../tests/test_legal_consent_http.mjs ../tests/test_onboarding_flow.mjs ../tests/test_recovery_intent.mjs ../tests/test_world_airport_readiness.mjs ../tests/test_local_account_gateway.mjs ../tests/test_local_account_stack.mjs ../tests/test_sql_contract_drift.mjs"
   }
 }
