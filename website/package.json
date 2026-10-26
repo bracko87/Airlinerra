@@ -10,6 +10,6 @@
     "build": "node dev-scripts/build.mjs",
     "dev": "node dev-scripts/dev.mjs",
     "start": "node dev-scripts/dev.mjs",
-    "test": "node --test ../tests/test_account_foundation.mjs"
+    "test": "node --test ../tests/test_account_foundation.mjs ../tests/test_player_lifecycle.mjs"
   }
 }
