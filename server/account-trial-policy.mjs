@@ -49,6 +49,7 @@ export function previewEntitlement(entitlement, evaluatedAt) {
   if (end - start !== TRIAL_DURATION_MS) {
     throw new Error('Invalid seven-day trial duration.');
   }
+  if (now < start) throw new Error('Trial cannot begin before activation.');
   const remaining = Math.max(0, end - now);
   return Object.freeze({
     state: state === 'expired' || remaining === 0 ? 'expired' : 'trial',
