@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 const siteDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const distDir = path.resolve(siteDir, '..', 'dist');
-const required = ['index.html', 'styles.css', 'script.js', 'app.js', 'health.html', 'assets'];
+const required = ['index.html', 'styles.css', 'script.js', 'app.js', 'health.html', 'assets', 'account.html', 'account.css', 'account.js', 'auth-rules.mjs', 'auth-service.mjs'];
 for (const item of required) await stat(path.join(siteDir, item));
 await rm(distDir, { recursive: true, force: true });
 await mkdir(distDir, { recursive: true });
