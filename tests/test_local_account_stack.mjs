@@ -8,6 +8,7 @@ import {
 
 const PLAYER = '11111111-1111-4111-8111-111111111111';
 const AIRLINE = '22222222-2222-4222-8222-222222222222';
+const SECOND_AIRLINE = '33333333-3333-4333-8333-333333333333';
 const TOKEN = 'mock-valid-server-verified-token';
 const VALID_USER = { user: {
   id: PLAYER, email_confirmed_at: '2026-10-26T00:00:00.000Z',
@@ -73,10 +74,11 @@ function fakeDependencies({verified=VALID_USER}={}) {
               newly_created:false,starting_balance_usd:'5000000.00',
               trial_ends_at:state.trialEndsAt
             }]};
-            state.airlines.set(id,{id:AIRLINE,name,key});
+            const newId = world === 1 ? AIRLINE : SECOND_AIRLINE;
+            state.airlines.set(id,{id:newId,name,key});
             state.credits++;
             return {rows:[{
-              airline_id:AIRLINE,newly_created:true,
+              airline_id:newId,newly_created:true,
               starting_balance_usd:'5000000.00',
               trial_ends_at:state.trialEndsAt
             }]};
@@ -147,11 +149,14 @@ test('real airline HTTP and service create one synthetic $5m airline, then safe 
 test('fictional LYAL remains a valid stable key in another world without a second trial',async t=>{
   const x=await setup(t);
   await call(x.server,'/api/v1/legal/consents',legal());
-  await call(x.server,'/api/v1/airlines',airline());
+  const worldOne=await call(x.server,'/api/v1/airlines',airline());
+  const worldOneResult=await worldOne.json();
   const resp=await call(x.server,'/api/v1/airlines',
     airline(2,'FICTIONAL:fictional:RS:LYAL'));
   assert.equal(resp.status,201);
-  assert.equal((await resp.json()).trialEndsAt,x.state.trialEndsAt);
+  const secondResult=await resp.json();
+  assert.equal(secondResult.trialEndsAt,x.state.trialEndsAt);
+  assert.notEqual(secondResult.airlineId,worldOneResult.airlineId);
   assert.equal(x.state.credits,2);
   assert.equal(x.state.airlines.size,2);
 });
