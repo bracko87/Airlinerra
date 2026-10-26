@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Airlinerra password recovery</title></head>
+<body>
+  <h1>Reset your Airlinerra password</h1>
+  <p>Use this one-time link to verify that you requested a password reset.</p>
+  <p><a href="{{ .SiteURL }}/account.html?screen=reset&amp;token_hash={{ .TokenHash }}&amp;type=recovery">Reset my password</a></p>
+  <p>If you didn't request a reset, you can ignore this email.</p>
+</body>
+</html>
