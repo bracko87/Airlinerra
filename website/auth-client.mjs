@@ -30,10 +30,19 @@ export function validatedDevelopmentAuthConfig({ supabaseUrl, publishableKey } =
       url.hostname === RESEARCH_PROJECT_ID + '.supabase.co') {
     throw new Error('A separate development Supabase project is required.');
   }
-  // For this development adapter, use modern public publishable keys only.
-  // Do not accept service-role JWTs or Supabase secret keys here.
-  if (!/^sb_publishable_[A-Za-z0-9_-]{16,128}$/u.test(publishableKey)) {
-    throw new Error('A development publishable key is required.');
+  // Local Supabase CLI may expose a legacy anon JWT rather than a
+  // publishable key. Accept that ONLY for loopback, and explicitly verify
+  // its JWT role is "anon" (never service_role or other privileged roles).
+  let validKey=/^sb_publishable_[A-Za-z0-9_-]{16,128}$/u.test(publishableKey);
+  if (!validKey && local && /^eyJ[A-Za-z0-9._-]+$/u.test(publishableKey)) {
+    try {
+      const claims=JSON.parse(atob(publishableKey.split('.')[1]
+        .replace(/-/g,'+').replace(/_/g,'/')));
+      validKey=claims?.role==='anon';
+    } catch { validKey=false; }
+  }
+  if (!validKey) {
+    throw new Error('A development publishable or local anonymous key is required.');
   }
   return Object.freeze({ supabaseUrl: url.origin, publishableKey });
 }
