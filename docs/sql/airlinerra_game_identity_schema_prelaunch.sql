@@ -125,6 +125,12 @@ create table if not exists airlinerra_game.approved_game_airports (
   world_id smallint not null references public.airlinerra_game_worlds(id),
   airport_key text not null check (airport_key ~ '^(OURAIRPORTS:[1-9][0-9]{0,18}|FICTIONAL:fictional:[A-Z]{2}:[A-Z0-9]{2,8})$'),
   approval_reference text not null,
+  -- Optional, operator-owned presentation metadata. Airport identity and
+  -- airline eligibility always depend on airport_key, never on this text.
+  airport_name text check (airport_name is null or char_length(btrim(airport_name)) between 1 and 160),
+  airport_code text check (airport_code is null or char_length(btrim(airport_code)) between 1 and 20),
+  country_iso text check (country_iso is null or country_iso ~ '^[A-Z]{2}$'),
+  municipality text check (municipality is null or char_length(municipality) <= 160),
   approved_at timestamptz not null default now(),
   primary key (world_id, airport_key)
 );
