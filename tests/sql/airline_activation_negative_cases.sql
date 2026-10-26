@@ -44,6 +44,38 @@ begin
   exception when check_violation then null;
   end;
 
+  -- These users deliberately have no consent, but account verification
+  -- must fail *before* the legal-acceptance check.
+  begin
+    perform airlinerra_game.create_airline_once(
+      '77777777-7777-4777-8777-777777777777',1,'Unverified Airways',101);
+    raise exception 'Unverified email unexpectedly admitted';
+  exception when check_violation then
+    if sqlerrm <> 'Verified, active player account required' then
+      raise exception 'Unverified account rejected for wrong reason: %', sqlerrm;
+    end if;
+  end;
+
+  begin
+    perform airlinerra_game.create_airline_once(
+      '88888888-8888-4888-8888-888888888888',1,'Anonymous Airways',101);
+    raise exception 'Anonymous Auth account unexpectedly admitted';
+  exception when check_violation then
+    if sqlerrm <> 'Verified, active player account required' then
+      raise exception 'Anonymous account rejected for wrong reason: %', sqlerrm;
+    end if;
+  end;
+
+  begin
+    perform airlinerra_game.create_airline_once(
+      '99999999-9999-4999-8999-999999999999',1,'Deleted Airways',101);
+    raise exception 'Deleted player account unexpectedly admitted';
+  exception when check_violation then
+    if sqlerrm <> 'Verified, active player account required' then
+      raise exception 'Deleted account rejected for wrong reason: %', sqlerrm;
+    end if;
+  end;
+
   -- No account may masquerade as unstarted after acquiring a trial clock.
   begin
     insert into airlinerra_game.account_entitlements
