@@ -4,42 +4,42 @@ begin
   -- Neither a closed third world nor an unapproved airport may be used.
   begin
     perform airlinerra_game.create_airline_once(
-      '11111111-1111-4111-8111-111111111111',3,'Illegal Third World','OURAIRPORTS:101');
+      '11111111-1111-4111-8111-111111111111',3::smallint,'Illegal Third World','OURAIRPORTS:101');
     raise exception 'Closed world unexpectedly accepted activation';
   exception when check_violation then null;
   end;
 
   begin
     perform airlinerra_game.create_airline_once(
-      '11111111-1111-4111-8111-111111111111',2,'Wrong Airport','OURAIRPORTS:101');
+      '11111111-1111-4111-8111-111111111111',2::smallint,'Wrong Airport','OURAIRPORTS:101');
     raise exception 'Wrong-world airport unexpectedly admitted';
   exception when check_violation then null;
   end;
 
   begin
     perform airlinerra_game.create_airline_once(
-      '22222222-2222-4222-8222-222222222222',1,'Expired Member','OURAIRPORTS:101');
+      '22222222-2222-4222-8222-222222222222',1::smallint,'Expired Member','OURAIRPORTS:101');
     raise exception 'Expired trial unexpectedly admitted';
   exception when check_violation then null;
   end;
 
   begin
     perform airlinerra_game.create_airline_once(
-      '44444444-4444-4444-8444-444444444444',1,'Banned Pilot','OURAIRPORTS:101');
+      '44444444-4444-4444-8444-444444444444',1::smallint,'Banned Pilot','OURAIRPORTS:101');
     raise exception 'Banned user unexpectedly admitted';
   exception when check_violation then null;
   end;
 
   begin
     perform airlinerra_game.create_airline_once(
-      '55555555-5555-4555-8555-555555555555',1,'Suspended Operator','OURAIRPORTS:101');
+      '55555555-5555-4555-8555-555555555555',1::smallint,'Suspended Operator','OURAIRPORTS:101');
     raise exception 'Suspended membership unexpectedly admitted';
   exception when check_violation then null;
   end;
 
   begin
     perform airlinerra_game.create_airline_once(
-      '66666666-6666-4666-8666-666666666666',1,'Missing Consent','OURAIRPORTS:101');
+      '66666666-6666-4666-8666-666666666666',1::smallint,'Missing Consent','OURAIRPORTS:101');
     raise exception 'Unconsented user unexpectedly admitted';
   exception when check_violation then null;
   end;
@@ -48,7 +48,7 @@ begin
   -- must fail *before* the legal-acceptance check.
   begin
     perform airlinerra_game.create_airline_once(
-      '77777777-7777-4777-8777-777777777777',1,'Unverified Airways','OURAIRPORTS:101');
+      '77777777-7777-4777-8777-777777777777',1::smallint,'Unverified Airways','OURAIRPORTS:101');
     raise exception 'Unverified email unexpectedly admitted';
   exception when check_violation then
     if sqlerrm <> 'Verified, active player account required' then
@@ -58,7 +58,7 @@ begin
 
   begin
     perform airlinerra_game.create_airline_once(
-      '88888888-8888-4888-8888-888888888888',1,'Anonymous Airways','OURAIRPORTS:101');
+      '88888888-8888-4888-8888-888888888888',1::smallint,'Anonymous Airways','OURAIRPORTS:101');
     raise exception 'Anonymous Auth account unexpectedly admitted';
   exception when check_violation then
     if sqlerrm <> 'Verified, active player account required' then
@@ -68,7 +68,7 @@ begin
 
   begin
     perform airlinerra_game.create_airline_once(
-      '99999999-9999-4999-8999-999999999999',1,'Deleted Airways','OURAIRPORTS:101');
+      '99999999-9999-4999-8999-999999999999',1::smallint,'Deleted Airways','OURAIRPORTS:101');
     raise exception 'Deleted player account unexpectedly admitted';
   exception when check_violation then
     if sqlerrm <> 'Verified, active player account required' then
