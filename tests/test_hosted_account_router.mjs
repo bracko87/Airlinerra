@@ -4,6 +4,7 @@ import {
   createHostedAccountRouter,
   HOSTED_ACCOUNT_PATHS
 } from '../server/hosted-account-router.mjs';
+import {createHostedAccountStack} from '../server/hosted-account-stack.mjs';
 
 const ORIGIN='https://airlinerra.example';
 const userToken='synthetic-test-token-without-any-real-credentials';
@@ -109,4 +110,48 @@ test('private handler status is preserved but CORS response headers are never tr
   assert.equal(response.status,401);
   assert.equal(response.headers.get('access-control-allow-origin'),null);
   assert.equal(response.headers.get('set-cookie'),null);
+});
+
+test('hosted account stack remains closed by default and requires private dependencies',async()=>{
+  const closed=createHostedAccountStack();
+  assert.equal((await closed(json('/api/v1/airlines'))).status,503);
+  assert.throws(()=>createHostedAccountStack({
+    enabled:true,publicOrigin:ORIGIN
+  }),/Trusted hosted Auth/);
+});
+test('enabled hosted stack composes independent private handlers without granting airport access',async()=>{
+  const state={dbCalls:0,verificationCalls:0};
+  const database={
+    async connect(){
+      state.dbCalls++;
+      return {
+        async query(sql){
+          if(sql.includes('platform_release_gate')) {
+            return {rows:[{enabled:false,terms_version:null,privacy_version:null}]};
+          }
+          throw new Error('Private backend may not run unapproved SQL');
+        },
+        release(){}
+      };
+    }
+  };
+  const router=createHostedAccountStack({
+    enabled:true,publicOrigin:ORIGIN,
+    verifyUserToken:async()=>{
+      state.verificationCalls++;
+      return {user:{
+        id:'11111111-1111-4111-8111-111111111111',
+        email_confirmed_at:'2026-10-26T00:00:00Z',is_anonymous:false
+      }};
+    },
+    database,termsPath:'/terms-v1.html',privacyPath:'/privacy-v1.html'
+  });
+  const noOrigin=await router(json('/api/v1/onboarding/context','{}',{origin:'https://bad.example'}));
+  assert.equal(noOrigin.status,403);
+  assert.equal(state.verificationCalls,0);
+  assert.equal(state.dbCalls,0);
+  const held=await router(json('/api/v1/onboarding/context'));
+  assert.equal(held.status,503,'disabled operator release prevents context');
+  assert.equal(state.verificationCalls,1);
+  assert.equal(state.dbCalls,1);
 });
