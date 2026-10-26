@@ -52,8 +52,8 @@ test('screens, input validation and fixed callback URLs', () => {
 test('PKCE and one-time recovery callback parsing blocks mixed/cross-screen input', () => {
   assert.deepEqual(parseAuthCallback('?screen=verify&code=abc-123', 'verify'),
     {kind:'pkce',code:'abc-123',purpose:'verify'});
-  assert.deepEqual(parseAuthCallback('?screen=reset&code=abc-123', 'reset'),
-    {kind:'pkce',code:'abc-123',purpose:'reset'});
+  assert.throws(() => parseAuthCallback('?screen=reset&code=abc-123', 'reset'),
+    /Recovery-specific verification/);
   const hash = 'abcABC1234567890';
   assert.deepEqual(parseAuthCallback('?token_hash='+hash+'&type=recovery','reset'),
     {kind:'otp',token_hash:hash,type:'recovery',purpose:'reset'});
@@ -108,7 +108,7 @@ test('injected test client exercises signup, login, PKCE, recovery and session s
     signInWithPassword:async arg=>{calls.push(['login',arg]);return {data:{user:{id:'test'}},error:null};},
     resetPasswordForEmail:async (email,options)=>{calls.push(['forgot',email,options]);return {error:null};},
     exchangeCodeForSession:async code=>{calls.push(['exchange',code]);return {data:{session:{access_token:'test'}},error:null};},
-    verifyOtp:async arg=>{calls.push(['otp',arg]);return {data:{session:{access_token:'test'}},error:null};},
+    verifyOtp:async arg=>{calls.push(['otp',arg]);return {data:{session:{access_token:'test',user:{id:'test'}}},error:null};},
     updateUser:async arg=>{calls.push(['password',arg]);return {error:null};},
     getUser:async()=>({data:{user:{id:'test'}},error:null}),
     signOut:async arg=>{calls.push(['signout',arg]);return {error:null};}
@@ -134,6 +134,65 @@ test('injected test client exercises signup, login, PKCE, recovery and session s
   assert.deepEqual(calls[6],['signout',{scope:'global'}]);
   await api.signOut();
   assert.deepEqual(calls[7],['signout',{scope:'local'}]);
+});
+
+test('PKCE verification must never grant recovery-screen password changes', async () => {
+  let exchanges = 0, changes = 0;
+  const auth = {
+    exchangeCodeForSession:async()=>{exchanges++;return {
+      data:{session:{user:{id:'test'}}},error:null};},
+    updateUser:async()=>{changes++;return {error:null};},
+    getUser:async()=>({data:{user:{id:'test'}},error:null})
+  };
+  const api=createAuthService({supabase:{auth},origin:'http://localhost:5187',enabled:true});
+  await assert.rejects(api.completeCallback({kind:'pkce',code:'confirmation-code',purpose:'reset'}),
+    /Recovery-specific verification/);
+  assert.equal(exchanges,0);
+  await assert.rejects(api.updatePassword('a-safe-password-123'),/verified password recovery/);
+  assert.equal(changes,0);
+  await api.completeCallback({kind:'pkce',code:'confirmation-code',purpose:'verify'});
+  await assert.rejects(api.updatePassword('a-safe-password-123'),/verified password recovery/);
+  assert.equal(changes,0);
+});
+
+test('recovery OTP is single-use, tied to same verified account, and cleared on login', async () => {
+  let authId='owner';
+  let updates=0;
+  const auth={
+    verifyOtp:async()=>({data:{session:{user:{id:'owner'}}},error:null}),
+    getUser:async()=>({data:{user:{id:authId}},error:null}),
+    updateUser:async()=>{updates++;return {error:null};},
+    signOut:async()=>({error:null}),
+    signInWithPassword:async()=>({data:{user:{id:'owner'}},error:null})
+  };
+  const api=createAuthService({supabase:{auth},origin:'http://localhost:5187',enabled:true});
+  const callback={kind:'otp',token_hash:'abcABC1234567890',type:'recovery',purpose:'reset'};
+  await assert.rejects(api.updatePassword('a-safe-password-123'),/verified password recovery/);
+  await api.completeCallback(callback);
+  authId='other-account';
+  await assert.rejects(api.updatePassword('a-safe-password-123'),/identity changed/);
+  assert.equal(updates,0);
+  authId='owner';
+  await assert.rejects(api.updatePassword('a-safe-password-123'),/verified password recovery/);
+  await api.completeCallback(callback);
+  await api.updatePassword('a-safe-password-123');
+  assert.equal(updates,1);
+  await assert.rejects(api.updatePassword('a-safe-password-123'),/verified password recovery/);
+  await api.completeCallback(callback);
+  await api.signIn({email:'owner@example.com',password:'a-safe-password-123'});
+  await assert.rejects(api.updatePassword('a-safe-password-123'),/verified password recovery/);
+  assert.equal(updates,1);
+});
+
+test('verified recovery OTP session must match fresh Auth user', async () => {
+  const api=createAuthService({supabase:{auth:{
+    verifyOtp:async()=>({data:{session:{user:{id:'owner'}}},error:null}),
+    getUser:async()=>({data:{user:{id:'other-account'}},error:null})
+  }},origin:'http://localhost:5187',enabled:true});
+  await assert.rejects(api.completeCallback({
+    kind:'otp',token_hash:'abcABC1234567890',type:'recovery',purpose:'reset'
+  }),/Recovery identity could not be verified/);
+  await assert.rejects(api.updatePassword('a-safe-password-123'),/verified password recovery/);
 });
 
 test('forgot-password response is neutral on provider errors', async () => {
@@ -163,7 +222,7 @@ test('static page remains a non-submitting preview and build includes new module
   assert.ok(js.includes('displayScreen(screen); // scrubs auth material immediately'));
   assert.match(css,/\.auth-feedback/);
   for (const file of ['account.html','account.css','account.js',
-                      'auth-rules.mjs','auth-service.mjs','auth-client.mjs']) {
+                      'auth-rules.mjs','auth-service.mjs','recovery-intent.mjs','auth-client.mjs']) {
     assert.ok(build.includes("'"+file+"'"), 'missing build asset '+file);
   }
   assert.match(server,/\.mjs.*text\/javascript/);
