@@ -6,10 +6,10 @@
 import { STARTING_CAPITAL_USD, STARTING_AIRCRAFT_COUNT } from './account-trial-policy.mjs';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const MAX_BIGINT = 9223372036854775807n;
+const AIRPORT_KEY = /^(?:OURAIRPORTS:[1-9]\d{0,18}|FICTIONAL:fictional:[A-Z]{2}:[A-Z0-9]{2,8})$/u;
 export const AIRLINE_ACTIVATION_SQL =
   'select airline_id, newly_created, starting_balance_usd, trial_ends_at ' +
-  'from airlinerra_game.create_airline_once($1::uuid,$2::smallint,$3::text,$4::bigint)';
+  'from airlinerra_game.create_airline_once($1::uuid,$2::smallint,$3::text,$4::text)';
 
 export function validatedActivationRequest(request) {
   if (request === null || typeof request !== 'object' || Array.isArray(request)) {
@@ -26,18 +26,14 @@ export function validatedActivationRequest(request) {
   if (name.length < 3 || name.length > 80 || /[\x00-\x1f\x7f<>]/u.test(name)) {
     throw new Error('Invalid airline name.');
   }
-  const rawId = request.homeAirportSourceId;
-  if ((typeof rawId !== 'number' && typeof rawId !== 'string') ||
-      (typeof rawId === 'number' && !Number.isSafeInteger(rawId)) ||
-      !/^[1-9]\d{0,18}$/u.test(String(rawId))) {
-    throw new Error('Invalid home airport identifier.');
+  const airportKey = request.homeAirportKey;
+  if (typeof airportKey !== 'string' || !AIRPORT_KEY.test(airportKey)) {
+    throw new Error('Invalid home airport key.');
   }
-  const airport = BigInt(rawId);
-  if (airport > MAX_BIGINT) throw new Error('Invalid home airport identifier.');
   return Object.freeze({
     worldId,
     airlineName:name,
-    homeAirportSourceId:airport.toString()
+    homeAirportKey:airportKey
   });
 }
 
@@ -80,7 +76,7 @@ export function createAirlineActivationService({
       // This is ONE private PostgreSQL function call. All membership, airline,
       // ledger and trial writes occur inside that same transaction.
       const result = await client.query(AIRLINE_ACTIVATION_SQL, [
-        playerId, valid.worldId, valid.airlineName, valid.homeAirportSourceId
+        playerId, valid.worldId, valid.airlineName, valid.homeAirportKey
       ]);
       if (!Array.isArray(result.rows) || result.rows.length !== 1) {
         throw new Error('Airline activation returned an invalid result.');
