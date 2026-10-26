@@ -85,15 +85,36 @@ export function createPlayerDataService({ supabase, enabled = PUBLIC_AUTH_ENABLE
     async saveMyProfile({ displayName, locale = null }) {
       requireEnabled();
       const user = await ownVerifiedUser();
-      const payload = {
-        user_id: user.id, // sourced solely from verified Auth, never caller input
+      const changes = {
         display_name: validatedDisplayName(displayName),
         locale: validatedLocale(locale)
       };
-      const { data, error } = await supabase.from('airlinerra_player_profiles')
-        .upsert(payload, { onConflict: 'user_id' })
-        .select(PROFILE_FIELDS).single();
+
+      // Never UPDATE user_id. PostgreSQL grants UPDATE on display_name/locale
+      // only, deliberately protecting immutable account ownership.
+      const updateOwnProfile = () => supabase.from('airlinerra_player_profiles')
+        .update(changes)
+        .eq('user_id', user.id)
+        .select(PROFILE_FIELDS).maybeSingle();
+
+      let { data, error } = await updateOwnProfile();
       if (error) throw error;
+      if (!data) {
+        // A new profile uses INSERT with a verified Auth user ID. Two tabs
+        // may race on first save: a 23505 duplicate key then safely retries
+        // the owner-scoped UPDATE rather than requiring user_id update rights.
+        const inserted = await supabase.from('airlinerra_player_profiles')
+          .insert({ user_id: user.id, ...changes })
+          .select(PROFILE_FIELDS).single();
+        if (inserted.error?.code === '23505') {
+          ({ data, error } = await updateOwnProfile());
+          if (error) throw error;
+          if (!data) throw new Error('Profile save could not be completed.');
+        } else {
+          if (inserted.error) throw inserted.error;
+          data = inserted.data;
+        }
+      }
       if (data?.user_id !== user.id) {
         throw new Error('Profile ownership verification failed.');
       }
