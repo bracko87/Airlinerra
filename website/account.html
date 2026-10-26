@@ -106,6 +106,25 @@
         <h3>Choose your world</h3>
         <p class="panel-note">Worlds are independent. No real game world is open for registration yet.</p>
         <div id="world-list" class="world-list"></div>
+        <div class="profile-divider" aria-hidden="true"></div>
+        <h3>Your manager profile</h3>
+        <p class="panel-note">After verified sign-in, you can maintain your player display name and language. Your profile does not create an airline or unlock a world.</p>
+        <form id="player-profile-form" autocomplete="off" aria-describedby="prelaunch-notice">
+          <fieldset disabled>
+            <label for="profile-display-name">Manager display name</label>
+            <input id="profile-display-name" type="text" minlength="2" maxlength="40"
+              placeholder="Airline manager name" autocomplete="off" />
+            <label for="profile-locale">Preferred language</label>
+            <select id="profile-locale">
+              <option value="">Not selected</option>
+              <option value="en-US">English (United States)</option>
+              <option value="de-DE">Deutsch (Deutschland)</option>
+              <option value="sr-RS">Srpski (Srbija)</option>
+            </select>
+            <button class="primary-button" type="submit">Save profile</button>
+          </fieldset>
+        </form>
+        <p class="panel-note">Profile editing remains unavailable until a verified development account and database are connected.</p>
       </section>
       <div class="account-bottom">
         <button type="button" class="preview-link" data-screen="worlds">Preview game worlds</button>
