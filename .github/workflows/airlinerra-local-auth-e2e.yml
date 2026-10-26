@@ -10,6 +10,12 @@ on:
       - 'tests/e2e/local-supabase-auth.mjs'
       - 'tests/e2e/local-player-onboarding.mjs'
       - 'tests/e2e/package.json'
+      - 'tests/e2e/browser-account-ui.mjs'
+      - 'tests/e2e/browser-sdk-entry.mjs'
+      - 'website/account.js'
+      - 'website/account.html'
+      - 'website/auth-client.mjs'
+      - 'website/dev-scripts/dev-local-auth.mjs'
   workflow_dispatch:
 
 permissions:
@@ -83,6 +89,22 @@ jobs:
         run: |
           set -euo pipefail
           node tests/e2e/local-player-onboarding.mjs
+      - name: Bundle isolated public browser Auth SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./tests/e2e/node_modules/.bin/esbuild tests/e2e/browser-sdk-entry.mjs \
+            --bundle --format=esm --platform=browser --target=es2022 \
+            --outfile=website/.airlinerra-local-sdk.mjs
+          test -s website/.airlinerra-local-sdk.mjs
+      - name: Install disposable Chromium browser
+        shell: bash
+        run: ./tests/e2e/node_modules/.bin/playwright install --with-deps chromium
+      - name: Verify real browser signup, email confirmation, profile and recovery
+        shell: bash
+        run: |
+          set -euo pipefail
+          node tests/e2e/browser-account-ui.mjs
       - name: Stop the isolated local Supabase stack
         if: always()
         shell: bash
