@@ -13,8 +13,12 @@ import {
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-function fakeClient({ user = {id:'owned-id',email_confirmed_at:'2026-10-26T00:00:00.000Z'}, profile = null, worlds = [] } = {}) {
+function fakeClient({
+  user = {id:'owned-id',email_confirmed_at:'2026-10-26T00:00:00.000Z'},
+  profile = null, worlds = [], simulateInsertConflict = false
+} = {}) {
   const calls = [];
+  let conflictPending = simulateInsertConflict;
   const supabase = {
     auth: {
       async getUser() {
@@ -25,10 +29,12 @@ function fakeClient({ user = {id:'owned-id',email_confirmed_at:'2026-10-26T00:00
     from(table) {
       calls.push({method:'from',table});
       let rows = null;
+      let writeError = null;
+      let mode = 'read';
       return {
         select(cols) {
           calls.push({method:'select',table,cols});
-          rows = table === 'airlinerra_game_worlds' ? worlds : profile;
+          if (mode === 'read') rows = table === 'airlinerra_game_worlds' ? worlds : profile;
           return this;
         },
         order(column,opts) {
@@ -39,16 +45,35 @@ function fakeClient({ user = {id:'owned-id',email_confirmed_at:'2026-10-26T00:00
           calls.push({method:'eq',column,id});
           return this;
         },
-        maybeSingle() {
-          return Promise.resolve({data:rows,error:null});
-        },
-        upsert(payload,opts) {
-          calls.push({method:'upsert',table,payload,opts});
-          profile = {...payload,created_at:'2026-10-26T00:00:00.000Z',updated_at:'2026-10-26T00:00:00.000Z'};
+        update(changes) {
+          mode = 'update';
+          calls.push({method:'update',table,changes});
+          if (profile) profile = {...profile,...changes};
+          rows = profile;
           return this;
         },
+        insert(payload) {
+          mode = 'insert';
+          calls.push({method:'insert',table,payload});
+          if (conflictPending) {
+            conflictPending = false;
+            profile = {...payload,created_at:'2026-10-26T00:00:00.000Z'};
+            writeError = {code:'23505',message:'duplicate key'};
+            rows = null;
+          } else if (profile) {
+            writeError = {code:'23505',message:'duplicate key'};
+            rows = null;
+          } else {
+            profile = {...payload,created_at:'2026-10-26T00:00:00.000Z'};
+            rows = profile;
+          }
+          return this;
+        },
+        maybeSingle() {
+          return Promise.resolve({data:rows,error:writeError});
+        },
         single() {
-          return Promise.resolve({data:profile,error:null});
+          return Promise.resolve({data:rows,error:writeError});
         }
       };
     }
@@ -76,12 +101,38 @@ test('player can only read and change own profile; caller cannot inject user ID 
   assert.equal(saved.user_id,'owned-id');
   assert.equal(saved.display_name,'Pacific Pilot');
   assert.equal(saved.locale,'en-US');
-  const write = calls.find(c=>c.method==='upsert');
-  assert.deepEqual(write.payload,{user_id:'owned-id',display_name:'Pacific Pilot',locale:'en-US'});
-  assert.deepEqual(write.opts,{onConflict:'user_id'});
-  assert.ok(!('created_at' in write.payload));
+  const update = calls.find(c=>c.method==='update');
+  const insert = calls.find(c=>c.method==='insert');
+  assert.deepEqual(update.changes,{display_name:'Pacific Pilot',locale:'en-US'});
+  assert.deepEqual(insert.payload,{user_id:'owned-id',display_name:'Pacific Pilot',locale:'en-US'});
+  assert.ok(!('user_id' in update.changes));
+  assert.ok(!('created_at' in insert.payload));
+  assert.ok(!calls.some(c=>c.method==='upsert'));
   assert.equal((await repo.getMyProfile()).user_id,'owned-id');
   assert.ok(calls.some(c=>c.method==='eq'&&c.column==='user_id'&&c.id==='owned-id'));
+});
+
+test('existing profile updates only editable fields; no re-insert or user ID mutation', async () => {
+  const existing={user_id:'owned-id',display_name:'Old Manager',locale:'de-DE'};
+  const {supabase,calls}=fakeClient({profile:existing});
+  const service=createPlayerDataService({supabase,enabled:true});
+  const saved=await service.saveMyProfile({displayName:'New Manager',locale:'en-US',
+    user_id:'another-user'});
+  assert.deepEqual(saved,{...existing,display_name:'New Manager',locale:'en-US'});
+  assert.equal(calls.filter(c=>c.method==='insert').length,0);
+  assert.equal(calls.filter(c=>c.method==='update').length,1);
+  const changes=calls.find(c=>c.method==='update').changes;
+  assert.deepEqual(changes,{display_name:'New Manager',locale:'en-US'});
+});
+
+test('simultaneous first-save duplicate insert is resolved by owner-only update', async () => {
+  const {supabase,calls}=fakeClient({simulateInsertConflict:true});
+  const service=createPlayerDataService({supabase,enabled:true});
+  const saved=await service.saveMyProfile({displayName:'Concurrent Manager'});
+  assert.equal(saved.user_id,'owned-id');
+  assert.equal(calls.filter(c=>c.method==='update').length,2);
+  assert.equal(calls.filter(c=>c.method==='insert').length,1);
+  assert.ok(!calls.some(c=>c.method==='upsert'));
 });
 
 test('unverified and anonymous users cannot access or mutate profiles', async () => {
@@ -106,7 +157,7 @@ test('invalid display names and locales are blocked before profile writes', asyn
   assert.equal(validatedLocale('sr-Latn-RS'),'sr-Latn-RS');
   assert.equal(validatedLocale('de-DE'),'de-DE');
   assert.throws(()=>validatedLocale('en_US'),/Unsupported/);
-  assert.equal(calls.filter(c=>c.method==='upsert').length,0);
+  assert.equal(calls.filter(c=>['update','insert'].includes(c.method)).length,0);
 });
 
 test('world metadata is strictly validated, sorted, and never authorizes game entry', async () => {
