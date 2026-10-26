@@ -41,7 +41,7 @@ export function validatedActivationRequest(request) {
   });
 }
 
-function verifiedPlayerId(data) {
+export function verifiedPlayerId(data) {
   const user = data?.user;
   // getUser performs an Auth server check, not a locally decoded JWT.
   if (data?.error || !user || !UUID.test(user.id) ||
