@@ -1,0 +1,10 @@
+{
+  "name": "airlinerra-isolated-e2e",
+  "private": true,
+  "type": "module",
+  "description": "CI-only test dependencies, never bundled with the website",
+  "dependencies": {
+    "@supabase/supabase-js": "2.118.0",
+    "pg": "8.16.3"
+  }
+}
