@@ -2,7 +2,7 @@
 
 **Original task:** Player onboarding / airline creation in the browser.
 **Branch:** GitHub `main` (Airlinerra `AGENTS.md` policy).
-**Status:** **Source code implemented and native Node + isolated PostgreSQL checks green. Final new Chromium wizard click-through has not yet returned a successful result.**
+**Status:** **Code implemented, isolated Node/PostgreSQL checks passed, and complete local Chromium airline-creation click-through PASSED on 2026-10-26 (GitHub Actions #40401594030). This is a verified test milestone, not a public deployment.**
 
 ## Implemented
 
@@ -20,11 +20,12 @@
 - The first attempt to add a regression assertion had the same replacement issue; the unintended duplicated tail of `tests/test_account_foundation.mjs` was removed.
 - Browser parser diagnostics now report source location; they pinpointed the defect at `account.js` line 223.
 
-## Verified results and outstanding gate
+## Verified results — browser gate passed
 
-- The native Node and disposable PostgreSQL jobs in [GitHub Actions #40399231610](https://github.com/bracko87/Airlinerra/actions/runs/40399231610) **both completed SUCCESS** after those fixes.
-- The full local Supabase Auth / Mailpit / account database steps in [GitHub Actions #40398820250](https://github.com/bracko87/Airlinerra/actions/runs/40398820250) completed successfully up through the isolated PostgreSQL backend tests and SDK bundling. When last inspected, this run was **still installing disposable Chromium**; the new wizard click-through is **not yet independently certified green**. Do not call that UI test complete based only on the green backend.
-- The previously verified browser registration, email confirmation, profile and recovery journey remains documented in `docs/PLATFORM_CHROMIUM_ACCOUNT_UI_E2E_GREEN_2026-10-26.md`; this new wizard is an additional test gate.
+- The native Node and disposable PostgreSQL jobs in [GitHub Actions #40399231610](https://github.com/bracko87/Airlinerra/actions/runs/40399231610) **both completed SUCCESS** after the original fixes. A later [Node validation run #40400685468](https://github.com/bracko87/Airlinerra/actions/runs/40400685468) also **completed SUCCESS**.
+- **Full local Auth, Mailpit, isolated PostgreSQL and Chromium browser E2E** completed **SUCCESS** in [GitHub Actions #40401594030](https://github.com/bracko87/Airlinerra/actions/runs/40401594030) (commit `e04324d92f556c5f2b603358e194912321c37300`). The job log explicitly confirms registration, email confirmation, profile persistence, synthetic legal-page navigation, airport selection and airline creation against real private disposable SQL, password recovery, and successful sign-in with the new password.
+- The backend E2E also verified separate legal consent, denied unapproved airports, idempotent retry, per-airline $5,000,000 starting capital and an account-level seven-day trial. All synthetic data remained in the disposable test environment.
+- **The browser milestone is closed**. It does not certify hosted service readiness, production terms and privacy, or live game approval. The previously verified account UI journey is also documented in `docs/PLATFORM_CHROMIUM_ACCOUNT_UI_E2E_GREEN_2026-10-26.md`.
 
 ## Live database remains untouched
 
@@ -37,8 +38,8 @@ No actual legal documents were approved, no airport research rows were mutated, 
 
 ## Remaining original launch work
 
-1. Obtain a green **actual browser wizard** result, including legal links, private consent transaction, approved airport selection and exact $5,000,000 single-credit airline creation.
-2. Agree real published Terms/Privacy documents and trusted operator-approved airport handoff, exclusively from the **Airport Database Overview** workstream.
-3. Set up owner-authorized hosted development backend/SMTP/domain and payment integration before any public registration or live-account database migration.
+1. **Complete:** Green actual-browser wizard result, including synthetic legal links, private consent transaction, approved test-airport selection and a $5,000,000 starting balance; independently verified in run #40401594030.
+2. **Pending operator/legal decisions:** Publish approved real Terms and Privacy documents (synthetic CI documents are not publishable), and receive an explicitly authorized playable-airport roster from the **Airport Database Overview** workstream. Neither the 3,140 research activations nor provisional categories automatically authorize `approved_game_airports` entries.
+3. **Pending owner-authorized hosted integration:** Configure secure development hosting, identity/database/SMTP/domain, production release gates and payment integration; verify the complete flow in hosted staging before enabling public player registration. Do not deploy the private schema or open live accounts without explicit authorization.
 
-**Source-code milestone complete; new browser verification remains outstanding.**
+**The source-code and isolated full-browser milestone is COMPLETE. Public registration and production onboarding remain BLOCKED by separate release dependencies.**
