@@ -117,7 +117,7 @@ async function main(){
     const page=await context.newPage();
     page.setDefaultTimeout(18000);
     const errors=[];
-    page.on('pageerror',error=>errors.push('js: '+String(error?.message||'unknown').slice(0,190)));
+    page.on('pageerror',error=>errors.push('js: '+String(error?.stack||error?.message||'unknown').replace(/\s+/g,' ').slice(0,420)));
     page.on('response',response=>{
       if(response.status()>=400 && /\.(?:m?js|html)(?:\?|$)/u.test(response.url())){
         errors.push('http:'+response.status()+' '+new URL(response.url()).pathname);
