@@ -10,10 +10,14 @@ export function createRecoveryIntentGate() {
   let recoveredUserId = null;
   return Object.freeze({
     clear() { recoveredUserId = null; },
-    async markAfterVerifiedOtp(auth) {
+    async markAfterVerifiedOtp(auth, verifiedSession) {
       recoveredUserId = null;
+      if (!verifiedSession?.user?.id) {
+        throw new Error('Recovery session identity is missing.');
+      }
       const { data, error } = await auth.getUser();
-      if (error || typeof data?.user?.id !== 'string' || !data.user.id) {
+      if (error || typeof data?.user?.id !== 'string' ||
+          data.user.id !== verifiedSession.user.id) {
         throw new Error('Recovery identity could not be verified.');
       }
       recoveredUserId = data.user.id;
