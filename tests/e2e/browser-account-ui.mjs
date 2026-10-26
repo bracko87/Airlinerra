@@ -125,6 +125,22 @@ async function main(){
       }
     });
     await chromeDebugger.send('Debugger.enable');
+    // Chromium's script parser can reject syntax that Node 22 accepts.
+    // Compile a copy without static import declarations to get a precise
+    // line and column before running the real application module.
+    const source=await (await import('node:fs/promises'))
+      .readFile('website/account.js','utf8');
+    const withoutImports=source.split('\n').map(line=>
+      line.startsWith('import ') ? '' : line).join('\n');
+    const checked=await chromeDebugger.send('Runtime.compileScript',{
+      expression:withoutImports,sourceURL:'airlinerra-account-debug',
+      persistScript:false
+    });
+    if(checked.exceptionDetails){
+      const issue=checked.exceptionDetails;
+      throw Error('Chromium account.js parse error at line '+
+        (issue.lineNumber+1)+' column '+(issue.columnNumber+1));
+    }
     page.on('pageerror',error=>errors.push('js: '+String(error?.stack||error?.message||'unknown').replace(/\s+/g,' ').slice(0,420)));
     page.on('response',response=>{
       if(response.status()>=400 && /\.(?:m?js|html)(?:\?|$)/u.test(response.url())){
