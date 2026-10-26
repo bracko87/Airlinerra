@@ -213,10 +213,16 @@ test('static page remains a non-submitting preview and build includes new module
   const pkg=JSON.parse(await readFile(path.join(root,'website/package.json'),'utf8'));
   assert.match(html,/name="robots" content="noindex,nofollow"/);
   assert.match(html,/No information entered here is submitted or stored/);
-  assert.equal((html.match(/<fieldset disabled>/g)||[]).length,4);
-  assert.equal((html.match(/<form /g)||[]).length,4);
+  assert.equal((html.match(/<fieldset disabled>/g)||[]).length,5);
+  assert.equal((html.match(/<form /g)||[]).length,5);
   assert.equal((html.match(/<form[^>]+action=/gi)||[]).length,0);
   assert.match(html,/id="account-feedback"/);
+  assert.match(html,/id="player-profile-form"/);
+  assert.match(html,/id="profile-display-name"/);
+  assert.match(html,/id="profile-locale"/);
+  assert.match(js,/playerDataService\.saveMyProfile/);
+  assert.match(js,/verifiedProfileReady/);
+  assert.match(js,/devAuth\.supabaseUrl/);
   for (const screen of ['sign-in','register','forgot','reset','verify','worlds']) {
     assert.ok(html.includes('data-panel="'+screen+'"'));
   }
@@ -224,7 +230,8 @@ test('static page remains a non-submitting preview and build includes new module
   assert.ok(js.includes('displayScreen(screen); // scrubs auth material immediately'));
   assert.match(css,/\.auth-feedback/);
   for (const file of ['account.html','account.css','account.js',
-                      'auth-rules.mjs','auth-service.mjs','recovery-intent.mjs','auth-client.mjs']) {
+                      'auth-rules.mjs','auth-service.mjs','recovery-intent.mjs','auth-client.mjs',
+                       'player-data-service.mjs','onboarding-api-client.mjs']) {
     assert.ok(build.includes("'"+file+"'"), 'missing build asset '+file);
   }
   assert.match(server,/\.mjs.*text\/javascript/);
