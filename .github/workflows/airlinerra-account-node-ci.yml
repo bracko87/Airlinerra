@@ -28,6 +28,7 @@ on:
       - 'tests/test_recovery_intent.mjs'
       - 'tests/test_world_airport_readiness.mjs'
       - 'tests/test_local_account*.mjs'
+      - 'tests/test_hosted_account_router.mjs'
       - 'tests/test_sql_contract_drift.mjs'
       - 'tests/sql/**'
       - 'docs/sql/airlinerra_game_*.sql'
