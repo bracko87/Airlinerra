@@ -46,6 +46,15 @@ begin
     raise exception 'legal release policy must not be pre-approved';
   end if;
 
+  -- Verify the actual function call is denied while the release gate
+  -- is disabled, before any test account or airport has been prepared.
+  begin
+    perform airlinerra_game.create_airline_once(
+      '11111111-1111-4111-8111-111111111111',1,'Closed By Default',101);
+    raise exception 'Activation succeeded despite a disabled platform gate';
+  exception when check_violation then null;
+  end;
+
   if has_function_privilege('anon',
      'airlinerra_game.create_airline_once(uuid,smallint,text,bigint)','EXECUTE')
      or has_function_privilege('authenticated',
