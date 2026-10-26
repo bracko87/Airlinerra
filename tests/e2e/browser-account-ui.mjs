@@ -115,9 +115,16 @@ async function main(){
     assert.equal(await page.locator('#profile-display-name').inputValue(),
       'Browser Verified Manager');
     assert.equal(await page.locator('#profile-locale').inputValue(),'de-DE');
-    assert.match(await page.locator('#world-list').innerText(),/Founding World/);
-    assert.ok(!(await page.locator('#world-list').innerText()).includes('Registration open'),
-      'No real game world can be presented as open by default');
+    const worldText=await page.locator('#world-list').innerText();
+    assert.match(worldText,/Founding World/);
+    // Previous CI-only backend journey explicitly opens synthetic Worlds 01
+    // and 02. They are expected to show 'Registration open' here, whereas
+    // unmodified World 03 must remain closed. No public world is opened.
+    const entries=await page.locator('#world-list .world-entry').allTextContents();
+    assert.equal(entries.length,3);
+    assert.match(entries[0],/Founding World.*Registration open/s);
+    assert.match(entries[1],/Expansion World.*Registration open/s);
+    assert.match(entries[2],/Future World.*Coming later/s);
     console.log('PASS: verified player profile survives real browser refresh and RLS.');
 
     await page.locator('[data-screen="forgot"]').click();
