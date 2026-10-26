@@ -21,6 +21,14 @@ BEGIN
   WHERE airport_key !~ '^OURAIRPORTS:[1-9][0-9]{0,18}$')
  THEN RAISE EXCEPTION 'Invalid authorized airport key'; END IF;
  IF EXISTS(SELECT 1 FROM airlinerra.airport_game_world1_registration_source
+   WHERE airport_name IS NULL OR btrim(airport_name)=''
+      OR char_length(airport_name)>160
+      OR airport_code IS NULL OR btrim(airport_code)=''
+      OR char_length(airport_code)>20
+      OR country_iso !~ '^[A-Z]{2}$' OR country_iso IS NULL
+      OR char_length(coalesce(municipality,''))>160)
+ THEN RAISE EXCEPTION 'Invalid operator-owned airport display metadata'; END IF;
+ IF EXISTS(SELECT 1 FROM airlinerra.airport_game_world1_registration_source
   WHERE world_id<>1 OR admission_basis<>'OWNER_AUTHORIZED_SIMULATION_CATALOG')
  THEN RAISE EXCEPTION 'Unapproved catalog record in source';END IF;
  IF EXISTS(SELECT 1 FROM airlinerra_game.approved_game_airports
@@ -35,9 +43,10 @@ BEGIN
 END $preflight$;
 
 INSERT INTO airlinerra_game.approved_game_airports
-  (world_id,airport_key,approval_reference)
+  (world_id,airport_key,approval_reference,airport_name,airport_code,country_iso,municipality)
 SELECT c.world_id,c.airport_key,
-  'SIMULATION_ONLY:FOUNDATION_ORIGINAL_3140_WORLD1_2026_10_26'
+  'SIMULATION_ONLY:FOUNDATION_ORIGINAL_3140_WORLD1_2026_10_26',
+  c.airport_name,c.airport_code,c.country_iso,c.municipality
 FROM airlinerra.airport_game_world1_registration_source c
 ON CONFLICT(world_id,airport_key) DO NOTHING;
 
@@ -51,6 +60,14 @@ BEGIN
   ON c.world_id=a.world_id AND c.airport_key=a.airport_key
   WHERE c.airport_key IS NULL OR a.world_id<>1)
  THEN RAISE EXCEPTION 'Unauthorized home airport was added';END IF;
+ IF EXISTS(SELECT 1 FROM airlinerra_game.approved_game_airports a
+  JOIN airlinerra.airport_game_world1_registration_source c
+    ON c.world_id=a.world_id AND c.airport_key=a.airport_key
+  WHERE a.airport_name IS DISTINCT FROM c.airport_name
+     OR a.airport_code IS DISTINCT FROM c.airport_code
+     OR a.country_iso IS DISTINCT FROM c.country_iso
+     OR a.municipality IS DISTINCT FROM c.municipality)
+ THEN RAISE EXCEPTION 'Operator airport display metadata drifted';END IF;
  IF EXISTS(SELECT 1 FROM airlinerra_game.approved_game_airports
   WHERE approval_reference<>'SIMULATION_ONLY:FOUNDATION_ORIGINAL_3140_WORLD1_2026_10_26')
  THEN RAISE EXCEPTION 'Unscoped game airport approval reference';END IF;
@@ -67,7 +84,8 @@ COMMIT;
 
 -- Backend account activation uses stable text airport_key values (for example
 -- OURAIRPORTS:101), not bigint IDs. Home-airport choices come only from the
--- owner-authorized registration source and are revalidated against
+-- owner-authorized registration source with names/countries copied into the
+-- private game approval roster; eligibility is still revalidated against
 -- airlinerra_game.approved_game_airports in create_airline_once().
 -- Keeping public.airlinerra_game_worlds.state='planned' is REQUIRED until the
 -- independent authentication/terms/mail/security launch checklist is approved.
