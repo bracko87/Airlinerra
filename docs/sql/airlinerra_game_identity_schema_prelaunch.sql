@@ -239,7 +239,7 @@ begin
 
   insert into airlinerra_game.account_entitlements as e
     (player_id, trial_started_at, trial_ends_at, membership_state)
-  values (p_player_id, now(), now() + interval '7 days', 'trial')
+  values (p_player_id, now(), now() + interval '168 hours', 'trial')
   on conflict (player_id) do update
     set trial_started_at = excluded.trial_started_at,
         trial_ends_at = excluded.trial_ends_at,
