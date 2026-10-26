@@ -1,0 +1,63 @@
+name: Airlinerra account Node validation (non-deploying)
+
+# Lightweight code checks only. The disposable PostgreSQL workflow remains
+# workflow_dispatch-only, and this job has no Supabase access or credentials.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/airlinerra-account-node-ci.yml'
+      - 'server/**'
+      - 'website/auth-*.mjs'
+      - 'website/account.*'
+      - 'website/player-data-service.mjs'
+      - 'website/dev-scripts/**'
+      - 'website/package.json'
+      - 'tests/test_account_foundation.mjs'
+      - 'tests/test_player_lifecycle.mjs'
+      - 'tests/test_airline*.mjs'
+      - 'tests/test_legal*.mjs'
+      - 'tests/test_onboarding_flow.mjs'
+      - 'tests/test_recovery_intent.mjs'
+      - 'tests/test_world_airport_readiness.mjs'
+      - 'tests/test_local_account*.mjs'
+      - 'tests/test_sql_contract_drift.mjs'
+      - 'tests/sql/**'
+      - 'docs/sql/airlinerra_game_*.sql'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: airlinerra-account-node-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  node-account-regressions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run account regression tests
+        working-directory: website
+        run: npm test
+      - name: Verify static prelaunch build
+        working-directory: website
+        run: npm run build
+      - name: Confirm public auth remains disabled
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -Eq '^export const PUBLIC_AUTH_ENABLED = false;' website/auth-rules.mjs
+          grep -Fq "enabled = false" server/airline-activation.mjs
+          grep -Fq "enabled = false" server/airline-http-handler.mjs
+          grep -Fq "enabled = false" server/legal-consent-service.mjs
+          grep -Fq "enabled = false" server/legal-consent-http-handler.mjs
+          echo 'Prelaunch switches remain disabled. No database access or deployment performed.'
