@@ -157,7 +157,7 @@ jobs:
             exit 1
           fi
           grep -Fq 'expected 3140' "$RUNNER_TEMP/bridge_expected_rejection.log"
-          psql -X -v ON_ERROR_STOP=1 -c "INSERT INTO airlinerra.airport_game_world1_registration_source VALUES (1,'OURAIRPORTS:3140','OWNER_AUTHORIZED_SIMULATION_CATALOG');"
+          psql -X -v ON_ERROR_STOP=1 -c "INSERT INTO airlinerra.airport_game_world1_registration_source VALUES (1,'OURAIRPORTS:3140','OWNER_AUTHORIZED_SIMULATION_CATALOG','Synthetic Airport 3140','T3140','DE','Synthetic City');"
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/airport_bridge_disposable_assertions.sql
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/airport_bridge_disposable_cleanup.sql
           echo 'PASS: 3140 game airport handoff, idempotency, drift rejection, and fail-closed cleanup.'
