@@ -74,7 +74,7 @@ test('trusted verified Auth user ID overrides caller-supplied account identifier
   });
   assert.equal(response.airlineId,AIRLINE);
   assert.equal(response.newlyCreated,true);
-  assert.equal(response.cashUsd,5000000);
+  assert.equal(response.cashUsd,'5000000.00');
   assert.deepEqual(calls.map(c=>c[0]==='query'?c[1]:c[0]),
     ['connect','BEGIN',AIRLINE_ACTIVATION_SQL,'COMMIT','release']);
   const values=calls.find(c=>c[1]===AIRLINE_ACTIVATION_SQL)[2];
@@ -129,7 +129,7 @@ test('identical replay accepts original existing airline, never credits via clie
   const service=createAirlineActivationService({database:db,enabled:true,verifyUserToken:async()=>validUser()});
   const res=await service.createAirline({accessToken:'secret-bearer-token-test',request});
   assert.equal(res.newlyCreated,false);
-  assert.equal(res.cashUsd,5000000);
+  assert.equal(res.cashUsd,'5000000.00');
   assert.equal(calls.filter(c=>c[1]===AIRLINE_ACTIVATION_SQL).length,1);
 });
 
