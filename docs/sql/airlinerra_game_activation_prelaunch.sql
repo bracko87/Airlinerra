@@ -181,7 +181,7 @@ begin
   values (p_world_id,p_player_id,'active')
   on conflict (world_id,player_id) do update
       set state='active'
-      where world_memberships.state in ('reserved','left')
+      where world_memberships.state in ('reserved','active','left')
   returning state into v_membership_state;
   if not found or v_membership_state <> 'active' then
     raise exception 'World membership is suspended'
