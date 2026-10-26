@@ -55,5 +55,5 @@ export function authRedirect(origin, screen = 'verify') {
 }
 
 export function isWorldSelectable(world) {
-  return !!world && world.state === 'registration_open';
+  return !!world && ['registration_open','active'].includes(world.state);
 }
