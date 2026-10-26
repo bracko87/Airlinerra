@@ -225,7 +225,9 @@ test('static page remains a non-submitting preview and build includes new module
   assert.match(html,/id="onboarding-accept-privacy"/);
   assert.match(js,/onboardingApi\.acceptLegal/);
   assert.match(js,/onboardingApi\.createAirline/);
-  assert.match(js,/Starting balance: \\\
+  assert.ok(js.includes('Starting balance: '));
+  assert.match(js,/Seven-day trial ends:/);
+  assert.doesNotMatch(js,/Starting balance: [\r\n]/);
   assert.match(html,/id="profile-display-name"/);
   assert.match(html,/id="profile-locale"/);
   assert.match(js,/playerDataService\.saveMyProfile/);
