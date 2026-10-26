@@ -238,3 +238,102 @@ Primary FOCA status: https://www.bazl.admin.ch/de/flugfeld-ambri
 - No changes to the original World 1 catalog (3,140 records), world activation, six-category assignments, historic German cases or Austrian specialist admissions.
 
 **Research conclusion:** Payerne's concrete extended-hour quotas can now be encoded as *restrictions* in future dispatch rules, never as player-granted slots. Mollis's asphalt authority evidence is corroborated, while official post-work runway distance and aircraft suitability await confirmation. Saanen and St. Stephan runway conflicts, as well as Ambrì's court appeal, remain documented holds. No new airports activated.
+
+---
+
+## Batch 05 — independent paved runway & directional length reconciliation (2026-10-26)
+
+**Research marker:** `CH_SPECIALIST_05_2026_10_26`  
+**Scope:** Mollis (LSZM), Saanen (LSGK), Payerne (LSMP), and St. Stephan (LSTS), based on accessible current airport operator/on-field handling records and historical original Skyguide AIP publications reproduced by airport operators. **The original October 2026 live Skyguide aeronautical publication and live NOTAMs were not independently authenticated**, and all individual airline/commercial permissions remain `UNVERIFIED`.
+
+### Fundamental rule
+
+A physical asphalt/concrete runway length of at least 1,200 m qualifies for Airlinerra's **runway-only candidate collection** even when **directional landing or takeoff distances are shorter**. Directional restrictions are to be retained for eventual aircraft-specific dispatch, never used as an automatic physical-collection exclusion. The status `paved_runway_status='VERIFIED'` in these research access reviews means independently confirmed *historical/current-source pavement evidence*, **not a guarantee the live 2026 AIP/NOTAM and all operational gates passed**.
+
+### Mollis LSZM — independent 1,707 m physical runway, asymmetrical usable lengths
+
+**Linth Air Service AG**, an airport-based handling provider, publishes the airport as **RWY 01/19, 1,707 × 40 m ASPH**. The original source registry says 1,799.8 m ASP, now a **92.8 m difference** that must be preserved without overwriting raw source rows. The August 2025 Swiss FOCA runway-rehabilitation approval independently corroborates the existence of an asphalt runway.
+
+| Runway direction | On-field handler published **available landing** | On-field handler published **available takeoff** |
+|---|---:|---:|
+| 01 | **1,150 m** | **1,500 m** |
+| 19 | **1,500 m** | **1,150 m** |
+
+This handling provider uses the words **LDG / TKOF available lengths**, not a formally authenticated current Skyguide table of **LDA / TORA / TODA / ASDA**. Keep the provider's figures labeled exactly as such until primary AIP confirmation. They prove a directional simulation-review requirement and do not deny the 1,707 m physical-airport collection pass.
+
+**Additional source discrepancy:** Linth Air Service's own handling page references mandatory handling for MTOM **over 2.5 t**, while **Mollis Airport AG**, the airport operator, specifies **over 2.25 t** with 24 h PPR in advance (weekends by Friday 17:00 local). **For research planning, the airport operator's 2.25 t restriction takes precedence; neither figure is legal proof of broader charter permission.** Further restrictions: VFR, no runway or approach lights, mandatory briefing for turning speeds >110kt, no standing fire brigade (Cat 4 can be requested), Schengen and customs limitations.
+
+Sources:
+- Airport-based handler, physical runway and direction available lengths: https://www.linthairservice.com/de/location
+- Primary airport operator, PPR and handling: https://www.mollisairport.ch/ppr-jet-helicopter
+- FOCA August 2025 asphalt runway rehabilitation approval: https://www.bazl.admin.ch/dam/de/sd-web/In1Bxxy2qNzw/2025-08-11-mollis-plangenehmigung-pistensanierung.pdf
+
+**Database decision:** Physical paved runway `VERIFIED`; commercial permission `UNVERIFIED`; game admission `NOT_APPROVED`; current post-rehabilitation Skyguide AIP/NOTAM still pending.
+
+### Saanen LSGK — operator-hosted Skyguide AD INFO resolves physical runway length
+
+The **Gstaad Airport Pilot Briefing version 14**, distributed via the airport operator's September **2025** PDF, contains embedded **original Skyguide VFR AD INFO 1–3 sheets issued 25 January 2023**. The official aerodrome plan (document PDF **page 6**) shows **1,400 × 40 m ASPH** RWY 08/26. The following Skyguide aerodrome information sheet (document PDF **page 7**) explicitly publishes the following available distances:
+
+| Direction | **AVBL LEN LDG** | **AVBL LEN TKOF** |
+|---|---:|---:|
+| **08** | **1,070 m** | **1,070 m** |
+| **26** | **1,050 m** | **1,110 m** |
+
+The operator's first briefing page independently warns that landing available distances are about 1,000 m because thresholds are displaced. These source values are consistent, but **the published "AVBL LEN" labels are retained instead of relabeling them as current certified TORA/LDA**.
+
+The prior registry reports **1,466.1 m ASP**, which differs from the published Skyguide 1,400m physical runway by **66.1m**. Retain both with source/date, and do not overwrite the registry or claim the chart is the live 2026 AIP.
+
+**Simulation consequence:** Both directions' chart-reported available takeoff and landing distances are **below 1,200m** even though the physical runway qualifies for candidate collection. Aircraft-level clearance, mountain performance, available fire category, PPR for every arrival/departure and live NOTAM remain separately gated.
+
+Primary source displayed by operator: https://www.gstaad-airport.ch/wp-content/uploads/2025/09/250919_pilots_briefing_v14_-1.pdf (chart PDF pages 6–7, visually checked). Airport operator rules: https://www.gstaad-airport.ch/en/pilots/
+
+**Database decision:** Physical paved runway `VERIFIED`; commercial permission `UNVERIFIED`; game admission `NOT_APPROVED`.
+
+### Payerne LSMP — original AIP physical runway and military net-barrier configurations
+
+The airport-hosted Skyguide **AIP Switzerland LSMP AD 2.12/2.13**, physical/declared-distance section dated **2 October 2025**, reports **RWY 05/23 2,791 × 40 m ASPH**, **66.8m shorter** than historical registry 2,857.8m ASP. The downloadable PDF is hosted by the aerodrome but explicitly says it is **NOT FOR OPERATIONAL USE** and its older hours on the AD 2.3 page **predate** the December 2025 extended-hours amendment. Preserve this date difference.
+
+Skyguide-published declared distances vary by **military net-barrier position**:
+
+| Direction/barrier | TORA | TODA | ASDA | LDA |
+|---|---:|---:|---:|---:|
+| **05 raised** | 2,433m | 2,433m | 2,433m | 2,708m |
+| **05 lowered** | 2,665m | 2,725m | 2,665m | 2,708m |
+| **23 raised** | 2,364m | 2,364m | 2,364m | 2,665m |
+| **23 lowered** | 2,708m | 2,768m | 2,708m | 2,665m |
+
+The AIP notes two military arresting cables and civil limitations if equipment is not retracted. State-dependent distances are aviation constraints, **not a second airport or alternate runway record**.
+
+The airport's **current 2026 operations page** reports:
+- Monday–Friday **07:00–22:00**;
+- Saturday **08:00–12:00**, **12:00–13:00 landing only**, then **13:00–22:00**;
+- Sunday **10:00–12:00** and **13:30–20:00**;
+- **PPR and mandatory handling**, and no routine slot assignment. The absence of a formal routine slot system **does not remove** the **December 2025 FOCA annual quotas** of 600 weekday-extended, 500 Saturday, and 200 Sunday/holiday movements (see Batch 04).
+
+Sources:
+- Airport-hosted original Skyguide AIP AD 2.12/13, published Oct 2025: https://payerne-airport.ch/wp-content/uploads/2025/10/2025-10-24_AIP-LSMP-IFR.pdf (PDF page 7, table)
+- Current airport operations: https://payerne-airport.ch/en/prepare-a-flight/
+- Official regulator Dec 2025 extended-hours/quota decision: https://www.bazl.admin.ch/dam/de/sd-web/tA4QFgjK1NZ9/2025-12-03-payerne-modification-du-reglement-exploitation-extension-heures-exploitation-et-contingents.pdf
+
+**Database decision:** Physical paved runway `VERIFIED`; civil access `RESTRICTED_MILITARY_CIVIL_REGULATED`, commercial permission `UNVERIFIED`, game admission `NOT_APPROVED`. Recheck up-to-date primary AIP and military net-barrier configuration before modeling any actual aircraft movement.
+
+### St. Stephan LSTS — official AIP physical reconciliation NOT resolved
+
+The airport operator's current **Airport Information** page explicitly describes the aerodrome document as **"Unofficial Aerodrome Informations" until official AD INFO is published in the VFR Manual**. An airport-authority-issued current AIP runway length / usable-distance table has **not** been authenticated. Thus the existing registry **1,739.8 m ASP** and alternate secondary **2,050m ASPH** remain unmerged source claims. Both would qualify for physical collection, but this is **not** enough to assert an independently approved runway dimension.
+
+FOCA's **October 31, 2025 civilian conversion approval** is separately established, and the operator has a flight movement reporting form with commercial taxi categories. Neither provides authoritative present runway distances nor an individual Airlinerra airline permit.
+
+Operator page: https://www.airportststephan.ch/airport-information .  
+FOCA civil conversion: https://www.bazl.admin.ch/de/newnsb/I-EXq2Jy3KdSyIOqr7sNN .
+
+**Database decision:** `paved_runway_status='UNVERIFIED'`, `commercial_permission_status='UNVERIFIED'`, `game_admission_status='NOT_APPROVED'` — explicit AIP publication request is the next step.
+
+### Persisted data and safe rollout boundaries
+
+- **6** newly inserted private `airlinerra.airport_evidence` records, IDs **2141–2146**, four Swiss airports, source marker `CH_SPECIALIST_05_2026_10_26`.
+- Updated **4** `airlinerra.airport_access_reviews`, three paved-runway passes (LSZM, LSGK, LSMP) and one intentionally unresolved (LSTS).
+- **4** review events, IDs **26–29**, preserve exact source reference and distinct gate outcome.
+- Swiss Batches **01–05 total 42 evidence records**, covering the same 12 candidate airports. **Six** of those 12 now have independently corroborated physical paved-runway evidence (Sion, Samedan, Buochs, Mollis, Saanen, Payerne). The other six remain `paved_runway_status='UNVERIFIED'` against current independent review; none is a new admitted playable airport.
+- **0** commercial permissions approved, **0** new World 1 additions, **0** six-category finalizations. Keep the original 3,140-row World 1 database activation and three German specialist holds completely unchanged.
+
+**Next verification:** Obtain current Skyguide AIP/VFR Manual / NOTAM and operator written confirmation for St. Stephan, and then physical runway/declared distances for the five remaining military/appealed fields Alpnach, Dübendorf, Emmen, Meiringen, Ambrì. Commercial flight permission must be assessed separately.
