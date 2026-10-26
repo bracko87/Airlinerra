@@ -99,6 +99,7 @@ export function createOnboardingApiClient({
     return Object.freeze(data);
   }
   return Object.freeze({
+    loadContext: () => post('/api/v1/onboarding/context',{}),
     acceptLegal: data => post('/api/v1/legal/consents',cleanLegalRequest(data)),
     createAirline: data => post('/api/v1/airlines',cleanAirlineRequest(data))
   });
