@@ -260,38 +260,3 @@ test('SQL draft is private-by-default and seeds no active worlds or bankroll', a
   assert.match(sql,/\(3,'Future World','planned'\)/);
   assert.ok(!sql.includes("granted to anon"));
 });
-/);
-  assert.match(js,/Seven-day trial ends:/);
-  assert.doesNotMatch(js,/' Starting balance: \\n/);
-  assert.match(html,/id="profile-display-name"/);
-  assert.match(html,/id="profile-locale"/);
-  assert.match(js,/playerDataService\.saveMyProfile/);
-  assert.match(js,/verifiedProfileReady/);
-  assert.match(js,/devAuth\.supabaseUrl/);
-  for (const screen of ['sign-in','register','forgot','reset','verify','worlds']) {
-    assert.ok(html.includes('data-panel="'+screen+'"'));
-  }
-  assert.ok(js.includes('if (!PUBLIC_AUTH_ENABLED) return;'));
-  assert.ok(js.includes('displayScreen(screen); // scrubs auth material immediately'));
-  assert.match(css,/\.auth-feedback/);
-  for (const file of ['account.html','account.css','account.js',
-                      'auth-rules.mjs','auth-service.mjs','recovery-intent.mjs','auth-client.mjs',
-                       'player-data-service.mjs','onboarding-api-client.mjs']) {
-    assert.ok(build.includes("'"+file+"'"), 'missing build asset '+file);
-  }
-  assert.match(server,/\.mjs.*text\/javascript/);
-  assert.ok(pkg.scripts.test.includes('test_account_foundation.mjs'));
-});
-
-test('SQL draft is private-by-default and seeds no active worlds or bankroll', async () => {
-  const sql=await readFile(path.join(root,'docs/sql/airlinerra_game_identity_schema_prelaunch.sql'),'utf8');
-  assert.match(sql,/REVIEW ONLY, NOT APPLIED/);
-  assert.match(sql,/create schema if not exists airlinerra_game/i);
-  assert.match(sql,/enable row level security/g);
-  assert.match(sql,/unique \(world_id,owner_player_id\)/);
-  assert.match(sql,/to authenticated\s+using \(\(select auth\.uid\(\)\) = user_id/);
-  assert.match(sql,/\(1,'Founding World','planned'\)/);
-  assert.match(sql,/\(2,'Expansion World','planned'\)/);
-  assert.match(sql,/\(3,'Future World','planned'\)/);
-  assert.ok(!sql.includes("granted to anon"));
-});
