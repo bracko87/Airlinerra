@@ -211,16 +211,25 @@ async function handleSubmit(event) {
       }
       const policy = onboardingContext.policy;
       await onboardingApi.acceptLegal({
-        termsVersion:policy.termsVersion,privacyVersion:policy.privacyVersion,
-        acceptTerms:true,acceptPrivacy:true
+        termsVersion: policy.termsVersion,
+        privacyVersion: policy.privacyVersion,
+        acceptTerms: true,
+        acceptPrivacy: true
       });
       const result = await onboardingApi.createAirline({
-        worldId,homeAirportKey,
-        airlineName:document.querySelector('#onboarding-airline-name').value
+        worldId, homeAirportKey,
+        airlineName: document.querySelector('#onboarding-airline-name').value
       });
       document.querySelector('#onboarding-result').textContent =
         (result.newlyCreated ? 'Airline created.' : 'Existing airline confirmed.') +
-        ' Starting balance: 
+        ' Starting balance: $' + result.cashUsd +
+        '. Seven-day trial ends: ' + (result.trialEndsAt || 'not applicable') + '.';
+      document.querySelector('#onboarding-accept-terms').checked = false;
+      document.querySelector('#onboarding-accept-privacy').checked = false;
+      await prepareAirlineWizard();
+      setFeedback(result.newlyCreated ? 'Your airline was created.' : 'Your airline is already registered.');
+    } else if (panel === 'worlds') {
+      if (!verifiedProfileReady || !playerDataService) {
         throw new Error('Sign in with a verified account first.');
       }
       await playerDataService.saveMyProfile({
