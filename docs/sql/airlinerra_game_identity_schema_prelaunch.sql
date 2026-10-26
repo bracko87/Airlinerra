@@ -96,6 +96,13 @@ create table if not exists airlinerra_game.account_entitlements (
     (trial_started_at is null and trial_ends_at is null)
     or (trial_started_at is not null
         and trial_ends_at = trial_started_at + interval '168 hours')
+  ),
+  constraint entitlement_state_clock_consistent check (
+    (membership_state = 'none'
+       and trial_started_at is null and trial_ends_at is null)
+    or (membership_state = 'trial'
+       and trial_started_at is not null and trial_ends_at is not null)
+    or membership_state in ('active','past_due','expired','suspended')
   )
 );
 alter table airlinerra_game.account_entitlements enable row level security;
