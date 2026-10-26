@@ -97,9 +97,18 @@ jobs:
             --bundle --format=esm --platform=browser --target=es2022 \
             --outfile=website/.airlinerra-local-sdk.mjs
           test -s website/.airlinerra-local-sdk.mjs
-      - name: Install disposable Chromium browser
+      - name: Select Chromium for real browser E2E
         shell: bash
-        run: ./tests/e2e/node_modules/.bin/playwright install --with-deps chromium
+        run: |
+          set -euo pipefail
+          BROWSER="$(command -v google-chrome || command -v google-chrome-stable || true)"
+          if [ -n "$BROWSER" ]; then
+            echo "AIRLINERRA_CHROME_PATH=$BROWSER" >> "$GITHUB_ENV"
+            "$BROWSER" --version
+            echo 'Using GitHub runner Chrome without downloading a second browser.'
+          else
+            ./tests/e2e/node_modules/.bin/playwright install --with-deps chromium
+          fi
       - name: Verify real browser signup, email confirmation, profile and recovery
         shell: bash
         run: |
