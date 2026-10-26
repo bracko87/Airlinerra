@@ -117,7 +117,12 @@ async function main(){
     const page=await context.newPage();
     page.setDefaultTimeout(18000);
     const errors=[];
-    page.on('pageerror',()=>errors.push('browser module error'));
+    page.on('pageerror',error=>errors.push('js: '+String(error?.message||'unknown').slice(0,190)));
+    page.on('response',response=>{
+      if(response.status()>=400 && /\.(?:m?js|html)(?:\?|$)/u.test(response.url())){
+        errors.push('http:'+response.status()+' '+new URL(response.url()).pathname);
+      }
+    });
 
     const email='airlinerra-browser-'+randomBytes(7).toString('hex')+'@example.test';
     const password='UiTest-A1-'+randomBytes(15).toString('hex');
@@ -125,7 +130,10 @@ async function main(){
     const seen=new Set();
 
     await page.goto(WEB+'/account.html?screen=register');
-    await page.locator('[data-panel="register"]').waitFor({state:'visible'});
+    await page.waitForTimeout(700);
+    if(!(await page.locator('[data-panel="register"]').isVisible())){
+      throw Error('Register panel did not initialize: '+errors.join('; ').slice(0,300));
+    }
     await page.locator('#register-name').fill('Browser CI Manager');
     await page.locator('#register-email').fill(email);
     await page.locator('#register-password').fill(password);
