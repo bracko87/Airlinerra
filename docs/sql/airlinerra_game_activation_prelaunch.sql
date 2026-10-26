@@ -42,7 +42,7 @@ create or replace function airlinerra_game.create_airline_once(
   p_player_id uuid,
   p_world_id smallint,
   p_name text,
-  p_home_airport_source_id bigint
+  p_home_airport_key text
 )
 returns table (
   airline_id uuid,
@@ -56,7 +56,7 @@ as $airlinerra_activation$
 declare
   v_existing_airline uuid;
   v_existing_name text;
-  v_existing_airport bigint;
+  v_existing_airport text;
   v_airline_name text;
   v_entitlement_state text;
   v_trial_end timestamptz;
@@ -117,7 +117,7 @@ begin
   -- Approved game airports are intentionally empty by default.
   perform 1 from airlinerra_game.approved_game_airports a
     where a.world_id = p_world_id
-      and a.source_airport_id = p_home_airport_source_id
+      and a.airport_key = p_home_airport_key
     for share;
   if not found then
     raise exception 'Home airport not approved for this world'
@@ -133,14 +133,14 @@ begin
   end if;
 
   -- Repeated identical activation is allowed, different airline is not.
-  select a.id,a.name,a.home_airport_source_id
+  select a.id,a.name,a.home_airport_key
     into v_existing_airline,v_existing_name,v_existing_airport
     from airlinerra_game.airlines a
    where a.owner_player_id = p_player_id and a.world_id = p_world_id;
 
   if found then
     if v_existing_name <> v_airline_name
-       or v_existing_airport <> p_home_airport_source_id then
+       or v_existing_airport <> p_home_airport_key then
       raise exception 'Player already operates a different airline in this world'
         using errcode = 'unique_violation';
     end if;
@@ -189,8 +189,8 @@ begin
   end if;
 
   insert into airlinerra_game.airlines
-    (world_id,owner_player_id,name,home_airport_source_id)
-  values (p_world_id,p_player_id,v_airline_name,p_home_airport_source_id)
+    (world_id,owner_player_id,name,home_airport_key)
+  values (p_world_id,p_player_id,v_airline_name,p_home_airport_key)
   returning id into v_existing_airline;
 
   select airlinerra_game.credit_starting_cash_once(v_existing_airline)
@@ -226,7 +226,7 @@ $airlinerra_activation$;
 -- Deny all direct client calls. A dedicated privileged backend must
 -- establish an authenticated user identity and call through a trusted
 -- database connection. NOT via browser RPC or client service-role key.
-revoke all on function airlinerra_game.create_airline_once(uuid,smallint,text,bigint)
+revoke all on function airlinerra_game.create_airline_once(uuid,smallint,text,text)
   from public,anon,authenticated;
 revoke all on all tables in schema airlinerra_game
   from public,anon,authenticated;
