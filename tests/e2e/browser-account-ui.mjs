@@ -117,6 +117,14 @@ async function main(){
     const page=await context.newPage();
     page.setDefaultTimeout(18000);
     const errors=[];
+    const chromeDebugger=await context.newCDPSession(page);
+    chromeDebugger.on('Debugger.scriptFailedToParse',info=>{
+      const url=String(info.url||'');
+      if(url.startsWith(WEB)){
+        errors.push('parse: '+new URL(url).pathname+':'+info.startLine+':'+info.startColumn);
+      }
+    });
+    await chromeDebugger.send('Debugger.enable');
     page.on('pageerror',error=>errors.push('js: '+String(error?.stack||error?.message||'unknown').replace(/\s+/g,' ').slice(0,420)));
     page.on('response',response=>{
       if(response.status()>=400 && /\.(?:m?js|html)(?:\?|$)/u.test(response.url())){
