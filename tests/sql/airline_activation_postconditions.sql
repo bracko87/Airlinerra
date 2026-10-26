@@ -1,4 +1,4 @@
--- Runs only after two same-player activation calls have completed in
+-- Runs only after eight same-player activation calls have completed in
 -- disposable PostgreSQL 17. Must not run on Airlinerra's real database.
 do $verify$
 declare
@@ -30,20 +30,20 @@ begin
   where player_id='11111111-1111-4111-8111-111111111111';
 
   select * into v_replay from airlinerra_game.create_airline_once(
-    '11111111-1111-4111-8111-111111111111',1,'Aurelia Airways',101);
+    '11111111-1111-4111-8111-111111111111',1,'Aurelia Airways','OURAIRPORTS:101');
   if v_replay.newly_created or v_replay.starting_balance_usd <> 5000000.00 then
     raise exception 'Replay changed previously created airline';
   end if;
 
   begin
     perform airlinerra_game.create_airline_once(
-      '11111111-1111-4111-8111-111111111111',1,'A Different Airline',101);
+      '11111111-1111-4111-8111-111111111111',1,'A Different Airline','OURAIRPORTS:101');
     raise exception 'Changed-name replay succeeded';
   exception when unique_violation then null;
   end;
 
   select * into v_second from airlinerra_game.create_airline_once(
-    '11111111-1111-4111-8111-111111111111',2,'Atlantic Routes',202);
+    '11111111-1111-4111-8111-111111111111',2,'Atlantic Routes','FICTIONAL:fictional:RS:LYAL');
   if not v_second.newly_created or v_second.starting_balance_usd <> 5000000.00 then
     raise exception 'Second world must create a new airline with only one credit';
   end if;
@@ -54,7 +54,7 @@ begin
 
   -- Already-paid player without a prior trial must not be forced to take one.
   select * into v_paid from airlinerra_game.create_airline_once(
-    '33333333-3333-4333-8333-333333333333',1,'Paid Flyer',101);
+    '33333333-3333-4333-8333-333333333333',1,'Paid Flyer','OURAIRPORTS:101');
   if not v_paid.newly_created or v_paid.starting_balance_usd <> 5000000.00 then
     raise exception 'Paid membership without a trial should be eligible';
   end if;
