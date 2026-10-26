@@ -50,15 +50,15 @@ begin
   -- is disabled, before any test account or airport has been prepared.
   begin
     perform airlinerra_game.create_airline_once(
-      '11111111-1111-4111-8111-111111111111',1,'Closed By Default',101);
+      '11111111-1111-4111-8111-111111111111',1,'Closed By Default','OURAIRPORTS:101');
     raise exception 'Activation succeeded despite a disabled platform gate';
   exception when check_violation then null;
   end;
 
   if has_function_privilege('anon',
-     'airlinerra_game.create_airline_once(uuid,smallint,text,bigint)','EXECUTE')
+     'airlinerra_game.create_airline_once(uuid,smallint,text,text)','EXECUTE')
      or has_function_privilege('authenticated',
-     'airlinerra_game.create_airline_once(uuid,smallint,text,bigint)','EXECUTE')
+     'airlinerra_game.create_airline_once(uuid,smallint,text,text)','EXECUTE')
   then
     raise exception 'private activation function exposed to browser roles';
   end if;
