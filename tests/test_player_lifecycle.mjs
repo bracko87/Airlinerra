@@ -100,7 +100,7 @@ test('unverified and anonymous users cannot access or mutate profiles', async ()
 test('invalid display names and locales are blocked before profile writes', async () => {
   const {supabase,calls} = fakeClient();
   const repo = createPlayerDataService({supabase,enabled:true});
-  await assert.rejects(repo.saveMyProfile({displayName:'<admin>'}),/display name/);
+  await assert.rejects(repo.saveMyProfile({displayName:'<admin>'}),/display name/i);
   await assert.rejects(repo.saveMyProfile({displayName:'Manager',locale:'../../etc/passwd'}),/Unsupported/);
   assert.equal(validatedLocale(null),null);
   assert.equal(validatedLocale('sr-Latn-RS'),'sr-Latn-RS');
