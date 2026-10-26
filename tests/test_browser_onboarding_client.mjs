@@ -111,7 +111,7 @@ test('invalid airline keys and world IDs are rejected before Auth calls',async()
     {...AIRLINE,airlineName:'<script>'}
   ]) {
     const x=setup();
-    await assert.rejects(x.client.createAirline(data),/Select an eligible|invalid/);
+    assert.throws(()=>x.client.createAirline(data),/Select an eligible|invalid/);
     assert.equal(x.calls.length,0);
   }
 });
@@ -131,7 +131,7 @@ test('legal acceptance must be explicit and versioned',async()=>{
     {...LEGAL,privacyVersion:''}
   ]){
     const x=setup();
-    await assert.rejects(x.client.acceptLegal(input),/Review and explicitly accept/);
+    assert.throws(()=>x.client.acceptLegal(input),/Review and explicitly accept/);
     assert.equal(x.calls.length,0);
   }
 });
