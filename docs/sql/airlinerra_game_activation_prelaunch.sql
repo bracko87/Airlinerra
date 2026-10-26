@@ -207,7 +207,11 @@ begin
   -- A trial/none account, however, must have acquired a full trial.
   if not found or
      (v_entitlement_state <> 'active'
-       and (v_trial_start is null or v_trial_end is null)) then
+       and (v_entitlement_state <> 'trial'
+         or v_trial_start is null
+         or v_trial_end is null
+         or v_trial_end <> v_trial_start + interval '168 hours'
+         or v_trial_end <= now())) then
     raise exception 'Account entitlement initialization failed'
       using errcode = 'check_violation';
   end if;
