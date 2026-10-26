@@ -19,6 +19,7 @@ on:
       - 'supabase/config.toml'
       - 'supabase/templates/**'
       - 'tests/test_supabase_dev_email_contract.mjs'
+      - 'tests/test_local_auth_preview.mjs'
       - 'tests/test_account_foundation.mjs'
       - 'tests/test_player_lifecycle.mjs'
       - 'tests/test_airline*.mjs'
@@ -61,6 +62,7 @@ jobs:
           node --check auth-service.mjs
           node --check onboarding-api-client.mjs
           node --check player-data-service.mjs
+          node --check dev-scripts/dev-local-auth.mjs
       - name: Verify static prelaunch build
         working-directory: website
         run: npm run build
