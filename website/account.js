@@ -84,27 +84,36 @@ function resetInputs() {
 
 async function showSignedInProfile() {
   // Backend RLS still verifies profile ownership independently; this is UX.
-  verifiedProfileReady = true;
+  // The editor stays disabled if the actual profile table is not accessible.
+  verifiedProfileReady = false;
   displayScreen('worlds');
   setFormsEnabled();
   let profile = null;
+  let profileUnavailable = false;
   let worldsUnavailable = false;
   try {
     profile = await playerDataService.getMyProfile();
+    verifiedProfileReady = true;
+  } catch {
+    profileUnavailable = true;
+  }
+  try {
     const worlds = await playerDataService.listWorlds();
     drawWorlds(worlds);
   } catch {
-    // Keep the prelaunch world list as a preview if game tables do not exist.
-    // Never imply the world is open based on a failed backend query.
+    // Do not treat a failed directory request as authorization to join.
     drawWorlds();
     worldsUnavailable = true;
   }
   document.querySelector('#profile-display-name').value =
     profile?.display_name || '';
   document.querySelector('#profile-locale').value = profile?.locale || '';
-  setFeedback(worldsUnavailable ?
-    'Signed in. Game worlds or profile storage are not available in this environment yet.' :
-    'Verified account. You can update your player profile; airline creation remains closed.');
+  setFormsEnabled();
+  setFeedback(profileUnavailable ?
+    'Signed in. Player profile storage is not available in this environment yet.' :
+    worldsUnavailable ?
+      'Verified account. Profile editing is available; game worlds are still unavailable.' :
+      'Verified account. You can update your player profile; airline creation remains closed.');
 }
 
 async function handleSubmit(event) {
