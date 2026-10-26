@@ -1,0 +1,58 @@
+name: Airlinerra local Supabase Auth and Mailpit E2E
+
+# Never deploys. Launches fresh local Docker services inside the GitHub runner.
+# Only this workflow and the isolated E2E script trigger the heavy job.
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/airlinerra-local-auth-e2e.yml'
+      - 'tests/e2e/local-supabase-auth.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: airlinerra-local-auth-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  real-local-auth:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      # Zero cloud credentials, no hosted Supabase URL, synthetic users only.
+      SUPABASE_ACCESS_TOKEN: ''
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned Supabase CLI
+        uses: supabase/setup-cli@v3
+        with:
+          version: 2.122.0
+      - name: Check local-only service settings
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -Fq 'project_id = "airlinerra-local-auth"' supabase/config.toml
+          grep -Fq 'enable_confirmations = true' supabase/config.toml
+          ! grep -Fq 'hwllkabgzaynalahvkpz' supabase/config.toml
+          supabase --version
+          docker info >/dev/null
+      - name: Start disposable local Supabase Auth, PostgreSQL and Mailpit
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase start -x studio,imgproxy,realtime,storage-api,postgres-meta,edge-runtime,logflare,vector,supavisor
+      - name: Run real signup, confirmation, login and recovery through Mailpit
+        shell: bash
+        run: |
+          set -euo pipefail
+          node tests/e2e/local-supabase-auth.mjs
+      - name: Stop the isolated local Supabase stack
+        if: always()
+        shell: bash
+        run: supabase stop || true
