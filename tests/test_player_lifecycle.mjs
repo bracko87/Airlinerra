@@ -231,6 +231,9 @@ test('SQL is still review-only with a closed-world trigger, airport FK and idemp
   assert.match(sql,/e\.trial_started_at is null and e\.membership_state = 'none'/);
   assert.match(sql,/security invoker/);
   assert.match(sql,/revoke all on function airlinerra_game\.start_account_trial_once\(uuid\)/);
+  assert.match(sql,/constraint entitlement_state_clock_consistent check/);
+  assert.match(sql,/membership_state = 'none'/);
+  assert.match(sql,/membership_state = 'trial'/);
   assert.match(sql,/entry_kind <> 'STARTING_CAPITAL' or amount_usd = 5000000\.00/);
   assert.match(sql,/grant insert \(user_id, display_name, locale\)/);
   assert.match(sql,/grant update \(display_name, locale\)/);
