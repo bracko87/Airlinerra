@@ -25,7 +25,7 @@ const types=Object.freeze({
 });
 
 export async function startLocalAuthPreview({
-  port=5187, env=process.env
+  port=5187, env=process.env, createTestAccountHandlers
 }={}) {
   if (env.AIRLINERRA_LOCAL_AUTH_TEST !== '1') {
     throw new Error('Local Auth preview requires explicit opt-in.');
@@ -40,7 +40,12 @@ export async function startLocalAuthPreview({
   if (!/^http:\/\/(?:127\.0\.0\.1|localhost):54321$/u.test(config.supabaseUrl)) {
     throw new Error('Only the local Supabase Auth stack is permitted here.');
   }
+  if (createTestAccountHandlers !== undefined &&
+      typeof createTestAccountHandlers !== 'function') {
+    throw new Error('Trusted CI-only account handler factory required.');
+  }
   let boundPort=null;
+  let testHandlers=null;
   const server=createServer(async(req,res)=>{
     const headers={
       'cache-control':'no-store',
@@ -57,6 +62,31 @@ export async function startLocalAuthPreview({
     try {
       if (req.headers.host !== 'localhost:'+boundPort) {
         return finish(421,'Only localhost is accepted.');
+      }
+      if (req.url?.startsWith('/api/v1/')) {
+        const paths=new Set(['/api/v1/onboarding/context',
+          '/api/v1/legal/consents','/api/v1/airlines']);
+        if(!testHandlers || !paths.has(req.url))return finish(404,'Not found.');
+        if(req.method!=='POST')return finish(405,'Method not allowed.');
+        if(req.headers.origin!=='http://localhost:'+boundPort){
+          return finish(403,'Local same-origin request required.');
+        }
+        if(req.headers['content-type']!=='application/json'){
+          return finish(415,'JSON required.');
+        }
+        const chunks=[];
+        let length=0;
+        for await(const chunk of req){
+          length+=chunk.length;
+          if(length>2048)return finish(413,'Request too large.');
+          chunks.push(chunk);
+        }
+        const request={path:req.url,method:req.method,headers:req.headers,
+          body:Buffer.concat(chunks).toString('utf8')};
+        const response=await testHandlers[req.url]?.(request);
+        if(!response||!Number.isInteger(response.status)||
+          typeof response.body!=='string')return finish(503,'Unavailable.');
+        return finish(response.status,response.body,'application/json; charset=utf-8');
       }
       if (req.method!=='GET' && req.method!=='HEAD') {
         return finish(405,'Method not allowed.');
@@ -110,6 +140,15 @@ export async function startLocalAuthPreview({
       server.listen(port,'127.0.0.1',resolve);
     });
     boundPort=server.address().port;
+    if(createTestAccountHandlers){
+      testHandlers=createTestAccountHandlers('http://localhost:'+boundPort);
+      for(const endpoint of ['/api/v1/onboarding/context',
+        '/api/v1/legal/consents','/api/v1/airlines']){
+        if(typeof testHandlers?.[endpoint]!=='function'){
+          throw new Error('All local test account handlers are required.');
+        }
+      }
+    }
     return Object.freeze({
       origin:'http://localhost:'+boundPort,
       port:boundPort,
