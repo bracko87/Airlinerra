@@ -98,3 +98,20 @@ The Wels AIP specifies runway load capacity **SIWL 11,000 kg**; SIWL is *single 
 4. Reassess on **2026-10-29** when the next Austrian AIP effective edition begins. Neither the latest NOTAM package nor individual aircraft performance/ground-loading has been independently cleared by this batch.
 
 **Research conclusion:** Austrian technical and AIP access triage finished; two military airline exclusions are source-grounded, one Wels commercial-review case remains open; zero new game admissions.
+
+---
+
+## Batch 03 — Wels operator-contact and permissions recheck (2026-10-26)
+
+The official operator's public website reconfirms `LOLW` as a **public civil field** with an asphalt RWY 08L/26R of 1390 x 30m, Jet-A1 availability, published daily operating hours, and customs facilities:
+- Aerodrome/operator: https://www.wmw.at/flugplatz-wels-lolw/
+- Main operational information: https://www.wmw.at/
+- Operations directorate and contact: https://www.wmw.at/kontakt/ and https://www.wmw.at/unser-team-am-flugplatz/
+
+Airport operations contact published by the operator: **fbl@wmw.at**. This is the appropriate route to request written confirmation of **non-scheduled commercial passenger charter and cargo operator permissions, aircraft weight/gear restrictions, fire category, hours/handling, and whether scheduled-airline services are excluded by the currently applicable airport regulations**.
+
+The publicly accessible operator descriptions do **not** independently establish a blanket permission for Airlinerra commercial passenger/cargo operation; they describe facilities and general civil operations. **No email was sent or represented as sent.** Preserve `passenger_charter_status='UNVERIFIED'`, `cargo_status='UNVERIFIED'`, `commercial_permission_status='UNVERIFIED'`, and `game_admission_status='NOT_APPROVED'`.
+
+A further evidence record, ID **2116**, was added to private `airlinerra.airport_evidence` with batch marker `AT_SPECIALIST_03_2026_10_26`, operator contact URL and unresolved commercial permissions. No original airport registry, World 1 active roster, category, or German specialist decision was touched.
+
+**Current Austria disposition:** Three specialist airports' technical runway collection and access research reviewed; two military fields do not qualify for commercial game operations under current AIP, and Wels remains a candidate subject to explicit operator and authority permissions. Do not confuse airport physical qualification with commercial authorization.
