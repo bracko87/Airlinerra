@@ -44,6 +44,34 @@ begin
   exception when check_violation then null;
   end;
 
+  -- No account may masquerade as unstarted after acquiring a trial clock.
+  begin
+    insert into airlinerra_game.account_entitlements
+      (player_id,membership_state,trial_started_at,trial_ends_at)
+    values (
+      '66666666-6666-4666-8666-666666666666',
+      'none',now(),now() + interval '168 hours'
+    );
+    raise exception 'Malformed none entitlement passed database validation';
+  exception when check_violation then null;
+  end;
+
+  -- A membership marked trial must contain the complete 168-hour clock.
+  begin
+    insert into airlinerra_game.account_entitlements
+      (player_id,membership_state)
+    values ('66666666-6666-4666-8666-666666666666','trial');
+    raise exception 'Trial entitlement missing dates passed database validation';
+  exception when check_violation then null;
+  end;
+
+  if exists (
+    select 1 from airlinerra_game.account_entitlements
+     where player_id = '66666666-6666-4666-8666-666666666666'
+  ) then
+    raise exception 'Malformed entitlement tests created a persistent record';
+  end if;
+
   if exists (
     select 1 from airlinerra_game.airlines
   ) then
