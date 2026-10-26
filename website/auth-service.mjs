@@ -126,7 +126,7 @@ export function createAuthService({ supabase, origin, enabled = PUBLIC_AUTH_ENAB
       if (callback.purpose === 'reset') {
         // Only an actual verifyOtp(type:'recovery') succeeds on this path.
         // Bind the one-use authorization to the server-verified Auth user.
-        await recoveryIntent.markAfterVerifiedOtp(supabase.auth);
+        await recoveryIntent.markAfterVerifiedOtp(supabase.auth, result.data.session);
       }
       return { purpose: callback.purpose, sessionEstablished: true };
     },
