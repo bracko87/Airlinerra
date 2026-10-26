@@ -71,22 +71,29 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/legal_consent_isolated.sql
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/player_profile_rls_isolated.sql
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/airline_activation_negative_cases.sql
-      - name: Two concurrent requests for one player airline
+      - name: Eight simultaneous same-player airline activations
         shell: bash
         run: |
           set -euo pipefail
           QUERY="select newly_created::text from airlinerra_game.create_airline_once('11111111-1111-4111-8111-111111111111',1,'Aurelia Airways',101);"
-          psql -X -qAt -v ON_ERROR_STOP=1 -c "$QUERY" > "$RUNNER_TEMP/airline_activation_first.txt" 2>&1 &
-          first_pid=$!
-          psql -X -qAt -v ON_ERROR_STOP=1 -c "$QUERY" > "$RUNNER_TEMP/airline_activation_second.txt" 2>&1 &
-          second_pid=$!
-          wait "$first_pid"
-          wait "$second_pid"
-          cat "$RUNNER_TEMP/airline_activation_first.txt" "$RUNNER_TEMP/airline_activation_second.txt"
-          count_true=$(grep -hc '^true$' "$RUNNER_TEMP"/airline_activation_*.txt | awk -F: '{s+=$NF} END {print s+0}')
-          count_false=$(grep -hc '^false$' "$RUNNER_TEMP"/airline_activation_*.txt | awk -F: '{s+=$NF} END {print s+0}')
-          test "$count_true" -eq 1
-          test "$count_false" -eq 1
+          # A burst of independent DB connections must yield ONE creation
+          # and exactly seven replay results; each operation is bounded.
+          pids=()
+          for n in $(seq 1 8); do
+            PGOPTIONS="-c statement_timeout=30000 -c lock_timeout=20000" psql -X -qAt -v ON_ERROR_STOP=1 -c "$QUERY" > "$RUNNER_TEMP/airline_activation_$n.txt" 2>&1 &
+            pids+=("$!")
+          done
+          status=0
+          for pid in "${pids[@]}"; do
+            wait "$pid" || status=1
+          done
+          cat "$RUNNER_TEMP"/airline_activation_*.txt
+          test "$status" -eq 0
+          counts=$(awk '/^true$/ {created++} /^false$/ {retried++} END {printf "%d %d",created+0,retried+0}' "$RUNNER_TEMP"/airline_activation_*.txt)
+          read -r count_created count_retried <<< "$counts"
+          echo "Created: $count_created; idempotent retries: $count_retried"
+          test "$count_created" -eq 1
+          test "$count_retried" -eq 7
       - name: Verify concurrent funds, replay, subscriptions and world isolation
         run: |
           set -euo pipefail
