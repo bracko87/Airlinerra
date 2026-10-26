@@ -37,3 +37,9 @@ h1 span{color:var(--orange)}.intro>p:not(.prelaunch-banner){line-height:1.8;colo
 .auth-feedback{border:1px solid #cbd6e3;border-radius:9px;background:#f1f6fb;color:var(--navy);padding:12px 14px;font-size:13px;line-height:1.6;margin:16px 0 0}
 .auth-feedback[data-state=error]{border-color:#eab3af;background:#fff1f0;color:#8b2424}
 .auth-feedback[hidden]{display:none}
+
+/* Development profile editor remains disabled until verified sign-in. */
+.profile-divider{border-top:1px solid var(--line);margin:24px 0 19px}
+.account-panel select{min-height:46px;border:1px solid #cbd6e3;padding:10px 13px;border-radius:9px;background:#f6f8fa;width:100%;font:inherit}
+.account-panel select:disabled{cursor:not-allowed}
+.account-panel fieldset:disabled{opacity:.64}
