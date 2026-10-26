@@ -19,6 +19,11 @@ jobs:
       - name: Run offline Auth regression tests
         working-directory: website
         run: npm test
+      - name: Verify isolated SQL contract is present
+        run: |
+          test -f docs/sql/airlinerra_game_identity_schema_prelaunch.sql
+          test -f docs/sql/airlinerra_game_activation_prelaunch.sql
+          grep -q "enabled boolean not null default false" docs/sql/airlinerra_game_activation_prelaunch.sql
       - name: Verify static account preview build
         working-directory: website
         run: npm run build
