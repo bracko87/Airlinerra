@@ -5,7 +5,7 @@
 
 Phase 5 Priority-2 reviewed the 10 airports that Phase 4 flagged because at least one runway landing direction cannot meet the game's **1,200-metre direction-specific usable landing-distance** threshold. An **individual landing-direction failure is not automatically an airport-wide exclusion**. Conversely, a physical asphalt runway longer than 1,200 metres is not proof its per-direction FAA published landing distance meets the requirement. Source checks used AirNav displays of FAA information effective **1 October 2026**; these are **secondary derived sources**, not flight-date FAA/NOTAM authorizations.
 
-**Conclusions:** 9 airports have at least one runway direction with source-reported physical/nominal room above the threshold that still requires an authoritative per-direction LDA. **PHD** has no such currently documented paved landing direction; its RW15 and RW33 officially declared FAA-derived LDAs are both below threshold, and its second runway is turf and short. All 10 remain `EVIDENCE_HOLD`, not `NOT_APPROVED` overrides.
+**Conclusions:** 9 airports have at least one runway direction with source-reported physical/nominal room above the threshold that still requires an authoritative per-direction LDA. **PHD** has no such currently documented paved landing direction; its RW15 and RW33 officially declared FAA-derived LDAs are both below threshold, and its second runway is turf and short. All 10 retain the Phase 5 review status `EVIDENCE_HOLD` **and** the separate gameplay status `NOT_APPROVED`.
 
 | Metric | Verified |
 | --- | ---: |
