@@ -22,7 +22,8 @@ function fixture({enabled=true,open=true,documents=true,user=true}={}) {
           if(sql===ONBOARDING_CONTEXT_SQL.worlds) return {rows:[
             {id:1,name:'Founding World'},{id:2,name:'Expansion World'}]};
           if(sql===ONBOARDING_CONTEXT_SQL.airports)return {rows:[
-            {world_id:1,airport_key:'OURAIRPORTS:101'},
+            {world_id:1,airport_key:'OURAIRPORTS:101',airport_name:'Bremen Airport',
+              airport_code:'EDDW',country_iso:'DE'},
             {world_id:2,airport_key:'FICTIONAL:fictional:RS:LYAL'},
             {world_id:3,airport_key:'OURAIRPORTS:303'},
             {world_id:1,airport_key:'unsafe/invalid-key'}
@@ -51,7 +52,7 @@ test('private context lists only operator-added keys in open worlds',async()=>{
   assert.equal(result.policy.termsVersion,'ci-v1');
   assert.equal(result.worlds.length,2);
   assert.deepEqual(result.worlds[0].airports,[{
-    key:'OURAIRPORTS:101',label:'OURAIRPORTS:101'}]);
+    key:'OURAIRPORTS:101',label:'Bremen Airport (EDDW) — DE'}]);
   assert.deepEqual(result.worlds[1].airports,[{
     key:'FICTIONAL:fictional:RS:LYAL',
     label:'FICTIONAL:fictional:RS:LYAL'}]);
