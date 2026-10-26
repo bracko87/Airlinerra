@@ -112,7 +112,10 @@ async function main(){
       }
     });
     assert.equal(preview.origin,WEB);
-    browser=await chromium.launch({headless:true});
+    browser=await chromium.launch({headless:true,
+      ...(process.env.AIRLINERRA_CHROME_PATH ?
+        {executablePath:process.env.AIRLINERRA_CHROME_PATH} : {})
+    });
     const context=await browser.newContext({viewport:{width:1440,height:900}});
     const page=await context.newPage();
     page.setDefaultTimeout(18000);
