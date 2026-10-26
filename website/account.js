@@ -1,6 +1,7 @@
 import { PUBLIC_AUTH_ENABLED, WORLD_DIRECTORY, safeScreen, isWorldSelectable } from './auth-rules.mjs';
 import { createBrowserAuthClient } from './auth-client.mjs';
 import { createAuthService, parseAuthCallback } from './auth-service.mjs';
+import { createPlayerDataService } from './player-data-service.mjs';
 
 const descriptions = {
   'sign-in': ['Welcome back', 'Preview the steps players will use to access Airlinerra.'],
@@ -13,6 +14,8 @@ const descriptions = {
 const feedback = document.querySelector('#account-feedback');
 let verifiedRecovery = false;
 let accountService = null;
+let playerDataService = null;
+let verifiedProfileReady = false;
 
 function setFeedback(message, isError = false) {
   feedback.hidden = !message;
@@ -45,13 +48,16 @@ function setFormsEnabled() {
   for (const panel of document.querySelectorAll('[data-panel]')) {
     const fieldset = panel.querySelector('fieldset');
     if (!fieldset) continue;
-    fieldset.disabled = !PUBLIC_AUTH_ENABLED || (panel.dataset.panel === 'reset' && !verifiedRecovery);
+    fieldset.disabled = !PUBLIC_AUTH_ENABLED ||
+      (panel.dataset.panel === 'reset' && !verifiedRecovery) ||
+      (panel.dataset.panel === 'worlds' && !verifiedProfileReady);
   }
 }
 
-function drawWorlds() {
+function drawWorlds(worlds = WORLD_DIRECTORY) {
   const worldList = document.querySelector('#world-list');
-  for (const world of WORLD_DIRECTORY) {
+  worldList.replaceChildren();
+  for (const world of worlds) {
     const article = document.createElement('article');
     article.className = 'world-entry';
     const content = document.createElement('div');
@@ -76,6 +82,31 @@ function resetInputs() {
   for (const input of document.querySelectorAll('input[type="password"]')) input.value = '';
 }
 
+async function showSignedInProfile() {
+  // Backend RLS still verifies profile ownership independently; this is UX.
+  verifiedProfileReady = true;
+  displayScreen('worlds');
+  setFormsEnabled();
+  let profile = null;
+  let worldsUnavailable = false;
+  try {
+    profile = await playerDataService.getMyProfile();
+    const worlds = await playerDataService.listWorlds();
+    drawWorlds(worlds);
+  } catch {
+    // Keep the prelaunch world list as a preview if game tables do not exist.
+    // Never imply the world is open based on a failed backend query.
+    drawWorlds();
+    worldsUnavailable = true;
+  }
+  document.querySelector('#profile-display-name').value =
+    profile?.display_name || '';
+  document.querySelector('#profile-locale').value = profile?.locale || '';
+  setFeedback(worldsUnavailable ?
+    'Signed in. Game worlds or profile storage are not available in this environment yet.' :
+    'Verified account. You can update your player profile; airline creation remains closed.');
+}
+
 async function handleSubmit(event) {
   event.preventDefault();
   if (!PUBLIC_AUTH_ENABLED || !accountService) return;
@@ -89,8 +120,20 @@ async function handleSubmit(event) {
         password: formValue(panel, '#login-password')
       });
       resetInputs();
-      displayScreen('worlds');
-      setFeedback('Signed in. No playable worlds are open yet.');
+      const user = await accountService.getUser();
+      if (!user?.email_confirmed_at || user.is_anonymous === true || user.deleted_at) {
+        throw new Error('Verified account required.');
+      }
+      await showSignedInProfile();
+    } else if (panel === 'worlds') {
+      if (!verifiedProfileReady || !playerDataService) {
+        throw new Error('Sign in with a verified account first.');
+      }
+      await playerDataService.saveMyProfile({
+        displayName: formValue(panel, '#profile-display-name'),
+        locale: formValue(panel, '#profile-locale') || null
+      });
+      setFeedback('Manager profile saved.');
     } else if (panel === 'register') {
       const result = await accountService.register({
         displayName: formValue(panel, '#register-name'),
@@ -157,8 +200,16 @@ async function initialize() {
   if (!PUBLIC_AUTH_ENABLED) return;
 
   try {
-    const supabase = await createBrowserAuthClient({ origin: window.location.origin });
+    // No default project credentials are embedded in the static website.
+    // An explicitly configured local/dev Auth instance is required.
+    const devAuth = window.__AIRLINERRA_DEV_AUTH__ || {};
+    const supabase = await createBrowserAuthClient({
+      origin: window.location.origin,
+      supabaseUrl: devAuth.supabaseUrl,
+      publishableKey: devAuth.publishableKey
+    });
     accountService = createAuthService({ supabase, origin: window.location.origin, enabled: true });
+    playerDataService = createPlayerDataService({supabase,enabled:true});
     setFormsEnabled();
 
     const callback = parseAuthCallback(rawQuery, screen);
@@ -176,6 +227,17 @@ async function initialize() {
     } else if (screen === 'reset') {
       displayScreen('forgot');
       setFeedback('Request a new password recovery email to continue.', true);
+    } else if (screen === 'worlds') {
+      // A page refresh must re-verify account state, never infer it from URL.
+      try {
+        const user = await accountService.getUser();
+        if (user?.email_confirmed_at && user.is_anonymous !== true && !user.deleted_at) {
+          await showSignedInProfile();
+        }
+      } catch {
+        setFormsEnabled();
+        setFeedback('Sign in to manage your profile.', true);
+      }
     }
   } catch {
     verifiedRecovery = false;
