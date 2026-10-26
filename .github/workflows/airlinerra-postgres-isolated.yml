@@ -60,6 +60,7 @@ jobs:
         run: |
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/airline_activation_disposable_fixtures.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/player_profile_rls_isolated.sql
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/airline_activation_negative_cases.sql
       - name: Two concurrent requests for one player airline
         shell: bash
