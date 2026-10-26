@@ -183,6 +183,39 @@ create unique index if not exists airlinerra_one_startup_credit_per_airline
   where entry_kind = 'STARTING_CAPITAL';
 alter table airlinerra_game.airline_ledger enable row level security;
 
+-- This operation is exactly-once under concurrency: the partial unique
+-- ledger index decides which concurrent transaction may apply the balance
+-- credit. Ledger insert and balance update happen in ONE database statement.
+-- Call from the SAME trusted DB transaction as airline creation and trial.
+create or replace function airlinerra_game.credit_starting_cash_once(
+  p_airline_id uuid
+)
+returns boolean
+language plpgsql security invoker set search_path = ''
+as $
+declare
+  was_credited boolean;
+begin
+  with inserted as (
+    insert into airlinerra_game.airline_ledger
+      (airline_id,entry_kind,amount_usd)
+    values (p_airline_id,'STARTING_CAPITAL',5000000.00)
+    on conflict do nothing
+    returning airline_id
+  ),
+  credited as (
+    update airlinerra_game.airlines a
+       set cash_usd = a.cash_usd + 5000000.00
+     where a.id in (select inserted.airline_id from inserted)
+    returning a.id
+  )
+  select exists (select 1 from credited) into was_credited;
+  return was_credited;
+end;
+$;
+revoke all on function airlinerra_game.credit_starting_cash_once(uuid)
+  from public, anon, authenticated;
+
 -- Call ONLY as part of a future trusted airline-creation transaction.
 -- This function is security INVOKER, private-schema only, and has no public
 -- EXECUTE privilege. Repeated calls can NEVER restart an existing trial.
