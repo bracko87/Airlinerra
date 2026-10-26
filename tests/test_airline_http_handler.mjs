@@ -10,7 +10,7 @@ const TOKEN = 'test-only-bearer-access-token-123';
 const BODY = JSON.stringify({
   worldId: 1,
   airlineName: 'Aurelia Airways',
-  homeAirportSourceId: 101
+  homeAirportKey: 'OURAIRPORTS:101'
 });
 
 function request(overrides = {}) {
@@ -102,7 +102,7 @@ test('rejects oversized, invalid, unknown and attacker-supplied owner fields', a
   const { handle, calls } = fixture(true);
   for (const body of [
     '{broken', '[]', 'null', '{}',
-    JSON.stringify({ worldId: 1, airlineName: 'Fly', homeAirportSourceId: 101, playerId: 'attacker' }),
+    JSON.stringify({ worldId: 1, airlineName: 'Fly', homeAirportKey: 'OURAIRPORTS:101', playerId: 'attacker' }),
     JSON.stringify({ worldId: 1, airlineName: 'Fly' })
   ]) {
     const output = await handle(request({ body }));
@@ -112,7 +112,12 @@ test('rejects oversized, invalid, unknown and attacker-supplied owner fields', a
   assert.equal(huge.status, 413);
   assert.equal(calls.length, 0);
   assert.deepEqual(parseOnboardingBody(BODY),
-    { worldId: 1, airlineName: 'Aurelia Airways', homeAirportSourceId: 101 });
+    { worldId: 1, airlineName: 'Aurelia Airways', homeAirportKey: 'OURAIRPORTS:101' });
+  const fiction = parseOnboardingBody(JSON.stringify({
+    worldId:1,airlineName:'Aleksandrovo Air',
+    homeAirportKey:'FICTIONAL:fictional:RS:LYAL'
+  }));
+  assert.equal(fiction.homeAirportKey,'FICTIONAL:fictional:RS:LYAL');
 });
 
 test('valid request returns exact cash string and never leaks tokens', async () => {
