@@ -24,8 +24,13 @@ export function onboardingNextStep({
   evaluatedAt
 } = {}) {
   if (!user?.id) return stage('sign_in');
+  // A trusted server clock is required. An absent or malformed clock must
+  // never make a suspended/revoked or expired account appear ready.
+  const now = Date.parse(evaluatedAt);
+  if (!Number.isFinite(now)) return stage('status_unavailable');
+  const bannedUntil = user.banned_until ? Date.parse(user.banned_until) : null;
   if (user.is_anonymous === true || user.deleted_at ||
-      (user.banned_until && Date.parse(user.banned_until) > Date.parse(evaluatedAt))) {
+      (user.banned_until && (!Number.isFinite(bannedUntil) || bannedUntil > now))) {
     return stage('account_restricted');
   }
   if (!user.email_confirmed_at) return stage('verify_email');
@@ -47,8 +52,7 @@ export function onboardingNextStep({
   }
   if (entitlement?.membership_state === 'trial') {
     const expiry=Date.parse(entitlement.trial_ends_at);
-    const now=Date.parse(evaluatedAt);
-    if (!Number.isFinite(expiry) || !Number.isFinite(now) || now >= expiry) {
+    if (!Number.isFinite(expiry) || now >= expiry) {
       return stage('subscription_required');
     }
   }
