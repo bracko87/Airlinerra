@@ -125,9 +125,11 @@ test('injected test client exercises signup, login, PKCE, recovery and session s
   assert.equal(calls[2][2].redirectTo,'http://localhost:5187/account.html?screen=reset');
   await api.completeCallback({kind:'pkce',code:'abc123',purpose:'verify'});
   assert.deepEqual(calls[3],['exchange','abc123']);
+  // An invalid callback clears any prior recovery intent, so reject it
+  // BEFORE the successful one-time recovery verification.
+  await assert.rejects(api.completeCallback({kind:'otp',token_hash:'abcABC1234567890',type:'email',purpose:'reset'}), /Invalid/);
   await api.completeCallback({kind:'otp',token_hash:'abcABC1234567890',type:'recovery',purpose:'reset'});
   assert.equal(calls[4][1].type,'recovery');
-  await assert.rejects(api.completeCallback({kind:'otp',token_hash:'abcABC1234567890',type:'email',purpose:'reset'}), /Invalid/);
   assert.equal((await api.getUser()).id,'test');
   await api.updatePassword('new-secret-password');
   assert.deepEqual(calls[5],['password',{password:'new-secret-password'}]);
