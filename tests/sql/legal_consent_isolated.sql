@@ -68,7 +68,7 @@ begin;
     begin
       perform airlinerra_game.create_airline_once(
         '11111111-1111-4111-8111-111111111111',
-        1,'Should Reject Old Legal Consent',101);
+        1,'Should Reject Old Legal Consent','OURAIRPORTS:101');
       raise exception 'Activation unexpectedly accepted an outdated consent';
     exception when check_violation then
       if sqlerrm <> 'Published terms and verified player consent required' then
