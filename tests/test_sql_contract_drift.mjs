@@ -91,8 +91,9 @@ test('owner-authorized 3140 airport bridge matches the text-key account schema',
   assert.equal((sql.match(/^BEGIN;$/gm)||[]).length,1,'one transaction start');
   assert.equal((sql.match(/^COMMIT;$/gm)||[]).length,1,'one transaction finish');
   assert.equal((sql.match(/^INSERT INTO airlinerra_game\.approved_game_airports/gm)||[]).length,1);
-  assert.match(sql,/INSERT INTO airlinerra_game\.approved_game_airports\s*\(world_id,airport_key,approval_reference\)/);
+  assert.match(sql,/INSERT INTO airlinerra_game\.approved_game_airports\s*\(world_id,airport_key,approval_reference,airport_name,airport_code,country_iso,municipality\)/);
   assert.match(sql,/ON CONFLICT\(world_id,airport_key\) DO NOTHING;/);
+  assert.match(sql,/c\.airport_name,c\.airport_code,c\.country_iso,c\.municipality/);
   assert.match(sql,/ON c\.world_id=a\.world_id AND c\.airport_key=a\.airport_key/);
   assert.doesNotMatch(sql,/\bhome_airport_source_id\b|\bsource_airport_id\b/);
   assert.ok(sql.includes("WHERE airport_key !~ '^OURAIRPORTS:[1-9][0-9]{0,18}$'"));
