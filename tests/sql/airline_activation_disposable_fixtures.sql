@@ -17,6 +17,14 @@ insert into airlinerra_game.account_consents
 select id,'test-v1','test-v1' from auth.users
  where id <> '66666666-6666-4666-8666-666666666666';
 
+-- Additional negative-test accounts are created *after* consent setup:
+-- they deliberately have no legal acceptance record.
+insert into auth.users (id,email_confirmed_at,is_anonymous,deleted_at)
+values
+  ('77777777-7777-4777-8777-777777777777',null,false,null),
+  ('88888888-8888-4888-8888-888888888888',now(),true,null),
+  ('99999999-9999-4999-8999-999999999999',now(),false,now());
+
 update public.airlinerra_game_worlds
   set state='registration_open'
 where id in (1,2);
