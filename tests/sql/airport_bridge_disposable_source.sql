@@ -18,7 +18,11 @@ REVOKE ALL ON SCHEMA airlinerra FROM PUBLIC, anon, authenticated;
 CREATE TABLE airlinerra.airport_game_world1_registration_source (
   world_id smallint NOT NULL,
   airport_key text NOT NULL,
-  admission_basis text NOT NULL
+  admission_basis text NOT NULL,
+  airport_name text NOT NULL,
+  airport_code text NOT NULL,
+  country_iso text NOT NULL,
+  municipality text
 );
 CREATE TABLE airlinerra.airport_world_activation (
   world_number smallint NOT NULL,
@@ -29,9 +33,10 @@ CREATE TABLE airlinerra.airport_access_reviews (
 );
 
 INSERT INTO airlinerra.airport_game_world1_registration_source
-  (world_id,airport_key,admission_basis)
+  (world_id,airport_key,admission_basis,airport_name,airport_code,country_iso,municipality)
 SELECT 1::smallint,'OURAIRPORTS:' || n::text,
-       'OWNER_AUTHORIZED_SIMULATION_CATALOG'
+       'OWNER_AUTHORIZED_SIMULATION_CATALOG',
+       'Synthetic Airport ' || n::text,'T' || n::text,'DE','Synthetic City'
 FROM generate_series(1,3140) AS n;
 
 INSERT INTO airlinerra.airport_world_activation (world_number,active)
