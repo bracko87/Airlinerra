@@ -85,3 +85,18 @@ test('disposable activation calls use explicit PostgreSQL smallint world IDs',as
   }
   assert.ok(typedCalls >= 16,'expected all disposable activation calls to be typed');
 });
+
+test('owner-authorized 3140 airport bridge matches the text-key account schema',async()=>{
+  const sql=await load('docs/sql/AIRLINERRA_WORLD1_3140_TO_GAME_ACCOUNT_AIRPORTS_PRELAUNCH_2026-10-26.sql');
+  assert.equal((sql.match(/^BEGIN;$/gm)||[]).length,1,'one transaction start');
+  assert.equal((sql.match(/^COMMIT;$/gm)||[]).length,1,'one transaction finish');
+  assert.equal((sql.match(/^INSERT INTO airlinerra_game\.approved_game_airports/gm)||[]).length,1);
+  assert.match(sql,/INSERT INTO airlinerra_game\.approved_game_airports\s*\(world_id,airport_key,approval_reference\)/);
+  assert.match(sql,/ON CONFLICT\(world_id,airport_key\) DO NOTHING;/);
+  assert.match(sql,/ON c\.world_id=a\.world_id AND c\.airport_key=a\.airport_key/);
+  assert.doesNotMatch(sql,/\bhome_airport_source_id\b|\bsource_airport_id\b/);
+  assert.ok(sql.includes("WHERE airport_key !~ '^OURAIRPORTS:[1-9][0-9]{0,18}$'"));
+  assert.match(sql,/n<>3140/,'fail closed if the authorized roster count changes');
+  assert.match(sql,/state='planned'/,'no automatic public world opening');
+  assert.doesNotMatch(sql,/\bUPDATE\s+public\.airlinerra_game_worlds\b|\bUPDATE\s+airlinerra_game\.platform_release_gate\b/i);
+});
