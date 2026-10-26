@@ -10,6 +10,8 @@ on:
       - '.github/workflows/airlinerra-account-node-ci.yml'
       - 'server/**'
       - 'website/auth-*.mjs'
+      - 'website/onboarding-api-client.mjs'
+      - 'tests/test_browser_onboarding_client.mjs'
       - 'website/account.*'
       - 'website/player-data-service.mjs'
       - 'website/dev-scripts/**'
