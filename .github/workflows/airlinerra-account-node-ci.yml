@@ -61,3 +61,110 @@ jobs:
           grep -Fq "enabled = false" server/legal-consent-service.mjs
           grep -Fq "enabled = false" server/legal-consent-http-handler.mjs
           echo 'Prelaunch switches remain disabled. No database access or deployment performed.'
+
+  # Disposable PostgreSQL service uses only CI-local credentials and an
+  # isolated airlinerra_disposable DB; no Supabase endpoint or game deployment.
+  postgres-disposable:
+    needs: node-account-regressions
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable-ci-only
+          POSTGRES_DB: airlinerra_disposable
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d airlinerra_disposable"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 8
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: disposable-ci-only
+      PGDATABASE: airlinerra_disposable
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run Node account regressions
+        working-directory: website
+        run: npm test
+      - name: Build prelaunch website without deployment
+        working-directory: website
+        run: npm run build
+      - name: Install PostgreSQL client
+        run: |
+          if ! command -v psql >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y postgresql-client
+          fi
+          psql --version
+      - name: Verify disposable PostgreSQL target before any DDL
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = "127.0.0.1"
+          test "$PGPORT" = "5432"
+          test "$PGDATABASE" = "airlinerra_disposable"
+          test "$PGUSER" = "postgres"
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/disposable_database_preflight.sql
+      - name: Create isolated Supabase Auth stubs and schema
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/bootstrap_auth_stubs.sql
+          psql -X -v ON_ERROR_STOP=1 -f docs/sql/airlinerra_game_identity_schema_prelaunch.sql
+          psql -X -v ON_ERROR_STOP=1 -f docs/sql/airlinerra_game_activation_prelaunch.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/airline_activation_isolated_assertions.sql
+      - name: Synthetic accounts and expected pre-activation rejections
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/airline_activation_disposable_fixtures.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/legal_consent_isolated.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/player_profile_rls_isolated.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/airline_activation_negative_cases.sql
+      - name: Eight simultaneous same-player airline activations
+        shell: bash
+        run: |
+          set -euo pipefail
+          QUERY="select newly_created::text from airlinerra_game.create_airline_once('11111111-1111-4111-8111-111111111111',1,'Aurelia Airways','OURAIRPORTS:101');"
+          # A burst of independent DB connections must yield ONE creation
+          # and exactly seven replay results; each operation is bounded.
+          pids=()
+          for n in $(seq 1 8); do
+            PGOPTIONS="-c statement_timeout=30000 -c lock_timeout=20000" psql -X -qAt -v ON_ERROR_STOP=1 -c "$QUERY" > "$RUNNER_TEMP/airline_activation_$n.txt" 2>&1 &
+            pids+=("$!")
+          done
+          status=0
+          for pid in "${pids[@]}"; do
+            wait "$pid" || status=1
+          done
+          cat "$RUNNER_TEMP"/airline_activation_*.txt
+          test "$status" -eq 0
+          counts=$(awk '/^true$/ {created++} /^false$/ {retried++} END {printf "%d %d",created+0,retried+0}' "$RUNNER_TEMP"/airline_activation_*.txt)
+          read -r count_created count_retried <<< "$counts"
+          echo "Created: $count_created; idempotent retries: $count_retried"
+          test "$count_created" -eq 1
+          test "$count_retried" -eq 7
+      - name: Verify concurrent funds, replay, subscriptions and world isolation
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/airline_activation_postconditions.sql
+      - name: Save database test diagnostics
+        if: always()
+        shell: bash
+        run: |
+          echo "## Airlinerra isolated PostgreSQL test" >> "$GITHUB_STEP_SUMMARY"
+          echo "Database target: disposable service on localhost; no external Supabase secrets." >> "$GITHUB_STEP_SUMMARY"
+          echo "Run: ${GITHUB_RUN_ID}, attempt: ${GITHUB_RUN_ATTEMPT}." >> "$GITHUB_STEP_SUMMARY"
+          if command -v psql >/dev/null 2>&1 && test "$PGDATABASE" = "airlinerra_disposable" && test "$PGHOST" = "127.0.0.1" && pg_isready -q; then
+            psql -X -qAt -v ON_ERROR_STOP=1 -c "select 'airlines=' || count(*) from airlinerra_game.airlines;" >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
+            psql -X -qAt -v ON_ERROR_STOP=1 -c "select 'ledger=' || count(*) from airlinerra_game.airline_ledger;" >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
+          fi
