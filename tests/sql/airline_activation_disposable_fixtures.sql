@@ -30,9 +30,10 @@ update public.airlinerra_game_worlds
 where id in (1,2);
 
 insert into airlinerra_game.approved_game_airports
-  (world_id,source_airport_id,approval_reference)
-values (1,101,'ISOLATED-TEST-ONLY'),
-       (2,202,'ISOLATED-TEST-ONLY');
+  (world_id,airport_key,approval_reference)
+values (1,'OURAIRPORTS:101','ISOLATED-TEST-ONLY'),
+       (2,'OURAIRPORTS:202','ISOLATED-TEST-ONLY'),
+       (2,'FICTIONAL:fictional:RS:LYAL','ISOLATED-TEST-ONLY');
 
 -- Synthetic expired trial, paid-without-trial, suspended membership.
 insert into airlinerra_game.account_entitlements
