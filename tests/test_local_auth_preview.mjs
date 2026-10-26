@@ -46,6 +46,8 @@ test('real localhost HTTP preview provides virtual enabled flags but leaves sour
   assert.equal(html.status,200);
   assert.match(html.body,/__airlinerra_local_auth_config__\.js/);
   assert.match(html.body,/id="player-profile-form"/);
+  assert.match(html.body,/Local Auth test only/);
+  assert.doesNotMatch(html.body,/No information entered here is submitted or stored/);
   assert.match(flags.body,/PUBLIC_AUTH_ENABLED = true;/);
   assert.match(flags.body,new RegExp('http://localhost:'+server.port));
   assert.doesNotMatch(flags.body,/hwllkabgzaynalahvkpz/);
