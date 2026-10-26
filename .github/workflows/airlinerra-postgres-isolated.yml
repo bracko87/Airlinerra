@@ -1,0 +1,83 @@
+name: Airlinerra isolated PostgreSQL account validation
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  postgres-activation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable-ci-only
+          POSTGRES_DB: airlinerra_disposable
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d airlinerra_disposable"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 8
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: disposable-ci-only
+      PGDATABASE: airlinerra_disposable
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run Node account regressions
+        working-directory: website
+        run: npm test
+      - name: Build prelaunch website without deployment
+        working-directory: website
+        run: npm run build
+      - name: Install PostgreSQL client
+        run: |
+          if ! command -v psql >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y postgresql-client
+          fi
+          psql --version
+      - name: Create isolated Supabase Auth stubs and schema
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/bootstrap_auth_stubs.sql
+          psql -X -v ON_ERROR_STOP=1 -f docs/sql/airlinerra_game_identity_schema_prelaunch.sql
+          psql -X -v ON_ERROR_STOP=1 -f docs/sql/airlinerra_game_activation_prelaunch.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/airline_activation_isolated_assertions.sql
+      - name: Synthetic accounts and expected pre-activation rejections
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/airline_activation_disposable_fixtures.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/airline_activation_negative_cases.sql
+      - name: Two concurrent requests for one player airline
+        shell: bash
+        run: |
+          set -euo pipefail
+          QUERY="select newly_created::text from airlinerra_game.create_airline_once('11111111-1111-4111-8111-111111111111',1,'Aurelia Airways',101);"
+          psql -X -qAt -v ON_ERROR_STOP=1 -c "$QUERY" > "$RUNNER_TEMP/airline_activation_first.txt" 2>&1 &
+          first_pid=$!
+          psql -X -qAt -v ON_ERROR_STOP=1 -c "$QUERY" > "$RUNNER_TEMP/airline_activation_second.txt" 2>&1 &
+          second_pid=$!
+          wait "$first_pid"
+          wait "$second_pid"
+          cat "$RUNNER_TEMP/airline_activation_first.txt" "$RUNNER_TEMP/airline_activation_second.txt"
+          count_true=$(grep -hc '^true$' "$RUNNER_TEMP"/airline_activation_*.txt | awk -F: '{s+=$NF} END {print s+0}')
+          count_false=$(grep -hc '^false$' "$RUNNER_TEMP"/airline_activation_*.txt | awk -F: '{s+=$NF} END {print s+0}')
+          test "$count_true" -eq 1
+          test "$count_false" -eq 1
+      - name: Verify concurrent funds, replay, subscriptions and world isolation
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/airline_activation_postconditions.sql
