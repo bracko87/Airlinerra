@@ -225,7 +225,7 @@ test('static page remains a non-submitting preview and build includes new module
   assert.match(html,/id="onboarding-accept-privacy"/);
   assert.match(js,/onboardingApi\.acceptLegal/);
   assert.match(js,/onboardingApi\.createAirline/);
-  assert.equal((js.match(/^initialize\\(\\);$/gm)||[]).length,1,
+  assert.equal(js.split(String.fromCharCode(10)).filter(line => line.trim() === 'initialize();').length,1,
     'exactly one browser initialization call is permitted');
   assert.ok(js.trimEnd().endsWith('initialize();'),
     'account controller must not contain script fragments after initialization');
