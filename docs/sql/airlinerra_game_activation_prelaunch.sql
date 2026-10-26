@@ -200,11 +200,15 @@ begin
       using errcode = 'check_violation';
   end if;
 
-  select e.trial_started_at,e.trial_ends_at
-    into v_trial_start,v_trial_end
+  select e.trial_started_at,e.trial_ends_at,e.membership_state
+    into v_trial_start,v_trial_end,v_entitlement_state
     from airlinerra_game.start_account_trial_once(p_player_id) e;
-  if v_trial_start is null or v_trial_end is null then
-    raise exception 'Account trial initialization failed'
+  -- A previously paid account may legitimately have no free-trial clock.
+  -- A trial/none account, however, must have acquired a full trial.
+  if not found or
+     (v_entitlement_state <> 'active'
+       and (v_trial_start is null or v_trial_end is null)) then
+    raise exception 'Account entitlement initialization failed'
       using errcode = 'check_violation';
   end if;
 
