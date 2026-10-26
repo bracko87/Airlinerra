@@ -96,7 +96,7 @@ export function createAirlineActivationService({
       return Object.freeze({
         airlineId:row.airline_id,
         newlyCreated:row.newly_created,
-        cashUsd:Number(row.starting_balance_usd),
+        cashUsd:String(row.starting_balance_usd), // exact decimal, never JS floating-point
         trialEndsAt:row.trial_ends_at
       });
     } catch (error) {
