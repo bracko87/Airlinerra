@@ -47,7 +47,7 @@ export function createOnboardingApiClient({
   }
   const allowOrigin = ALLOWED_AUTH_ORIGINS.includes(origin);
   async function post(path, payload) {
-    if (!enabled || !PUBLIC_AUTH_ENABLED) {
+    if (!enabled) {
       throw new Error('Airlinerra player onboarding is not yet open.');
     }
     if (!allowOrigin) throw new Error('Account API origin is not authorized.');
