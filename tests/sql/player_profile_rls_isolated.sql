@@ -14,7 +14,7 @@ begin
    raise exception 'Excessive API profile privileges';
  end if;
  if has_function_privilege('authenticated',
-      'airlinerra_game.create_airline_once(uuid,smallint,text,bigint)','EXECUTE') then
+      'airlinerra_game.create_airline_once(uuid,smallint,text,text)','EXECUTE') then
    raise exception 'Authenticated client can invoke private airline activation';
  end if;
 end;
