@@ -59,8 +59,7 @@ test('hard-off Auth SDK never loads or contacts any Supabase project',async()=>{
   assert.equal(loads,0);
 });
 test('default onboarding bridge prevents any Auth or API traffic',async()=>{
-  const {calls}=setup({enabled:false});
-  const {client}=setup({enabled:false});
+  const {calls,client}=setup({enabled:false});
   await assert.rejects(client.createAirline(AIRLINE),/not yet open/);
   await assert.rejects(client.acceptLegal(LEGAL),/not yet open/);
   assert.equal(calls.length,0);
