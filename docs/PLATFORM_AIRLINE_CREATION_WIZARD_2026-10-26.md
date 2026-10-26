@@ -42,6 +42,15 @@ The Airport Database Overview workstream **already recorded owner authorization*
 
 The existing unapplied migration `docs/sql/AIRLINERRA_WORLD1_3140_TO_GAME_ACCOUNT_AIRPORTS_PRELAUNCH_2026-10-26.sql` was repaired to use `(world_id,airport_key)` throughout, matching `airlinerra_game.approved_game_airports` and the `create_airline_once` API. The earlier draft incorrectly used bigint-style `source_airport_id` in an account schema that requires stable `OURAIRPORTS:<id>` text keys. A contract-drift regression was added in `tests/test_sql_contract_drift.mjs`. **This SQL has not been run against the live database; approval transfer awaits installed game-account tables and owner-authorized deployment.**
 
+## World 01 airport roster — actual disposable SQL transfer and player-readable choices
+
+- The ACTUAL (unapplied) World 01 airport bridge has now been exercised in disposable PostgreSQL with 3,140 synthetic source identities: first import, idempotent second import, incorrect source-count rejection, unchanged world states and release gate, and a clean restore to the disabled baseline. Both Node and PostgreSQL jobs passed in [GitHub Actions #40404162522](https://github.com/bracko87/Airlinerra/actions/runs/40404162522).
+- A read-only check of the already-approved live research view confirmed 3,140 airports with **no missing names, source airport codes or country codes**. The longest observed name was 90 characters and the longest source airport code 8 characters.
+- The REVIEW-ONLY account schema now stores optional airport name, airport code, country and municipality on `airlinerra_game.approved_game_airports` records. The guarded airport bridge copies these fields from the owner-approved World 01 view; it rejects missing or drifted identifying display metadata. Import still requires an explicit, authorized game-schema deployment.
+- The private onboarding context now formats player-facing options such as **Bremen Airport (EDDW) — DE**, instead of showing just an opaque `OURAIRPORTS:<id>` key. The underlying chosen value, database foreign key, and server authorization remain the immutable airport key; no research schema becomes browser-accessible.
+- The latest complete native Node and disposable PostgreSQL checks passed in [GitHub Actions #40405017760](https://github.com/bracko87/Airlinerra/actions/runs/40405017760). A separate Chromium E2E assertion has been added to check the actual visible option label using synthetic CI records; this extra browser verification is separate from the already completed original wizard flow.
+- No public registration was enabled, no actual game-account table was deployed, and no real production airport approval was applied by these changes.
+
 ## Remaining original launch work
 
 1. **Complete:** Green actual-browser wizard result, including synthetic legal links, private consent transaction, approved test-airport selection and a $5,000,000 starting balance; independently verified in run #40401594030.
