@@ -50,6 +50,6 @@ Final audit: 8 research records; 6 operator-verified pending release; 2 independ
 
 ## Next batch
 
-Continue with additional 2026 current airport-operator or national AIP sources, prioritizing the remaining **42** German airports on the previous 44-airport queue, excluding the six advanced; of those 42, two now have recorded secondary/historical evidence and 40 have not been reviewed in Batch 01. Use current published runway distances, special runway type, access status and permanent/temporary closures independently. Propose expansion activation only as a separate, explicitly authorized **simulated-game release**, after runway screening; do not confuse physical runway collection with airline-specific operating permissions.
+Continue with additional 2026 current airport-operator or national AIP sources, prioritizing the remaining **38** German airports still on independent-source hold (44 initially minus six advanced); two of these now have recorded secondary/historical evidence and 36 have not yet been reviewed in Batch 01. Use current published runway distances, special runway type, access status and permanent/temporary closures independently. Propose expansion activation only as a separate, explicitly authorized **simulated-game release**, after runway screening; do not confuse physical runway collection with airline-specific operating permissions.
 
 **Status:** German expansion Batch 01 research completed, protected World 1 founding cohort intact.
