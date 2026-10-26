@@ -392,3 +392,72 @@ Swiss Federal Office of Civil Aviation **2025-10-31 decree**, chapter **2.7.3 p.
 - No modifications to original `airport_registry` source values, `airport_game_world1_catalog`, `airport_world_activation`, six provisional categories or the German/Austrian specialist holds.
 
 **Priority next:** Request authoritative current (as of 2026) runway/declared-distance and pavement charts for five outstanding aircraft-related physical checks: **LSTS, LSMA, LSME, LSMM, LSPM**. Also verify live NOTAM and specific operator permissions before any later airport game-admission decision. The 3,140 original World 1 airports stay active in the database; operational UI reachability is not established merely by activation flags.
+
+---
+
+## Batch 07 — official Ambrì runway restriction and primary-source access gap (2026-10-26)
+
+**Marker:** `CH_SPECIALIST_07_2026_10_26`  
+**Research method:** Current FOCA/BAZL source pages plus original dated regulator decisions and Swiss federal mapping agency history. For official Swiss operating information, Skyguide states the **AIP and VFR Manual** are the authoritative aviation publications; aerodrome data are obtainable from AIM Services, possibly by direct request or in structured AIXM format. The official 2026 live runway publications and NOTAMs for these five cases were **not accessed**. Neither a virtual-ATC runway listing nor a historical aviation map is a valid current operational clearance.
+
+### Ambrì LSPM — verified physical-vs-usable official separation (new and important)
+
+Two Swiss **federal** documents clarify why different reported runway lengths should not be mixed:
+
+1. The **2020-09-02 FOCA/BAZL SIL aviation infrastructure sheet** for Ambrì describes the former military installation being reduced to a **1,285 m runway with a `rivestimento duro` ("hard surface")**. Its approved displaced threshold arrangements limit the **maximum length usable for takeoff and landing to 1,120 m**. The `aerodrome reference code number 1` cited in the SIL sheet concerns operational classification of the shorter usable length and is **not an Airlinerra final six-level airport category**.
+2. The **2023-09-05 FOCA conversion decision** confirms the **1,120 m maximum usable runway length** had already been imposed through **horizontal runway markings approved March 15, 2016**. It also references the civil conversion order. The current FOCA Ambrì facility directory expressly says the conversion decision remains **under appeal**. Thus issuance of the 2023 order must not be misreported as finalized civilian conversion.
+
+| Measure | Source-supported value | Classification/gate implication |
+|---|---:|---|
+| FOCA planned **physical hard-surfaced runway** | **1,285 m** | Above Airlinerra's 1,200 m runway-only **length** criterion, but **hard surface does not explicitly prove asphalt or concrete** |
+| FOCA **maximum usable length for takeoff/landing** | **1,120 m** | Below 1,200 m **for aircraft performance**; do not equate with physical runway length |
+| Original `airport_registry` (OurAirports-source record) | **1,237.5 m CONCRETE** | Keep immutable, not independently reconciled with FOCA's hard-surface material description |
+| Other online/vACC reports | **1,245 m asphalt / historic 7,000 ft** | Conflicting or obsolete alternative lengths, not accepted as current official usable distances |
+
+**Consequence:** `paved_runway_status='UNVERIFIED'` for the *independent exact asphalt-or-concrete and current AIP gate*, `civilian_access_status='CONVERSION_UNDER_APPEAL'`, `commercial_permission_status='UNVERIFIED'`, `game_admission_status='NOT_APPROVED'`. The registry-runway collection screen is **not deleted**: a physical 1,285m hard-surfaced length above threshold and a source-specific 1,237.5m concrete report remain preserved pending definitive material reconciliation. If future aircraft-performance rules require 1,200m usable in a direction, LSPM would fail that *aircraft* criterion using the published 1,120m figure, without becoming automatically excluded from the separate collection list.
+
+Official sources:
+- FOCA SIL 2020 `Ambrì del 2 settembre 2020`, original PDF pp. 2 and 5: https://www.bazl.admin.ch/dam/de/sd-web/WEaxL7IyPLAE/ambri-del-02-09-2020.pdf
+- FOCA 2023 decision, original PDF pp. 3 and 11: https://www.bazl.admin.ch/dam/de/sd-web/2XpR4DHo49N8/2023-09-05-ambri-decisione-cambiamento-d-uso-dell-ex-aerodromo-militare-in-aerodromo-civile.pdf
+- FOCA directory including unresolved appeal as checked 2026-10-26: https://www.bazl.admin.ch/de/flugfeld-ambri
+
+### Emmen LSME — authoritative historical length corroboration, not pavement
+
+The Swiss federal mapping agency **swisstopo** published a historical airport article on **2023-12-28** confirming that Emmen runway was extended in **1957 to 2,500 m** (following earlier 1,100m/1,500m stages). This is an independently **federal** source for a historical runway-length figure consistent with the legacy source registry's **2,501.8m** asphalt record; it **does not explicitly identify 2026 runway asphalt/concrete type, closed/open condition or live 2026 directional distances**.
+
+Keep `paved_runway_status='UNVERIFIED'`, military/co-use RUAG administration and maximum **1,000 civil movements/year** previously documented, and commercial admission `NOT_APPROVED`.
+
+Source: https://www.swisstopo.admin.ch/de/luftfahrt-in-emmen-und-die-siegfriedkarte-20231205
+
+### St. Stephan LSTS — official-decision vs generic directory publication mismatch
+
+The FOCA directory for **LSTS**, accessed on this research date, still says *former military airport, not converted* and *no published decision*. This conflicts with a **more specific published October 31, 2025 FOCA authority decree** expressly granting the operating licence, approving the operating rules and specifying **1,726 m operational runway between ends** versus **2,040 m total area including overruns**. Read the specific decision as evidence it was issued; **do not assume all effective-date, appeal and runway publication conditions are fulfilled** on the strength of that decree alone.
+
+This batch did **not** retrieve a live 2026 Skyguide AD INFO certifying asphalt/concrete material and complete TORA/LDA. `paved_runway_status='UNVERIFIED'` and individual operator access are unchanged, and no raw `airport_registry` surface or length was overwritten.
+
+Sources:
+- FOCA specific 2025-10-31 published conversion decision: https://www.bazl.admin.ch/dam/bazl/fr/dokumente/Sicherheit/Infrastruktur/Verfuegungen/2025-10-31-st-stephan-verfuegung-umnutzung-des-ehemaligen-militaerfluplatzes-in-ein-ziviles-flugfeld.pdf.download.pdf/2025-10-31-st-stephan-verfuegung-umnutzung-des-ehemaligen-militaerfluplatzes-in-ein-ziviles-flugfeld.pdf
+- FOCA generic directory with older wording: https://www.bazl.admin.ch/de/flugfeld-st-stephan
+
+### Alpnach LSMA and Meiringen LSMM — primary physical-source blocker, no promotion
+
+This batch searched current Swiss FOCA, Swiss Air Force, Skyguide AIM, military aeronautical publications and relevant airport-specific indexed resources. **No publicly authenticated current 2026 source containing a definitive asphalt/concrete runway, physical length and directional TORA/LDA was obtained for either airfield.** The existing conflicting Alpnach virtual-ATC **1,870 m** versus raw register **1,497.8m asphalt** and Meiringen community **2,002 m** versus register **2,002.8m asphalt** remain secondary research leads, not standalone authoritative reconciliations. Both airports stay source-registry `RUNWAY_QUALIFIED`, independent full `paved_runway_status='UNVERIFIED'`, with military-use gates and no commercial permission.
+
+Useful primary data access:
+- Skyguide AIM authoritative AIP/VFR and availability on request: https://www.skyguide.ch/services/aeronautical-information-management
+- Swiss FOCA aeronautical information and manuals: https://www.bazl.admin.ch/en/aeronautical-information-2
+- Skyguide contact listing for Alpnach, Emmen, Meiringen and other facilities: https://www.skyguide.ch/de/kontakt
+- Official Swiss Air Force facility overview: https://www.vtg.admin.ch/de/militaerflugplaetze
+
+**Requests for the next source-acquisition stage:** Obtain a date-effective (October 2026) original AIP/VFR AD INFO or authorized military aerodrome chart for **LSTS, LSMA, LSME, LSMM, LSPM**, including runway designators, physical paved length/width and exact ASPHALT vs CONCRETE material, TORA/TODA/ASDA/LDA per direction and any reduced length, current published operational/closure status and NOTAM requirements. Ask specifically whether St. Stephan's 2025 FOCA civil grant is legally effective and which aeronautical publication governs it, and whether Ambrì has any later judgment modifying the pending-conversion status. **No outreach email was sent by this batch.**
+
+### Persisted audit result
+
+- **4** private `airlinerra.airport_evidence` observations, IDs **2157–2160**, covering Ambrì (two), Emmen (one) and St. Stephan (one), batch `CH_SPECIALIST_07_2026_10_26`.
+- **3** access-review research status updates, all retaining `paved_runway_status='UNVERIFIED'`, `commercial_permission_status='UNVERIFIED'`, `game_admission_status='NOT_APPROVED'`.
+- **3** historical audit events, IDs **36–38**, under the same batch marker.
+- No evidence-led promotion for Alpnach or Meiringen, because the searched authority sources did not provide definitive physical/surface data. They were left unchanged.
+- **Swiss batches 01–07 total: 56 evidence records across 12 specialist airport candidates**; **7/12** have independently corroborated physical asphalt/concrete suitability at the research gate, **5/12** retain full independent pavement evidence holds. All 12 remain `NOT_APPROVED` for airline gameplay.
+- No mutation of original `airport_registry`, World 1 3,140-airport catalog, `airport_world_activation`, Germany/Austria specialist cases, or six-category decisions.
+
+**Batch 07 conclusion:** Ambrì's key 1,285m physical-vs-1,120m usable distinction is established directly from federal planning/decree sources; Emmen's 2,500m historical length gains federal corroboration; St. Stephan's FOCA website publication inconsistency is documented. Five Swiss aircraft-specific current-runway/permission source gates still require authoritative AIP acquisition. Do not activate new airports.
