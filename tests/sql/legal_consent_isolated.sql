@@ -63,6 +63,18 @@ begin;
     ) then
       raise exception 'Old consent wrongly accepted after terms changed';
     end if;
+    -- A real activation attempt must enforce the updated published
+    -- policy, not merely a synthetic JOIN-based consent comparison.
+    begin
+      perform airlinerra_game.create_airline_once(
+        '11111111-1111-4111-8111-111111111111',
+        1,'Should Reject Old Legal Consent',101);
+      raise exception 'Activation unexpectedly accepted an outdated consent';
+    exception when check_violation then
+      if sqlerrm <> 'Published terms and verified player consent required' then
+        raise exception 'Stale consent rejected for incorrect reason: %', sqlerrm;
+      end if;
+    end;
   end;
   $legal_version_check$;
 rollback;
