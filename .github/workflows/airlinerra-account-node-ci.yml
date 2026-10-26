@@ -50,6 +50,14 @@ jobs:
       - name: Run account regression tests
         working-directory: website
         run: npm test
+      - name: Check account browser module syntax
+        working-directory: website
+        run: |
+          node --check account.js
+          node --check auth-client.mjs
+          node --check auth-service.mjs
+          node --check onboarding-api-client.mjs
+          node --check player-data-service.mjs
       - name: Verify static prelaunch build
         working-directory: website
         run: npm run build
