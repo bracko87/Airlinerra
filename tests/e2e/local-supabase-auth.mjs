@@ -28,11 +28,19 @@ function localCredentials(){
     encoding:'utf8',timeout:20000,stdio:['ignore','pipe','pipe']
   });
   const data=JSON.parse(raw);
-  const entries=Object.entries(data).map(([key,value])=>[key.toLowerCase(),value]);
-  const pick=(...keys)=>entries.find(([k])=>keys.some(x=>x===k))?.[1];
-  const key=pick('publishable_key','anon_key','publishablekey');
-  if (typeof key!=='string'||!key.startsWith('sb_publishable_')) {
-    throw new Error('Local CLI did not expose a publishable API key.');
+  // Recent CLI status JSON nests the exported variables under "env",
+  // whereas earlier versions return them at top level.
+  const source=data?.env && typeof data.env==='object'?data.env:data;
+  const entries=Object.entries(source).map(([name,value])=>[name.toLowerCase(),value]);
+  const pick=(...names)=>entries.find(([name])=>names.includes(name))?.[1];
+  const publishable=pick('publishable_key','publishablekey');
+  const legacyAnon=pick('anon_key','anonkey');
+  const key=typeof publishable==='string' && publishable.startsWith('sb_publishable_') ?
+    publishable :
+    typeof legacyAnon==='string' && /^eyJ[A-Za-z0-9._-]+$/.test(legacyAnon) ?
+      legacyAnon : null;
+  if (!key) {
+    throw new Error('Local CLI status did not expose a valid public Auth API key.');
   }
   const url=pick('api_url','apiurl');
   if (url!==API) throw new Error('Refusing nonlocal Supabase API endpoint.');
