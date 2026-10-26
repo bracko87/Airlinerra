@@ -461,3 +461,21 @@ Useful primary data access:
 - No mutation of original `airport_registry`, World 1 3,140-airport catalog, `airport_world_activation`, Germany/Austria specialist cases, or six-category decisions.
 
 **Batch 07 conclusion:** Ambrì's key 1,285m physical-vs-1,120m usable distinction is established directly from federal planning/decree sources; Emmen's 2,500m historical length gains federal corroboration; St. Stephan's FOCA website publication inconsistency is documented. Five Swiss aircraft-specific current-runway/permission source gates still require authoritative AIP acquisition. Do not activate new airports.
+
+---
+
+## Batch 08 — official AIP access acquisition and review-ready correspondence (2026-10-26)
+
+**Marker:** `CH_SPECIALIST_08_2026_10_26`. The five still-unverified **independent current physical runway** cases are LSTS (St. Stephan), LSMA (Alpnach), LSME (Emmen), LSMM (Meiringen), LSPM (Ambrì). No fresh official AIP runway dimensions were obtained in this pass, so **zero new physical verifications** and zero admissions were granted.
+
+**Access route:** Skyguide AIM offers the authoritative Swiss AIP and VFR Manual through skybriefing, subject to registered/subscription access, and can provide aeronautical data on request, including AIXM. For audit date 2026-10-26, request the source edition effective on this date (October 2026); a future AIRAC effective 2026-10-29 must not be represented as already in force. Skyguide AIM information: https://www.skyguide.ch/services/aeronautical-information-management .
+
+**Gmail drafts prepared but NOT SENT:**
+1. `helpdesk@skybriefing.com` — asks Skyguide how to obtain effective-date runway designators, physical length/width, **explicit asphalt or concrete**, per-direction TORA/TODA/ASDA/LDA and displaced thresholds for **LSTS, LSMA, LSME, LSMM, LSPM**, including military publication handling, NOTAM/edition references, access fees and licensing for factual simulation research. Gmail draft id `r4998687464403464281`.
+2. `lesa@bazl.admin.ch` — asks Swiss FOCA about **LSTS** 2025 official conversion decree versus stale generic directory, applicable operating regulations and runway surface, and **LSPM** 2023 appealed conversion decision and FOCA physical 1285m hard surface vs usable 1120m, with request for access path, costs and licensing. Gmail draft id `r-6093111150944599887`.
+
+These draft identifiers refer to private Gmail, not public source material. **No email was sent, no paid subscription/order initiated, and no publication rights presumed.**
+
+The 5 `airlinerra.airport_evidence` research-access records **2161–2165**, one per airport, record access limitation and drafts prepared—not current runway factual verification. The existing `airport_access_reviews` gates remain unchanged (`paved_runway_status='UNVERIFIED'`, `commercial_permission_status='UNVERIFIED'`, `game_admission_status='NOT_APPROVED'`). No World 1 mutation, source registry replacement, six-category assignment or deployment.
+
+**Actionable next:** Review and send the drafts if desired; once an official source or written authority reply is obtained, enter its edition/effective date, provenance and specific physical vs usable distances as new evidence, independently audit the surface and only then reconsider the source-verification field. Replies and fees are unknown.
