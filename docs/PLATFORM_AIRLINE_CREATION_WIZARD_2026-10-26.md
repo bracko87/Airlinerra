@@ -25,21 +25,28 @@
 - The native Node and disposable PostgreSQL jobs in [GitHub Actions #40399231610](https://github.com/bracko87/Airlinerra/actions/runs/40399231610) **both completed SUCCESS** after the original fixes. A later [Node validation run #40400685468](https://github.com/bracko87/Airlinerra/actions/runs/40400685468) also **completed SUCCESS**.
 - **Full local Auth, Mailpit, isolated PostgreSQL and Chromium browser E2E** completed **SUCCESS** in [GitHub Actions #40401594030](https://github.com/bracko87/Airlinerra/actions/runs/40401594030) (commit `e04324d92f556c5f2b603358e194912321c37300`). The job log explicitly confirms registration, email confirmation, profile persistence, synthetic legal-page navigation, airport selection and airline creation against real private disposable SQL, password recovery, and successful sign-in with the new password.
 - The backend E2E also verified separate legal consent, denied unapproved airports, idempotent retry, per-airline $5,000,000 starting capital and an account-level seven-day trial. All synthetic data remained in the disposable test environment.
-- **The browser milestone is closed**. It does not certify hosted service readiness, production terms and privacy, or live game approval. The previously verified account UI journey is also documented in `docs/PLATFORM_CHROMIUM_ACCOUNT_UI_E2E_GREEN_2026-10-26.md`.
+- **The browser milestone is closed**. It does not certify hosted service readiness, production terms and privacy, or deployment of a game-account approval roster. The previously verified account UI journey is also documented in `docs/PLATFORM_CHROMIUM_ACCOUNT_UI_E2E_GREEN_2026-10-26.md`.
 
 ## Live database remains untouched
 
 After the changes, read-only checks confirmed:
 - Deployed `airlinerra_game` tables: **0**.
-- Research World 01 activation records: **3,140**.
+- Research World 01 active records: **3,140**. An explicit owner-authorized **simulation-only** foundation release also has exactly **3,140** member keys; the two sets match precisely with zero duplicates or mismatches (read-only SQL verified 2026-10-26).
 - Website/game state: **`prelaunch`**.
 
-No actual legal documents were approved, no airport research rows were mutated, no live game worlds were opened and no paid subscriptions were enabled.
+No actual legal documents were approved, no airport research rows were mutated by this workstream, no live game-account tables or worlds were opened and no paid subscriptions were enabled.
+
+### World 01 airport handoff (code prepared, deployment blocked)
+
+The Airport Database Overview workstream **already recorded owner authorization** `FOUNDATION_ORIGINAL_3140_WORLD1_2026_10_26` for the original 3,140 airports as a **simulation game catalog**, explicitly not real-world commercial operating permission or production website launch. An owner-approved subset does not need to be reapproved for this same simulation purpose. The private source view is `airlinerra.airport_game_world1_registration_source`.
+
+The existing unapplied migration `docs/sql/AIRLINERRA_WORLD1_3140_TO_GAME_ACCOUNT_AIRPORTS_PRELAUNCH_2026-10-26.sql` was repaired to use `(world_id,airport_key)` throughout, matching `airlinerra_game.approved_game_airports` and the `create_airline_once` API. The earlier draft incorrectly used bigint-style `source_airport_id` in an account schema that requires stable `OURAIRPORTS:<id>` text keys. A contract-drift regression was added in `tests/test_sql_contract_drift.mjs`. **This SQL has not been run against the live database; approval transfer awaits installed game-account tables and owner-authorized deployment.**
 
 ## Remaining original launch work
 
 1. **Complete:** Green actual-browser wizard result, including synthetic legal links, private consent transaction, approved test-airport selection and a $5,000,000 starting balance; independently verified in run #40401594030.
-2. **Pending operator/legal decisions:** Publish approved real Terms and Privacy documents (synthetic CI documents are not publishable), and receive an explicitly authorized playable-airport roster from the **Airport Database Overview** workstream. Neither the 3,140 research activations nor provisional categories automatically authorize `approved_game_airports` entries.
-3. **Pending owner-authorized hosted integration:** Configure secure development hosting, identity/database/SMTP/domain, production release gates and payment integration; verify the complete flow in hosted staging before enabling public player registration. Do not deploy the private schema or open live accounts without explicit authorization.
+2. **Airport release already authorized; handoff pending deployment:** The first 3,140 World 01 simulation airports are explicitly owner-authorized in the private research database; use the guarded key-matched bridge after the game-account schema is installed and reviewed. Do not ask for duplicate cohort approval, import other candidate airports, infer commercial-flight permits or open the release gate.
+3. **Real legal publication pending:** Publish owner-reviewed Terms and Privacy documents, with versioned links and retention/consent policy. CI synthetic pages are not player legal documents.
+4. **Pending owner-authorized hosted integration:** Configure secure development hosting, identity/database/SMTP/domain, production release gates and payment integration; verify the complete flow in hosted staging before enabling public player registration. Do not deploy the private schema or open live accounts without explicit authorization.
 
 **The source-code and isolated full-browser milestone is COMPLETE. Public registration and production onboarding remain BLOCKED by separate release dependencies.**
