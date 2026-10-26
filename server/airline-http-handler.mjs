@@ -39,7 +39,7 @@ export function parseOnboardingBody(body) {
   if (!object || Array.isArray(object) || typeof object !== 'object') {
     throw new Error('A JSON object is required.');
   }
-  const expected = new Set(['worldId', 'airlineName', 'homeAirportSourceId']);
+  const expected = new Set(['worldId', 'airlineName', 'homeAirportKey']);
   const keys = Object.keys(object);
   if (keys.length !== 3 || keys.some(key => !expected.has(key))) {
     throw new Error('Unexpected airline creation fields.');
@@ -47,7 +47,7 @@ export function parseOnboardingBody(body) {
   return Object.freeze({
     worldId: object.worldId,
     airlineName: object.airlineName,
-    homeAirportSourceId: object.homeAirportSourceId
+    homeAirportKey: object.homeAirportKey
   });
 }
 
