@@ -3,13 +3,22 @@
  * -> save persistent owner-scoped profile -> recovery -> new password login.
  * Real Supabase local Auth/PostgREST, not mock objects; CI-only data.
  *
- * Deliberately does not claim browser airline creation: the airline wizard
- * UI and its production-grade server deployment do not exist yet.
+ * CI-only browser airline creation uses explicitly injected local handlers.
+ * A production-grade server deployment is still not available.
  */
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { chromium } from 'playwright';
+import pg from 'pg';
+import { createClient } from '@supabase/supabase-js';
+import { writeFile, unlink } from 'node:fs/promises';
+import { createAirlineActivationService } from '../../server/airline-activation.mjs';
+import { createLegalConsentService } from '../../server/legal-consent-service.mjs';
+import { createOnboardingContextService } from '../../server/onboarding-context-service.mjs';
+import { createAirlineHttpHandler } from '../../server/airline-http-handler.mjs';
+import { createLegalConsentHttpHandler } from '../../server/legal-consent-http-handler.mjs';
+import { createOnboardingContextHttpHandler } from '../../server/onboarding-context-http-handler.mjs';
 import { startLocalAuthPreview } from '../../website/dev-scripts/dev-local-auth.mjs';
 
 const AUTH='http://127.0.0.1:54321';
@@ -63,15 +72,45 @@ async function emailLink(email,subjectPart,seen){
 }
 async function main(){
   const key=readLocalKey();
-  const preview=await startLocalAuthPreview({
-    port:5187,env:{
-      AIRLINERRA_LOCAL_AUTH_TEST:'1',
-      AIRLINERRA_LOCAL_SUPABASE_URL:AUTH,
-      AIRLINERRA_LOCAL_PUBLISHABLE_KEY:key
-    }
-  });
+  const database=new pg.Pool({host:'127.0.0.1',port:54322,user:'postgres',
+    password:'postgres',database:'postgres',connectionTimeoutMillis:7500,max:3});
+  const trustedAuth=createClient(AUTH,key,{auth:{
+    autoRefreshToken:false,persistSession:false,detectSessionInUrl:false}});
+  const verifyUserToken=async token=>{
+    const {data,error}=await trustedAuth.auth.getUser(token);
+    return {user:data?.user,error};
+  };
+  // CI-only synthetic legal pages exist ONLY on this ephemeral runner.
+  const termsPath='website/.airlinerra-ci-terms.html';
+  const privacyPath='website/.airlinerra-ci-privacy.html';
+  await writeFile(termsPath,'<!doctype html><h1>CI-only synthetic Terms v1</h1><p>Testing document, not a real agreement.</p>');
+  await writeFile(privacyPath,'<!doctype html><h1>CI-only synthetic Privacy v1</h1><p>Testing document, not a real policy.</p>');
   let browser;
+  let preview;
   try {
+    preview=await startLocalAuthPreview({
+      port:5187,env:{
+        AIRLINERRA_LOCAL_AUTH_TEST:'1',
+        AIRLINERRA_LOCAL_SUPABASE_URL:AUTH,
+        AIRLINERRA_LOCAL_PUBLISHABLE_KEY:key
+      },
+      createTestAccountHandlers:origin=>{
+        const activation=createAirlineActivationService({verifyUserToken,database,enabled:true});
+        const legal=createLegalConsentService({verifyUserToken,database,enabled:true});
+        const context=createOnboardingContextService({verifyUserToken,database,
+          enabled:true,documentPaths:{
+            terms:'/.airlinerra-ci-terms.html',privacy:'/.airlinerra-ci-privacy.html'
+          }});
+        return {
+          '/api/v1/airlines':createAirlineHttpHandler({
+            activationService:activation,allowedOrigins:[origin],enabled:true}),
+          '/api/v1/legal/consents':createLegalConsentHttpHandler({
+            consentService:legal,allowedOrigins:[origin],enabled:true}),
+          '/api/v1/onboarding/context':createOnboardingContextHttpHandler({
+            contextService:context,allowedOrigins:[origin],enabled:true})
+        };
+      }
+    });
     assert.equal(preview.origin,WEB);
     browser=await chromium.launch({headless:true});
     const context=await browser.newContext({viewport:{width:1440,height:900}});
@@ -117,6 +156,30 @@ async function main(){
     assert.equal(await page.locator('#profile-locale').inputValue(),'de-DE');
     const worldText=await page.locator('#world-list').innerText();
     assert.match(worldText,/Founding World/);
+    await page.locator('#airline-onboarding').waitFor({state:'visible'});
+    const termsLink=await page.locator('#onboarding-terms').getAttribute('href');
+    const privacyLink=await page.locator('#onboarding-privacy').getAttribute('href');
+    assert.equal(termsLink,'/.airlinerra-ci-terms.html');
+    assert.equal(privacyLink,'/.airlinerra-ci-privacy.html');
+    const legalPage=await context.newPage();
+    await legalPage.goto(WEB+termsLink);
+    assert.match(await legalPage.locator('h1').innerText(),/CI-only synthetic Terms/);
+    await legalPage.goto(WEB+privacyLink);
+    assert.match(await legalPage.locator('h1').innerText(),/CI-only synthetic Privacy/);
+    await legalPage.close();
+    await page.locator('#onboarding-world').selectOption('1');
+    await page.locator('#onboarding-airport').selectOption('OURAIRPORTS:101');
+    await page.locator('#onboarding-airline-name').fill('Browser CI Airlines');
+    await page.locator('#onboarding-accept-terms').check();
+    await page.locator('#onboarding-accept-privacy').check();
+    await page.locator('#airline-onboarding-form button[type=submit]').click();
+    await page.getByText('Your airline was created.').waitFor();
+    assert.match(await page.locator('#onboarding-result').innerText(),/5000000/);
+    const actual=await database.query(
+      "select count(*)::integer as n from airlinerra_game.airlines a join auth.users u on a.owner_player_id=u.id where u.email=$1 and a.world_id=1",
+      [email]);
+    assert.equal(actual.rows[0].n,1);
+    console.log('PASS: Chromium reviewed CI-only terms and created an airline through real private SQL.');
     // Previous CI-only backend journey explicitly opens synthetic Worlds 01
     // and 02. They are expected to show 'Registration open' here, whereas
     // unmodified World 03 must remain closed. No public world is opened.
@@ -155,7 +218,10 @@ async function main(){
     await context.close();
   } finally {
     if(browser)await browser.close();
-    await preview.close();
+    if(preview)await preview.close();
+    await database.end();
+    await unlink(termsPath).catch(()=>{});
+    await unlink(privacyPath).catch(()=>{});
   }
 }
 main().catch(e=>{
