@@ -337,3 +337,58 @@ FOCA civil conversion: https://www.bazl.admin.ch/de/newnsb/I-EXq2Jy3KdSyIOqr7sNN
 - **0** commercial permissions approved, **0** new World 1 additions, **0** six-category finalizations. Keep the original 3,140-row World 1 database activation and three German specialist holds completely unchanged.
 
 **Next verification:** Obtain current Skyguide AIP/VFR Manual / NOTAM and operator written confirmation for St. Stephan, and then physical runway/declared distances for the five remaining military/appealed fields Alpnach, Dübendorf, Emmen, Meiringen, Ambrì. Commercial flight permission must be assessed separately.
+
+---
+
+## Batch 06 — Swiss military runway discrepancies and St. Stephan authority reconciliation (2026-10-26)
+
+**Research batch:** `CH_SPECIALIST_06_2026_10_26`  
+**Scope:** St. Stephan LSTS, Dübendorf LSMD, Emmen LSME, Alpnach LSMA, Meiringen LSMM, Ambrì LSPM. No final gameplay approval. Existing original-runway source records stay immutable. Research-source credibility matters: federal FOCA authority > aerodrome-based handling > historical aviation guide > virtual simulation community.
+
+### Critical St. Stephan official runway correction
+
+Swiss Federal Office of Civil Aviation **2025-10-31 decree**, chapter **2.7.3 p. 13 of 43**, states **RWY 14/32**:
+
+- **Total 2,040 metres** includes `Auffangzonen` — end safety/overrun/catchment areas, and **must not be used as unrestricted operational runway length**.
+- **Operational 1,726 metres** *between runway ends* (the authority's words: `operationelle Pistenlänge zwischen den Pistenenden`).
+- **Both runway thresholds displaced** due to obstacles. The usable takeoff/landing distances are thus **materially shorter** than the total length. This document does not provide a complete, current, formal TORA/TODA/ASDA/LDA table.
+- Original registry **1,739.8 m ASP** appears close to the authority's operational 1,726 m, whereas secondary OpenAIP **2,050 m asphalt** appears closer to the **2,040 m total-inclusive figure**, explaining much of the apparent contradiction. This is a *plausible source-definition reconciliation*, not a verified chain linking the databases.
+- The exact runway asphalt/concrete material is **not expressly identified by the paragraph**: do **not** infer a runway surface from its instructions about resurfacing unrelated refuelling areas. Secondary source identifies asphalt; **current independent official surface verification stays UNVERIFIED** in `airport_access_reviews`. Physical >=1,200m runway length is separately corroborated.
+
+**Authority source:** https://www.bazl.admin.ch/dam/bazl/fr/dokumente/Sicherheit/Infrastruktur/Verfuegungen/2025-10-31-st-stephan-verfuegung-umnutzung-des-ehemaligen-militaerfluplatzes-in-ein-ziviles-flugfeld.pdf.download.pdf/2025-10-31-st-stephan-verfuegung-umnutzung-des-ehemaligen-militaerfluplatzes-in-ein-ziviles-flugfeld.pdf  
+**Secondary source:** https://airfield.directory/airfield/LSTS  
+**Next:** Current official Skyguide VFR AD INFO/NOTAM and latest aerodrome operator statements on pavement and declared distances; commercial operator permits independently gated.
+
+### Remaining five: sources, contradictions and decision
+
+| ICAO | Airport | Evidence and disagreement | Independent physical-runway review | Commercial/civilian operating gate |
+|---|---|---|---|---|
+| **LSMD** | Dübendorf | **On-field aircraft handler TopMotion** reports **2,355 × 40 m ASPHALT RWY 11/29**, PPR required. Swiss **vACC is a virtual ATC community**, reporting the **same dimensions but CONCRETE**. Both surfaces meet Airlinerra's pavement rule; preserve disagreement rather than recoding registry `ASP`. | **VERIFIED**, based on on-field provider explicit asphalt length | Military airport limited civil co-use; no carrier-specific entitlement |
+| **LSME** | Emmen | 2019 *Zigermeet* aircrew chart reports historic RWY 04/22 **2,500 m TORA/TODA/ASDA**, LDA **2,440m RW04**, **2,377m RW22**. vACC virtual community lists **2,502 × 40m asphalt**, agreeing with registry **2,501.8m ASP**. The 2019 historic PDF could not be fetched for full contemporary authentication; do not reuse its declared distances as live 2026 data. | **UNVERIFIED** current independent AIP (historic runway corroboration recorded) | FOCA occasional shared use, military and RUAG max 1,000 civil movements/year; not general airline allocations |
+| **LSMA** | Alpnach | Source registry **1,497.8m ASP**, older reference approx **1,500m asphalt**; vACC virtual source **1,870 × 40m asphalt**, a **372.2m** conflict. Both exceed 1,200m technically, but no primary current military/Skyguide chart reconciles the length. | **UNVERIFIED** | Occasional civil military use under FOCA Art. 30; no civilian operating regulation |
+| **LSMM** | Meiringen | vACC virtual source **2,002 × 40m asphalt**, near registry **2,002.8m ASP**; Swiss Air Force confirms active military flying but does not independently state current runway material and dimensions on the retrieved public page. | **UNVERIFIED** independent primary AIP | No general commercial civilian rights demonstrated |
+| **LSPM** | Ambrì | Registry **1,237.5m CONCRETE**; vACC virtual source **1,245 × 40m ASPHALT**; official airport historical marketing narrative describes a **7,000ft (~2,134m) runway**, possibly referring to different/obsolete total runway area. Competing nonofficial directories give other values. **Do not pick one arbitrarily or recode the original surface.** All explicit above-threshold runway variants are *candidate* signals, not verified present declared operating distances. | **UNVERIFIED** | FOCA says 2023 civilian conversion is under judicial appeal. Hold continues |
+
+### Provenance-specific links
+
+- On-airfield TopMotion LSMD runway/PPR: https://www.topmotion.ch/topmotion-aircraft-handling/aerodrome-information-d%C3%BCbendorf-aerodrome-lsmd-zurich-switzerland/
+- vACC virtual community LSMD (surface contradiction): https://www.vacc.ch/en/airports_and_charts/LSMD
+- vACC LSME: https://www.vacc.ch/en/airports_and_charts/LSME
+- Historical 2019 Emmen flight guide (source referenced, currently could not be retrieved in full): https://sbc2582ebda09177e.jimcontent.com/download/version/1564594089/module/14213420135/name/Aircrew%20Guide%20Zigermeet%202019-04.pdf
+- vACC LSMA Alpnach: https://www.vacc.ch/en/airports_and_charts/LSMA
+- vACC LSMM Meiringen: https://www.vacc.ch/en/airports_and_charts/LSMM
+- vACC LSPM Ambrì: https://www.vacc.ch/en/airports_and_charts/LSPM
+- Airport's historical marketing narrative of Ambri: https://www.ambri-airport.com/
+- FOCA Alpnach military access: https://www.bazl.admin.ch/de/flugfeld-alpnach
+- FOCA Dübendorf military/civil co-use: https://www.bazl.admin.ch/de/zivil-mitbenuetzter-militaerflugplatz-duebendorf
+- FOCA Ambrì pending legal conversion appeal: https://www.bazl.admin.ch/de/flugfeld-ambri
+
+### Supabase and GitHub research outcome
+
+- Added **10** individual research evidence observations, `airlinerra.airport_evidence` IDs **2147–2156**, across six airport keys.
+- Updated **6** `airlinerra.airport_access_reviews`: Dübendorf `paved_runway_status='VERIFIED'`; other five `UNVERIFIED` at the independent current pavement-source gate; all 6 `commercial_permission_status='UNVERIFIED'` and `game_admission_status='NOT_APPROVED'`.
+- Six audit events **30–35**, each tied to `CH_SPECIALIST_06_2026_10_26`.
+- **Swiss overall batches 01–06: 52 evidence records across 12 airport expansion candidates**, **seven** with independent physical asphalt/concrete verification, **five** still pending independent provenance checks. These are **not** 52 airports and **not** seven additional game approvals.
+- No modifications to original `airport_registry` source values, `airport_game_world1_catalog`, `airport_world_activation`, six provisional categories or the German/Austrian specialist holds.
+
+**Priority next:** Request authoritative current (as of 2026) runway/declared-distance and pavement charts for five outstanding aircraft-related physical checks: **LSTS, LSMA, LSME, LSMM, LSPM**. Also verify live NOTAM and specific operator permissions before any later airport game-admission decision. The 3,140 original World 1 airports stay active in the database; operational UI reachability is not established merely by activation flags.
