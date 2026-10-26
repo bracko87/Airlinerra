@@ -1,0 +1,23 @@
+# LOCAL DEV ONLY. Never link this stack to the live Airlinerra research project.
+# Use the Supabase CLI on a developer machine. This project is isolated.
+project_id = "airlinerra-local-auth"
+
+[auth]
+site_url = "http://localhost:5187"
+additional_redirect_urls = [
+  "http://localhost:5187/account.html?screen=verify",
+  "http://localhost:5187/account.html?screen=reset"
+]
+enable_signup = true
+
+[auth.email]
+# Supabase local Auth otherwise bypasses confirmation; force the real flow.
+enable_confirmations = true
+
+[auth.email.template.confirmation]
+subject = "Airlinerra — Confirm your email"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.recovery]
+subject = "Airlinerra — Reset your password"
+content_path = "./supabase/templates/recovery.html"
