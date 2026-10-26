@@ -107,3 +107,68 @@ Switzerland's regulator explicitly states that full operating regulations are no
 - No change to `airport_registry`, `airport_game_world1_catalog`, `airport_world_activation`, source codes, German specialist decisions or final six-category assignments. The original **3,140 World 1 records** are preserved.
 
 **Next work:** After this batch, evaluate Swiss military/shared aviation cases and recover current official AIP declared distances for the three runway-conflict cases. Actual aircraft eligibility must be checked on a per-aircraft, per-direction, weather/terrain/permission basis; the runway-only collection threshold is never an aircraft-compatibility permission.
+
+---
+
+## Batch 03 — Swiss military/civilian-access adjudication (2026-10-26)
+
+**Central research batch marker:** `CH_SPECIALIST_03_2026_10_26`  
+**Scope:** Six remaining Switzerland expansion cases with military, mixed-use or appealed civilian-conversion restrictions. This batch validates **access/legal operating status** using the Swiss federal regulator (FOCA/BAZL) and armed forces (VBS/Swiss Air Force), without representing the previously imported paved-runway fields as independently audited current AIP physical dimensions. Source-screened paved runway eligibility remains intact; neither a military name nor restricted access automatically invalidates a ≥1,200 m qualifying physical runway.
+
+### Verified source and research disposition
+
+| ICAO | Airport | Authority evidence / date | Research decision | Game admission |
+|---|---|---|---|---|
+| **LSMA** | Alpnach Air Base | FOCA current airport directory: occasionally civil co-used military aerodrome under Art. 30 VIL; **no civilian operating regulation or SIL object sheet**. | `ALPNACH_ART30_OCCASIONAL_CIVIL_NO_OPERATING_REGULATION`: military/operation-specific permission required, regular airline use unestablished. | **NOT_APPROVED** |
+| **LSMD** | Dübendorf Air Base | FOCA: 2014 civil-conversion ambition interrupted in Oct 2020, new planning in Zurich, existing use remains occasional civil sharing under Art. 30 VIL. Rega helicopter-base 2002 civil regulation does **not** authorize general commercial fixed-wing use. Swiss Air Force continues active military operations. | `DUEBENDORF_ART30_CIVIL_OCCASIONAL_CONVERSION_NOT_COMPLETED`: do not treat planned conversion as already complete. | **NOT_APPROVED** |
+| **LSME** | Emmen Air Base | FOCA: occasional civil shared-use military airport **without separate civilian operating regulation/SIL**. Swiss Air Force official page published **2026-01-01** establishes a separate VBS co-use agreement allowing **up to 1,000 civilian flight movements per year** for Lucerne economic development, administered by **RUAG MRO Holding**. 2025 military movements: **18,552**. | `EMMEN_ART30_RUAG_1000_CIVIL_MOVEMENTS_PER_YEAR_GATE`: annual count is neither hourly airline slots nor a blanket right for player airlines. Preserve both FOCA Art. 30 status and narrow co-use quota. | **NOT_APPROVED** |
+| **LSMM** | Meiringen Air Base | Swiss Air Force 2026 flight programme/current military operating page: active F/A-18 station, regular military weekday operations, exceptional night/response activities. | `MEIRINGEN_ACTIVE_F18_MILITARY_AIRFIELD_CIVIL_OPERATOR_ACCESS_NOT_ESTABLISHED`: no general civilian commercial entitlement established. **Do not assert a legal total ban** solely from absence of published permissions. | **NOT_APPROVED** |
+| **LSMP** | Payerne Air Base | FOCA: regulated military/civilian shared airfield with civilian operating regulation since **2013-09-27**. SIL amendment approved **2025-10-29**; FOCA operating-rules amendment **2025-12-03**, extending hours/movement contingents. Aero-Club Switzerland article published **2026-02-02** confirms appeal period expired and amended operating framework entered into force. | `PAYERNE_EFFECTIVE_2025_AMENDED_CIVIL_OPERATIONS_QUOTAS_AND_MILITARY_GATE`: **advance within restricted regulated civilian research**, not regular unqualified airline admission. Individual hours, movement quota allocation, military coordination and carrier eligibility still unresolved. | **NOT_APPROVED** |
+| **LSPM** | Ambrì | FOCA current airport directory explicitly states **former military airport not yet converted; complaint/appeal pending** against civilian conversion decision of **2023-09-05** before Swiss Federal Administrative Court. | `AMBRI_2023_CIVIL_CONVERSION_COURT_APPEAL_UNRESOLVED`: unresolved legal conversion and civilian permissions; physical runway threshold is a separate issue. | **NOT_APPROVED** |
+
+### Legal distinction: civilian co-use ≠ airline entitlement
+
+FOCA distinguishes private licensed airfields and regional airports from military facilities sharing some civil operations. In the contemporary Swiss aerodrome law (VIL Articles 30–31), *occasional* civil operations at military fields require military-airfield command consent; *frequent* civil use has additional operating-regulation requirements. A previously converted civil airfield has different authorization from a proposed conversion facing an unresolved appeal. Do not set `commercial_permission_status='VERIFIED'` from FOCA co-use labels or annual movement caps.
+
+For Emmen specifically, annual 1,000 civilian **movements** administered via RUAG are **not** one thousand Airlinerra scheduled flights and do not translate to slots/hour or seats/flight without a separately approved simulation model and specific access rights.
+
+Payerne's expanded civilian hours are real and current, but the 2025 approval does not supersede individual airport usage restrictions, aircraft performance or military coordination.
+
+### Authority sources independently checked
+
+- Swiss FOCA/BAZL general aerodrome definitions and rules: https://www.bazl.admin.ch/de/flugplaetze-generell
+- FOCA Alpnach (LSMA): https://www.bazl.admin.ch/de/flugfeld-alpnach
+- FOCA Dübendorf (LSMD): https://www.bazl.admin.ch/de/zivil-mitbenuetzter-militaerflugplatz-duebendorf
+- Swiss Air Force Dübendorf operations: https://www.vtg.admin.ch/de/militarflugplatz-dubendorf
+- FOCA Emmen (LSME): https://www.bazl.admin.ch/de/zivil-mitbenuetzter-militaerflugplatz-emmen
+- Swiss Air Force Emmen **2026**, annual civil co-use quota administered by RUAG: https://www.vtg.admin.ch/de/militarflugplatz-emmen
+- Swiss Air Force Meiringen (LSMM), 2026 flight operations: https://www.vtg.admin.ch/de/militaerflugplatz-meiringen
+- FOCA Payerne (LSMP) and dated SIL/regulation amendment: https://www.bazl.admin.ch/de/zivil-mitbenuetzter-militaerflugplatz-payerne
+- Swiss federal October 29, 2025 plan for Payerne and Samedan: https://www.bazl.admin.ch/de/newnsb/ShrgOidOtnCTr8kMTDaJU
+- February 2, 2026 notice on Payerne amended regulation entering into force: https://aeroclub.ch/en/dank-neuem-sil-kann-der-payerne-airport-laengere-betriebszeiten-anbieten/
+- FOCA Ambrì (LSPM), 2023 conversion court appeal: https://www.bazl.admin.ch/de/flugfeld-ambri
+- FOCA request procedure for current unpublished operating regulations: https://www.bazl.admin.ch/de/plangenehmigungen-und-betriebsreglemente (access request contact **lesa@bazl.admin.ch**)
+- Skyguide original NOTAM / flight information: https://www.skyguide.ch/de/dienstleistungen/luftfahrtinformationsdienste
+
+### Persisted data and safeguards
+
+The private Airlinerra Supabase `airlinerra` schema now holds:
+
+- Eight new `airport_evidence` records, **IDs 2126–2133**, source-scoped to `CH_SPECIALIST_03_2026_10_26`, covering all six airport keys. Two each for Emmen (FOCA classification plus Swiss Air Force quota) and Payerne (FOCA amended rule plus in-force confirmation); one for each remaining field.
+- Six updated `airport_access_reviews` preserving airport identity and registry source information, with newly precise `review_status`, civilian-access restrictions and research explanations.
+- Six immutable `airport_review_events` **IDs 15–20** for reproducible access-case adjudication, linked to the same batch marker.
+- `paved_runway_status='UNVERIFIED'` for these six **current independent physical AIP gates**; their older `airport_registry.runway_screen_status='RUNWAY_QUALIFIED'` source screen remains intact.
+- **All six** `commercial_permission_status='UNVERIFIED'`, `game_admission_status='NOT_APPROVED'`; no assertions of commercial or final category approvals.
+
+**Across Swiss batches 01–03:** 12 airport candidates reviewed, 29 source-specific evidence records created, 12 access reviews maintained, and 0 game approvals. Existing World 1 3,140 airport records, the six provisional categories and German specialist hold decisions are not changed.
+
+### Remaining Swiss work, priority
+
+1. **Runway physical independent source gate:** current Swiss eAIP AD 2 / AIP AD 1.3 runway lengths, surfaces, declared TORA/LDA and open/closed status for Alpnach, Dübendorf, Emmen, Meiringen, Payerne, Ambrì, and the three remaining civil discrepancy cases Mollis, Saanen, St. Stephan.
+2. **Payerne regulatory gate:** read effective December 2025 regulation, detailed applicable hour bands, quotas and military coordination requirements; verify whether any category of commercial passenger/cargo operators can obtain access.
+3. **Emmen RUAG agreement gate:** identify eligible civilian operators under the maximum 1,000 movements per year without presuming a general charter/scheduled airline entitlement.
+4. **Ambrì conversion court status:** seek updated FOCA/Federal Administrative Court decision or direct official confirmation; retain legal hold while appeal remains listed.
+5. **Other military fields:** request individual airfield command/operator permission scope only if eventual game expansion would justify civilian access research. No generic military exclusion from the runway-only catalog.
+6. Preserve the owner-controlled final classification order exactly: **Local, Regional, Medium, Large, Major Hub, Mega Hub**, with no inferred final level from runway length.
+
+**Batch-03 conclusion:** Independent civilian/military operating-status research finished and documented for all six; current physical AIP verification and commercial/game-eligibility gates still unresolved. Do not activate.
