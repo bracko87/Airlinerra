@@ -1,5 +1,5 @@
 -- Airlinerra game/account foundation — REVIEW ONLY, NOT APPLIED.
--- Prepared 2026-10-26, for a future OWNER-AUTHORIZED Supabase migration.
+-- Revised 2026-10-26, for a future OWNER-AUTHORIZED Supabase migration.
 -- IMPORTANT: do NOT execute this against production until the launch schema
 -- approval, privacy/legal terms, backfill plan and current schema checks.
 -- Does NOT touch private airport research schema: airlinerra.*.
@@ -45,7 +45,12 @@ create table if not exists public.airlinerra_player_profiles (
 );
 alter table public.airlinerra_player_profiles enable row level security;
 revoke all on public.airlinerra_player_profiles from public, anon, authenticated;
-grant select, insert, update (display_name, locale, updated_at)
+grant select on public.airlinerra_player_profiles to authenticated;
+-- Only the owner-provided, non-authoritative profile fields are writeable.
+-- The user_id must match auth.uid(); timestamps are database-controlled.
+grant insert (user_id, display_name, locale)
+  on public.airlinerra_player_profiles to authenticated;
+grant update (display_name, locale)
   on public.airlinerra_player_profiles to authenticated;
 create policy "Profile owner can read"
   on public.airlinerra_player_profiles for select to authenticated
@@ -61,6 +66,21 @@ create policy "Profile owner can update"
     and coalesce((select auth.jwt())->>'is_anonymous', 'false') = 'false')
   with check ((select auth.uid()) = user_id
     and coalesce((select auth.jwt())->>'is_anonymous', 'false') = 'false');
+
+-- Profile timestamps come from the database, never from client input.
+create or replace function airlinerra_game.touch_profile_updated_at()
+returns trigger language plpgsql security invoker set search_path = ''
+as $
+begin
+  new.updated_at := now();
+  return new;
+end;
+$;
+revoke all on function airlinerra_game.touch_profile_updated_at()
+  from public, anon, authenticated;
+create trigger airlinerra_profile_update_clock
+  before update on public.airlinerra_player_profiles
+  for each row execute function airlinerra_game.touch_profile_updated_at();
 
 -- Private tables: neither exposed via the Data API nor granted to client roles.
 -- Policies are intentionally absent; all state mutations require a vetted
@@ -90,6 +110,17 @@ create table if not exists airlinerra_game.world_memberships (
 );
 alter table airlinerra_game.world_memberships enable row level security;
 
+-- Empty by default: no runway-only/research airport is automatically playable.
+-- An operator must separately approve actual airports, per individual world.
+create table if not exists airlinerra_game.approved_game_airports (
+  world_id smallint not null references public.airlinerra_game_worlds(id),
+  source_airport_id bigint not null,
+  approval_reference text not null,
+  approved_at timestamptz not null default now(),
+  primary key (world_id, source_airport_id)
+);
+alter table airlinerra_game.approved_game_airports enable row level security;
+
 create table if not exists airlinerra_game.airlines (
   id uuid primary key default gen_random_uuid(),
   world_id smallint not null,
@@ -97,17 +128,40 @@ create table if not exists airlinerra_game.airlines (
   name text not null
     check (char_length(trim(name)) between 3 and 80),
   home_airport_source_id bigint not null,
-  -- Research source IDs are NOT gameplay approvals. Before airlines can
-  -- exist, a server transaction must check a separately approved game roster.
+  -- FK prevents ANY airline until separately approved game airports exist.
   cash_usd numeric(18,2) not null default 0 check (cash_usd >= 0),
   created_at timestamptz not null default now(),
   unique (world_id,owner_player_id),
   foreign key (world_id,owner_player_id)
-    references airlinerra_game.world_memberships(world_id,player_id)
+    references airlinerra_game.world_memberships(world_id,player_id),
+  foreign key (world_id,home_airport_source_id)
+    references airlinerra_game.approved_game_airports(world_id,source_airport_id)
 );
 create unique index if not exists airlinerra_airline_name_per_world
   on airlinerra_game.airlines(world_id,lower(name));
 alter table airlinerra_game.airlines enable row level security;
+
+-- Protect against accidental server-side airline creation in a closed world.
+create or replace function airlinerra_game.require_open_world_for_airline()
+returns trigger language plpgsql security invoker set search_path = ''
+as $
+begin
+  if not exists (
+    select 1 from public.airlinerra_game_worlds w
+    where w.id = new.world_id
+      and w.state in ('registration_open','active')
+  ) then
+    raise exception 'Airlinerra world is not open for airline registration'
+      using errcode = 'check_violation';
+  end if;
+  return new;
+end;
+$;
+revoke all on function airlinerra_game.require_open_world_for_airline()
+  from public, anon, authenticated;
+create trigger airlinerra_airline_world_gate
+  before insert or update of world_id on airlinerra_game.airlines
+  for each row execute function airlinerra_game.require_open_world_for_airline();
 
 create table if not exists airlinerra_game.airline_ledger (
   id bigint generated always as identity primary key,
@@ -117,6 +171,9 @@ create table if not exists airlinerra_game.airline_ledger (
   recorded_at timestamptz not null default now(),
   constraint valid_entry_kind check (
     entry_kind in ('STARTING_CAPITAL','AIRCRAFT_PURCHASE','AIRCRAFT_LEASE','REVENUE','EXPENSE','ADJUSTMENT')
+  ),
+  constraint valid_starting_amount check (
+    entry_kind <> 'STARTING_CAPITAL' or amount_usd = 5000000.00
   )
 );
 -- Exactly one startup grant ($5 million) per airline; future secure
@@ -125,6 +182,44 @@ create unique index if not exists airlinerra_one_startup_credit_per_airline
   on airlinerra_game.airline_ledger (airline_id)
   where entry_kind = 'STARTING_CAPITAL';
 alter table airlinerra_game.airline_ledger enable row level security;
+
+-- Call ONLY as part of a future trusted airline-creation transaction.
+-- This function is security INVOKER, private-schema only, and has no public
+-- EXECUTE privilege. Repeated calls can NEVER restart an existing trial.
+-- The airline row must already exist (within the trusted transaction).
+create or replace function airlinerra_game.start_account_trial_once(p_player_id uuid)
+returns table (
+  trial_started_at timestamptz,
+  trial_ends_at timestamptz,
+  membership_state text
+)
+language plpgsql security invoker set search_path = ''
+as $
+begin
+  if p_player_id is null or not exists (
+    select 1 from airlinerra_game.airlines a
+    where a.owner_player_id = p_player_id
+  ) then
+    raise exception 'Verified airline activation is required to begin a trial'
+      using errcode = 'check_violation';
+  end if;
+
+  insert into airlinerra_game.account_entitlements as e
+    (player_id, trial_started_at, trial_ends_at, membership_state)
+  values (p_player_id, now(), now() + interval '7 days', 'trial')
+  on conflict (player_id) do update
+    set trial_started_at = excluded.trial_started_at,
+        trial_ends_at = excluded.trial_ends_at,
+        membership_state = 'trial'
+    where e.trial_started_at is null and e.membership_state = 'none';
+
+  return query select e.trial_started_at, e.trial_ends_at, e.membership_state
+    from airlinerra_game.account_entitlements e
+    where e.player_id = p_player_id;
+end;
+$;
+revoke all on function airlinerra_game.start_account_trial_once(uuid)
+  from public, anon, authenticated;
 
 -- Defensive grants. No anon or authenticated privileges on private schema.
 revoke all on all tables in schema airlinerra_game from public, anon, authenticated;
