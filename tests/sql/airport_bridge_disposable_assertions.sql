@@ -22,6 +22,13 @@ BEGIN
   ) THEN
     RAISE EXCEPTION 'Authorized source keys and game-approved keys differ';
   END IF;
+  IF EXISTS (SELECT 1 FROM airlinerra_game.approved_game_airports
+             WHERE airport_name IS NULL OR airport_code IS NULL OR country_iso <> 'DE'
+                OR municipality <> 'Synthetic City'
+                OR airport_name <> 'Synthetic Airport ' || split_part(airport_key,':',2)
+                OR airport_code <> 'T' || split_part(airport_key,':',2)) THEN
+    RAISE EXCEPTION 'Bridge did not copy authorized airport display metadata';
+  END IF;
   IF EXISTS (SELECT 1 FROM public.airlinerra_game_worlds WHERE state <> 'planned')
      OR (SELECT count(*) FROM public.airlinerra_game_worlds) <> 3 THEN
     RAISE EXCEPTION 'Bridge changed a public game world state';
