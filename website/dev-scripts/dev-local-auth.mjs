@@ -66,7 +66,7 @@ export async function startLocalAuthPreview({
       const origin='http://localhost:'+boundPort;
       if (pathname==='/__airlinerra_local_auth_config__.js') {
         const js='window.__AIRLINERRA_DEV_AUTH__ = Object.freeze('+
-          JSON.stringify(config)+');\n';
+          JSON.stringify({...config,localSdk:true})+');\n';
         return finish(200,req.method==='HEAD'?'':js,types['.js']);
       }
       let filename=path.resolve(root,'.'+pathname);
