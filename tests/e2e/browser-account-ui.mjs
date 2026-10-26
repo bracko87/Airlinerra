@@ -125,6 +125,7 @@ async function main(){
       }
     });
     await chromeDebugger.send('Debugger.enable');
+    await chromeDebugger.send('Runtime.enable');
     // Chromium's script parser can reject syntax that Node 22 accepts.
     // Compile a copy without static import declarations to get a precise
     // line and column before running the real application module.
