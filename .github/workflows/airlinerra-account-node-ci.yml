@@ -138,6 +138,29 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f docs/sql/airlinerra_game_identity_schema_prelaunch.sql
           psql -X -v ON_ERROR_STOP=1 -f docs/sql/airlinerra_game_activation_prelaunch.sql
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/airline_activation_isolated_assertions.sql
+      - name: Exercise 3140-airport approval bridge with disposable PostgreSQL only
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = "127.0.0.1"
+          test "$PGDATABASE" = "airlinerra_disposable"
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/airport_bridge_disposable_source.sql
+          psql -X -v ON_ERROR_STOP=1 -f docs/sql/AIRLINERRA_WORLD1_3140_TO_GAME_ACCOUNT_AIRPORTS_PRELAUNCH_2026-10-26.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/airport_bridge_disposable_assertions.sql
+          # A second execution must have no duplicate approvals.
+          psql -X -v ON_ERROR_STOP=1 -f docs/sql/AIRLINERRA_WORLD1_3140_TO_GAME_ACCOUNT_AIRPORTS_PRELAUNCH_2026-10-26.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/airport_bridge_disposable_assertions.sql
+          # A source count drift must fail closed, with no new approvals.
+          psql -X -v ON_ERROR_STOP=1 -c "DELETE FROM airlinerra.airport_game_world1_registration_source WHERE airport_key='OURAIRPORTS:3140';"
+          if psql -X -v ON_ERROR_STOP=1 -f docs/sql/AIRLINERRA_WORLD1_3140_TO_GAME_ACCOUNT_AIRPORTS_PRELAUNCH_2026-10-26.sql >"$RUNNER_TEMP/bridge_expected_rejection.log" 2>&1; then
+            echo 'ERROR: mismatched source count was unexpectedly accepted'
+            exit 1
+          fi
+          grep -Fq 'expected 3140' "$RUNNER_TEMP/bridge_expected_rejection.log"
+          psql -X -v ON_ERROR_STOP=1 -c "INSERT INTO airlinerra.airport_game_world1_registration_source VALUES (1,'OURAIRPORTS:3140','OWNER_AUTHORIZED_SIMULATION_CATALOG');"
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/airport_bridge_disposable_assertions.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/airport_bridge_disposable_cleanup.sql
+          echo 'PASS: 3140 game airport handoff, idempotency, drift rejection, and fail-closed cleanup.'
       - name: Synthetic accounts and expected pre-activation rejections
         run: |
           set -euo pipefail
