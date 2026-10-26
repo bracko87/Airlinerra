@@ -77,10 +77,10 @@ test('disposable activation calls use explicit PostgreSQL smallint world IDs',as
   for (const filename of sources) {
     const sql = await load(filename);
     assert.doesNotMatch(sql,
-      /create_airline_once\\(\\s*'[0-9a-f-]{36}'\\s*,\\s*[123]\\s*,/i,
+      /create_airline_once\(\s*'[0-9a-f-]{36}'\s*,\s*[123]\s*,/i,
       filename+' calls a smallint function with an untyped integer world ID');
     typedCalls += [...sql.matchAll(
-      /create_airline_once\\(\\s*'[0-9a-f-]{36}'\\s*,\\s*[123]::smallint\\s*,/gi
+      /create_airline_once\(\s*'[0-9a-f-]{36}'\s*,\s*[123]::smallint\s*,/gi
     )].length;
   }
   assert.ok(typedCalls >= 16,'expected all disposable activation calls to be typed');
