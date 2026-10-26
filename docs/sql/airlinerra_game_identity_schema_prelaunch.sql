@@ -70,12 +70,12 @@ create policy "Profile owner can update"
 -- Profile timestamps come from the database, never from client input.
 create or replace function airlinerra_game.touch_profile_updated_at()
 returns trigger language plpgsql security invoker set search_path = ''
-as $
+as $airlinerra_fn$
 begin
   new.updated_at := now();
   return new;
 end;
-$;
+$airlinerra_fn$;
 revoke all on function airlinerra_game.touch_profile_updated_at()
   from public, anon, authenticated;
 create trigger airlinerra_profile_update_clock
@@ -144,7 +144,7 @@ alter table airlinerra_game.airlines enable row level security;
 -- Protect against accidental server-side airline creation in a closed world.
 create or replace function airlinerra_game.require_open_world_for_airline()
 returns trigger language plpgsql security invoker set search_path = ''
-as $
+as $airlinerra_fn$
 begin
   if not exists (
     select 1 from public.airlinerra_game_worlds w
@@ -156,7 +156,7 @@ begin
   end if;
   return new;
 end;
-$;
+$airlinerra_fn$;
 revoke all on function airlinerra_game.require_open_world_for_airline()
   from public, anon, authenticated;
 create trigger airlinerra_airline_world_gate
@@ -192,7 +192,7 @@ create or replace function airlinerra_game.credit_starting_cash_once(
 )
 returns boolean
 language plpgsql security invoker set search_path = ''
-as $
+as $airlinerra_fn$
 declare
   was_credited boolean;
 begin
@@ -212,7 +212,7 @@ begin
   select exists (select 1 from credited) into was_credited;
   return was_credited;
 end;
-$;
+$airlinerra_fn$;
 revoke all on function airlinerra_game.credit_starting_cash_once(uuid)
   from public, anon, authenticated;
 
@@ -227,7 +227,7 @@ returns table (
   membership_state text
 )
 language plpgsql security invoker set search_path = ''
-as $
+as $airlinerra_fn$
 begin
   if p_player_id is null or not exists (
     select 1 from airlinerra_game.airlines a
@@ -250,7 +250,7 @@ begin
     from airlinerra_game.account_entitlements e
     where e.player_id = p_player_id;
 end;
-$;
+$airlinerra_fn$;
 revoke all on function airlinerra_game.start_account_trial_once(uuid)
   from public, anon, authenticated;
 
