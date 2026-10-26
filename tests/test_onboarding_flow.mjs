@@ -30,6 +30,16 @@ test('signed-out and unverified users cannot reach onboarding',()=>{
     'account_restricted');
 });
 
+test('missing or invalid evaluation time fails closed',()=>{
+  assert.equal(onboardingNextStep({...valid(),evaluatedAt:undefined}).next,
+    'status_unavailable');
+  assert.equal(onboardingNextStep({...valid(),evaluatedAt:'invalid-date'}).next,
+    'status_unavailable');
+  assert.equal(onboardingNextStep({...valid(),
+    user:{...user,banned_until:'invalid-ban-date'}}).next,
+    'account_restricted');
+});
+
 test('legal policy must be published and current before onboarding',()=>{
   assert.equal(onboardingNextStep({...valid(),publishedPolicy:null}).next,
     'legal_unavailable');
