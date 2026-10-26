@@ -66,3 +66,22 @@ test('isolated PostgreSQL validation remains manual-only with explicit DB prefli
   assert.match(workflow,/\bpostgres:17\b/);
   assert.match(workflow,/PGDATABASE: airlinerra_disposable/);
 });
+
+test('disposable activation calls use explicit PostgreSQL smallint world IDs',async()=>{
+  const sources = [
+    ...FILES,
+    '.github/workflows/airlinerra-postgres-isolated.yml',
+    '.github/workflows/airlinerra-account-node-ci.yml'
+  ];
+  let typedCalls = 0;
+  for (const filename of sources) {
+    const sql = await load(filename);
+    assert.doesNotMatch(sql,
+      /create_airline_once\\(\\s*'[0-9a-f-]{36}'\\s*,\\s*[123]\\s*,/i,
+      filename+' calls a smallint function with an untyped integer world ID');
+    typedCalls += [...sql.matchAll(
+      /create_airline_once\\(\\s*'[0-9a-f-]{36}'\\s*,\\s*[123]::smallint\\s*,/gi
+    )].length;
+  }
+  assert.ok(typedCalls >= 16,'expected all disposable activation calls to be typed');
+});
