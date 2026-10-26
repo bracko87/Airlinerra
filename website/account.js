@@ -215,7 +215,11 @@ async function initialize() {
     const supabase = await createBrowserAuthClient({
       origin: window.location.origin,
       supabaseUrl: devAuth.supabaseUrl,
-      publishableKey: devAuth.publishableKey
+      publishableKey: devAuth.publishableKey,
+      // Local CI preview uses a bundled SDK instead of external CDN access.
+      // Public prelaunch never enters this branch or loads an Auth SDK.
+      ...(devAuth.localSdk === true && window.location.hostname === 'localhost'
+        ? {loadSdk: () => import('./.airlinerra-local-sdk.mjs')} : {})
     });
     accountService = createAuthService({ supabase, origin: window.location.origin, enabled: true });
     playerDataService = createPlayerDataService({supabase,enabled:true});
