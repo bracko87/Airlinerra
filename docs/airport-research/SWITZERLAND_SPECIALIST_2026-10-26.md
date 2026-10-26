@@ -172,3 +172,69 @@ The private Airlinerra Supabase `airlinerra` schema now holds:
 6. Preserve the owner-controlled final classification order exactly: **Local, Regional, Medium, Large, Major Hub, Mega Hub**, with no inferred final level from runway length.
 
 **Batch-03 conclusion:** Independent civilian/military operating-status research finished and documented for all six; current physical AIP verification and commercial/game-eligibility gates still unresolved. Do not activate.
+
+---
+
+## Batch 04 — Official Payerne limits, Mollis pavement and outstanding Swiss runway discrepancies (2026-10-26)
+
+**Research batch:** `CH_SPECIALIST_04_2026_10_26`  
+**Scope:** Payerne (LSMP), Mollis (LSZM), Saanen (LSGK), St. Stephan (LSTS), Ambrì (LSPM). Updated 5 airport access-review research statuses without granting any carrier access or changing World 1.
+
+### Payerne LSMP — exact December 2025 FOCA operating amendments
+
+I checked the **December 3, 2025 FOCA decision**, *Aérodrome militaire avec utilisation civile de Payerne: Modification du règlement d'exploitation - Extension des heures d'exploitation et des contingents*. The decision section **C** approves the amendments, with an important clarification that the **600 annual weekday extended-hour movements** apply **across both morning and evening combined**, not just to evening.
+
+| Day | Base/extended civilian operating time | Specific limits in FOCA approval |
+|---|---|---|
+| Monday–Friday | **07:00–19:00 base**; **06:00–07:00** and **19:00–22:00 extended** | **600 movements per year for those two extended intervals combined**. Early 06:00–07:00 period must be coordinated with military airbase command and Skyguide. |
+| Saturday | **08:00–22:00** | **500 movements per year**. No departures **12:00–13:00** except technical, meteorological or traffic-related rescheduling. Air-traffic-control rest periods must be coordinated through PPR. |
+| Sundays/public holidays | **10:00–12:00**, **13:30–20:00** | **200 movements per year** across the specified Sunday/holiday windows. Air-traffic-control breaks may require PPR. |
+
+The decision mentions an **8,400 movements/year potential used in a noise analysis**. Do **not** turn this into a player airline slot allocation or misrepresent it as automatically bookable flights. The approved 600/500/200 quotas are for relevant **civilian aerodrome movements** under the approved operational rules, not Airlinerra allocations or independently certified takeoff/landing aircraft capacities. Additional constraints in the final decision include agreed military/Skyguide air-traffic service provisions, PPR scheduling, and ongoing publication of effective aeronautical information. The operator/airline-specific commercial gate remains `UNVERIFIED`; `game_admission_status='NOT_APPROVED'`.
+
+**Official FOCA decision:** https://www.bazl.admin.ch/dam/de/sd-web/tA4QFgjK1NZ9/2025-12-03-payerne-modification-du-reglement-exploitation-extension-heures-exploitation-et-contingents.pdf (especially source PDF pp. 2, 13, 32–33).  
+**Regulator's aviation facility record:** https://www.bazl.admin.ch/de/zivil-mitbenuetzter-militaerflugplatz-payerne .  
+**Effective legal follow-up (2026-02-02):** https://aeroclub.ch/en/dank-neuem-sil-kann-der-payerne-airport-laengere-betriebszeiten-anbieten/ .
+
+### Mollis LSZM — new official asphalt evidence without inventing AIP runway length
+
+The **FOCA August 11, 2025 approval** authorizes rehabilitation of the existing **asphalt runway**. The project documents works between **construction chainages km 0.057 and km 1.830** — a **1,773 m resurfacing segment**, which is **not** a published full runway physical length, TORA, TODA, ASDA or LDA. The authority says the pre-existing infrastructure dimensions are not enlarged. The approval planned a closure **September 4–16, 2025** for construction, which must **not** be carried forward as a 2026 current-closure hold without a current NOTAM.
+
+That FOCA approval is independently authoritative for the **asphalt pavement material** and the project scope; completed work, official 2026 post-work physical dimensions and latest declared-direction distances have **not** all been confirmed. Hence the combined database access-review `paved_runway_status` remains `UNVERIFIED` at the **full current physical length / operation gate**, even though registry `RUNWAY_QUALIFIED` and asphalt material corroboration are retained.
+
+Operator's current pilot rules preserve **VFR**, aircraft above **2,250 kg** requiring PPR/handling, higher turning-speed mandatory briefing, no runway/approach lights, Schengen-specific notice, Non-Schengen operations currently unavailable, and no permanent RFF (Cat 4 may be arranged). A Mollis operator-published **November 3/5, 2026** temporary-restricted-area NOTAM describes **future** activity relative to this audit; it is not proof of current October closure.
+
+- Official asphalt reconstruction approval: https://www.bazl.admin.ch/dam/de/sd-web/In1Bxxy2qNzw/2025-08-11-mollis-plangenehmigung-pistensanierung.pdf (source PDF p. 2).
+- Operator PPR and aircraft restrictions: https://www.mollisairport.ch/ppr-jet-helicopter
+- Operator homepage/current NOTAM bulletins: https://www.mollisairport.ch/
+
+### Saanen LSGK / St. Stephan LSTS — alternative measured lengths remain unresolved
+
+| Airport | Existing immutable registry source | Secondary OpenAIP-derived entry | Difference and decision |
+|---|---:|---:|---|
+| **LSGK Saanen** | **1,466.1 m ASP** | **1,400 m asphalt**, direction 08/26 | **66.1 m difference**; both qualify for the >=1,200 m physical collection. Original `airport_registry` unchanged. Primary/current Skyguide AIP physical length and per-end TORA/LDA still outstanding. |
+| **LSTS St. Stephan** | **1,739.8 m ASP** | **2,050 m asphalt**, direction 14/32 | **310.2 m difference**; both qualify physically for collection. Original registry unchanged. Current official AIP length and declared distances pending; 2025 FOCA civilian conversion approval remains recorded independently. |
+
+Secondary sources are evidence of **conflict**, not authority to overwrite the original records or to release flight operations. Do not treat a historical 1,080–1,090 m usable-distance claim at Saanen as current without primary aeronautical publication.
+
+- Saanen OpenAIP-derived secondary airport page: https://airfield.directory/airfield/LSGK
+- Saanen operator mandatory pilot/PPR conditions: https://www.gstaad-airport.ch/en/pilots/
+- St. Stephan OpenAIP-derived secondary airport page: https://airfield.directory/airfield/LSTS
+- St. Stephan current operator commercial flight-type registration: https://www.airportststephan.ch/anmeldung-einflug-nach-lsts
+- FOCA St. Stephan civil-conversion announcement 2025: https://www.bazl.admin.ch/de/newnsb/I-EXq2Jy3KdSyIOqr7sNN
+
+### Ambrì LSPM — conversion appeal checked again
+
+FOCA's current Ambrì airport directory still explicitly states that the **September 5, 2023 civilian-conversion decision** is challenged before the Swiss Federal Administrative Court. There was no independent definitive later judgment found in this review. Preserve `CONVERSION_UNDER_APPEAL`, `commercial_permission_status='UNVERIFIED'`, and `game_admission_status='NOT_APPROVED'`. Source-runway qualification remains independent of the civil operating title.
+
+Primary FOCA status: https://www.bazl.admin.ch/de/flugfeld-ambri
+
+### Database write record and safeguards
+
+- **7 evidence records**, `airlinerra.airport_evidence` IDs **2134–2140**, source batch `CH_SPECIALIST_04_2026_10_26`, added for five airport keys.
+- **5 access-review** `review_status` and evidence updates, preserving all unverified commercial permission states and `NOT_APPROVED` game admissions. Full current independent runway checks are **still unresolved**, so neither raw `airport_registry` measurements nor independent physical pass statuses were falsely overwritten.
+- **5 airport audit events**, IDs **21–25**, tagged `CH_SPECIALIST_04_2026_10_26`.
+- **All Switzerland specialist batches 01–04:** **36 evidence entries covering 12 Swiss airport candidates**. This is a count of cited research observations, **not 36 newly eligible airports**.
+- No changes to the original World 1 catalog (3,140 records), world activation, six-category assignments, historic German cases or Austrian specialist admissions.
+
+**Research conclusion:** Payerne's concrete extended-hour quotas can now be encoded as *restrictions* in future dispatch rules, never as player-granted slots. Mollis's asphalt authority evidence is corroborated, while official post-work runway distance and aircraft suitability await confirmation. Saanen and St. Stephan runway conflicts, as well as Ambrì's court appeal, remain documented holds. No new airports activated.
