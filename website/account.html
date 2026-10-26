@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex,nofollow" />
+  <meta name="theme-color" content="#ffffff" />
+  <meta name="description" content="Airlinerra account experience preview. Registration is not open yet." />
+  <title>Airlinerra — Account Experience Preview</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="account.css" />
+  <script src="account.js" type="module"></script>
+</head>
+<body>
+  <header class="account-header">
+    <a href="index.html" class="brand" aria-label="Back to Airlinerra homepage">
+      <img src="assets/airlinerra-logo.png" alt="Airlinerra" width="206" height="50" />
+    </a>
+    <a href="index.html" class="back-link">← Back to website</a>
+  </header>
+  <main class="account-layout">
+    <section class="intro">
+      <span class="eyebrow">AIRLINERRA · ACCOUNT FOUNDATION</span>
+      <h1>Your airline journey<br /><span>starts here.</span></h1>
+      <p>One account will let you manage your airlines across independent game worlds. Each world follows the real-time calendar and has a separate economy.</p>
+      <p class="prelaunch-banner" id="prelaunch-notice" role="status"><strong>Prelaunch preview</strong> — Account creation, sign-in and password reset are not available yet. No information entered here is submitted or stored.</p>
+      <div class="intro-benefits">
+        <div><span class="benefit-number">01</span><span>One secure player identity</span></div>
+        <div><span class="benefit-number">02</span><span>Independent airlines in each world</span></div>
+        <div><span class="benefit-number">03</span><span>Seven-day trial planned for game launch</span></div>
+      </div>
+    </section>
+
+    <section class="account-card" aria-label="Account flow design preview">
+      <div class="account-card-heading">
+        <span class="eyebrow">YOUR AIRLINERRA ACCOUNT</span>
+        <h2 id="account-title">Welcome back</h2>
+        <p id="account-description">Preview the steps players will use to access Airlinerra.</p>
+      </div>
+      <nav class="account-tabs" aria-label="Account preview pages">
+        <button class="tab" type="button" data-screen="sign-in" aria-current="page">Sign in</button>
+        <button class="tab" type="button" data-screen="register">Register</button>
+        <button class="tab" type="button" data-screen="forgot">Forgot password</button>
+      </nav>
+
+      <section class="account-panel" data-panel="sign-in" aria-label="Sign-in preview">
+        <form autocomplete="off" aria-describedby="prelaunch-notice">
+          <fieldset disabled>
+            <label for="login-email">Email address</label>
+            <input id="login-email" type="email" placeholder="you@example.com" autocomplete="off" />
+            <label for="login-password">Password</label>
+            <input id="login-password" type="password" placeholder="Your password" autocomplete="off" />
+            <button type="submit" class="primary-button">Sign in (coming soon)</button>
+          </fieldset>
+        </form>
+        <p class="panel-note">Email verification is required before accessing a playable world.</p>
+      </section>
+
+      <section class="account-panel" data-panel="register" hidden aria-label="Registration preview">
+        <form autocomplete="off" aria-describedby="prelaunch-notice">
+          <fieldset disabled>
+            <label for="register-name">Display name</label>
+            <input id="register-name" type="text" placeholder="Airline manager name" autocomplete="off" />
+            <label for="register-email">Email address</label>
+            <input id="register-email" type="email" placeholder="you@example.com" autocomplete="off" />
+            <label for="register-password">Create password</label>
+            <input id="register-password" type="password" placeholder="12 characters minimum" autocomplete="off" />
+            <label class="checkbox-label"><input type="checkbox" disabled /> I accept the terms and privacy notice (to be published)</label>
+            <button type="submit" class="primary-button">Create account (coming soon)</button>
+          </fieldset>
+        </form>
+        <p class="panel-note">Register → verify email → sign in → choose a world → create your airline.</p>
+      </section>
+
+      <section class="account-panel" data-panel="forgot" hidden aria-label="Password recovery preview">
+        <form autocomplete="off" aria-describedby="prelaunch-notice">
+          <fieldset disabled>
+            <label for="forgot-email">Account email address</label>
+            <input id="forgot-email" type="email" placeholder="you@example.com" autocomplete="off" />
+            <button type="submit" class="primary-button">Send recovery email (coming soon)</button>
+          </fieldset>
+        </form>
+        <p class="panel-note">A secure, expiring link will let the account owner set a new password. Responses will never reveal whether the address is registered.</p>
+      </section>
+
+      <section class="account-panel" data-panel="reset" hidden aria-label="New password preview">
+        <form autocomplete="off" aria-describedby="prelaunch-notice">
+          <fieldset disabled>
+            <label for="reset-password">New password</label>
+            <input id="reset-password" type="password" placeholder="12 characters minimum" autocomplete="off" />
+            <label for="reset-confirm">Confirm new password</label>
+            <input id="reset-confirm" type="password" placeholder="Repeat password" autocomplete="off" />
+            <button type="submit" class="primary-button">Update password (coming soon)</button>
+          </fieldset>
+        </form>
+        <p class="panel-note">Recovery will be available only after a valid, one-time email link is verified.</p>
+      </section>
+
+      <section class="account-panel" data-panel="verify" hidden aria-label="Email verification preview">
+        <h3>Email verification</h3>
+        <p class="panel-note">When registration opens, follow the one-time link delivered to your inbox. Unverified accounts will not enter game worlds.</p>
+      </section>
+
+      <section class="account-panel" data-panel="worlds" hidden aria-label="Game worlds preview">
+        <h3>Choose your world</h3>
+        <p class="panel-note">Worlds are independent. No real game world is open for registration yet.</p>
+        <div id="world-list" class="world-list"></div>
+      </section>
+      <div class="account-bottom">
+        <button type="button" class="preview-link" data-screen="worlds">Preview game worlds</button>
+        <span>1 real day = 1 in-game day</span>
+      </div>
+    </section>
+  </main>
+  <footer class="account-footer">© <span id="copyright-year">2026</span> Next Quest Studio · Airlinerra prelaunch</footer>
+</body>
+</html>
