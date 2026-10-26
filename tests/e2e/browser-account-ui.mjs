@@ -204,6 +204,10 @@ async function main(){
     assert.match(await legalPage.locator('h1').innerText(),/CI-only synthetic Privacy/);
     await legalPage.close();
     await page.locator('#onboarding-world').selectOption('1');
+    assert.equal(
+      await page.locator('#onboarding-airport option[value="OURAIRPORTS:101"]').textContent(),
+      'Synthetic Founding Airport (CI01) — DE'
+    );
     await page.locator('#onboarding-airport').selectOption('OURAIRPORTS:101');
     await page.locator('#onboarding-airline-name').fill('Browser CI Airlines');
     await page.locator('#onboarding-accept-terms').check();
