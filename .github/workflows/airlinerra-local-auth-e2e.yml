@@ -8,6 +8,8 @@ on:
     paths:
       - '.github/workflows/airlinerra-local-auth-e2e.yml'
       - 'tests/e2e/local-supabase-auth.mjs'
+      - 'tests/e2e/local-player-onboarding.mjs'
+      - 'tests/e2e/package.json'
   workflow_dispatch:
 
 permissions:
@@ -52,6 +54,35 @@ jobs:
         run: |
           set -euo pipefail
           node tests/e2e/local-supabase-auth.mjs
+      - name: Verify local PostgreSQL and apply REVIEW-ONLY schema to disposable stack
+        shell: bash
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: '54322'
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          PGDATABASE: postgres
+        run: |
+          set -euo pipefail
+          if ! command -v psql >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y postgresql-client
+          fi
+          pg_isready -h 127.0.0.1 -p 54322 -U postgres -d postgres
+          [ "$(psql -Atqc "select current_database()")" = 'postgres' ]
+          [ "$(psql -Atqc "select count(*) from pg_namespace where nspname = 'airlinerra'")" = '0' ]
+          [ "$(psql -Atqc "select (to_regclass('auth.users') is not null)::integer")" = '1' ]
+          psql -v ON_ERROR_STOP=1 -f docs/sql/airlinerra_game_identity_schema_prelaunch.sql
+          psql -v ON_ERROR_STOP=1 -f docs/sql/airlinerra_game_activation_prelaunch.sql
+          echo 'Game schema exists only inside disposable local CI PostgreSQL.'
+      - name: Install exact isolated test dependencies
+        working-directory: tests/e2e
+        run: npm install --ignore-scripts --no-audit --no-fund --no-package-lock
+      - name: Verify actual Auth to profile, legal consent and airline activation
+        shell: bash
+        run: |
+          set -euo pipefail
+          node tests/e2e/local-player-onboarding.mjs
       - name: Stop the isolated local Supabase stack
         if: always()
         shell: bash
