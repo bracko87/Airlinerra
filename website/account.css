@@ -33,3 +33,7 @@ h1 span{color:var(--orange)}.intro>p:not(.prelaunch-banner){line-height:1.8;colo
 .account-footer{text-align:center;font-size:12px;color:#708096;padding-bottom:35px}
 @media(max-width:900px){.account-layout{grid-template-columns:1fr;margin-top:18px;gap:35px}.intro{padding-top:12px}.intro-benefits{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.intro-benefits>div{align-items:flex-start}.account-card{max-width:650px}}
 @media(max-width:580px){.account-header{height:72px}.brand img{width:151px}.back-link{font-size:12px}.account-layout{width:calc(100% - 30px)}.intro-benefits{grid-template-columns:1fr}.account-card{padding:22px}.account-bottom{align-items:flex-start;flex-direction:column}h1{font-size:40px}}
+
+.auth-feedback{border:1px solid #cbd6e3;border-radius:9px;background:#f1f6fb;color:var(--navy);padding:12px 14px;font-size:13px;line-height:1.6;margin:16px 0 0}
+.auth-feedback[data-state=error]{border-color:#eab3af;background:#fff1f0;color:#8b2424}
+.auth-feedback[hidden]{display:none}
