@@ -79,8 +79,12 @@ export async function startLocalAuthPreview({
         const html=body.toString('utf8');
         const target='<script src="account.js" type="module"></script>';
         if (!html.includes(target)) throw Error('Account preview HTML changed.');
-        body=Buffer.from(html.replace(target,
-          '<script src="/__airlinerra_local_auth_config__.js"></script>\n  '+target));
+        const prelaunchNotice='<strong>Prelaunch preview</strong> — Account creation, sign-in and password reset are not available yet. No information entered here is submitted or stored.';
+        const localNotice='<strong>Local Auth test only</strong> — Test credentials are sent to the Supabase stack on your own computer. Never use production passwords or customer data.';
+        if (!html.includes(prelaunchNotice)) throw Error('Account safety notice changed.');
+        body=Buffer.from(html.replace(prelaunchNotice,localNotice)
+          .replace(target,
+            '<script src="/__airlinerra_local_auth_config__.js"></script>\n  '+target));
       } else if (pathname==='/auth-rules.mjs') {
         let script=body.toString('utf8');
         const defaultOff='export const PUBLIC_AUTH_ENABLED = false;';
