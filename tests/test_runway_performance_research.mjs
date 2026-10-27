@@ -54,3 +54,11 @@ test('directional landing distances are not interchangeable',()=>{
  const r=check(landing(1400),[x]);
  assert.deepEqual(r.candidates.map(c=>c.numericStatus),['INSUFFICIENT','SUFFICIENT']);
 });
+
+test('landing prohibited despite sufficient LDA',()=>{
+ const x=runway({runwayPair:'09/27',scheduledPermission:'PROHIBITED',directions:[direction('09',{ldaM:1800,landingStatus:'PROHIBITED'})]});
+ const r=check(landing(1500),[x]);
+ assert.equal(r.candidates[0].numericStatus,'SUFFICIENT');
+ assert.ok(r.candidates[0].blockers.includes('DIRECTION_OPERATION_PROHIBITED'));
+ assert.equal(r.schedulingAllowed,false);
+});
