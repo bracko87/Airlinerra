@@ -84,6 +84,77 @@ jobs:
           assert not (Path('website')/'netlify'/'functions').exists()
           assert not (Path('netlify')/'functions').exists()
           PY
+      - name: Smoke test bundled Function with synthetic preview config and no network
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          import os
+          zip_path=Path(os.environ['RUNNER_TEMP'])/'airlinerra-functions'/'airlinerra-accounts.zip'
+          output=Path(os.environ['RUNNER_TEMP'])/'unpacked-netlify-function'
+          output.mkdir()
+          with ZipFile(zip_path) as archive:
+            names=archive.namelist()
+            assert all('..' not in Path(n).parts and not Path(n).is_absolute() for n in names)
+            archive.extractall(output)
+          entry=output/'airlinerra-accounts.mjs'
+          assert entry.is_file()
+          print('BUNDLED_ENTRY_SIZE:', entry.stat().st_size)
+          PY
+          node --input-type=module <<'JS'
+          import {pathToFileURL} from 'node:url';
+          import {join} from 'node:path';
+          import assert from 'node:assert/strict';
+          const entry=pathToFileURL(join(process.env.RUNNER_TEMP,
+            'unpacked-netlify-function','airlinerra-accounts.mjs')).href;
+          const {default:handler,config}=await import(entry);
+          assert.equal(typeof handler,'function');
+          assert.deepEqual(config.path,[
+            '/api/v1/onboarding/context','/api/v1/legal/consents','/api/v1/airlines'
+          ]);
+          const origin='https://deploy-preview-123--airlinerra.netlify.app';
+          const secret='B'.repeat(43); // Synthetic, never a real credential.
+          const request=()=>new Request(origin+'/api/v1/onboarding/context',{
+            method:'POST',
+            headers:{
+              origin,'content-type':'application/json',
+              'x-airlinerra-preview-access':secret,
+              authorization:'Bearer bad'
+            },
+            body:'{}'
+          });
+          const oldFetch=globalThis.fetch;
+          globalThis.fetch=async()=>{throw Error('SECURITY: Unexpected network call');};
+          try{
+            const closed=await handler(request());
+            assert.equal(closed.status,503);
+            Object.assign(process.env,{
+              CONTEXT:'production',
+              AIRLINERRA_HOSTED_BACKEND_ENABLED:'true',
+              AIRLINERRA_PRIVATE_PREVIEW_APPROVED:'true'
+            });
+            assert.equal((await handler(request())).status,503);
+            Object.assign(process.env,{
+              CONTEXT:'deploy-preview',
+              AIRLINERRA_PREVIEW_ORIGIN:origin,
+              AIRLINERRA_PREVIEW_ACCESS_SECRET:secret,
+              AIRLINERRA_SUPABASE_URL:'https://hwllkabgzaynalahvkpz.supabase.co',
+              AIRLINERRA_SUPABASE_PUBLISHABLE_KEY:'sb_publishable_'+('A'.repeat(32)),
+              AIRLINERRA_PRIVATE_DATABASE_URL:'postgresql://postgres.hwllkabgzaynalahvkpz:synthetic-ci-only@aws-0-eu-central-1.pooler.supabase.com:6543/postgres?sslmode=require',
+              AIRLINERRA_TERMS_PATH:'/legal/terms-v1.html',
+              AIRLINERRA_PRIVACY_PATH:'/legal/privacy-v1.html'
+            });
+            const badSession=await handler(request());
+            assert.equal(badSession.status,401,
+              'Bundled pg driver and private handlers must load and reject invalid Auth without network');
+            assert.equal(badSession.headers.get('cache-control'),'no-store');
+            console.log('PASS: real bundled Function refuses production and rejects invalid test token offline');
+          }finally{
+            globalThis.fetch=oldFetch;
+          }
+          JS
       - name: Recheck public static build remains unrelated
         working-directory: website
         run: |
