@@ -8,7 +8,7 @@
 
 This completes a **foundation** for consuming real, independently verified aircraft flight manual (AFM/OEM) performance reference data in Airlinerra **once obtainable**, rather than inventing takeoff/landing requirements from runway length or simple aircraft weight.
 
-**Private Supabase:** project `hwllkabgzaynalahvkpz`, private schema `airlinerra`. Installed migration `airlinerra_private_aircraft_performance_reference_grid_20261027` creates:
+**Private Supabase:** project `hwllkabgzaynalahvkpz`, private schema `airlinerra`. Installed migrations `airlinerra_private_aircraft_performance_reference_grid_20261027` (the two tables) and `airlinerra_private_aircraft_performance_review_source_constraints_20261027` (reviewer/date and nonempty source-authority/document/revision guards) enforce:
 
 1. `airlinerra.aircraft_performance_reference_sets`: aircraft variant key, manufacturer/model/engine configuration, sourced minimum mass, MTOW, maximum landing mass, wingspan, authority, manual/reference ID, revision/effective date, reviewed-by/date and explicit approval to use a conservative higher-weight envelope.
 2. `airlinerra.aircraft_performance_reference_points`: flight phase (takeoff/landing), aircraft configuration, operating mass, **pressure altitude**, outside-air temperature, signed headwind component, runway slope, DRY/WET condition, and phase-specific takeoff/landing reference distance(s), with independent row review status.
@@ -40,7 +40,7 @@ The engine is intentionally **not yet an actual certified aircraft-performance c
 
 ## Installation and verification
 
-- Supabase migration succeeded.
+- Both Supabase migrations succeeded, and PostgreSQL constraint read-back confirmed reviewer/date and source identity enforcement.
 - SQL inspection confirms both tables exist with RLS enabled, no policies, and `anon`/`authenticated` do not have SELECT. The parent private schema is not usable by public clients.
 - Both tables remain **0 records**, preventing synthetic data from being confused with certified manufacturer performance.
 - The loader's generated private parameterized SQL successfully executes against the actual Supabase project and returns zero rows for an absent synthetic variant.
@@ -53,3 +53,5 @@ The engine is intentionally **not yet an actual certified aircraft-performance c
 Select the first approved aircraft **model/variant and engine** from the separate aircraft database task. For each intended departure and landing configuration, collect authoritative revision-dated AFM/OEM reference points across relevant takeoff/landing mass and operating-condition grids, plus MTOW/MLW, wingspan and configuration restrictions. Trace every number to table/page/document/revision and review it before changing its status to `PRIMARY_SOURCE_REVIEWED`. Do not fill gaps using a generic guessed performance multiplier.
 
 Only then can Airlinerra perform **reference-backed** numerical runway suitability screening on real aircraft. The flight scheduling gate must remain closed until a separately authorized game-world release, model certification and aircraft dispatch-policy implementation are completed.
+
+**Additional integrity validation:** The calculation code refuses source grids whose reviewed mass rows lie outside the aircraft variant's independently approved maximum or minimum operating masses, and refuses source references missing a revision. These safeguards are covered by an additional source-grid regression test.
