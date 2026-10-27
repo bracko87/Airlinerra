@@ -59,7 +59,6 @@ jobs:
           npm exec --yes --package=esbuild@0.25.12 -- \
             esbuild "$GITHUB_WORKSPACE/server/netlify-preview-template/airlinerra-accounts.mjs" \
             --bundle --platform=node --format=esm --target=node22 \
-            --node-path="$GITHUB_WORKSPACE/website/node_modules" \
             --external:pg-native \
             --banner:js="import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);" \
             --outfile="$RUNNER_TEMP/airlinerra-source/airlinerra-accounts.mjs"
