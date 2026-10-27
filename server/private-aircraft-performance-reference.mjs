@@ -137,6 +137,8 @@ export function calculateReviewedAircraftPerformance({scenario,reference,points}
      reference.sourceEffectiveDate>s.asOfDate ||
      typeof reference.sourceDocumentRef!=='string' ||
      reference.sourceDocumentRef.trim().length<3 ||
+     typeof reference.sourceRevision!=='string' ||
+     reference.sourceRevision.trim().length<1 ||
      typeof reference.sourceAuthority!=='string' ||
      reference.sourceAuthority.trim().length<3) {
     return blocked('REVIEWED_REFERENCE_NOT_AVAILABLE',['NO_EFFECTIVE_REVIEWED_AFM_OR_OEM_SOURCE']);
@@ -155,6 +157,9 @@ export function calculateReviewedAircraftPerformance({scenario,reference,points}
     return blocked('AIRCRAFT_MASS_OUTSIDE_REFERENCE_LIMITS',['MASS_LIMIT_EXCEEDED_OR_UNDERFLOW']);
   }
   const grid=checkedGrid(points,s);
+  if(grid.some(p=>p.mass<number(reference.minReferenceMassKg) || p.mass>max)) {
+    return blocked('SOURCE_GRID_OUTSIDE_APPROVED_MASS_LIMITS',['UNREVIEWED_PERFORMANCE_MASS_RANGE']);
+  }
   if(!grid.length) return blocked('CONDITIONS_NOT_COVERED',['NO_EXACT_CERTIFIED_WEATHER_ELEVATION_SLOPE_SURFACE_POINT']);
   if(s.operatingMassKg<grid[0].mass ||
      s.operatingMassKg>grid[grid.length-1].mass) {
