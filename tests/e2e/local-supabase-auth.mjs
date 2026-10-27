@@ -207,11 +207,17 @@ async function run(){
   const inviteRes=await fetch(API+'/auth/v1/invite?redirect_to='+
     encodeURIComponent(ORIGIN+'/account.html?screen=verify'),{
     method:'POST',signal:AbortSignal.timeout(12000),
-    headers:{apikey:key,authorization:'Bearer '+adminKey,
+    headers:{apikey:adminKey,authorization:'Bearer '+adminKey,
       'content-type':'application/json'},
     body:JSON.stringify({email:invitedEmail,data:{display_name:'Local Invited Tester'}})
   });
-  assert.equal(inviteRes.status,200,'Local admin invitation must create a new unconfirmed tester.');
+  if(!inviteRes.ok){
+    // Logs contain only HTTP status and provider error category, never
+    // actual email, tokens, keys or raw response body.
+    const failure=await inviteRes.json().catch(()=>({}));
+    throw Error('Local admin invitation: HTTP '+inviteRes.status+
+      ', code '+String(failure.error_code||failure.code||'unknown').slice(0,70));
+  }
   const invitedMail=await mailFor(invitedEmail,'invitation',seen);
   const invitedLink=invitedMail.url;
   const invitation=parseAuthCallback(invitedLink.search,'verify');
