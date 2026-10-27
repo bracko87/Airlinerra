@@ -8,6 +8,11 @@
 - `server/hosted-auth-readiness.mjs` now fails closed when Supabase Auth settings omit an explicit `external.anonymous_users=false` value. A production account endpoint still cannot start until the host reports `disable_signup=true`, email confirmation required, email enabled and anonymous accounts disabled.
 - Connected Resend sender plan: **3 / 3 domains**, with `nextqueststudio.net` and `tennislegacygame.com` both **failed** (unverified DKIM/MX/SPF), and `propelotonmanager.com` verified. Attempt to register `airlinerra.com` was blocked by 403 `domain limit`. Neither other domain was removed; ownership and future plans must be considered before deletion. Do not conflate passing isolated Mailpit E2E with actual hosted SMTP readiness. The live Airlinerra Auth and Netlify API remain unchanged. Handoff: [single-domain testing](docs/PLATFORM_SINGLE_DOMAIN_PRELAUNCH_TESTING_2026-10-27.md).
 
+### APPROVED COMPANY EMAIL SENDER PLAN — 2026-10-27
+
+- Airlinerra account invitation, confirmation and recovery emails should use the **existing `nextqueststudio.net` corporate domain**, with sender identity **`Airlinerra — NextQuest Studio <noreply@nextqueststudio.net>`**. No new Resend sender domain and no removal/replacement of current domains. See [required non-destructive DNS verification and SMTP handoff](docs/PLATFORM_NEXTQUEST_STUDIO_EMAIL_SENDER_2026-10-27.md).
+- This is a **configuration plan, not successful delivery**. Resend currently lists the corporate sender domain as **failed**; the `resend._domainkey` TXT and `send` MX/TXT records must be added/verified on the authoritative `nextqueststudio.net` DNS before configuring outgoing hosted Auth SMTP. Never overwrite the company's existing root incoming MX or send secrets to GitHub. Existing Netlify/Auth/email registration remains prelaunch-gated.
+
 ### OWNER REQUIREMENT: NEVER REMOVE OTHER RESEND DOMAINS — 2026-10-27
 
 - Owner explicitly requires **no deletion of any existing Resend domains**, including failed/unverified entries. Do not remove, replace, or upgrade sender domains to free capacity unless explicitly instructed with a new decision. Preserve existing ProPeloton Manager/Tennis Legacy/NextQuest Studio email configurations.
