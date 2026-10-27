@@ -240,3 +240,33 @@ Live field-level totals as of this batch: **14/105 `paved_runway_status='VERIFIE
 - The six Airlinerra eventual tiers remain **Local, Regional, Medium, Large, Major Hub, Mega Hub**, no categories inferred or assigned by runway length.
 
 **Next research:** Continue reviewing French civil source-only holds where an original accessible DGAC AD2.12 expressly says *asphalt/béton bitumineux* or *béton*. Prioritize material verification that converts actual technical holds into specific decisions. Lyon-Bron and Agen may warrant airport-runway paving documents before exact-material promotions. **Do not confuse an airport with complete physical gate and an airport ready for unrestricted commercial gameplay.**
+
+---
+
+## France civilian-airport verification pass 02 — October 27, 2026
+
+**Supabase research run:** `FR_SPECIALIST_CIVIL_02_2026_10_27`  
+**Scope:** Five previously `UNVERIFIED` French outside-World-1 airports with plausible civil use, not an additional batch of new registry candidates. Official airport-operator and 2026 SIA original runway sources were checked. All five remain **game NOT_APPROVED** and commercial carrier-specific rights **UNVERIFIED**, even where physical runway suitability is now independently verified.
+
+| Airport | Source-verified physical runway and its provenance | Technical result and operating qualifications |
+|---|---|---|
+| **LFMH Saint-Étienne–Bouthéon** | **2,300 ×45m RW17/35, `bitume` / asphalt**, airport manager's directly accessible current technical page. Imported 2,300m ASP matches. | **`paved_runway_status='VERIFIED'`**. Civil airport; operator publishes Mon–Fri 08:00–18:00, Sat 09:00–13:00, closed Sunday/holidays unless requested opening, passenger terminal and cargo facilities. Does not certify airline-specific permission, Oct 2026 directional TORA/LDA or out-of-hours access. |
+| **LFRT Saint-Brieuc–Armor** | **2,200 ×45m RW06/24, `bitume` / asphalt**, directly accessible airport-operator technical page. Imported 2,200m ASP agrees. | **`VERIFIED`**. Civil IFR/night VFR and AFIS, handling, GPU, Jet A1, level-2/5 rescue by request. Operational support on request does not mean automatic scheduled traffic approval. |
+| **LFOP Rouen–Vallée de Seine** | **1,700 ×45m RW04/22 `enrobé bitumineux` / asphalt**, **official French SIA October 1 2026 AD1.3**. Imported 1,699.9m ASP effectively agrees. The separate RW05/23 **900×80m grass** does not qualify. | **`VERIFIED`** current original regulator surface. Civil open to public air traffic, IFR/VFR; commercial permission and 2026 detailed declared distances unverified. |
+| **LFLV Vichy–Charmeil** | 2026 official French AD1.3 RW01/19 **2,200×45m `revêtue` / paved**; airport municipality's **November 2018** page explicitly says **`macadam`**, not certified precise asphalt/concrete. Regional heritage history notes the original **1954 bituminous 1,600m runway extended by 600m in 1961**. | **Remain `UNVERIFIED` for present-day full-length explicit asphalt/concrete**, despite the old registry `ASP` and separate old asphalt construction history. Municipal page confirms civil **open to public air traffic**, but not an unrestricted modern airline service. |
+| **LFJR Angers–Marcé** | **1,800×45m RW08/26 `revêtue`**, official SIA Oct 2026 AD1.3 and current Angers Loire EDEIS operator. Original registry 1,800.1m ASP. Neither accessible current source independently spells out runway material as asphalt or concrete. | **Remain `UNVERIFIED` exact material.** Important conflicting numbers across airport operator's own 2026-presented bilingual pages: **French RW26 TORA1,728 / TODA1,800 / ASDA1,800 / LDA1,650m**, while **English RW26 TORA1,728 / TODA1,800 / ASDA1,728 / LDA1,578m**. Do not accept either as authenticated October 2026 SIA AD2 until reconciled. Civil IFR/VFR business/general operations exist; airline permission remains unverified. |
+
+### Direct sources / documentation uncertainty
+
+- **LFMH airport operator, bitume and hours:** https://saint-etienne.aeroport.fr/info-pratiques/informations-techniques/
+- **LFRT airport operator, bitume RW06/24:** https://www.st-brieuc.aeroport.fr/donnees-techniques/
+- **LFOP SIA official AD1.3, 01 Oct 2026:** https://www.sia.aviation-civile.gouv.fr/media/dvd/eAIP_01_OCT_2026/FRANCE/AIRAC-2026-10-01/html/eAIP/FR-AD-1.3-fr-FR.html
+- **LFLV municipality's 2018 macadam runway specification:** https://www.vichy-communaute.fr/aeroport/
+- **LFLV regional historical bituminous original runway and 1961 extension, not current proof:** https://patrimoine.auvergnerhonealpes.fr/dossier/IA03000594
+- **LFJR French operator original data:** https://angers.aeroport.fr/domaines-application/informations-tarifs-et-pilotes/
+- **LFJR English operator inconsistent data:** https://angers.aeroport.fr/en/domaines-application/information-rates-and-pilots/
+- **LFJR current SIA AD1.3 paved physical runway:** same 2026 DGAC AD1.3 URL as LFOP.
+
+**Persistence:** **10** private `airport_evidence` rows IDs **2225–2234**, two per airport; **5** updates to existing `airport_access_reviews`, physical status **3 promoted VERIFIED / 2 retained UNVERIFIED**; **5** `airport_review_events` IDs **68–72**. Raw `airport_registry` runway values/surfaces and original identity keys untouched. `game_admission_status='NOT_APPROVED'` and `commercial_permission_status='UNVERIFIED'` all five. No final category, World 1 airport activation, 3,140-key private game catalog, or public launch changes.
+
+**Next:** Prioritize other civilian source-only holds with original 2026 SIA `béton / béton bitumineux / enrobé bitumineux` or current first-party airport `bitume / concrete` runway evidence; avoid using apron or taxiway surface as proof for runway. Follow up Angers bilingual declared-distance inconsistency from original current SIA AD2 before applying aircraft performance logic. Six allowed eventual categories unchanged: Local, Regional, Medium, Large, Major Hub, Mega Hub.
