@@ -25,6 +25,12 @@ export function parseHostedRuntimeConfig(env = {}) {
     throw new Error('A pinned HTTPS preview origin is required.');
   }
   const parsedOrigin = new URL(origin);
+  // The production hostname is never an acceptable private-preview origin,
+  // even when someone incorrectly sets a Netlify preview CONTEXT variable.
+  if (['airlinerra.com','www.airlinerra.com',
+       'airlinerra.netlify.app'].includes(parsedOrigin.hostname)) {
+    throw new Error('A production origin cannot be used for private previews.');
+  }
   if (parsedOrigin.username || parsedOrigin.password ||
       parsedOrigin.pathname !== '/' || parsedOrigin.search || parsedOrigin.hash ||
       ['localhost','127.0.0.1'].includes(parsedOrigin.hostname)) {
@@ -66,13 +72,19 @@ export function parseHostedRuntimeConfig(env = {}) {
   if (!db.port || !['5432','6543'].includes(db.port)) {
     throw new Error('Explicit, supported PostgreSQL port required.');
   }
+  // node-postgres overwrites the explicit TLS options when a connection
+  // string contains sslmode. Validate it above, then strip it before Pool
+  // construction so ssl.rejectUnauthorized=true actually remains active.
+  // See https://node-postgres.com/features/ssl
+  db.searchParams.delete('sslmode');
+  const sanitizedDbUrl=db.toString();
   return Object.freeze({
     enabled:true,
     context:env.CONTEXT,
     publicOrigin:parsedOrigin.origin,
     supabaseUrl:AIRLINERRA_AUTH_API,
     publishableKey:key,
-    dbUrl:raw,
+    dbUrl:sanitizedDbUrl,
     termsPath,
     privacyPath
   });
