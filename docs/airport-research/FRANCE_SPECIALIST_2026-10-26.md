@@ -359,3 +359,36 @@ Live field-level totals as of this batch: **14/105 `paved_runway_status='VERIFIE
 **Recorded:** **8 `airport_evidence`** rows (IDs **2253–2260**); **4** existing `airport_access_reviews` updated (one technical VERIFIED and three material holds); **4 `airport_review_events` IDs 82–85**; zero admissions, catalog changes, category assignments or original source mutations.
 
 **Separate integrity control:** A **versioned runway discrepancy proposal register** will be created in `docs/airport-research/FRANCE_RUNWAY_CORRECTION_PROPOSALS_2026-10-27.json`. This is a **review-only proposal**, not a database update. It distinguishes physical runway length from runway-specific usable takeoff/landing distances and captures original-versus-authoritative conflicts for 2026 source import reconciliation. Do not automatically run updates from that proposal. Six category hierarchy names remain exactly Local, Regional, Medium, Large, Major Hub, Mega Hub.
+
+---
+
+## France physical-runway correction validation 01 — October 27, 2026
+
+**Run:** `FR_RUNWAY_CORRECTION_VALIDATION_01_2026_10_27`. This pass revalidated **four HIGH-impact** physical-length discrepancies from the already versioned `FRANCE_RUNWAY_CORRECTION_PROPOSALS_2026-10-27.json`. Each is confirmed by **the current October 2026 French DGAC SIA official aerodrome register or detailed AIP**, or a **current first-party airport operator**. Evidence and corrections do **not** change original registry rows, airline gameplay admissions, military/civil restrictions, or 3,140 World 1 prelaunch airport keys.
+
+| Airport | Original `airport_registry` main runway length | Revalidated physical runway length | Important interpretation |
+|---|---:|---:|---|
+| **LFQE Étain–Rouvres** | 2400.0m `ASP` | **1721m**, RW01/19 1721×45m paved. **−679m** | Current 2026 DGAC SIA AD1.3 independently certifies the **physical length**, *not* exact asphalt/concrete subtype. Remains military restricted and `paved_runway_status='UNVERIFIED'`. Do not use imported 2400m for aircraft eligibility. |
+| **LFPB Paris–Le Bourget** | 2395.1m `ASP` | **2991m** longest physical, RW07/25 2991×45m bituminous concrete; also RW03/21 **2395m** and RW09/27 **1847m** bituminous concrete. **+595.9m** versus imported summary. | **Not a simple runway lengthening.** The imported value corresponds to a real *different* runway, RW03/21. The original longest-runway selection omits RW07/25. Current DGAC AD2.13 RW07 TORA2901/LDA2602m, RW25 TORA2938/LDA2049m; neither 2991m physical runway nor 3051m TODA is usable LDA. **Current DGAC AD2.2 prohibits scheduled commercial and charter traffic.** Even a corrected longest runway would **not** admit general Airlinerra scheduled services. |
+| **LFPV Villacoublay–Vélizy** | 1813.0m `ASP` | **1957m** RW09/27 1957×45m **enrobé bitumineux** (asphalt), **+144m**. | Current 2026 DGAC SIA AD1.3 explicitly says asphalt, preserving `paved_runway_status='VERIFIED'` while military access remains restricted. Directional TORA/LDA have not been certified in the *current detailed 2026* AIP from this pass; do not infer usability from 1957m. |
+| **LFRO Lannion–Côte de Granit Rose** | 1699.9m `ASP` | **1602m** RW11/29 1602×45m **revêtue/paved**, **−97.9m**. | Current original airport operator reports **LDA RW11 1376m / LDA RW29 1463m**, each shorter than physical. Current October 2026 DGAC AD1.3 independently gives 1602m. Exact full asphalt/concrete material `UNVERIFIED`; 72h request for certain commercial extensions. Never schedule with the imported 1699.9m. |
+
+### Direct current original sources
+
+- **2026 DGAC October 1 AIP AD1.3 (LFQE and LFPV, and corroborated LFRO):** https://www.sia.aviation-civile.gouv.fr/media/dvd/eAIP_01_OCT_2026/FRANCE/AIRAC-2026-10-01/html/eAIP/FR-AD-1.3-fr-FR.html
+- **2026 DGAC October 1 detailed Le Bourget AD2.2/12/13:** https://www.sia.aviation-civile.gouv.fr/media/dvd/eAIP_01_OCT_2026/FRANCE/AIRAC-2026-10-01/html/eAIP/FR-AD-2.LFPB-fr-FR.html
+- **Current Lannion airport-operator pilot page**, October 1 fuel-fee update and runway/LDA sections: https://www.lannion.aeroport.fr/
+
+These documents provide **physical length and source provenance**. AIP effective-date publication details, NOTAMs and airline-specific permission remain additional gates if routes are ever authorized. The three larger physical discrepancies LFQE, LFPB and LFPV are not permission to run military/business airports as unrestricted scheduled air transport.
+
+### Recorded and protected state
+
+- **8** new `airlinerra.airport_evidence` entries (**IDs 2261–2268**) covering physical measurement and its operating/material restrictions for each airport.
+- **4** immutable `airlinerra.airport_review_events` (**IDs 86–89**), each status `SOURCE_CONFIRMED_CORRECTION_NOT_APPLIED`.
+- Correction-proposal register updated to **version 2**, with **4 of the original 14 length proposals flagged `PRIMARY_SOURCE_VALIDATED_NOT_APPLIED`** and **10 remaining `PROPOSED_NOT_APPLIED`**. Four additional surface-composition conflicts still awaiting separate reconciliation.
+- **0** `airlinerra.airport_registry` source changes, **0** `airport_access_reviews` admissions or runway-state promotions, **0** `airlinerra_game.approved_game_airports` additions/changes and **0** `airport_world_activation` changes.
+- No final category assignments; exactly **Local, Regional, Medium, Large, Major Hub, Mega Hub** remain the entire taxonomy.
+
+### Next operationally safe step
+
+Revalidate the remaining **10** physical-length proposals by source authority and effective date, with priority to existing civil airport fields where the measurements can affect future runway performance. Then design a **separate reviewed derived-runway facts layer** (airport identity + runway-specific ID, physical length/surface + effective date + per-direction TORA/TODA/ASDA/LDA + legal access), instead of overwriting or silently rewriting imported source `airport_registry` records. This derived layer is **not** currently deployed or authorized for game calculations.
