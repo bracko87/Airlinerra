@@ -2,6 +2,12 @@
 
 ## Current operating state — 2026-10-27 (supersedes older prelaunch database counts)
 
+### STAGED NETLIFY FUNCTION EXECUTABLE BUILD VALIDATED — 2026-10-27
+
+- Non-deploying [Netlify Functions CI #40502453942](https://github.com/bracko87/Airlinerra/actions/runs/40502453942) passed an **actual Netlify CLI build AND offline Node startup of the extracted ZIP**. With synthetic flags, production mode stays 503; an authorized preview with an intentionally invalid account token produces the expected 401. No Supabase Auth, DB, SMTP, Netlify site API or external service was contacted.
+- Critical packaging finding: Netlify's **default bundler produced a ZIP missing resolvable `pg`** when directly bundling `server/netlify-preview-template`, even with a source-side import bridge to `website/node_modules`. This yielded HTTP 503 at runtime. The validated approach **first uses esbuild 0.25.12** to bundle the staged Function plus the pinned `pg@8.23.1` into a self-contained ESM module under a *temporary CI directory*, then hands that generated module to **Netlify CLI 27.14.2** for ZIP packaging. Future owner-approved preview deployment **MUST reuse this verified prebundle step** rather than merely move the unbundled source into a live Functions folder. Details: [staged Function report](docs/PLATFORM_NETLIFY_API_STAGE_2026-10-27.md).
+- This milestone is **source/CI packaging only**: no public route, no provider-level signup activation, no credentials entered, no new game world and no public Netlify Function deployed. The existing `website/` static build and production `netlify.toml` remain untouched.
+
 ### LIVE WORLD 01 ROSTER EXPANDED BY PARALLEL AIRPORT WORKSTREAM — 2026-10-27
 
 - **Read-only live Supabase audit on 27 October:** `airlinerra_game.approved_game_airports` now holds **8,149 simulation-only World 01 airports**: **3,140** original entries with `SIMULATION_ONLY:FOUNDATION_ORIGINAL_3140_WORLD1_2026_10_26` plus **5,009** separately added entries with `SIMULATION_ONLY:HISTORICAL_PAVED_1200M_USER_APPROVED_2026_10_27`. Migration `20261027114044 allow_owner_authorized_simulation_only_historical_airports_world1` belongs to the separate airport workstream. The original 3,140 remain intact; no approvals exist in Worlds 02/03.
