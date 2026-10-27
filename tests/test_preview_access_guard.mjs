@@ -6,6 +6,7 @@ import {
 import {createStagedNetlifyAccountHandler} from '../server/netlify-preview-template/airlinerra-accounts.mjs';
 
 const ORIGIN='https://deploy-preview-19--airlinerra.netlify.app';
+const PLATFORM=()=>({deploy:{context:'deploy-preview',published:false},site:{name:'airlinerra',url:'https://airlinerra.com'}});
 const SECRET='Z'.repeat(43); // Synthetic, cannot open any actual preview.
 const env=()=>({
   CONTEXT:'deploy-preview',
@@ -141,10 +142,10 @@ test('staged handler refuses untrusted preview requests without starting an app'
       return {enabled:true,handler:async()=>new Response('{}',{status:200})};
     }
   });
-  const rejected=await handler(request(undefined,{secret:'B'.repeat(43)}));
+  const rejected=await handler(request(undefined,{secret:'B'.repeat(43)}),PLATFORM());
   assert.equal(rejected.status,503);
   assert.equal(builds,0);
-  assert.equal((await handler(request())).status,200);
+  assert.equal((await handler(request(),PLATFORM())).status,200);
   assert.equal(builds,1);
 });
 
@@ -162,13 +163,13 @@ test('guarded in-flight request always releases capacity even on handler failure
       return new Response('{}',{status:200});
     }})
   });
-  const active=Array.from({length:4},()=>handler(request()));
+  const active=Array.from({length:4},()=>handler(request(),PLATFORM()));
   await entered;
-  const over=await handler(request());
+  const over=await handler(request(),PLATFORM());
   assert.equal(over.status,429);
   finish();
   const finished=await Promise.all(active);
   assert.ok(finished.every(x=>x.status===503));
-  const recovered=await handler(request());
+  const recovered=await handler(request(),PLATFORM());
   assert.equal(recovered.status,200);
 });
