@@ -130,3 +130,31 @@ All four `commercial_permission_status='UNVERIFIED'` and `game_admission_status=
 - Follow-up: retrieve effective original AD2 or DIRCAM military data for 2026 declared distances and exact surfaces especially LFKS/LFMY; clarify any civilian privileges separately. The remaining French unreviewed set is expected to fall from **14 to 10** (verify live SQL after this documentation commit).
 
 **Game safeguard:** The 3,140 World 1 airport activation records must remain active and unchanged. Six final categories are only **Local, Regional, Medium, Large, Major Hub, Mega Hub**.
+
+---
+
+## France Batch 05 — Évreux, Saint-Dizier, Orléans and Nancy-Ochey (27 October 2026)
+
+**Research marker:** `FR_SPECIALIST_05_2026_10_27`. Four further military aerodromes were present in `airport_registry` but outside World 1 and without a dedicated `airport_access_reviews` record. The source period is **official French SIA eAIP 01 October 2026**, valid through 28 October inclusive. The SIA **AD 1.3** nationwide published aerodrome register is a current physical and general-use source, **not** the full aerodrome AD2 with takeoff/landing-distance and legal operating procedures. Historic AD2/military charts are recorded as auxiliary provenance only. Do not overwrite the original imported registry.
+
+| ICAO / name | OurAirports source | Official current SIA AD1.3 | Independent runway gate | Civil/airline gate |
+|---|---|---|---|---|
+| **LFOJ Orléans–Bricy (BA123)** | 2,404m ASP | **RWY07/25, 2,404×45m, `béton` / concrete** | **VERIFIED** explicit concrete >1,200m. Current DGAC material **CONCRETE** differs from raw source ASP | `RESTRICTED_MILITARY_RESERVED_TO_STATE` per DGAC register; carrier specific permissions `UNVERIFIED`; game `NOT_APPROVED` |
+| **LFSO Nancy–Ochey (BA133)** | 2,401.2m CON | **RWY02/20, 2,400×45m `béton` / concrete** | **VERIFIED** explicit 2026 current SIA concrete. 1.2m imported length difference. **Note** older 16 May 2024 French military DIRCAM aerodrome chart described the runway as **1,920m central bitumen/asphalt plus 240m concrete at each end**. The 2026 SIA single material label may simplify that mixed composition. Both sources describe eligible materials; never silently rewrite raw source or conflate dates. | `RESTRICTED_MILITARY_RESERVED_TO_STATE`; no scheduled airline right; game `NOT_APPROVED` |
+| **LFOE Évreux–Fauville (BA105)** | 2,995m ASP | **RWY04/22, 3,001×45m `revêtue` / paved** | **UNVERIFIED precise explicit material** in current AD1.3; physical length now **6m longer** than registry. Archived April 2026 SIA AD2 reports **concrete–macadam mixed** surface and 3,001m, but does not quantify how much is continuously asphalt/concrete under a strict material-only test. Preserve original provisional `RUNWAY_QUALIFIED`, not a verified current full asphalt runway. | `RESTRICTED_MILITARY_AERODROME`; no general commercial right; game `NOT_APPROVED` |
+| **LFSI Saint-Dizier–Robinson (BA113)** | 2,411.9m ASP | **RWY11/29, 2,413×45m `revêtue` / paved**; also RW11L/29R **1,200×100m grass** (does *not* qualify). | **UNVERIFIED precise asphalt-or-concrete**: current AD1.3 specifies only paved, not subtype. Source registry difference **1.1m**. Earlier AIP mentions apron/taxiway concrete/macadams, which are **not evidence of runway surface**. | `RESTRICTED_MILITARY_AERODROME`; no general commercial right; game `NOT_APPROVED` |
+
+**Primary official 2026 source:** French DGAC SIA AD1.3, 01 October 2026, including the four named airport rows: https://www.sia.aviation-civile.gouv.fr/media/dvd/eAIP_01_OCT_2026/FRANCE/AIRAC-2026-10-01/html/eAIP/FR-AD-1.3-fr-FR.html .
+
+**Additional date-bounded source context (not current operational authority):**
+- LFOE original SIA AD2 April 2026 archive, surfaced with `béton/concrete–macadam` remark and 3001m declared nominal distances: https://www.sia.aviation-civile.gouv.fr/media/dvd/eAIP_16_APR_2026/FRANCE/AIRAC-2026-04-16/pdf/FR-AD-2.LFOE-fr-FR.pdf . The PDF reader's image request did not load, so figures were not promoted to current Oct 2026 flight-performance data.
+- LFSO French military DIRCAM landing chart, 16 May 2024, states **bitumen central 1,920m, concrete 240m both ends**, recorded as an **older source-specific material description**: https://www.dircam.dsae.defense.gouv.fr/images/Stories/Doc/AVUE/avue_nancy_ochey_lfso.pdf . The direct PDF viewer timed out; do not claim contemporary detailed TORA/LDA proof from it.
+- LFOJ archived DGAC AD2 April 2026 also lists 2404×45 concrete; 2026 October AD1.3 is the **controlling current source** rather than that historic detailed page.
+
+**Changes in private Supabase project `hwllkabgzaynalahvkpz`:**
+- **8** `airlinerra.airport_evidence` entries IDs **2197–2204**, two per airport (physical SIA register vs military-access status), using marker `FR_SPECIALIST_05_2026_10_27`.
+- **4** new `airlinerra.airport_access_reviews`: identities verified; LFOJ/LFSO paved material independently **VERIFIED**, LFOE/LFSI **UNVERIFIED** specific material; all restricted military and `commercial_permission_status='UNVERIFIED'`, `game_admission_status='NOT_APPROVED'`.
+- **4** `airlinerra.airport_review_events` IDs **54–57**, with field-level provenance and no gameplay authorization.
+- No changes to original `airlinerra.airport_registry` source length/surface, no new airport admissions, world activations or category assignments. The exact six final game categories remain **Local, Regional, Medium, Large, Major Hub, Mega Hub**.
+
+**Follow-up:** obtain the 2026 effective SIA AD2 detailed surface and available-distance notes for LFOE/LFSI and recheck LFSO's 2024 military mixed-pavement context, keeping civil authorizations a distinct legal gate. The remaining previously-unreviewed French military airports will be counted from live Supabase after this commit.
