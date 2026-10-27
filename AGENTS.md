@@ -2,6 +2,12 @@
 
 ## Current operating state — 2026-10-27 (supersedes older prelaunch database counts)
 
+### REAL LOCAL INVITED ACCOUNT END-TO-END VALIDATED — 2026-10-27
+
+- [GitHub isolated Auth/Mailpit/Chromium run #40513518775](https://github.com/bracko87/Airlinerra/actions/runs/40513518775) is **SUCCESS**. It verifies a real local administrator invite and `type=invite` OTP, one-time identity-bound initial password, and login as the invited account, in addition to existing synthetic signup, email confirmation, reset, and UI flows. Temporary CLI 2.122.0 `sb_secret_...` and legacy service-role JWTs are accepted *only in local CI* for admin invites. No hosted account was created, no external message sent, no airline/world release changed.
+- `server/hosted-auth-readiness.mjs` now fails closed when Supabase Auth settings omit an explicit `external.anonymous_users=false` value. A production account endpoint still cannot start until the host reports `disable_signup=true`, email confirmation required, email enabled and anonymous accounts disabled.
+- Connected Resend sender plan: **3 / 3 domains**, with `nextqueststudio.net` and `tennislegacygame.com` both **failed** (unverified DKIM/MX/SPF), and `propelotonmanager.com` verified. Attempt to register `airlinerra.com` was blocked by 403 `domain limit`. Neither other domain was removed; ownership and future plans must be considered before deletion. Do not conflate passing isolated Mailpit E2E with actual hosted SMTP readiness. The live Airlinerra Auth and Netlify API remain unchanged. Handoff: [single-domain testing](docs/PLATFORM_SINGLE_DOMAIN_PRELAUNCH_TESTING_2026-10-27.md).
+
 ### AUTH STEP 2 — INVITED TESTER SOURCE READY, SMTP DOMAIN BLOCKED — 2026-10-27
 
 - Code-only development now permits future exact `https://airlinerra.com` Auth verification/recovery callbacks but `PUBLIC_AUTH_ENABLED=false` remains unchanged and website account forms stay disabled. `website/invited-tester-auth.mjs` is the **only** source module pinned to the real Airlinerra Auth project for future operator-invited testing; it exposes no signup method and is **not** shipped by the public static build. Do not repurpose `website/auth-client.mjs`'s local development client to enable live registration.
