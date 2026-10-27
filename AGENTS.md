@@ -2,6 +2,13 @@
 
 ## Current operating state — 2026-10-27 (supersedes older prelaunch database counts)
 
+### PERMANENT DOMAIN VERIFIED — 2026-10-27
+
+- **Official canonical website: `https://airlinerra.com/`.** The owner purchased `airlinerra.com` at Namecheap and connected it to the public `airlinerra` Netlify project. Namecheap BasicDNS has A `@` → `75.2.60.5` and CNAME `www` → `airlinerra.netlify.app`. Domain management marks `airlinerra.com` primary and `www.airlinerra.com` as automatic redirect to primary.
+- Owner supplied Netlify screenshot confirming an active **Let's Encrypt HTTPS certificate covering both domains**, with automatic renewal enabled. Direct public HTTPS retrieval independently verified that `https://airlinerra.com/` serves the correct homepage and that `https://www.airlinerra.com/` resolves to the canonical `https://airlinerra.com/`. `/health` serves the static health page, and `/account.html` remains the **non-submitting prelaunch preview**.
+- **Hosting/domain/SSL milestone is complete.** Netlify remains production static host, Namecheap remains registrar and DNS provider. Do not buy separate hosting/SSL or reconfigure nameservers without a reason. Future public URLs, OAuth callback origins, SMTP DNS and hosted functions should use the canonical `airlinerra.com` domain when independently approved.
+- **Public account signup/gameplay remains closed.** This domain verification does not authorize deploying private hosted Functions, relaxing `PUBLIC_AUTH_ENABLED=false`, enabling Supabase Auth signup or opening any game world. Future features can use the domain but still require their own release gates.
+
 ### LIVE PUBLIC NETLIFY PRELAUNCH — 2026-10-27
 
 - **Airlinerra's STATIC PRELAUNCH WEBSITE IS NOW PUBLIC at `https://airlinerra.netlify.app/`.** The owner created and published the Netlify site, connected to GitHub `bracko87/Airlinerra` branch `main`. Public website publishing is specifically approved; **public account registration, game activation, Supabase Auth provider changes, paid products, or any live private hosted API deployment are NOT approved** by this action.
