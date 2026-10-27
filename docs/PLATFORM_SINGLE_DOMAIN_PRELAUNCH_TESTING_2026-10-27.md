@@ -3,6 +3,12 @@
 
 ## Current decision
 
+## SMTP email transport configured — 27 October 2026 (latest)
+
+A dedicated Resend key **`Airlinerra Supabase Auth SMTP`** with **Sending access only**, restricted to verified `nextqueststudio.net`, was created using a secure authenticated browser and immediately pasted into Supabase's SMTP password field without exposing its value. The existing Supabase project's Authentication → SMTP page is now **ENABLED and successfully saved**, with server `smtp.resend.com`, port `465`, username `resend`, and sender `noreply@nextqueststudio.net` / `Airlinerra - NextQuest Studio`. The saved settings were verified after reload. Existing Auth guards and game release remained unchanged.
+
+**No live invitation email or delivery test has yet occurred**, and the website account experience remains disabled/undeployed. Continue to treat the game as prelaunch: site `airlinerra.com`, no public signup/anonymous accounts, no world or gameplay release, no payments, no new Netlify project. Next task is testing/deploying the secure invitation callback and account UI on the existing official domain with the required owner release authorization; only then send a controlled invitation.
+
 ## Hosted Supabase Auth configuration completed — 27 October 2026
 
 In the **existing** Airlinerra Supabase project `hwllkabgzaynalahvkpz`, the actual Auth Dashboard was configured, and the final state rechecked after saving/reloading: **public self-signup OFF; anonymous sign-ins OFF; email confirmation ON; Email provider enabled; original manual account-linking setting ON**. The canonical Auth Site URL is `https://airlinerra.com`, and exact callback allowlist URLs `https://airlinerra.com/account.html?screen=verify` and `https://airlinerra.com/account.html?screen=reset` have been added. First dashboard attempt inadvertently changed manual linking to OFF and one save did not persist public signup OFF; both were subsequently corrected and independently verified after reload.
