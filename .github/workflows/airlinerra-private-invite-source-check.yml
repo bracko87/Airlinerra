@@ -29,6 +29,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Install website dependencies
+        working-directory: website
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Check syntax
         run: |
           node --check website/invited-tester-entry.mjs
