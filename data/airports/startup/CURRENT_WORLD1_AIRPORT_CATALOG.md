@@ -1,3 +1,5 @@
+> **CURRENT GAME STATE (27 October 2026, manual review reset):** World 1 APPROVED and ACTIVE = **3,140 original founding airports only**. **4,996** formerly active additional approvals were archived and deactivated by explicit owner request. The earlier 8,136 approved airport report below is an **obsolete historical audit snapshot**, not the current game membership. Owner-checked airports go to a separate `airlinerra.airport_candidate_preapproval_pool`, **not** straight into World 1. Currently **0 pre-approved**, **3,728** review candidates pending, **3** known rejected in the ICAO candidate queue. The next batch is [airports 51–100](world1_manual_preapproval_batch_2_51_to_100_2026-10-27.csv). Only submitting the checked batch finalizes its unchecked exclusions.
+
 # Airlinerra — World 1 airport catalog (27 October 2026)
 
 This is the **current authoritative GitHub index** for the Airlinerra airport audit. Older 8,148-, 8,139- and 18-exception snapshots are superseded.
