@@ -13,22 +13,39 @@ const DOC_PATH = /^\/[A-Za-z0-9._/-]{1,160}\.html$/u;
 export function parseHostedRuntimeConfig(env = {}) {
   // Checking the two deliberate gates first means disabled deployments do
   // not even inspect connection strings, keys or URLs.
+  // The public production hostname is never enabled by a preview flag.
+  // Canonical prelaunch testing requires its own explicit independent opt-in.
+  const mode = env.AIRLINERRA_HOSTED_RUNTIME_MODE;
+  if (mode !== undefined && mode !== 'private-preview' &&
+      mode !== 'canonical-prelaunch-test') {
+    throw new Error('Unrecognized hosted account runtime mode.');
+  }
+  const canonical = mode === 'canonical-prelaunch-test';
   if (env.AIRLINERRA_HOSTED_BACKEND_ENABLED !== 'true' ||
-      env.AIRLINERRA_PRIVATE_PREVIEW_APPROVED !== 'true') {
+      (canonical
+        ? env.AIRLINERRA_CANONICAL_PRELAUNCH_TEST_APPROVED !== 'true'
+        : env.AIRLINERRA_PRIVATE_PREVIEW_APPROVED !== 'true')) {
     return Object.freeze({enabled:false});
   }
-  if (!ALLOWED_PREVIEW_CONTEXTS.has(env.CONTEXT)) {
-    throw new Error('Hosted accounts are forbidden in production context.');
+  if (canonical ? env.CONTEXT !== 'production'
+      : !ALLOWED_PREVIEW_CONTEXTS.has(env.CONTEXT)) {
+    throw new Error('Hosted accounts are forbidden in this deployment context.');
   }
-  const origin = env.AIRLINERRA_PREVIEW_ORIGIN;
+  const origin = canonical
+    ? env.AIRLINERRA_CANONICAL_TEST_ORIGIN
+    : env.AIRLINERRA_PREVIEW_ORIGIN;
   if (typeof origin !== 'string' || !HTTPS_ORIGIN.test(origin)) {
     throw new Error('A pinned HTTPS preview origin is required.');
   }
   const parsedOrigin = new URL(origin);
   // The production hostname is never an acceptable private-preview origin,
   // even when someone incorrectly sets a Netlify preview CONTEXT variable.
-  if (['airlinerra.com','www.airlinerra.com',
-       'airlinerra.netlify.app'].includes(parsedOrigin.hostname)) {
+  if (canonical) {
+    if (parsedOrigin.origin !== 'https://airlinerra.com') {
+      throw new Error('Canonical prelaunch testing is restricted to the official domain.');
+    }
+  } else if (['airlinerra.com','www.airlinerra.com',
+              'airlinerra.netlify.app'].includes(parsedOrigin.hostname)) {
     throw new Error('A production origin cannot be used for private previews.');
   }
   if (parsedOrigin.username || parsedOrigin.password ||
@@ -80,6 +97,7 @@ export function parseHostedRuntimeConfig(env = {}) {
   const sanitizedDbUrl=db.toString();
   return Object.freeze({
     enabled:true,
+    mode:canonical?'canonical-prelaunch-test':'private-preview',
     context:env.CONTEXT,
     publicOrigin:parsedOrigin.origin,
     supabaseUrl:AIRLINERRA_AUTH_API,
