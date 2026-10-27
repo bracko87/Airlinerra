@@ -324,11 +324,13 @@ async function initialize() {
     const callback = parseAuthCallback(rawQuery, screen);
     if (callback) {
       const completion = await accountService.completeCallback(callback);
-      if (completion.purpose === 'reset') {
+      if (completion.purpose === 'reset' || completion.purpose === 'invite') {
         verifiedRecovery = true;
         setFormsEnabled();
         displayScreen('reset');
-        setFeedback('Recovery link verified. Choose a new password.');
+        setFeedback(completion.purpose === 'invite'
+          ? 'Invitation verified. Choose your account password.'
+          : 'Recovery link verified. Choose a new password.');
       } else {
         displayScreen('sign-in');
         setFeedback('Email confirmed. You can now sign in.');
