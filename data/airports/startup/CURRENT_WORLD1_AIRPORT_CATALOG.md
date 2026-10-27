@@ -1,33 +1,41 @@
 # Airlinerra — Current World 1 airport catalog (27 October 2026)
 
-**This file supersedes older airport counts and CSV snapshot lists from 27 October 2026.**
+**Current database-verified catalog.** Supersedes previous 8,148- and 8,139-airport snapshots.
 
-## Database-verified counts
+## Live database reconciliation
 
-| Cohort | Count |
+| Acceptance basis | Airports |
 |---|---:|
-| Original game cohort (untouched) | 3,140 |
-| Added under source-reported ICAO + historic hard-paved >1,200 m rule | 2,392 |
-| Added using historical runway and identifier evidence (not all independently validated) | 2,607 |
-| **Active and approved in World 1** | **8,139** |
-| **Rejected / not active** | **14** |
-| All registry candidates | 8,153 |
+| Original simulation cohort retained unchanged | 3,140 |
+| Source-reported ICAO + paved runway >1,200 m | 2,391 |
+| Historical paved-runway/identifier admission | 2,605 |
+| **Active and approved for World 1 simulation** | **8,136** |
+| **Rejected and inactive** | **17** |
+| Registered original candidates | 8,153 |
 
-## Current downloads
+## Current lists
 
-- [Active accepted airport register — 8,139](airlinerra_world1_accepted_8139_2026-10-27.csv)
-- [Confirmed exclusions — 14](airlinerra_world1_rejected_14_2026-10-27.csv)
-- [Detailed independently sourced runway checks — 14 cases](airlinerra_independent_runway_checks_14_2026-10-27.csv)
-- [Earlier 524 high-priority historical review items](airlinerra_historical_high_priority_review_524_2026-10-27.csv) — historical audit snapshot; some records have since been rejected, so cross-check against the current accepted register.
+- [World 1 accepted airports — 8,136](airlinerra_world1_accepted_8136_2026-10-27.csv)
+- [Definitively rejected — 17](airlinerra_world1_rejected_17_2026-10-27.csv)
+- [Independent source reviews — 21 cases, including 12 failed and nine runway passes](airlinerra_independent_runway_checks_21_2026-10-27.csv)
+- [870 current high-priority flagged accepted airports](airlinerra_high_priority_870_2026-10-27.csv)
 
-## Data and limits
+## Latest inspection findings
 
-- The database source of truth is Airlinerra Supabase project `hwllkabgzaynalahvkpz`, `airlinerra.airport_world1_review_20261027`; membership is `airlinerra.airport_world_activation` and `airlinerra_game.approved_game_airports`.
-- Explicit four-letter ICAO codes in the registry are **source-reported**, not guaranteed to be independently verified. National/local IDs are not fabricated as ICAO codes.
-- The **2,607 historical admissions** remain eligible under the owner's historical-runway simulation rule; they **have not all received independent checks for a current eligible paved runway**.
-- Newly identified failures include asphalt runways under 1,200 m, mixed dirt/asphalt runway lengths incorrectly counted as wholly paved, a turf runway mistakenly recorded as asphalt, and an airport marked closed indefinitely.
-- High-priority flags are documented separately in `airlinerra.airport_quality_audit_flags`; past acceptance is not an assertion of current airline service or commercial permission.
-- Six category labels remain exactly Local, Regional, Medium, Large, Major Hub, Mega Hub; provisional assignments may require later refinement.
-- This is a **simulation game airport catalog**, not a flight-planning authority.
+- Grand Geneva Resort Airport C02: FAA-derived 2026 status **closed indefinitely** despite historical asphalt length.
+- Upperville Airport 2VG2: reported closed since 2023 despite historical 5,100 ft asphalt runway.
+- Hiroshima Heliport RJBH: **present heliport only has a 35 x 30 m surface**, confirmed by Hiroshima City. Historic 1,800 m fixed-wing runway record was incorrectly carried forward from the former Hiroshima West Airport.
+- Sabre Army Airfield KEOD: FAA 2026 verifies 5,000 ft (1,524 m) concrete fixed-wing runway with 24h military prior-permission restriction; the game-display name is corrected from `Sabre Army Heliport` to `Sabre Army Airfield (Fort Campbell)`.
+- Custer State Park Airport 3V0: historical 4,000 ft asphalt runway confirmed from FAA-derived records, but not independently proven current in Oct 2026.
+- Bartow Executive KBOW and Palacios Municipal KPSX: each has a separate qualifying 1,524 m paved runway despite other poor-condition surfaces. Both retained in catalog with alternate-runway-condition warnings.
 
-**Prior snapshot with 8,148 active is outdated.** The present numbers are 8,139 accepted, 14 rejected.
+## Verification boundaries
+
+- Source-reported `ICAO` codes are not independently verified on every row. Do not conflate local IDs and official ICAO indicators.
+- Historical runway observations are accepted for **simulation-only** under owner-approved policy, not as current aircraft operating authorization.
+- 870 admitted non-foundation airports retain HIGH quality flags: 526 in historical-review subgroup, 344 in ICAO-rule subgroup. Some independently checked runway passes may still have operational or commercial permission restrictions.
+- Airport six-category assignments remain provisional: Local, Regional, Medium, Large, Major Hub, Mega Hub.
+- All original 3,140 founding airports have been preserved.
+- Source of truth: Supabase Airlinerra project `hwllkabgzaynalahvkpz`, tables `airlinerra.airport_world1_review_20261027`, `airlinerra.airport_world_activation`, `airlinerra_game.approved_game_airports`, and `airlinerra.airport_independent_runway_checks_20261027`.
+
+**Not usable as a real-world flight-planning source.**
