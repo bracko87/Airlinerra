@@ -1,5 +1,13 @@
 # Airlinerra repository instructions
 
+## Current operating state — 2026-10-27 (supersedes older prelaunch database counts)
+
+- **Installed (OWNER-directed non-public prelaunch step):** Airlinerra Supabase project `hwllkabgzaynalahvkpz` now has **8 private `airlinerra_game` tables**, and `public.airlinerra_game_worlds` contains exactly **three `planned` worlds**. The authorized **3,140 founding World 01 simulation-airport keys** were copied from the previously approved private registration source into `airlinerra_game.approved_game_airports`. No extra/missing IDs or metadata differences; no World 02/03 approvals.
+- **Never treat this as launch authorization.** `platform_release_gate.enabled=false`; actual account/airline/ledger/consent records are empty; published legal policy is empty; `public.airlinerra_site_status.game_state=prelaunch`. Private schema has RLS and no anonymous/authenticated database privileges. No public Netlify account backend has been deployed. Keep public site UX disabled until independently approved. Supabase Auth provider-level signup restrictions must still be checked.
+- Supabase migration history has three new 2026-10-27 account/catalog migrations. Do **not run the draft account schema or 3,140-airport bridge a second time**. Consult [the read-back and exact migration audit](docs/PLATFORM_PRELAUNCH_ACCOUNT_DB_INSTALLED_2026-10-27.md). The historical airport-collection sections below refer to earlier checkpoints; they do not override this live-state update.
+- Airport availability is for **simulation game catalog**, not regulatory permission, and the six levels remain the only Airlinerra categorization taxonomy. Public release, paid subscriptions and opening World 01 still require separate explicit owner approval.
+
+
 These rules apply to all contributors, automated agents and connected development tools.
 
 ## Central research database — 2026-10-23
