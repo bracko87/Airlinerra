@@ -12,6 +12,16 @@
 
 ## Current operating state — 2026-10-27 (supersedes older prelaunch database counts)
 
+### SOURCE-ONLY INVITED TESTER ACCOUNT SHELL + CI — 2026-10-27 (LATEST)
+
+- Implemented new **isolated, NOT DEPLOYED** private invited-tester account experience on the existing official domain, intended to replace the public-disabled `/account.html` preview **only in a separately reviewed prelaunch deployment**: `website/prelaunch-invited-account.html`, `website/invited-tester-page.css`, `website/invited-tester-page.mjs`, and `website/invited-tester-entry.mjs`. The page handles sign-in, email recovery and single-use OTP-authorized password setup, **without any signup form/method or airline activation**.
+- Safety: only accepts exact `https://airlinerra.com/account.html` callbacks, synchronously scrubs the OTP query/hash from browser history, rejects implicit token fragments and other origins, and checks actual hosted Auth `disable_signup=true`, `mailer_autoconfirm=false`, `external.email=true`, `external.anonymous_users=false` **before any Auth SDK/client load**. Requires source-only `operatorPrelaunchApproved=true` plus pinned project/publishable config. This client check is defense in depth, not a replacement for Supabase provider protections.
+- Added `tests/test_invited_tester_entry.mjs` and dedicated `.github/workflows/airlinerra-private-invite-source-check.yml`, plus wired new tests into `website/package.json`. **[GitHub Actions #40541648740 succeeded](https://github.com/bracko87/Airlinerra/actions/runs/40541648740)**: syntax, 4 Node test files (invite callback/provider/source gates), normal static build, and explicit assertions that private modules/shell do not enter `dist/`. An initial failed CI run lacked the pinned `pg` dependency; corrected by `npm ci --ignore-scripts`, then verified green.
+- **Hosted Supabase Auth templates are NOT complete.** Browser tried to install Invite user, Confirm signup and Recovery templates; Supabase's Monaco body editor would not accept/persist HTML. Invite subject was possibly updated to `You're invited to test Airlinerra`; invite BODY was not verified/saved; other templates were untouched. Do not send invites using unverified templates. Need an alternative supported Auth template editor/management API flow after verifying the exact callback body.
+- **Zero production deployment.** `netlify.toml` unchanged, public `website/account.html` still the disabled preview, `PUBLIC_AUTH_ENABLED=false`, no Netlify Functions registered, no game worlds opened, no accounts created, no external test email sent. Owner-approved, guarded Netlify release, legal documents, secure configuration, and live invited tester test are still pending. **Do not misrepresent source CI as a live account release.**
+
+
+
 ### AIRLINERRA CUSTOM SMTP — CREDENTIAL HANDOFF PENDING (2026-10-27)
 
 - Verified Resend company sender DNS and Supabase invite-only Auth controls. Custom SMTP remains OFF. The official Resend SMTP configuration is `smtp.resend.com:465`, username `resend`, sender `Airlinerra — NextQuest Studio <noreply@nextqueststudio.net>`; the required password is a new `sending_access` Resend key restricted to `nextqueststudio.net`. Never reuse unknown-scoped keys from other games.
