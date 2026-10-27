@@ -51,23 +51,36 @@ export function createStagedNetlifyAccountHandler({
     throw new Error('Explicit server-only hosting dependencies are required.');
   }
   let pending=null;
-  return async function stagedAccountHandler(request){
+  return async function stagedAccountHandler(request,netlifyContext){
     try{
+      // Netlify's build-time CONTEXT is NOT a read-only Functions runtime
+      // variable. Deployment identity must come from the platform-provided
+      // (request, context) Function API, never a manually set env.CONTEXT.
+      // Reject published/production deployments BEFORE reading any secrets.
+      const deploy=netlifyContext?.deploy;
+      const verifiedContext=deploy?.context;
+      if(!['deploy-preview','branch-deploy'].includes(verifiedContext) ||
+         deploy.published!==false ||
+         netlifyContext?.site?.name!=='airlinerra' ||
+         netlifyContext?.site?.url!=='https://airlinerra.com'){
+        return closedResponse();
+      }
       const env=getEnvironment();
       if(!env || env.AIRLINERRA_HOSTED_BACKEND_ENABLED!=='true' ||
-         env.AIRLINERRA_PRIVATE_PREVIEW_APPROVED!=='true' ||
-         !['deploy-preview','branch-deploy'].includes(env.CONTEXT)){
-        // Recheck context even for a warm cached app; production is forbidden.
+         env.AIRLINERRA_PRIVATE_PREVIEW_APPROVED!=='true'){
         return closedResponse();
       }
       if(!(request instanceof Request)) return closedResponse();
+      // Set the trusted deploy context for the downstream existing guards.
+      // Explicitly override any forged or stale CONTEXT environment value.
+      const verifiedEnv={...env,CONTEXT:verifiedContext};
       // Origin, exact path, access secret and warm-instance budget are
       // checked BEFORE loading the DB driver or contacting Supabase Auth.
-      const admission=previewGate.acquire(env,request);
+      const admission=previewGate.acquire(verifiedEnv,request);
       if(!admission.allowed)return closedResponse(admission.status);
       try{
         if(!pending){
-          pending=Promise.resolve().then(()=>buildApp({env}));
+          pending=Promise.resolve().then(()=>buildApp({env:verifiedEnv}));
         }
         let app;
         try{app=await pending;}
