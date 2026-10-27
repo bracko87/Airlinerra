@@ -12,6 +12,15 @@
 
 ## Current operating state — 2026-10-27 (supersedes older prelaunch database counts)
 
+### HOSTED AUTH EMAIL TEMPLATE MANAGEMENT API INSTALLER — 2026-10-27 (LATEST)
+
+- Supabase's Monaco hosted Auth HTML editor failed twice despite both direct input and clipboard paste; **the invite HTML body is still the default Supabase `{{ .ConfirmationURL }}` template**, confirmation/recovery unchanged, so **do NOT send any real invited-user emails yet**.
+- Added purpose-built `server/apply-hosted-auth-templates.mjs`, `tests/test_hosted_auth_template_management.mjs`, and two workflows: [source review](.github/workflows/airlinerra-hosted-auth-template-review.yml) and [manual-only installer](.github/workflows/airlinerra-apply-hosted-auth-templates.yml). [CI run #40546333614 PASSED](https://github.com/bracko87/Airlinerra/actions/runs/40546333614). The installation workflow is NOT RUN: it requires the owner-confirmed manual dispatch phrase and GitHub Actions secret `AIRLINERRA_SUPABASE_AUTH_TEMPLATES_TOKEN`. It PATCHes ONLY the six invited/confirmation/recovery subject+body fields, verifies hosted persistence, and fails closed if signup or anonymous access is enabled or the Resend SMTP sender changed. No users, game states, or SMTP settings are written.
+- The Supabase Dashboard now offers fine-grained **per-resource** permissions. A short-lived (24-hour) token can be restricted to **only the Airlinerra project**, with only **Project Settings Read-write** + **Auth Config Read-write**, all 44 remaining resource permissions None. One scoped PAT `Airlinerra Auth Templates One-time 2026-10-27` was created via secure browser, **but the saved GitHub browser was signed out**, so transfer to GitHub Actions secret failed. **The PAT was then immediately deleted/revoked in Supabase, and absence was verified after reload.** No GitHub secret exists, no token was pasted in chat or source and no API PATCH occurred. Do not reuse the deleted token.
+- Secure GitHub sign-in via browser profile is the next blocker. After owner saves authenticated GitHub repository-secrets session, generate a *new* 24-hour scoped PAT, paste it **directly via browser clipboard into GitHub Actions secret** (no disclosure in tools/chat/source), then manually run `Airlinerra apply hosted Auth email templates (manual only)` with exact confirmation phrase `APPLY AIRLINERRA EMAIL TEMPLATES`. Check Actions result and revoke the PAT/delete secret after verification. No public invite email before callback UI is live.
+
+
+
 ### SOURCE-ONLY INVITED TESTER ACCOUNT SHELL + CI — 2026-10-27 (LATEST)
 
 - Implemented new **isolated, NOT DEPLOYED** private invited-tester account experience on the existing official domain, intended to replace the public-disabled `/account.html` preview **only in a separately reviewed prelaunch deployment**: `website/prelaunch-invited-account.html`, `website/invited-tester-page.css`, `website/invited-tester-page.mjs`, and `website/invited-tester-entry.mjs`. The page handles sign-in, email recovery and single-use OTP-authorized password setup, **without any signup form/method or airline activation**.
