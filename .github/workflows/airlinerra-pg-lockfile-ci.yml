@@ -1,0 +1,45 @@
+name: Airlinerra pinned PostgreSQL lockfile generator (no deployment)
+
+# One-time, non-deploying lockfile provenance job. No production access,
+# Netlify secrets, Supabase keys, or GitHub write permissions.
+on:
+  push:
+    branches: [main]
+    paths:
+      - website/package.json
+      - .github/workflows/airlinerra-pg-lockfile-ci.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  resolve-pg-lock:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Generate exact npm lock file in CI
+        working-directory: website
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          npm ci --ignore-scripts --no-audit --no-fund
+          node -e "const a=require('./package-lock.json');if(a.packages[''].dependencies.pg!=='8.23.1')process.exit(1)"
+          echo "LOCK_SHA256=$(sha256sum package-lock.json | cut -d' ' -f1)"
+          echo 'BEGIN_AIRLINERRA_PACKAGE_LOCK_BASE64'
+          base64 -w0 package-lock.json
+          echo
+          echo 'END_AIRLINERRA_PACKAGE_LOCK_BASE64'
+      - name: Preserve prelaunch static website (never deploy)
+        working-directory: website
+        run: |
+          npm run build
+          test -f ../dist/index.html
+          test ! -d netlify/functions
+          test ! -d ../netlify/functions
+          test ! -e ../dist/server
