@@ -1,0 +1,15 @@
+airport_key,airport_name,country_iso,code,historical_length_m,historical_surface,checked_paved_m,checked_surface,reason,source_url
+OURAIRPORTS:20697,Bryant Field,US,KO57,1292.0,ASP,1174.8,ASPHALT,FAA 2026: Bryant Field RWY 16/34 is 3854 ft = 1174.8 m asphalt; historic length 1292.0 m is not substantiated.,https://www.airnav.com/airport/O57
+OURAIRPORTS:4184,Creil Air Base,FR,LFPC,2399.1,CON,,,Documented permanent aerodrome closure; not playable,
+OURAIRPORTS:21081,Hagler Army Heliport,US,KSLJ,1524.0,ASP,,,FAA-derived airport remark explicitly states no fixed-wing traffic allowed. Heliport is unsuitable for airline simulation.,
+OURAIRPORTS:20680,Lee Vining Airport,US,O24,1246.6,ASPH-F,1194.8,ASPHALT,FAA 2026: Lee Vining RWY 15/33 is 3920 ft = 1194.8 m asphalt; historic registry 1246.6 m is not substantiated. No paved 1200m runway.,https://www.airnav.com/airport/O24
+OURAIRPORTS:20316,Mountain Valley Airport,US,KL94,1490.5,ASP,1124.7,ASPHALT / DIRT,"Mountain Valley 4890 ft total includes 1200 ft dirt; only 3690 ft = 1124.7 m paved, and 09L/27R sailplane-only.",https://www.airnav.com/airport/L94
+OURAIRPORTS:20315,New Cuyama Airport,US,KL88,1200.9,ASP,1030.2,ASPHALT,"New Cuyama operator lists runway length 3380 ft = 1030.2 m, below minimum, notwithstanding historic registry 1200.9 m.",https://www.visitcuyama.com/l88
+OURAIRPORTS:328992,Nighthawks Nest Airport,US,TT45,2326.8,ASP,0,TURF,Nighthawks Nest FAA 2026 RWY 15/33 is turf 4387 ft; stale registry claims 2326.8 m asphalt. No paved qualifying runway.,https://www.airnav.com/airport/TT45
+OURAIRPORTS:13745,Pierce Field,US,72TA,1828.8,CONC,1147,"ASPHALT, SECONDARY CONCRETE 888M","Pierce Field FAA 2026: asphalt RWY 11/29 3763 ft = 1147 m, concrete 18/36 2913 ft = 888 m; neither exceeds 1200 m.",https://www.airnav.com/airport/72TA
+OURAIRPORTS:20305,Pollock Municipal Airport,US,L66,1371.3,ASP,,,FAA-reviewed runway condition FAILED or qualifying paved runway unavailable; not playable,
+OURAIRPORTS:20615,Rosaschi Air Park,US,KN59,1463.0,ASP,,,FAA-reviewed runway condition FAILED or qualifying paved runway unavailable; not playable,
+OURAIRPORTS:18485,Searchlight Airport,US,K1L3,1536.2,ASPH-G,,,FAA-reviewed runway condition FAILED or qualifying paved runway unavailable; not playable,
+OURAIRPORTS:10350,Seminole Spraying Service Airport,US,39TE,1219.2,ASPH-P,1219.2,"ASPHALT POOR, AIRPORT CLOSED INDEFINITELY","Seminole Spraying Service historical asphalt RWY 17/35 4000 ft is long enough, but FAA 2026 operating status is CLOSED INDEFINITELY with poor runway pavement. Not eligible for active simulation under closure rule.",https://skyvector.com/airport/39TE/Seminole-Spraying-Service-Airport
+OURAIRPORTS:20422,Waldron Municipal Airport,US,KM27,1219.2,ASP,1112.5,ASPHALT,"Waldron Municipal FAA 2026: only asphalt runway 3650 ft = 1112.5 m, historic 1219.2m entry contradicted.",https://www.airnav.com/airport/M27
+OURAIRPORTS:23858,Weddle Field,US,OR07,1341.1,ASP,762,ASPHALT / DIRT / GRAVEL,"Weddle Field FAA: 4400 ft total runway but only 2500 ft = 762 m asphalt, with 1300 ft dirt and 600 ft gravel; not 1200 m contiguous paved.",https://www.airnav.com/airport/OR07
