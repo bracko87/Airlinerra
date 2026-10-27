@@ -34,6 +34,7 @@ on:
       - 'tests/test_hosted_account_router.mjs'
       - 'tests/test_private_preview_account_app.mjs'
       - 'tests/test_staged_netlify_account_api.mjs'
+      - 'tests/test_canonical_prelaunch_account_api.mjs'
       - 'tests/test_preview_access_guard.mjs'
       - 'tests/test_prelaunch_release_invariants.mjs'
       - 'tests/test_sql_contract_drift.mjs'
