@@ -2,6 +2,14 @@
 
 **Owner decision:** Use the existing NextQuest Studio corporate domain **`nextqueststudio.net`** as the outbound sender for Airlinerra invitations, confirmations and password recovery instead of registering a fourth sending domain. **Never remove or replace any existing Resend domain.** Airlinerra's official website remains `https://airlinerra.com`.
 
+## Completed: Resend → Supabase SMTP, 27 October 2026 (latest state)
+
+**Status: CONFIGURED, delivery test not yet performed.** The owner saved an authenticated secure browser session for both providers. The browser created a unique Resend API Key named **`Airlinerra Supabase Auth SMTP`**, with **Sending access only** and sender-domain restriction **`nextqueststudio.net` only**. The new token was copied/pasted only into Airlinerra's Supabase Auth secure SMTP password field, never entered into repository source or the chat. No other keys or domains were modified.
+
+In Supabase project `hwllkabgzaynalahvkpz` the dashboard reports **Custom SMTP enabled**, successfully saved and confirmed after reload, with `smtp.resend.com:465`, username `resend`, sender address `noreply@nextqueststudio.net` and display name `Airlinerra - NextQuest Studio`. The intended display name uses an em dash rather than a hyphen, but this is cosmetic and not a reason to expose or rotate credentials. Resend independently lists the new key and verifies all four DNS records for `nextqueststudio.net`.
+
+**Do not send a real tester invitation yet.** The public `https://airlinerra.com/account.html` login/verification/reset experience remains disabled and the protected API/backend has not been deployed to the official Netlify site. Live users=0, airlines=0, game worlds open=0; release gate disabled. Continue with reviewed hosted callback UI, admin-invitation tests, and only then one intentional test email. Public signup remains OFF. Historical sections below referring to SMTP OFF or missing keys describe prior state, not this current state.
+
 ## SMTP connection values confirmed (27 October 2026)
 
 Resend's documented TLS/SMTP connection is **host `smtp.resend.com`, port `465`, username `resend`**. The SMTP password is a Resend API key; create a **dedicated `sending_access` key restricted to the already verified `nextqueststudio.net` domain** (do not reuse older keys owned by other projects). Configure in the **existing** Airlinerra Supabase project's Authentication → SMTP Settings:
