@@ -8,11 +8,12 @@
 import {parseHostedRuntimeConfig} from './hosted-runtime-config.mjs';
 import {createHostedAuthVerifier} from './hosted-auth-verifier.mjs';
 import {createHostedAccountStack} from './hosted-account-stack.mjs';
+import {loadServerPostgresDriver} from '../website/server-only-pg-loader.mjs';
 
 export async function buildPrivatePreviewAccountApp({
   env={},
   fetchImpl=globalThis.fetch,
-  loadPg=()=>import('pg')
+  loadPg=loadServerPostgresDriver
 }={}) {
   const config=parseHostedRuntimeConfig(env);
   if(!config.enabled) {
