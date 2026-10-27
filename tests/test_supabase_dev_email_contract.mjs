@@ -78,6 +78,44 @@ test('recovery template yields only a recovery OTP callback',async()=>{
   assert.doesNotMatch(html,/\.ConfirmationURL|\?code=|type=email/);
 });
 
+test('invite email uses verified one-time OTP to authorize exactly one initial password setup',async()=>{
+  const conf=await read('supabase/config.toml');
+  assert.match(conf,/\[auth\.email\.template\.invite\]/);
+  assert.match(conf,/content_path = "\.\/supabase\/templates\/invite\.html"/);
+  const html=await read(TEMPLATE_DIR+'invite.html');
+  const canonical=html.replaceAll('{{ .SiteURL }}','https://airlinerra.com')
+    .replaceAll('{{ .TokenHash }}',HASH).replaceAll('&amp;','&');
+  const href=canonical.match(/href="([^"]+)"/)?.[1];
+  assert.ok(href);
+  const link=new URL(href);
+  assert.equal(link.origin,'https://airlinerra.com');
+  assert.equal(link.pathname,'/account.html');
+  assert.equal(link.searchParams.get('screen'),'verify');
+  const callback=parseAuthCallback(link.search,'verify');
+  assert.deepEqual(callback,{kind:'otp',token_hash:HASH,type:'invite',purpose:'verify'});
+  assert.throws(()=>parseAuthCallback(link.search,'reset'),/Unexpected recovery link type/);
+  const events=[];
+  const user={id:'invited-test-user',email_confirmed_at:'2026-10-27T10:00:00Z'};
+  const auth={
+    verifyOtp:async input=>{
+      events.push(['verifyOtp',input]);
+      return {data:{session:{user}},error:null};
+    },
+    getUser:async()=>({data:{user},error:null}),
+    updateUser:async input=>{events.push(['updateUser',input]);return {error:null};},
+    signOut:async options=>{events.push(['signOut',options]);return {error:null};}
+  };
+  const service=createAuthService({supabase:{auth},origin:'https://airlinerra.com',enabled:true});
+  const result=await service.completeCallback(callback);
+  assert.equal(result.purpose,'invite');
+  assert.equal(result.sessionEstablished,true);
+  assert.deepEqual(events[0],['verifyOtp',{token_hash:HASH,type:'invite'}]);
+  await service.updatePassword('first-invited-password-123');
+  assert.deepEqual(events[1],['updateUser',{password:'first-invited-password-123'}]);
+  assert.deepEqual(events[2],['signOut',{scope:'global'}]);
+  await assert.rejects(service.updatePassword('second-password-12345'),/verified password recovery/);
+});
+
 test('recovery token from email must not verify as ordinary signup',async()=>{
   const html=await read(TEMPLATE_DIR+'recovery.html');
   const url=new URL(linkFromTemplate(html));
