@@ -171,7 +171,34 @@ jobs:
             assert.equal(badSession.status,401,
               'Bundled pg driver and private handlers must load and reject invalid Auth without network');
             assert.equal(badSession.headers.get('cache-control'),'no-store');
-            console.log('PASS: real bundled Function trusts platform context and rejects invalid test token offline');
+            // Official domain is used as a controlled prelaunch test site.
+            // Preview access flags must NEVER open a production deployment.
+            const canonicalOrigin='https://airlinerra.com';
+            const canonicalSecret='C'.repeat(43);
+            const canonicalRequest=()=>new Request(canonicalOrigin+'/api/v1/onboarding/context',{
+              method:'POST',
+              headers:{
+                origin:canonicalOrigin,'content-type':'application/json',
+                'x-airlinerra-preview-access':canonicalSecret,
+                authorization:'Bearer bad'
+              },
+              body:'{}'
+            });
+            assert.equal((await handler(canonicalRequest(),productionContext)).status,503);
+            Object.assign(process.env,{
+              AIRLINERRA_HOSTED_RUNTIME_MODE:'canonical-prelaunch-test',
+              AIRLINERRA_CANONICAL_PRELAUNCH_TEST_APPROVED:'true',
+              AIRLINERRA_CANONICAL_TEST_ORIGIN:canonicalOrigin,
+              AIRLINERRA_CANONICAL_TEST_ACCESS_SECRET:canonicalSecret,
+              CONTEXT:'deploy-preview' // Must not override trusted production context.
+            });
+            const canonicalTest=await handler(canonicalRequest(),productionContext);
+            assert.equal(canonicalTest.status,401,
+              'Operator-approved official-domain Function must reject invalid token offline');
+            assert.equal(canonicalTest.headers.get('cache-control'),'no-store');
+            assert.equal((await handler(request(),previewContext)).status,503,
+              'Canonical mode must not authorize a separate deploy preview');
+            console.log('PASS: Netlify ZIP denies unauthorised production, verifies both isolated modes, rejects invalid tokens offline');
           }finally{
             globalThis.fetch=oldFetch;
           }
