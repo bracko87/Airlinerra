@@ -1,5 +1,15 @@
 # Airlinerra — Netlify account API staged safely (27 October 2026)
 
+## 27 October 2026 — Pinned database dependency completed
+
+The `pg` runtime dependency is now **pinned to exact version `8.23.1`** in `website/package.json`, and its complete `website/package-lock.json` was generated using npm on a credential-free GitHub Actions runner. The lock includes package integrity hashes; it is committed so Netlify can reproduce the exact dependency tree using `npm ci`.
+
+- `tests/test_pg_driver_contract.mjs` uses the **real installed** `pg` client and pool, with **no network connection**, to validate the sanitized configuration preserves `ssl.rejectUnauthorized=true` after the URL has been parsed by node-postgres.
+- `.github/workflows/airlinerra-pg-lockfile-ci.yml` now runs **`npm ci` validation** (not a generator) and confirms the static website build excludes `server/`, `node_modules/` and server package metadata.
+- The existing `airlinerra-account-node-ci.yml` now also runs `npm ci` before each account test job, including disposable PostgreSQL tests.
+- **No Function was moved into a live functions directory.** The automatic Netlify production deployment still publishes only the disabled-registration static prelaunch website. The secure serverless runtime needs separate preview deployment authorization, configuration and live external integration testing.
+- The lockfile contains no database password, service-role key or Netlify secret. The version is pinned, but hosted secrets, reviewed legal documents, rate limiting and Auth signup restrictions remain pending.
+
 ## Status
 
 **Source implementation and CI checks only. NOT deployed.**
