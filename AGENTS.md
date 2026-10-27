@@ -1,6 +1,15 @@
 # Airlinerra repository instructions
 
-## Current operating state — 2026-10-27 (supersedes older prelaunch database counts)
+
+
+### HOSTED SUPABASE AUTH INVITE-ONLY CONFIGURATION SAVED — 2026-10-27
+
+- Airlinerra hosted project `hwllkabgzaynalahvkpz` was accessed in the Supabase Dashboard. **Final persisted UI state AFTER SAVE AND PAGE RELOAD:** `Allow new users to sign up=OFF`, `Allow anonymous sign-ins=OFF`, `Confirm Email=ON`, Email provider=ENABLED and `Allow manual linking=ON` (original pre-existing value restored after an unintended toggle during first attempt).
+- Hosted Auth **Site URL** changed from `http://localhost:3000` to `https://airlinerra.com`. Exact redirect URLs `https://airlinerra.com/account.html?screen=verify` and `https://airlinerra.com/account.html?screen=reset` were added to the allowlist. No prior redirects were present.
+- **Current Custom SMTP in Supabase Auth remains OFF and not configured.** Resend corporate sender domain `nextqueststudio.net` is fully verified. The only outstanding SMTP setup is securely entering the SMTP host/port, a restricted Resend credential and `Airlinerra — NextQuest Studio <noreply@nextqueststudio.net>` directly in Supabase secure settings. **Never commit/transmit an API key, password, or token into GitHub, public JS, chat, browser automation goal text, or documentation.** No hosted SMTP enabled, real invites sent, or email deliveries verified.
+- Live database confirmed `auth.users=0`, airlines=0, no open game worlds, game release disabled and `site_state=prelaunch`. Website account UI/API remain undeployed/closed. Do not conflate invite-only Auth configuration with launched gameplay.
+- Documentation: [Single-domain prelaunch plan](docs/PLATFORM_SINGLE_DOMAIN_PRELAUNCH_TESTING_2026-10-27.md) and [Company sender DNS/SMTP](docs/PLATFORM_NEXTQUEST_STUDIO_EMAIL_SENDER_2026-10-27.md).
+
 
 ### VERIFIED RESEND CORPORATE DOMAIN — 2026-10-27 (SUPERCEDES EARLIER DNS-PENDING AND FAILED ENTRIES)
 
