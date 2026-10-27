@@ -130,6 +130,9 @@ jobs:
             '/api/v1/onboarding/context','/api/v1/legal/consents','/api/v1/airlines'
           ]);
           const origin='https://deploy-preview-123--airlinerra.netlify.app';
+          const trustedSite={name:'airlinerra',url:'https://airlinerra.com'};
+          const productionContext={deploy:{context:'production',published:true},site:trustedSite};
+          const previewContext={deploy:{context:'deploy-preview',published:false},site:trustedSite};
           const secret='B'.repeat(43); // Synthetic, never a real credential.
           const request=()=>new Request(origin+'/api/v1/onboarding/context',{
             method:'POST',
@@ -146,13 +149,13 @@ jobs:
             const closed=await handler(request());
             assert.equal(closed.status,503);
             Object.assign(process.env,{
-              CONTEXT:'production',
+              CONTEXT:'deploy-preview', // Intentionally misleading; runtime MUST ignore it.
               AIRLINERRA_HOSTED_BACKEND_ENABLED:'true',
               AIRLINERRA_PRIVATE_PREVIEW_APPROVED:'true'
             });
-            assert.equal((await handler(request())).status,503);
+            assert.equal((await handler(request(),productionContext)).status,503);
             Object.assign(process.env,{
-              CONTEXT:'deploy-preview',
+              CONTEXT:'production', // Build-only metadata is not authoritative.
               AIRLINERRA_PREVIEW_ORIGIN:origin,
               AIRLINERRA_PREVIEW_ACCESS_SECRET:secret,
               AIRLINERRA_SUPABASE_URL:'https://hwllkabgzaynalahvkpz.supabase.co',
@@ -161,11 +164,11 @@ jobs:
               AIRLINERRA_TERMS_PATH:'/legal/terms-v1.html',
               AIRLINERRA_PRIVACY_PATH:'/legal/privacy-v1.html'
             });
-            const badSession=await handler(request());
+            const badSession=await handler(request(),previewContext);
             assert.equal(badSession.status,401,
               'Bundled pg driver and private handlers must load and reject invalid Auth without network');
             assert.equal(badSession.headers.get('cache-control'),'no-store');
-            console.log('PASS: real bundled Function refuses production and rejects invalid test token offline');
+            console.log('PASS: real bundled Function trusts platform context and rejects invalid test token offline');
           }finally{
             globalThis.fetch=oldFetch;
           }
