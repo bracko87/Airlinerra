@@ -158,3 +158,50 @@ All four `commercial_permission_status='UNVERIFIED'` and `game_admission_status=
 - No changes to original `airlinerra.airport_registry` source length/surface, no new airport admissions, world activations or category assignments. The exact six final game categories remain **Local, Regional, Medium, Large, Major Hub, Mega Hub**.
 
 **Follow-up:** obtain the 2026 effective SIA AD2 detailed surface and available-distance notes for LFOE/LFSI and recheck LFSO's 2024 military mixed-pavement context, keeping civil authorizations a distinct legal gate. The remaining previously-unreviewed French military airports will be counted from live Supabase after this commit.
+
+---
+
+## France Batch 06 — six final missing-access-review candidates (27 October 2026)
+
+**Research marker:** `FR_SPECIALIST_06_2026_10_27`  
+**Edition:** French DGAC SIA AIRAC **10/26** (October 1–28, 2026), official eAIP AD 1.3 register, with expressly dated supplemental evidence from May 2026 SIA AD 2, 2025 DIRCAM, and a **binding 2021 French ministerial closure decree**. These are research audits, **not flight-planning guidance**; live NOTAMs and carrier permits remain separate. The registry is preserved exactly as imported, even where its historic runway figures conflict with later authority information.
+
+### Decisions by airfield
+
+| ICAO | Historical registry length / material | Authoritative later runway evidence | Independent strict asphalt-or-concrete review / access |
+|---|---|---|---|
+| **LFBC Cazaux (BA120)** | 2,407.9m `ASP` | DGAC original AD 2 available May 2026 describes **RWY 06/24 2,398 ×45m** `béton-macadam` (concrete–macadam), **9.9m less** than registry. Dated source also lists RW06 clearway 318m / RW24 314m; these are **not** extra physical runway. | `paved_runway_status='UNVERIFIED'` under strict current continuous asphalt/concrete surface proof: mixed material not quantified and 2026 October AD2 update unverified. Active **military restricted**. No commercial route authorization. |
+| **LFQE Étain–Rouvres (ALAT)** | **2,400m `ASP`** | **October 2026 SIA AD1.3 1,721 ×45m `revêtue`** RW01/19 — **679m shorter** than imported runway. Older original military DIRCAM (2025, preserved as secondary copy) also lists 1,721m physical, with RW01 TODA 2,000m / ASDA+LDA 1,721m and RW19 TODA 1,996m / ASDA+LDA 1,721m. Those larger TODA figures are **not physical runway**. Historical DIRCAM directory indicates mixed concrete–macadam rather than definitive asphalt continuous 1,200m. | `paved_runway_status='UNVERIFIED'` independent exact material, **registry remains source-screen provisional only**, military access restricted. The **679m length mismatch is high-priority cleanup** before aircraft performance calculations. |
+| **LFPC Creil (former BA110)** | 2,399.1m `CON` (historic runway) | **French ministerial arrêté of June 2, 2021, in force June 14, 2021** **CLOSED the aerodrome to ALL air traffic and removed it from the designated aerodrome list**. Former airfield grounds were redeveloped for an industrial-scale solar farm by July 2026. Historical concrete runway is not evidence of an operational airport. | **Definitive exclusion:** `review_status='FR_B6_EXCLUDED_BY_LEGAL_AERODROME_CLOSURE_2021'`, `civilian_access_status='CLOSED_ALL_AIR_TRAFFIC_BY_FRENCH_LAW_2021'`, passenger scheduled/charter/cargo/commercial all `PROHIBITED_CLOSED_AERODROME`, `game_admission_status='NOT_APPROVED'`. Do not re-import or activate as a new playable airport regardless of length. Historical `airport_registry` source row is retained solely for immutable provenance. |
+| **LFQP Phalsbourg–Bourscheid** | 2,196.1m `ASP` | Oct 2026 SIA AD1.3 **2,202 ×45m `macadam`**, RW05/23; **5.9m longer** than original, and current runway magnetic labels differ from older RW06/24 charts. | `paved_runway_status='UNVERIFIED'` exact asphalt/concrete; military restricted, airline permission unresolved. |
+| **LFXA Ambérieu (BA278)** | 2,000.1m `ASP` | Oct 2026 SIA AD1.3 **RW01L/19R 1,993 ×30m `revêtue` / paved**, **7.1m shorter** than registry; also 800×100m **unpaved** RW01R/19L, which does NOT qualify. Published **mixed military/civil, open to public air traffic**; this is not the same as a general commercial passenger/charter carrier permit. Older DIRCAM VAC lists **RW19R LDA 1,791m** vs RW01L 1,993m, but does not independently certify current runway asphalt/concrete material. | `paved_runway_status='UNVERIFIED'` exact subtype; `civilian_access_status='MIXED_MILITARY_CIVIL_OPEN_TO_PUBLIC_AIR_TRAFFIC'`. Legal airport open, but airline-specific authorization unverified and game NOT_APPROVED. |
+| **LFPV Vélizy–Villacoublay (BA107)** | **1,813m `ASP`** | Oct 2026 SIA AD1.3 **RW09/27 1,957 ×45m `enrobé bitumineux` (bituminous asphalt)**, **144m longer** than source registry. Archived 2023 French DIRCAM chart independently agrees with 1,957m and lists directional LDA 1,886m / 1,884m (not certified October 2026). | **VERIFIED** independently explicit full-length asphalt >=1,200m; **military restricted**. No scheduled/commercial general permission, game NOT_APPROVED. |
+
+### Authoritative and dated sources
+
+- **Current (as of Oct 27, 2026) DGAC/SIA nationwide AD1.3** with LFQE 1,721m, LFQP 2,202m macadam, LFXA 1,993m paved and LFPV 1,957m bituminous runway: https://www.sia.aviation-civile.gouv.fr/media/dvd/eAIP_01_OCT_2026/FRANCE/AIRAC-2026-10-01/html/eAIP/FR-AD-1.3-fr-FR.html .
+- **Official legally binding Creil closure**, **June 2, 2021 arrêté** in force June 14, 2021, French Government Légifrance: https://www.legifrance.gouv.fr/loda/id/JORFTEXT000043648488/ .
+- **Creil site reuse, 2026 local-government document:** https://www.ccac.fr/wp-content/uploads/2026/02/Deliberations-et-annexes-du-conseil-communautaire-du-10-fevrier-2026-sans-PV.pdf . July 2026 news corroboration: https://www.leparisien.fr/oise-60/150-millions-deuros-et-331-830-panneaux-plus-tard-lex-base-militaire-de-creil-devient-la-2e-ferme-solaire-de-france-06-07-2026-ZNBOTCC675AYNAQ3NGIO5GI52U.php .
+- **LFBC DGAC/SIA dated May 14, 2026 original detailed AD2:** https://www.sia.aviation-civile.gouv.fr/media/dvd/eAIP_14_MAY_2026/FRANCE/AIRAC-2026-05-14/pdf/FR-AD-2.LFBC-fr-FR.pdf (search-extracted official text reports 2,398m concrete–macadam; direct full-page PDF capture unavailable during this pass, so treat it as date-bounded until checked).
+- **LFQE military DIRCAM 2025 original chart copied via external reproduction**, not a current 2026 AIP: https://fr.scribd.com/document/910791323/LFQE-Etain-Rouvres-VAC .
+- **LFQP supplementary independent airfield directory** matches 2,202m dimensions: https://europeairfields.com/airfields/france/lfqp/phalsbourg-bourscheid .
+- **LFXA secondary dated original DIRCAM runway VFR transcription:** https://www.wingman-vfr.com/terrain/lfxa .
+- **LFPV DIRCAM 2023 original military chart** corroborates 1,957×45m and directional shorter LDA: https://www.dircam.dsae.defense.gouv.fr/images/Stories/Doc/MIAC4/miac4_villacoublay_lfpv.pdf (historic chart only, not 2026 flight clearance).
+
+### Supabase records and version-control safeguards
+
+- **12** `airlinerra.airport_evidence` rows, IDs **2205–2216**, two observations per airport (physical source distinction and legal-access status).
+- **6** new `airlinerra.airport_access_reviews` with four explicit technical-material holds (LFBC, LFQE, LFQP, LFXA), one `VERIFIED` asphalt pavement (LFPV), and one **legally closed airport** separately excluded (LFPC).
+- **6** `airlinerra.airport_review_events` IDs **58–63**, `source_run_id='FR_SPECIALIST_06_2026_10_27'`.
+- **No mutations** of `airport_registry` historical raw source values, **no World 1 additional airport approvals or activations**, **no final six-category assignments**. Creil is an exclusion despite the registry's historic `RUNWAY_QUALIFIED` marker because it violates the mandatory **not-closed** runway-collection criterion.
+- Audits include the source-effective date and distinguish current aerodrome register from historical pilot charts and operator/public law. The original registry should not be overwritten to “correct” discrepancies unless a separately authorized versioned source-correction process is adopted.
+
+### Consolidated France result after Batches 01–06
+
+**The original French outside-World1 registry contains 105 candidates. All 105 now have access-review records: 0 missing.** Six specialist batches have filled the **25 previously absent** access reviews, with **51 distinct research evidence records** across those 25 airports (6+8+9+8+8+12).
+
+Live field-level totals as of this batch: **14/105 `paved_runway_status='VERIFIED'`**, **91/105 `UNVERIFIED'`**. The 91 include **one separate definitive legal closure (LFPC Creil)** and **90 unresolved pavement-review cases**, many of which were already present as pre-existing source-only reviews before the specialist project. **A populated access-review record means that case has entered or passed a review step, not that every technical and legal gate passed.** All **105/105** currently remain `game_admission_status='NOT_APPROVED'`, including the 14 with independent pavement verification.
+
+**Research milestone completed:** France's **missing-access-review backlog is zero**, but **the technical evidence backlog is NOT zero**. Prioritize French existing older source-only `UNVERIFIED` candidates that could pass the strict pavement gate and have plausible civil operations; do not repeatedly research closed LFPC or try to approve military-only airports automatically.
+
+**Game catalog:** World 1's already-approved 3,140 source keys in the private prelaunch `airlinerra_game` catalog remain unchanged. The six categories are still exactly **Local, Regional, Medium, Large, Major Hub, Mega Hub**; none assigned by this specialist review. No launch authorization granted.
