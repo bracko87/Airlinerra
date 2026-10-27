@@ -1,0 +1,51 @@
+review_no,airport_name,country,source_reported_icao,historical_paved_runway_m,surface,suggested_category,chosen_category,checked_for_pre_approval_yes,manual_status,airport_key
+51,Paso De Los Libres Airport,AR,SARL,2260.1,ASP,Regional,Regional,,PENDING,OURAIRPORTS:5807
+52,Reconquista Airport,AR,SATR,2799.9,CON,Local,Local,,PENDING,OURAIRPORTS:5819
+53,Rincon De Los Sauces Airport,AR,SAHS,1499.9,ASP,Regional,Regional,,PENDING,OURAIRPORTS:5784
+54,Santa Cruz Airport,AR,SAWU,1999.8,ASP,Regional,Regional,,PENDING,OURAIRPORTS:5839
+55,Sunchales Aeroclub Airport,AR,SAFS,2000.1,CON,Local,Local,,PENDING,OURAIRPORTS:39021
+56,Termal Airport,AR,SARS,1799.8,Concrete,Local,Local,,PENDING,OURAIRPORTS:42884
+57,Valle Del Conlara International Airport,AR,SAOS,2550.0,CON,Regional,Regional,,PENDING,OURAIRPORTS:5801
+58,Venado Tuerto Airport,AR,SAFV,1499.9,ASP,Local,Local,,PENDING,OURAIRPORTS:39
+59,Villa Dolores Airport,AR,SAOD,1399.9,ASP,Regional,Regional,,PENDING,OURAIRPORTS:5797
+60,Villa Gesell Airport,AR,SAZV,1591.1,ASP,Regional,Regional,,PENDING,OURAIRPORTS:5854
+61,Villa Reynolds Airport,AR,SAOR,2400.0,ASP,Local,Local,,PENDING,OURAIRPORTS:5800
+62,Zapala Airport,AR,SAHZ,2200.0,ASP,Regional,Regional,,PENDING,OURAIRPORTS:5785
+63,Brumowski  Air Base,AT,LOXT,1399.9,ASPHALT,Local,Local,,PENDING,OURAIRPORTS:29484
+64,Hinterstoisser Air Base,AT,LOXZ,2749.9,ASP,Local,Local,,PENDING,OURAIRPORTS:4436
+65,Wels Airfield,AT,LOLW,1389.9,ASP,Local,Local,,PENDING,OURAIRPORTS:4429
+66,Ararat Airport,AU,YARA,1239.9,ASP,Regional,Regional,,PENDING,OURAIRPORTS:26891
+67,Argyle Airport,AU,YARG,2300.0,ASP,Regional,Regional,,PENDING,OURAIRPORTS:26892
+68,Ayr Airport,AU,YAYR,1461.8,ASP,Local,Local,,PENDING,OURAIRPORTS:26896
+69,Ballarat Airport,AU,YBLT,1264.9,ASP,Local,Local,,PENDING,OURAIRPORTS:26916
+70,Ballera Airport,AU,YLLE,1800.1,ASP,Regional,Regional,,PENDING,OURAIRPORTS:27036
+71,Barrow Island Airport,AU,YBWX,1900.1,ASP,Regional,Regional,,PENDING,OURAIRPORTS:26940
+72,Bathurst Island Airport,AU,YBTI,1470.1,ASP,Regional,Regional,,PENDING,OURAIRPORTS:26933
+73,Blackwater Airport,AU,YBTR,1531.0,ASP,Regional,Regional,,PENDING,OURAIRPORTS:26935
+74,Brewarrina Airport,AU,YBRW,1385.9,ASP,Regional,Regional,,PENDING,OURAIRPORTS:26929
+75,Brisbane Archerfield Airport,AU,YBAF,1481.0,ASP,Local,Local,,PENDING,OURAIRPORTS:26897
+76,Camden Airport,AU,YSCN,1464.3,ASP,Regional,Regional,,PENDING,OURAIRPORTS:27133
+77,Clarence Valley Regional Airport,AU,YGFN,1709.0,ASP,Regional,Regional,,PENDING,OURAIRPORTS:26992
+78,Clermont Airport,AU,YCMT,1310.9,ASP,Regional,Regional,,PENDING,OURAIRPORTS:26956
+79,Cleve Airport,AU,YCEE,1350.0,ASP,Regional,Regional,,PENDING,OURAIRPORTS:26951
+80,Condobolin Airport,AU,YCDO,1371.9,ASP,Local,Local,,PENDING,OURAIRPORTS:26949
+81,Coonabarabran Airport,AU,YCBB,1520.0,ASP,Regional,Regional,,PENDING,OURAIRPORTS:26944
+82,Coondewanna Airport,AU,YCWA,1950.1,CON,Regional,Regional,,PENDING,OURAIRPORTS:29801
+83,Cootamundra Airport,AU,YCTM,1427.1,ASP,Regional,Regional,,PENDING,OURAIRPORTS:26965
+84,Corowa Airport,AU,YCOR,1827.0,ASP,Regional,Regional,,PENDING,OURAIRPORTS:26963
+85,Corryong Airport,AU,YCRG,1400.9,ASP,Regional,Regional,,PENDING,OURAIRPORTS:26964
+86,Cowra Airport,AU,YCWR,1630.1,ASP,Regional,Regional,,PENDING,OURAIRPORTS:26968
+87,Dalby Airport,AU,YDAY,1268.0,ASP,Local,Local,,PENDING,OURAIRPORTS:26969
+88,Deniliquin Airport,AU,YDLQ,1218.9,ASP,Regional,Regional,,PENDING,OURAIRPORTS:26972
+89,Derby Airport,AU,YDBY,1736.1,ASP,Regional,Regional,,PENDING,OURAIRPORTS:26971
+90,Dirranbandi Airport,AU,YDBI,1217.1,ASP,Regional,Regional,,PENDING,OURAIRPORTS:26970
+91,Dysart Airport,AU,YDYS,1549.9,ASP,Regional,Regional,,PENDING,OURAIRPORTS:26976
+92,Evans Head Aerodrome,AU,YEVD,1303.0,ASP,Local,Local,,PENDING,OURAIRPORTS:26983
+93,Forbes Airport,AU,YFBS,1228.0,ASP,Regional,Regional,,PENDING,OURAIRPORTS:26984
+94,Forrest Airport,AU,YFRT,1519.1,ASP,Regional,Regional,,PENDING,OURAIRPORTS:26985
+95,Fortescue - Dave Forrest Aerodrome,AU,YFDF,2300.0,ASP,Regional,Regional,,PENDING,OURAIRPORTS:301103
+96,Gayndah Airport,AU,YGAY,1264.9,ASP,Local,Local,,PENDING,OURAIRPORTS:26987
+97,Ginbata Airport,AU,YGIA,2500.0,CON,Regional,Regional,,PENDING,OURAIRPORTS:319713
+98,Glen Innes Airport,AU,YGLI,1498.1,ASP,Regional,Regional,,PENDING,OURAIRPORTS:26996
+99,Goondiwindi Airport,AU,YGDI,1339.9,ASP,Local,Local,,PENDING,OURAIRPORTS:26990
+100,Goulburn Airport,AU,YGLB,1282.9,ASP,Regional,Regional,,PENDING,OURAIRPORTS:26995
