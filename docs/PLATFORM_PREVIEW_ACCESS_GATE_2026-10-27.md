@@ -6,6 +6,8 @@
 
 Airlinerra's public website `https://airlinerra.com/` uses a Netlify Free site connected to GitHub `main`. A future public-facing preview URL can be discovered by strangers unless protected. Netlify's current [Project Visibility / password protection documentation](https://docs.netlify.com/manage/security/secure-access-to-sites/password-protection/) says password-protected previews require paid access on the credit-based Free/Personal plans. The goal is to keep the public site on its current plan, **not** buy an unnecessary second hosting package.
 
+**No-cost hosting alternative:** Netlify's [Project Visibility guide](https://docs.netlify.com/manage/security/secure-access-to-sites/project-visibility/) also documents that *preview visibility can be set separately from production* on credit-based Free/Personal plans, where previews can remain **private to the Team Owner** while the production website stays **public**. This is different from the paid shared-password option. Before any real private preview deployment, inspect the owner's actual UI for **Project configuration → General → Visitor access → Project visibility**, keep production Public, and select Private for previews if available. The owner previously chose public hosting to avoid paid plans; do not make the entire live project private. The API-level secret guard remains additional protection even when a provider-level preview restriction is available.
+
 The preview API now requires both existing operator flags, `deploy-preview` or `branch-deploy` context, exact approved preview hostname and Origin, and a **separate 256-bit random operator access credential** before loading any private backend dependencies.
 
 ## Implementation
