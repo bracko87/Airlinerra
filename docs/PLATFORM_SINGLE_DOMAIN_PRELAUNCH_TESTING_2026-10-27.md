@@ -7,6 +7,15 @@ The correct Airlinerra domain is **https://airlinerra.com/**. Until the game its
 
 The site's marketing/prelaunch pages may be public; that does not mean the game is released. Reuse the exact domain after launch, with public features enabled only through separate launch approval.
 
+## Step 2a — Real isolated invitation test PASSED (27 October 2026)
+
+- **[GitHub E2E run #40513518775 — PASS](https://github.com/bracko87/Airlinerra/actions/runs/40513518775)**. This test uses Supabase CLI 2.122.0 to start *temporary local* GoTrue, PostgreSQL, Kong and Mailpit. It exercises synthetic signup/confirmation, verified login, password recovery, an **administrator-created invitation**, one-time `type=invite` OTP, identity-bound initial password, second-use denial, and login using the invited account. It also executes the full Chromium account UI/local player flow. It never touches the hosted Airlinerra Supabase project.
+- Local CLI may provide modern `sb_secret_...` administrator keys instead of service-role JWTs. The test now accepts both *only after validating that the local API URL is `127.0.0.1:54321`*; it never prints credentials. The admin invite uses the proper administrator key as the API key, not the anonymous/publishable key.
+- The invitation flow is **working under a disposable local stack**. That does not demonstrate that the hosted Airlinerra Auth provider has signup disabled, real email templates configured, verified SMTP, or a deployed public-domain test UI.
+- `server/hosted-auth-readiness.mjs` was hardened to require an explicit `external.anonymous_users === false` in addition to `disable_signup === true`, confirmed-email settings and enabled email provider; missing information is rejected, not assumed safe.
+- Resend usage is **three sender domains out of three allowed**; **two are failed to verify** (`nextqueststudio.net`, `tennislegacygame.com`), while `propelotonmanager.com` is verified. Read-only diagnostics confirm the two failed domains have unresolved verification records. Neither failed domain can be assumed obsolete; do not delete either without owner approval. Adding `airlinerra.com` through the connected email API was rejected with HTTP 403 `domain limit reached`. Existing mail volume also draws against the same shared sending quota.
+- **No external invitation emails were sent, no live Supabase Auth settings were changed and no new hosting or email subscription was purchased** during this milestone.
+
 ## Step 2 — Auth invitation and confirmation code prepared (27 October 2026)
 
 **Code/test milestone completed; real public-domain email delivery and account login are NOT yet active.** No new Netlify site, Supabase project or hosting subscription has been created.
