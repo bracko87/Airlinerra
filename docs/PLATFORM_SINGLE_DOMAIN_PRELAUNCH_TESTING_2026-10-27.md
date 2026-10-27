@@ -7,6 +7,27 @@ The correct Airlinerra domain is **https://airlinerra.com/**. Until the game its
 
 The site's marketing/prelaunch pages may be public; that does not mean the game is released. Reuse the exact domain after launch, with public features enabled only through separate launch approval.
 
+## Step 1 implementation — source complete, NOT deployed
+
+The same-domain operator testing mode is now implemented as **source-only code**:
+
+- `server/hosted-runtime-config.mjs` recognizes the exact server-only `AIRLINERRA_HOSTED_RUNTIME_MODE=canonical-prelaunch-test` setting. It requires `AIRLINERRA_HOSTED_BACKEND_ENABLED=true`, `AIRLINERRA_CANONICAL_PRELAUNCH_TEST_APPROVED=true`, a Netlify **production** deployment context, and the pinned `AIRLINERRA_CANONICAL_TEST_ORIGIN=https://airlinerra.com`. These do **not** authorize public registration, payment collection or unlocking a game world.
+- `server/netlify-preview-template/airlinerra-accounts.mjs` checks the trusted Netlify `context.deploy.context='production'`, `context.deploy.published=true` and Airlinerra site identity. It refuses canonical requests without the separate mode and opt-ins; preview-only flags are explicitly insufficient.
+- `server/preview-access-guard.mjs` uses `AIRLINERRA_CANONICAL_TEST_ACCESS_SECRET` **only** in canonical mode; the prior private-preview credential is not valid on the official domain. The `X-Airlinerra-Preview-Access` header is required and removed before forwarding to verified user handlers. Requests failing operator authentication cannot read the database connection URL, load PostgreSQL or call Auth.
+- Keep the existing Netlify code-based 30/IP/minute rate limit and four in-flight per-instance limit.
+- `tests/test_canonical_prelaunch_account_api.mjs` uses entirely synthetic credentials and a stub database to exercise the official-domain approval switches, preview credential isolation, real Auth-style verification, and rejection by the still-closed `platform_release_gate` without reading the airport catalog or writing airlines.
+- The existing GitHub Actions packaging workflow tests the **real compiled Netlify Function ZIP** in a completely offline, synthetic official-domain test.
+
+**No new Netlify project or separate staging domain is needed.** Do not move `server/netlify-preview-template/airlinerra-accounts.mjs` into a discovered Functions directory: the prior verified packaging workflow needs to prebundle the pinned `pg` dependency first.
+
+### Remaining for a functioning test account at airlinerra.com
+
+1. Obtain access to the **existing Airlinerra Netlify project** for secured host environment configuration; never commit secrets, require them in chat or add them to frontend JS. The current connected tools do not have an authenticated Netlify management session.
+2. Separately approve and deploy the validated operator-only Function artifact on the existing site, retaining full public marketing access and default-closed backend switches.
+3. Verify Supabase Auth provider-level testing eligibility, allowed redirect URLs and secure SMTP/email confirmation behavior; do not enable unrestricted public signups.
+4. Publish reviewed legal Terms and Privacy documents, configure approved test accounts, and implement a controlled test-data path if account/airline mutations are desired; the **live private game release gate remains disabled**.
+5. Activate browser test UI only behind explicit operator authorization, without setting `PUBLIC_AUTH_ENABLED=true` for all visitors.
+
 ## What is already active
 
 - https://airlinerra.com/ is the public prelaunch website with Namecheap DNS and Netlify HTTPS.
