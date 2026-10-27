@@ -9,7 +9,7 @@
 - Email verification, invitation and password reset callback website: `https://airlinerra.com/account.html`
 - Sender purpose: authentication and transactional emails only, not Tennis Legacy health alerts or mass promotional email.
 - Resend account: use its existing company sender-domain registration; do not register `airlinerra.com` or buy an upgrade merely to use a separate From address on the verified company domain.
-- **Status: DNS PUBLISHED; RESEND VERIFICATION PENDING.** The three required records were added to Namecheap and are already visible in public DNS. Resend verification was requested on 2026-10-27; its last checked domain status still reported `failed`, which may be cached pending verification. Do not send hosted mail until the domain status is explicitly `verified`.
+- **Status: DNS PUBLISHED; RESEND VERIFICATION PENDING.** The three required records were added to Namecheap and are already visible in public DNS. Resend verification was requested on 2026-10-27; its latest domain status has now moved to **`pending`**, with all Resend DNS checks pending. Do not send hosted mail until the domain status is explicitly `verified`.
 
 ## Domain verification prerequisites
 
