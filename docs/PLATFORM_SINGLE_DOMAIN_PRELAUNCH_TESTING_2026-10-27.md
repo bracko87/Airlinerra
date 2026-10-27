@@ -1,7 +1,13 @@
 # Airlinerra — official domain is also the prelaunch testing site
 **Owner direction — 27 October 2026**
 
-## Current decision
+## Hosted Supabase Auth configuration completed — 27 October 2026
+
+In the **existing** Airlinerra Supabase project `hwllkabgzaynalahvkpz`, the actual Auth Dashboard was configured, and the final state rechecked after saving/reloading: **public self-signup OFF; anonymous sign-ins OFF; email confirmation ON; Email provider enabled; original manual account-linking setting ON**. The canonical Auth Site URL is `https://airlinerra.com`, and exact callback allowlist URLs `https://airlinerra.com/account.html?screen=verify` and `https://airlinerra.com/account.html?screen=reset` have been added. First dashboard attempt inadvertently changed manual linking to OFF and one save did not persist public signup OFF; both were subsequently corrected and independently verified after reload.
+
+**SMTP remains the next unfinished step.** The verified corporate sender domain `nextqueststudio.net` is ready in Resend, but Supabase project's **Enable custom SMTP toggle is OFF**, and its SMTP credentials and sender fields are not configured. Set this up **only through secure provider settings** with a sender-scoped Resend credential. **Do not create/paste a credential in public chats, GitHub source, client JavaScript or browser automation goals.** No real invitation was dispatched. All game and registration gates remain closed; live DB check: 0 auth users, 0 airlines, 0 open game worlds, game release disabled, site prelaunch. Source-only account route/frontend is not deployed.
+
+
 
 The correct Airlinerra domain is **https://airlinerra.com/**. Until the game itself is launched, use the **existing** public Netlify site, connected to GitHub `main`, for frontend development, visual review and controlled hosted tests. **Do not create a second Netlify project, paid staging host, or separate testing subdomain just for development.**
 
