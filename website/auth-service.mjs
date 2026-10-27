@@ -36,7 +36,7 @@ export function parseAuthCallback(rawSearch, screen) {
     if (!/^[A-Za-z0-9_-]{10,4096}$/.test(hash)) throw new Error('Invalid account confirmation link.');
     // Signup confirmation generally uses type=email; recovery uses type=recovery.
     if (screen === 'reset' && type !== 'recovery') throw new Error('Unexpected recovery link type.');
-    if (screen === 'verify' && !['email', 'signup'].includes(type)) throw new Error('Unexpected verification link type.');
+    if (screen === 'verify' && !['email', 'signup', 'invite'].includes(type)) throw new Error('Unexpected verification link type.');
     return { kind: 'otp', token_hash: hash, type, purpose: screen };
   }
   return null;
@@ -113,7 +113,7 @@ export function createAuthService({ supabase, origin, enabled = PUBLIC_AUTH_ENAB
       } else if (callback.kind === 'otp') {
         // Only expected confirmation types; forbid arbitrary/invite/magiclink.
         if (callback.purpose === 'reset' && callback.type !== 'recovery') throw new Error('Invalid recovery link.');
-        if (callback.purpose === 'verify' && !['email','signup'].includes(callback.type)) {
+        if (callback.purpose === 'verify' && !['email','signup','invite'].includes(callback.type)) {
           throw new Error('Invalid verification link.');
         }
         if (!/^[A-Za-z0-9_-]{10,4096}$/.test(callback.token_hash)) throw new Error('Invalid account confirmation link.');
@@ -123,12 +123,19 @@ export function createAuthService({ supabase, origin, enabled = PUBLIC_AUTH_ENAB
       }
       if (result.error) throw result.error;
       if (!result.data?.session) throw new Error('Session verification could not be completed.');
-      if (callback.purpose === 'reset') {
-        // Only an actual verifyOtp(type:'recovery') succeeds on this path.
-        // Bind the one-use authorization to the server-verified Auth user.
+      if (callback.purpose === 'reset' ||
+          (callback.kind === 'otp' && callback.type === 'invite' &&
+           callback.purpose === 'verify')) {
+        // Password setup follows ONLY a confirmed recovery or invitation
+        // OTP. A generic signup confirmation/PKCE session must not grant it.
+        // The one-use intent is bound to the freshly verified Auth user.
         await recoveryIntent.markAfterVerifiedOtp(supabase.auth, result.data.session);
       }
-      return { purpose: callback.purpose, sessionEstablished: true };
+      return {
+        purpose:callback.kind === 'otp' && callback.type === 'invite'
+          ? 'invite' : callback.purpose,
+        sessionEstablished:true
+      };
     },
 
     async updatePassword(password) {
