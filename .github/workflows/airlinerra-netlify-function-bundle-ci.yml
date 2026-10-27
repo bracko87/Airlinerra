@@ -1,0 +1,85 @@
+name: Airlinerra staged Netlify Function bundle (non-deploying)
+
+# Source-only dry-run with the real Netlify CLI. This does NOT connect a
+# Netlify site, deploy functions, publish a preview or read any secrets.
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/airlinerra-netlify-function-bundle-ci.yml'
+      - 'server/**'
+      - 'website/package.json'
+      - 'website/package-lock.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: airlinerra-netlify-bundle-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bundle-isolated:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      CI: 'true'
+      NETLIFY_TELEMETRY_DISABLED: '1'
+    steps:
+      - name: Checkout without deployment credentials
+        uses: actions/checkout@v4
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+      - name: Install exact server dependency tree
+        working-directory: website
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Check production prelaunch isolation
+        run: |
+          set -euo pipefail
+          test ! -d website/netlify/functions
+          test ! -d netlify/functions
+          test ! -e .netlify/state.json
+          grep -Eq '^export const PUBLIC_AUTH_ENABLED = false;' website/auth-rules.mjs
+          if grep -q '^\[functions\]' netlify.toml; then
+            echo 'ERROR: production Netlify Function directory configured'
+            exit 1
+          fi
+      - name: Compile staged serverless Function into ephemeral CI directory
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -z "${NETLIFY_AUTH_TOKEN:-}"
+          mkdir -p "$RUNNER_TEMP/airlinerra-functions"
+          npm exec --yes --package=netlify-cli@27.14.2 -- \
+            netlify functions:build \
+            --src "$GITHUB_WORKSPACE/server/netlify-preview-template" \
+            --functions "$RUNNER_TEMP/airlinerra-functions"
+          ls -lah "$RUNNER_TEMP/airlinerra-functions"
+      - name: Assert isolated Function contains compiled Netlify adapter
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          output=Path(os.environ['RUNNER_TEMP'])/'airlinerra-functions'
+          files=[p for p in output.rglob('*') if p.is_file()]
+          assert files, 'Netlify CLI emitted no function artifact'
+          print('Isolated output:', ', '.join(f'{p.name}: {p.stat().st_size} bytes' for p in files))
+          assert any('airlinerra' in p.name for p in files)
+          assert not (Path('website')/'netlify'/'functions').exists()
+          assert not (Path('netlify')/'functions').exists()
+          PY
+      - name: Recheck public static build remains unrelated
+        working-directory: website
+        run: |
+          npm run build
+          test -f ../dist/index.html
+          test ! -e ../dist/server
+          test ! -e ../dist/node_modules
+          test ! -e ../dist/package.json
