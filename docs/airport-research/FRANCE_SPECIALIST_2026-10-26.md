@@ -104,3 +104,29 @@ Batch `FR_SPECIALIST_03_2026_10_26`, source evidence IDs **2180–2188** (9 obse
 **Actual runway rehabilitation contractor:** https://www.spiebatignolles.fr/realisation/aeroport-toulouse-francazal/
 
 All four `commercial_permission_status='UNVERIFIED'` and `game_admission_status='NOT_APPROVED'`; military/civilian operating restrictions encoded in `civilian_access_status`. Total France missing-access-review candidates went from 18 to **14** following these four records. The unchanged six classification tiers are **Local, Regional, Medium, Large, Major Hub, Mega Hub**.
+
+---
+
+## France Batch 04 — four further military fields, 27 October 2026
+
+**Marker:** `FR_SPECIALIST_04_2026_10_27`. Earlier France Batch 03 documentation has been committed separately to GitHub `main` (commit `6a7901a59f9ff51072fdee5b2ee9cc59def290b5`). This batch reviews four of the **14** remaining French airports without access-review records. All measurements below are from the **official France SIA AD 1.3 register, effective October 1, 2026**, and apply to the October 2026 record snapshot. The indexed official register contained the relevant airfield rows; the more detailed AD2 aerodrome publications were not independently retrieved this pass. **AD1.3 does not supply full TORA/TODA/ASDA/LDA, aircraft restrictions or carrier-specific authorizations.**
+
+| Airport | Original OurAirports registry | French SIA October 2026 AD1.3 official physical runway | Airfield use and distinct research status |
+|---|---|---|---|
+| **LFMI Istres–Le Tubé** | 3,750m **ASP** | **RW 15/33, 3,750 × 53m, béton / concrete** | Military **restricted**. `paved_runway_status='VERIFIED'` based on explicit independently published concrete; original registry asphalt surface retained as an unmodified source discrepancy. Commercial/civilian airline use unverified. |
+| **LFSX Luxeuil–Saint-Sauveur** | 2,432.9m **ASP** | **RW 11/29, 2,433 × 45m, béton / concrete** | Military **restricted**. `paved_runway_status='VERIFIED'`; original ASP source preserved, official concrete material used in research review. The French military aeronautical DIRCAM catalog also documents this as a restricted-use facility, but current detailed AD2 rules remain to be checked. |
+| **LFKS Solenzara (BA126)** | 2,627.1m **CON** | **RW 18/36, 2,627 × 45m, revêtue / paved**, *exact specific surface material not given in accessible AD1.3* | Military **reserved to the State**. Existing source-registry runway provisional `RUNWAY_QUALIFIED` preserved, but independent explicit asphalt/concrete gate `UNVERIFIED`. Detailed AD2/military material source and any approved civilian exceptions still missing. |
+| **LFMY Salon-de-Provence (BA701)** | 2,001m **CON** | **RW 16/34, 2,001 × 45m, revêtue / paved**, plus short grass runways | Military **restricted**. Exact asphalt/concrete surface independently `UNVERIFIED` on AD1.3 alone; independent historic secondary sources call 16/34 concrete, but not accepted as current direct SIA pavement certification. No automatic airline permission. |
+
+**Primary source:** [French DGAC SIA eAIP AD 1.3, AIRAC Oct 1 2026](https://www.sia.aviation-civile.gouv.fr/media/dvd/eAIP_01_OCT_2026/FRANCE/AIRAC-2026-10-01/html/eAIP/FR-AD-1.3-fr-FR.html). Relevant published rows are LFMI, LFSX, LFKS and LFMY.
+
+**Source distinctions:** `béton` is explicitly concrete and meets the minimum. `revêtue` only means paved, so **not** independently conclusive under Airlinerra's strict asphalt-or-concrete rule. Runway source data in `airport_registry` are not overwritten. The `RUNWAY_QUALIFIED` candidate flag remains from the original data even where independently reviewed exact material is not yet verified. A military restricted field can qualify physically without authorizing scheduled airline flights.
+
+**Confirmed Supabase work:**
+- **8** `airport_evidence` observations, IDs **2189–2196**, separate physical-vs-legal provenance for each field.
+- **4** new `airport_access_reviews` with identity verified; two physical independent `VERIFIED`, two `UNVERIFIED` exact-material holds. `commercial_permission_status='UNVERIFIED'` and `game_admission_status='NOT_APPROVED'` for all four.
+- **4** `airport_review_events`, IDs **50–53**, source marker as above.
+- No new gameplay admissions, no direct activation or source-runway mutation, and no final six-tier classification assigned.
+- Follow-up: retrieve effective original AD2 or DIRCAM military data for 2026 declared distances and exact surfaces especially LFKS/LFMY; clarify any civilian privileges separately. The remaining French unreviewed set is expected to fall from **14 to 10** (verify live SQL after this documentation commit).
+
+**Game safeguard:** The 3,140 World 1 airport activation records must remain active and unchanged. Six final categories are only **Local, Regional, Medium, Large, Major Hub, Mega Hub**.
