@@ -129,6 +129,9 @@ jobs:
           assert.deepEqual(config.path,[
             '/api/v1/onboarding/context','/api/v1/legal/consents','/api/v1/airlines'
           ]);
+          assert.deepEqual(config.rateLimit,{
+            action:'rate_limit',aggregateBy:'ip',windowSize:60,windowLimit:30
+          });
           const origin='https://deploy-preview-123--airlinerra.netlify.app';
           const trustedSite={name:'airlinerra',url:'https://airlinerra.com'};
           const productionContext={deploy:{context:'production',published:true},site:trustedSite};
