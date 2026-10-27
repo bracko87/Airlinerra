@@ -1,0 +1,34 @@
+name: Airlinerra hosted Auth template source safety
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'server/apply-hosted-auth-templates.mjs'
+      - 'supabase/templates/invite.html'
+      - 'supabase/templates/confirmation.html'
+      - 'supabase/templates/recovery.html'
+      - 'tests/test_hosted_auth_template_management.mjs'
+      - '.github/workflows/airlinerra-hosted-auth-template-review.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check template writer syntax and the six-field fail-closed contract
+        run: |
+          node --check server/apply-hosted-auth-templates.mjs
+          node --test tests/test_hosted_auth_template_management.mjs
+      - name: Confirm public prelaunch has no API writer
+        run: |
+          test ! -f website/apply-hosted-auth-templates.mjs
+          ! grep -q 'apply-hosted-auth-templates.mjs' website/dev-scripts/build.mjs
