@@ -17,7 +17,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 test('prelaunch hard-stop, strict origin and three locked real-time worlds', () => {
   assert.equal(PUBLIC_AUTH_ENABLED, false);
-  assert.deepEqual(ALLOWED_AUTH_ORIGINS, ['http://localhost:5187']);
+  assert.deepEqual(ALLOWED_AUTH_ORIGINS, ['http://localhost:5187','https://airlinerra.com']);
   assert.equal(WORLD_DIRECTORY.length, 3);
   assert.deepEqual(WORLD_DIRECTORY.map(w => w.id), ['01','02','03']);
   WORLD_DIRECTORY.forEach(w => {
@@ -45,6 +45,11 @@ test('screens, input validation and fixed callback URLs', () => {
     'http://localhost:5187/account.html?screen=verify');
   assert.equal(authRedirect('http://localhost:5187','reset'),
     'http://localhost:5187/account.html?screen=reset');
+  assert.equal(authRedirect('https://airlinerra.com','verify'),
+    'https://airlinerra.com/account.html?screen=verify');
+  assert.equal(authRedirect('https://airlinerra.com','reset'),
+    'https://airlinerra.com/account.html?screen=reset');
+  assert.throws(() => authRedirect('https://www.airlinerra.com','verify'), /not authorized/);
   assert.throws(() => authRedirect('https://other.example','verify'), /not authorized/);
   assert.throws(() => authRedirect('http://localhost:5187','//other.example'), /Invalid/);
 });
