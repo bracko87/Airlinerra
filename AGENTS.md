@@ -4,6 +4,12 @@
 
 ## Current operating state — 2026-10-27 (supersedes older prelaunch database counts)
 
+### AIRLINERRA CUSTOM SMTP — CREDENTIAL HANDOFF PENDING (2026-10-27)
+
+- Verified Resend company sender DNS and Supabase invite-only Auth controls. Custom SMTP remains OFF. The official Resend SMTP configuration is `smtp.resend.com:465`, username `resend`, sender `Airlinerra — NextQuest Studio <noreply@nextqueststudio.net>`; the required password is a new `sending_access` Resend key restricted to `nextqueststudio.net`. Never reuse unknown-scoped keys from other games.
+- Existing Resend account has seven API keys, **none named Airlinerra**. Browser profile was **signed out from Resend** when attempting to inspect `resend.com/api-keys`. No key was created; tool-based `create_api_key` explicitly requires revealing the one-time token to the user, violating the project's no-secrets-in-chat approach. Prefer obtaining a scoped key only via the secure Resend UI and entering it directly in the Supabase secure SMTP editor. If browser transfer is not feasible, ask user to enter it directly into Supabase UI without sharing it in the conversation.
+- No outgoing email sent. **Do not send actual invitation emails until a deployed functional callback/account page exists on `airlinerra.com`**. See [Company sender setup](docs/PLATFORM_NEXTQUEST_STUDIO_EMAIL_SENDER_2026-10-27.md).
+
 ### HOSTED SUPABASE AUTH INVITE-ONLY CONFIGURATION SAVED — 2026-10-27
 
 - Airlinerra hosted project `hwllkabgzaynalahvkpz` was accessed in the Supabase Dashboard. **Final persisted UI state AFTER SAVE AND PAGE RELOAD:** `Allow new users to sign up=OFF`, `Allow anonymous sign-ins=OFF`, `Confirm Email=ON`, Email provider=ENABLED and `Allow manual linking=ON` (original pre-existing value restored after an unintended toggle during first attempt).
