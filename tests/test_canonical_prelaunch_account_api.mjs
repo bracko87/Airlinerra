@@ -64,7 +64,8 @@ test('canonical access refuses untrusted context and missing opt-in before initi
   for(const platform of denied){
     assert.equal((await handler(request(),platform)).status,503);
   }
-  assert.equal(reads,0);
+  assert.equal(reads,1,
+    'Legitimate deploy-preview metadata may read flags, but canonical runtime mode still rejects it');
   assert.equal(builds,0);
   e.AIRLINERRA_CANONICAL_PRELAUNCH_TEST_APPROVED='false';
   assert.equal((await handler(request(),PLATFORM())).status,503);
