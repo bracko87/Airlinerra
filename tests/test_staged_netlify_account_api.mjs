@@ -87,10 +87,12 @@ test('warm staging function reuses one app/pool for concurrent invocations',asyn
       });}};
     }
   });
-  const responses=await Promise.all(Array.from({length:9},()=>handler(request())));
+  // All four admitted requests share the same warm backend instance.
+  // Additional simultaneous calls are intentionally limited by the guard.
+  const responses=await Promise.all(Array.from({length:4},()=>handler(request())));
   assert.ok(responses.every(r=>r.status===200));
   assert.equal(builds,1);
-  assert.equal(calls,9);
+  assert.equal(calls,4);
 });
 
 test('cached preview is immediately closed when runtime context changes to production',async()=>{
