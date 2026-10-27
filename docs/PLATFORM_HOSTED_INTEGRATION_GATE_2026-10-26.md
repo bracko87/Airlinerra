@@ -30,11 +30,18 @@
 | Milestone | Result |
 | --- | --- |
 | Local browser wizard | Passed |
-| Authorized airport cohort and transfer logic | Verified; production transfer pending |
+| Authorized airport cohort and transfer logic | **3,140 authorized World 01 airports transferred to private game roster; keys and metadata reconciled** |
 | Hosted HTTPS transport / service composition | Source prepared, default-disabled |
 | Hosted runtime / Netlify Functions registration | Not yet built/deployed |
-| Private game-account schema in live Supabase | Not installed |
+| Private game-account schema in live Supabase | **Installed 2026-10-27; 8 RLS-protected tables and all worlds planned** |
 | Real legal documents and hosted SMTP | Not configured |
 | Public registration and game worlds | Intentionally closed |
 
 **Safety invariant:** A successful unit test, airport research activation or GitHub `main` commit must never automatically open registration or create a player/game airline in production.
+
+
+## 2026-10-27 completion addendum — database milestone closed
+
+The owner-directed private schema installation and World 01 airport handoff have now been applied to the existing Supabase project. Three versioned migrations appear in Supabase history; the private schema has **8 tables**, all RLS-enabled; the game approval roster contains **3,140 World 01** entries and no other-world approvals, with zero key or metadata mismatch. The platform release gate remains **false**, every world remains **planned**, legal publication and account records remain empty, and a direct activation attempt was refused as expected. See [verified live database release record](PLATFORM_PRELAUNCH_ACCOUNT_DB_INSTALLED_2026-10-27.md).
+
+**Remaining tasks are hosted backend deployment, provider-level Auth signup restrictions, real legal/SMTP configuration, payment preparation and nonpublic hosted end-to-end verification. No public release was made.**
