@@ -3,6 +3,12 @@
 
 ## Current decision
 
+## Hosted Auth template installer ready (not yet applied) — 27 October 2026
+
+Supabase Monaco editor failed direct and clipboard input; hosted HTML templates remain unmodified. The official documented Supabase Management API path was implemented as a **manual-only, fail-closed six-field installer** with pinned Airlinerra Auth/SMTP safety checks. [Source CI #40546333614 PASSED](https://github.com/bracko87/Airlinerra/actions/runs/40546333614). The installer is NOT RUN and has not sent email. A precisely scoped 24-hour one-project PAT was briefly created in Supabase, but GitHub browser authentication prevented secure secret storage. **That unused PAT was revoked/deleted and independently verified absent.** A new, short-lived scoped token may only be created once the secure GitHub login is saved; never paste keys into chat or source. No account frontend or backend deployment, signup enablement, or game release has occurred.
+
+
+
 ## Private tester callback source and deployment readiness — 27 October 2026
 
 New **source-only**, invite-specific callback page `website/prelaunch-invited-account.html` and modules `website/invited-tester-entry.mjs`, `website/invited-tester-page.mjs` and CSS are implemented. They handle the verified invitation/recovery OTP and email-confirmed login without allowing public registration or creating airlines. The OTP is synchronously removed from browser history. They are **explicitly excluded from `dist/`**, so the official live `/account.html` continues to show the disabled preview.
