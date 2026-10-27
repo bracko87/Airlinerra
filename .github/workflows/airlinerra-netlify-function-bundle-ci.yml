@@ -72,6 +72,15 @@ jobs:
           assert files, 'Netlify CLI emitted no function artifact'
           print('Isolated output:', ', '.join(f'{p.name}: {p.stat().st_size} bytes' for p in files))
           assert any('airlinerra' in p.name for p in files)
+          from zipfile import ZipFile
+          packages=[p for p in files if p.name=='airlinerra-accounts.zip']
+          assert len(packages)==1, 'Expected exactly one staged Netlify Function bundle'
+          with ZipFile(packages[0]) as archive:
+            members=archive.namelist()
+            print('NETLIFY_BUNDLE_ENTRIES:', ', '.join(members[:80]))
+            print('NETLIFY_BUNDLE_FILE_COUNT:', len(members))
+            print('PG_MODULE_MEMBERS:', ', '.join(n for n in members if 'pg' in n.lower())[:900])
+            assert members, 'Empty Functions ZIP'
           assert not (Path('website')/'netlify'/'functions').exists()
           assert not (Path('netlify')/'functions').exists()
           PY
