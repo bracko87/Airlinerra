@@ -46,15 +46,24 @@ function localCredentials(){
   if (url!==API) throw new Error('Refusing nonlocal Supabase API endpoint.');
   if (JSON.stringify(data).includes(RESEARCH_REF)) throw new Error('Research project forbidden.');
   const adminKey=pick('service_role_key','servicerolekey','secret_key','secretkey');
-  if(typeof adminKey!=='string' || !/^eyJ[A-Za-z0-9._-]+$/u.test(adminKey)){
-    throw new Error('Local CLI did not expose an isolated admin role key.');
+  const localJwt=typeof adminKey==='string' && /^eyJ[A-Za-z0-9._-]+$/u.test(adminKey);
+  const localSecret=typeof adminKey==='string' &&
+    /^sb_secret_[A-Za-z0-9_-]{16,128}$/u.test(adminKey);
+  if(!localJwt && !localSecret){
+    // Only export names are printed: never print the values of CLI keys.
+    const names=entries.map(([name])=>name).sort().join(', ');
+    throw new Error('Local CLI did not expose a recognized admin key. Export names: '+names);
   }
-  let role;
-  try{
-    const payload=adminKey.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
-    role=JSON.parse(Buffer.from(payload,'base64').toString('utf8')).role;
-  }catch{role=null;}
-  if(role!=='service_role')throw new Error('Admin key must belong only to local service role.');
+  if(localJwt){
+    let role;
+    try{
+      const payload=adminKey.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
+      role=JSON.parse(Buffer.from(payload,'base64').toString('utf8')).role;
+    }catch{role=null;}
+    if(role!=='service_role')throw new Error('Local admin JWT must use service_role.');
+  }
+  // New Supabase CLI can provide sb_secret_* instead of a legacy JWT.
+  // Its scope is constrained to the 127.0.0.1 local API before any request.
   return {key,adminKey};
 }
 async function rest(url,route,key,body,{method='POST',accessToken}={}){
