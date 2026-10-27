@@ -15,7 +15,7 @@ test('prelaunch website and Netlify cannot auto-expose hosted account routes',as
     source('website/dev-scripts/build.mjs')
   ]);
   assert.match(rules,/export const PUBLIC_AUTH_ENABLED = false;/);
-  assert.match(rules,/ALLOWED_AUTH_ORIGINS = Object\.freeze\(\['http:\/\/localhost:5187'\]\)/);
+  assert.match(rules,/ALLOWED_AUTH_ORIGINS = Object\.freeze\(\['http:\/\/localhost:5187', 'https:\/\/airlinerra\.com'\]\)/);
   assert.match(netlify,/base = "website"/);
   assert.doesNotMatch(netlify,/\/api\/v1\/(?:airlines|onboarding|legal)/);
   assert.doesNotMatch(netlify,/\[functions\]/);
