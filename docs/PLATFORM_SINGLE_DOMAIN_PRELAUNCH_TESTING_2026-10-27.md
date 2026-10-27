@@ -3,6 +3,14 @@
 
 ## Current decision
 
+## Private tester callback source and deployment readiness — 27 October 2026
+
+New **source-only**, invite-specific callback page `website/prelaunch-invited-account.html` and modules `website/invited-tester-entry.mjs`, `website/invited-tester-page.mjs` and CSS are implemented. They handle the verified invitation/recovery OTP and email-confirmed login without allowing public registration or creating airlines. The OTP is synchronously removed from browser history. They are **explicitly excluded from `dist/`**, so the official live `/account.html` continues to show the disabled preview.
+
+[Dedicated GitHub CI run #40541648740 — SUCCESS](https://github.com/bracko87/Airlinerra/actions/runs/40541648740) proved the new Node tests, syntax checks, static build and build exclusion. No live Netlify deployment occurred.
+
+**Hosted email templates currently BLOCK live invitation.** Supabase Auth's web editor did not persist the attempted Monaco HTML edits. The Invite subject may have been saved, but the Invite HTML body remains unverified/not configured. Confirmation and Recovery templates were left unchanged. Do not send live invitations until the hosted Invite template is verified with the expected `{{ .TokenHash }}` to `/account.html?screen=verify&type=invite`; the email link must also reach a functional official-domain callback. Next requires safe template installation (perhaps via supported Auth management API), controlled same-site account deployment, and one authorized end-to-end invitation. Public signup and gameplay release must remain OFF.
+
 ## SMTP email transport configured — 27 October 2026 (latest)
 
 A dedicated Resend key **`Airlinerra Supabase Auth SMTP`** with **Sending access only**, restricted to verified `nextqueststudio.net`, was created using a secure authenticated browser and immediately pasted into Supabase's SMTP password field without exposing its value. The existing Supabase project's Authentication → SMTP page is now **ENABLED and successfully saved**, with server `smtp.resend.com`, port `465`, username `resend`, and sender `noreply@nextqueststudio.net` / `Airlinerra - NextQuest Studio`. The saved settings were verified after reload. Existing Auth guards and game release remained unchanged.
