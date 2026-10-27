@@ -16,6 +16,8 @@ on:
       - 'website/player-data-service.mjs'
       - 'website/dev-scripts/**'
       - 'website/package.json'
+      - 'website/package-lock.json'
+      - 'tests/test_pg_driver_contract.mjs'
       - 'supabase/config.toml'
       - 'supabase/templates/**'
       - 'tests/test_supabase_dev_email_contract.mjs'
@@ -55,6 +57,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Install exact locked PostgreSQL driver without scripts
+        working-directory: website
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Run account regression tests
         working-directory: website
         run: npm test
@@ -114,6 +119,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Install exact locked PostgreSQL driver without scripts
+        working-directory: website
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Run Node account regressions
         working-directory: website
         run: npm test
