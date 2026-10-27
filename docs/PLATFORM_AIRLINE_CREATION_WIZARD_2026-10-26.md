@@ -59,3 +59,8 @@ The existing unapplied migration `docs/sql/AIRLINERRA_WORLD1_3140_TO_GAME_ACCOUN
 4. **Pending owner-authorized hosted integration:** Configure secure development hosting, identity/database/SMTP/domain, production release gates and payment integration; verify the complete flow in hosted staging before enabling public player registration. Do not deploy the private schema or open live accounts without explicit authorization.
 
 **The source-code and isolated full-browser milestone is COMPLETE. Public registration and production onboarding remain BLOCKED by separate release dependencies.**
+
+
+## 27 October 2026 — Game database installation completed
+
+The actual Airlinerra Supabase prelaunch database is now installed: 8 protected `airlinerra_game` tables, 3 planned worlds, **3,140** authorized game-roster airport records for World 01 with all keys/metadata matching the approved research source. The dedicated gate is **disabled**, no player accounts/airlines or legal policy are present, and public onboarding is still unavailable. The earlier October 26 text above describing the live game database as absent is retained as **historical evidence**, not current status. See [the verified current state](PLATFORM_PRELAUNCH_ACCOUNT_DB_INSTALLED_2026-10-27.md).
