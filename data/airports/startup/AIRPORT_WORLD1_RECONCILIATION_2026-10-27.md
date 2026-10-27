@@ -1,3 +1,5 @@
+> **SUPERSEDED SNAPSHOT:** This earlier 8,148-airport count is outdated following additional independent runway inspections. See [CURRENT_WORLD1_AIRPORT_CATALOG.md](CURRENT_WORLD1_AIRPORT_CATALOG.md) for 8,139 accepted and 14 rejected.
+
 # Airlinerra World 1 airport reconciliation — 27 October 2026
 
 ## Final simulation-catalog counts
