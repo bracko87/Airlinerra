@@ -26,7 +26,7 @@ test('prelaunch website and Netlify cannot auto-expose hosted account routes',as
     'No root functions may automatically deploy without owner authorization');
 });
 
-test('server-only private preview is gated twice and blocks production context',async()=>{
+test('server-only hosted backend requires independent preview or canonical-production opt-in',async()=>{
   const [runtime,config,stack]=await Promise.all([
     source('server/preview-account-app.mjs'),
     source('server/hosted-runtime-config.mjs'),
@@ -34,6 +34,9 @@ test('server-only private preview is gated twice and blocks production context',
   ]);
   assert.match(config,/AIRLINERRA_HOSTED_BACKEND_ENABLED !== 'true'/);
   assert.match(config,/AIRLINERRA_PRIVATE_PREVIEW_APPROVED !== 'true'/);
+  assert.match(config,/AIRLINERRA_CANONICAL_PRELAUNCH_TEST_APPROVED !== 'true'/);
+  assert.match(config,/AIRLINERRA_HOSTED_RUNTIME_MODE/);
+  assert.match(config,/https:\/\/airlinerra\.com/);
   assert.match(config,/ALLOWED_PREVIEW_CONTEXTS = new Set\(\['deploy-preview', 'branch-deploy'\]\)/);
   assert.doesNotMatch(config,/\['production'/);
   assert.match(runtime,/if\(!config\.enabled\)/);
