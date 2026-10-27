@@ -2,6 +2,12 @@
 
 ## Current operating state — 2026-10-27 (supersedes older prelaunch database counts)
 
+### VERIFIED RESEND CORPORATE DOMAIN — 2026-10-27 (SUPERCEDES EARLIER DNS-PENDING AND FAILED ENTRIES)
+
+- **Latest authoritative provider check**: Resend reports `nextqueststudio.net` **verified**, with **all four records verified**: DKIM `resend._domainkey` TXT, SPF `send` TXT, custom return-path `send` MX and `rsend` CNAME. Namecheap saved all records; public DNS independently resolved them; Zoho company's original root MX records, root SPF/DKIM and website configuration remained untouched. No other Resend domains deleted and no email sent.
+- Sender chosen by owner for Airlinerra Auth: **Airlinerra — NextQuest Studio <noreply@nextqueststudio.net>**. The DNS/domain-registration blocker is RESOLVED. **Do not confuse verification with live SMTP: Supabase Auth SMTP, invite-only provider settings, email templates, website callback UI and Netlify API still require configuration/deployment.** Earlier dated paragraphs saying corporate domain is failed/pending are historical, not current.
+- Tried saved browser profile at Supabase Dashboard project `hwllkabgzaynalahvkpz`; redirected to login. **No hosted Auth changes**. The Supabase connector has no Auth settings/SMTP editor actions; browser login to Supabase is the required access blocker. See [email sender handoff](docs/PLATFORM_NEXTQUEST_STUDIO_EMAIL_SENDER_2026-10-27.md).
+
 ### REAL LOCAL INVITED ACCOUNT END-TO-END VALIDATED — 2026-10-27
 
 - [GitHub isolated Auth/Mailpit/Chromium run #40513518775](https://github.com/bracko87/Airlinerra/actions/runs/40513518775) is **SUCCESS**. It verifies a real local administrator invite and `type=invite` OTP, one-time identity-bound initial password, and login as the invited account, in addition to existing synthetic signup, email confirmation, reset, and UI flows. Temporary CLI 2.122.0 `sb_secret_...` and legacy service-role JWTs are accepted *only in local CI* for admin invites. No hosted account was created, no external message sent, no airline/world release changed.
