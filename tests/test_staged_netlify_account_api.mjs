@@ -7,16 +7,20 @@ import {
 import {buildPrivatePreviewAccountApp} from '../server/preview-account-app.mjs';
 
 const ORIGIN='https://deploy-preview-19--airlinerra.netlify.app';
+const SECRET='A'.repeat(43); // Synthetic value, never usable on a real host.
 const request=()=>new Request(ORIGIN+'/api/v1/onboarding/context',{
   method:'POST',
   headers:{origin:ORIGIN,'content-type':'application/json',
+    'x-airlinerra-preview-access':SECRET,
     authorization:'Bearer synthetic-test-token-long-enough'},
   body:'{}'
 });
 const env=()=>({
   AIRLINERRA_HOSTED_BACKEND_ENABLED:'true',
   AIRLINERRA_PRIVATE_PREVIEW_APPROVED:'true',
-  CONTEXT:'deploy-preview'
+  CONTEXT:'deploy-preview',
+  AIRLINERRA_PREVIEW_ORIGIN:ORIGIN,
+  AIRLINERRA_PREVIEW_ACCESS_SECRET:SECRET
 });
 
 test('staged Netlify URL config covers exactly three POST API routes',()=>{
