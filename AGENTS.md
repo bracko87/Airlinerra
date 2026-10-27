@@ -9,6 +9,12 @@
 - **Hosting/domain/SSL milestone is complete.** Netlify remains production static host, Namecheap remains registrar and DNS provider. Do not buy separate hosting/SSL or reconfigure nameservers without a reason. Future public URLs, OAuth callback origins, SMTP DNS and hosted functions should use the canonical `airlinerra.com` domain when independently approved.
 - **Public account signup/gameplay remains closed.** This domain verification does not authorize deploying private hosted Functions, relaxing `PUBLIC_AUTH_ENABLED=false`, enabling Supabase Auth signup or opening any game world. Future features can use the domain but still require their own release gates.
 
+### OPERATOR PREVIEW ACCESS GATE — 2026-10-27
+
+- The staged, **non-deployed** account API now includes `server/preview-access-guard.mjs`: exact deploy-preview/branch hostname + same-origin POST checks, separate `X-Airlinerra-Preview-Access` header verified against a 256-bit random secret, stripped before the business handlers, per-warm-instance limits of 4 in-flight and 30 admitted requests/minute. Checks occur before private app initialization. The public `airlinerra.com` deployment remains static-only and unrestricted for homepage visitors. See [gate handoff](docs/PLATFORM_PREVIEW_ACCESS_GATE_2026-10-27.md).
+- **Netlify Free does not include password-protected previews** in its credit-based visibility settings; these API checks are source-level defense in depth and are not a substitute for provider edge controls. Functions-only secret scope is Pro/Enterprise; never claim the Free site has that isolation. No production secret or private preview route has been deployed; do not insert preview credentials in `netlify.toml`, browser JS, or the public GitHub repo.
+- Future operator tests require approved preview launch, safely configured host environment and hosted Auth/SMTP/legal readiness. Production context, player signup, subscriptions and World 01 remain separately closed.
+
 ### STAGED NETLIFY ACCOUNT API (NOT DEPLOYED) — 2026-10-27
 
 - **Account gateway source prepared and CI passed:** `server/netlify-preview-template/airlinerra-accounts.mjs` is a Netlify Web Request/Response handler for precisely three future POST endpoints. It is **outside the active Netlify Functions directory**, is NOT included in the `website/` static build, and is **NOT live** at `airlinerra.com`. Do not move it under `website/netlify/functions/` or change Netlify auto-discovery without specific approval. See [gateway handoff](docs/PLATFORM_NETLIFY_API_STAGE_2026-10-27.md).
