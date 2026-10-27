@@ -37,6 +37,10 @@ test('server-only private preview is gated twice and blocks production context',
   assert.match(config,/ALLOWED_PREVIEW_CONTEXTS = new Set\(\['deploy-preview', 'branch-deploy'\]\)/);
   assert.doesNotMatch(config,/\['production'/);
   assert.match(runtime,/if\(!config\.enabled\)/);
-  assert.match(runtime,/loadPg=\(\)=>import\('pg'\)/);
+  assert.match(runtime,/loadPg=loadServerPostgresDriver/);
+  const loader=await source('website/server-only-pg-loader.mjs');
+  assert.match(loader,/return import\('pg'\);/);
+  const build=await source('website/dev-scripts/build.mjs');
+  assert.doesNotMatch(build,/server-only-pg-loader/);
   assert.match(stack,/if\(!enabled\)return createHostedAccountRouter\(\)/);
 });
