@@ -1,3 +1,5 @@
+> **MANUAL PRE-APPROVAL PROCESS UPDATE (27 Oct 2026):** New candidate airports do **NOT** enter playable World 1 directly. World 1 was reset to its original **3,140** approved/active founding airports; **4,996** non-foundation approvals were archived in `airlinerra.airport_world1_nonfoundation_approval_archive_20261027` and deactivated. Owner-checked batch airports enter **`airlinerra.airport_candidate_preapproval_pool`** only after their YES selections and one of six categories are submitted. Any unchecked/NO rows in a **submitted and finalized** review batch become excluded from further consideration. The first 50 have not been submitted and their downloaded Excel check column is empty; do not infer decisions from unsent UI state. Batch 2 [airports 51–100](world1_manual_preapproval_batch_2_51_to_100_2026-10-27.csv) is now prepared with suggested categories. Current pre-approved count **0**, pending candidates **3,728** (3 additional known rejects are excluded).
+
 # Airlinerra — non-foundation ICAO & paved-runway manual review queue
 
 Generated 27 October 2026 from Airlinerra Supabase project `hwllkabgzaynalahvkpz`.
