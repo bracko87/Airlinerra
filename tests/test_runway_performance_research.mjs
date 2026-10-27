@@ -42,3 +42,9 @@ test('Melun: clearway extends TODA, never TORA',()=>{
  assert.equal(short.candidates.find(c=>c.direction==='28').numericStatus,'INSUFFICIENT');
  assert.equal(short.schedulingAllowed,false);
 });
+
+test('unapproved airport yields no aircraft candidates',()=>{
+ const r=check(takeoff(),[runway()],{inApprovedWorld:false,airportKey:'OURAIRPORTS:4195'});
+ assert.equal(r.candidates.length,0);
+ assert.equal(r.schedulingAllowed,false);
+});
