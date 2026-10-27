@@ -1,14 +1,16 @@
 /**
- * Server-side dependency bridge for Airlinerra's Netlify base directory.
+ * Server-only Netlify dependency bridge (NOT copied into public dist/).
  *
- * Netlify installs npm dependencies under website/node_modules because
- * netlify.toml sets base="website", while account services are in ../server.
- * Keeping the lazy import HERE makes the function bundler resolve pinned
- * pg from the same directory as website/package.json.
+ * Netlify installs dependencies under website/node_modules. An explicit
+ * static import here ensures its Functions bundler includes pg and its
+ * transitive modules when code is staged under ../server/.
  *
- * This module is never copied into the public static dist/ allowlist.
- * NEVER put secrets or production URLs in this file.
+ * Importing this module does NOT open a connection, inspect credentials,
+ * or authorize a serverless API route. Pool creation remains guarded by
+ * independent preview/production release checks in preview-account-app.
  */
+import pg from 'pg';
+
 export async function loadServerPostgresDriver(){
-  return import('pg');
+  return pg;
 }
