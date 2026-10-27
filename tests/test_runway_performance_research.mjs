@@ -48,3 +48,9 @@ test('unapproved airport yields no aircraft candidates',()=>{
  assert.equal(r.candidates.length,0);
  assert.equal(r.schedulingAllowed,false);
 });
+
+test('directional landing distances are not interchangeable',()=>{
+ const x=runway({runwayPair:'11/29',directions:[direction('11',{ldaM:1376}),direction('29',{ldaM:1463})]});
+ const r=check(landing(1400),[x]);
+ assert.deepEqual(r.candidates.map(c=>c.numericStatus),['INSUFFICIENT','SUFFICIENT']);
+});
