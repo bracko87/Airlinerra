@@ -18,7 +18,16 @@ export const config = Object.freeze({
     '/api/v1/legal/consents',
     '/api/v1/airlines'
   ],
-  method:'POST'
+  method:'POST',
+  // Netlify's provider-side code-based rate limiting is available on Free.
+  // Unlike the per-warm-instance guard, this rejects excess traffic at
+  // Netlify before starting the Function or contacting the database.
+  rateLimit:Object.freeze({
+    action:'rate_limit',
+    aggregateBy:'ip',
+    windowSize:60,
+    windowLimit:30
+  })
 });
 
 const CLOSED_HEADERS = Object.freeze({
