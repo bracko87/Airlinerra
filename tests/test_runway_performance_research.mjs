@@ -62,3 +62,9 @@ test('landing prohibited despite sufficient LDA',()=>{
  assert.ok(r.candidates[0].blockers.includes('DIRECTION_OPERATION_PROHIBITED'));
  assert.equal(r.schedulingAllowed,false);
 });
+
+test('unknown pavement never clears qualification',()=>{
+ const r=check(takeoff(),[runway({materialVerified:false,normalizedSurface:'MACADAM_UNRESOLVED',operationalStatus:'RESTRICTED'})]);
+ assert.ok(r.candidates[0].blockers.includes('RUNWAY_PAVEMENT_NOT_INDEPENDENTLY_QUALIFIED'));
+ assert.ok(r.candidates[0].blockers.includes('RUNWAY_NOT_CONFIRMED_UNRESTRICTED_OPEN'));
+});
