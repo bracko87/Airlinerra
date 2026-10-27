@@ -9,6 +9,13 @@
 - **Hosting/domain/SSL milestone is complete.** Netlify remains production static host, Namecheap remains registrar and DNS provider. Do not buy separate hosting/SSL or reconfigure nameservers without a reason. Future public URLs, OAuth callback origins, SMTP DNS and hosted functions should use the canonical `airlinerra.com` domain when independently approved.
 - **Public account signup/gameplay remains closed.** This domain verification does not authorize deploying private hosted Functions, relaxing `PUBLIC_AUTH_ENABLED=false`, enabling Supabase Auth signup or opening any game world. Future features can use the domain but still require their own release gates.
 
+### STAGED NETLIFY ACCOUNT API (NOT DEPLOYED) — 2026-10-27
+
+- **Account gateway source prepared and CI passed:** `server/netlify-preview-template/airlinerra-accounts.mjs` is a Netlify Web Request/Response handler for precisely three future POST endpoints. It is **outside the active Netlify Functions directory**, is NOT included in the `website/` static build, and is **NOT live** at `airlinerra.com`. Do not move it under `website/netlify/functions/` or change Netlify auto-discovery without specific approval. See [gateway handoff](docs/PLATFORM_NETLIFY_API_STAGE_2026-10-27.md).
+- Two explicit server-side opt-ins and `CONTEXT=deploy-preview` or `branch-deploy` are required; production context and the public `airlinerra.com` host are forbidden. All account/game DB release gates remain separately disabled. The preview source reuses one bounded TLS PostgreSQL pool per warm function.
+- **Security correction:** `server/hosted-runtime-config.mjs` removes the validated `sslmode` URL parameter before passing a URL plus explicit `ssl.rejectUnauthorized=true` to Node `pg`, preventing a URL option from silently replacing the TLS verification object. The `pg` production dependency/lockfile and real host secrets still need approved packaging.
+- [Non-deploying account CI #40492192241](https://github.com/bracko87/Airlinerra/actions/runs/40492192241) passed both Node and disposable PostgreSQL jobs after these changes. The public prelaunch site is unchanged, and no real hosted Auth/signup or email delivery has been tested.
+
 ### LIVE PUBLIC NETLIFY PRELAUNCH — 2026-10-27
 
 - **Airlinerra's STATIC PRELAUNCH WEBSITE IS NOW PUBLIC at `https://airlinerra.netlify.app/`.** The owner created and published the Netlify site, connected to GitHub `bracko87/Airlinerra` branch `main`. Public website publishing is specifically approved; **public account registration, game activation, Supabase Auth provider changes, paid products, or any live private hosted API deployment are NOT approved** by this action.
