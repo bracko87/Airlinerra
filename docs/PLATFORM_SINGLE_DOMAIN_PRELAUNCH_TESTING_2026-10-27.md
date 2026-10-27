@@ -7,6 +7,12 @@ The correct Airlinerra domain is **https://airlinerra.com/**. Until the game its
 
 The site's marketing/prelaunch pages may be public; that does not mean the game is released. Reuse the exact domain after launch, with public features enabled only through separate launch approval.
 
+## Verified corporate sender and hosted Auth access — 27 October 2026
+
+Resend now reports `nextqueststudio.net` **fully verified (4/4 records)**. Airlinerra will use `Airlinerra — NextQuest Studio <noreply@nextqueststudio.net>` for Auth invitations/confirmation/reset; **no new domain slot or paid email plan required**. Namecheap public DNS confirms the records and original Zoho mail intact. The company's sender DNS task is complete; sending actual Auth email is **not yet live**.
+
+The existing Airlinerra Supabase project `hwllkabgzaynalahvkpz` could not be configured through the signed-out Supabase Dashboard browser session, even though the project is available via the connected DB connector. **No live Auth settings were changed.** Next: user signs in to Supabase via the secure connected browser, and configures invite-only signup, Confirm Email, anonymous-off, canonical Auth redirect URLs, and Resend SMTP using secret credentials stored only in provider settings. Do not send invitations until the prelaunch callback UI is actually reachable.
+
 ## Step 2a — Real isolated invitation test PASSED (27 October 2026)
 
 - **[GitHub E2E run #40513518775 — PASS](https://github.com/bracko87/Airlinerra/actions/runs/40513518775)**. This test uses Supabase CLI 2.122.0 to start *temporary local* GoTrue, PostgreSQL, Kong and Mailpit. It exercises synthetic signup/confirmation, verified login, password recovery, an **administrator-created invitation**, one-time `type=invite` OTP, identity-bound initial password, second-use denial, and login using the invited account. It also executes the full Chromium account UI/local player flow. It never touches the hosted Airlinerra Supabase project.
