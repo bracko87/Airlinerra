@@ -176,6 +176,15 @@ jobs:
             globalThis.fetch=oldFetch;
           }
           JS
+      - name: Archive the verified Function for a future owner-approved preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: airlinerra-private-account-function-build
+          path: |
+            ${{ runner.temp }}/airlinerra-functions/airlinerra-accounts.zip
+            ${{ runner.temp }}/airlinerra-functions/manifest.json
+          retention-days: 7
+          if-no-files-found: error
       - name: Recheck public static build remains unrelated
         working-directory: website
         run: |
