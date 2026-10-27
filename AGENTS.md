@@ -2,6 +2,8 @@
 
 
 
+## Current operating state — 2026-10-27 (supersedes older prelaunch database counts)
+
 ### HOSTED SUPABASE AUTH INVITE-ONLY CONFIGURATION SAVED — 2026-10-27
 
 - Airlinerra hosted project `hwllkabgzaynalahvkpz` was accessed in the Supabase Dashboard. **Final persisted UI state AFTER SAVE AND PAGE RELOAD:** `Allow new users to sign up=OFF`, `Allow anonymous sign-ins=OFF`, `Confirm Email=ON`, Email provider=ENABLED and `Allow manual linking=ON` (original pre-existing value restored after an unintended toggle during first attempt).
