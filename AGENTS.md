@@ -2,6 +2,11 @@
 
 ## Current operating state — 2026-10-27 (supersedes older prelaunch database counts)
 
+### LIVE WORLD 01 ROSTER EXPANDED BY PARALLEL AIRPORT WORKSTREAM — 2026-10-27
+
+- **Read-only live Supabase audit on 27 October:** `airlinerra_game.approved_game_airports` now holds **8,149 simulation-only World 01 airports**: **3,140** original entries with `SIMULATION_ONLY:FOUNDATION_ORIGINAL_3140_WORLD1_2026_10_26` plus **5,009** separately added entries with `SIMULATION_ONLY:HISTORICAL_PAVED_1200M_USER_APPROVED_2026_10_27`. Migration `20261027114044 allow_owner_authorized_simulation_only_historical_airports_world1` belongs to the separate airport workstream. The original 3,140 remain intact; no approvals exist in Worlds 02/03.
+- This account-preview workstream did **not** add or reclassify those 5,009 airports. `platform_release_gate.enabled=false`; all worlds remain `planned`; `auth.users` and `airlinerra_game.airlines` remain empty. Earlier paragraphs referring to *only* 3,140 approved game airports describe the initial foundation and are historical, not the latest live total. Never rerun either cohort migration without re-auditing the current database.
+
 ### PERMANENT DOMAIN VERIFIED — 2026-10-27
 
 - **Official canonical website: `https://airlinerra.com/`.** The owner purchased `airlinerra.com` at Namecheap and connected it to the public `airlinerra` Netlify project. Namecheap BasicDNS has A `@` → `75.2.60.5` and CNAME `www` → `airlinerra.netlify.app`. Domain management marks `airlinerra.com` primary and `www.airlinerra.com` as automatic redirect to primary.
