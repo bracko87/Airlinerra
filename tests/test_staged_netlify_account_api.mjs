@@ -7,6 +7,7 @@ import {
 import {buildPrivatePreviewAccountApp} from '../server/preview-account-app.mjs';
 
 const ORIGIN='https://deploy-preview-19--airlinerra.netlify.app';
+const PLATFORM=()=>({deploy:{context:'deploy-preview',published:false},site:{name:'airlinerra',url:'https://airlinerra.com'}});
 const SECRET='A'.repeat(43); // Synthetic value, never usable on a real host.
 const request=()=>new Request(ORIGIN+'/api/v1/onboarding/context',{
   method:'POST',
@@ -44,7 +45,7 @@ test('default staging handler fails closed and never reads secrets or builds app
     buildApp:()=>{builds++;throw Error('Should never start');}
   });
   for(let i=0;i<3;i++){
-    const response=await handler(request());
+    const response=await handler(request(),PLATFORM());
     assert.equal(response.status,503);
     assert.equal(response.headers.get('cache-control'),'no-store');
     assert.equal(response.headers.get('content-security-policy'),"default-src 'none'");
@@ -62,16 +63,16 @@ test('two independent enable flags are required on every invocation',async()=>{
     buildApp:async()=>{builds++;return {enabled:true,handler:async()=>new Response('{}',{status:200})};}
   });
   e.AIRLINERRA_HOSTED_BACKEND_ENABLED='false';
-  assert.equal((await handler(request())).status,503);
+  assert.equal((await handler(request(),PLATFORM())).status,503);
   e.AIRLINERRA_HOSTED_BACKEND_ENABLED='true';
   e.AIRLINERRA_PRIVATE_PREVIEW_APPROVED='false';
-  assert.equal((await handler(request())).status,503);
+  assert.equal((await handler(request(),PLATFORM())).status,503);
   assert.equal(builds,0);
   e.AIRLINERRA_PRIVATE_PREVIEW_APPROVED='true';
-  assert.equal((await handler(request())).status,200);
+  assert.equal((await handler(request(),PLATFORM())).status,200);
   assert.equal(builds,1);
   e.AIRLINERRA_PRIVATE_PREVIEW_APPROVED='false';
-  assert.equal((await handler(request())).status,503);
+  assert.equal((await handler(request(),PLATFORM())).status,503);
   assert.equal(builds,1);
 });
 
@@ -89,7 +90,7 @@ test('warm staging function reuses one app/pool for concurrent invocations',asyn
   });
   // All four admitted requests share the same warm backend instance.
   // Additional simultaneous calls are intentionally limited by the guard.
-  const responses=await Promise.all(Array.from({length:4},()=>handler(request())));
+  const responses=await Promise.all(Array.from({length:4},()=>handler(request(),PLATFORM())));
   assert.ok(responses.every(r=>r.status===200));
   assert.equal(builds,1);
   assert.equal(calls,4);
@@ -97,20 +98,22 @@ test('warm staging function reuses one app/pool for concurrent invocations',asyn
 
 test('cached preview is immediately closed when runtime context changes to production',async()=>{
   let builds=0;
-  const current=env();
+  const current=PLATFORM();
   const handler=createStagedNetlifyAccountHandler({
-    getEnvironment:()=>current,
+    getEnvironment:env,
     buildApp:async()=>{
       builds++;
       return {enabled:true,handler:async()=>new Response('{"ok":true}',{status:200})};
     }
   });
-  assert.equal((await handler(request())).status,200);
-  current.CONTEXT='production';
-  assert.equal((await handler(request())).status,503);
+  assert.equal((await handler(request(),current)).status,200);
+  current.deploy.context='production';
+  current.deploy.published=true;
+  assert.equal((await handler(request(),current)).status,503);
   assert.equal(builds,1);
-  current.CONTEXT='deploy-preview';
-  assert.equal((await handler(request())).status,200);
+  current.deploy.context='deploy-preview';
+  current.deploy.published=false;
+  assert.equal((await handler(request(),current)).status,200);
   assert.equal(builds,1);
 });
 
@@ -124,8 +127,8 @@ test('staging function redacts internal startup and handler failures',async()=>{
       return {enabled:true,handler:async()=>{throw Error('db private token');}};
     }
   });
-  const first=await handler(request());
-  const second=await handler(request());
+  const first=await handler(request(),PLATFORM());
+  const second=await handler(request(),PLATFORM());
   assert.equal(first.status,503);
   assert.equal(second.status,503);
   const bodies=[await first.text(),await second.text()];
@@ -135,13 +138,16 @@ test('staging function redacts internal startup and handler failures',async()=>{
 
 test('production context cannot create an app even with both flags enabled',async()=>{
   const handler=createStagedNetlifyAccountHandler({
-    getEnvironment:()=>({...env(),CONTEXT:'production'}),
+    getEnvironment:env,
     buildApp:options=>buildPrivatePreviewAccountApp({
       env:options.env,
       loadPg:async()=>{throw Error('Driver must not be loaded in production');}
     })
   });
-  const response=await handler(request());
+  const response=await handler(request(),{
+    deploy:{context:'production',published:true},
+    site:{name:'airlinerra',url:'https://airlinerra.com'}
+  });
   assert.equal(response.status,503);
   assert.equal(response.headers.get('cache-control'),'no-store');
 });
