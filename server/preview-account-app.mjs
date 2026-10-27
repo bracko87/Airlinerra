@@ -9,6 +9,7 @@ import {parseHostedRuntimeConfig} from './hosted-runtime-config.mjs';
 import {createHostedAuthVerifier} from './hosted-auth-verifier.mjs';
 import {createHostedAccountStack} from './hosted-account-stack.mjs';
 import {loadServerPostgresDriver} from '../website/server-only-pg-loader.mjs';
+import {inspectCanonicalTesterAuthReadiness} from './hosted-auth-readiness.mjs';
 
 export async function buildPrivatePreviewAccountApp({
   env={},
@@ -24,6 +25,16 @@ export async function buildPrivatePreviewAccountApp({
     });
   }
   if(typeof loadPg!=='function')throw new Error('A trusted database driver is required.');
+  // Public Supabase Auth signup can bypass browser UX. For official-domain
+  // tester mode, prove provider-level invite-only/confirmed-email settings
+  // BEFORE loading pg or constructing a private DB pool.
+  if(config.mode==='canonical-prelaunch-test'){
+    await inspectCanonicalTesterAuthReadiness({
+      authUrl:config.supabaseUrl,
+      publishableKey:config.publishableKey,
+      fetchImpl
+    });
+  }
   // Lazy loading means disabled deployments never load a privileged DB driver
   // or create connections. Driver installation/bundling is a separate host gate.
   const driver=await loadPg();
