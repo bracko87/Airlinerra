@@ -50,6 +50,21 @@ jobs:
             echo 'ERROR: production Netlify Function directory configured'
             exit 1
           fi
+      - name: Prebundle account backend from the pinned website dependency tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -z "${NETLIFY_AUTH_TOKEN:-}"
+          mkdir -p "$RUNNER_TEMP/airlinerra-source"
+          npm exec --yes --package=esbuild@0.25.12 -- \
+            esbuild "$GITHUB_WORKSPACE/server/netlify-preview-template/airlinerra-accounts.mjs" \
+            --bundle --platform=node --format=esm --target=node22 \
+            --node-path="$GITHUB_WORKSPACE/website/node_modules" \
+            --external:pg-native \
+            --banner:js="import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);" \
+            --outfile="$RUNNER_TEMP/airlinerra-source/airlinerra-accounts.mjs"
+          test -s "$RUNNER_TEMP/airlinerra-source/airlinerra-accounts.mjs"
+          echo 'Private function prebundled in CI only; no production directory created.'
       - name: Compile staged serverless Function into ephemeral CI directory
         shell: bash
         run: |
@@ -58,7 +73,7 @@ jobs:
           mkdir -p "$RUNNER_TEMP/airlinerra-functions"
           npm exec --yes --package=netlify-cli@27.14.2 -- \
             netlify functions:build \
-            --src "$GITHUB_WORKSPACE/server/netlify-preview-template" \
+            --src "$RUNNER_TEMP/airlinerra-source" \
             --functions "$RUNNER_TEMP/airlinerra-functions"
           ls -lah "$RUNNER_TEMP/airlinerra-functions"
       - name: Assert isolated Function contains compiled Netlify adapter
