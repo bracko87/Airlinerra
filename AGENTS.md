@@ -2,6 +2,12 @@
 
 ## Current operating state — 2026-10-27 (supersedes older prelaunch database counts)
 
+### TRUSTED NETLIFY RUNTIME CONTEXT AND FREE EDGE LIMIT — 2026-10-27
+
+- **Correction: Netlify's `CONTEXT` is a build-time variable, not a guaranteed Function runtime variable.** Account entrypoint `server/netlify-preview-template/airlinerra-accounts.mjs` now requires Netlify's trusted `(request,context)` API and verifies `context.deploy.context` belongs to `deploy-preview`/`branch-deploy`, `context.deploy.published=false`, and `context.site.name='airlinerra'` and `context.site.url='https://airlinerra.com'`, **before reading any environment variables or initializing the backend**. It injects the verified context into downstream app guards. Never revert to trusting `process.env.CONTEXT`. Source: https://docs.netlify.com/build/functions/api/ and https://docs.netlify.com/build/functions/environment-variables/.
+- The staged Function now includes **one code-based Netlify edge IP rate limit** `rateLimit:{action:'rate_limit',aggregateBy:'ip',windowSize:60,windowLimit:30}`. Netlify's Free plan supports up to two code-based rules; this is one rule protecting all three routes. Existing per-instance guard stays in place. Source: https://docs.netlify.com/manage/security/secure-access-to-sites/rate-limiting/.
+- Source-only `airlinerra-netlify-function-bundle-ci.yml` tests the **compiled, zipped Function startup with synthetic Netlify context** and refuses production; it retains a short-lived ZIP artifact after passing. This workflow **never publishes a Function** or attaches secrets to production. The public website and registration remain unchanged. See [the updated API handoff](docs/PLATFORM_NETLIFY_API_STAGE_2026-10-27.md).
+
 ### STAGED NETLIFY FUNCTION EXECUTABLE BUILD VALIDATED — 2026-10-27
 
 - Non-deploying [Netlify Functions CI #40502453942](https://github.com/bracko87/Airlinerra/actions/runs/40502453942) passed an **actual Netlify CLI build AND offline Node startup of the extracted ZIP**. With synthetic flags, production mode stays 503; an authorized preview with an intentionally invalid account token produces the expected 401. No Supabase Auth, DB, SMTP, Netlify site API or external service was contacted.
