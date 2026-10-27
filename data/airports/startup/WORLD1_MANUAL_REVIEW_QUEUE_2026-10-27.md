@@ -38,3 +38,15 @@ Enter `YES` to request approval, or `REJECT`/`NEEDS REVIEW` as the appropriate d
 Permanent review state: `airlinerra.airport_icao_manual_review_20261027`, with `review_sequence`, `review_status`, `manually_checked`, and individual confirmation booleans.
 
 Original 3,140 are preserved, and existing confirmed-rejected airports remain excluded.
+
+## Traffic-type selection (27 Oct 2026)
+
+Each owner-reviewed candidate now has a **third independent choice** in addition to the YES checkbox and the selected one-of-six category:
+
+- `Passenger`: planned passenger-serving game airport
+- `Cargo`: planned cargo-serving game airport
+- `Both`: both passenger and cargo operations in the simulation
+
+The traffic-type dropdown is intentionally blank until chosen. It is required on every selected YES row before finalizing a batch, and persists in `airlinerra.airport_icao_manual_review_20261027.selected_traffic_type` and `airlinerra.airport_candidate_preapproval_pool.traffic_type`. This is a **game-design classification**, not proof of a real-world airline licence. All previous World 1 / staging rules remain unchanged: unselected rows are excluded when the batch is finalized; selected rows remain pre-approved and **do not become playable World 1 airports**. The original 3,140 are preserved.
+
+[Batch 2 CSV with traffic-type field](world1_manual_preapproval_batch_2_51_to_100_2026-10-27.csv). The same field is also present in the updated Batch 1 CSV and the downloadable combined Excel checklist.
