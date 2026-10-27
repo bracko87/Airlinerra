@@ -27,7 +27,8 @@ const env=()=>({
 test('staged Netlify URL config covers exactly three POST API routes',()=>{
   assert.deepEqual(config,{
     path:['/api/v1/onboarding/context','/api/v1/legal/consents','/api/v1/airlines'],
-    method:'POST'
+    method:'POST',
+    rateLimit:{action:'rate_limit',aggregateBy:'ip',windowSize:60,windowLimit:30}
   });
 });
 
