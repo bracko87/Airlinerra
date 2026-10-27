@@ -1,61 +1,59 @@
-# Airlinerra — Current World 1 airport catalog (27 October 2026)
+# Airlinerra — World 1 airport catalog (27 October 2026)
 
-**Current database-verified catalog.** Supersedes previous 8,148- and 8,139-airport snapshots.
+This is the **current authoritative GitHub index** for the Airlinerra airport audit. Older 8,148-, 8,139- and 18-exception snapshots are superseded.
 
-## Live database reconciliation
+## World 1 game membership (verified against Supabase)
 
-| Acceptance basis | Airports |
+| Admission status | Count |
 |---|---:|
-| Original simulation cohort retained unchanged | 3,140 |
-| Source-reported ICAO + paved runway >1,200 m | 2,391 |
-| Historical paved-runway/identifier admission | 2,605 |
-| **Active and approved for World 1 simulation** | **8,136** |
-| **Rejected and inactive** | **17** |
-| Registered original candidates | 8,153 |
+| Preserved founding airports | 3,140 |
+| Extra airports accepted with source-reported ICAO + historical paved runway | 2,391 |
+| Extra airports accepted using historical runway/identifiers | 2,605 |
+| **Total activated and approved** | **8,136** |
+| **Confirmed exclusions, inactive** | **17** |
+| Overall candidate registry | 8,153 |
 
-## Current lists
+## Latest reference lists
 
-- [World 1 accepted airports — 8,136](airlinerra_world1_accepted_8136_2026-10-27.csv)
-- [Definitively rejected — 17](airlinerra_world1_rejected_17_2026-10-27.csv)
-- [Independent source reviews — 21 cases, including 12 failed and nine runway passes](airlinerra_independent_runway_checks_21_2026-10-27.csv)
-- [870 current high-priority flagged accepted airports](airlinerra_high_priority_870_2026-10-27.csv)
+- [All 8,136 accepted game airports](airlinerra_world1_accepted_8136_2026-10-27.csv)
+- [17 confirmed exclusions and reasons](airlinerra_world1_rejected_17_2026-10-27.csv)
+- [21 individual runway-source reviews](airlinerra_independent_runway_checks_21_2026-10-27.csv)
+- [All 870 high-flag airports with separated runway and access reviews — latest](airlinerra_flagged_870_resolution_latest_2026-10-27.csv)
+- [The remaining 7 specific runway material/operational exceptions — latest](airlinerra_remaining_7_runway_exceptions_2026-10-27.csv)
 
-## Latest inspection findings
+## Resolved high-priority runway evidence
 
-- Grand Geneva Resort Airport C02: FAA-derived 2026 status **closed indefinitely** despite historical asphalt length.
-- Upperville Airport 2VG2: reported closed since 2023 despite historical 5,100 ft asphalt runway.
-- Hiroshima Heliport RJBH: **present heliport only has a 35 x 30 m surface**, confirmed by Hiroshima City. Historic 1,800 m fixed-wing runway record was incorrectly carried forward from the former Hiroshima West Airport.
-- Sabre Army Airfield KEOD: FAA 2026 verifies 5,000 ft (1,524 m) concrete fixed-wing runway with 24h military prior-permission restriction; the game-display name is corrected from `Sabre Army Heliport` to `Sabre Army Airfield (Fort Campbell)`.
-- Custer State Park Airport 3V0: historical 4,000 ft asphalt runway confirmed from FAA-derived records, but not independently proven current in Oct 2026.
-- Bartow Executive KBOW and Palacios Municipal KPSX: each has a separate qualifying 1,524 m paved runway despite other poor-condition surfaces. Both retained in catalog with alternate-runway-condition warnings.
+The 870 non-foundation game airports with previous high-priority quality flags were audited separately for the physical runway requirement, without conflating that with airline operating permissions.
 
-## Verification boundaries
-
-- Source-reported `ICAO` codes are not independently verified on every row. Do not conflate local IDs and official ICAO indicators.
-- Historical runway observations are accepted for **simulation-only** under owner-approved policy, not as current aircraft operating authorization.
-- 870 admitted non-foundation airports retain HIGH quality flags: 526 in historical-review subgroup, 344 in ICAO-rule subgroup. Some independently checked runway passes may still have operational or commercial permission restrictions.
-- Airport six-category assignments remain provisional: Local, Regional, Medium, Large, Major Hub, Mega Hub.
-- All original 3,140 founding airports have been preserved.
-- Source of truth: Supabase Airlinerra project `hwllkabgzaynalahvkpz`, tables `airlinerra.airport_world1_review_20261027`, `airlinerra.airport_world_activation`, `airlinerra_game.approved_game_airports`, and `airlinerra.airport_independent_runway_checks_20261027`.
-
-**Not usable as a real-world flight-planning source.**
-
-## Addendum — flagged 870 airport resolution (27 October 2026)
-
-This resolves the **runway-evidence component** of the 870 accepted airports with HIGH audit flags, separate from their commercial-access status:
-
-| Runway evidence outcome | Airports |
+| Runway evidence | Airports |
 |---|---:|
-| FAA NASR 1 October 2026 asphalt/concrete >1,200m | 841 |
-| Other primary authority/operator paved runway independently supported | 9 |
-| First-party operator evidence of paved runway >1,200m | 2 |
-| **Still requiring targeted paved-runway evidence review** | **18** |
+| FAA NASR October 2026 confirmed >1,200m asphalt/concrete | 841 |
+| Official non-FAA primary-source confirmation | 9 |
+| Airport operator confirmation | 4 |
+| Secondary/historical aviation sources corroborate long paved runway | 9 |
+| **Still pending exact technical runway verification** | **7** |
 | **Total** | **870** |
 
-- [Complete 870-airport runway/access decision register](airlinerra_flagged_870_runway_access_resolution_2026-10-27.csv)
-- [Remaining 18 runway evidence exceptions](airlinerra_remaining_18_runway_exceptions_2026-10-27.csv)
+The **seven targeted exceptions** are Ambrì (LSPM), Avord (LFOA), Cazaux (LFBC), Évreux-Fauville (LFOE), Orange-Caritat (LFMO), Phalsbourg-Bourscheid (LFQP), and Solenzara (LFKS).
 
-Access status is **not** implied by runway qualification: the review records 841 civilian/public-use airfields with commercial authorizations unverified, 26 private or military-restricted airports, and 3 whose civilian access remains unconfirmed. A verified paved runway is **not** evidence of unrestricted commercial or scheduled airline access.
+- For Ambrì, Swiss FOCA evidence gives about 1,285m hard paved physical runway but **1,120m maximum usable runway**, plus unresolved civil conversion appeal. The precise eligibility interpretation is not reconciled.
+- For French cases, published AIP surfaces such as **macadam** or **revêtue** have not yet been fully reconciled to the narrower user requirement of asphalt or concrete, or continuous qualifying segments must be verified. Historic ASP/CON registry records remain available.
+- These seven remain **simulation-only historical admissions, not operationally verified safe airports**. There was no unsupported bulk rejection.
+- Saint Hubert EBSU and Yucca Lake historical airstrip were separately corroborated as historically paved, but **not cleared for civilian scheduled airline operations**. The legacy `NV11` display code on Yucca was set to NULL in the game approved-airport catalog because that FAA identifier is now assigned to the separate Owyhee Hospital Heliport.
+- Alpnach has different historical and aviation chart runway lengths, but all corroborating asphalt lengths exceed 1,200m. Its exact operational dimensions and military restrictions remain separate.
+- Dübendorf, Emmen, Payerne, Étain-Rouvres, Saint-Dizier, Salon-de-Provence and Toulouse-Francazal have positive operator or aviation source checks; independent source quality is labeled explicitly.
 
-The 18 remain in the simulation catalog under the owner's historical-data policy; no new rejection is established solely by missing independent evidence. Existing World 1 counts **remain 8,136 accepted and 17 rejected**; the original 3,140 are unchanged. This also corrects any impression that all 870 need their runway length rechecked: 852 have passed the runway-evidence component.
+## Access restrictions are a separate question
 
+Of the 870 reviewed airports, 841 have FAA public-use evidence but **commercial permission has not been verified**; 28 have private/military restrictions recorded; and one has civilian access unconfirmed. Verifying a paved runway does **not** mean an airport is authorized for scheduled passenger or cargo operations.
+
+## Source of truth
+
+Supabase project `hwllkabgzaynalahvkpz`:
+- `airlinerra.airport_world1_review_20261027`
+- `airlinerra.airport_flagged_review_resolution_20261027`
+- `airlinerra.airport_world_activation`
+- `airlinerra_game.approved_game_airports`
+- `airlinerra.airport_quality_audit_flags`
+
+The original 3,140-airport founding cohort is untouched. The game catalog is for **simulation**, not real-world flight planning. Provisional game categories remain the six required levels: Local, Regional, Medium, Large, Major Hub, and Mega Hub.
