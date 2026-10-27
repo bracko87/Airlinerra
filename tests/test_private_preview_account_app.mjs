@@ -86,6 +86,12 @@ test('PostgreSQL must belong to this project, require credentials/TLS and pin po
       'postgresql://postgres.'+PROJECT+'@aws-0-eu-central-1.pooler.supabase.com:6543/postgres'
   }),/PostgreSQL/);
   assert.ok(parseHostedRuntimeConfig(base).dbUrl.includes('synthetic-not-real'));
+  // sslmode inside pg connectionString replaces Pool's ssl object, defeating
+  // rejectUnauthorized:true. Verified URL must no longer contain sslmode.
+  const parsed=parseHostedRuntimeConfig(base);
+  assert.equal(new URL(parsed.dbUrl).search,'');
+  assert.equal(new URL(parsed.dbUrl).hostname,'aws-0-eu-central-1.pooler.supabase.com');
+  assert.notEqual(parsed.dbUrl,base.AIRLINERRA_PRIVATE_DATABASE_URL);
 });
 
 test('fresh hosted Auth verification rejects revoked, unconfirmed and anonymous users',async()=>{
