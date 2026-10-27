@@ -10,6 +10,7 @@
  * https://docs.netlify.com/build/functions/configuration/
  */
 import {buildPrivatePreviewAccountApp} from '../preview-account-app.mjs';
+import {createPreviewRequestGate} from '../preview-access-guard.mjs';
 
 export const config = Object.freeze({
   path:[
@@ -28,10 +29,10 @@ const CLOSED_HEADERS = Object.freeze({
   'referrer-policy':'no-referrer',
   'x-frame-options':'DENY'
 });
-function closedResponse(){
+function closedResponse(status=503){
   return new Response(
     JSON.stringify({error:'Airlinerra account service unavailable.'}),
-    {status:503,headers:CLOSED_HEADERS}
+    {status,headers:CLOSED_HEADERS}
   );
 }
 
@@ -42,9 +43,11 @@ function closedResponse(){
  */
 export function createStagedNetlifyAccountHandler({
   getEnvironment=()=>process.env,
-  buildApp=buildPrivatePreviewAccountApp
+  buildApp=buildPrivatePreviewAccountApp,
+  previewGate=createPreviewRequestGate()
 }={}){
-  if(typeof getEnvironment!=='function'||typeof buildApp!=='function'){
+  if(typeof getEnvironment!=='function'||typeof buildApp!=='function'||
+     typeof previewGate?.acquire!=='function'){
     throw new Error('Explicit server-only hosting dependencies are required.');
   }
   let pending=null;
@@ -58,20 +61,27 @@ export function createStagedNetlifyAccountHandler({
         return closedResponse();
       }
       if(!(request instanceof Request)) return closedResponse();
-
-      if(!pending){
-        pending=Promise.resolve().then(()=>buildApp({env}));
+      // Origin, exact path, access secret and warm-instance budget are
+      // checked BEFORE loading the DB driver or contacting Supabase Auth.
+      const admission=previewGate.acquire(env,request);
+      if(!admission.allowed)return closedResponse(admission.status);
+      try{
+        if(!pending){
+          pending=Promise.resolve().then(()=>buildApp({env}));
+        }
+        let app;
+        try{app=await pending;}
+        catch {
+          pending=null; // Recover only on a future request; never return raw errors.
+          return closedResponse();
+        }
+        if(!app?.enabled || typeof app.handler!=='function'){
+          return closedResponse();
+        }
+        return await app.handler(admission.request);
+      }finally{
+        admission.release();
       }
-      let app;
-      try{app=await pending;}
-      catch {
-        pending=null; // Recover only on a future request; never return raw errors.
-        return closedResponse();
-      }
-      if(!app?.enabled || typeof app.handler!=='function'){
-        return closedResponse();
-      }
-      return await app.handler(request);
     }catch{
       return closedResponse();
     }
