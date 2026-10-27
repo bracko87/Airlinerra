@@ -39,3 +39,23 @@
 - Source of truth: Supabase Airlinerra project `hwllkabgzaynalahvkpz`, tables `airlinerra.airport_world1_review_20261027`, `airlinerra.airport_world_activation`, `airlinerra_game.approved_game_airports`, and `airlinerra.airport_independent_runway_checks_20261027`.
 
 **Not usable as a real-world flight-planning source.**
+
+## Addendum — flagged 870 airport resolution (27 October 2026)
+
+This resolves the **runway-evidence component** of the 870 accepted airports with HIGH audit flags, separate from their commercial-access status:
+
+| Runway evidence outcome | Airports |
+|---|---:|
+| FAA NASR 1 October 2026 asphalt/concrete >1,200m | 841 |
+| Other primary authority/operator paved runway independently supported | 9 |
+| First-party operator evidence of paved runway >1,200m | 2 |
+| **Still requiring targeted paved-runway evidence review** | **18** |
+| **Total** | **870** |
+
+- [Complete 870-airport runway/access decision register](airlinerra_flagged_870_runway_access_resolution_2026-10-27.csv)
+- [Remaining 18 runway evidence exceptions](airlinerra_remaining_18_runway_exceptions_2026-10-27.csv)
+
+Access status is **not** implied by runway qualification: the review records 841 civilian/public-use airfields with commercial authorizations unverified, 26 private or military-restricted airports, and 3 whose civilian access remains unconfirmed. A verified paved runway is **not** evidence of unrestricted commercial or scheduled airline access.
+
+The 18 remain in the simulation catalog under the owner's historical-data policy; no new rejection is established solely by missing independent evidence. Existing World 1 counts **remain 8,136 accepted and 17 rejected**; the original 3,140 are unchanged. This also corrects any impression that all 870 need their runway length rechecked: 852 have passed the runway-evidence component.
+
