@@ -55,6 +55,7 @@ test('public signup, autoconfirm, disabled email, and anonymous accounts all den
     {mailer_autoconfirm:null},
     {external:{email:false,anonymous_users:false}},
     {external:{email:true,anonymous_users:true}},
+    {external:{email:true}},
     {external:null}
   ]){
     await assert.rejects(inspectCanonicalTesterAuthReadiness({
