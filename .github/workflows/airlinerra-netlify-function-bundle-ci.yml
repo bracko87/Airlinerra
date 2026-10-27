@@ -147,7 +147,16 @@ jobs:
             body:'{}'
           });
           const oldFetch=globalThis.fetch;
-          globalThis.fetch=async()=>{throw Error('SECURITY: Unexpected network call');};
+          // Mock ONLY publicly readable Auth policy, never external network.
+          globalThis.fetch=async(url)=>{
+            if(url==='https://hwllkabgzaynalahvkpz.supabase.co/auth/v1/settings'){
+              return new Response(JSON.stringify({
+                disable_signup:true,mailer_autoconfirm:false,
+                external:{email:true,anonymous_users:false}
+              }),{status:200,headers:{'content-type':'application/json'}});
+            }
+            throw Error('SECURITY: Unexpected network call');
+          };
           try{
             const closed=await handler(request());
             assert.equal(closed.status,503);
