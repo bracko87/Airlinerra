@@ -1,5 +1,33 @@
 # Airlinerra — Netlify account API staged safely (27 October 2026)
 
+## 27 October 2026 — Netlify native preview context and Free-plan edge protection
+
+**This is a non-deployed security correction.** Netlify's current [Functions runtime environment documentation](https://docs.netlify.com/build/functions/environment-variables/) says only `URL`, `SITE_NAME` and `SITE_ID` are guaranteed read-only Netlify environment variables inside Functions; the build-time `CONTEXT` variable is not guaranteed there. The [Function context API](https://docs.netlify.com/build/functions/api/) provides the real context of the current deployment under `context.deploy.context`, whether it belongs to the published deployment under `context.deploy.published`, and trusted site identity under `context.site`.
+
+The staged entrypoint now takes **both Request and Netlify Context**. Before reading the environment, it requires:
+
+- Host-provided context is strictly `deploy-preview` or `branch-deploy` and `published === false`;
+- Host-provided site name is `airlinerra` and canonical site URL is `https://airlinerra.com`;
+- Both independent account preview flags remain true;
+- Existing operator-secret, exact preview hostname, same-origin, POST, JSON and bounded-request checks still pass.
+
+It then injects the **verified** deploy type into a copy of the environment for downstream guards and ignores any stale/forged `process.env.CONTEXT`. Every check is repeated for warm requests. Tests verify that absent or forged platform deployment metadata and production context are rejected *before reading secrets or initializing a DB pool*. Netlify's own archived Function ZIP is loaded and run with synthetic trusted and contradictory environment metadata as a smoke test.
+
+### Free-plan native rate limiter
+
+Netlify's [rate-limiting documentation](https://docs.netlify.com/manage/security/secure-access-to-sites/rate-limiting/) confirms that **two code-based rate-limiting rules are available on Free**. The single staged Function `config` now sets one IP-aggregated rule:
+
+- `action: 'rate_limit'`
+- `aggregateBy: 'ip'`
+- `windowSize: 60` seconds
+- `windowLimit: 30` requests
+
+This adds provider-side protection across Function instances, in addition to the existing local capacity limit. It does not deploy a rule until the Function is separately deployed. Because the account API has three paths but one Function, this is one code-based rule, not three.
+
+### Artifact
+
+The isolated Netlify CI workflow archives the **tested secret-free Function ZIP and manifest** as a short-lived GitHub Actions artifact. This output is evidence and material for future owner-approved review; it is **not** an active Netlify Function, a site deployment, or a record of real hosted authentication. The production site remains static and public, with player registration disabled.
+
 ## 27 October 2026 — Real Netlify Function compilation AND offline runtime smoke passed
 
 - **Non-deploying GitHub Actions [#40502453942](https://github.com/bracko87/Airlinerra/actions/runs/40502453942): SUCCESS.** The workflow `.github/workflows/airlinerra-netlify-function-bundle-ci.yml` uses the real Netlify CLI **27.14.2** and an isolated temporary output directory; it does not connect to the real Netlify project, publish a preview, configure a function route, or read provider secrets.
