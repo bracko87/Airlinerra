@@ -10,6 +10,7 @@ on:
       - 'server/**'
       - 'website/package.json'
       - 'website/package-lock.json'
+      - 'website/server-only-pg-loader.mjs'
   workflow_dispatch:
 
 permissions:
