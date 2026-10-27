@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <meta name="referrer" content="no-referrer" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://esm.sh; connect-src https://hwllkabgzaynalahvkpz.supabase.co; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'self'" />
+  <title>Airlinerra — Private invitation access</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+  <link rel="stylesheet" href="invited-tester-page.css" />
+  <script type="module" src="invited-tester-page.mjs"></script>
+</head>
+<body>
+  <!-- SOURCE ONLY. NOT IN dev-scripts/build.mjs. A reviewed release may replace
+       the public preview account.html with this shell on the same domain. -->
+  <header><a href="/" aria-label="Airlinerra home">
+    <img src="assets/airlinerra-logo.png" alt="Airlinerra" width="195" height="48" />
+  </a><span>PRIVATE PRELAUNCH ACCESS</span></header>
+  <main>
+    <section class="intro">
+      <p class="kicker">BY INVITATION ONLY</p>
+      <h1>Welcome to Airlinerra.</h1>
+      <p>This account area is available to invited testers only. Airline creation,
+        game worlds, payments, and public registration remain closed during prelaunch.</p>
+      <p class="note">Your invitation or password recovery link will be checked
+        before you can choose a password. Do not forward your private link.</p>
+    </section>
+    <section class="card" aria-label="Private account access">
+      <h2 id="page-heading">Preparing secure access…</h2>
+      <p id="page-feedback" role="status" aria-live="polite">Checking invitation-only access.</p>
+      <form id="sign-in" data-private-panel="sign-in" hidden>
+        <label for="sign-in-email">Email address</label>
+        <input id="sign-in-email" name="email" type="email" autocomplete="email" required maxlength="254" />
+        <label for="sign-in-password">Password</label>
+        <input id="sign-in-password" name="password" type="password" autocomplete="current-password" required />
+        <button type="submit">Sign in</button>
+        <button type="button" id="forgot-link" class="text-link">Forgot password?</button>
+      </form>
+      <form id="forgot" data-private-panel="forgot" hidden>
+        <label for="forgot-email">Your invited email address</label>
+        <input id="forgot-email" name="email" type="email" autocomplete="email" required maxlength="254" />
+        <button type="submit">Send password reset link</button>
+        <button type="button" id="back-to-login" class="text-link">Back to sign in</button>
+      </form>
+      <form id="set-password" data-private-panel="set-password" hidden>
+        <label for="new-password">New password (12 to 128 characters)</label>
+        <input id="new-password" name="password" type="password" autocomplete="new-password" required minlength="12" maxlength="128" />
+        <label for="confirm-password">Confirm new password</label>
+        <input id="confirm-password" name="confirmPassword" type="password" autocomplete="new-password" required minlength="12" maxlength="128" />
+        <button type="submit">Save password</button>
+      </form>
+      <section id="signed-in" data-private-panel="signed-in" hidden>
+        <p>Your invited identity is verified. Game access is not yet open.</p>
+        <button type="button" id="sign-out">Sign out</button>
+      </section>
+      <p class="fineprint">There is no public account registration on this page.</p>
+    </section>
+  </main>
+  <footer>Airlinerra is a NextQuest Studio project.</footer>
+</body>
+</html>
