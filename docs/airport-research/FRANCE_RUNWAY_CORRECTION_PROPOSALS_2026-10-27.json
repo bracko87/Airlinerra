@@ -1,6 +1,6 @@
 {
   "register": "AIRLINERRA_FRANCE_RUNWAY_CORRECTIONS",
-  "register_version": 1,
+  "register_version": 2,
   "created_utc_date": "2026-10-27",
   "status": "PROPOSALS_ONLY_NOT_APPLIED",
   "source_project": "hwllkabgzaynalahvkpz",
@@ -35,8 +35,19 @@
       "issue": "IMPORTED_LENGTH_OVERSTATED",
       "source_url": "https://www.sia.aviation-civile.gouv.fr/media/dvd/eAIP_01_OCT_2026/FRANCE/AIRAC-2026-10-01/html/eAIP/FR-AD-1.3-fr-FR.html",
       "source_quality": "CURRENT_DGAC_SIA_OCT2026",
-      "review_status": "PROPOSED_NOT_APPLIED",
-      "note": "Unverified exact asphalt/concrete surface; military restricted. Do not use 2400m in aircraft runway performance."
+      "review_status": "PRIMARY_SOURCE_VALIDATED_NOT_APPLIED",
+      "note": "Unverified exact asphalt/concrete surface; military restricted. Do not use 2400m in aircraft runway performance.",
+      "validation": {
+        "validated_on": "2026-10-27",
+        "validation_batch": "FR_RUNWAY_CORRECTION_VALIDATION_01_2026_10_27",
+        "primary_source_url": "https://www.sia.aviation-civile.gouv.fr/media/dvd/eAIP_01_OCT_2026/FRANCE/AIRAC-2026-10-01/html/eAIP/FR-AD-1.3-fr-FR.html",
+        "source_effective_date": "2026-10-01",
+        "primary_source_observation": "1721m paved RW01/19 confirmed current DGAC SIA; 2026 May detailed AIP also reports 1721m. Exact current asphalt/concrete subtype remains unverified, military restricted; a 2400m takeoff simulation would be invalid.",
+        "source_length_confirmed": true,
+        "physical_length_registry_mutated": false,
+        "commercial_or_game_permission_granted": false,
+        "requires_derived_data_change_review": true
+      }
     },
     {
       "icao": "LFPB",
@@ -48,8 +59,19 @@
       "issue": "MISSING_LONGEST_RUNWAY_07_25",
       "source_url": "https://www.sia.aviation-civile.gouv.fr/media/dvd/eAIP_01_OCT_2026/FRANCE/AIRAC-2026-10-01/html/eAIP/FR-AD-2.LFPB-fr-FR.html",
       "source_quality": "CURRENT_DGAC_SIA_OCT2026",
-      "review_status": "PROPOSED_NOT_APPLIED",
-      "note": "The imported length identifies genuine RW03/21 (2395m), NOT the aerodrome longest 07/25 runway (2991m). Scheduled commercial and charter flights prohibited."
+      "review_status": "PRIMARY_SOURCE_VALIDATED_NOT_APPLIED",
+      "note": "The imported length identifies genuine RW03/21 (2395m), NOT the aerodrome longest 07/25 runway (2991m). Scheduled commercial and charter flights prohibited.",
+      "validation": {
+        "validated_on": "2026-10-27",
+        "validation_batch": "FR_RUNWAY_CORRECTION_VALIDATION_01_2026_10_27",
+        "primary_source_url": "https://www.sia.aviation-civile.gouv.fr/media/dvd/eAIP_01_OCT_2026/FRANCE/AIRAC-2026-10-01/html/eAIP/FR-AD-2.LFPB-fr-FR.html",
+        "source_effective_date": "2026-10-01",
+        "primary_source_observation": "This is a longest-runway selection defect, not extension of the imported existing 2395m RW03/21. Official 2026 AD2.12 confirms RW07/25 2991m bituminous concrete, RW03/21 2395m and RW09/27 1847m. AD2.13 RW07 TORA2901 LDA2602, RW25 TORA2938 LDA2049; AD2.2 prohibits scheduled commercial and charter.",
+        "source_length_confirmed": true,
+        "physical_length_registry_mutated": false,
+        "commercial_or_game_permission_granted": false,
+        "requires_derived_data_change_review": true
+      }
     },
     {
       "icao": "LFPV",
@@ -61,8 +83,19 @@
       "issue": "IMPORTED_LENGTH_UNDERSTATED",
       "source_url": "https://www.sia.aviation-civile.gouv.fr/media/dvd/eAIP_01_OCT_2026/FRANCE/AIRAC-2026-10-01/html/eAIP/FR-AD-1.3-fr-FR.html",
       "source_quality": "CURRENT_DGAC_SIA_OCT2026",
-      "review_status": "PROPOSED_NOT_APPLIED",
-      "note": "Explicit bituminous asphalt RW09/27 1957m; military restricted. Historical directional LDA may be shorter."
+      "review_status": "PRIMARY_SOURCE_VALIDATED_NOT_APPLIED",
+      "note": "Explicit bituminous asphalt RW09/27 1957m; military restricted. Historical directional LDA may be shorter.",
+      "validation": {
+        "validated_on": "2026-10-27",
+        "validation_batch": "FR_RUNWAY_CORRECTION_VALIDATION_01_2026_10_27",
+        "primary_source_url": "https://www.sia.aviation-civile.gouv.fr/media/dvd/eAIP_01_OCT_2026/FRANCE/AIRAC-2026-10-01/html/eAIP/FR-AD-1.3-fr-FR.html",
+        "source_effective_date": "2026-10-01",
+        "primary_source_observation": "DGAC SIA official 2026 AD1.3 reports RW09/27 1957x45m enrobé bitumineux, rather than imported 1813m. Military restricted, declared TORA/LDA must be taken from effective detailed chart before game flight-performance calculations.",
+        "source_length_confirmed": true,
+        "physical_length_registry_mutated": false,
+        "commercial_or_game_permission_granted": false,
+        "requires_derived_data_change_review": true
+      }
     },
     {
       "icao": "LFRO",
@@ -74,8 +107,19 @@
       "issue": "IMPORTED_LENGTH_OVERSTATED",
       "source_url": "https://www.lannion.aeroport.fr/",
       "source_quality": "CURRENT_FIRST_PARTY_OPERATOR_CORROBORATED_BY_MAY2026_DGAC_AD2",
-      "review_status": "PROPOSED_NOT_APPLIED",
-      "note": "RW11/29 1602m paved exact material pending; airport operator LDA11 1376m LDA29 1463m."
+      "review_status": "PRIMARY_SOURCE_VALIDATED_NOT_APPLIED",
+      "note": "RW11/29 1602m paved exact material pending; airport operator LDA11 1376m LDA29 1463m.",
+      "validation": {
+        "validated_on": "2026-10-27",
+        "validation_batch": "FR_RUNWAY_CORRECTION_VALIDATION_01_2026_10_27",
+        "primary_source_url": "https://www.lannion.aeroport.fr/",
+        "source_effective_date": "2026-10-27 operator page, fuel tariffs updated 2026-10-01",
+        "primary_source_observation": "First-party airport operator confirms RW11/29 1602x45m revêtue, LDA11 1376m, LDA29 1463m. Current Oct2026 SIA AD1.3 independently also shows 1602m. Imported 1699.9m overstates physical runway by 97.9m, precise asphalt/concrete remains unverified.",
+        "source_length_confirmed": true,
+        "physical_length_registry_mutated": false,
+        "commercial_or_game_permission_granted": false,
+        "requires_derived_data_change_review": true
+      }
     },
     {
       "icao": "LFBN",
@@ -245,5 +289,9 @@
       "source_url": "https://www.sia.aviation-civile.gouv.fr/media/dvd/eAIP_01_OCT_2026/FRANCE/AIRAC-2026-10-01/html/eAIP/FR-AD-2.LFLX-fr-FR.html",
       "action": "PROPOSE_MATERIAL_RECONCILIATION_NOT_RAW_OVERWRITE"
     }
-  ]
+  ],
+  "last_validation_date": "2026-10-27",
+  "primary_source_validated_count": 4,
+  "unvalidated_proposal_count": 10,
+  "validation_note": "Source revalidation is factual research only. Do not automatically update raw registry or operational runway catalog; present proposals for separate reviewed versioned correction process, and separately verify usable distances, material, permissions, and NOTAMs."
 }
