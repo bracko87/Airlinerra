@@ -17,6 +17,7 @@ on:
       - 'website/dev-scripts/**'
       - 'website/package.json'
       - 'website/package-lock.json'
+      - 'website/server-only-pg-loader.mjs'
       - 'tests/test_pg_driver_contract.mjs'
       - 'supabase/config.toml'
       - 'supabase/templates/**'
