@@ -60,34 +60,54 @@ export function createStagedNetlifyAccountHandler({
     throw new Error('Explicit server-only hosting dependencies are required.');
   }
   let pending=null;
+  let activeMode=null;
   return async function stagedAccountHandler(request,netlifyContext){
     try{
       // Netlify's build-time CONTEXT is NOT a read-only Functions runtime
       // variable. Deployment identity must come from the platform-provided
       // (request, context) Function API, never a manually set env.CONTEXT.
-      // Reject published/production deployments BEFORE reading any secrets.
+      // Netlify production deployment is permitted ONLY for an explicit
+      // operator-controlled *prelaunch test*, not for public account launch.
+      // Deployment type, published status and site are platform-owned.
       const deploy=netlifyContext?.deploy;
       const verifiedContext=deploy?.context;
-      if(!['deploy-preview','branch-deploy'].includes(verifiedContext) ||
-         deploy.published!==false ||
+      const canonical=verifiedContext==='production' && deploy.published===true;
+      const privatePreview=['deploy-preview','branch-deploy'].includes(verifiedContext) &&
+        deploy.published===false;
+      if((!canonical && !privatePreview) ||
          netlifyContext?.site?.name!=='airlinerra' ||
          netlifyContext?.site?.url!=='https://airlinerra.com'){
         return closedResponse();
       }
       const env=getEnvironment();
-      if(!env || env.AIRLINERRA_HOSTED_BACKEND_ENABLED!=='true' ||
-         env.AIRLINERRA_PRIVATE_PREVIEW_APPROVED!=='true'){
+      if(!env || env.AIRLINERRA_HOSTED_BACKEND_ENABLED!=='true'){
+        return closedResponse();
+      }
+      const verifiedMode=canonical?'canonical-prelaunch-test':'private-preview';
+      if(canonical
+        ? env.AIRLINERRA_HOSTED_RUNTIME_MODE!=='canonical-prelaunch-test' ||
+          env.AIRLINERRA_CANONICAL_PRELAUNCH_TEST_APPROVED!=='true'
+        : (env.AIRLINERRA_HOSTED_RUNTIME_MODE!==undefined &&
+           env.AIRLINERRA_HOSTED_RUNTIME_MODE!=='private-preview') ||
+          env.AIRLINERRA_PRIVATE_PREVIEW_APPROVED!=='true'){
         return closedResponse();
       }
       if(!(request instanceof Request)) return closedResponse();
-      // Set the trusted deploy context for the downstream existing guards.
-      // Explicitly override any forged or stale CONTEXT environment value.
-      const verifiedEnv={...env,CONTEXT:verifiedContext};
+      // Override the mutable build-time CONTEXT with trusted host metadata;
+      // each mode has separate Origin, access secret and activation switch.
+      const verifiedEnv={...env,CONTEXT:verifiedContext,
+        AIRLINERRA_HOSTED_RUNTIME_MODE:verifiedMode};
       // Origin, exact path, access secret and warm-instance budget are
       // checked BEFORE loading the DB driver or contacting Supabase Auth.
       const admission=previewGate.acquire(verifiedEnv,request);
       if(!admission.allowed)return closedResponse(admission.status);
       try{
+        // A warm test instance must never reuse a backend configured for a
+        // different mode. Normally mode is immutable for a Netlify deploy.
+        if(activeMode!==verifiedMode){
+          pending=null;
+          activeMode=verifiedMode;
+        }
         if(!pending){
           pending=Promise.resolve().then(()=>buildApp({env:verifiedEnv}));
         }
