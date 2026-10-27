@@ -6,7 +6,7 @@
 export const AIRLINERRA_PROJECT_REF = 'hwllkabgzaynalahvkpz';
 export const AIRLINERRA_AUTH_API = `https://${AIRLINERRA_PROJECT_REF}.supabase.co`;
 const ALLOWED_PREVIEW_CONTEXTS = new Set(['deploy-preview', 'branch-deploy']);
-const HTTPS_ORIGIN = /^https:\/\/[a-z0-9-]+(?:\.[a-z0-9-]+)+(?:\:[0-9]{2,5})?$/u;
+const HTTPS_ORIGIN = /^https:\/\/[a-z0-9-]+(?:\.[a-z0-9-]+)+(?::[0-9]{2,5})?$/u;
 const PUBLISHABLE_KEY = /^sb_publishable_[A-Za-z0-9_-]{16,128}$/u;
 const DOC_PATH = /^\/[A-Za-z0-9._/-]{1,160}\.html$/u;
 
