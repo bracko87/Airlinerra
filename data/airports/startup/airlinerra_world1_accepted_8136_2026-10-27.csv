@@ -836,7 +836,7 @@ OURAIRPORTS:19395,Banning Municipal Airport,Banning Municipal Airport,US,KBNG,KB
 OURAIRPORTS:19396,Barnwell Regional Airport,Barnwell Regional Airport,US,KBNL,KBNL,1560.3,ASP,Local,SAFE_BY_ICAO_PAVED_RULE,,,,1
 OURAIRPORTS:19397,Burns Municipal Airport,Burns Municipal Airport,US,KBNO,KBNO,1554.8,ASP,Regional,SAFE_BY_ICAO_PAVED_RULE,,,,1
 OURAIRPORTS:19398,Boone Municipal Airport,Boone Municipal Airport,US,KBNW,KBNW,1465.5,PEM,Local,SAFE_BY_ICAO_PAVED_RULE,,,,1
-OURAIRPORTS:19399,Bartow Executive Airport,Bartow Executive Airport,US,KBOW,KBOW,1524.3,ASP,Local,SAFE_BY_ICAO_PAVED_RULE,,,,2
+OURAIRPORTS:19399,Bartow Executive Airport,Bartow Executive Airport,US,KBOW,KBOW,1524.3,ASP,Local,SAFE_BY_ICAO_PAVED_RULE,1524,ACCEPT,https://www.airnav.com/airport/KBOW,2
 OURAIRPORTS:1940,Norman Wells Airport,Norman Wells Airport,CA,CYVQ,CYVQ,1828.2,ASP,Medium,KEEP_ORIGINAL_3140,,,,0
 OURAIRPORTS:19400,Big Spring Mc Mahon-Wrinkle Airport,Big Spring Mc Mahon-Wrinkle Airport,US,KBPG,KBPG,1402.4,ASP,Local,SAFE_BY_ICAO_PAVED_RULE,,,,1
 OURAIRPORTS:19401,Miley Memorial Field,Miley Memorial Field,US,KBPI,KBPI,2073.6,ASP,Regional,SAFE_BY_ICAO_PAVED_RULE,,,,1
@@ -2031,7 +2031,7 @@ OURAIRPORTS:20870,Tri Cities Airport,Tri Cities Airport,US,KPSC,KPSC,2349.1,ASP,
 OURAIRPORTS:20871,Pittsfield Municipal Airport,Pittsfield Municipal Airport,US,KPSF,KPSF,1765.4,ASP,Local,SAFE_BY_ICAO_PAVED_RULE,,,,1
 OURAIRPORTS:20872,New River Valley Airport,New River Valley Airport,US,KPSK,KPSK,1890.1,ASP,Regional,SAFE_BY_ICAO_PAVED_RULE,,,,1
 OURAIRPORTS:20873,Palestine Municipal Airport,Palestine Municipal Airport,US,KPSN,KPSN,1525.5,ASP,Local,SAFE_BY_ICAO_PAVED_RULE,,,,0
-OURAIRPORTS:20874,Palacios Municipal Airport,Palacios Municipal Airport,US,KPSX,KPSX,1524.3,CON,Local,SAFE_BY_ICAO_PAVED_RULE,,,,2
+OURAIRPORTS:20874,Palacios Municipal Airport,Palacios Municipal Airport,US,KPSX,KPSX,1524.3,CON,Local,SAFE_BY_ICAO_PAVED_RULE,1524,ACCEPT,https://www.airnav.com/airport/PSX,2
 OURAIRPORTS:20875,Dinwiddie County Airport,Dinwiddie County Airport,US,KPTB,KPTB,1524.6,ASP,Local,SAFE_BY_ICAO_PAVED_RULE,,,,0
 OURAIRPORTS:20877,Harry P Williams Memorial Airport,Harry P Williams Memorial Airport,US,KPTN,KPTN,1645.6,ASP,Local,SAFE_BY_ICAO_PAVED_RULE,,,,0
 OURAIRPORTS:20878,Atkinson Municipal Airport,Atkinson Municipal Airport,US,KPTS,KPTS,1676.4,ASP,Local,SAFE_BY_ICAO_PAVED_RULE,,,,0
