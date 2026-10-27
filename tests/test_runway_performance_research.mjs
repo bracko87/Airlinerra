@@ -32,3 +32,13 @@ test('requires explicit aircraft performance source and nonzero distances',()=>{
   {...takeoff(),requiredDistancesM:{toraM:1000,todaM:2000}}
  ]) assert.throws(()=>validatePerformanceScenario(bad));
 });
+
+test('Melun: clearway extends TODA, never TORA',()=>{
+ const r=check(takeoff(),[runway()]);
+ const row=r.candidates.find(c=>c.direction==='28');
+ assert.equal(row.numericStatus,'SUFFICIENT');
+ assert.deepEqual(row.checks.map(c=>c.availableM),[1972,2650,1972]);
+ const short=check(takeoff({toraM:2000,todaM:2500,asdaM:1900}),[runway()]);
+ assert.equal(short.candidates.find(c=>c.direction==='28').numericStatus,'INSUFFICIENT');
+ assert.equal(short.schedulingAllowed,false);
+});
