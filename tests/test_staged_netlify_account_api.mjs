@@ -89,6 +89,25 @@ test('warm staging function reuses one app/pool for concurrent invocations',asyn
   assert.equal(calls,9);
 });
 
+test('cached preview is immediately closed when runtime context changes to production',async()=>{
+  let builds=0;
+  const current=env();
+  const handler=createStagedNetlifyAccountHandler({
+    getEnvironment:()=>current,
+    buildApp:async()=>{
+      builds++;
+      return {enabled:true,handler:async()=>new Response('{"ok":true}',{status:200})};
+    }
+  });
+  assert.equal((await handler(request())).status,200);
+  current.CONTEXT='production';
+  assert.equal((await handler(request())).status,503);
+  assert.equal(builds,1);
+  current.CONTEXT='deploy-preview';
+  assert.equal((await handler(request())).status,200);
+  assert.equal(builds,1);
+});
+
 test('staging function redacts internal startup and handler failures',async()=>{
   let attempts=0;
   const handler=createStagedNetlifyAccountHandler({
