@@ -34,7 +34,10 @@ function matchesSecret(provided,expected){
 }
 
 function validPreviewOrigin(env,request){
-  const origin=env.AIRLINERRA_PREVIEW_ORIGIN;
+  const canonical=env.AIRLINERRA_HOSTED_RUNTIME_MODE==='canonical-prelaunch-test';
+  const origin=canonical
+    ? env.AIRLINERRA_CANONICAL_TEST_ORIGIN
+    : env.AIRLINERRA_PREVIEW_ORIGIN;
   if(typeof origin!=='string' || !(request instanceof Request))return false;
   let target,source;
   try{
@@ -50,6 +53,13 @@ function validPreviewOrigin(env,request){
     return false;
   }
   const hostname=target.hostname;
+  if(canonical){
+    // Production requires a separate prelaunch operator opt-in AND key.
+    // A private preview credential must never authorize the canonical site.
+    return env.CONTEXT==='production' &&
+      env.AIRLINERRA_CANONICAL_PRELAUNCH_TEST_APPROVED==='true' &&
+      origin==='https://airlinerra.com';
+  }
   if(env.CONTEXT==='deploy-preview'){
     return /^deploy-preview-[1-9][0-9]*--airlinerra\.netlify\.app$/u.test(hostname);
   }
@@ -74,7 +84,9 @@ export function createPreviewRequestGate({now=()=>Date.now()}={}){
   function acquire(env,request){
     if(!env || !validPreviewOrigin(env,request) ||
        !matchesSecret(request.headers.get(PREVIEW_ACCESS_HEADER),
-         env.AIRLINERRA_PREVIEW_ACCESS_SECRET)){
+         env.AIRLINERRA_HOSTED_RUNTIME_MODE==='canonical-prelaunch-test'
+           ? env.AIRLINERRA_CANONICAL_TEST_ACCESS_SECRET
+           : env.AIRLINERRA_PREVIEW_ACCESS_SECRET)){
       return {allowed:false,status:503};
     }
     const stamp=now();
