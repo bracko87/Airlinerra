@@ -45,7 +45,17 @@ function localCredentials(){
   const url=pick('api_url','apiurl');
   if (url!==API) throw new Error('Refusing nonlocal Supabase API endpoint.');
   if (JSON.stringify(data).includes(RESEARCH_REF)) throw new Error('Research project forbidden.');
-  return {key};
+  const adminKey=pick('service_role_key','servicerolekey','secret_key','secretkey');
+  if(typeof adminKey!=='string' || !/^eyJ[A-Za-z0-9._-]+$/u.test(adminKey)){
+    throw new Error('Local CLI did not expose an isolated admin role key.');
+  }
+  let role;
+  try{
+    const payload=adminKey.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
+    role=JSON.parse(Buffer.from(payload,'base64').toString('utf8')).role;
+  }catch{role=null;}
+  if(role!=='service_role')throw new Error('Admin key must belong only to local service role.');
+  return {key,adminKey};
 }
 async function rest(url,route,key,body,{method='POST',accessToken}={}){
   if (url!==API) throw new Error('Only local Supabase is permitted.');
@@ -140,7 +150,7 @@ async function mailFor(email,marker,seen=new Set()){
   throw new Error('Mailpit did not deliver '+marker+' message to synthetic test inbox');
 }
 async function run(){
-  const {key}=localCredentials();
+  const {key,adminKey}=localCredentials();
   const email='airlinerra-ci-'+randomBytes(7).toString('hex')+'@example.test';
   const originalPassword='A1-'+randomBytes(18).toString('hex');
   const nextPassword='B2-'+randomBytes(18).toString('hex');
@@ -181,6 +191,40 @@ async function run(){
   assert.equal(fresh.user.id,firstUser.id);
   await client.signOut();
   console.log('PASS: old password denied, new password accepted.');
+  // Test the actual Admin invite route, not browser signup, using ONLY
+  // the temporary local Auth admin key. Neither the key nor any token is logged.
+  const invitedEmail='airlinerra-invite-'+randomBytes(7).toString('hex')+'@example.test';
+  const invitedPassword='Invited-'+randomBytes(20).toString('hex');
+  const inviteRes=await fetch(API+'/auth/v1/invite?redirect_to='+
+    encodeURIComponent(ORIGIN+'/account.html?screen=verify'),{
+    method:'POST',signal:AbortSignal.timeout(12000),
+    headers:{apikey:key,authorization:'Bearer '+adminKey,
+      'content-type':'application/json'},
+    body:JSON.stringify({email:invitedEmail,data:{display_name:'Local Invited Tester'}})
+  });
+  assert.equal(inviteRes.status,200,'Local admin invitation must create a new unconfirmed tester.');
+  const invitedMail=await mailFor(invitedEmail,'invitation',seen);
+  const invitedLink=invitedMail.url;
+  const invitation=parseAuthCallback(invitedLink.search,'verify');
+  assert.equal(invitation.kind,'otp');
+  assert.equal(invitation.type,'invite');
+  assert.equal(invitation.purpose,'verify');
+  const invitedAuth=authAdapter(key);
+  const invitedService=createAuthService({supabase:{auth:invitedAuth},
+    origin:ORIGIN,enabled:true});
+  const accepted=await invitedService.completeCallback(invitation);
+  assert.equal(accepted.purpose,'invite');
+  assert.equal(accepted.sessionEstablished,true);
+  await invitedService.updatePassword(invitedPassword);
+  await assert.rejects(invitedService.updatePassword('Different-password-123456'),
+    /verified password recovery/);
+  const invitedLogin=await invitedService.signIn({
+    email:invitedEmail,password:invitedPassword
+  });
+  assert.equal(invitedLogin.user?.email,invitedEmail);
+  assert.ok(invitedLogin.user?.email_confirmed_at);
+  await invitedService.signOut();
+  console.log('PASS: real local admin invitation, Mailpit OTP, identity-bound initial password and login.');
   console.log('All local Supabase Auth + Mailpit stages passed. No cloud services used.');
 }
 run().catch(error=>{
