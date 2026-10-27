@@ -9,7 +9,7 @@
 - Email verification, invitation and password reset callback website: `https://airlinerra.com/account.html`
 - Sender purpose: authentication and transactional emails only, not Tennis Legacy health alerts or mass promotional email.
 - Resend account: use its existing company sender-domain registration; do not register `airlinerra.com` or buy an upgrade merely to use a separate From address on the verified company domain.
-- **Status: NOT LIVE.** This exact corporate domain is currently `failed` in Resend, so do not attempt SMTP delivery using it until Resend confirms `verified`.
+- **Status: DNS PUBLISHED; RESEND VERIFICATION PENDING.** The three required records were added to Namecheap and are already visible in public DNS. Resend verification was requested on 2026-10-27; its last checked domain status still reported `failed`, which may be cached pending verification. Do not send hosted mail until the domain status is explicitly `verified`.
 
 ## Domain verification prerequisites
 
@@ -27,7 +27,7 @@ Resend also displays an optional `rsend` CNAME → `send.forge.rmta.net` with st
 
 **Live DNS safety audit (27 October 2026):** The root domain currently receives company mail through **Zoho EU**: `MX 10 mx.zoho.eu`, `MX 20 mx2.zoho.eu`, and `MX 50 mx3.zoho.eu`. These MUST remain unchanged. Resend's `send` MX must be installed **only at the `send` subdomain**, never replacing or moving any of the Zoho root records. On Namecheap, MX editing can require switching the **domain-wide Mail Settings** mode to `Custom MX`; do **not** change that dropdown before comparing and preserving the Zoho delivery settings. If the UI cannot add a subdomain MX without affecting root Zoho mail, leave the MX pending and escalate to a DNS API or registrar support rather than risking normal corporate email.
 
-Public DNS checks also confirm that `resend._domainkey` TXT, `send` TXT and `send` MX are still missing. Namecheap is the authoritative DNS host (`dns1.registrar-servers.com` and `dns2.registrar-servers.com`). No authenticated Namecheap management session is connected, therefore these records have **not** been added. Do not request or paste Namecheap passwords into chat.
+**Update 2026-10-27:** The user saved an authenticated Namecheap browser session. All three missing Resend records were subsequently saved under `nextqueststudio.net` using its Advanced DNS editor. A public DNS lookup returned **Status 0 and the expected values** for `resend._domainkey` TXT, `send` SPF TXT, and `send` MX. The site ALIAS and www CNAME, the Zoho root SPF and DKIM records, and root MX priorities 10/20/50 were confirmed unchanged. The Resend `verify_domain` operation was invoked; its immediate follow-up `get_domain` continued showing `failed`. Wait for verified Resend status before enabling hosted Supabase SMTP. Do not request or paste Namecheap passwords into chat.
 
 **Preserve all root MX and other mail DNS records.** The SPF/MX records here use the dedicated `send` subdomain and do **not** alter where normal company incoming mail is received. Do not change DNS if an existing `send` TXT/MX record already has a conflicting purpose; investigate it first.
 
@@ -38,4 +38,4 @@ Public DNS checks also confirm that `resend._domainkey` TXT, `send` TXT and `sen
 3. Run a single authorized tester invitation, confirmation and recovery test after server-side access and legal settings have been verified. Do not change the main game-world release gates or send tester email before the callback UI is deployed.
 4. Monitor account-wide sending quotas. On 2026-10-27, the shared Resend account had 3/3 domain registrations and a daily sending limit of 100; Tennis Legacy's repeated system incident emails were separately stopped at their source in the Tennis Legacy database, leaving unrelated email services untouched.
 
-**No domain was removed; no sender records were written to Namecheap in this milestone.**
+**Three new Resend sending DNS records were saved to Namecheap and publicly resolved successfully. No existing domain or DNS record was deleted or altered, no mail was sent, and hosted SMTP is NOT yet active.**
