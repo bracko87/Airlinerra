@@ -103,3 +103,13 @@ test('landing requires independent LDA reference and landing mass limit',()=>{
   assert.equal(calculate(scenario({phase:'LANDING',operatingMassKg:67000}),reference(),landing).status,
     'AIRCRAFT_MASS_OUTSIDE_REFERENCE_LIMITS');
 });
+
+test('rejects reference mass points above documented aircraft limitations',()=>{
+  const r=calculate(scenario(),reference(),[
+    point(50000,1500,1700,1600),point(90000,2500,2800,2700)
+  ]);
+  assert.equal(r.status,'SOURCE_GRID_OUTSIDE_APPROVED_MASS_LIMITS');
+  assert.equal(r.schedulingAllowed,false);
+  assert.equal(calculate(scenario(),reference({sourceRevision:''})).status,
+    'REVIEWED_REFERENCE_NOT_AVAILABLE');
+});
