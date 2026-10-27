@@ -1,0 +1,6 @@
+airport_key,airport_name,country_iso,code,runway_m_historical,runway_surface_historical,rejection_reason
+OURAIRPORTS:4184,Creil Air Base,FR,LFPC,2399.1,CON,Documented permanent aerodrome closure; not playable
+OURAIRPORTS:21081,Hagler Army Heliport,US,KSLJ,1524.0,ASP,FAA-derived airport remark explicitly states no fixed-wing traffic allowed. Heliport is unsuitable for airline simulation.
+OURAIRPORTS:20305,Pollock Municipal Airport,US,L66,1371.3,ASP,FAA-reviewed runway condition FAILED or qualifying paved runway unavailable; not playable
+OURAIRPORTS:20615,Rosaschi Air Park,US,KN59,1463.0,ASP,FAA-reviewed runway condition FAILED or qualifying paved runway unavailable; not playable
+OURAIRPORTS:18485,Searchlight Airport,US,K1L3,1536.2,ASPH-G,FAA-reviewed runway condition FAILED or qualifying paved runway unavailable; not playable
