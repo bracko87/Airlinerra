@@ -31,6 +31,12 @@ Resend also displays an optional `rsend` CNAME → `send.forge.rmta.net` with st
 
 **Preserve all root MX and other mail DNS records.** The SPF/MX records here use the dedicated `send` subdomain and do **not** alter where normal company incoming mail is received. Do not change DNS if an existing `send` TXT/MX record already has a conflicting purpose; investigate it first.
 
+## Final sender DNS record — 27 October 2026
+
+After the initial three records verified successfully, Resend displayed **partially_verified** with one remaining SPF CNAME check. A second, owner-authorized, non-destructive Namecheap change added `CNAME rsend.nextqueststudio.net → send.forge.rmta.net` (TTL Automatic). The record was absent beforehand, saved in the authenticated Namecheap editor, and independently confirmed in public DNS (`Status=0`, exact expected CNAME target). Original company Zoho MX, SPF/DKIM and website ALIAS/www records were again confirmed unmodified.
+
+Resend `verify_domain` was retriggered after adding the CNAME. The most recent immediate verification response was `pending` for the domain and all four records; await its eventual final state before marking SMTP live. No real emails were sent and no other domains/records were removed.
+
 ## Hosting follow-up after Resend verifies domain
 
 1. In the existing Airlinerra Supabase project's Auth SMTP settings, use Resend's documented SMTP host/port and its secure credentials; the From address and sender name above must be configured there. Store credentials **only in secure provider settings**, never in GitHub, the public website, or Netlify static files.
