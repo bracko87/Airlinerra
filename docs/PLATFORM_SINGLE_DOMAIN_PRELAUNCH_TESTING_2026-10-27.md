@@ -7,6 +7,24 @@ The correct Airlinerra domain is **https://airlinerra.com/**. Until the game its
 
 The site's marketing/prelaunch pages may be public; that does not mean the game is released. Reuse the exact domain after launch, with public features enabled only through separate launch approval.
 
+## Step 2 — Auth invitation and confirmation code prepared (27 October 2026)
+
+**Code/test milestone completed; real public-domain email delivery and account login are NOT yet active.** No new Netlify site, Supabase project or hosting subscription has been created.
+
+- `website/auth-rules.mjs` now allows the exact canonical **`https://airlinerra.com`** for future verification and recovery redirects while keeping `PUBLIC_AUTH_ENABLED=false`. `www` or other domains do not qualify as account callback origins. The old localhost-only test harness was updated to preserve the existing local workflow.
+- `website/invited-tester-auth.mjs` is a **source-only, non-published** invited-user sign-in client pinned to the existing Airlinerra Supabase Auth project. It can sign in, verify an invitation, recover passwords and sign out, but exposes no signup method. It is intentionally omitted from the static site's `dist/` allowlist.
+- `server/hosted-auth-readiness.mjs` queries the Auth service's public `/auth/v1/settings` endpoint using the publishable key before the **canonical operator-test** backend creates a PostgreSQL pool. Startup fails closed unless `disable_signup=true`, `mailer_autoconfirm=false`, email authentication enabled and anonymous signup not enabled. **These settings have not yet been confirmed on the real hosted Auth service.** They must be configured in the Supabase Dashboard; a UI-side flag is not an authentication-provider security control.
+- `website/auth-service.mjs` handles Supabase `type=invite` OTP confirmation and permits exactly one password setup tied to the freshly verified invited user. The existing prelaunch UI uses the password setup screen after the invite succeeds. Ordinary signup confirmation and arbitrary PKCE links cannot authorize the reset screen.
+- `supabase/templates/invite.html` and the local `supabase/config.toml` include a dedicated Airlinerra invitation email with a one-time `token_hash` callback to `https://airlinerra.com/account.html?screen=verify&type=invite`. The normal confirmation and recovery templates were also tested against the official-domain URLs. **These templates are source assets, not yet installed into hosted Supabase Auth.**
+- The GitHub account Node/disposable Postgres regression [#40511157414](https://github.com/bracko87/Airlinerra/actions/runs/40511157414) passed; a separate local Auth/Mailpit workflow [#40511007507](https://github.com/bracko87/Airlinerra/actions/runs/40511007507) also passed. The pinned Netlify ZIP with synthetic invite-only Auth readiness passed earlier in [#40510463006](https://github.com/bracko87/Airlinerra/actions/runs/40510463006).
+
+### Real hosted setup still blocked
+
+1. **Supabase hosted Auth:** Using the existing Airlinerra project, set *Allow new users to sign up* to OFF, email confirmation ON, anonymous accounts OFF, email provider ON. Set Site URL to `https://airlinerra.com` and allow only the necessary `/account.html?screen=verify` and `/account.html?screen=reset` callbacks. Deploy the reviewed invite, confirmation and recovery templates through Supabase Auth Dashboard. **Do not send invites until the callback page is actually operational.** Only the Supabase Dashboard/Auth Admin API may create invited tester users.
+2. **Resend domain verification:** Read-only list of the connected sender account showed no `airlinerra.com` domain. Attempting to add it returned a **403 domain-limit error** (the plan has reached its limit). No domains were deleted, no plan upgraded and no DNS records touched. Sender-domain capacity must be resolved before a dedicated Airlinerra Resend SMTP sender can be verified. Do not reuse another game's branding/domain without approval. Existing local Mailpit remains available for test emails without a verified production sender.
+3. **Existing Netlify project:** Production account API is still undeployed and the public website still has `PUBLIC_AUTH_ENABLED=false`; an authenticated host-management session plus secure host environment setup is needed. The operator-only canonical backend needs a separately approved deployment using the tested esbuild→Netlify Functions packaging chain.
+4. **No user/game launch:** Invited Auth identity testing does NOT approve game account registration generally, airline creation, World 01, payments or game trial activation. Keep `airlinerra_game.platform_release_gate.enabled=false` and world states `planned` throughout setup.
+
 ## Step 1 implementation — source complete, NOT deployed
 
 The same-domain operator testing mode is now implemented as **source-only code**:
