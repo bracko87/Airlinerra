@@ -31,6 +31,12 @@ Resend also required `rsend` CNAME → `send.forge.rmta.net`. It was added in a 
 
 **Preserve all root MX and other mail DNS records.** The SPF/MX records here use the dedicated `send` subdomain and do **not** alter where normal company incoming mail is received. Do not change DNS if an existing `send` TXT/MX record already has a conflicting purpose; investigate it first.
 
+## Hosted Airlinerra Supabase Auth state — 27 October 2026
+
+The existing Airlinerra Supabase Dashboard project `hwllkabgzaynalahvkpz` now has public self-signup **OFF** (verified after save and reload), anonymous sign-ins **OFF**, Confirm Email **ON**, Email provider **enabled**, and manual account linking restored to its original **ON** state. Site URL is `https://airlinerra.com`, with exact verification/password-reset callback URLs allowlisted. The real database has zero registered users, zero airlines and no released game worlds.
+
+The SMTP Settings page was inspected read-only: **Custom SMTP toggle remains OFF** and no host, port, sender or credentials are configured. Resend has verified `nextqueststudio.net` (all four DNS records). The remaining action is to store a **sender-restricted Resend SMTP credential securely inside the Supabase Dashboard** together with the intended From name/address and connection settings. Do not transmit API keys through GitHub, the public site, chat or browser-automation text. No tester invitations or real email were sent, and the static account interface remains non-functional until separately deployed.
+
 ## Final sender DNS record — 27 October 2026
 
 After the initial three records verified successfully, Resend displayed **partially_verified** with one remaining SPF CNAME check. A second, owner-authorized, non-destructive Namecheap change added `CNAME rsend.nextqueststudio.net → send.forge.rmta.net` (TTL Automatic). The record was absent beforehand, saved in the authenticated Namecheap editor, and independently confirmed in public DNS (`Status=0`, exact expected CNAME target). Original company Zoho MX, SPF/DKIM and website ALIAS/www records were again confirmed unmodified.
