@@ -31,6 +31,27 @@ test('local Supabase config is isolated and requires email confirmation',async()
   assert.doesNotMatch(config,/hwllkabgzaynalahvkpz|service_role|sb_secret_|db\.supabase\.co/i);
 });
 
+test('canonical Airlinerra email links resolve only to approved HTTPS verification and recovery routes',async()=>{
+  const canonical='https://airlinerra.com';
+  const confirmation=(await read(TEMPLATE_DIR+'confirmation.html'))
+    .replaceAll('{{ .SiteURL }}',canonical).replaceAll('{{ .TokenHash }}',HASH)
+    .replaceAll('&amp;','&');
+  const recovery=(await read(TEMPLATE_DIR+'recovery.html'))
+    .replaceAll('{{ .SiteURL }}',canonical).replaceAll('{{ .TokenHash }}',HASH)
+    .replaceAll('&amp;','&');
+  for(const [source,screen,type] of [[confirmation,'verify','email'],[recovery,'reset','recovery']]){
+    const href=source.match(/href="([^"]+)"/)?.[1];
+    assert.ok(href);
+    const url=new URL(href);
+    assert.equal(url.origin,canonical);
+    assert.equal(url.pathname,'/account.html');
+    assert.equal(url.searchParams.get('screen'),screen);
+    assert.deepEqual(parseAuthCallback(url.search,screen),{
+      kind:'otp',token_hash:HASH,type,purpose:screen
+    });
+  }
+});
+
 test('confirmation template yields only a verified email OTP callback',async()=>{
   const html=await read(TEMPLATE_DIR+'confirmation.html');
   const url=new URL(linkFromTemplate(html));
