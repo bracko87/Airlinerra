@@ -25,6 +25,10 @@ Set the **following Resend-provided records in the currently authoritative DNS z
 
 Resend also displays an optional `rsend` CNAME → `send.forge.rmta.net` with status `not_started`; do not make unrelated DNS changes without verifying the Resend dashboard.
 
+**Live DNS safety audit (27 October 2026):** The root domain currently receives company mail through **Zoho EU**: `MX 10 mx.zoho.eu`, `MX 20 mx2.zoho.eu`, and `MX 50 mx3.zoho.eu`. These MUST remain unchanged. Resend's `send` MX must be installed **only at the `send` subdomain**, never replacing or moving any of the Zoho root records. On Namecheap, MX editing can require switching the **domain-wide Mail Settings** mode to `Custom MX`; do **not** change that dropdown before comparing and preserving the Zoho delivery settings. If the UI cannot add a subdomain MX without affecting root Zoho mail, leave the MX pending and escalate to a DNS API or registrar support rather than risking normal corporate email.
+
+Public DNS checks also confirm that `resend._domainkey` TXT, `send` TXT and `send` MX are still missing. Namecheap is the authoritative DNS host (`dns1.registrar-servers.com` and `dns2.registrar-servers.com`). No authenticated Namecheap management session is connected, therefore these records have **not** been added. Do not request or paste Namecheap passwords into chat.
+
 **Preserve all root MX and other mail DNS records.** The SPF/MX records here use the dedicated `send` subdomain and do **not** alter where normal company incoming mail is received. Do not change DNS if an existing `send` TXT/MX record already has a conflicting purpose; investigate it first.
 
 ## Hosting follow-up after Resend verifies domain
