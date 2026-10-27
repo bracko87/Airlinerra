@@ -2,6 +2,12 @@
 
 ## Current operating state — 2026-10-27 (supersedes older prelaunch database counts)
 
+### IMPLEMENTED SAME-DOMAIN OPERATOR ACCOUNT TEST MODE — 2026-10-27
+
+- In source only, `server/netlify-preview-template/airlinerra-accounts.mjs`, `server/hosted-runtime-config.mjs`, and `server/preview-access-guard.mjs` now support canonical **`https://airlinerra.com` prelaunch operator testing** without a second project/domain. Netlify's trusted **production + published** context, exact Airlinerra site identity, `AIRLINERRA_HOSTED_BACKEND_ENABLED=true`, `AIRLINERRA_HOSTED_RUNTIME_MODE=canonical-prelaunch-test`, `AIRLINERRA_CANONICAL_PRELAUNCH_TEST_APPROVED=true`, exact `AIRLINERRA_CANONICAL_TEST_ORIGIN=https://airlinerra.com`, and an independent high-entropy `AIRLINERRA_CANONICAL_TEST_ACCESS_SECRET` are ALL required. Legacy preview switches/keys **cannot** authorize official-domain traffic.
+- The operator test key is never stored in GitHub or public JS and is stripped before backend handler invocation. No Postgres credential is read prior to operator authorization. The prior preview backend remains supported behind independent preview-only flags and original hostname checks.
+- These changes are **not deployed**: production build remains static-only, `netlify.toml` does not register Functions, `PUBLIC_AUTH_ENABLED=false`, game worlds and player release switches remain closed, and public registration/airline activation are not enabled. Do not characterize the source code as a live account service. When later authorized to deploy on the existing site, reuse the validated Netlify CLI + esbuild prebundle steps from `.github/workflows/airlinerra-netlify-function-bundle-ci.yml`. See [single-domain handoff](docs/PLATFORM_SINGLE_DOMAIN_PRELAUNCH_TESTING_2026-10-27.md).
+
 ### OWNER DECISION: SINGLE OFFICIAL DOMAIN FOR ALL PRELAUNCH TESTING — 2026-10-27
 
 - **Use `https://airlinerra.com/` as the development/testing site while the game is not launched, and keep it as the official game site later.** This is the existing public Netlify project `airlinerra`, not a second host/domain/project. The owner explicitly does not require another Netlify deploy preview or paid hosting tier just to test the game. See [single-domain decision](docs/PLATFORM_SINGLE_DOMAIN_PRELAUNCH_TESTING_2026-10-27.md). This supersedes older directions implying separate preview hosting is required.
