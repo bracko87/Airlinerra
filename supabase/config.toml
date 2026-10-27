@@ -21,3 +21,7 @@ content_path = "./supabase/templates/confirmation.html"
 [auth.email.template.recovery]
 subject = "Airlinerra — Reset your password"
 content_path = "./supabase/templates/recovery.html"
+
+[auth.email.template.invite]
+subject = "Airlinerra — Your testing invitation"
+content_path = "./supabase/templates/invite.html"
