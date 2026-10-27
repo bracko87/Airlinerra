@@ -93,15 +93,30 @@ export function createStagedNetlifyAccountHandler({
         return closedResponse();
       }
       if(!(request instanceof Request)) return closedResponse();
-      // Override the mutable build-time CONTEXT with trusted host metadata;
-      // each mode has separate Origin, access secret and activation switch.
-      const verifiedEnv={...env,CONTEXT:verifiedContext,
-        AIRLINERRA_HOSTED_RUNTIME_MODE:verifiedMode};
-      // Origin, exact path, access secret and warm-instance budget are
-      // checked BEFORE loading the DB driver or contacting Supabase Auth.
-      const admission=previewGate.acquire(verifiedEnv,request);
+      // Read ONLY the mode-specific operator gate fields first. Do not
+      // spread env (or read DB credentials) before the operator is admitted.
+      const accessEnv=canonical ? {
+        CONTEXT:verifiedContext,
+        AIRLINERRA_HOSTED_RUNTIME_MODE:verifiedMode,
+        AIRLINERRA_CANONICAL_PRELAUNCH_TEST_APPROVED:
+          env.AIRLINERRA_CANONICAL_PRELAUNCH_TEST_APPROVED,
+        AIRLINERRA_CANONICAL_TEST_ORIGIN:env.AIRLINERRA_CANONICAL_TEST_ORIGIN,
+        AIRLINERRA_CANONICAL_TEST_ACCESS_SECRET:env.AIRLINERRA_CANONICAL_TEST_ACCESS_SECRET
+      } : {
+        CONTEXT:verifiedContext,
+        AIRLINERRA_HOSTED_RUNTIME_MODE:verifiedMode,
+        AIRLINERRA_PREVIEW_ORIGIN:env.AIRLINERRA_PREVIEW_ORIGIN,
+        AIRLINERRA_PREVIEW_ACCESS_SECRET:env.AIRLINERRA_PREVIEW_ACCESS_SECRET
+      };
+      // Origin, exact path, access secret and request budget are checked
+      // BEFORE touching database credentials, loading pg or checking Auth.
+      const admission=previewGate.acquire(accessEnv,request);
       if(!admission.allowed)return closedResponse(admission.status);
       try{
+        // Only an admitted request may read the remaining runtime secrets.
+        // The platform-owned deploy CONTEXT overrides mutable build metadata.
+        const verifiedEnv={...env,CONTEXT:verifiedContext,
+          AIRLINERRA_HOSTED_RUNTIME_MODE:verifiedMode};
         // A warm test instance must never reuse a backend configured for a
         // different mode. Normally mode is immutable for a Netlify deploy.
         if(activeMode!==verifiedMode){
