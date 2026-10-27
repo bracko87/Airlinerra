@@ -1,0 +1,43 @@
+name: Airlinerra apply hosted Auth email templates (manual only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type APPLY AIRLINERRA EMAIL TEMPLATES (only this prelaunch project)'
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: airlinerra-hosted-auth-email-templates
+  cancel-in-progress: false
+
+jobs:
+  update:
+    if: github.event.inputs.confirmation == 'APPLY AIRLINERRA EMAIL TEMPLATES'
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test template payload and fail-closed API guards
+        run: |
+          node --check server/apply-hosted-auth-templates.mjs
+          node --test tests/test_hosted_auth_template_management.mjs
+      - name: Fail closed if dedicated token not provided
+        env:
+          ACCESS: ${{ secrets.AIRLINERRA_SUPABASE_AUTH_TEMPLATES_TOKEN }}
+        run: |
+          if [ -z "$ACCESS" ]; then
+            echo "Required repository secret AIRLINERRA_SUPABASE_AUTH_TEMPLATES_TOKEN is not configured."
+            exit 1
+          fi
+      - name: Apply only three reviewed templates, verify hosted persistence
+        env:
+          AIRLINERRA_SUPABASE_AUTH_TEMPLATES_TOKEN: ${{ secrets.AIRLINERRA_SUPABASE_AUTH_TEMPLATES_TOKEN }}
+        run: node server/apply-hosted-auth-templates.mjs --apply
