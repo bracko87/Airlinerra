@@ -92,5 +92,21 @@ JOIN airlinerra.airport_registry r ON r.airport_key=sv.airport_key
 JOIN airlinerra.airport_access_reviews a ON a.airport_key=sv.airport_key;
 REVOKE ALL ON airlinerra.runway_research_facts FROM PUBLIC,anon,authenticated;
 
+-- Third installed migration: airlinerra_private_runway_direction_research_takeoff_landing_gate_20261027
+ALTER TABLE airlinerra.runway_direction_facts
+ ADD COLUMN takeoff_status text NOT NULL DEFAULT 'UNVERIFIED'
+   CHECK(takeoff_status IN('UNVERIFIED','PROHIBITED','CONDITIONAL','PERMITTED_BY_AIP')),
+ ADD COLUMN landing_status text NOT NULL DEFAULT 'UNVERIFIED'
+   CHECK(landing_status IN('UNVERIFIED','PROHIBITED','CONDITIONAL','PERMITTED_BY_AIP'));
+COMMENT ON COLUMN airlinerra.runway_direction_facts.takeoff_status
+ IS 'Research source direction-specific operation gate; does not grant commercial airline permission.';
+COMMENT ON COLUMN airlinerra.runway_direction_facts.landing_status
+ IS 'Research source direction-specific operation gate; does not grant commercial airline permission.';
+
+-- Seed only the backed prohibitions after installing direction facts:
+-- LFPB RW09: landing_status PROHIBITED.
+-- LFPB RW27: takeoff_status PROHIBITED.
+-- Both are already set in the private DB; do not re-import without verification.
+
 -- Deliberately no grants or RLS policies for API users.
 -- The installed migration also has explanatory PostgreSQL table/view comments.
