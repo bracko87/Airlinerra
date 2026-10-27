@@ -136,6 +136,48 @@ test('staging function redacts internal startup and handler failures',async()=>{
   assert.equal(attempts,2);
 });
 
+test('missing or forged platform deploy/site metadata fails before any secret read',async()=>{
+  let reads=0,builds=0;
+  const handler=createStagedNetlifyAccountHandler({
+    getEnvironment:()=>{reads++;return {...env(),CONTEXT:'deploy-preview'};},
+    buildApp:async()=>{builds++;return {enabled:true,handler:async()=>new Response('{}',{status:200})};}
+  });
+  const valid=PLATFORM();
+  const blocked=[
+    undefined,
+    {},
+    {deploy:{context:'deploy-preview',published:false}},
+    {...valid,site:{name:'different-netlify-project',url:'https://airlinerra.com'}},
+    {...valid,site:{name:'airlinerra',url:'https://evil.example'}},
+    {...valid,deploy:{context:'production',published:false}},
+    {...valid,deploy:{context:'deploy-preview',published:true}},
+    {...valid,deploy:{context:'dev',published:false}}
+  ];
+  for(const platform of blocked){
+    assert.equal((await handler(request(),platform)).status,503);
+  }
+  assert.equal(reads,0,'No secrets accessed without platform authorization');
+  assert.equal(builds,0);
+  assert.equal((await handler(request(),valid)).status,200);
+  assert.equal(reads,1);
+  assert.equal(builds,1);
+});
+
+test('platform context overrides contradictory build-time CONTEXT environment value',async()=>{
+  const runtime={...env(),CONTEXT:'production'};
+  let seen=null;
+  const handler=createStagedNetlifyAccountHandler({
+    getEnvironment:()=>runtime,
+    buildApp:async({env:verifiedEnv})=>{
+      seen=verifiedEnv.CONTEXT;
+      return {enabled:true,handler:async()=>new Response('{}',{status:200})};
+    }
+  });
+  assert.equal((await handler(request(),PLATFORM())).status,200);
+  assert.equal(seen,'deploy-preview');
+  assert.equal(runtime.CONTEXT,'production','Input env is never modified');
+});
+
 test('production context cannot create an app even with both flags enabled',async()=>{
   const handler=createStagedNetlifyAccountHandler({
     getEnvironment:env,
