@@ -81,3 +81,26 @@ There were **25** French registry candidates without access-review rows before t
 - **Zero** entries added to World 1, **zero** source rows overwritten, **zero** final category assignments. Category names remain **Local, Regional, Medium, Large, Major Hub, Mega Hub**.
 
 **Next:** Twenty-two French candidates lacked access-review rows after France Batch 1; four of them are now covered by Batch 2, leaving **18** pending access-review creation if no concurrent process has changed this subset. Continue direct French SIA AIP investigation for additional civilian sites, or use a deliberately separate military access research stream; do not conflate runway eligibility with legal passenger service.
+
+---
+
+## France Batch 03 — military access and specific runway-material verification (2026-10-26)
+
+Batch `FR_SPECIALIST_03_2026_10_26`, source evidence IDs **2180–2188** (9 observations), new access-review rows for **4 airports**, audit event IDs **46–49**. No World 1 admissions or changes to the original registry. Source edition: French SIA eAIP October 1, 2026.
+
+| ICAO | Source-runway comparison | Physical independent status | Flight access |
+|---|---|---|---|
+| LFRJ Landivisiau | Registry 2699.9m CON. SIA AD2 official **2700×45m concrete** RW07/25. Non-based aircraft normally only **2410m TORA/TODA/ASDA**, full 2700m with prior request; nominal LDA 2700m. | **VERIFIED** | French Navy airbase **not open to public air traffic**, special permission/PPR 48h. |
+| LFOA Avord | Registry 3503.1m ASP. SIA RW06/24 **3503×45m macadam** (not explicitly asphalt or concrete). RW06 ASDA 3903m includes 400m stopway, **not** added physical length. | **UNVERIFIED** specific material; registry provisional `RUNWAY_QUALIFIED` untouched | Military BA702 **not open to public air traffic**; civil permission at least 72h beforehand. |
+| LFMO Orange-Caritat | Registry 2410.7m CON. SIA RW14/32 **2407×45m macadam**, with **330m** concrete at one threshold and **262m** concrete at other. The short concrete sections alone cannot independently establish a continuous ≥1200m runway of explicit asphalt/concrete material. | **UNVERIFIED** specific qualifying surface; provisional original registry screen retained | Military BA115 **not open to public air traffic**, requires flight director approval. |
+| LFBF Toulouse-Francazal | Registry 1800.1m ASP. Airport operator RW11/29 **1800×45m paved**. Main-runway contractor Spie batignolles documents 2020 runway bituminous rehabilitation (overall project 40,000 tonnes bituminous mix; **do not assign this whole tonnage to runway**). | **VERIFIED** research asphalt-pavement gate; October 2026 directional TORA/LDA still unchecked | Civil airport, **airport-operator authorization required** before arrival. |
+
+**Official October 2026 SIA AD2 sources:** 
+- https://www.sia.aviation-civile.gouv.fr/media/dvd/eAIP_01_OCT_2026/FRANCE/AIRAC-2026-10-01/html/eAIP/FR-AD-2.LFRJ-fr-FR.html
+- https://www.sia.aviation-civile.gouv.fr/media/dvd/eAIP_01_OCT_2026/FRANCE/AIRAC-2026-10-01/html/eAIP/FR-AD-2.LFOA-fr-FR.html
+- https://www.sia.aviation-civile.gouv.fr/media/dvd/eAIP_01_OCT_2026/FRANCE/AIRAC-2026-10-01/html/eAIP/FR-AD-2.LFMO-fr-FR.html
+
+**Civil airport operator:** https://toulouse-francazal.aeroport.fr/en/domaines-application/pilot-info/  
+**Actual runway rehabilitation contractor:** https://www.spiebatignolles.fr/realisation/aeroport-toulouse-francazal/
+
+All four `commercial_permission_status='UNVERIFIED'` and `game_admission_status='NOT_APPROVED'`; military/civilian operating restrictions encoded in `civilian_access_status`. Total France missing-access-review candidates went from 18 to **14** following these four records. The unchanged six classification tiers are **Local, Regional, Medium, Large, Major Hub, Mega Hub**.
