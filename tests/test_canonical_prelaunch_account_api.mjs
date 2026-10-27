@@ -140,7 +140,13 @@ test('confirmed synthetic user reaches exactly the closed release gate without e
     getEnvironment:ENV,
     buildApp:({env})=>buildPrivatePreviewAccountApp({
       env,loadPg:async()=>({Pool}),
-      fetchImpl:async()=>{
+      fetchImpl:async url=>{
+        if(url.endsWith('/auth/v1/settings')){
+          return new Response(JSON.stringify({
+            disable_signup:true,mailer_autoconfirm:false,
+            external:{email:true,anonymous_users:false}
+          }),{status:200,headers:{'content-type':'application/json'}});
+        }
         authFetches++;
         return new Response(JSON.stringify({
           id:USER,email_confirmed_at:'2026-10-27T00:00:00Z',is_anonymous:false
@@ -172,7 +178,13 @@ test('unauthorized players receive 401 before any database connections',async()=
     getEnvironment:ENV,
     buildApp:({env})=>buildPrivatePreviewAccountApp({
       env,loadPg:async()=>({Pool}),
-      fetchImpl:async()=>{throw Error('Do not call Auth for rejected token syntax');}
+      fetchImpl:async url=>{
+        if(url.endsWith('/auth/v1/settings'))return new Response(JSON.stringify({
+          disable_signup:true,mailer_autoconfirm:false,
+          external:{email:true,anonymous_users:false}
+        }),{status:200,headers:{'content-type':'application/json'}});
+        throw Error('Do not call Auth for rejected token syntax');
+      }
     })
   });
   assert.equal((await handler(request(SECRET,'short'),PLATFORM())).status,401);
