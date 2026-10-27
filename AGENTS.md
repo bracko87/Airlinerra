@@ -2,6 +2,14 @@
 
 
 
+### LIVE AIRLINERRA CUSTOM SMTP CONFIGURED SECURELY — 2026-10-27 (LATEST)
+
+- Resend API Keys browser and existing Airlinerra Supabase Dashboard were both authenticated in the same secure browser session. **A new key `Airlinerra Supabase Auth SMTP` was created** with **Sending access ONLY**, scoped to verified `nextqueststudio.net`. The one-time token was transferred directly by browser copy/paste into the **secure Supabase SMTP password field**, without printing, exposing or recording the key in chat/GitHub.
+- Live **Supabase Auth → SMTP** for Airlinerra project `hwllkabgzaynalahvkpz` is now **ENABLED**, saved successfully and verified after page reload: host `smtp.resend.com`, port `465`, username `resend`, From address `noreply@nextqueststudio.net`, displayed sender name `Airlinerra - NextQuest Studio` (ASCII hyphen as reported by the browser), secret password stored/obfuscated. Intended sender naming convention uses `Airlinerra — NextQuest Studio` (em dash), a future cosmetic consistency check; do not rotate/recreate the key solely for the dash.
+- Connected Resend independent read-only check confirmed that the new key name exists and sender domain is `verified` with all four DNS records verified. **No transactional test email has been sent**; completing SMTP settings is NOT the same as proving delivery.
+- Public signup OFF, anonymous accounts OFF, confirmed email ON remain in place. Live DB independently checked: `auth.users=0`, airlines=0, game gate disabled, game worlds open=0, site `prelaunch`. Website account UI and private API are source-only/not deployed. **Do not send an invitation until the matching official-domain callback UI and protected backend are intentionally deployed/testable and owner-approved.** No public release or payments were enabled.
+- Older milestones below stating SMTP is OFF, Resend key does not exist, or Resend sender domain is failed are HISTORICAL and superseded by this block. See [corporate sender setup](docs/PLATFORM_NEXTQUEST_STUDIO_EMAIL_SENDER_2026-10-27.md).
+
 ## Current operating state — 2026-10-27 (supersedes older prelaunch database counts)
 
 ### AIRLINERRA CUSTOM SMTP — CREDENTIAL HANDOFF PENDING (2026-10-27)
