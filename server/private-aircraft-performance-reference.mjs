@@ -157,6 +157,7 @@ export function calculateReviewedAircraftPerformance({scenario,reference,points}
     return blocked('AIRCRAFT_MASS_OUTSIDE_REFERENCE_LIMITS',['MASS_LIMIT_EXCEEDED_OR_UNDERFLOW']);
   }
   const grid=checkedGrid(points,s);
+  // Reject review grid entries beyond this aircraft variant's documented mass limits.
   if(grid.some(p=>p.mass<number(reference.minReferenceMassKg) || p.mass>max)) {
     return blocked('SOURCE_GRID_OUTSIDE_APPROVED_MASS_LIMITS',['UNREVIEWED_PERFORMANCE_MASS_RANGE']);
   }
