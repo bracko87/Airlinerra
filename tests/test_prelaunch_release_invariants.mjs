@@ -39,7 +39,8 @@ test('server-only private preview is gated twice and blocks production context',
   assert.match(runtime,/if\(!config\.enabled\)/);
   assert.match(runtime,/loadPg=loadServerPostgresDriver/);
   const loader=await source('website/server-only-pg-loader.mjs');
-  assert.match(loader,/return import\('pg'\);/);
+  assert.match(loader,/import pg from 'pg';/);
+  assert.match(loader,/return pg;/);
   const build=await source('website/dev-scripts/build.mjs');
   assert.doesNotMatch(build,/server-only-pg-loader/);
   assert.match(stack,/if\(!enabled\)return createHostedAccountRouter\(\)/);
