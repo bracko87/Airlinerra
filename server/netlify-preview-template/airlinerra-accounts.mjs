@@ -52,7 +52,9 @@ export function createStagedNetlifyAccountHandler({
     try{
       const env=getEnvironment();
       if(!env || env.AIRLINERRA_HOSTED_BACKEND_ENABLED!=='true' ||
-         env.AIRLINERRA_PRIVATE_PREVIEW_APPROVED!=='true'){
+         env.AIRLINERRA_PRIVATE_PREVIEW_APPROVED!=='true' ||
+         !['deploy-preview','branch-deploy'].includes(env.CONTEXT)){
+        // Recheck context even for a warm cached app; production is forbidden.
         return closedResponse();
       }
       if(!(request instanceof Request)) return closedResponse();
