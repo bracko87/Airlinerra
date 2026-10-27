@@ -44,7 +44,7 @@ export async function inspectCanonicalTesterAuthReadiness({
      settings.disable_signup!==true ||
      settings.mailer_autoconfirm!==false ||
      settings.external?.email!==true ||
-     settings.external?.anonymous_users===true){
+     settings.external?.anonymous_users!==false){
     throw new Error('Supabase Auth must block public signup and require confirmed email.');
   }
   return Object.freeze({
