@@ -2,6 +2,21 @@
 
 **Owner decision:** Use the existing NextQuest Studio corporate domain **`nextqueststudio.net`** as the outbound sender for Airlinerra invitations, confirmations and password recovery instead of registering a fourth sending domain. **Never remove or replace any existing Resend domain.** Airlinerra's official website remains `https://airlinerra.com`.
 
+## SMTP connection values confirmed (27 October 2026)
+
+Resend's documented TLS/SMTP connection is **host `smtp.resend.com`, port `465`, username `resend`**. The SMTP password is a Resend API key; create a **dedicated `sending_access` key restricted to the already verified `nextqueststudio.net` domain** (do not reuse older keys owned by other projects). Configure in the **existing** Airlinerra Supabase project's Authentication → SMTP Settings:
+
+- Enable Custom SMTP only when the scoped credential can be immediately entered and saved securely.
+- Sender name: `Airlinerra — NextQuest Studio`.
+- Sender email: `noreply@nextqueststudio.net`.
+- Host / port / username: `smtp.resend.com` / `465` / `resend`.
+- SMTP password: dedicated scoped key, entered **only** into Supabase's credential field; never copied into GitHub, public JS, logs, a chat response or a browser-automation goal. Do not expose it by using the Resend connector's create-key action, which requires displaying the one-time token in the chat.
+- Confirm the SMTP settings' actual saved state and the project is still invite-only **before** considering any tester email. The `https://airlinerra.com/account.html` callback UI is currently disabled publicly, so **do not send a real invite until the UI is operational**.
+- Resend account has an existing `supabase-smtp` key but its age/ownership and sender-domain scope were not independently confirmed; **do not reuse it** for Airlinerra.
+- The secure-browser Resend session was tested 2026-10-27 and found **signed out** at `https://resend.com/api-keys`. A new secure profile-sign-in session was prepared in chat. No key was created or modified; current Supabase SMTP remains OFF.
+
+References: [Resend SMTP](https://resend.com/changelog/smtp-service), [Supabase Auth Custom SMTP](https://supabase.com/docs/guides/auth/auth-smtp).
+
 ## Proposed sender configuration
 
 - From display name: `Airlinerra — NextQuest Studio`
