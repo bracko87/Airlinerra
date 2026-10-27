@@ -1,6 +1,8 @@
 # Airlinerra — official domain is also the prelaunch testing site
 **Owner direction — 27 October 2026**
 
+## Current decision
+
 ## Hosted Supabase Auth configuration completed — 27 October 2026
 
 In the **existing** Airlinerra Supabase project `hwllkabgzaynalahvkpz`, the actual Auth Dashboard was configured, and the final state rechecked after saving/reloading: **public self-signup OFF; anonymous sign-ins OFF; email confirmation ON; Email provider enabled; original manual account-linking setting ON**. The canonical Auth Site URL is `https://airlinerra.com`, and exact callback allowlist URLs `https://airlinerra.com/account.html?screen=verify` and `https://airlinerra.com/account.html?screen=reset` have been added. First dashboard attempt inadvertently changed manual linking to OFF and one save did not persist public signup OFF; both were subsequently corrected and independently verified after reload.
