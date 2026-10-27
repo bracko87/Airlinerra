@@ -2,6 +2,12 @@
 
 ## Current operating state — 2026-10-27 (supersedes older prelaunch database counts)
 
+### OWNER DECISION: SINGLE OFFICIAL DOMAIN FOR ALL PRELAUNCH TESTING — 2026-10-27
+
+- **Use `https://airlinerra.com/` as the development/testing site while the game is not launched, and keep it as the official game site later.** This is the existing public Netlify project `airlinerra`, not a second host/domain/project. The owner explicitly does not require another Netlify deploy preview or paid hosting tier just to test the game. See [single-domain decision](docs/PLATFORM_SINGLE_DOMAIN_PRELAUNCH_TESTING_2026-10-27.md). This supersedes older directions implying separate preview hosting is required.
+- **Important distinction:** publicly accessible prelaunch website ≠ public game registration or launched game. Browser Auth remains off, account/airline API is not deployed, database game release gate stays off, game worlds remain closed, and payments remain off. Using the public website to test appearance, navigation, etc. is already allowed. A future same-domain operator-only account test API requires a **separate opt-in, auth/edge protections and code changes**; do not enable the older preview-only Function on the canonical site by defeating its production-context checks.
+- Existing `server/netlify-preview-template/` and `server/hosted-runtime-config.mjs` still refuse `production` and `airlinerra.com` by design. Keep these fail-closed until a reviewed, source-tested **same-domain prelaunch backend test mode** replaces them. Any eventual host configuration must be performed within the existing Netlify project, not a new project. Never expose real secrets, enable public player signup or open a world as part of this plan correction.
+
 ### TRUSTED NETLIFY RUNTIME CONTEXT AND FREE EDGE LIMIT — 2026-10-27
 
 - **Correction: Netlify's `CONTEXT` is a build-time variable, not a guaranteed Function runtime variable.** Account entrypoint `server/netlify-preview-template/airlinerra-accounts.mjs` now requires Netlify's trusted `(request,context)` API and verifies `context.deploy.context` belongs to `deploy-preview`/`branch-deploy`, `context.deploy.published=false`, and `context.site.name='airlinerra'` and `context.site.url='https://airlinerra.com'`, **before reading any environment variables or initializing the backend**. It injects the verified context into downstream app guards. Never revert to trusting `process.env.CONTEXT`. Source: https://docs.netlify.com/build/functions/api/ and https://docs.netlify.com/build/functions/environment-variables/.
