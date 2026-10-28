@@ -1,3 +1,12 @@
+# CURRENT - 28 October 2026: AIRLINE CREATION 503 FIX AND AIRPORT PANEL CLEANUP
+
+Owner's confirmed setup returned two 503 responses from /api/v1/airlines. Supabase logs at 20:53 UTC showed "Airlinerra world is not open for airline registration". Root cause: BEFORE INSERT trigger `airlinerra_game.require_open_world_for_airline()` still denied planned World 1 even though `create_airline_once` already had a verified-owner private-pilot exception. SQL migration `supabase/migrations/20261028215500_airlinerra_owner_world1_airline_trigger_exception.sql` is now applied: the trigger retains ordinary open-world protection but allows only planned World 1, only for a confirmed, unbanned, active reserved-email owner with recorded `owner_private_pilot_consents` matching `owner_private_pilot_20261028`. It does not enable public world gates or INSERT grants to anon/authenticated/service_role. A real create_airline_once invocation in BEGIN/ROLLBACK completed successfully, leaving zero airlines, zero world memberships, public gate closed. Never imply an airline was actually created.
+
+User also crossed out category provisional status, coordinates and airport type on the right-side setup information panel. Those 3 DOM rows and JS update calls are now removed in `website/private-player-app.html` and `website/player-app.mjs`; category, location, runway and pending demand bars remain. These static UI changes require owner's manual Netlify deploy after review. The database trigger fix is already live and needs no Netlify deploy. Local preview stays an authenticated read-only option.
+
+Use normal ASCII hyphens in all user-facing prose; maintain GitHub main -> local test -> manual Netlify deploy workflow, no auto deploy.
+
+---
 # CURRENT - 28 October 2026: WORLD 1 AIRPORT ONBOARDING LOCAL TEST
 
 Owner requested: Kosovo (XK) must be a separate selectable game country (Pristina under Kosovo), Aleksandrovo Airport LYAL in Serbia, category badges next to dropdown airport rows, right-side airport details (name/code/location/runway/six-level category), passenger/cargo demand 0%-100% scales with UNKNOWN until measured, and downward menus must not overlap subsequent fields. Use ASCII hyphens, not em-dashes in user-facing UI.
