@@ -201,6 +201,12 @@ async function loadPlayerReadData({local=false}={}){
         (first.premiumUnlimited===true?' · Premium Unlimited':' · Registered airline');
       doc.getElementById('player-airline-name').textContent=first.name;
       doc.getElementById('player-cash').textContent=first.cashUsd+' USD';
+      if(first.id&&auth?.getAirlineLogoUrl){
+       auth.getAirlineLogoUrl(first.id).then(url=>{
+        const img=doc.getElementById('player-existing-logo');
+        if(img&&url){img.src=url;img.hidden=false;}
+       }).catch(()=>{});
+      }
     }else{
       doc.getElementById('top-airline-state').textContent='No airline created · Complete airline setup';
       doc.getElementById('top-world').textContent='WORLD 01 · REGISTRATION';
@@ -273,7 +279,7 @@ async function loadRealOnboarding(){
   const options=doc.getElementById('setup-world');
   options.replaceChildren(new Option('Choose a world',''));
   for(const world of ctx.worlds)options.append(new Option(world.name,String(world.worldId)));
-  options.disabled=false;
+  options.disabled=false;refreshMenu('setup-world');summarize();
   const info=doc.getElementById('setup-legal-approval');
   info.replaceChildren();
   for(const [name,url] of [['Terms',ctx.policy.termsUrl],['Privacy',ctx.policy.privacyUrl]]){
@@ -289,12 +295,11 @@ async function loadRealOnboarding(){
     ?' I acknowledge the Privacy review draft ':' I acknowledge the Privacy Policy ';
   for(const id of ['setup-airline-name','setup-accept-terms','setup-accept-privacy','setup-create-airline'])
    doc.getElementById(id).disabled=false;
-  status.textContent=ctx.privatePilot
-    ?'Invitation-only owner pilot: review drafts are not published Terms or Privacy. Unlimited premium, no expiry and no billing.'
-    :'Official documents and eligible worlds loaded from the protected database.';
+  status.textContent='Choose your country, home airport and airline name.';
+  doc.getElementById('setup-airline-logo').disabled=false;
  }catch{
   onboardingContext=null;
-  status.textContent='Registration is not open yet. The official legal policy and World 1 must be approved before real airline creation.';
+  status.textContent='Airline setup is temporarily unavailable. Please try again later.';
  }
 }
 async function prepareLogo(file){
@@ -361,7 +366,7 @@ doc.getElementById('setup-create-airline').addEventListener('click',()=>{
 doc.getElementById('setup-final-create').addEventListener('click',async()=>{
  const status=doc.getElementById('setup-draft-feedback');
  if(!onboardingContext||!onboarding)return;
- const btn=doc.getElementById('setup-create-airline');
+ const btn=doc.getElementById('setup-final-create');
  btn.disabled=true;
  try{
   const worldId=Number(doc.getElementById('setup-world').value);
@@ -380,13 +385,16 @@ doc.getElementById('setup-final-create').addEventListener('click',async()=>{
   });
   const record=await onboarding.createAirline({worldId,homeAirportKey:home,airlineName});
   if(!record?.airlineId)throw Error('Airline ID not returned');
-  status.textContent='Airline created and saved to Supabase. Your dashboard is ready.';
+  doc.getElementById('setup-confirm-dialog').close();
+  if(logoBlob){try{await auth.uploadAirlineLogo({airlineId:record.airlineId,blob:logoBlob});}
+   catch{status.textContent='Airline created. Logo upload failed; you can add it later.';}}
+  if(!status.textContent.includes('Logo upload failed'))status.textContent='Airline created successfully.';
   doc.getElementById('player-airline-name').textContent=airlineName;
   doc.getElementById('player-cash').textContent=String(record.cashUsd)+' USD';
   await loadPlayerReadData({local:window.location.origin==='http://localhost:5188'});
   window.history.replaceState({},'','/player.html#overview');navigateTo('overview');
  }catch(error){
-  status.textContent=error?.message||'Airline creation failed. No money was credited.';
+  status.textContent=error?.message||'Unable to create your airline.';
  }finally{btn.disabled=false;}
 });
 doc.getElementById('setup-save-draft').addEventListener('click',()=>{
@@ -434,12 +442,10 @@ function prepareDemoSettings(){
   if(d&&['12','24'].includes(d.time))doc.getElementById('settings-time').value=d.time;
  }catch{/* no persisted settings */}
 }
-doc.getElementById('setup-country').addEventListener('change',()=>{
- const select=doc.getElementById('setup-airport-results');
- select.replaceChildren(new Option('Search and select an airport',''));
- select.disabled=true;
- doc.getElementById('setup-draft-feedback').textContent='Search for a home airport in the selected country.';
-});
+doc.getElementById('setup-country').addEventListener('change',()=>{void loadSetupAirports();});
+doc.getElementById('setup-world').addEventListener('change',summarize);
+doc.getElementById('setup-airport-results').addEventListener('change',summarize);
+doc.getElementById('setup-airline-name').addEventListener('input',summarize);
 doc.getElementById('setup-airport-search').addEventListener('click',()=>{void airportSearch({setup:true});});
 doc.getElementById('airports-search').addEventListener('click',()=>{nextAirportOffset=null;void airportSearch();});
 doc.getElementById('airports-more').addEventListener('click',()=>{if(nextAirportOffset!==null)void airportSearch({offset:nextAirportOffset});});
