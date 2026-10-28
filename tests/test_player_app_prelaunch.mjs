@@ -80,35 +80,29 @@ test('player page and build surface contain no write routes or exposed credentia
   assert.match(overlay,/player-app-model\.mjs/);
 });
 
-test('player navigation is horizontal, sectioned and keeps all ten routes accessible',async()=>{
+test('grouped horizontal dropdowns keep all ten game routes accessible',async()=>{
   const [html,css]=await Promise.all([
     readFile(new URL('../website/private-player-app.html',import.meta.url),'utf8'),
     readFile(new URL('../website/player-app.css',import.meta.url),'utf8')
   ]);
   assert.match(html,/<nav class="app-navigation" aria-label="Player application">/);
-  assert.doesNotMatch(html,/class="sidebar"|<aside class="sidebar"/);
+  assert.doesNotMatch(html,/class="sidebar"/);
   const order=['manager','operations','fleet','finance','account'];
-  const expected={
-    manager:['overview','onboarding','profile'],
-    operations:['worlds','airports','routes','schedule'],
-    fleet:['fleet'],
-    finance:['finances'],
-    account:['settings']
-  };
+  const expected={manager:['overview','onboarding','profile'],operations:['worlds','airports','routes','schedule'],
+    fleet:['fleet'],finance:['finances'],account:['settings']};
   const indexes=order.map(name=>html.indexOf('data-nav-group="'+name+'"'));
   assert.ok(indexes.every((n,i)=>n>=0&&(i===0||n>indexes[i-1])));
   for(let i=0;i<order.length;i++){
     const segment=html.slice(indexes[i],i+1<order.length?indexes[i+1]:html.indexOf('</nav>',indexes[i]));
-    const views=[...segment.matchAll(/data-view-link="([^"]+)"/g)].map(x=>x[1]);
-    assert.deepEqual(views,expected[order[i]],order[i]+' group routes');
+    assert.match(segment,/<summary class="nav-label">/);
+    assert.match(segment,/class="chevron"/);
+    assert.deepEqual([...segment.matchAll(/data-view-link="([^"]+)"/g)].map(x=>x[1]),expected[order[i]]);
   }
-  const all=[...html.matchAll(/data-view-link="([^"]+)"/g)].map(x=>x[1]);
-  assert.equal(all.length,PLAYER_VIEWS.length);
-  assert.deepEqual(new Set(all),new Set(PLAYER_VIEWS));
-  assert.match(css,/\.app-navigation-inner\{[^}]*display:flex;[^}]*overflow-x:auto;/);
+  assert.equal([...html.matchAll(/data-view-link="([^"]+)"/g)].length,PLAYER_VIEWS.length);
+  assert.match(css,/\.app-navigation-inner\{[^}]*overflow:visible;/);
   assert.match(css,/\.nav-links a\[aria-current="page"\]/);
-  assert.match(html,/id="player-sign-out"/);
-  assert.match(html,/id="top-email"/);
+  assert.match(css,/#player-main\{max-width:1540px;/);
   assert.match(html,/href="\/tester.html"/);
   assert.match(html,/href="\/"[^>]*>Public website<\/a>/);
+  assert.match(html,/id="player-sign-out"/);
 });

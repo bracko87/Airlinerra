@@ -24,8 +24,6 @@
           <span class="top-subtitle">No airline activated</span>
         </div>
         <div class="header-tools">
-          <a class="header-link" href="/tester.html">Tester account</a>
-          <a class="header-link" href="/">Public website</a>
           <span id="top-email">Invited account</span>
           <button id="player-sign-out" type="button">Sign out</button>
         </div>
@@ -33,41 +31,43 @@
     </header>
     <nav class="app-navigation" aria-label="Player application">
       <div class="app-navigation-inner">
-        <div class="nav-group" data-nav-group="manager" role="group" aria-label="Manager">
-          <span class="nav-label">MANAGER</span>
-          <div class="nav-links">
+        <details class="nav-group" data-nav-group="manager" aria-label="Manager">
+          <summary class="nav-label">Manager<span class="chevron" aria-hidden="true"></span></summary>
+          <div class="nav-links" role="group" aria-label="Manager pages">
             <a href="#overview" data-view-link="overview" aria-current="page">Overview</a>
             <a href="#onboarding" data-view-link="onboarding">Airline setup</a>
-            <a href="#profile" data-view-link="profile">Profile</a>
+            <a href="#profile" data-view-link="profile">Manager profile</a>
           </div>
-        </div>
-        <div class="nav-group" data-nav-group="operations" role="group" aria-label="Operations">
-          <span class="nav-label">OPERATIONS</span>
-          <div class="nav-links">
+        </details>
+        <details class="nav-group" data-nav-group="operations" aria-label="Operations">
+          <summary class="nav-label">Operations<span class="chevron" aria-hidden="true"></span></summary>
+          <div class="nav-links" role="group" aria-label="Operations pages">
             <a href="#worlds" data-view-link="worlds">Game worlds</a>
             <a href="#airports" data-view-link="airports">Airports</a>
             <a href="#routes" data-view-link="routes">Routes</a>
             <a href="#schedule" data-view-link="schedule">Schedule</a>
           </div>
-        </div>
-        <div class="nav-group" data-nav-group="fleet" role="group" aria-label="Fleet">
-          <span class="nav-label">FLEET</span>
-          <div class="nav-links">
+        </details>
+        <details class="nav-group" data-nav-group="fleet" aria-label="Fleet">
+          <summary class="nav-label">Fleet<span class="chevron" aria-hidden="true"></span></summary>
+          <div class="nav-links" role="group" aria-label="Fleet pages">
             <a href="#fleet" data-view-link="fleet">Aircraft</a>
           </div>
-        </div>
-        <div class="nav-group" data-nav-group="finance" role="group" aria-label="Finance">
-          <span class="nav-label">FINANCE</span>
-          <div class="nav-links">
+        </details>
+        <details class="nav-group" data-nav-group="finance" aria-label="Finance">
+          <summary class="nav-label">Finance<span class="chevron" aria-hidden="true"></span></summary>
+          <div class="nav-links" role="group" aria-label="Finance pages">
             <a href="#finances" data-view-link="finances">Finances</a>
           </div>
-        </div>
-        <div class="nav-group" data-nav-group="account" role="group" aria-label="Account">
-          <span class="nav-label">ACCOUNT</span>
-          <div class="nav-links">
+        </details>
+        <details class="nav-group" data-nav-group="account" aria-label="Account">
+          <summary class="nav-label">Account<span class="chevron" aria-hidden="true"></span></summary>
+          <div class="nav-links" role="group" aria-label="Account pages">
             <a href="#settings" data-view-link="settings">Settings</a>
+            <a href="/tester.html">Tester account</a>
+            <a href="/">Public website</a>
           </div>
-        </div>
+        </details>
       </div>
     </nav>
     <div class="workspace">

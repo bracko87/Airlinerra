@@ -35,6 +35,8 @@ function navigateTo(view){
     else link.removeAttribute('aria-current');
   }
   doc.title='Airlinerra — '+name[0].toUpperCase()+name.slice(1)+' · Private prelaunch';
+  // Close dropdowns when changing pages, preserving keyboard navigation.
+  for(const group of doc.querySelectorAll('.nav-group[open]'))group.open=false;
 }
 function drawWorldDirectory(){
   const root=doc.getElementById('world-directory');
@@ -249,8 +251,8 @@ function showPreview(){
   doc.getElementById('local-preview-note').hidden=false;
   doc.getElementById('local-preview-note').textContent='LOCAL DEMO ONLY — no real identity, database connection or airline activation.';
   doc.getElementById('manager-name').textContent=LOCAL_DEMO_MANAGER.name;
-  for(const id of ['manager-email','setup-email','top-email'])
-    doc.getElementById(id).textContent=LOCAL_DEMO_MANAGER.email;
+  for(const id of ['manager-email','setup-email'])doc.getElementById(id).textContent=LOCAL_DEMO_MANAGER.email;
+  doc.getElementById('top-email').textContent='LOCAL DEMO · Not signed in';
   doc.getElementById('manager-joined').textContent='Demo session';
   // Do not claim a verified Supabase account in an unauthenticated preview.
   doc.getElementById('manager-verified').textContent='Demo only · Not verified';
@@ -301,6 +303,21 @@ async function initialize(){
     visible('denied');
   }
 }
+doc.querySelectorAll('.nav-group').forEach(group=>group.addEventListener('toggle',()=>{
+  if(!group.open)return;
+  for(const other of doc.querySelectorAll('.nav-group[open]'))if(other!==group)other.open=false;
+}));
+doc.addEventListener('click',event=>{
+  if(event.target.closest('.app-navigation'))return;
+  for(const group of doc.querySelectorAll('.nav-group[open]'))group.open=false;
+});
+doc.addEventListener('keydown',event=>{
+  if(event.key!=='Escape')return;
+  for(const group of doc.querySelectorAll('.nav-group[open]')){
+    group.open=false;
+    group.querySelector('summary')?.focus();
+  }
+});
 doc.querySelectorAll('[data-view-link]').forEach(link=>link.addEventListener('click',e=>{
   e.preventDefault();
   window.history.replaceState({},'',playerViewUrl(link.dataset.viewLink));
