@@ -104,6 +104,16 @@ doc.getElementById('sign-out').addEventListener('click',()=>{
 });
 
 async function initialize(){
+  // localhost is visual-only: never initialize the hosted Auth SDK or send
+  // credentials from a developer's machine. Real links work only on airlinerra.com.
+  if(['localhost','127.0.0.1'].includes(window.location.hostname)){
+    window.history.replaceState({},'','/account.html?screen=sign-in');
+    showPanel('sign-in','Local visual preview only. Authentication is disabled here; real invitations are accepted only on airlinerra.com.');
+    for(const input of doc.querySelectorAll('input,button')){
+      input.disabled=true;
+    }
+    return;
+  }
   // Scrub OTP/hash from browser history before network, SDK, config or awaits.
   const originalHref=window.location.href;
   let entry;
