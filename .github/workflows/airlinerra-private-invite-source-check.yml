@@ -36,6 +36,9 @@ on:
       - 'tests/test_invited_tester_dashboard.mjs'
       - 'website/invited-tester-page.mjs'
       - 'website/real-registration.mjs'
+      - 'website/registration-access.mjs'
+      - 'tests/test_registration_access.mjs'
+      - 'supabase/migrations/20261028183852_grant_owner_signup_gate_reserved_email_read_to_auth_admin.sql'
       - 'website/register.html'
       - 'website/real-onboarding-client.mjs'
       - 'website/dev-scripts/real-player-read-gateway.mjs'
@@ -80,6 +83,7 @@ jobs:
           node --check website/invited-tester-entry.mjs
           node --check website/invited-tester-page.mjs
           node --check website/real-registration.mjs
+          node --check website/registration-access.mjs
           node --check website/real-onboarding-client.mjs
           node --check website/dev-scripts/real-player-read-gateway.mjs
           node --check website/local-demo-session.mjs
@@ -97,7 +101,7 @@ jobs:
           node --check website/player-app-model.mjs
       - name: Test invited-only callbacks, OTP scrubbing and provider gates
         run: |
-          node --test tests/test_homepage_account_entries.mjs tests/test_invited_tester_entry.mjs tests/test_invited_tester_auth.mjs tests/test_invited_tester_dashboard.mjs tests/test_player_app_prelaunch.mjs tests/test_player_read_api.mjs tests/test_local_demo_flow.mjs tests/test_local_preview_catalog.mjs tests/test_local_onboarding_draft.mjs tests/test_local_registration_flow.mjs tests/test_prelaunch_release_audit.mjs tests/test_hosted_auth_readiness.mjs tests/test_prelaunch_release_invariants.mjs
+          node --test tests/test_homepage_account_entries.mjs tests/test_invited_tester_entry.mjs tests/test_invited_tester_auth.mjs tests/test_invited_tester_dashboard.mjs tests/test_player_app_prelaunch.mjs tests/test_player_read_api.mjs tests/test_local_demo_flow.mjs tests/test_local_preview_catalog.mjs tests/test_local_onboarding_draft.mjs tests/test_local_registration_flow.mjs tests/test_registration_access.mjs tests/test_prelaunch_release_audit.mjs tests/test_hosted_auth_readiness.mjs tests/test_prelaunch_release_invariants.mjs
       - name: Build ordinary main website with invitation-only account
         working-directory: website
         run: npm run build
