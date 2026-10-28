@@ -31,7 +31,7 @@ export async function addInviteOnlyAccount({siteDir,distDir}={}){
   const source=await readFile(path.join(siteDir,'prelaunch-invited-account.html'),'utf8');
   const moduleTag='<script type="module" src="invited-tester-page.mjs"></script>';
   if(!source.includes(moduleTag)||
-    !source.includes('PRIVATE PRELAUNCH ACCESS')||
+    !source.includes('SECURE AIRLINERRA ACCOUNT')||
     /id="register"|id="airline-onboarding"/.test(source)){
     throw new Error('Invite-only account page failed safety checks.');
   }

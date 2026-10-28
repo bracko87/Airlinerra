@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex,nofollow" />
   <meta name="referrer" content="no-referrer" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://esm.sh; connect-src https://hwllkabgzaynalahvkpz.supabase.co; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'self'" />
-  <title>Airlinerra — Private invitation access</title>
+  <title>Airlinerra — Sign in</title>
   <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
   <link rel="stylesheet" href="invited-tester-page.css" />
   <script type="module" src="invited-tester-page.mjs"></script>
@@ -18,21 +18,22 @@
     <img src="assets/airlinerra-logo.png" alt="Airlinerra" width="195" height="48" />
   </a>
   <nav class="header-actions" aria-label="Account page navigation">
-    <span>PRIVATE PRELAUNCH ACCESS</span>
+    <span>SECURE AIRLINERRA ACCOUNT</span>
     <a class="public-home-link" href="/">Home page</a>
+    <a class="public-home-link" href="/register.html">Register</a>
   </nav></header>
   <main>
     <section class="intro">
-      <p class="kicker">BY INVITATION ONLY</p>
+      <p class="kicker">YOUR AIRLINE MANAGEMENT ACCOUNT</p>
       <h1>Welcome to Airlinerra.</h1>
-      <p>This account area is available to invited testers only. Airline creation,
-        game worlds, payments, and public registration remain closed during prelaunch.</p>
-      <p class="note">Your invitation or password recovery link will be checked
-        before you can choose a password. Do not forward your private link.</p>
+      <p>Sign in with the account you registered and confirmed by email. You can then
+        set up your airline in an available game world and open the manager dashboard.</p>
+      <p class="note">Email confirmation and password recovery links are single-use
+        security links. Do not share your private email links.</p>
     </section>
     <section class="card" aria-label="Private account access">
       <h2 id="page-heading">Preparing secure access…</h2>
-      <p id="page-feedback" role="status" aria-live="polite">Checking invitation-only access.</p>
+      <p id="page-feedback" role="status" aria-live="polite">Checking secure account access.</p>
       <form id="sign-in" data-private-panel="sign-in" hidden>
         <label for="sign-in-email">Email address</label>
         <input id="sign-in-email" name="email" type="email" autocomplete="email" required maxlength="254" />
@@ -42,7 +43,7 @@
         <button type="button" id="forgot-link" class="text-link">Forgot password?</button>
       </form>
       <form id="forgot" data-private-panel="forgot" hidden>
-        <label for="forgot-email">Your invited email address</label>
+        <label for="forgot-email">Your account email address</label>
         <input id="forgot-email" name="email" type="email" autocomplete="email" required maxlength="254" />
         <button type="submit">Send password reset link</button>
         <button type="button" id="back-to-login" class="text-link">Back to sign in</button>
@@ -54,7 +55,7 @@
         <input id="confirm-password" name="confirmPassword" type="password" autocomplete="new-password" required minlength="12" maxlength="128" />
         <button type="submit">Save password</button>
       </form>
-      <p class="fineprint">There is no public account registration on this page.</p>
+      <p class="fineprint">New to Airlinerra? <a href="/register.html">Create an account</a>. No payment details required.</p>
     </section>
   </main>
   <footer>Airlinerra is a Next Quest Studio project. <a href="/impressum.html">Legal notice</a> · <a href="/terms.html">Terms</a> · <a href="/privacy.html">Privacy</a></footer>

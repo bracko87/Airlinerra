@@ -31,7 +31,7 @@ function showPanel(panel,message=''){
     view.hidden=view.dataset.privatePanel!==panel;
   }
   const title={
-    'sign-in':'Sign in to your invitation',
+    'sign-in':'Sign in to Airlinerra',
     'forgot':'Recover your account',
     'set-password':'Choose your password'
   };
@@ -83,7 +83,7 @@ doc.getElementById('forgot').addEventListener('submit',e=>{
   void submitOnce(e.currentTarget,async()=>{
     await activeAuth.requestPasswordReset(getInput('forgot-email'));
     // Avoid account enumeration regardless of whether an identity exists.
-    feedbackMessage('If the address belongs to an invited account, a recovery email will be sent.');
+    feedbackMessage('If the address belongs to an Airlinerra account, a recovery email will be sent.');
   });
 });
 doc.getElementById('set-password').addEventListener('submit',e=>{
@@ -182,14 +182,14 @@ async function initialize(){
     if(otpAuthorizesPassword){
       showPanel('set-password',opened.message);
     }else if(entry.screen==='verify'&&!entry.callback){
-      showPanel('sign-in','Use the link in your invitation email.');
+      showPanel('sign-in','Confirm your email address using the link we sent.');
     }else if(opened.screen==='forgot'){
       showPanel('forgot',opened.message);
     }else{
       try{
         await showAuthenticatedUser();
       }catch{
-        showPanel('sign-in',opened.message||'Sign in with your invited email address.');
+        showPanel('sign-in',opened.message||'Sign in with your registered email address.');
       }
     }
   }catch{

@@ -18,13 +18,14 @@ test('ordinary main build includes invite-only account, without registering play
     read('account.html'),read('invited-tester-page.mjs'),
     read('auth-rules.mjs'),read('invited-tester-config.js')
   ]);
-  assert.match(html,/PRIVATE PRELAUNCH ACCESS/);
+  assert.match(html,/SECURE AIRLINERRA ACCOUNT/);
   assert.match(html,/id="sign-in"/);
   assert.match(html,/id="set-password"/);
   assert.match(html,/invited-tester-config\.js/);
   // Explicit homepage navigation is visible on the sign-in, invite and recovery views.
   assert.match(html,/<nav class="header-actions" aria-label="Account page navigation">/);
   assert.match(html,/<a class="public-home-link" href="\/">Home page<\/a>/);
+  assert.match(html,/<a class="public-home-link" href="\/register.html">Register<\/a>/);
 
   assert.doesNotMatch(html,/id="register"|id="airline-onboarding"/);
   assert.match(configuration,/operatorPrelaunchApproved":true/);
