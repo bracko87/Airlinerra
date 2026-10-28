@@ -257,8 +257,8 @@ function showPreview(){
   doc.getElementById('top-email').textContent=localTest?'LOCAL TEST ACCOUNT · Not Supabase':'LOCAL DEMO · Not signed in';
   doc.getElementById('manager-joined').textContent='Demo session';
   // Do not claim a verified Supabase account in an unauthenticated preview.
-  doc.getElementById('manager-verified').textContent='Demo only · Not verified';
-  doc.getElementById('setup-account-state').textContent='Demo';
+  doc.getElementById('manager-verified').textContent=localTest?'Email confirmed in local simulation · Not Supabase':'Demo only · Not verified';
+  doc.getElementById('setup-account-state').textContent=localTest?'Local test complete':'Demo';
   doc.getElementById('setup-account-state').classList.remove('step-good');
   doc.getElementById('setup-email').closest('.step').querySelector('p').firstChild.textContent='Simulated manager; no invitation verified. ';
   doc.getElementById('player-data-status').textContent='Simulated navigation; protected game API is not connected';

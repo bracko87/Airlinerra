@@ -22,6 +22,7 @@ export function hasLocalDemo(storage,location){
 export function endLocalDemo(storage,location){
   if(!isLocalDemoOrigin(location))return false;
   storage?.removeItem?.(LOCAL_DEMO_KEY);
+  storage?.removeItem?.(PROFILE_KEY);
   return true;
 }
 const PROFILE_KEY='airlinerra-local-test-profile-v1';
