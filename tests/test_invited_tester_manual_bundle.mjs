@@ -2,9 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile,access} from 'node:fs/promises';
 import {execFileSync} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
 
 const repoRoot=new URL('../',import.meta.url);
-const rootPath=repoRoot.pathname;
+const rootPath=fileURLToPath(repoRoot);
 const output=name=>new URL('../dist/'+name,import.meta.url);
 const read=name=>readFile(output(name),'utf8');
 const exists=async name=>{try{await access(output(name));return true;}catch{return false;}};
