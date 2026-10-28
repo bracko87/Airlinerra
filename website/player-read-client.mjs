@@ -1,8 +1,8 @@
 /** Read-only browser bridge. No direct database API or credential persistence. */
 export const PLAYER_READ_API_ENABLED=false;
-export function createPlayerReadClient({auth,origin,enabled=PLAYER_READ_API_ENABLED,
+export function createPlayerReadClient({auth,origin,enabled=PLAYER_READ_API_ENABLED,local=false,
  fetchImpl=(...args)=>fetch(...args)}={}){
- if(origin!=='https://airlinerra.com'||typeof auth?.getAccessToken!=='function'||
+ if(!(origin==='https://airlinerra.com'||(local&&origin==='http://localhost:5188'))||typeof auth?.getAccessToken!=='function'||
    typeof fetchImpl!=='function')throw Error('Private player read client requires verified hosted Auth');
  async function post(path,payload){
    if(!enabled)throw Error('Player database API is not deployed.');

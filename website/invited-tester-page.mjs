@@ -56,7 +56,7 @@ async function showAuthenticatedUser(){
     throw new Error('Invitation identity is not verified.');
   }
   otpAuthorizesPassword=false;
-  window.location.replace(PRIVATE_TESTER_DASHBOARD_PATH);
+  window.location.replace(localPreview?'/player.html#overview':PRIVATE_TESTER_DASHBOARD_PATH);
 }
 
 doc.getElementById('sign-in').addEventListener('submit',e=>{

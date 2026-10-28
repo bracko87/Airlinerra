@@ -59,7 +59,7 @@ async function readBody(request){
 }
 export function createPlayerReadHandler({enabled=false,verifyUserToken,database,origin=ORIGIN}={}){
  if(!enabled)return async()=>respond(503,{error:'Player data service is not available.'});
- if(origin!==ORIGIN||typeof verifyUserToken!=='function'||typeof database?.connect!=='function')
+ if(![ORIGIN,'http://localhost:5188'].includes(origin)||typeof verifyUserToken!=='function'||typeof database?.connect!=='function')
    throw Error('Private player backend configuration required');
  return async(request)=>{
    if(!(request instanceof Request))return respond(400,{error:'Invalid request'});
