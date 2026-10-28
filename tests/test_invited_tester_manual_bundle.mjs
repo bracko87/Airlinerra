@@ -80,5 +80,5 @@ test('build remains distinct from automatic Netlify deployment and local UI need
   assert.doesNotMatch(source,/input\.disabled=true/);
   assert.match(source,/await inspectInvitedTesterProvider/);
   assert.doesNotMatch(source,/beginLocalDemo\(/);
-  assert.match(source,/LOCAL DASHBOARD DEMO/);
+  assert.match(source,/Sign in with your real verified Airlinerra account/);
 });
