@@ -22,6 +22,10 @@ test('ordinary main build includes invite-only account, without registering play
   assert.match(html,/id="sign-in"/);
   assert.match(html,/id="set-password"/);
   assert.match(html,/invited-tester-config\.js/);
+  // Explicit homepage navigation is visible on the sign-in, invite and recovery views.
+  assert.match(html,/<nav class="header-actions" aria-label="Account page navigation">/);
+  assert.match(html,/<a class="public-home-link" href="\/">Home page<\/a>/);
+
   assert.doesNotMatch(html,/id="register"|id="airline-onboarding"/);
   assert.match(configuration,/operatorPrelaunchApproved":true/);
   assert.match(configuration,/sb_publishable_[A-Za-z0-9_-]{16,128}/);
