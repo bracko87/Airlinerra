@@ -5,6 +5,7 @@ import {inspectInvitedTesterProvider,TESTER_ORIGIN} from './invited-tester-entry
 import {createInvitedTesterAuth} from './invited-tester-auth.mjs';
 import {openPrivateTesterDashboard,PrivateTesterAccessDenied} from './tester-dashboard-state.mjs';
 import {createPlayerReadClient,PLAYER_READ_API_ENABLED} from './player-read-client.mjs';
+import {createLocalCatalogClient} from './local-catalog-client.mjs';
 import {isLocalDemoOrigin,hasLocalDemo,endLocalDemo,LOCAL_DEMO_MANAGER,LOCAL_DEMO_LOGIN_PATH} from './local-demo-session.mjs';
 import {
   PLAYER_APP_PATH,PLAYER_LOGIN_PATH,PLAYER_VIEWS,WORLD_LABELS,
@@ -125,10 +126,12 @@ async function airportSearch({setup=false,offset=0}={}){
     else output.textContent='The airport service is unavailable. Try again after the private API is enabled.';
   }
 }
-async function loadPlayerReadData(){
-  if(!auth||!PLAYER_READ_API_ENABLED)return;
+async function loadPlayerReadData({local=false}={}){
+  if(!local&&(!auth||!PLAYER_READ_API_ENABLED))return;
   try{
-    playerData=createPlayerReadClient({auth,origin:window.location.origin,enabled:true});
+    playerData=local
+      ?createLocalCatalogClient({location:window.location})
+      :createPlayerReadClient({auth,origin:window.location.origin,enabled:true});
     const data=await playerData.overview();
     if(!Array.isArray(data.worlds)||!Array.isArray(data.countries)||!Array.isArray(data.airlines))throw Error('Invalid data');
     drawRealWorlds(data.worlds);
@@ -138,12 +141,16 @@ async function loadPlayerReadData(){
       doc.getElementById('player-airline-name').textContent=first.name;
       doc.getElementById('player-cash').textContent=first.cashUsd+' USD';
     }
-    doc.getElementById('player-data-status').textContent='Live private database · Read only';
+    doc.getElementById('player-data-status').textContent=local
+      ?'LOCAL DATA SNAPSHOT '+data.snapshotDate+' · Read only · Not a live database connection'
+      :'Live private database · Read only';
     doc.getElementById('airport-heading').textContent='Approved airport directory';
     doc.getElementById('airport-description').textContent=data.airportsTotal+' approved simulation airports available for read-only lookup.';
   }catch{
     playerData=null;
-    doc.getElementById('player-data-status').textContent='Private game database not connected';
+    doc.getElementById('player-data-status').textContent=local
+      ?'Local airport snapshot unavailable; no live database connection'
+      :'Private game database not connected';
   }
 }
 doc.getElementById('setup-airport-search').addEventListener('click',()=>{void airportSearch({setup:true});});
@@ -181,7 +188,9 @@ async function initialize(){
       window.location.replace(LOCAL_DEMO_LOGIN_PATH);
       return;
     }
-    showPreview();return;
+    showPreview();
+    await loadPlayerReadData({local:true});
+    return;
   }
   if(window.location.origin!==TESTER_ORIGIN||window.location.pathname!==PLAYER_APP_PATH){
     visible('denied');return;
