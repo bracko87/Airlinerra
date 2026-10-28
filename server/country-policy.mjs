@@ -1,5 +1,6 @@
 /** Country grouping for the airline selector, not a statement about sovereignty.
- * Only UN members plus the two UN observer states appear as selectable entries.
+ * UN members and the two observer states are supported, plus Kosovo as an
+ * explicit World 1 game country selected by the owner.
  * Territory airports remain in the approved roster and are grouped with their
  * administrating/parent country for the game's country selector.
  */
@@ -11,16 +12,19 @@ export const TERRITORY_COUNTRY=Object.freeze({
  MQ:'FR',MS:'GB',NC:'FR',NF:'AU',NU:'NZ',PF:'FR',PM:'FR',PN:'GB',
  PR:'US',RE:'FR',SH:'GB',SJ:'NO',SX:'NL',TC:'GB',TF:'FR',TK:'NZ',
  TW:'CN',UM:'US',VG:'GB',VI:'US',WF:'FR',
- XK:'RS',YT:'FR'
+ YT:'FR'
 });
 // 193 UN member countries plus Holy See (VA) and Palestine (PS).
 export const UN_COUNTRY_CODES=Object.freeze((
  'AF AL DZ AD AO AG AR AM AU AT AZ BS BH BD BB BY BE BZ BJ BT BO BA BW BR BN BG BF BI CV KH CM CA CF TD CL CN CO KM CG CD CR CI HR CU CY CZ DK DJ DM DO EC EG SV GQ ER EE SZ ET FJ FI FR GA GM GE DE GH GR GD GT GN GW GY HT HN HU IS IN ID IR IQ IE IL IT JM JP JO KZ KE KI KP KR KW KG LA LV LB LS LR LY LI LT LU MG MW MY MV ML MT MH MR MU MX FM MD MC MN ME MA MZ MM NA NR NP NL NZ NI NE NG MK NO OM PK PW PA PG PY PE PH PL PT QA RO RU RW KN LC VC WS SM ST SA SN RS SC SL SG SK SI SB SO ZA SS ES LK SD SR SE CH SY TJ TZ TH TL TG TO TT TN TR TM TV UG UA AE GB US UY UZ VU VE VN YE ZM ZW VA PS'
 ).split(' ').filter((value,index,list)=>list.indexOf(value)===index));
 export const UN_COUNTRY_SET=new Set(UN_COUNTRY_CODES);
+// Kosovo is a deliberately separate game entry; it is not a UN member.
+export const GAME_COUNTRY_CODES=Object.freeze([...UN_COUNTRY_CODES,'XK']);
+export const GAME_COUNTRY_SET=new Set(GAME_COUNTRY_CODES);
 export function parentCountryIso(code){
  const normalized=TERRITORY_COUNTRY[code]||code;
- return UN_COUNTRY_SET.has(normalized)?normalized:null;
+ return GAME_COUNTRY_SET.has(normalized)?normalized:null;
 }
 export function countrySqlExpression(column='country_iso'){
  if(!/^[a-z_]+$/i.test(column))throw Error('Invalid country SQL column');
