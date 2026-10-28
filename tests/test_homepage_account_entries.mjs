@@ -13,8 +13,9 @@ test('public homepage exposes accessible sign-in and prelaunch registration link
  assert.match(register,/Public registration and the 7-day free trial will open together/);
  assert.match(register,/No public registration form is available yet/);
  assert.match(register,/href="\/account\.html\?screen=sign-in"/);
- assert.doesNotMatch(register,/<form|signUp\(|service_role|sb_secret_/i);
- assert.match(build,/'register.html', 'register.css'/);
+ assert.match(register,/id="real-registration-form" hidden/);
+ assert.doesNotMatch(register,/service_role|sb_secret_/i);
+ assert.match(build,/'register.html', 'register.css', 'real-registration.mjs'/);
  const authCss=await read('../website/invited-tester-page.css');
  const regCss=await read('../website/register.css');
  assert.match(authCss,/1220px/);

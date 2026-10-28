@@ -9,3 +9,13 @@ main{width:min(1220px,calc(100% - 80px));margin:75px auto 80px;padding:0}.regist
 @media(max-width:740px){header,main,footer{width:calc(100% - 36px)}.registration-layout{grid-template-columns:1fr;gap:12px}.registration-intro{padding-top:0}main{margin-top:35px}.card{margin:15px 0 30px}}
 
 .local-registration-entry{display:block;margin-top:16px;color:var(--navy);font-weight:800;text-decoration:underline}
+
+#real-registration-form{display:grid;gap:8px;margin:20px 0}
+#real-registration-form label{font-size:13px;font-weight:800;color:var(--navy)}
+#real-registration-form input:not([type="checkbox"]){width:100%;border:1px solid #bccfe1;border-radius:8px;padding:11px;font:inherit}
+#real-registration-form input:focus-visible,#real-registration-form button:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+#real-registration-form .registration-consent{display:flex;align-items:start;gap:10px;line-height:1.5;font-weight:500}
+#real-registration-form .registration-consent input{margin-top:5px;accent-color:var(--orange)}
+#real-registration-form button{padding:13px 18px;background:var(--orange);color:white;border:0;border-radius:8px;font-weight:800}
+#real-registration-form button:disabled{opacity:.6;cursor:not-allowed}
+#registration-readiness,#registration-feedback{font-size:13px;color:#5b6f86}

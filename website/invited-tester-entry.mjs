@@ -65,11 +65,13 @@ export async function inspectInvitedTesterProvider({
     throw new Error('Cannot verify private tester access.');
   }
   if(!settings||Array.isArray(settings)||
-    settings.disable_signup!==true||settings.mailer_autoconfirm!==false||
+    typeof settings.disable_signup!=='boolean'||settings.mailer_autoconfirm!==false||
     settings.external?.email!==true||settings.external?.anonymous_users!==false){
     throw new Error('Private tester access is not authorized by the identity provider.');
   }
-  return Object.freeze({inviteOnly:true,emailConfirmedRequired:true,anonymousDisabled:true});
+  return Object.freeze({inviteOnly:settings.disable_signup===true,
+    signupEnabled:settings.disable_signup===false,
+    emailConfirmedRequired:true,anonymousDisabled:true});
 }
 
 /**

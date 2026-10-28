@@ -6,6 +6,7 @@
 import {createInvitedTesterAuth,LOCAL_REAL_AUTH_ORIGIN} from './invited-tester-auth.mjs';
 import {inspectInvitedTesterProvider} from './invited-tester-entry.mjs';
 import {isLocalDemoOrigin} from './local-demo-session.mjs';
+import {parseAuthCallback} from './auth-service.mjs';
 import {isVerifiedInvitedUser,PRIVATE_TESTER_DASHBOARD_PATH} from './tester-dashboard-state.mjs';
 import {
   consumeInvitedTesterEntry,openInvitedTesterEntry,
@@ -105,8 +106,21 @@ doc.getElementById('back-to-login').addEventListener('click',()=>{
 });
 async function initialize(){
   if(localPreview){
-    // Real hosted Supabase session on localhost, not a simulated manager.
-    window.history.replaceState({},'','/account.html?screen=sign-in');
+    // Scrub OTP or PKCE code synchronously before any network request.
+    const current=new URL(window.location.href);
+    const wanted=current.searchParams.get('screen');
+    const screen=['verify','reset','sign-in'].includes(wanted)?wanted:'sign-in';
+    const query=current.search;
+    const hasFragment=Boolean(current.hash);
+    window.history.replaceState({},'','/account.html?screen='+screen);
+    if(hasFragment){
+      heading.textContent='Invalid account link';
+      feedbackMessage('Request a new confirmation or recovery email.',true);
+      return;
+    }
+    let callback=null;
+    try{callback=parseAuthCallback(query,screen);}
+    catch{heading.textContent='Invalid account link';feedbackMessage('Request a new confirmation link.',true);return}
     const config=window.__AIRLINERRA_INVITED_TESTER_CONFIG__;
     try{
       if(config?.operatorPrelaunchApproved!==true||
@@ -117,11 +131,17 @@ async function initialize(){
         origin:LOCAL_REAL_AUTH_ORIGIN,supabaseUrl:config.supabaseUrl,
         publishableKey:config.publishableKey
       });
+      if(callback){
+        const outcome=await activeAuth.completeCallback(callback);
+        otpAuthorizesPassword=outcome.purpose==='invite'||outcome.purpose==='reset';
+        if(otpAuthorizesPassword){showPanel('set-password',outcome.purpose==='invite'?
+          'Invitation confirmed. Choose your password.':'Recovery confirmed. Choose a new password.');return}
+      }
       try{await showAuthenticatedUser();}
-      catch{showPanel('sign-in','Sign in with your real verified Airlinerra account. Public registration remains closed.');}
+      catch{showPanel('sign-in','Sign in with your confirmed Airlinerra account.');}
     }catch{
       heading.textContent='Live account service unavailable';
-      feedbackMessage('The real Supabase provider is not reachable. No demo session will be created.',true);
+      feedbackMessage('The real Supabase account service could not verify this request.',true);
     }
     return;
   }
