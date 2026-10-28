@@ -22,7 +22,7 @@ export async function addInviteOnlyAccount({siteDir,distDir}={}){
     'invited-tester-page.mjs','invited-tester-entry.mjs',
     'invited-tester-auth.mjs','invited-tester-page.css',
     'tester-dashboard.mjs','tester-dashboard-state.mjs','tester-dashboard.css',
-    'player-app.mjs','player-app-model.mjs','player-app.css','player-read-client.mjs','real-onboarding-client.mjs',
+    'player-app.mjs','setup-choice-menu.mjs','player-app-model.mjs','player-app.css','player-read-client.mjs','real-onboarding-client.mjs',
     'local-demo-session.mjs','local-catalog-client.mjs','local-onboarding-draft.mjs'
   ];
   for(const name of files){
@@ -74,7 +74,7 @@ export async function addInviteOnlyAccount({siteDir,distDir}={}){
   if(!playerSource.includes(playerTag)||
      !playerSource.includes('id="player-app" hidden')||
      !playerSource.includes('PRIVATE PRELAUNCH')||
-     !playerSource.includes('disabled>Create airline')||
+     !playerSource.includes('disabled>Create my airline')||
      /<script[^>]+src="https?:|id="register"|service_role|sb_secret_/u.test(playerSource)){
     throw new Error('Player application prelaunch safety checks failed.');
   }
