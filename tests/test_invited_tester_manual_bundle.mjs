@@ -52,6 +52,8 @@ test('build remains distinct from automatic Netlify deployment and local UI need
   assert.equal(JSON.parse(packageJson).scripts.preview,
     'npm run build && node dev-scripts/dev.mjs --built');
   assert.match(dev,/process\.argv\.includes\('--built'\)/);
+  assert.match(dev,/--built'\) \? 5188 : 5187/);
+  assert.match(dev,/process\.env\.PORT/);
   assert.match(source,/\['localhost','127\.0\.0\.1'\]/);
   assert.match(source,/input\.disabled=true/);
 });
