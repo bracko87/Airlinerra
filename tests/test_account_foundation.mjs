@@ -37,8 +37,9 @@ test('screens, input validation and fixed callback URLs', () => {
   assert.equal(normalizedEmail('  Air@Example.COM  '), 'air@example.com');
   assert.throws(() => normalizedEmail('invalid'), /valid email/);
   assert.equal(validatedPassword('abcdefghijkl'), 'abcdefghijkl');
-  assert.throws(() => validatedPassword('short'), /12 to 128/);
-  assert.throws(() => validatedPassword('a'.repeat(129)), /12 to 128/);
+  assert.throws(() => validatedPassword('short'), /8 to 128/);
+   assert.equal(validatedPassword('eight888'),'eight888');
+  assert.throws(() => validatedPassword('a'.repeat(129)), /8 to 128/);
   assert.equal(validatedDisplayName('  Sky Pilot '), 'Sky Pilot');
   assert.throws(() => validatedDisplayName('<script>'), /display name/i);
   assert.equal(authRedirect('http://localhost:5187','verify'),
@@ -273,4 +274,12 @@ test('SQL draft is private-by-default and seeds no active worlds or bankroll', a
   assert.match(sql,/\(2,'Expansion World','planned'\)/);
   assert.match(sql,/\(3,'Future World','planned'\)/);
   assert.ok(!sql.includes("granted to anon"));
+});
+
+test('8 character passwords are accepted and strength is only a visual guide',async()=>{
+ const {passwordStrength}=await import('../website/auth-rules.mjs');
+ assert.equal(passwordStrength('').score,0);
+ assert.equal(passwordStrength('short').score,0);
+ assert.ok(passwordStrength('eight888').score>=1);
+ assert.equal(passwordStrength('LongerPassword123!').score,4);
 });

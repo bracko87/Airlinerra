@@ -28,10 +28,19 @@ export function normalizedEmail(value) {
 }
 
 export function validatedPassword(value) {
-  if (typeof value !== 'string' || value.length < 12 || value.length > 128) {
-    throw new Error('Password must contain 12 to 128 characters.');
+  if (typeof value !== 'string' || value.length < 8 || value.length > 128) {
+    throw new Error('Password must contain 8 to 128 characters.');
   }
   return value;
+}
+
+/** UI-only guide; provider applies its own independent password checks. */
+export function passwordStrength(value){
+ if(typeof value!=='string'||value.length===0)return {score:0,label:'Enter a password'};
+ if(value.length<8)return {score:0,label:'At least 8 characters required'};
+ const groups=[/[a-z]/.test(value),/[A-Z]/.test(value),/[0-9]/.test(value),/[^A-Za-z0-9]/.test(value)].filter(Boolean).length;
+ const score=Math.min(4,1+Number(value.length>=12)+Number(groups>=3)+Number(value.length>=16&&groups>=3));
+ return {score,label:['','Weak','Fair','Good','Strong'][score]};
 }
 
 export function validatedDisplayName(value) {

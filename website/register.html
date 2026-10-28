@@ -26,11 +26,18 @@
       <input id="new-manager-name" name="displayName" autocomplete="name" required minlength="2" maxlength="40">
       <label for="new-manager-email">Email address</label>
       <input id="new-manager-email" name="email" type="email" autocomplete="email" required maxlength="254">
-      <label for="new-manager-password">Password (12–128 characters)</label>
-      <input id="new-manager-password" name="password" type="password" autocomplete="new-password" required minlength="12" maxlength="128">
+      <label for="new-manager-password">Password (minimum 8 characters)</label>
+      <input id="new-manager-password" name="password" type="password" autocomplete="new-password" required minlength="8" maxlength="128" aria-describedby="password-strength-label">
+      <div class="password-strength" aria-live="polite">
+        <meter id="password-strength-meter" min="0" max="4" value="0" aria-label="Password strength"></meter>
+        <span id="password-strength-label">Password strength: Enter a password</span>
+      </div>
+      <label for="new-manager-password-confirm">Repeat password</label>
+      <input id="new-manager-password-confirm" name="confirmPassword" type="password" autocomplete="new-password" required minlength="8" maxlength="128">
       <label class="registration-consent"><input id="new-manager-consent" type="checkbox" required>
-        <span id="registration-consent-description">I have read and accept the published Terms of Service and acknowledge the Privacy Policy.</span>
-        <span>(<a href="/terms.html" target="_blank" rel="noopener noreferrer">Terms</a> · <a href="/privacy.html" target="_blank" rel="noopener noreferrer">Privacy</a>)</span>
+        <span class="consent-copy"><span id="registration-consent-description">I have read the Terms of Service and Privacy Policy.</span>
+          <span class="consent-links"><a href="/terms.html" target="_blank" rel="noopener noreferrer">Read Terms</a><span aria-hidden="true"> · </span><a href="/privacy.html" target="_blank" rel="noopener noreferrer">Read Privacy</a></span>
+        </span>
       </label>
       <button type="submit" disabled id="real-register-submit">Create account and send confirmation email</button>
       <p id="registration-feedback" role="status" aria-live="polite"></p>

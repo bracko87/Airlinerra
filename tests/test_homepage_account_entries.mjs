@@ -95,3 +95,22 @@ test('owner-approved trial has no payment requirement or automatic conversion ac
  assert.doesNotMatch(register,/name="(?:cardNumber|paymentMethod|iban)"/i);
  assert.doesNotMatch(terms,/data-airlinerra-legal-approved="true"/);
 });
+
+test('signup has repeat-password match, strength indicator, aligned consent and safe readiness failure',async()=>{
+ const [html,script,style,account,page]=await Promise.all([
+  read('../website/register.html'),read('../website/real-registration.mjs'),
+  read('../website/register.css'),read('../website/prelaunch-invited-account.html'),
+  read('../website/invited-tester-page.mjs')
+ ]);
+ assert.match(html,/id="new-manager-password"[^>]*minlength="8"/);
+ assert.match(html,/id="new-manager-password-confirm"[^>]*minlength="8"/);
+ assert.match(html,/id="password-strength-meter"/);
+ assert.match(html,/class="consent-links"/);
+ assert.match(script,/password!==confirmInput.value/);
+ assert.match(script,/confirmInput\.setCustomValidity/);
+ assert.match(script,/readinessResponse.status===503/);
+ assert.match(style,/#real-registration-form\[hidden\]\{display:none!important\}/);
+ assert.match(style,/grid-template-columns:18px minmax\(0,1fr\)/);
+ assert.match(account,/New password \(8 to 128 characters\)/);
+ assert.match(page,/password.length<8/);
+});

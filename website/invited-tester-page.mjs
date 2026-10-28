@@ -91,8 +91,8 @@ doc.getElementById('set-password').addEventListener('submit',e=>{
   if(!activeAuth||!otpAuthorizesPassword)return;
   void submitOnce(e.currentTarget,async()=>{
     const password=getInput('new-password');
-    if(password!==getInput('confirm-password')||password.length<12||password.length>128){
-      feedbackMessage('Choose matching passwords containing 12 to 128 characters.',true);
+    if(password!==getInput('confirm-password')||password.length<8||password.length>128){
+      feedbackMessage('Choose matching passwords containing 8 to 128 characters.',true);
       return;
     }
     await activeAuth.updatePassword(password);
