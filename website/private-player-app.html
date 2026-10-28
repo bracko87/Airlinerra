@@ -111,7 +111,34 @@
  <p>Starting capital: $5,000,000 USD · Starting aircraft: 0.</p>
  </div>
             </div>
-            <aside class="panel setup-help" aria-label="Your airline summary"><span class="panel-kicker">YOUR AIRLINE</span><h2>Airline summary</h2><div class="logo-summary"><img id="summary-airline-logo" alt="Selected airline logo" hidden><span id="summary-logo-placeholder">Your logo</span></div><div class="detail-row"><span>Airline name</span><strong id="summary-airline-name">Not entered</strong></div><div class="detail-row"><span>Game world</span><strong id="summary-world">Not selected</strong></div><div class="detail-row"><span>Country</span><strong id="summary-country">Not selected</strong></div><div class="detail-row"><span>Home airport</span><strong id="summary-airport">Not selected</strong></div><div class="detail-row"><span>Starting cash</span><strong>$5,000,000 USD</strong></div><div class="detail-row"><span>Aircraft</span><strong>0</strong></div></aside>
+            <div class="setup-side-column"><aside class="panel setup-help" aria-label="Your airline summary"><span class="panel-kicker">YOUR AIRLINE</span><h2>Airline summary</h2><div class="logo-summary"><img id="summary-airline-logo" alt="Selected airline logo" hidden><span id="summary-logo-placeholder">Your logo</span></div><div class="detail-row"><span>Airline name</span><strong id="summary-airline-name">Not entered</strong></div><div class="detail-row"><span>Game world</span><strong id="summary-world">Not selected</strong></div><div class="detail-row"><span>Country</span><strong id="summary-country">Not selected</strong></div><div class="detail-row"><span>Home airport</span><strong id="summary-airport">Not selected</strong></div><div class="detail-row"><span>Starting cash</span><strong>$5,000,000 USD</strong></div><div class="detail-row"><span>Aircraft</span><strong>0</strong></div></aside>
+<section class="panel airport-details-panel" aria-label="Selected airport information">
+ <span class="panel-kicker">HOME AIRPORT</span>
+ <h2>Airport details</h2>
+ <p id="airport-details-empty" class="airport-details-empty">Select a country and airport to view its information.</p>
+ <div id="airport-details-content" hidden>
+  <h3 id="airport-details-name"></h3>
+  <div class="detail-row"><span>Airport code</span><strong id="airport-details-code">-</strong></div>
+  <div class="detail-row"><span>Location</span><strong id="airport-details-location">-</strong></div>
+  <div class="detail-row"><span>Category</span><strong id="airport-details-category">-</strong></div>
+  <p id="airport-details-category-note" class="airport-metadata-note"></p>
+  <div class="detail-row"><span>Runway length</span><strong id="airport-details-runway">-</strong></div>
+  <div class="detail-row"><span>Runway surface</span><strong id="airport-details-surface">-</strong></div>
+  <div class="detail-row"><span>Coordinates</span><strong id="airport-details-coordinates">-</strong></div>
+  <div class="detail-row"><span>Airport type</span><strong id="airport-details-type">-</strong></div>
+  <div class="airport-demand" aria-label="Passenger and cargo demand percentages">
+   <h3>Demand potential</h3>
+   <div class="demand-head"><strong>Passengers</strong><span id="airport-passenger-demand">Data pending</span></div>
+   <div class="demand-scale" id="airport-passenger-scale" role="img" aria-label="Passenger demand not available"></div>
+   <div class="demand-ticks"><span>0%</span><span>100%</span></div>
+   <div class="demand-head"><strong>Cargo</strong><span id="airport-cargo-demand">Data pending</span></div>
+   <div class="demand-scale" id="airport-cargo-scale" role="img" aria-label="Cargo demand not available"></div>
+   <div class="demand-ticks"><span>0%</span><span>100%</span></div>
+   <p class="airport-metadata-note">Demand values will appear here when calculated and approved. An empty scale does not mean zero demand.</p>
+  </div>
+ </div>
+</section>
+</div>
           </div>
         </section>
         <section data-player-view="profile" hidden>
