@@ -93,3 +93,10 @@ test('request bodies exceeding 512 bytes are rejected without database contact',
  assert.equal(response.status,400);
  assert.equal(s.counts().connected,0);
 });
+
+test('owner-approved, verified premium is calculated server-side from private entitlement and verified account email',()=>{
+ assert.match(PLAYER_READ_SQL.airlines,/account_entitlements/);
+ assert.match(PLAYER_READ_SQL.airlines,/owner_premium_email_reservations/);
+ assert.match(PLAYER_READ_SQL.airlines,/email_confirmed_at is not null/);
+ assert.match(PLAYER_READ_SQL.airlines,/owner_player_id=\$1::uuid/);
+});

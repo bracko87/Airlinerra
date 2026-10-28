@@ -150,7 +150,8 @@ async function loadPlayerReadData({local=false}={}){
     hasRealAirline=Boolean(first?.name);
     if(first?.name){
       doc.getElementById('top-world').textContent='WORLD '+String(first.worldId).padStart(2,'0')+' · PRELAUNCH';
-      doc.getElementById('top-airline-state').textContent=first.name+' · Registered airline';
+      doc.getElementById('top-airline-state').textContent=first.name+
+        (first.premiumUnlimited===true?' · Premium Unlimited':' · Registered airline');
       doc.getElementById('player-airline-name').textContent=first.name;
       doc.getElementById('player-cash').textContent=first.cashUsd+' USD';
     }else{

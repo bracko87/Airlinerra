@@ -137,3 +137,9 @@ test('real airline persists visibly in dashboard header while no-airline users a
  assert.match(js,/No airline created · Complete airline setup/);
  assert.match(js,/if\(!hasRealAirline && safePlayerView\(window.location.hash\)==='overview'\)/);
 });
+
+test('real dashboard displays complimentary unlimited membership only when server confirms it',async()=>{
+ const js=await readFile(new URL('../website/player-app.mjs',import.meta.url),'utf8');
+ assert.match(js,/first.premiumUnlimited===true/);
+ assert.match(js,/Premium Unlimited/);
+});
