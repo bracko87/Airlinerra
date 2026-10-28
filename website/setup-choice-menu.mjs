@@ -16,7 +16,7 @@ export function createDownwardMenu(select,{flags=false,placeholder='Select an op
  select.after(shell);select.hidden=true;
  const flagFor=(code)=>{
   const img=document.createElement('img');img.className='country-flag';
-  img.src='/assets/flags/'+code.toLowerCase()+'.svg';
+  img.src='https://flagcdn.com/w40/'+code.toLowerCase()+'.png';
   img.alt='';img.setAttribute('aria-hidden','true');img.loading='lazy';
   return img;
  };
