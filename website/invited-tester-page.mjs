@@ -57,7 +57,9 @@ async function showAuthenticatedUser(){
     throw new Error('Invitation identity is not verified.');
   }
   otpAuthorizesPassword=false;
-  window.location.replace(localPreview?'/player.html#overview':PRIVATE_TESTER_DASHBOARD_PATH);
+  // The player application reads the actual airline list and selects
+  // Airline Setup for first-time managers, Overview for existing managers.
+  window.location.replace('/player.html#overview');
 }
 
 doc.getElementById('sign-in').addEventListener('submit',e=>{

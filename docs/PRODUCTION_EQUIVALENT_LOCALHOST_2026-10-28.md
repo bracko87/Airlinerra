@@ -9,3 +9,6 @@ To enable real read-only game data on localhost, obtain the **Airlinerra project
 As of 2026-10-28, Supabase shows **1 confirmed account**, **0 airlines**, **0 open worlds**, **release gate disabled**, **0 approved published legal policies**. Consequently the full real path 'new account → real email verification → legal consent → world and home-airport choice → database airline creation → $5m ledger' is **NOT yet complete**. Public signup currently remains disabled by Supabase, independently of this website. Do not turn it on or bypass creation gates until legal documents and backend safety verification are complete and the owner explicitly approves.
 
 No Netlify deployment or Supabase data mutations in this batch. The production release still requires explicit owner approval and a real hosted Auth + private backend readiness review.
+
+## 2026-10-28 follow-up: entry routing
+A verified manager enters /player.html. The protected overview resolves the real list of airlines: zero airlines routes to #onboarding, an existing airline stays on Overview and renders the actual server-returned name/balance. This is shared across localhost and canonical host; no simulated session or $5m display is used. The published site still needs its private API deployed before end-to-end operations work.

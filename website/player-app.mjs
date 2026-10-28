@@ -139,7 +139,7 @@ async function airportSearch({setup=false,offset=0}={}){
   }
 }
 async function loadPlayerReadData({local=false}={}){
-  if(!auth||(!local&&!PLAYER_READ_API_ENABLED))return;
+  if(!auth)return; // The same protected API is used on localhost and the published site.
   try{
     playerData=createPlayerReadClient({auth,origin:window.location.origin,enabled:true,local});
     const data=await playerData.overview();
@@ -159,6 +159,10 @@ async function loadPlayerReadData({local=false}={}){
     doc.getElementById('airport-description').textContent=data.airportsTotal+' approved simulation airports available for read-only lookup.';
     // Actual airline setup must be saved by the protected backend.
     await loadRealOnboarding();
+    if(!hasRealAirline && safePlayerView(window.location.hash)==='overview'){
+      window.history.replaceState({},'',playerViewUrl('onboarding'));
+      navigateTo('onboarding');
+    }
   }catch{
     playerData=null;
     doc.getElementById('player-data-status').textContent=local

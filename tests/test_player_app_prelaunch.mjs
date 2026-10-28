@@ -116,3 +116,12 @@ test('real account onboarding does not re-open creation for an existing airline'
  assert.match(js,/Your real airline already exists/);
  assert.match(js,/new Intl\.DisplayNames\(\['en'\],\{type:'region'\}\)/);
 });
+
+test('verified first-time account routes to real setup while a returning airline retains its dashboard',async()=>{
+ const js=await readFile(new URL('../website/player-app.mjs',import.meta.url),'utf8');
+ assert.match(js,/if\(!hasRealAirline && safePlayerView\(window.location.hash\)==='overview'\)/);
+ assert.match(js,/navigateTo\('onboarding'\)/);
+ assert.match(js,/if\(hasRealAirline\)\{/);
+ assert.match(js,/Your real airline already exists/);
+ assert.doesNotMatch(js,/if\(!local&&\(!auth\|\|!PLAYER_READ_API_ENABLED\)\)return/);
+});
