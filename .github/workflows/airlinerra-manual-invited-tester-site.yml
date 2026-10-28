@@ -1,0 +1,59 @@
+name: Airlinerra invitation-only manual Netlify package
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type PREPARE INVITED TESTER ZIP (does not deploy)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: airlinerra-manual-invited-tester-site
+  cancel-in-progress: false
+
+jobs:
+  prepare-site:
+    if: github.event.inputs.confirmation == 'PREPARE INVITED TESTER ZIP'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned website dependencies
+        working-directory: website
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Verify security and browser callback tests
+        run: |
+          node --test tests/test_invited_tester_auth.mjs tests/test_invited_tester_entry.mjs tests/test_hosted_auth_readiness.mjs tests/test_prelaunch_release_invariants.mjs
+      - name: Verify manual bundle is opt-in and public build stays disabled
+        run: node --test tests/test_invited_tester_manual_bundle.mjs
+      - name: Build approved invitation-only website artifact
+        working-directory: website
+        env:
+          AIRLINERRA_INVITED_TESTER_BUILD_APPROVED: I APPROVE PRIVATE TESTER BUILD
+        run: npm run build:invited-tester
+      - name: Inspect final bundle for missing or accidentally shipped files
+        run: |
+          test -f dist/index.html
+          test -f dist/account.html
+          test -f dist/invited-tester-entry.mjs
+          test -f dist/invited-tester-auth.mjs
+          test -f dist/invited-tester-config.js
+          grep -q 'PRIVATE PRELAUNCH ACCESS' dist/account.html
+          grep -q 'PUBLIC_AUTH_ENABLED = false' dist/auth-rules.mjs
+          test ! -e dist/server
+          test ! -e dist/apply-hosted-auth-templates.mjs
+          test ! -e dist/netlify/functions
+      - name: Upload artifact for OWNER'S MANUAL Netlify Drop only
+        uses: actions/upload-artifact@v4
+        with:
+          name: airlinerra-private-invited-tester-site
+          path: dist/
+          retention-days: 7
+          if-no-files-found: error
