@@ -62,6 +62,27 @@ export async function createInvitedTesterAuth({
         throw new Error('Verified session unavailable.');
       return data.session.access_token;
     },
+    async uploadAirlineLogo({airlineId,blob}={}){
+      if(!/^[0-9a-f-]{36}$/i.test(airlineId||'')||
+         !(blob instanceof Blob)||blob.type!=='image/webp'||blob.size>1048576)
+        throw Error('Invalid airline logo.');
+      const user=await service.getUser();
+      if(!user?.id||!user.email_confirmed_at||user.is_anonymous)
+        throw Error('Verified account required.');
+      const objectPath=user.id+'/'+airlineId+'/logo.webp';
+      const {error}=await client.storage.from('airlinerra-airline-logos')
+        .upload(objectPath,blob,{contentType:'image/webp',upsert:true,cacheControl:'3600'});
+      if(error)throw Error('Unable to store airline logo.');
+      return objectPath;
+    },
+    async getAirlineLogoUrl(airlineId){
+      if(!/^[0-9a-f-]{36}$/i.test(airlineId||''))return null;
+      const user=await service.getUser();
+      if(!user?.id||!user.email_confirmed_at||user.is_anonymous)return null;
+      const {data,error}=await client.storage.from('airlinerra-airline-logos')
+        .createSignedUrl(user.id+'/'+airlineId+'/logo.webp',3600);
+      return error?null:data?.signedUrl||null;
+    },
     requestPasswordReset:service.requestPasswordReset,
     completeCallback:service.completeCallback,
     updatePassword:service.updatePassword,
