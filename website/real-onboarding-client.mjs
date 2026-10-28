@@ -18,7 +18,7 @@ export function createRealOnboardingClient({auth,origin,fetchImpl=(...args)=>fet
   if(!response.ok){
    if(response.status===401)throw Error('Your account session expired. Sign in again.');
    if(response.status===409)throw Error('The legal policy or airline status changed. Refresh the page.');
-   if(response.status===503)throw Error('Onboarding is not yet authorized. Check World 1 and the published legal policy.');
+   if(response.status===503)throw Error('Airline setup is temporarily unavailable. Please try again.');
    throw Error(typeof result?.error==='string'?result.error:'Onboarding request rejected');
   }
   return result;
