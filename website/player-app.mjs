@@ -224,6 +224,7 @@ async function loadPlayerReadData({local=false}={}){
     }
   }catch{
     playerData=null;
+    doc.getElementById('setup-draft-feedback').textContent='Unable to load your airports and airline data. Please refresh the page and try again.';
     doc.getElementById('player-data-status').textContent=local
       ?'Live read-only API unavailable; configure local trusted database backend'
       :'Private game database not connected';
