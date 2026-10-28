@@ -4,6 +4,7 @@
  * No routes, approvals, or public deployment configured here.
  */
 import { verifiedPlayerId } from './airline-activation.mjs';
+import {parentCountryIso} from './country-policy.mjs';
 
 export const ONBOARDING_CONTEXT_SQL = Object.freeze({
   ready: "select g.enabled, l.terms_version, l.privacy_version from airlinerra_game.platform_release_gate g left join airlinerra_game.legal_release_policy l on l.id=true and l.is_published=true and l.approved_at is not null where g.id=true",
@@ -71,7 +72,18 @@ export function createOnboardingContextService({
           const bucket=byWorld.get(Number(row.world_id));
           if(bucket && typeof row.airport_key==='string'&&
              /^(?:OURAIRPORTS:[1-9][0-9]{0,18}|FICTIONAL:fictional:[A-Z]{2}:[A-Z0-9]{2,8})$/u.test(row.airport_key)){
-            bucket.airports.push({key:row.airport_key,label:airportDisplayLabel(row)});
+            const countryIso=parentCountryIso(row.country_iso);
+            if(!countryIso)continue;
+            const airportName=typeof row.airport_name==='string'?row.airport_name.trim():'';
+            const airportCode=typeof row.airport_code==='string'?row.airport_code.trim():'';
+            if(!airportName||airportName.length>160)continue;
+            bucket.airports.push({
+              key:row.airport_key,
+              label:airportDisplayLabel(row),
+              name:airportName,
+              code:airportCode,
+              countryIso
+            });
           }
         }
         return Object.freeze({
