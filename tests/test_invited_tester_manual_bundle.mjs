@@ -42,7 +42,7 @@ test('ordinary main build includes invite-only account, without registering play
   const playerHtml=await read('player.html');
   assert.match(playerHtml,/id="player-app" hidden/);
   assert.match(playerHtml,/invited-tester-config\.js/);
-  assert.match(playerHtml,/disabled>Create airline/);
+  assert.match(playerHtml,/disabled>Create my airline/);
   assert.doesNotMatch(playerHtml,/id="register"|service_role|sb_secret_/);
 
   assert.match(dashboardHtml,/invited-tester-config\.js/);
