@@ -41,3 +41,25 @@ test('real signup requires hosted signup enabled and approved legal pages',async
  assert.match(build,/real-registration.mjs/);
  assert.doesNotMatch(script,/example.test|mock|simulate|fakeAccount|service_role|sb_secret_/i);
 });
+
+test('operator-supplied legal notice is included, while unfinished policies cannot authorize public signup',async()=>{
+ const [legal,terms,privacy,build,register]=await Promise.all([
+  read('../website/impressum.html'),read('../website/terms.html'),
+  read('../website/privacy.html'),read('../website/dev-scripts/build.mjs'),
+  read('../website/register.html')
+ ]);
+ assert.match(legal,/Next Quest Studio/);
+ assert.match(legal,/Aleksandar Levnajic/);
+ assert.match(legal,/22850 Norderstedt/);
+ assert.match(legal,/mailto:contact@nextqueststudio.net/);
+ assert.match(legal,/sole proprietorship/i);
+ for(const draft of [terms,privacy]){
+  assert.match(draft,/REVIEW DRAFT/);
+  assert.match(draft,/contact@nextqueststudio.net/);
+  assert.doesNotMatch(draft,/data-airlinerra-legal-approved="true"/);
+ }
+ for(const filename of ['impressum.html','terms.html','privacy.html','legal.css'])
+  assert.ok(build.includes("'"+filename+"'"),filename);
+ for(const href of ['/impressum.html','/terms.html','/privacy.html'])
+  assert.ok(register.includes('href="'+href+'"'),href);
+});

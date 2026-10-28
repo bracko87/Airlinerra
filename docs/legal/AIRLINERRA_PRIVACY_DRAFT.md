@@ -2,7 +2,11 @@
 Version proposed: 2026-10-28-draft. Do not copy to `website/privacy.html` or record legal approval until accurate controller details and processing arrangements are reviewed.
 
 ## Controller and contact
-Service: Airlinerra by NextQuest Studio. **REQUIRED BEFORE APPROVAL**: full legal controller name and business address, support/privacy rights contact email, applicable DPO details (if legally required) and complete Impressum information.
+Controller: Aleksandar Levnajic, trading as Next Quest Studio (sole proprietorship).
+Postal address: Horst-Embacher-Allee 3, 22850 Norderstedt, Germany.
+Contact for privacy rights and support: contact@nextqueststudio.net.
+The proprietor is not recorded in the German commercial register, according to the existing Next Quest Studio legal notice.
+**STILL REQUIRED BEFORE APPROVAL:** verify any required DPO information; confirm retention periods, processing contracts, hosting locations, international data transfers and the exact lawful bases for all enabled processing.
 
 ## Data categories
 - Account identity: email address, display name, email verification and account status.
@@ -25,7 +29,7 @@ Supabase (authentication and PostgreSQL), Netlify (hosting), Resend (transaction
 **REQUIRED BEFORE APPROVAL**: confirm account/game-data retention after deletion; audit/security log retention; trial expiry; support/invoices; backups and deletion schedules; cross-border transfer locations and legal transfer safeguards. No unverified retention period should be published.
 
 ## Rights and inquiries
-Subject to applicable conditions, EU/EEA users may seek access, rectification, erasure, restriction, portability, objection and withdrawal of consent, and complain to the relevant supervisory authority. Provide the operator's working privacy contact and request process before publishing.
+Subject to applicable conditions, EU/EEA users may seek access, rectification, erasure, restriction, portability, objection and withdrawal of consent, and complain to the relevant supervisory authority. Requests may be sent to contact@nextqueststudio.net; verify the complete identity-verification and handling process before approval.
 
 ## Cookies and account security
 Essential session storage may be used for authentication. Document actual cookies/storage, purposes and expiration. Obtain consent before optional analytics/advertising tracking where required. Password reset and confirmation links should not be logged or shared.

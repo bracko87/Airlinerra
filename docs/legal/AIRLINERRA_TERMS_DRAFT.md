@@ -2,7 +2,11 @@
 Version proposed: 2026-10-28-draft. Do not copy this draft to `website/terms.html` or set `legal_release_policy.approved_at` until the actual operator approves it.
 
 ## Operator
-Service: Airlinerra, a NextQuest Studio project. **REQUIRED BEFORE APPROVAL**: formal business proprietor/legal name, German business address, direct support email, any applicable VAT/business registration details, legal notice/Impressum and governing business jurisdiction. Do not assume that NextQuest Studio is a registered company.
+Service: Airlinerra, operated by Next Quest Studio (sole proprietorship), owner Aleksandar Levnajic.
+Registered-business address: Horst-Embacher-Allee 3, 22850 Norderstedt, Germany.
+Business contact: contact@nextqueststudio.net.
+Commercial register: not entered, per the operator's published company legal notice.
+**STILL REQUIRED BEFORE APPROVAL:** independently verify whether a VAT identification number or other statutory disclosures apply; confirm the exact trial/payment/cancellation/withdrawal rules and obtain the operator's approval of the final text. Do not describe Next Quest Studio as a registered corporation.
 
 ## Service and account
 Airlinerra is an online fictional airline-management game. Players create an account, confirm their email, and create an airline in a designated game world. Managers must protect their credentials, may not impersonate others or interfere with game infrastructure, and should report account compromise.

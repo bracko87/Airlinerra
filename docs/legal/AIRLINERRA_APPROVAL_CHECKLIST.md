@@ -8,6 +8,10 @@
 - Local private DB connection available to the preview server; secure hosted backend in place before Netlify deployment.
 - Automated tests and a genuine manual registration + real mail + write to DB + balance readback pass.
 
-**Information missing to approve Terms/Privacy:** legally registered/proprietor name, business address, support/privacy email, payment/trial terms and withdrawal policy, confirmed data processor/legal transfer arrangements and retention periods. These cannot legitimately be invented. Prepare approved policies and then enable the necessary provider/database release settings in a controlled release. The user's existing confirmed account can sign in now.
+**Operator identification supplied 28 October 2026:** Next Quest Studio — sole proprietorship operated by Aleksandar Levnajic; Horst-Embacher-Allee 3; 22850 Norderstedt; Germany; Email: contact@nextqueststudio.net; German commercial register: not entered (as declared in the operator's existing Impressum). The owner supplied these particulars in a screenshot of the existing Next Quest Studio legal notice. This identifies the sole proprietor rather than inventing a separate company.
+**Still missing for Terms/Privacy approval:** confirmed payment/trial rules and withdrawal policy; data processor arrangements, retention periods and international-transfer information; applicable VAT or other mandatory business disclosures; and explicit approval of the final document versions. Do not mark them approved while those are open. Prepare approved policies and then enable the necessary provider/database release settings in a controlled release. The user's existing confirmed account can sign in now.
 
 No Supabase release gates, user records or airline records were mutated during this code batch; no Netlify deploy occurred.
+
+## Legal website pages added for local review
+`/impressum.html` displays the owner-provided operator and contact information. `/terms.html` and `/privacy.html` are conspicuously labelled **review drafts**. They intentionally lack the `data-airlinerra-legal-approved="true"` marker and cannot unlock public signup. No production deployment or Supabase legal approval was made.
