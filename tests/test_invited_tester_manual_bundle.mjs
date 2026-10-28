@@ -30,9 +30,19 @@ test('ordinary main build includes invite-only account, without registering play
   assert.match(js,/config\?\.operatorPrelaunchApproved!==true/);
   assert.doesNotMatch(js,/\.signUp\(/);
   assert.match(publicRules,/export const PUBLIC_AUTH_ENABLED = false;/);
+  const [dashboardHtml,dashboardScript,accountPage]=await Promise.all([
+    read('tester.html'),read('tester-dashboard.mjs'),read('invited-tester-page.mjs')
+  ]);
+  assert.match(dashboardHtml,/id="tester-dashboard" hidden/);
+  assert.match(dashboardHtml,/invited-tester-config\.js/);
+  assert.match(dashboardHtml,/PRIVATE PRELAUNCH ACCESS/);
+  assert.doesNotMatch(dashboardHtml,/id="register"|id="airline-onboarding"/);
+  assert.match(dashboardScript,/Local visual preview|LOCAL VISUAL PREVIEW|local preview|Local preview/i);
+  assert.match(dashboardScript,/openPrivateTesterDashboard/);
+  assert.match(accountPage,/location\.replace\(PRIVATE_TESTER_DASHBOARD_PATH\)/);
   for(const name of [
     'index.html','invited-tester-entry.mjs','invited-tester-auth.mjs',
-    'invited-tester-page.css','assets/airlinerra-logo.png'
+    'invited-tester-page.css','tester-dashboard.css','tester-dashboard-state.mjs','assets/airlinerra-logo.png'
   ])assert.equal(await exists(name),true,name+' missing from normal build');
   for(const name of ['server','netlify/functions','apply-hosted-auth-templates.mjs']){
     assert.equal(await exists(name),false,name+' must not be published');

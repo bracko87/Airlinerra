@@ -4,6 +4,7 @@
  * from the public website build. They are not a player signup launch.
  */
 import {createInvitedTesterAuth} from './invited-tester-auth.mjs';
+import {isVerifiedInvitedUser,PRIVATE_TESTER_DASHBOARD_PATH} from './tester-dashboard-state.mjs';
 import {
   consumeInvitedTesterEntry,openInvitedTesterEntry,
   TESTER_ORIGIN,TESTER_AUTH_URL
@@ -28,8 +29,7 @@ function showPanel(panel,message=''){
   const title={
     'sign-in':'Sign in to your invitation',
     'forgot':'Recover your account',
-    'set-password':'Choose your password',
-    'signed-in':'Your account is verified'
+    'set-password':'Choose your password'
   };
   heading.textContent=title[panel]||'Private account access unavailable';
   feedbackMessage(message);
@@ -48,12 +48,12 @@ async function submitOnce(form,job){
 }
 async function showAuthenticatedUser(){
   const user=await activeAuth.getUser();
-  if(!user?.email_confirmed_at||user.is_anonymous===true||user.deleted_at){
+  if(!isVerifiedInvitedUser(user)){
     await activeAuth.signOut().catch(()=>{});
     throw new Error('Invitation identity is not verified.');
   }
   otpAuthorizesPassword=false;
-  showPanel('signed-in','Signed in as an invited manager. Airline creation remains closed.');
+  window.location.replace(PRIVATE_TESTER_DASHBOARD_PATH);
 }
 
 doc.getElementById('sign-in').addEventListener('submit',e=>{
@@ -96,13 +96,6 @@ doc.getElementById('forgot-link').addEventListener('click',()=>{
 doc.getElementById('back-to-login').addEventListener('click',()=>{
   otpAuthorizesPassword=false;showPanel('sign-in');
 });
-doc.getElementById('sign-out').addEventListener('click',()=>{
-  if(!activeAuth)return;
-  void activeAuth.signOut().then(()=>showPanel('sign-in','Signed out.')).catch(()=>{
-    feedbackMessage('Sign out could not be completed.',true);
-  });
-});
-
 async function initialize(){
   // localhost is visual-only: never initialize the hosted Auth SDK or send
   // credentials from a developer's machine. Real links work only on airlinerra.com.

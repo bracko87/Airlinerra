@@ -6,6 +6,11 @@ on:
     branches: [main]
     paths:
       - 'website/invited-tester-entry.mjs'
+      - 'website/tester-dashboard.mjs'
+      - 'website/tester-dashboard-state.mjs'
+      - 'website/tester-dashboard.css'
+      - 'website/private-tester-dashboard.html'
+      - 'tests/test_invited_tester_dashboard.mjs'
       - 'website/invited-tester-page.mjs'
       - 'website/invited-tester-page.css'
       - 'website/prelaunch-invited-account.html'
@@ -42,9 +47,11 @@ jobs:
         run: |
           node --check website/invited-tester-entry.mjs
           node --check website/invited-tester-page.mjs
+          node --check website/tester-dashboard.mjs
+          node --check website/tester-dashboard-state.mjs
       - name: Test invited-only callbacks, OTP scrubbing and provider gates
         run: |
-          node --test tests/test_invited_tester_entry.mjs tests/test_invited_tester_auth.mjs tests/test_hosted_auth_readiness.mjs tests/test_prelaunch_release_invariants.mjs
+          node --test tests/test_invited_tester_entry.mjs tests/test_invited_tester_auth.mjs tests/test_invited_tester_dashboard.mjs tests/test_hosted_auth_readiness.mjs tests/test_prelaunch_release_invariants.mjs
       - name: Build ordinary main website with invitation-only account
         working-directory: website
         run: npm run build
@@ -53,6 +60,10 @@ jobs:
       - name: Assert invited-only account is included without public signup
         run: |
           test -f dist/account.html
+          test -f dist/tester.html
+          test -f dist/tester-dashboard.mjs
+          test -f dist/tester-dashboard-state.mjs
+          grep -q 'id="tester-dashboard" hidden' dist/tester.html
           grep -q 'PRIVATE PRELAUNCH ACCESS' dist/account.html
           test -f dist/invited-tester-entry.mjs
           test -f dist/invited-tester-page.mjs

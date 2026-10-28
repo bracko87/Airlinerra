@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <meta name="referrer" content="no-referrer" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://esm.sh; connect-src https://hwllkabgzaynalahvkpz.supabase.co; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'self'" />
+  <title>Airlinerra — Private tester home</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+  <link rel="stylesheet" href="tester-dashboard.css" />
+  <script type="module" src="tester-dashboard.mjs"></script>
+</head>
+<body>
+  <header class="site-header">
+    <a href="/" aria-label="Airlinerra public homepage"><img src="assets/airlinerra-logo.png" alt="Airlinerra" width="190" height="47" /></a>
+    <div class="header-right"><span class="tiny">PRIVATE PRELAUNCH ACCESS</span><a class="site-link" href="/">Public website</a></div>
+  </header>
+  <main>
+    <section id="dashboard-loading" class="loading card" role="status">
+      <p class="eyebrow">INVITED TESTER</p>
+      <h1>Checking your private account…</h1>
+      <p>Verifying your invitation-only session.</p>
+    </section>
+    <section id="tester-dashboard" hidden>
+      <div class="hero">
+        <div>
+          <p class="eyebrow">AIRLINERRA · PRIVATE TESTING</p>
+          <h1>Welcome aboard.</h1>
+          <p class="hero-description">Your invitation is confirmed. This is your private tester home while Airlinerra prepares for launch.</p>
+          <p id="preview-indicator" class="preview" hidden>LOCAL VISUAL PREVIEW — no live account or authentication is connected.</p>
+        </div>
+        <div class="hero-mark"><span class="mark-icon" aria-hidden="true">✓</span><div><strong>Invited access</strong><span>Account area only</span></div></div>
+      </div>
+      <div class="tiles">
+        <article class="card account-card">
+          <div class="card-kicker">01 / ACCOUNT</div>
+          <h2>Your tester account</h2>
+          <p class="card-description">Sign-in and password recovery are available for invited accounts only.</p>
+          <dl class="details">
+            <div><dt>Email address</dt><dd id="account-email">—</dd></div>
+            <div><dt>Email verification</dt><dd><span class="status-dot"></span>Confirmed</dd></div>
+            <div><dt>Access level</dt><dd>Private prelaunch tester</dd></div>
+          </dl>
+          <div class="card-actions">
+            <button type="button" id="dashboard-sign-out">Sign out</button>
+            <a class="secondary" href="/account.html?screen=forgot">Reset password</a>
+          </div>
+          <p id="dashboard-feedback" role="status" aria-live="polite"></p>
+        </article>
+        <article class="card access-card">
+          <div class="card-kicker">02 / RELEASE STATUS</div>
+          <h2>The game is not open yet.</h2>
+          <p class="card-description">Invitation-only access lets us verify accounts safely before releasing the airline manager.</p>
+          <div class="status-list">
+            <div><span class="status-tag">Not open</span><span>Airline creation</span></div>
+            <div><span class="status-tag">Not open</span><span>Game worlds and routes</span></div>
+            <div><span class="status-tag">Not open</span><span>Trials, memberships and payments</span></div>
+          </div>
+          <p class="small-note">These are prelaunch restrictions, not account errors. No airline or trial has been activated.</p>
+        </article>
+      </div>
+      <section class="next">
+        <div><p class="eyebrow">WHAT HAPPENS NEXT</p><h2>Ready when the runway is.</h2>
+        <p>Your account is prepared for future testing. The game dashboard will become available only after a separate release approval.</p></div>
+        <a href="/" class="home-link">Explore Airlinerra <span aria-hidden="true">→</span></a>
+      </section>
+    </section>
+    <section id="dashboard-unavailable" class="loading card" hidden role="alert">
+      <p class="eyebrow">PRIVATE ACCESS</p>
+      <h1>Account verification unavailable.</h1>
+      <p>We couldn't safely verify your session right now. No game access was granted.</p>
+      <a href="/account.html?screen=sign-in" class="home-link">Return to sign in</a>
+    </section>
+  </main>
+  <footer>Airlinerra is a NextQuest Studio project. <span>Private prelaunch · No public registration</span></footer>
+</body>
+</html>

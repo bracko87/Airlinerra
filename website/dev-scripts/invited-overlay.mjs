@@ -20,7 +20,8 @@ export async function addInviteOnlyAccount({siteDir,distDir}={}){
   }
   const files=[
     'invited-tester-page.mjs','invited-tester-entry.mjs',
-    'invited-tester-auth.mjs','invited-tester-page.css'
+    'invited-tester-auth.mjs','invited-tester-page.css',
+    'tester-dashboard.mjs','tester-dashboard-state.mjs','tester-dashboard.css'
   ];
   for(const name of files){
     await cp(path.join(siteDir,name),path.join(distDir,name));
@@ -51,4 +52,16 @@ export async function addInviteOnlyAccount({siteDir,distDir}={}){
     built.includes('id="airline-onboarding"')){
     throw new Error('Invited account page must not offer registration or airline creation.');
   }
+
+  const dashboardSource=await readFile(path.join(siteDir,'private-tester-dashboard.html'),'utf8');
+  const dashboardTag='<script type="module" src="tester-dashboard.mjs"></script>';
+  if(!dashboardSource.includes(dashboardTag)||
+    !dashboardSource.includes('id="tester-dashboard" hidden')||
+    !dashboardSource.includes('PRIVATE PRELAUNCH ACCESS')||
+    /id="register"|id="airline-onboarding"/.test(dashboardSource)){
+    throw new Error('Private tester dashboard failed safety checks.');
+  }
+  const dashboardBuilt=dashboardSource.replace(dashboardTag,
+    '<script defer src="invited-tester-config.js"></script>\n  '+dashboardTag);
+  await writeFile(path.join(distDir,'tester.html'),dashboardBuilt);
 }
