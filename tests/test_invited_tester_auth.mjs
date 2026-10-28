@@ -78,10 +78,12 @@ test('invited tester supports email-confirmed login, recovery and signout but ex
   });
 });
 
-test('invited test helper source is NOT in the public static prelaunch asset allowlist',async()=>{
+test('standard website build includes invited login, not general signup',async()=>{
   const {readFile}=await import('node:fs/promises');
   const build=await readFile(new URL('../website/dev-scripts/build.mjs',import.meta.url),'utf8');
-  assert.doesNotMatch(build,/invited-tester-auth/);
+  assert.match(build,/addInviteOnlyAccount/);
+  const overlay=await readFile(new URL('../website/dev-scripts/invited-overlay.mjs',import.meta.url),'utf8');
+  assert.match(overlay,/invited-tester-auth\.mjs/);
   const account=await readFile(new URL('../website/account.js',import.meta.url),'utf8');
   assert.doesNotMatch(account,/invited-tester-auth/);
 });
