@@ -75,3 +75,16 @@ test('client with registration capability is rejected',async()=>{
   })});
   await assert.rejects(openPrivateTesterDashboard(s.params),PrivateTesterAccessDenied);
 });
+
+
+test('missing Supabase session redirects through access denial, not service error',async()=>{
+  const missing=new Error('Auth session missing');
+  missing.name='AuthSessionMissingError';
+  let signedOut=false;
+  const s=setup({createAuth:async()=>({
+    getUser:async()=>{throw missing;},
+    signOut:async()=>{signedOut=true;}
+  })});
+  await assert.rejects(openPrivateTesterDashboard(s.params),PrivateTesterAccessDenied);
+  assert.equal(signedOut,true);
+});

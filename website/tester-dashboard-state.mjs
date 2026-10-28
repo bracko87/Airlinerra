@@ -39,7 +39,15 @@ export async function openPrivateTesterDashboard({
     auth.register!==undefined||auth.signUp!==undefined){
     throw new PrivateTesterAccessDenied();
   }
-  const user=await auth.getUser();
+  let user;
+  try{
+    user=await auth.getUser();
+  }catch(error){
+    // Supabase getUser() throws AuthSessionMissingError for a signed-out
+    // visitor. That is an expected access denial, not a service outage.
+    if(error?.name!=='AuthSessionMissingError')throw error;
+    user=null;
+  }
   if(!isVerifiedInvitedUser(user)){
     await auth.signOut().catch(()=>{});
     throw new PrivateTesterAccessDenied();
