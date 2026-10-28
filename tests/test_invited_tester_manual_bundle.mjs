@@ -3,49 +3,54 @@ import assert from 'node:assert/strict';
 import {readFile,access} from 'node:fs/promises';
 import {execFileSync} from 'node:child_process';
 
-const root=new URL('../',import.meta.url);
-const fsPath=url=>url.pathname;
-const run=(script,env={})=>execFileSync(process.execPath,[script],{
-  cwd:fsPath(root),
-  env:{...process.env,AIRLINERRA_INVITED_TESTER_BUILD_APPROVED:'',...env},
-  stdio:'pipe',timeout:20000
-});
-const dist=path=>new URL('../dist/'+path,import.meta.url);
-const read=async path=>readFile(dist(path),'utf8');
-async function exists(path){try{await access(dist(path));return true;}catch{return false;}}
+const repoRoot=new URL('../',import.meta.url);
+const rootPath=repoRoot.pathname;
+const output=name=>new URL('../dist/'+name,import.meta.url);
+const read=name=>readFile(output(name),'utf8');
+const exists=async name=>{try{await access(output(name));return true;}catch{return false;}};
 
-test('default static site remains closed; private build requires explicit approval and is reversible',async()=>{
-  run('website/dev-scripts/build.mjs');
-  const preview=await read('account.html');
-  assert.match(preview,/Prelaunch preview/);
-  assert.match(await read('auth-rules.mjs'),/export const PUBLIC_AUTH_ENABLED = false;/);
-  for(const p of [
-    'invited-tester-page.mjs','invited-tester-auth.mjs',
-    'invited-tester-entry.mjs','invited-tester-config.js'
-  ])assert.equal(await exists(p),false,'default build published '+p);
-  assert.throws(()=>run('website/dev-scripts/build-invited-tester.mjs'));
-  assert.equal(await read('account.html'),preview,'denied overlay cannot change account page');
-
-  run('website/dev-scripts/build-invited-tester.mjs',{
-    AIRLINERRA_INVITED_TESTER_BUILD_APPROVED:'I APPROVE PRIVATE TESTER BUILD'
+test('ordinary main build includes invite-only account, without registering players',async()=>{
+  execFileSync(process.execPath,['website/dev-scripts/build.mjs'],{
+    cwd:rootPath,stdio:'pipe',timeout:25000
   });
-  const html=await read('account.html');
+  const [html,js,publicRules,configuration]=await Promise.all([
+    read('account.html'),read('invited-tester-page.mjs'),
+    read('auth-rules.mjs'),read('invited-tester-config.js')
+  ]);
   assert.match(html,/PRIVATE PRELAUNCH ACCESS/);
+  assert.match(html,/id="sign-in"/);
   assert.match(html,/id="set-password"/);
   assert.match(html,/invited-tester-config\.js/);
   assert.doesNotMatch(html,/id="register"|id="airline-onboarding"/);
-  assert.equal(await exists('invited-tester-page.mjs'),true);
-  assert.equal(await exists('invited-tester-entry.mjs'),true);
-  assert.equal(await exists('invited-tester-auth.mjs'),true);
-  const runtime=await read('invited-tester-config.js');
-  assert.match(runtime,/operatorPrelaunchApproved":true/);
-  assert.match(runtime,/sb_publishable_[A-Za-z0-9_-]{16,128}/);
-  assert.doesNotMatch(runtime,/service_role|sb_secret_/);
-  assert.match(await read('auth-rules.mjs'),/export const PUBLIC_AUTH_ENABLED = false;/);
-
-  run('website/dev-scripts/build.mjs');
-  assert.equal(await read('account.html'),preview);
-  for(const p of ['invited-tester-entry.mjs','invited-tester-config.js']){
-    assert.equal(await exists(p),false,'default build failed to scrub '+p);
+  assert.match(configuration,/operatorPrelaunchApproved":true/);
+  assert.match(configuration,/sb_publishable_[A-Za-z0-9_-]{16,128}/);
+  assert.doesNotMatch(configuration,/sb_secret_|service_role|postgres:|postgresql:/);
+  assert.match(js,/Local visual preview only/);
+  assert.match(js,/config\?\.operatorPrelaunchApproved!==true/);
+  assert.doesNotMatch(js,/\.signUp\(/);
+  assert.match(publicRules,/export const PUBLIC_AUTH_ENABLED = false;/);
+  for(const name of [
+    'index.html','invited-tester-entry.mjs','invited-tester-auth.mjs',
+    'invited-tester-page.css','assets/airlinerra-logo.png'
+  ])assert.equal(await exists(name),true,name+' missing from normal build');
+  for(const name of ['server','netlify/functions','apply-hosted-auth-templates.mjs']){
+    assert.equal(await exists(name),false,name+' must not be published');
   }
+});
+
+test('build remains distinct from automatic Netlify deployment and local UI needs no live Auth',async()=>{
+  const [netlify,packageJson,dev,source]=await Promise.all([
+    readFile(new URL('../netlify.toml',import.meta.url),'utf8'),
+    readFile(new URL('../website/package.json',import.meta.url),'utf8'),
+    readFile(new URL('../website/dev-scripts/dev.mjs',import.meta.url),'utf8'),
+    readFile(new URL('../website/invited-tester-page.mjs',import.meta.url),'utf8')
+  ]);
+  assert.match(netlify,/command = "npm run build"/);
+  assert.match(netlify,/base = "website"/);
+  assert.doesNotMatch(netlify,/\[functions\]/);
+  assert.equal(JSON.parse(packageJson).scripts.preview,
+    'npm run build && node dev-scripts/dev.mjs --built');
+  assert.match(dev,/process\.argv\.includes\('--built'\)/);
+  assert.match(source,/\['localhost','127\.0\.0\.1'\]/);
+  assert.match(source,/input\.disabled=true/);
 });
