@@ -1,5 +1,20 @@
 # Airlinerra — official domain is also the prelaunch testing site
 
+## Owner's GitHub-main-first workflow — 28 October 2026 (LATEST)
+
+The owner rejected the separate ZIP-and-Netlify-Drop artifact workflow. The sole approved development path is **edit code → commit to existing `bracko87/Airlinerra` main → owner optionally pulls main and checks localhost → owner manually deploys the approved version to existing Netlify `airlinerra.com` project**. Never use TinyFish, invent new repositories, enable automatic publishing or require manual download of GitHub Actions artifacts for this task.
+
+**Implemented directly on main:** the ordinary Netlify configured command `cd website && npm run build` now runs `addInviteOnlyAccount()` from `website/dev-scripts/invited-overlay.mjs` after copying standard website assets. This places the private login / invitation / recovery shell and its browser modules at `dist/account.html`. No separate special build command, environment approval string, ZIP, or GitHub Actions artifact workflow is required. The regular `netlify.toml` still points at `npm run build`.
+
+**Local test command on Windows, from repository root:** `cd website`, `npm ci`, `npm run preview`; open `http://localhost:5187/account.html`. The preview shows the NEW invited-test UI, but form submission is deliberately disabled on localhost: no live Supabase Auth/OTP operations occur from local machine. Hosted invite flows work only at exact `https://airlinerra.com/account.html` after the owner's manual Netlify deployment. Pulling latest main without `npm run preview` and visiting the legacy `npm run dev` source route may still show the old static preview, so use `npm run preview` to inspect the actual production artifact.
+
+**Security:** hosted Supabase provider-level public signup OFF, anonymous OFF, confirmed email ON; `website/auth-rules.mjs` remains `PUBLIC_AUTH_ENABLED=false`; no registration or game-world actions in the new shell. Supabase publishable browser key is public, not a service-role/admin credential. No changes to Netlify automations, hosted signup flags, airline activation, payments or released game worlds.
+
+**Email templates:** all three were manually saved by the owner on 28 October 2026 with Airlinerra white-background logo design; the earlier Management API installer/One-time PAT attempt is obsolete and should not be pursued. SMTP is configured but no real email delivery test performed. A controlled hosted invitation test is appropriate only after normal build and release checks pass and the owner manually deploys.
+
+**Verification:** standard main build and private-login tests are wired into `.github/workflows/airlinerra-private-invite-source-check.yml`. Never claim Actions green or the site deployed before results have been confirmed.
+
+
 ## Update 28 October 2026 — owner-driven manual deployment path
 
 The owner manually completed and saved all three hosted Supabase Auth HTML email templates (invite, confirm signup, password recovery), in a common Airlinerra branded design with logo on white. This replaces the obsolete notes below about the Monaco editor being blocked. No Management API PAT or automated installer is needed; the previously created unused one-day PAT was revoked.
