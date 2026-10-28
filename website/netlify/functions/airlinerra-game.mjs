@@ -11,7 +11,7 @@ export const config={
  ],
  rateLimit:{action:'rate_limit',aggregateBy:'ip',windowSize:60,windowLimit:60}
 };
-const app=createProductionGameApi();
+const app=createProductionGameApi({loadPg:()=>import('pg')});
 export default async function airlinerraGame(request){
  return app(request);
 }

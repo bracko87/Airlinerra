@@ -51,6 +51,9 @@ on:
       - 'tests/test_local_onboarding_draft.mjs'
       - 'tests/test_player_app_prelaunch.mjs'
       - 'tests/test_real_local_player_gateway.mjs'
+      - 'tests/test_production_game_api.mjs'
+      - 'website/netlify/functions/**'
+      - 'netlify.toml'
       - 'tests/test_owner_private_pilot.mjs'
       - 'website/dev-scripts/dev-local-auth.mjs'
       - 'website/auth-rules.mjs'
@@ -99,6 +102,8 @@ jobs:
           node --check real-onboarding-client.mjs
           node --check ../server/registration-readiness.mjs
           node --check ../server/canonical-game-api.mjs
+          node --check ../server/production-game-api.mjs
+          node --check netlify/functions/airlinerra-game.mjs
           node --check player-app.mjs
           node --check player-data-service.mjs
           node --check dev-scripts/dev-local-auth.mjs
