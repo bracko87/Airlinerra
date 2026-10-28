@@ -8,7 +8,8 @@ const sourceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '.
 const root = process.argv.includes('--built') ? path.resolve(sourceRoot,'../dist') : sourceRoot;
 const port = Number(process.env.PORT || (process.argv.includes('--built') ? 5188 : 5187));
 const realPlayerHandler=process.argv.includes('--built') && port===5188
-  ?await makeRealLocalPlayerHandler():null;
+  ?await makeRealLocalPlayerHandler({env:process.argv.includes('--edge-readonly')
+    ?{...process.env,AIRLINERRA_LOCAL_EDGE_READONLY:'1'}:process.env}):null;
 const types = {'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.webp':'image/webp','.png':'image/png','.ico':'image/x-icon'};
 createServer(async (req, res) => {
   try {
