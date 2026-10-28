@@ -35,6 +35,10 @@ on:
       - 'website/private-tester-dashboard.html'
       - 'tests/test_invited_tester_dashboard.mjs'
       - 'website/invited-tester-page.mjs'
+      - 'website/real-registration.mjs'
+      - 'website/register.html'
+      - 'website/real-onboarding-client.mjs'
+      - 'website/dev-scripts/real-player-read-gateway.mjs'
       - 'website/dev-only/**'
       - 'website/register-local-entry.mjs'
       - 'tests/test_local_registration_flow.mjs'
@@ -75,6 +79,9 @@ jobs:
         run: |
           node --check website/invited-tester-entry.mjs
           node --check website/invited-tester-page.mjs
+          node --check website/real-registration.mjs
+          node --check website/real-onboarding-client.mjs
+          node --check website/dev-scripts/real-player-read-gateway.mjs
           node --check website/local-demo-session.mjs
           node --check website/dev-only/registration.mjs
           node --check website/dev-only/state.mjs
