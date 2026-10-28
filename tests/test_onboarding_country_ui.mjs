@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {TERRITORY_COUNTRY,UN_COUNTRY_CODES,UN_COUNTRY_SET,parentCountryIso,countrySqlExpression} from '../server/country-policy.mjs';
+import {TERRITORY_COUNTRY,UN_COUNTRY_CODES,UN_COUNTRY_SET,GAME_COUNTRY_CODES,GAME_COUNTRY_SET,parentCountryIso,countrySqlExpression} from '../server/country-policy.mjs';
 import {PLAYER_READ_SQL} from '../server/player-read-service.mjs';
 const read=relative=>readFile(new URL(relative,import.meta.url),'utf8');
-test('only 193 UN members and two observer states can appear as game countries',()=>{
+test('UN members and observers remain tracked, with owner-approved Kosovo exception',()=>{
  assert.equal(UN_COUNTRY_CODES.length,195);
  assert.equal(new Set(UN_COUNTRY_CODES).size,195);
  for(const code of ['RS','DK','GB','FI','FR','US','CN','MA','VA','PS'])
@@ -16,7 +16,10 @@ test('only 193 UN members and two observer states can appear as game countries',
  assert.equal(parentCountryIso('IM'),'GB');
  assert.equal(parentCountryIso('GF'),'FR');
  assert.equal(parentCountryIso('PR'),'US');
- assert.equal(parentCountryIso('XK'),'RS');
+ assert.equal(parentCountryIso('XK'),'XK');
+ assert.equal(GAME_COUNTRY_CODES.length,196);
+ assert.equal(GAME_COUNTRY_SET.has('XK'),true);
+ assert.equal(UN_COUNTRY_SET.has('XK'),false);
  assert.equal(parentCountryIso('TW'),'CN');
  assert.equal(parentCountryIso('AB'),null);
  assert.equal(countrySqlExpression('country_iso').includes("when 'FO' then 'DK'"),true);
@@ -45,7 +48,14 @@ test('onboarding uses downward flags, protected full airport choices, logo uploa
  assert.match(html,/id="summary-airline-name"/);
  assert.match(html,/id="setup-confirm-dialog"/);
  assert.doesNotMatch(html,/Development preview:|PRIVATE PRELAUNCH|What happens before creation/);
- assert.match(css,/top:calc\(100% \+ 5px\)/);
+ assert.match(css,/\.down-menu-options\{position:relative/);
+ assert.match(css,/\.down-menu-category/);
+ assert.match(html,/id="airport-details-category"/);
+ assert.match(html,/id="airport-passenger-demand"/);
+ assert.match(html,/id="airport-cargo-demand"/);
+ assert.match(js,/demandScale\('passenger',airport.passengerDemandPct\)/);
+ assert.match(js,/demandScale\('cargo',airport.cargoDemandPct\)/);
+ assert.match(menu,/option.dataset.category/);
  assert.match(menu,/flagcdn\.com\/w40/);
  assert.match(menu,/aria-expanded/);
  assert.match(js,/Intl\.Collator/);
