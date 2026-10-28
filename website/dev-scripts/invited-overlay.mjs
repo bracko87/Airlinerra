@@ -73,7 +73,7 @@ export async function addInviteOnlyAccount({siteDir,distDir}={}){
   const playerTag='<script type="module" src="player-app.mjs"></script>';
   if(!playerSource.includes(playerTag)||
      !playerSource.includes('id="player-app" hidden')||
-     !playerSource.includes('PRIVATE PRELAUNCH')||
+     !playerSource.includes('YOUR NEW AIRLINE')||
      !playerSource.includes('disabled>Create my airline')||
      /<script[^>]+src="https?:|id="register"|service_role|sb_secret_/u.test(playerSource)){
     throw new Error('Player application prelaunch safety checks failed.');
