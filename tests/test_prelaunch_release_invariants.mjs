@@ -24,8 +24,8 @@ test('manual Netlify release requires private runtime opt-in, not public game ac
   assert.equal(await exists('website/netlify/functions/'),true,
     'Manual release must bundle the private API');
   const production=await source('server/production-game-api.mjs');
-  assert.match(production,/AIRLINERRA_PRODUCTION_API_ENABLED!=='true'/);
-  assert.match(production,/validProductionDatabaseUrl/);
+  assert.match(production,/EDGE_FUNCTION_URL/);
+  assert.doesNotMatch(production,/AIRLINERRA_DATABASE_URL|loadPg|process\\.env/);
   assert.equal(await exists('netlify/functions/'),false,
     'No root functions may automatically deploy without owner authorization');
 });

@@ -44,13 +44,13 @@ jobs:
           set -euo pipefail
           test -f website/netlify/functions/airlinerra-game.mjs
           test ! -d netlify/functions
-          grep -Fq "AIRLINERRA_PRODUCTION_API_ENABLED!=='true'" server/production-game-api.mjs
+          grep -Fq 'EDGE_FUNCTION_URL' server/production-game-api.mjs
           grep -Fq 'directory = "netlify/functions"' netlify.toml
           test ! -e .netlify/state.json
           grep -Eq '^export const PUBLIC_AUTH_ENABLED = false;' website/auth-rules.mjs
           # The owner explicitly requested a single manual deployment with
           # this real function. Missing private environment values must fail closed.
-          grep -Fq "validProductionDatabaseUrl" server/production-game-api.mjs
+          ! grep -Eq 'AIRLINERRA_DATABASE_URL|loadPg' server/production-game-api.mjs
       - name: Verify actual production Netlify game Function bundles without deployment
         shell: bash
         run: |

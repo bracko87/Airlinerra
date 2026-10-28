@@ -1,68 +1,56 @@
-/** Active Netlify server-side adapter for the canonical Airlinerra game account API.
- * Never deployed except through the owner's existing manual Netlify release.
- * Private DB URL is read only at invocation, never published to browsers.
+/** Netlify's same-origin, secret-free bridge to the already deployed Supabase
+ * game API. Supabase Edge Function owns private database connectivity.
+ * No database credentials or paid Netlify environment variables are necessary.
  */
-import {createCanonicalGameApi,CANONICAL_GAME_API_PATHS} from './canonical-game-api.mjs';
-import {createHostedAuthVerifier} from './hosted-auth-verifier.mjs';
-import {AIRLINERRA_INVITED_TESTER_PUBLIC_SETTINGS} from '../website/invited-tester-public-settings.mjs';
+import {CANONICAL_GAME_API_PATHS} from './canonical-game-api.mjs';
+import {AIRLINERRA_INVITED_TESTER_PUBLIC_SETTINGS as settings} from '../website/invited-tester-public-settings.mjs';
 
-const REF='hwllkabgzaynalahvkpz';
 export const PRODUCTION_ORIGIN='https://airlinerra.com';
-const HEADERS={'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff'};
-const fail=(status,message)=>new Response(JSON.stringify({error:message}),{status,headers:HEADERS});
-
-export function validProductionDatabaseUrl(value) {
- try{
-  if(typeof value!=='string')return false;
-  const u=new URL(value);
-  if(!['postgres:','postgresql:'].includes(u.protocol)||!u.password||
-     u.pathname!=='/postgres'||u.hash)return false;
-  if(u.searchParams.size>1||
-    (u.searchParams.size===1&&u.searchParams.get('sslmode')!=='require'))
-    return false;
-  if(u.hostname==='db.'+REF+'.supabase.co')return u.username==='postgres';
-  return u.hostname.endsWith('.pooler.supabase.com')&&u.username.endsWith('.'+REF);
- }catch{return false}
-}
-
-export function createProductionGameApi({
- env=process.env,loadPg=()=>import('pg'),fetchImpl=globalThis.fetch,
- origin=PRODUCTION_ORIGIN
-}={}){
- if(origin!==PRODUCTION_ORIGIN)throw Error('Untrusted game API origin');
- let cached=null;
- return async function productionGameApi(request){
+export const EDGE_FUNCTION_URL='https://hwllkabgzaynalahvkpz.supabase.co/functions/v1/airlinerra-game';
+const TOKEN=/^Bearer [A-Za-z0-9._~-]{16,8192}$/u;
+const HEADERS={'content-type':'application/json; charset=utf-8','cache-control':'no-store',
+ 'x-content-type-options':'nosniff','referrer-policy':'no-referrer'};
+function fail(status,error){return new Response(JSON.stringify({error}),{status,headers:HEADERS});}
+export function createProductionGameApi({origin=PRODUCTION_ORIGIN,fetchImpl=globalThis.fetch}={}){
+ if(origin!==PRODUCTION_ORIGIN||typeof fetchImpl!=='function')
+  throw Error('Pinned Airlinerra production API required');
+ return async function realGameApi(request){
   if(!(request instanceof Request))return fail(400,'Invalid request');
   const url=new URL(request.url);
-  if(url.origin!==PRODUCTION_ORIGIN||url.search||url.hash)
-   return fail(403,'Forbidden');
-  if(!CANONICAL_GAME_API_PATHS.includes(url.pathname))
-   return fail(404,'Not found');
-  if(env?.AIRLINERRA_PRODUCTION_API_ENABLED!=='true'||
-     !validProductionDatabaseUrl(env?.AIRLINERRA_DATABASE_URL))
-   return fail(503,'Game account database is not configured');
-  if(!cached){
-   cached=(async()=>{
-    const driver=await loadPg();
-    const Pool=driver.Pool||driver.default?.Pool;
-    if(typeof Pool!=='function')throw Error('PostgreSQL driver not available');
-    const db=new Pool({
-      connectionString:env.AIRLINERRA_DATABASE_URL,
-      ssl:{rejectUnauthorized:true},
-      max:2,connectionTimeoutMillis:5000,idleTimeoutMillis:10000
-    });
-    const verified=createHostedAuthVerifier({
-      publishableKey:AIRLINERRA_INVITED_TESTER_PUBLIC_SETTINGS.publishableKey,
-      fetchImpl
-    });
-    return createCanonicalGameApi({
-      enabled:true,origin:PRODUCTION_ORIGIN,
-      verifyUserToken:verified,database:db,
-      documentPaths:{terms:'/terms.html',privacy:'/privacy.html'}
-    });
-   })().catch(error=>{cached=null;throw error});
+  if(url.origin!==PRODUCTION_ORIGIN||url.search||url.hash)return fail(403,'Forbidden');
+  if(!CANONICAL_GAME_API_PATHS.includes(url.pathname))return fail(404,'Not found');
+  const isReadiness=url.pathname==='/api/v1/registration/readiness';
+  if(request.method!==(isReadiness?'GET':'POST'))return fail(405,'Method not allowed');
+  const userBearer=request.headers.get('authorization')||'';
+  if(!isReadiness&&!TOKEN.test(userBearer))return fail(401,'Verified session required');
+  if(!isReadiness&&request.headers.get('origin')!==null&&
+     request.headers.get('origin')!==PRODUCTION_ORIGIN)return fail(403,'Invalid origin');
+  let body;
+  if(!isReadiness){
+   try{
+    body=await request.text();
+    if(new TextEncoder().encode(body).byteLength>2048)return fail(413,'Request too large');
+   }catch{return fail(400,'Invalid request body')}
   }
-  try{return await(await cached)(request)}
-  catch{return fail(503,'Game account API temporarily unavailable')}
+  try{
+   const headers={
+    apikey:settings.publishableKey,
+    'x-airlinerra-route':url.pathname,
+    origin:PRODUCTION_ORIGIN,
+    'content-type':'application/json',
+    authorization:isReadiness?'Bearer '+settings.publishableKey:userBearer
+   };
+   const upstream=await fetchImpl(EDGE_FUNCTION_URL,{
+    method:request.method,headers,body,cache:'no-store',redirect:'error',
+    signal:AbortSignal.timeout(20000)
+   });
+   const contentType=upstream.headers.get('content-type')||'';
+   if(!contentType.includes('application/json'))return fail(503,'Game API returned an invalid response');
+   const bytes=await upstream.arrayBuffer();
+   if(bytes.byteLength>2_000_000)return fail(503,'Game API response limit reached');
+   return new Response(bytes,{status:upstream.status,headers:HEADERS});
+  }catch{
+   return fail(503,'Secure game API is temporarily unavailable');
+  }
  };
 }

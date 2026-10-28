@@ -1,5 +1,5 @@
 /** Airlinerra canonical production game account function.
- * Enabled ONLY with Netlify's private site environment configuration.
+ * The database is held privately by the Supabase Edge Function; no Netlify secrets.
  */
 import {createProductionGameApi} from '../../../server/production-game-api.mjs';
 
@@ -11,7 +11,7 @@ export const config={
  ],
  rateLimit:{action:'rate_limit',aggregateBy:'ip',windowSize:60,windowLimit:60}
 };
-const app=createProductionGameApi({loadPg:()=>import('pg')});
+const app=createProductionGameApi();
 export default async function airlinerraGame(request){
  return app(request);
 }
