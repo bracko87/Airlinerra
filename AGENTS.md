@@ -1,3 +1,15 @@
+# LATEST — 28 October 2026: OWNER AIRLINE SETUP UI AND REAL COUNTRY CATALOG
+
+The owner is reviewing the live player onboarding flow and explicitly requested a normal production-style UI without visible "private prelaunch" / "development preview" notices. The current GitHub main contains a country and airport selector redesign, optional logo upload, real-time airline summary, and legal confirmation in a final dialog. All edits MUST follow the owner workflow: commit to the existing GitHub main, owner manually deploys to the existing Netlify website. Auto deploy stays OFF.
+
+- World 01 approved airport roster stays 3,140 records. The live Supabase Edge Function `airlinerra-game` has been upgraded to version 3 with `server/country-policy.mjs` and the updated `server/player-read-service.mjs`. Only countries that are among 193 UN members plus 2 observer states may appear as country options. Dependent territory codes group under parent countries in this GAME selector, without rewriting original airport records. The UI sorts by English display name, uses real flag PNG images, and fetches every paginated airport for the chosen country in sorted order.
+- The logo bucket `airlinerra-airline-logos` is PRIVATE, limited to 1MB WebP, with per-user Storage RLS. The browser converts selected images to WebP; it uploads only after the protected `createAirline` operation succeeds. Real signed-image access for existing airline logos is supported. No keys are exposed.
+- Hook `public.airlinerra_owner_signup_gate(jsonb)` is enabled in Auth based on the owner's Supabase screenshot. Signup settings were switched on by the owner with anonymous sign-in OFF and confirm email ON. The hook is designed to reject all but the reserved owner email; this is NOT general public registration. Existing earlier AGENTS passages claiming provider signup must be OFF are historical and superseded for the authorized owner pilot; public game world release gates and unpublished legal consent remain CLOSED.
+- The player page displays no private prelaunch/development labels. Legal review drafts remain accurately disclosed at the final consent confirmation dialog; do NOT silently accept them or pretend final Terms have been published.
+- Do not claim hosted end-to-end login, airline creation, or real-logo upload has succeeded until manually validated. Supabase function/data read-side checks and source syntax checks are not equivalent to a successful browser E2E test. Do NOT automatically release Netlify or enable public game access.
+- Files: `website/private-player-app.html`, `website/player-app.mjs`, `website/player-app.css`, `website/setup-choice-menu.mjs`, `website/invited-tester-auth.mjs`, `server/country-policy.mjs`, `server/player-read-service.mjs`, `tests/test_onboarding_country_ui.mjs`.
+
+---
 # Airlinerra repository instructions
 
 ## CURRENT IMPLEMENTATION — 28 October 2026: REAL localhost authentication, no simulated signup
