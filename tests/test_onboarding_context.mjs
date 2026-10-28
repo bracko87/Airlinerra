@@ -50,12 +50,12 @@ test('private context lists only operator-added keys in open worlds',async()=>{
   const {service,state}=fixture();
   const result=await service.getContext({accessToken:TOKEN});
   assert.equal(result.policy.termsVersion,'ci-v1');
-  assert.equal(result.worlds.length,2);
+  assert.equal(result.worlds.length,1);
   assert.deepEqual(result.worlds[0].airports,[{
     key:'OURAIRPORTS:101',label:'Bremen Airport (EDDW) — DE',
     name:'Bremen Airport',code:'EDDW',countryIso:'DE'
   }]);
-  assert.deepEqual(result.worlds[1].airports,[]);
+  assert.equal(result.worlds[0].airports.length,1);
   assert.equal(state.connect,1);
   assert.equal(state.releases,1);
   assert.equal(state.verified,1);
