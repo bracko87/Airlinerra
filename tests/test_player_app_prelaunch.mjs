@@ -125,3 +125,15 @@ test('verified first-time account routes to real setup while a returning airline
  assert.match(js,/Your real airline already exists/);
  assert.doesNotMatch(js,/if\(!local&&\(!auth\|\|!PLAYER_READ_API_ENABLED\)\)return/);
 });
+
+test('real airline persists visibly in dashboard header while no-airline users are directed to onboarding',async()=>{
+ const [html,js]=await Promise.all([
+  readFile(new URL('../website/private-player-app.html',import.meta.url),'utf8'),
+  readFile(new URL('../website/player-app.mjs',import.meta.url),'utf8')
+ ]);
+ assert.match(html,/id="top-world"/);
+ assert.match(html,/id="top-airline-state"/);
+ assert.match(js,/first\.name\+' · Registered airline'/);
+ assert.match(js,/No airline created · Complete airline setup/);
+ assert.match(js,/if\(!hasRealAirline && safePlayerView\(window.location.hash\)==='overview'\)/);
+});

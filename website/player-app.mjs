@@ -149,8 +149,13 @@ async function loadPlayerReadData({local=false}={}){
     const first=data.airlines[0];
     hasRealAirline=Boolean(first?.name);
     if(first?.name){
+      doc.getElementById('top-world').textContent='WORLD '+String(first.worldId).padStart(2,'0')+' · PRELAUNCH';
+      doc.getElementById('top-airline-state').textContent=first.name+' · Registered airline';
       doc.getElementById('player-airline-name').textContent=first.name;
       doc.getElementById('player-cash').textContent=first.cashUsd+' USD';
+    }else{
+      doc.getElementById('top-airline-state').textContent='No airline created · Complete airline setup';
+      doc.getElementById('top-world').textContent='WORLD 01 · REGISTRATION';
     }
     doc.getElementById('player-data-status').textContent=local
       ?'LIVE SUPABASE · Verified account · Read-only player data'
