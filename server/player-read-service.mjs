@@ -35,8 +35,25 @@ function airport(row){
 async function readBody(request){
  const n=request.headers.get('content-length');
  if(n!==null&&(!/^\d+$/u.test(n)||Number(n)>512))return null;
- const raw=await request.text();
- if(new TextEncoder().encode(raw).length>512)return null;
+ if(!request.body)return null;
+ const reader=request.body.getReader();
+ let bytes=0;
+ const chunks=[];
+ try{
+   while(true){
+     const {done,value}=await reader.read();
+     if(done)break;
+     bytes+=value.byteLength;
+     if(bytes>512){await reader.cancel().catch(()=>{});return null;}
+     chunks.push(value);
+   }
+ }finally{reader.releaseLock();}
+ const buffer=new Uint8Array(bytes);
+ let offset=0;
+ for(const chunk of chunks){buffer.set(chunk,offset);offset+=chunk.length;}
+ let raw;
+ try{raw=new TextDecoder('utf-8',{fatal:true}).decode(buffer);}
+ catch{return null;}
  try{const v=JSON.parse(raw);return v && typeof v==='object'&&!Array.isArray(v)?v:null;}
  catch{return null;}
 }
