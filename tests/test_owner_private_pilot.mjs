@@ -82,3 +82,24 @@ test('browser discloses draft acknowledgement and never labels pilot drafts appr
  assert.match(html,/id="setup-privacy-description"/);
  assert.match(api,/enablePrivatePilot:true/);
 });
+
+test('owner World 1 wizard is independent of the read-only planned world directory',async()=>{
+ const [app,service,html]=await Promise.all([
+  readFile(new URL('../website/player-app.mjs',import.meta.url),'utf8'),
+  readFile(new URL('../server/onboarding-context-service.mjs',import.meta.url),'utf8'),
+  readFile(new URL('../website/private-player-app.html',import.meta.url),'utf8')
+ ]);
+ assert.match(app,/await loadRealOnboarding\(\)/);
+ assert.match(app,/const canSetup=Boolean\(onboardingContext\)/);
+ assert.match(app,/function fillSetupCountries\(\)/);
+ assert.match(app,/Number\(world\.worldId\)!==1/);
+ assert.match(app,/options\.value='1'/);
+ assert.match(app,/options\.disabled=options\.options\.length<=1/);
+ assert.match(app,/new Option\('World 1 - '/);
+ assert.match(service,/parentCountryIso\(row\.country_iso\)/);
+ assert.match(service,/countryIso/);
+ assert.match(html,/id="setup-world"/);
+ assert.match(html,/id="setup-country"/);
+ assert.match(html,/id="setup-airport-results"/);
+ assert.doesNotMatch(app,/options\.append\(new Option\(name\+' — '\+world\.state/);
+});
