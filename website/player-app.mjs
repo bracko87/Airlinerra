@@ -5,6 +5,7 @@ import {inspectInvitedTesterProvider,TESTER_ORIGIN} from './invited-tester-entry
 import {createInvitedTesterAuth} from './invited-tester-auth.mjs';
 import {openPrivateTesterDashboard,PrivateTesterAccessDenied} from './tester-dashboard-state.mjs';
 import {createPlayerReadClient,PLAYER_READ_API_ENABLED} from './player-read-client.mjs';
+import {isLocalDemoOrigin,hasLocalDemo,endLocalDemo,LOCAL_DEMO_MANAGER,LOCAL_DEMO_LOGIN_PATH} from './local-demo-session.mjs';
 import {
   PLAYER_APP_PATH,PLAYER_LOGIN_PATH,PLAYER_VIEWS,WORLD_LABELS,
   safePlayerView,playerViewUrl,verifiedManagerIdentity,onboardingReadiness
@@ -151,23 +152,37 @@ doc.getElementById('airports-more').addEventListener('click',()=>{if(nextAirport
 function showPreview(){
   preview=true;
   doc.getElementById('local-preview-note').hidden=false;
-  for(const id of ['manager-name','manager-email','setup-email','top-email']){
-    doc.getElementById(id).textContent='Local visual preview — not connected';
-  }
-  doc.getElementById('manager-joined').textContent='—';
-  signOut.disabled=true;
+  doc.getElementById('local-preview-note').textContent='LOCAL DEMO ONLY — no real identity, database connection or airline activation.';
+  doc.getElementById('manager-name').textContent=LOCAL_DEMO_MANAGER.name;
+  for(const id of ['manager-email','setup-email','top-email'])
+    doc.getElementById(id).textContent=LOCAL_DEMO_MANAGER.email;
+  doc.getElementById('manager-joined').textContent='Demo session';
+  // Do not claim a verified Supabase account in an unauthenticated preview.
+  doc.getElementById('manager-verified').textContent='Demo only · Not verified';
+  doc.getElementById('setup-account-state').textContent='Demo';
+  doc.getElementById('setup-account-state').classList.remove('step-good');
+  doc.getElementById('setup-email').closest('.step').querySelector('p').firstChild.textContent='Simulated manager; no invitation verified. ';
+  doc.getElementById('player-data-status').textContent='Simulated navigation; protected game API is not connected';
+  signOut.disabled=false;
+  doc.title='Airlinerra — LOCAL DEMO · Player dashboard';
   visible('app');
 }
 async function initialize(){
   drawWorldDirectory();
   // A static preview never checks the live user's credentials.
-  const isLocal=['localhost','127.0.0.1'].includes(window.location.hostname);
+  const isLocal=isLocalDemoOrigin(window.location);
   const selected=safePlayerView(window.location.hash);
   window.history.replaceState({},'',playerViewUrl(selected));
   navigateTo(selected);
   const readiness=onboardingReadiness();
   if(readiness.canCreate)throw Error('Prelaunch creation gate unexpectedly enabled.');
-  if(isLocal){showPreview();return;}
+  if(isLocal){
+    if(!hasLocalDemo(window.sessionStorage,window.location)){
+      window.location.replace(LOCAL_DEMO_LOGIN_PATH);
+      return;
+    }
+    showPreview();return;
+  }
   if(window.location.origin!==TESTER_ORIGIN||window.location.pathname!==PLAYER_APP_PATH){
     visible('denied');return;
   }
@@ -200,7 +215,12 @@ doc.querySelectorAll('[data-go-view]').forEach(button=>button.addEventListener('
 }));
 window.addEventListener('hashchange',()=>navigateTo(safePlayerView(window.location.hash)));
 signOut.addEventListener('click',async()=>{
-  if(preview||!auth)return;
+  if(preview){
+    endLocalDemo(window.sessionStorage,window.location);
+    window.location.replace(LOCAL_DEMO_LOGIN_PATH);
+    return;
+  }
+  if(!auth)return;
   signOut.disabled=true;
   try{
     await auth.signOut();window.location.replace(PLAYER_LOGIN_PATH);

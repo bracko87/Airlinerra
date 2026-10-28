@@ -52,7 +52,7 @@ test('ordinary main build includes invite-only account, without registering play
   assert.match(accountPage,/location\.replace\(PRIVATE_TESTER_DASHBOARD_PATH\)/);
   for(const name of [
     'index.html','invited-tester-entry.mjs','invited-tester-auth.mjs',
-    'invited-tester-page.css','tester-dashboard.css','tester-dashboard-state.mjs','player-app.mjs','player-app-model.mjs','player-app.css','assets/airlinerra-logo.png'
+    'invited-tester-page.css','tester-dashboard.css','tester-dashboard-state.mjs','player-app.mjs','player-app-model.mjs','player-app.css','local-demo-session.mjs','assets/airlinerra-logo.png'
   ])assert.equal(await exists(name),true,name+' missing from normal build');
   for(const name of ['server','netlify/functions','apply-hosted-auth-templates.mjs']){
     assert.equal(await exists(name),false,name+' must not be published');
@@ -74,9 +74,10 @@ test('build remains distinct from automatic Netlify deployment and local UI need
   assert.match(dev,/process\.argv\.includes\('--built'\)/);
   assert.match(dev,/--built'\) \? 5188 : 5187/);
   assert.match(dev,/process\.env\.PORT/);
-  assert.match(source,/\['localhost','127\.0\.0\.1'\]/);
+  assert.match(source,/isLocalDemoOrigin\(window\.location\)/);
   assert.match(source,/if\(localPreview\)/);
   assert.match(source,/doc\.getElementById\('sign-in-password'\)\.value=''/);
   assert.doesNotMatch(source,/input\.disabled=true/);
-  assert.match(source,/Local preview only: no credentials were sent/);
+  assert.match(source,/beginLocalDemo\(window\.sessionStorage,window\.location\)/);
+  assert.match(source,/LOCAL DASHBOARD DEMO/);
 });

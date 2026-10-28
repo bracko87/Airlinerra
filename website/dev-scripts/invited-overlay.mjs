@@ -22,7 +22,8 @@ export async function addInviteOnlyAccount({siteDir,distDir}={}){
     'invited-tester-page.mjs','invited-tester-entry.mjs',
     'invited-tester-auth.mjs','invited-tester-page.css',
     'tester-dashboard.mjs','tester-dashboard-state.mjs','tester-dashboard.css',
-    'player-app.mjs','player-app-model.mjs','player-app.css','player-read-client.mjs'
+    'player-app.mjs','player-app-model.mjs','player-app.css','player-read-client.mjs',
+    'local-demo-session.mjs'
   ];
   for(const name of files){
     await cp(path.join(siteDir,name),path.join(distDir,name));

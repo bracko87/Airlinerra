@@ -4,6 +4,7 @@
  * from the public website build. They are not a player signup launch.
  */
 import {createInvitedTesterAuth} from './invited-tester-auth.mjs';
+import {isLocalDemoOrigin,beginLocalDemo} from './local-demo-session.mjs';
 import {isVerifiedInvitedUser,PRIVATE_TESTER_DASHBOARD_PATH} from './tester-dashboard-state.mjs';
 import {
   consumeInvitedTesterEntry,openInvitedTesterEntry,
@@ -16,7 +17,7 @@ const heading=doc.querySelector('#page-heading');
 let activeAuth=null;
 let otpAuthorizesPassword=false;
 let currentPanel='';
-const localPreview=['localhost','127.0.0.1'].includes(window.location.hostname);
+const localPreview=isLocalDemoOrigin(window.location);
 
 function feedbackMessage(message,error=false){
   feedback.textContent=message;
@@ -60,8 +61,10 @@ async function showAuthenticatedUser(){
 doc.getElementById('sign-in').addEventListener('submit',e=>{
   e.preventDefault();
   if(localPreview){
+    // Discard entered text before advancing; preview state holds no credentials.
     doc.getElementById('sign-in-password').value='';
-    feedbackMessage('Local preview only: no credentials were sent. Real sign-in is available on airlinerra.com.');
+    doc.getElementById('sign-in-email').value='';
+    window.location.assign(beginLocalDemo(window.sessionStorage,window.location));
     return;
   }
   if(!activeAuth)return;
@@ -111,7 +114,15 @@ async function initialize(){
   // credentials from a developer's machine. Real links work only on airlinerra.com.
   if(localPreview){
     window.history.replaceState({},'','/account.html?screen=sign-in');
-    showPanel('sign-in','Local visual preview only. You can enter sample values to test the form; no password or email is sent. Real sign-in is only on airlinerra.com.');
+    showPanel('sign-in','LOCAL DASHBOARD DEMO — no authentication or database connection. Do not enter a real password; use the button below to explore the game dashboard.');
+    for(const id of ['sign-in-email','sign-in-password']){
+      const field=doc.getElementById(id);
+      field.required=false;
+      field.autocomplete='off';
+      field.value='';
+    }
+    doc.querySelector('#sign-in button[type="submit"]').textContent='Open local dashboard demo';
+    doc.getElementById('forgot-link').disabled=true;
     return;
   }
   // Scrub OTP/hash from browser history before network, SDK, config or awaits.
