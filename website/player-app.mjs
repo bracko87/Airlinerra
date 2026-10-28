@@ -366,6 +366,11 @@ async function loadRealOnboarding(){
    doc.getElementById(id).disabled=false;
   status.textContent='Choose your country, home airport and airline name.';
   doc.getElementById('setup-airline-logo').disabled=false;
+  if(window.location.origin==='http://localhost:5188'){
+   // Local readonly real-data test: never write to the production airline DB.
+   doc.getElementById('setup-create-airline').disabled=true;
+   status.textContent='Local test - choose airports, enter a name and preview a logo. Airline creation is disabled here.';
+  }
  }catch{
   onboardingContext=null;
   const world=doc.getElementById('setup-world');
