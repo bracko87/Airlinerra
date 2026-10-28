@@ -51,6 +51,29 @@ jobs:
           # The owner explicitly requested a single manual deployment with
           # this real function. Missing private environment values must fail closed.
           grep -Fq "validProductionDatabaseUrl" server/production-game-api.mjs
+      - name: Verify actual production Netlify game Function bundles without deployment
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -z "${NETLIFY_AUTH_TOKEN:-}"
+          mkdir -p "$RUNNER_TEMP/airlinerra-production-functions"
+          npm exec --yes --package=netlify-cli@27.14.2 -- \
+            netlify functions:build \
+            --src "$GITHUB_WORKSPACE/website/netlify/functions" \
+            --functions "$RUNNER_TEMP/airlinerra-production-functions"
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          import os
+          folder=Path(os.environ['RUNNER_TEMP'])/'airlinerra-production-functions'
+          archives=list(folder.rglob('airlinerra-game.zip'))
+          assert len(archives)==1, 'Missing actual Airlinerra game API Function bundle'
+          with ZipFile(archives[0]) as f:
+            names=f.namelist()
+            assert names and any('airlinerra-game' in n for n in names), names[:10]
+            assert not any('AIRLINERRA_DATABASE_URL' in n for n in names), 'Never bundle secrets'
+          print('PASS: Active Airlinerra production API bundles in isolation')
+          PY
       - name: Prebundle account backend from the pinned website dependency tree
         shell: bash
         run: |
