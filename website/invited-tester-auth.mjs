@@ -12,13 +12,14 @@ import {parseAuthCallback} from './auth-service.mjs';
 
 const PROJECT='hwllkabgzaynalahvkpz';
 const AUTH_ORIGIN='https://airlinerra.com';
+export const LOCAL_REAL_AUTH_ORIGIN='http://localhost:5188';
 const AUTH_URL='https://'+PROJECT+'.supabase.co';
 const KEY=/^sb_publishable_[A-Za-z0-9_-]{16,128}$/u;
 export const INVITED_TESTER_SDK_VERSION='2.118.0';
 export const INVITED_TESTER_SDK_IMPORT='https://esm.sh/@supabase/supabase-js@2.118.0?bundle';
 
 export function validatedInvitedTesterConfig({origin,supabaseUrl,publishableKey}={}){
-  if(origin!==AUTH_ORIGIN||supabaseUrl!==AUTH_URL||!KEY.test(publishableKey||'')){
+  if(![AUTH_ORIGIN,LOCAL_REAL_AUTH_ORIGIN].includes(origin)||supabaseUrl!==AUTH_URL||!KEY.test(publishableKey||'')){
     throw new Error('Pinned Airlinerra invited-tester Auth configuration is required.');
   }
   return Object.freeze({origin:AUTH_ORIGIN,supabaseUrl:AUTH_URL,publishableKey});

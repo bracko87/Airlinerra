@@ -2,7 +2,7 @@
  * Gameplay and database-backed onboarding stay disabled pending hosted API release.
  */
 import {inspectInvitedTesterProvider,TESTER_ORIGIN} from './invited-tester-entry.mjs';
-import {createInvitedTesterAuth} from './invited-tester-auth.mjs';
+import {createInvitedTesterAuth,LOCAL_REAL_AUTH_ORIGIN} from './invited-tester-auth.mjs';
 import {openPrivateTesterDashboard,PrivateTesterAccessDenied} from './tester-dashboard-state.mjs';
 import {createPlayerReadClient,PLAYER_READ_API_ENABLED} from './player-read-client.mjs';
 import {createLocalCatalogClient} from './local-catalog-client.mjs';
@@ -134,11 +134,9 @@ async function airportSearch({setup=false,offset=0}={}){
   }
 }
 async function loadPlayerReadData({local=false}={}){
-  if(!local&&(!auth||!PLAYER_READ_API_ENABLED))return;
+  if(!auth||(!local&&!PLAYER_READ_API_ENABLED))return;
   try{
-    playerData=local
-      ?createLocalCatalogClient({location:window.location})
-      :createPlayerReadClient({auth,origin:window.location.origin,enabled:true});
+    playerData=createPlayerReadClient({auth,origin:window.location.origin,enabled:true,local});
     const data=await playerData.overview();
     if(!Array.isArray(data.worlds)||!Array.isArray(data.countries)||!Array.isArray(data.airlines))throw Error('Invalid data');
     drawRealWorlds(data.worlds);
@@ -149,15 +147,15 @@ async function loadPlayerReadData({local=false}={}){
       doc.getElementById('player-cash').textContent=first.cashUsd+' USD';
     }
     doc.getElementById('player-data-status').textContent=local
-      ?'LOCAL DATA SNAPSHOT '+data.snapshotDate+' · Read only · Not a live database connection'
+      ?'LIVE SUPABASE · Verified account · Read-only player data'
       :'Live private database · Read only';
     doc.getElementById('airport-heading').textContent='Approved airport directory';
     doc.getElementById('airport-description').textContent=data.airportsTotal+' approved simulation airports available for read-only lookup.';
-    if(local)await restoreSetupDraft();
+    // Actual airline setup must be saved by the protected backend, not a local draft.
   }catch{
     playerData=null;
     doc.getElementById('player-data-status').textContent=local
-      ?'Local airport snapshot unavailable; no live database connection'
+      ?'Live read-only API unavailable; configure local trusted database backend'
       :'Private game database not connected';
   }
 }
@@ -276,13 +274,24 @@ async function initialize(){
   const readiness=onboardingReadiness();
   if(readiness.canCreate)throw Error('Prelaunch creation gate unexpectedly enabled.');
   if(isLocal){
-    if(!hasLocalDemo(window.sessionStorage,window.location)){
+    const conf=window.__AIRLINERRA_INVITED_TESTER_CONFIG__;
+    try{
+      if(conf?.operatorPrelaunchApproved!==true||
+         conf.supabaseUrl!=='https://hwllkabgzaynalahvkpz.supabase.co'||
+         typeof conf.publishableKey!=='string')throw Error('Invalid provider');
+      await inspectInvitedTesterProvider({publishableKey:conf.publishableKey});
+      auth=await createInvitedTesterAuth({
+        origin:LOCAL_REAL_AUTH_ORIGIN,supabaseUrl:conf.supabaseUrl,
+        publishableKey:conf.publishableKey
+      });
+      setManager(await auth.getUser());
+      doc.getElementById('local-preview-note').hidden=false;
+      doc.getElementById('local-preview-note').textContent='Verified live Supabase identity · Production game gates enforced';
+      visible('app');
+      await loadPlayerReadData({local:true});
+    }catch{
       window.location.replace(LOCAL_DEMO_LOGIN_PATH);
-      return;
     }
-    showPreview();
-    prepareDemoSettings();
-    await loadPlayerReadData({local:true});
     return;
   }
   if(window.location.origin!==TESTER_ORIGIN||window.location.pathname!==PLAYER_APP_PATH){
@@ -332,11 +341,6 @@ doc.querySelectorAll('[data-go-view]').forEach(button=>button.addEventListener('
 }));
 window.addEventListener('hashchange',()=>navigateTo(safePlayerView(window.location.hash)));
 signOut.addEventListener('click',async()=>{
-  if(preview){
-    endLocalDemo(window.sessionStorage,window.location);
-    window.location.replace(LOCAL_DEMO_LOGIN_PATH);
-    return;
-  }
   if(!auth)return;
   signOut.disabled=true;
   try{

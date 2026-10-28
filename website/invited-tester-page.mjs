@@ -3,8 +3,9 @@
  * This script and prelaunch-invited-account.html are deliberately excluded
  * from the public website build. They are not a player signup launch.
  */
-import {createInvitedTesterAuth} from './invited-tester-auth.mjs';
-import {isLocalDemoOrigin,beginLocalDemo} from './local-demo-session.mjs';
+import {createInvitedTesterAuth,LOCAL_REAL_AUTH_ORIGIN} from './invited-tester-auth.mjs';
+import {inspectInvitedTesterProvider} from './invited-tester-entry.mjs';
+import {isLocalDemoOrigin} from './local-demo-session.mjs';
 import {isVerifiedInvitedUser,PRIVATE_TESTER_DASHBOARD_PATH} from './tester-dashboard-state.mjs';
 import {
   consumeInvitedTesterEntry,openInvitedTesterEntry,
@@ -60,13 +61,6 @@ async function showAuthenticatedUser(){
 
 doc.getElementById('sign-in').addEventListener('submit',e=>{
   e.preventDefault();
-  if(localPreview){
-    // Discard entered text before advancing; preview state holds no credentials.
-    doc.getElementById('sign-in-password').value='';
-    doc.getElementById('sign-in-email').value='';
-    window.location.assign(beginLocalDemo(window.sessionStorage,window.location));
-    return;
-  }
   if(!activeAuth)return;
   void submitOnce(e.currentTarget,async()=>{
     await activeAuth.signIn({
@@ -79,7 +73,7 @@ doc.getElementById('sign-in').addEventListener('submit',e=>{
 doc.getElementById('forgot').addEventListener('submit',e=>{
   e.preventDefault();
   if(localPreview){
-    feedbackMessage('Local preview only: no recovery email was requested.');
+    feedbackMessage('Password recovery links must be handled on airlinerra.com. Real password sign-in works on localhost.');
     return;
   }
   if(!activeAuth)return;
@@ -110,19 +104,25 @@ doc.getElementById('back-to-login').addEventListener('click',()=>{
   otpAuthorizesPassword=false;showPanel('sign-in');
 });
 async function initialize(){
-  // localhost is visual-only: never initialize the hosted Auth SDK or send
-  // credentials from a developer's machine. Real links work only on airlinerra.com.
   if(localPreview){
+    // Real hosted Supabase session on localhost, not a simulated manager.
     window.history.replaceState({},'','/account.html?screen=sign-in');
-    showPanel('sign-in','LOCAL DASHBOARD DEMO — no authentication or database connection. Do not enter a real password; use the button below to explore the game dashboard.');
-    for(const id of ['sign-in-email','sign-in-password']){
-      const field=doc.getElementById(id);
-      field.required=false;
-      field.autocomplete='off';
-      field.value='';
+    const config=window.__AIRLINERRA_INVITED_TESTER_CONFIG__;
+    try{
+      if(config?.operatorPrelaunchApproved!==true||
+        config.supabaseUrl!==TESTER_AUTH_URL||
+        typeof config.publishableKey!=='string')throw Error('Invalid config');
+      await inspectInvitedTesterProvider({publishableKey:config.publishableKey});
+      activeAuth=await createInvitedTesterAuth({
+        origin:LOCAL_REAL_AUTH_ORIGIN,supabaseUrl:config.supabaseUrl,
+        publishableKey:config.publishableKey
+      });
+      try{await showAuthenticatedUser();}
+      catch{showPanel('sign-in','Sign in with your real verified Airlinerra account. Public registration remains closed.');}
+    }catch{
+      heading.textContent='Live account service unavailable';
+      feedbackMessage('The real Supabase provider is not reachable. No demo session will be created.',true);
     }
-    doc.querySelector('#sign-in button[type="submit"]').textContent='Open local dashboard demo';
-    doc.getElementById('forgot-link').disabled=true;
     return;
   }
   // Scrub OTP/hash from browser history before network, SDK, config or awaits.

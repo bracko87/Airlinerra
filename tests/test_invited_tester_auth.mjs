@@ -101,3 +101,12 @@ test('read API token adapter rechecks same verified manager and refuses switched
   sessionId='another-account';
   await assert.rejects(tester.getAccessToken(),/Verified session unavailable/);
 });
+
+test('real invited Auth can run on exact localhost without accepting hostile domains',()=>{
+ assert.deepEqual(validatedInvitedTesterConfig({...config(),origin:'http://localhost:5188'}),{
+  ...config(),origin:'http://localhost:5188'
+ });
+ for(const origin of ['http://localhost:5187','https://localhost:5188','http://127.0.0.1:5188','http://localhost.evil:5188']){
+  assert.throws(()=>validatedInvitedTesterConfig({...config(),origin}),/Pinned Airlinerra/);
+ }
+});
