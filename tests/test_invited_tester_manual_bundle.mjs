@@ -75,5 +75,8 @@ test('build remains distinct from automatic Netlify deployment and local UI need
   assert.match(dev,/--built'\) \? 5188 : 5187/);
   assert.match(dev,/process\.env\.PORT/);
   assert.match(source,/\['localhost','127\.0\.0\.1'\]/);
-  assert.match(source,/input\.disabled=true/);
+  assert.match(source,/if\(localPreview\)/);
+  assert.match(source,/doc\.getElementById\('sign-in-password'\)\.value=''/);
+  assert.doesNotMatch(source,/input\.disabled=true/);
+  assert.match(source,/Local preview only: no credentials were sent/);
 });

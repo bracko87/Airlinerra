@@ -16,6 +16,7 @@ const heading=doc.querySelector('#page-heading');
 let activeAuth=null;
 let otpAuthorizesPassword=false;
 let currentPanel='';
+const localPreview=['localhost','127.0.0.1'].includes(window.location.hostname);
 
 function feedbackMessage(message,error=false){
   feedback.textContent=message;
@@ -58,6 +59,11 @@ async function showAuthenticatedUser(){
 
 doc.getElementById('sign-in').addEventListener('submit',e=>{
   e.preventDefault();
+  if(localPreview){
+    doc.getElementById('sign-in-password').value='';
+    feedbackMessage('Local preview only: no credentials were sent. Real sign-in is available on airlinerra.com.');
+    return;
+  }
   if(!activeAuth)return;
   void submitOnce(e.currentTarget,async()=>{
     await activeAuth.signIn({
@@ -69,6 +75,10 @@ doc.getElementById('sign-in').addEventListener('submit',e=>{
 });
 doc.getElementById('forgot').addEventListener('submit',e=>{
   e.preventDefault();
+  if(localPreview){
+    feedbackMessage('Local preview only: no recovery email was requested.');
+    return;
+  }
   if(!activeAuth)return;
   void submitOnce(e.currentTarget,async()=>{
     await activeAuth.requestPasswordReset(getInput('forgot-email'));
@@ -99,12 +109,9 @@ doc.getElementById('back-to-login').addEventListener('click',()=>{
 async function initialize(){
   // localhost is visual-only: never initialize the hosted Auth SDK or send
   // credentials from a developer's machine. Real links work only on airlinerra.com.
-  if(['localhost','127.0.0.1'].includes(window.location.hostname)){
+  if(localPreview){
     window.history.replaceState({},'','/account.html?screen=sign-in');
-    showPanel('sign-in','Local visual preview only. Authentication is disabled here; real invitations are accepted only on airlinerra.com.');
-    for(const input of doc.querySelectorAll('input,button')){
-      input.disabled=true;
-    }
+    showPanel('sign-in','Local visual preview only. You can enter sample values to test the form; no password or email is sent. Real sign-in is only on airlinerra.com.');
     return;
   }
   // Scrub OTP/hash from browser history before network, SDK, config or awaits.
