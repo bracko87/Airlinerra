@@ -49,7 +49,7 @@ test('ordinary main build includes invite-only account, without registering play
   assert.doesNotMatch(dashboardHtml,/id="register"|id="airline-onboarding"/);
   assert.match(dashboardScript,/Local visual preview|LOCAL VISUAL PREVIEW|local preview|Local preview/i);
   assert.match(dashboardScript,/openPrivateTesterDashboard/);
-  assert.match(accountPage,/location\.replace\(PRIVATE_TESTER_DASHBOARD_PATH\)/);
+  assert.match(accountPage,/localPreview\?'\/player\.html#overview':PRIVATE_TESTER_DASHBOARD_PATH/);
   for(const name of [
     'index.html','invited-tester-entry.mjs','invited-tester-auth.mjs',
     'invited-tester-page.css','tester-dashboard.css','tester-dashboard-state.mjs','player-app.mjs','player-app-model.mjs','player-app.css','local-demo-session.mjs','assets/airlinerra-logo.png'
@@ -76,7 +76,7 @@ test('build remains distinct from automatic Netlify deployment and local UI need
   assert.match(dev,/process\.env\.PORT/);
   assert.match(source,/isLocalDemoOrigin\(window\.location\)/);
   assert.match(source,/if\(localPreview\)/);
-  assert.match(source,/doc\.getElementById\('sign-in-password'\)\.value=''/);
+  assert.match(source,/await activeAuth\.signIn|activeAuth\.signIn/);
   assert.doesNotMatch(source,/input\.disabled=true/);
   assert.match(source,/beginLocalDemo\(window\.sessionStorage,window\.location\)/);
   assert.match(source,/LOCAL DASHBOARD DEMO/);

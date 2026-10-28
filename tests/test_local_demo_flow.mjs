@@ -33,25 +33,17 @@ test('local demo is an ephemeral marker, not a credential or production session'
  assert.throws(()=>beginLocalDemo(storage,new URL('https://airlinerra.com')),/only at localhost/);
  assert.equal(LOCAL_DEMO_MANAGER.email.endsWith('.test'),true);
 });
-test('login and dashboard both enforce local marker, never live Supabase credentials',async()=>{
+test('local UI now requires real hosted authentication, never a synthetic login marker',async()=>{
  const read=p=>readFile(new URL(p,import.meta.url),'utf8');
- const [account,player,markup,overlay]=await Promise.all([
-  read('../website/invited-tester-page.mjs'),
-  read('../website/player-app.mjs'),
-  read('../website/private-player-app.html'),
-  read('../website/dev-scripts/invited-overlay.mjs')
+ const [account,player,markup]=await Promise.all([
+  read('../website/invited-tester-page.mjs'),read('../website/player-app.mjs'),
+  read('../website/private-player-app.html')
  ]);
- assert.match(account,/window\.location\.assign\(beginLocalDemo\(window\.sessionStorage,window\.location\)\)/);
- assert.match(account,/field\.required=false/);
- assert.match(account,/field\.autocomplete='off'/);
- assert.match(account,/Open local dashboard demo/);
- assert.match(account,/if\(localPreview\)/);
- assert.match(player,/if\(!hasLocalDemo\(window\.sessionStorage,window\.location\)\)/);
- assert.match(player,/window\.location\.replace\(LOCAL_DEMO_LOGIN_PATH\)/);
- assert.match(player,/endLocalDemo\(window\.sessionStorage,window\.location\)/);
- assert.match(player,/Demo only · Not verified/);
- assert.match(markup,/id="setup-account-state"/);
- assert.match(overlay,/local-demo-session\.mjs/);
- assert.doesNotMatch(account,/sessionStorage\.setItem\([^\n]*password/i);
- assert.doesNotMatch(player,/service_role|sb_secret_|postgresql:/);
+ assert.match(account,/await inspectInvitedTesterProvider/);
+ assert.match(account,/activeAuth=await createInvitedTesterAuth/);
+ assert.match(account,/await activeAuth\.signIn/);
+ assert.doesNotMatch(account,/beginLocalDemo\(/);
+ assert.match(player,/setManager\(await auth\.getUser\(\)\)/);
+ assert.doesNotMatch(player,/showPreview\(\);/);
+ assert.match(markup,/id="top-email"/);
 });

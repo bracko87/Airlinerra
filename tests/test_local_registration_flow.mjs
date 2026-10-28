@@ -36,7 +36,8 @@ test('demo registration is not in production output or connected to real Auth',a
   read('../website/dev-scripts/build.mjs'),read('../website/dev-scripts/dev.mjs'),
   read('../website/dev-only/registration.html'),read('../website/dev-only/registration.mjs')]);
  assert.doesNotMatch(build,/dev-only|local-registration.html/);
- assert.match(dev,/localRegistrationFiles/);
+ assert.doesNotMatch(dev,/localRegistrationFiles/);
+ assert.match(dev,/REAL_PLAYER_PATHS/);
  assert.match(dev,/process\.argv\.includes\('--built'\)/);
  assert.match(html,/LOCAL TEST ONLY/);
  assert.match(html,/Confirm test email/);

@@ -29,31 +29,15 @@ try{
  const page=await request('/player.html');
  assert.equal(page.status,200);
  assert.match(await page.text(),/PRIVATE PRELAUNCH/);
- const overview=await request('/__local_player__/overview',{});
- assert.equal(overview.status,200);
- const data=await overview.json();
- assert.equal(data.airportsTotal,3140);
- assert.equal(data.countries.length,229);
- assert.equal(data.worlds.length,3);
- assert.deepEqual(data.airlines,[]);
- assert.equal(data.readOnly,true);
- const airports=await request('/__local_player__/airports',{countryIso:'DE',search:'Berlin'});
- assert.equal(airports.status,200);
- assert.ok((await airports.json()).airports.some(a=>a.name==='Berlin Brandenburg Airport'));
- const denied=await request('/__local_player__/overview',{}, {origin:'https://attacker.example'});
- assert.equal(denied.status,403);
- const bad=await request('/__local_player__/airports',{countryIso:'XX',offset:999999});
- assert.equal(bad.status,400);
- const registration=await request('/__local_registration__/');
- assert.equal(registration.status,200);
- assert.match(await registration.text(),/LOCAL TEST ONLY/);
- for(const asset of ['registration.mjs','style.css','state.mjs']){
-  const res=await request('/__local_registration__/'+asset);
-  assert.equal(res.status,200);
- }
+ const unavailable=await request('/api/v1/player/overview',{});
+ assert.equal(unavailable.status,503,'No fake data without a private DB connection');
+ const legacy=await request('/__local_player__/overview',{});
+ assert.equal(legacy.status,404);
+ const oldSignup=await request('/__local_registration__/');
+ assert.equal(oldSignup.status,404);
  const hidden=await request('/dev-data/world1-approved-airports-2026-10-28.json');
  assert.equal(hidden.status,404);
- console.log('Local Airlinerra build-to-HTTP smoke passed: pages, worlds, 3140 airports, filters, origin protection and private snapshot.');
+ console.log('Local Airlinerra built HTTP smoke passed: page, real read backend fail-closed, fake routes removed.');
 }finally{
  child.kill('SIGTERM');
  await new Promise(resolve=>{if(stopped)return resolve();child.once('exit',resolve);setTimeout(resolve,2000)});

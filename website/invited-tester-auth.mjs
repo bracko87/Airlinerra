@@ -22,7 +22,7 @@ export function validatedInvitedTesterConfig({origin,supabaseUrl,publishableKey}
   if(![AUTH_ORIGIN,LOCAL_REAL_AUTH_ORIGIN].includes(origin)||supabaseUrl!==AUTH_URL||!KEY.test(publishableKey||'')){
     throw new Error('Pinned Airlinerra invited-tester Auth configuration is required.');
   }
-  return Object.freeze({origin:AUTH_ORIGIN,supabaseUrl:AUTH_URL,publishableKey});
+  return Object.freeze({origin,supabaseUrl:AUTH_URL,publishableKey});
 }
 
 export async function createInvitedTesterAuth({
