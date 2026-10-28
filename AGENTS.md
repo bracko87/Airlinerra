@@ -1,5 +1,16 @@
 # Airlinerra repository instructions
 
+## CURRENT STATUS — 28 October 2026: Manual invited-tester ZIP prepared in source, not deployed
+
+- **Owner's process:** Netlify automatic publishing remains OFF by choice. Owner personally publishes a reviewed ZIP/folder to the existing `airlinerra.com` project. Do not enable automatic Netlify deployment, create a second project, or deploy via automation.
+- **Hosted email templates:** Owner manually saved and confirmed successful preview of ALL THREE branded templates in Supabase Auth: Invite user, Confirm signup and Password Recovery. They use the Airlinerra logo on white, a navy top accent and orange action button. No need for the prior short-lived Management API installer or GitHub PAT; leave those old source-only tools inactive. Sender Resend SMTP is verified/configured, but no real delivery yet tested.
+- **New code:** `website/dev-scripts/build-invited-tester.mjs` overlays only `dist/account.html` with the source-only invitation UI, its CSS/client modules, and an intentionally public `sb_publishable_` browser key from `website/invited-tester-public-settings.mjs`. It requires `AIRLINERRA_INVITED_TESTER_BUILD_APPROVED='I APPROVE PRIVATE TESTER BUILD'`. Standard `npm run build` remains unchanged and leaves public account preview disabled. Server functions are NOT packaged.
+- **Manual ZIP:** GitHub Actions workflow `.github/workflows/airlinerra-manual-invited-tester-site.yml` builds and uploads a ZIP **only on owner-triggered workflow_dispatch** with phrase `PREPARE INVITED TESTER ZIP`. Includes Node security tests, default-vs-private build inversion test, and live read-only hosted Auth guard `website/dev-scripts/check-invited-auth-readiness.mjs`, which fails closed unless signup OFF, anonymous OFF, confirmed email ON and email provider ON. User must then manually upload reviewed ZIP to their existing Netlify Drop website. No production auto-publishing/action deploy is added.
+- **Release gates:** `website/auth-rules.mjs` remains `PUBLIC_AUTH_ENABLED=false`; no public signUp method in invited shell; only OTP invitation acceptance, password setup/reset and invited login. Live database world's release gates, airlines and payments unchanged. **No deploy or end-to-end email test has occurred yet.** Do not claim the new shell is on airlinerra.com before manual Netlify publish and verification.
+- **Next:** Verify GitHub Actions checks, owner manually run `Airlinerra invitation-only manual Netlify package`, download `airlinerra-private-invited-tester-site` artifact ZIP; review output, manually deploy, verify canonical callbacks, then invite one authorized test identity.
+
+
+
 
 
 ### LIVE AIRLINERRA CUSTOM SMTP CONFIGURED SECURELY — 2026-10-27 (LATEST)
