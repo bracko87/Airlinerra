@@ -1,3 +1,4 @@
+import {addInviteOnlyAccount} from './invited-overlay.mjs';
 import { cp, mkdir, readdir, rm, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -15,4 +16,5 @@ const assets = await readdir(path.join(distDir, 'assets'));
 for (const asset of ['airlinerra-logo.png', 'airlinerra-aircraft.webp', 'airlinerra-airport.webp', 'route-map.svg', 'favicon.svg']) {
   if (!assets.includes(asset)) throw new Error(`Required artwork not found: ${asset}`);
 }
-console.log(`Airlinerra static build created: ${distDir}`);
+await addInviteOnlyAccount({siteDir,distDir});
+console.log(`Airlinerra static build created (invitation-only account; no public signup): ${distDir}`);
