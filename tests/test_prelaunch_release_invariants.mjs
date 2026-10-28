@@ -8,7 +8,7 @@ const exists = async path => {
   catch(error){if(error.code==='ENOENT')return false;throw error;}
 };
 
-test('prelaunch website and Netlify cannot auto-expose hosted account routes',async()=>{
+test('manual Netlify release requires private runtime opt-in, not public game activation',async()=>{
   const [rules,netlify,build]=await Promise.all([
     source('website/auth-rules.mjs'),
     source('netlify.toml'),
@@ -18,10 +18,14 @@ test('prelaunch website and Netlify cannot auto-expose hosted account routes',as
   assert.ok(rules.includes("ALLOWED_AUTH_ORIGINS = Object.freeze(['http://localhost:5187', 'http://localhost:5188', 'https://airlinerra.com'])"));
   assert.match(netlify,/base = "website"/);
   assert.doesNotMatch(netlify,/\/api\/v1\/(?:airlines|onboarding|legal)/);
-  assert.doesNotMatch(netlify,/\[functions\]/);
+  assert.match(netlify,/\[functions\]/);
+  assert.match(netlify,/directory = "netlify\/functions"/);
   assert.doesNotMatch(build,/hosted-runtime-config|preview-account-app|hosted-auth-verifier|hosted-account-stack/);
-  assert.equal(await exists('website/netlify/functions/'),false,
-    'No discoverable Netlify Functions may launch preapproved');
+  assert.equal(await exists('website/netlify/functions/'),true,
+    'Manual release must bundle the private API');
+  const production=await source('server/production-game-api.mjs');
+  assert.match(production,/AIRLINERRA_PRODUCTION_API_ENABLED!=='true'/);
+  assert.match(production,/validProductionDatabaseUrl/);
   assert.equal(await exists('netlify/functions/'),false,
     'No root functions may automatically deploy without owner authorization');
 });

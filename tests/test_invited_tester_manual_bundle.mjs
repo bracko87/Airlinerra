@@ -68,7 +68,8 @@ test('build remains distinct from automatic Netlify deployment and local UI need
   ]);
   assert.match(netlify,/command = "npm run build"/);
   assert.match(netlify,/base = "website"/);
-  assert.doesNotMatch(netlify,/\[functions\]/);
+  assert.match(netlify,/\[functions\]/);
+  assert.match(netlify,/directory = "netlify\/functions"/);
   assert.equal(JSON.parse(packageJson).scripts.preview,
     'npm run build && node dev-scripts/dev.mjs --built');
   assert.match(dev,/process\.argv\.includes\('--built'\)/);

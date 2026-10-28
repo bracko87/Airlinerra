@@ -13,7 +13,8 @@ test('production gameplay release gates remain closed',async()=>{
  assert.match(page,/id="setup-create-airline" disabled>Create airline/);
  assert.match(page,/No balance is credited by loading this page/);
  assert.match(site,/process\.argv\.includes\('--built'\)/);
- assert.doesNotMatch(netlify,/\[functions\]/);
+ assert.match(netlify,/\[functions\]/);
+ assert.match(netlify,/directory = "netlify\/functions"/);
  assert.doesNotMatch(build,/dev-data|local-preview-catalog/);
  assert.doesNotMatch(overlay,/dev-data|local-preview-catalog/);
  assert.doesNotMatch(page,/service_role|sb_secret_/);

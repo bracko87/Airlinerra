@@ -42,14 +42,15 @@ jobs:
       - name: Check production prelaunch isolation
         run: |
           set -euo pipefail
-          test ! -d website/netlify/functions
+          test -f website/netlify/functions/airlinerra-game.mjs
           test ! -d netlify/functions
+          grep -Fq "AIRLINERRA_PRODUCTION_API_ENABLED!=='true'" server/production-game-api.mjs
+          grep -Fq 'directory = "netlify/functions"' netlify.toml
           test ! -e .netlify/state.json
           grep -Eq '^export const PUBLIC_AUTH_ENABLED = false;' website/auth-rules.mjs
-          if grep -q '^\[functions\]' netlify.toml; then
-            echo 'ERROR: production Netlify Function directory configured'
-            exit 1
-          fi
+          # The owner explicitly requested a single manual deployment with
+          # this real function. Missing private environment values must fail closed.
+          grep -Fq "validProductionDatabaseUrl" server/production-game-api.mjs
       - name: Prebundle account backend from the pinned website dependency tree
         shell: bash
         run: |
