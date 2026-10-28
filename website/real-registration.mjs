@@ -1,5 +1,5 @@
 /** Actual hosted Supabase registration for Airlinerra.
- * No mock emails, passwords, accounts, or airline creation.
+ * Only hosted email confirmation and database-backed accounts are supported.
  * Provider signup and real published legal pages are prerequisites.
  */
 import {normalizedEmail,validatedPassword,validatedDisplayName} from './auth-rules.mjs';
