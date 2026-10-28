@@ -17,8 +17,10 @@ on:
       - 'website/dev-data/**'
       - 'tests/test_local_preview_catalog.mjs'
       - 'website/player-read-client.mjs'
+      - 'website/dev-scripts/real-player-read-gateway.mjs'
+      - 'tests/test_real_local_player_gateway.mjs'
       - 'server/player-read-service.mjs'
-      - 'tests/test_player_read_api.mjs'
+      - 'tests/test_player_read_api.mjs tests/test_real_local_player_gateway.mjs'
       - 'website/index.html'
       - 'website/styles.css'
       - 'website/register.html'
@@ -83,6 +85,7 @@ jobs:
           node --check website/dev-scripts/local-preview-catalog.mjs
           node --check website/local-catalog-client.mjs
           node --check website/player-read-client.mjs
+          node --check website/dev-scripts/real-player-read-gateway.mjs
           node --check server/player-read-service.mjs
           node --check website/player-app-model.mjs
       - name: Test invited-only callbacks, OTP scrubbing and provider gates
