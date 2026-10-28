@@ -30,7 +30,7 @@ test('read API remaps territory airports and filters non-country codes before de
  for(const code of Object.keys(TERRITORY_COUNTRY))
   assert.equal(parentCountryIso(code),TERRITORY_COUNTRY[code]);
 });
-test('onboarding uses downward country flags, a paginated sorted airport selector, logo upload and final summary',async()=>{
+test('onboarding uses downward flags, protected full airport choices, logo upload and final summary',async()=>{
  const [html,css,js,menu,overlay,auth]=await Promise.all([
   read('../website/private-player-app.html'),read('../website/player-app.css'),
   read('../website/player-app.mjs'),read('../website/setup-choice-menu.mjs'),
@@ -50,7 +50,9 @@ test('onboarding uses downward country flags, a paginated sorted airport selecto
  assert.match(menu,/aria-expanded/);
  assert.match(js,/Intl\.Collator/);
  assert.match(js,/loadSetupAirports/);
- assert.match(js,/nextOffset===null/);
+ assert.match(js,/fillSetupCountries/);
+ assert.match(js,/onboardingContext\?\.worlds/);
+ assert.match(js,/loadRealOnboarding\(\)/);
  assert.match(js,/airports\.sort/);
  assert.match(js,/auth\.uploadAirlineLogo/);
  assert.match(auth,/airlinerra-airline-logos/);
