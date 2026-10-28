@@ -184,55 +184,68 @@ async function airportSearch({setup=false,offset=0}={}){
   }
 }
 async function loadPlayerReadData({local=false}={}){
-  if(!auth)return; // The same protected API is used on localhost and the published site.
-  try{
-    playerData=createPlayerReadClient({auth,origin:window.location.origin,enabled:true,local});
-    const data=await playerData.overview();
-    if(!Array.isArray(data.worlds)||!Array.isArray(data.countries)||!Array.isArray(data.airlines))throw Error('Invalid data');
-    drawRealWorlds(data.worlds);
-    fillCountries(data.countries);
-    const first=data.airlines[0];
-    hasRealAirline=Boolean(first?.name);
-    if(first?.name){
-      doc.getElementById('top-world').textContent='WORLD '+String(first.worldId).padStart(2,'0');
-      doc.getElementById('top-airline-state').textContent=first.name+
-        (first.premiumUnlimited===true?' · Premium Unlimited':' · Registered airline');
-      doc.getElementById('player-airline-name').textContent=first.name;
-      doc.getElementById('player-cash').textContent=first.cashUsd+' USD';
-      if(first.id&&auth?.getAirlineLogoUrl){
-       auth.getAirlineLogoUrl(first.id).then(url=>{
-        const img=doc.getElementById('player-existing-logo');
-        if(img&&url){img.src=url;img.hidden=false;}
-       }).catch(()=>{});
-      }
-    }else{
-      doc.getElementById('top-airline-state').textContent='No airline created · Complete airline setup';
-      doc.getElementById('top-world').textContent='WORLD 01 · REGISTRATION';
-    }
-    doc.getElementById('player-data-status').textContent=local
-      ?'LIVE SUPABASE · Verified account · Read-only player data'
-      :'Live private database · Read only';
-    doc.getElementById('airport-heading').textContent='Approved airport directory';
-    doc.getElementById('airport-description').textContent=data.airportsTotal+' approved simulation airports available for read-only lookup.';
-    // The real database, not the browser, decides whether an airline exists.
-    await loadRealOnboarding();
-    if(initialManagerLanding){
-      const destination=managerLandingView({requestedView:'onboarding',hasAirline:hasRealAirline});
-      window.history.replaceState({},'',playerViewUrl(destination));
-      navigateTo(destination);
-      initialManagerLanding=false;
-    }
-    doc.getElementById('setup-retry-loading').hidden=true;
-  }catch{
-    playerData=null;
-    doc.getElementById('setup-draft-feedback').textContent='Your account is verified, but game data could not be loaded. Please retry.';
-    doc.getElementById('top-airline-state').textContent='Airline setup data unavailable';
-    doc.getElementById('setup-create-airline').disabled=true;
-    doc.getElementById('setup-retry-loading').hidden=false;
-    doc.getElementById('player-data-status').textContent=local
-      ?'Live read-only API unavailable; configure local trusted database backend'
-      :'Private game database not connected';
+ if(!auth)return;
+ let readSucceeded=false;
+ // A failing general Overview API must never block the separately
+ // authenticated and owner-approved airline setup endpoint.
+ try{
+  playerData=createPlayerReadClient({auth,origin:window.location.origin,enabled:true,local});
+  const data=await playerData.overview();
+  if(!Array.isArray(data.worlds)||!Array.isArray(data.countries)||!Array.isArray(data.airlines))
+   throw Error('Invalid game directory');
+  drawRealWorlds(data.worlds);
+  fillCountries(data.countries);
+  const first=data.airlines[0];
+  hasRealAirline=Boolean(first?.name);
+  if(first?.name){
+   doc.getElementById('top-world').textContent='WORLD '+String(first.worldId).padStart(2,'0');
+   doc.getElementById('top-airline-state').textContent=first.name+
+    (first.premiumUnlimited===true?' - Premium Unlimited':' - Registered airline');
+   doc.getElementById('player-airline-name').textContent=first.name;
+   doc.getElementById('player-cash').textContent=first.cashUsd+' USD';
+   if(first.id&&auth?.getAirlineLogoUrl){
+    auth.getAirlineLogoUrl(first.id).then(url=>{
+     const img=doc.getElementById('player-existing-logo');
+     if(img&&url){img.src=url;img.hidden=false;}
+    }).catch(()=>{});
+   }
+  }else{
+   doc.getElementById('top-airline-state').textContent='Create your airline';
+   doc.getElementById('top-world').textContent='WORLD 01';
   }
+  doc.getElementById('airport-heading').textContent='Airport directory';
+  doc.getElementById('airport-description').textContent=
+   data.airportsTotal+' approved airports in the game.';
+  readSucceeded=true;
+ }catch{
+  playerData=null;
+  doc.getElementById('player-data-status').textContent='Game overview is currently unavailable.';
+ }
+ // This is independent of the general read API and controls all setup
+ // options. All airports come from verified protected server context.
+ await loadRealOnboarding();
+ const canSetup=Boolean(onboardingContext);
+ const needsRetry=(!readSucceeded&&!canSetup)||(!hasRealAirline&&!canSetup);
+ doc.getElementById('setup-retry-loading').hidden=!needsRetry;
+ if(readSucceeded&&initialManagerLanding){
+  const destination=managerLandingView({requestedView:'onboarding',hasAirline:hasRealAirline});
+  window.history.replaceState({},'',playerViewUrl(destination));
+  navigateTo(destination);
+  initialManagerLanding=false;
+ }
+ if(!readSucceeded&&canSetup){
+  // Stay on the authorized setup page. Its choices and activation remain
+  // protected by the backend, even when overview data is unavailable.
+  doc.getElementById('top-airline-state').textContent='Create your airline';
+  if(initialManagerLanding){
+   window.history.replaceState({},'',playerViewUrl('onboarding'));
+   navigateTo('onboarding');
+   initialManagerLanding=false;
+  }
+ }else if(!readSucceeded&&!canSetup){
+  doc.getElementById('setup-draft-feedback').textContent=
+   'Unable to load airline setup. Please select Retry.';
+ }
 }
 function renderSavedDraft(draft){
  const output=doc.getElementById('setup-draft-review');
