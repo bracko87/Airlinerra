@@ -38,6 +38,9 @@ test('only an eligible verified owner gets World 1 private-pilot context while p
  assert.equal(data.policy.privacyVersion,OWNER_PRIVATE_PILOT_VERSION);
  assert.equal(data.worlds.length,1);
  assert.equal(data.worlds[0].airports[0].key,'OURAIRPORTS:100');
+ assert.equal(data.worlds[0].airports[0].countryIso,'DE');
+ assert.equal(data.worlds[0].airports[0].name,'Approved Airport');
+ assert.equal(data.worlds[0].airports[0].code,'EDAA');
  assert.ok(good.calls.some(x=>x.sql===OWNER_PRIVATE_PILOT_SQL.eligibility&&x.params[0]===USER));
  const other=pilotContext(false);
  await assert.rejects(other.service.getContext({accessToken:TOKEN}),/approval required/);
@@ -72,9 +75,9 @@ test('browser discloses draft acknowledgement and never labels pilot drafts appr
   read('../website/player-app.mjs'),read('../website/private-player-app.html'),
   read('../server/canonical-game-api.mjs')
  ]);
- assert.match(app,/Invitation-only owner pilot/);
+ assert.match(app,/ctx\.privatePilot/);
  assert.match(app,/review draft/);
- assert.match(app,/Unlimited premium, no expiry and no billing/);
+ assert.match(app,/setup-confirm-dialog/);
  assert.match(html,/id="setup-terms-description"/);
  assert.match(html,/id="setup-privacy-description"/);
  assert.match(api,/enablePrivatePilot:true/);
