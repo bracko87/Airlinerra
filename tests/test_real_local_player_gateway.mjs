@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {makeRealLocalPlayerHandler,validConnectionUrl} from '../website/dev-scripts/real-player-read-gateway.mjs';
+import {makeRealLocalPlayerHandler,validConnectionUrl,createLiveReadOnlyPreviewHandler} from '../website/dev-scripts/real-player-read-gateway.mjs';
 import {PLAYER_READ_SQL} from '../server/player-read-service.mjs';
 import {createCanonicalGameApi,CANONICAL_GAME_API_PATHS} from '../server/canonical-game-api.mjs';
 import {createRegistrationReadinessHandler,REGISTRATION_READINESS_SQL} from '../server/registration-readiness.mjs';
@@ -159,4 +159,30 @@ test('registered owner can proceed through the same real signup form when the pr
  assert.equal(payload.registrationReady,false);
  assert.equal(payload.privateOwnerPilotAvailable,true);
  assert.equal(payload.world1RegistrationOpen,false);
+});
+
+test('opt-in local World 1 preview proxies only authenticated read requests',async()=>{
+ let calls=0;
+ const handler=await makeRealLocalPlayerHandler({
+  env:{AIRLINERRA_LOCAL_EDGE_READONLY:'1'},
+  loadPg:async()=>{throw Error('No private PostgreSQL driver in read-only mode')},
+  fetchImpl:async(url,options)=>{
+   calls++;
+   assert.equal(url,'https://'+REF+'.supabase.co/functions/v1/airlinerra-game');
+   assert.equal(options.method,'POST');
+   assert.equal(options.headers.authorization,'Bearer '+token);
+   assert.equal(options.headers.origin,'https://airlinerra.com');
+   assert.ok(['\/api/v1\/onboarding\/context','\/api/v1\/player\/overview'].includes(options.headers['x-airlinerra-route']));
+   return new Response(JSON.stringify({worlds:[{worldId:1,name:'Founding World',airports:[]}]}),{
+    status:200,headers:{'content-type':'application/json'}
+   });
+  }
+ });
+ assert.equal((await handler(request({},'/api/v1/onboarding/context'))).status,200);
+ assert.equal((await handler(request({},'/api/v1/player/overview'))).status,200);
+ assert.equal((await handler(request({},'/api/v1/airlines'))).status,403);
+ assert.equal((await handler(request({},'/api/v1/legal/consents'))).status,403);
+ assert.equal((await handler(request({},'/api/v1/player/overview',token,'https://evil.example'))).status,403);
+ assert.equal((await handler(request({},'/api/v1/player/overview','bad'))).status,401);
+ assert.equal(calls,2);
 });
