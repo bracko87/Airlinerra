@@ -12,7 +12,7 @@ import {saveLocalDraft,readLocalDraft,clearLocalDraft} from './local-onboarding-
 import {isLocalDemoOrigin,hasLocalDemo,endLocalDemo,getLocalTestProfile,LOCAL_DEMO_MANAGER,LOCAL_DEMO_LOGIN_PATH} from './local-demo-session.mjs';
 import {
   PLAYER_APP_PATH,PLAYER_LOGIN_PATH,PLAYER_VIEWS,WORLD_LABELS,
-  safePlayerView,playerViewUrl,verifiedManagerIdentity,onboardingReadiness
+  safePlayerView,playerViewUrl,verifiedManagerIdentity,onboardingReadiness,managerLandingView
 } from './player-app-model.mjs';
 
 const doc=window.document;
@@ -67,6 +67,8 @@ let playerData=null;
 let onboarding=null;
 let onboardingContext=null;
 let hasRealAirline=false;
+// Initial verified login is redirected; explicit later navigation is respected.
+let initialManagerLanding=false;
 let nextAirportOffset=null;
 let setupAirportRequest=0,logoBlob=null,logoObjectUrl=null;
 const countryNameOf=code=>typeof Intl.DisplayNames==='function'
@@ -216,15 +218,21 @@ async function loadPlayerReadData({local=false}={}){
       :'Live private database · Read only';
     doc.getElementById('airport-heading').textContent='Approved airport directory';
     doc.getElementById('airport-description').textContent=data.airportsTotal+' approved simulation airports available for read-only lookup.';
-    // Actual airline setup must be saved by the protected backend.
+    // The real database, not the browser, decides whether an airline exists.
     await loadRealOnboarding();
-    if(!hasRealAirline && safePlayerView(window.location.hash)==='overview'){
-      window.history.replaceState({},'',playerViewUrl('onboarding'));
-      navigateTo('onboarding');
+    if(initialManagerLanding){
+      const destination=managerLandingView({requestedView:'onboarding',hasAirline:hasRealAirline});
+      window.history.replaceState({},'',playerViewUrl(destination));
+      navigateTo(destination);
+      initialManagerLanding=false;
     }
+    doc.getElementById('setup-retry-loading').hidden=true;
   }catch{
     playerData=null;
-    doc.getElementById('setup-draft-feedback').textContent='Unable to load your airports and airline data. Please refresh the page and try again.';
+    doc.getElementById('setup-draft-feedback').textContent='Your account is verified, but game data could not be loaded. Please retry.';
+    doc.getElementById('top-airline-state').textContent='Airline setup data unavailable';
+    doc.getElementById('setup-create-airline').disabled=true;
+    doc.getElementById('setup-retry-loading').hidden=false;
     doc.getElementById('player-data-status').textContent=local
       ?'Live read-only API unavailable; configure local trusted database backend'
       :'Private game database not connected';
@@ -456,6 +464,11 @@ doc.getElementById('setup-airline-name').addEventListener('input',summarize);
 doc.getElementById('setup-airport-search').addEventListener('click',()=>{void airportSearch({setup:true});});
 doc.getElementById('airports-search').addEventListener('click',()=>{nextAirportOffset=null;void airportSearch();});
 doc.getElementById('airports-more').addEventListener('click',()=>{if(nextAirportOffset!==null)void airportSearch({offset:nextAirportOffset});});
+doc.getElementById('setup-retry-loading').addEventListener('click',()=>{
+ const button=doc.getElementById('setup-retry-loading');button.hidden=true;
+ doc.getElementById('setup-draft-feedback').textContent='Loading your airline setup…';
+ void loadPlayerReadData({local:window.location.origin==='http://localhost:5188'});
+});
 function showPreview(){
   preview=true;
   doc.getElementById('local-preview-note').hidden=false;
@@ -497,6 +510,11 @@ async function initialize(){
         publishableKey:conf.publishableKey
       });
       setManager(await auth.getUser());
+      if(['overview','onboarding'].includes(selected)){
+        initialManagerLanding=true;
+        window.history.replaceState({},'',playerViewUrl('onboarding'));
+        navigateTo('onboarding');
+      }
       doc.getElementById('local-preview-note').hidden=false;
       doc.getElementById('local-preview-note').textContent='Verified live Supabase identity · Production game gates enforced';
       visible('app');
@@ -517,6 +535,11 @@ async function initialize(){
     });
     auth=session.auth;
     setManager(session.user);
+    if(['overview','onboarding'].includes(selected)){
+      initialManagerLanding=true;
+      window.history.replaceState({},'',playerViewUrl('onboarding'));
+      navigateTo('onboarding');
+    }
     visible('app');
     await loadPlayerReadData();
   }catch(err){
@@ -543,15 +566,17 @@ doc.addEventListener('keydown',event=>{
 });
 doc.querySelectorAll('[data-view-link]').forEach(link=>link.addEventListener('click',e=>{
   e.preventDefault();
+  initialManagerLanding=false;
   window.history.replaceState({},'',playerViewUrl(link.dataset.viewLink));
   navigateTo(link.dataset.viewLink);
 }));
 doc.querySelectorAll('[data-go-view]').forEach(button=>button.addEventListener('click',()=>{
+  initialManagerLanding=false;
   const view=button.dataset.goView;
   window.history.replaceState({},'',playerViewUrl(view));
   navigateTo(view);
 }));
-window.addEventListener('hashchange',()=>navigateTo(safePlayerView(window.location.hash)));
+window.addEventListener('hashchange',()=>{initialManagerLanding=false;navigateTo(safePlayerView(window.location.hash));});
 signOut.addEventListener('click',async()=>{
   if(!auth)return;
   signOut.disabled=true;
