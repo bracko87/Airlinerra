@@ -4,15 +4,18 @@
  * A future credential-scoped runtime injects verifyUserToken and a private pg pool.
  */
 import {verifiedPlayerId} from './airline-activation.mjs';
+import {countrySqlExpression,UN_COUNTRY_CODES,UN_COUNTRY_SET} from './country-policy.mjs';
+const PARENT_ISO=countrySqlExpression('country_iso');
+const MEMBER_CODES=UN_COUNTRY_CODES.map(code=>"'"+code+"'").join(',');
 
 export const PLAYER_READ_PATHS=Object.freeze([
  '/api/v1/player/overview','/api/v1/player/airports'
 ]);
 export const PLAYER_READ_SQL=Object.freeze({
  worlds:'select id,name,state from public.airlinerra_game_worlds order by id',
- countries:"select country_iso,count(*)::integer as airport_count from airlinerra_game.approved_game_airports where world_id=1 and country_iso ~ '^[A-Z]{2}$' group by country_iso order by country_iso",
+ countries:"select "+PARENT_ISO+" as country_iso,count(*)::integer as airport_count from airlinerra_game.approved_game_airports where world_id=1 and "+PARENT_ISO+" in ("+MEMBER_CODES+") group by "+PARENT_ISO+" order by "+PARENT_ISO,
  airlines:"select a.id,a.world_id,a.name,a.home_airport_key,a.cash_usd::text as cash_usd,a.created_at, (e.membership_state='active' and exists(select 1 from airlinerra_game.owner_premium_email_reservations r join auth.users u on r.email=lower(btrim(u.email)) where u.id=a.owner_player_id and u.email_confirmed_at is not null)) as complimentary_premium from airlinerra_game.airlines a left join airlinerra_game.account_entitlements e on e.player_id=a.owner_player_id where a.owner_player_id=$1::uuid order by a.world_id limit 3",
- airports:"select airport_key,airport_name,airport_code,country_iso,municipality from airlinerra_game.approved_game_airports where world_id=1 and country_iso=$1::text and ($2::text='' or strpos(lower(coalesce(airport_name,'')),lower($2::text))>0 or strpos(lower(coalesce(airport_code,'')),lower($2::text))>0 or strpos(lower(coalesce(municipality,'')),lower($2::text))>0) order by airport_name nulls last,airport_key limit 51 offset $3::integer"
+ airports:"select airport_key,airport_name,airport_code,"+PARENT_ISO+" as country_iso,municipality from airlinerra_game.approved_game_airports where world_id=1 and "+PARENT_ISO+"=$1::text and "+PARENT_ISO+" in ("+MEMBER_CODES+") and ($2::text='' or strpos(lower(coalesce(airport_name,'')),lower($2::text))>0 or strpos(lower(coalesce(airport_code,'')),lower($2::text))>0 or strpos(lower(coalesce(municipality,'')),lower($2::text))>0) order by airport_name nulls last,airport_key limit 51 offset $3::integer"
 });
 const ORIGIN='https://airlinerra.com';
 const BEARER=/^Bearer ([A-Za-z0-9._~-]{16,8192})$/u;
@@ -77,7 +80,7 @@ export function createPlayerReadHandler({enabled=false,verifyUserToken,database,
    if(url.pathname===PLAYER_READ_PATHS[1]){
      country=data.countryIso;search=data.search??'';offset=data.offset??0;
      if(Object.keys(data).some(k=>!['countryIso','search','offset'].includes(k))||
-       typeof country!=='string'||!/^[A-Z]{2}$/u.test(country)||
+       typeof country!=='string'||!UN_COUNTRY_SET.has(country)||
        typeof search!=='string'||!SAFE_SEARCH.test(search)||
        !Number.isInteger(offset)||offset<0||offset>3100)return respond(400,{error:'Invalid airport search'});
    }
