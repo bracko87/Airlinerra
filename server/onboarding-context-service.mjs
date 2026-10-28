@@ -9,18 +9,19 @@ import {parentCountryIso} from './country-policy.mjs';
 export const ONBOARDING_CONTEXT_SQL = Object.freeze({
   ready: "select g.enabled, l.terms_version, l.privacy_version from airlinerra_game.platform_release_gate g left join airlinerra_game.legal_release_policy l on l.id=true and l.is_published=true and l.approved_at is not null where g.id=true",
   worlds: "select id, name from public.airlinerra_game_worlds where state in ('registration_open','active') order by id",
-  airports: "select a.world_id, a.airport_key, a.airport_name, a.airport_code, a.country_iso from airlinerra_game.approved_game_airports a join public.airlinerra_game_worlds w on w.id=a.world_id and w.state in ('registration_open','active') order by a.world_id,a.airport_name nulls last,a.airport_key"
+  airports: "select a.world_id,a.airport_key,a.airport_name,a.airport_code,a.country_iso,a.municipality,coalesce(c.game_display_category,p.proposed_category) as airport_category,c.category_finalized,coalesce(c.longest_qualifying_runway_m,r.longest_qualifying_runway_m) as runway_m,coalesce(c.longest_qualifying_surface,r.longest_qualifying_surface) as runway_surface,coalesce(c.latitude_deg,r.latitude_deg) as latitude_deg,coalesce(c.longitude_deg,r.longitude_deg) as longitude_deg from airlinerra_game.approved_game_airports a join public.airlinerra_game_worlds w on w.id=a.world_id and w.state in ('registration_open','active') left join airlinerra.airport_game_world1_catalog c on c.airport_key=a.airport_key and c.world_number=a.world_id left join airlinerra.airport_game_profiles p on p.airport_key=a.airport_key left join airlinerra.airport_registry r on r.airport_key=a.airport_key order by a.world_id,a.airport_name nulls last,a.airport_key"
 });
 const SAFE_DOCUMENT = /^\/[A-Za-z0-9._/-]{1,160}\.html$/u;
 export const OWNER_PRIVATE_PILOT_VERSION='owner_private_pilot_20261028';
 export const OWNER_PRIVATE_PILOT_SQL=Object.freeze({
  eligibility:"select exists(select 1 from auth.users u join airlinerra_game.owner_premium_email_reservations r on r.email=lower(btrim(u.email)) where u.id=$1::uuid and u.email_confirmed_at is not null and coalesce(u.is_anonymous,false)=false and u.deleted_at is null and (u.banned_until is null or u.banned_until<=now())) is_eligible",
  worlds:"select id,name from public.airlinerra_game_worlds where id=1 and state in ('planned','registration_open','active')",
- airports:"select world_id,airport_key,airport_name,airport_code,country_iso from airlinerra_game.approved_game_airports where world_id=1 order by airport_name nulls last,airport_key"
+ airports:"select a.world_id,a.airport_key,a.airport_name,a.airport_code,a.country_iso,a.municipality,coalesce(c.game_display_category,p.proposed_category) as airport_category,c.category_finalized,coalesce(c.longest_qualifying_runway_m,r.longest_qualifying_runway_m) as runway_m,coalesce(c.longest_qualifying_surface,r.longest_qualifying_surface) as runway_surface,coalesce(c.latitude_deg,r.latitude_deg) as latitude_deg,coalesce(c.longitude_deg,r.longitude_deg) as longitude_deg from airlinerra_game.approved_game_airports a left join airlinerra.airport_game_world1_catalog c on c.airport_key=a.airport_key and c.world_number=a.world_id left join airlinerra.airport_game_profiles p on p.airport_key=a.airport_key left join airlinerra.airport_registry r on r.airport_key=a.airport_key where a.world_id=1 order by a.airport_name nulls last,a.airport_key"
 });
 
-// Metadata is copied from the operator's already-approved game roster;
-// no airport research table is read by the player-facing service.
+// Only owner-approved game airport keys are returned. We enrich those keys
+// with category/runway catalog metadata on the server; no unapproved airports
+// or raw research evidence are sent to players.
 function airportDisplayLabel(row) {
   const name=typeof row.airport_name==='string' ? row.airport_name.trim() : '';
   const code=typeof row.airport_code==='string' ? row.airport_code.trim() : '';
@@ -82,7 +83,16 @@ export function createOnboardingContextService({
               label:airportDisplayLabel(row),
               name:airportName,
               code:airportCode,
-              countryIso
+              countryIso,
+              municipality:typeof row.municipality==='string'?row.municipality:'',
+              category:['Local','Regional','Medium','Large','Major Hub','Mega Hub'].includes(row.airport_category)?row.airport_category:null,
+              categoryFinalized:row.category_finalized===true,
+              runwayLengthM:row.runway_m!==null&&Number.isFinite(Number(row.runway_m))&&Number(row.runway_m)>0?Math.round(Number(row.runway_m)):null,
+              runwaySurface:typeof row.runway_surface==='string'?row.runway_surface:null,
+              latitude:row.latitude_deg!==null&&Number.isFinite(Number(row.latitude_deg))?Number(row.latitude_deg):null,
+              longitude:row.longitude_deg!==null&&Number.isFinite(Number(row.longitude_deg))?Number(row.longitude_deg):null,
+              passengerDemandPct:null,
+              cargoDemandPct:null
             });
           }
         }
