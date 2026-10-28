@@ -133,7 +133,9 @@ test('real airline persists visibly in dashboard header while no-airline users a
  ]);
  assert.match(html,/id="top-world"/);
  assert.match(html,/id="top-airline-state"/);
- assert.match(js,/first\.name\+' · Registered airline'/);
+ assert.match(js,/first\.premiumUnlimited===true/);
+ assert.match(js,/Premium Unlimited/);
+ assert.match(js,/Registered airline/);
  assert.match(js,/No airline created · Complete airline setup/);
  assert.match(js,/if\(!hasRealAirline && safePlayerView\(window.location.hash\)==='overview'\)/);
 });
