@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://esm.sh; connect-src 'self' https://hwllkabgzaynalahvkpz.supabase.co; style-src 'self'; img-src 'self' blob: data: https://flagcdn.com https://hwllkabgzaynalahvkpz.supabase.co; base-uri 'none'; form-action 'self'">
-  <title>Airlinerra — Airline manager</title>
+  <title>Airlinerra - Airline manager</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="player-app.css">
   <script type="module" src="player-app.mjs"></script>
@@ -76,9 +76,9 @@
           <div class="page-head"><div><p class="eyebrow">MANAGER CONSOLE</p><h1>Overview</h1><p>Your home for airline operations once the first world opens.</p></div><button class="primary" type="button" data-go-view="onboarding">Explore setup</button></div>
           <div class="kpi-grid">
             <article class="kpi"><span>Airline</span><strong id="player-airline-name">Not created</strong><img id="player-existing-logo" alt="Airline logo" hidden><small>Awaiting onboarding</small></article>
-            <article class="kpi"><span>Available cash</span><strong id="player-cash">—</strong><small>No airline ledger yet</small></article>
-            <article class="kpi"><span>Aircraft</span><strong>—</strong><small>Fleet not connected</small></article>
-            <article class="kpi"><span>Active routes</span><strong>—</strong><small>Operations closed</small></article>
+            <article class="kpi"><span>Available cash</span><strong id="player-cash">-</strong><small>No airline ledger yet</small></article>
+            <article class="kpi"><span>Aircraft</span><strong>-</strong><small>Fleet not connected</small></article>
+            <article class="kpi"><span>Active routes</span><strong>-</strong><small>Operations closed</small></article>
           </div>
           <p id="player-logo-warning" role="alert" class="hint" hidden></p>
           <div class="two-cols">
@@ -116,7 +116,7 @@
         </section>
         <section data-player-view="profile" hidden>
           <div class="page-head"><div><p class="eyebrow">YOUR IDENTITY</p><h1>Manager profile</h1><p>Account identity is read from the verified Supabase Auth session.</p></div></div>
-          <article class="panel narrow"><span class="panel-kicker">ACCOUNT DETAILS</span><div class="profile-avatar" aria-hidden="true">AM</div><div class="detail-row"><span>Display name</span><strong id="manager-name">Airline manager</strong></div><div class="detail-row"><span>Email address</span><strong id="manager-email">Not connected</strong></div><div class="detail-row"><span>Email status</span><strong id="manager-verified">Verified email</strong></div><div class="detail-row"><span>Account created</span><strong id="manager-joined">—</strong></div><p class="muted">Your account details are verified and protected.</p><a class="text-link" href="/account.html?screen=forgot">Password recovery</a></article>
+          <article class="panel narrow"><span class="panel-kicker">ACCOUNT DETAILS</span><div class="profile-avatar" aria-hidden="true">AM</div><div class="detail-row"><span>Display name</span><strong id="manager-name">Airline manager</strong></div><div class="detail-row"><span>Email address</span><strong id="manager-email">Not connected</strong></div><div class="detail-row"><span>Email status</span><strong id="manager-verified">Verified email</strong></div><div class="detail-row"><span>Account created</span><strong id="manager-joined">-</strong></div><p class="muted">Your account details are verified and protected.</p><a class="text-link" href="/account.html?screen=forgot">Password recovery</a></article>
         </section>
         <section data-player-view="worlds" hidden>
           <div class="page-head"><div><p class="eyebrow">SIMULATION WORLDS</p><h1>Game worlds</h1><p>Each world has its own independent airline economy. One real day equals one game day.</p></div></div>
@@ -128,7 +128,7 @@
         </section>
         <section data-player-view="fleet" hidden>
  <div class="page-head"><div><p class="eyebrow">FLEET MANAGEMENT</p><h1>Fleet</h1><p>Aircraft purchasing, leasing, maintenance and utilisation.</p></div></div>
- <div class="kpi-grid"><article class="kpi"><span>Owned aircraft</span><strong>—</strong><small>No airline activated</small></article><article class="kpi"><span>Leased aircraft</span><strong>—</strong><small>Not connected</small></article><article class="kpi"><span>Maintenance</span><strong>—</strong><small>No airframes</small></article><article class="kpi"><span>Available capacity</span><strong>—</strong><small>No schedules</small></article></div>
+ <div class="kpi-grid"><article class="kpi"><span>Owned aircraft</span><strong>-</strong><small>No airline activated</small></article><article class="kpi"><span>Leased aircraft</span><strong>-</strong><small>Not connected</small></article><article class="kpi"><span>Maintenance</span><strong>-</strong><small>No airframes</small></article><article class="kpi"><span>Available capacity</span><strong>-</strong><small>No schedules</small></article></div>
  <article class="panel empty-panel"><h2>Your fleet will appear here</h2><p>Aircraft models, actual new/used airframe inventory and maintenance must be connected before purchases or leases.</p><button class="secondary" data-go-view="onboarding" type="button">Review airline setup</button></article></section>
         <section data-player-view="routes" hidden><div class="page-head"><div><p class="eyebrow">ROUTE NETWORK</p><h1>Routes</h1><p>Build connections between approved departure and destination airports.</p></div></div>
  <article class="panel empty-panel"><h2>No route network yet</h2><p>Browse approved World 1 airports now. Creating routes requires an activated airline, aircraft assignment and live passenger/cargo demand.</p><button class="secondary" data-go-view="airports" type="button">Browse approved airports</button></article></section>
