@@ -11,6 +11,7 @@ on:
       - 'website/local-onboarding-draft.mjs'
       - 'tests/test_local_onboarding_draft.mjs'
       - 'tests/test_prelaunch_release_audit.mjs'
+      - 'tests/test_local_preview_http.mjs'
       - 'website/dev-scripts/local-preview-catalog.mjs'
       - 'website/local-catalog-client.mjs'
       - 'website/dev-data/**'
@@ -87,6 +88,8 @@ jobs:
         run: npm run build
       - name: Verify regular main build and safe localhost visual preview
         run: node --test tests/test_invited_tester_manual_bundle.mjs
+      - name: Smoke-test built localhost pages and actual read-only airport HTTP endpoints
+        run: node tests/test_local_preview_http.mjs
       - name: Assert invited-only account is included without public signup
         run: |
           test -f dist/account.html
