@@ -77,6 +77,46 @@ const collator=new Intl.Collator('en',{sensitivity:'base'});
 const menus=Object.fromEntries([['setup-world',false],['setup-country',true],['setup-airport-results',false],['airports-country',true]]
  .map(([id,flags])=>[id,createDownwardMenu(doc.getElementById(id),{flags})]));
 function refreshMenu(id){menus[id]?.refresh();}
+const SIX_CATEGORIES=new Set(['Local','Regional','Medium','Large','Major Hub','Mega Hub']);
+function selectedAirport(){
+ const worldId=Number(doc.getElementById('setup-world').value);
+ const key=doc.getElementById('setup-airport-results').value;
+ return onboardingContext?.worlds.find(w=>w.worldId===worldId)?.airports.find(a=>a.key===key)||null;
+}
+function demandScale(label,value){
+ const output=doc.getElementById('airport-'+label+'-demand');
+ const scale=doc.getElementById('airport-'+label+'-scale');
+ const valid=typeof value==='number'&&Number.isFinite(value)&&value>=0&&value<=100;
+ output.textContent=valid?Math.round(value)+'%':'Data pending';
+ scale.replaceChildren();
+ if(valid){
+  const fill=doc.createElement('span');fill.className='demand-bar-fill';
+  fill.style.width=value+'%';scale.append(fill);
+ }
+ scale.setAttribute('aria-label',valid
+  ?label+' demand '+Math.round(value)+' percent'
+  :label+' demand has not yet been calculated');
+}
+function updateAirportDetails(){
+ const airport=selectedAirport();
+ doc.getElementById('airport-details-empty').hidden=Boolean(airport);
+ doc.getElementById('airport-details-content').hidden=!airport;
+ if(!airport)return;
+ const put=(id,value)=>{doc.getElementById(id).textContent=value||'Not available';};
+ put('airport-details-name',airport.name);
+ put('airport-details-code',airport.code);
+ put('airport-details-location',[airport.municipality,countryNameOf(airport.countryIso)].filter(Boolean).join(', '));
+ put('airport-details-category',SIX_CATEGORIES.has(airport.category)?airport.category:'Not classified');
+ put('airport-details-category-note',airport.categoryFinalized?'Category finalized': 'Category provisional');
+ put('airport-details-runway',Number.isFinite(airport.runwayLengthM)?airport.runwayLengthM.toLocaleString('en')+' m':null);
+ put('airport-details-surface',airport.runwaySurface);
+ const coords=Number.isFinite(airport.latitude)&&Number.isFinite(airport.longitude)
+  ?airport.latitude.toFixed(4)+', '+airport.longitude.toFixed(4):null;
+ put('airport-details-coordinates',coords);
+ put('airport-details-type',airport.key.startsWith('FICTIONAL:')?'Fictional game airport':'Real-world airport');
+ demandScale('passenger',airport.passengerDemandPct);
+ demandScale('cargo',airport.cargoDemandPct);
+}
 function summarize(){
  const world=doc.getElementById('setup-world'),country=doc.getElementById('setup-country');
  const airport=doc.getElementById('setup-airport-results');
@@ -85,6 +125,7 @@ function summarize(){
  doc.getElementById('summary-world').textContent=world.value?(world.selectedOptions[0]?.textContent||'World 01'):'Not selected';
  doc.getElementById('summary-country').textContent=country.value?countryNameOf(country.value):'Not selected';
  doc.getElementById('summary-airport').textContent=airport.value?(airport.selectedOptions[0]?.textContent||'Not selected'):'Not selected';
+ updateAirportDetails();
 }
 function fillCountries(countries){
  const normalized=countries.filter(c=>typeof c.countryIso==='string'&&
@@ -129,7 +170,11 @@ function loadSetupAirports({initialKey=''}={}){
  airports.sort((a,b)=>collator.compare(a.name,b.name)||collator.compare(a.code||'',b.code||''));
  output.replaceChildren(new Option(!country?'Select a country first':
   airports.length?'Select a home airport':'No approved airports',''));
- for(const a of airports)output.append(new Option(a.name+' ('+(a.code||'-')+')',a.key));
+ for(const a of airports){
+  const option=new Option(a.name+' ('+(a.code||'-')+')',a.key);
+  if(SIX_CATEGORIES.has(a.category))option.dataset.category=a.category;
+  output.append(option);
+ }
  output.disabled=airports.length===0;
  if(initialKey&&airports.some(a=>a.key===initialKey))output.value=initialKey;
  refreshMenu('setup-airport-results');summarize();
