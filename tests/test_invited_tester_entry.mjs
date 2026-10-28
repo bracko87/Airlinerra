@@ -133,20 +133,18 @@ test('verified invitation unlocks private password setup, without exposing signu
   assert.equal(result.auth, sampleAuth);
 });
 
-test('public static site remains closed and private tester shell is excluded from build',async()=>{
+test('main website ships ONLY invitation login; public player signup stays disabled',async()=>{
   const base=new URL('../',import.meta.url);
-  const [build,rules,shell,page]=await Promise.all([
+  const [build,overlay,rules,shell,page]=await Promise.all([
     readFile(new URL('website/dev-scripts/build.mjs',base),'utf8'),
+    readFile(new URL('website/dev-scripts/invited-overlay.mjs',base),'utf8'),
     readFile(new URL('website/auth-rules.mjs',base),'utf8'),
     readFile(new URL('website/prelaunch-invited-account.html',base),'utf8'),
     readFile(new URL('website/invited-tester-page.mjs',base),'utf8')
   ]);
+  assert.match(build,/addInviteOnlyAccount\(\{siteDir,distDir\}\)/);
+  assert.match(overlay,/invited-tester-entry\.mjs/);
   assert.match(rules,/export const PUBLIC_AUTH_ENABLED = false;/);
-  for(const filename of [
-    'prelaunch-invited-account.html','invited-tester-entry.mjs',
-    'invited-tester-page.mjs','invited-tester-page.css',
-    'invited-tester-auth.mjs'
-  ])assert.doesNotMatch(build,new RegExp(filename.replaceAll('.','\\.')));
   assert.match(shell,/PRIVATE PRELAUNCH ACCESS/);
   assert.match(shell,/id="set-password"/);
   assert.doesNotMatch(shell,/id="register"/);
