@@ -72,9 +72,9 @@ test('player page and build surface contain no write routes or exposed credentia
   assert.match(html,/setup-country/);
   assert.match(html,/setup-airport/);
   assert.match(html,/setup-airline-name/);
-  assert.match(html,/disabled>Create airline/);
+  assert.match(html,/disabled>Create my airline/);
   assert.match(js,/openPrivateTesterDashboard/);
-  assert.match(js,/Local visual preview|local-preview-note/);
+  assert.match(js,/local-preview-note/);
   assert.match(js,/\.createAirline\(/);
   assert.match(js,/\.acceptLegal\(/);
   assert.doesNotMatch(js,/signUp\(|updateUser\(|\.from\(|service_role|sb_secret_|fetch\(/);
