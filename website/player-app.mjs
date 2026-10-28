@@ -323,7 +323,13 @@ async function loadRealOnboarding(){
   doc.getElementById('setup-airline-logo').disabled=false;
  }catch{
   onboardingContext=null;
-  status.textContent='Airline setup is temporarily unavailable. Please try again later.';
+  const world=doc.getElementById('setup-world');
+  world.replaceChildren(new Option('Select a world',''));
+  world.disabled=true;refreshMenu('setup-world');
+  fillSetupCountries();
+  for(const id of ['setup-airline-name','setup-airline-logo','setup-accept-terms','setup-accept-privacy','setup-create-airline'])
+   doc.getElementById(id).disabled=true;
+  status.textContent='Unable to load World 1 airline setup. Please select Retry.';
  }
 }
 async function prepareLogo(file){
