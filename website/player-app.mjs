@@ -90,7 +90,7 @@ function fillCountries(countries){
  const normalized=countries.filter(c=>typeof c.countryIso==='string'&&
   /^[A-Z]{2}$/.test(c.countryIso)&&Number.isInteger(c.airportCount)&&c.airportCount>0)
   .sort((a,b)=>collator.compare(countryNameOf(a.countryIso),countryNameOf(b.countryIso)));
- for(const id of ['setup-country','airports-country']){
+ for(const id of ['airports-country']){
   const select=doc.getElementById(id);
   select.replaceChildren(new Option('Select a country',''));
   for(const c of normalized)select.append(new Option(countryNameOf(c.countryIso)+' ('+c.airportCount+' airports)',c.countryIso));
@@ -100,58 +100,54 @@ function fillCountries(countries){
  doc.getElementById('airports-search').disabled=false;
  summarize();
 }
-async function loadSetupAirports({initialKey=''}={}){
- const request=++setupAirportRequest;
+function fillSetupCountries(){
+ const worldId=Number(doc.getElementById('setup-world').value);
+ const world=onboardingContext?.worlds.find(w=>w.worldId===worldId);
+ const countries=doc.getElementById('setup-country');
+ const counts=new Map();
+ for(const a of world?.airports||[]){
+  if(!/^[A-Z]{2}$/.test(a.countryIso||''))continue;
+  counts.set(a.countryIso,(counts.get(a.countryIso)||0)+1);
+ }
+ const sorted=[...counts].sort((a,b)=>collator.compare(countryNameOf(a[0]),countryNameOf(b[0])));
+ countries.replaceChildren(new Option('Select a country',''));
+ for(const [code,count] of sorted)countries.append(
+  new Option(countryNameOf(code)+' ('+count+' airports)',code));
+ countries.disabled=sorted.length===0;
+ const airports=doc.getElementById('setup-airport-results');
+ airports.replaceChildren(new Option('Select a country first',''));airports.disabled=true;
+ refreshMenu('setup-country');refreshMenu('setup-airport-results');summarize();
+}
+function loadSetupAirports({initialKey=''}={}){
+ const worldId=Number(doc.getElementById('setup-world').value);
  const country=doc.getElementById('setup-country').value;
  const output=doc.getElementById('setup-airport-results');
- output.disabled=true;output.replaceChildren(new Option(country?'Loading airports…':'Select a country first',''));
- refreshMenu('setup-airport-results');summarize();
- if(!playerData||!/^[A-Z]{2}$/.test(country))return;
- let offset=0;const airports=[],keys=new Set();
- try{
-  do{
-   const result=await playerData.airports({countryIso:country,search:'',offset});
-   if(request!==setupAirportRequest)return;
-   if(!Array.isArray(result.airports)||result.countryIso!==country)throw Error('Invalid airport response');
-   for(const airport of result.airports){
-    if(!airport?.key||keys.has(airport.key)||airport.countryIso!==country)continue;
-    keys.add(airport.key);airports.push(airport);
-   }
-   if(result.nextOffset===null){offset=null;break;}
-   if(!Number.isInteger(result.nextOffset)||result.nextOffset<=offset||result.nextOffset>3100)
-    throw Error('Invalid airport pagination');
-   offset=result.nextOffset;
-  }while(offset!==null);
-  if(request!==setupAirportRequest)return;
-  airports.sort((a,b)=>collator.compare(a.name,b.name)||collator.compare(a.code||'',b.code||''));
-  output.replaceChildren(new Option(airports.length?'Select a home airport':'No airports available',''));
-  for(const airport of airports)output.append(new Option(airport.name+' ('+(airport.code||'—')+')',airport.key));
-  output.disabled=airports.length===0;
-  if(initialKey&&airports.some(a=>a.key===initialKey))output.value=initialKey;
- }catch{
-  if(request!==setupAirportRequest)return;
-  output.replaceChildren(new Option('Airports could not be loaded',''));output.disabled=true;
-  doc.getElementById('setup-draft-feedback').textContent='Unable to load airports. Please choose the country again.';
- }
+ const world=onboardingContext?.worlds.find(w=>w.worldId===worldId);
+ // Only the protected, freshly verified backend context may supply choices.
+ const airports=(world?.airports||[]).filter(a=>
+  a.countryIso===country&&typeof a.name==='string'&&typeof a.key==='string');
+ airports.sort((a,b)=>collator.compare(a.name,b.name)||collator.compare(a.code||'',b.code||''));
+ output.replaceChildren(new Option(!country?'Select a country first':
+  airports.length?'Select a home airport':'No approved airports',''));
+ for(const a of airports)output.append(new Option(a.name+' ('+(a.code||'-')+')',a.key));
+ output.disabled=airports.length===0;
+ if(initialKey&&airports.some(a=>a.key===initialKey))output.value=initialKey;
  refreshMenu('setup-airport-results');summarize();
 }
 
 function drawRealWorlds(worlds){
   const root=doc.getElementById('world-directory');
   root.replaceChildren();
-  const options=doc.getElementById('setup-world');
-  options.replaceChildren(new Option('Select a world',''));
+  // Read-only directory. Never overwrite the protected airline setup choices.
   for(const world of worlds){
-    const name='World '+String(world.id).padStart(2,'0');
     const card=doc.createElement('article');card.className='world-card';
-    const header=doc.createElement('span');header.className='world-number';header.textContent='DATABASE · WORLD '+String(world.id).padStart(2,'0');
+    const header=doc.createElement('span');header.className='world-number';
+    header.textContent='WORLD '+String(world.id).padStart(2,'0');
     const title=doc.createElement('h2');title.textContent=world.name;
-    const status=doc.createElement('span');status.className='pill';status.textContent=world.state+' · '+(world.state==='planned'?'Registration closed':'Awaiting game release');
+    const status=doc.createElement('span');status.className='pill';
+    status.textContent=world.id===1?'World 1 - Founding World':'Not available';
     card.append(header,title,status);root.append(card);
-    options.append(new Option(name+' — '+world.state,String(world.id)));
   }
-  // Read-only choices can be inspected, but create-airline stays disabled.
-  options.disabled=false;refreshMenu('setup-world');summarize();
 }
 async function airportSearch({setup=false,offset=0}={}){
   if(!playerData)return;
@@ -286,9 +282,15 @@ async function loadRealOnboarding(){
    throw Error('No eligible worlds for this manager');
   onboardingContext=ctx;
   const options=doc.getElementById('setup-world');
-  options.replaceChildren(new Option('Choose a world',''));
-  for(const world of ctx.worlds)options.append(new Option(world.name,String(world.worldId)));
-  options.disabled=false;refreshMenu('setup-world');summarize();
+  options.replaceChildren(new Option('Select a world',''));
+  for(const world of ctx.worlds){
+   if(Number(world.worldId)!==1||!Array.isArray(world.airports)||!world.airports.length)continue;
+   options.append(new Option('World 1 - '+world.name,String(world.worldId)));
+  }
+  options.disabled=options.options.length<=1;
+  if(!options.disabled)options.value='1';
+  refreshMenu('setup-world');
+  fillSetupCountries();
   const info=doc.getElementById('setup-legal-approval');
   info.replaceChildren();
   for(const [name,url] of [['Terms',ctx.policy.termsUrl],['Privacy',ctx.policy.privacyUrl]]){
@@ -457,8 +459,8 @@ function prepareDemoSettings(){
   if(d&&['12','24'].includes(d.time))doc.getElementById('settings-time').value=d.time;
  }catch{/* no persisted settings */}
 }
-doc.getElementById('setup-country').addEventListener('change',()=>{void loadSetupAirports();});
-doc.getElementById('setup-world').addEventListener('change',summarize);
+doc.getElementById('setup-country').addEventListener('change',()=>{loadSetupAirports();});
+doc.getElementById('setup-world').addEventListener('change',fillSetupCountries);
 doc.getElementById('setup-airport-results').addEventListener('change',summarize);
 doc.getElementById('setup-airline-name').addEventListener('input',summarize);
 doc.getElementById('setup-airport-search').addEventListener('click',()=>{void airportSearch({setup:true});});
