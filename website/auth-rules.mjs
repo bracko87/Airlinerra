@@ -4,7 +4,7 @@
  * These frontend guards are UX-only; public signup MUST ALSO be disabled server-side.
  */
 export const PUBLIC_AUTH_ENABLED = false;
-export const ALLOWED_AUTH_ORIGINS = Object.freeze(['http://localhost:5187', 'https://airlinerra.com']);
+export const ALLOWED_AUTH_ORIGINS = Object.freeze(['http://localhost:5187', 'http://localhost:5188', 'https://airlinerra.com']);
 
 export const WORLD_DIRECTORY = Object.freeze([
   Object.freeze({ id: '01', name: 'Founding World', state: 'planned', calendar: '1 real day = 1 game day' }),

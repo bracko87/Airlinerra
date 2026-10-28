@@ -44,7 +44,7 @@ export async function createInvitedTesterAuth({
       storageKey:'airlinerra-invited-tester-v1'
     }
   });
-  const service=createAuthService({supabase:client,origin:AUTH_ORIGIN,enabled:true});
+  const service=createAuthService({supabase:client,origin:conf.origin,enabled:true});
   // Invite-only: never expose .register() to the official-domain test UI.
   return Object.freeze({
     signIn:service.signIn,

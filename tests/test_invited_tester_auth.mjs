@@ -110,3 +110,16 @@ test('real invited Auth can run on exact localhost without accepting hostile dom
   assert.throws(()=>validatedInvitedTesterConfig({...config(),origin}),/Pinned Airlinerra/);
  }
 });
+
+test('real localhost Auth uses localhost for callback requests, never a production-only redirect',async()=>{
+ const calls=[];
+ const local=await createInvitedTesterAuth({...config(),origin:'http://localhost:5188',loadSdk:async()=>({
+   createClient:()=>({auth:{
+     resetPasswordForEmail:async(email,opts)=>{calls.push({email,opts});return {error:null}}
+   }})
+ })});
+ await local.requestPasswordReset('Pilot@example.com');
+ assert.deepEqual(calls,[{email:'pilot@example.com',opts:{
+   redirectTo:'http://localhost:5188/account.html?screen=reset'
+ }}]);
+});

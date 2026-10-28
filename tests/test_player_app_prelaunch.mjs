@@ -108,3 +108,11 @@ test('grouped horizontal dropdowns keep all ten game routes accessible',async()=
   assert.match(html,/href="\/"[^>]*>Public website<\/a>/);
   assert.match(html,/id="player-sign-out"/);
 });
+
+test('real account onboarding does not re-open creation for an existing airline',async()=>{
+ const js=await readFile(new URL('../website/player-app.mjs',import.meta.url),'utf8');
+ assert.match(js,/hasRealAirline=Boolean\(first\?\.name\)/);
+ assert.match(js,/if\(hasRealAirline\)\{/);
+ assert.match(js,/Your real airline already exists/);
+ assert.match(js,/new Intl\.DisplayNames\(\['en'\],\{type:'region'\}\)/);
+});

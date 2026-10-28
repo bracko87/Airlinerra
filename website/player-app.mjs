@@ -65,6 +65,7 @@ function setManager(user){
 let playerData=null;
 let onboarding=null;
 let onboardingContext=null;
+let hasRealAirline=false;
 let nextAirportOffset=null;
 function fillCountries(countries){
   for(const id of ['setup-country','airports-country']){
@@ -72,7 +73,10 @@ function fillCountries(countries){
     select.replaceChildren(new Option('Select a country',''));
     for(const c of countries){
       if(typeof c.countryIso==='string'&&/^[A-Z]{2}$/.test(c.countryIso)&&Number.isInteger(c.airportCount)){
-        select.append(new Option(c.countryIso+' ('+c.airportCount+' airports)',c.countryIso));
+        const countryName=typeof Intl.DisplayNames==='function'
+          ?new Intl.DisplayNames(['en'],{type:'region'}).of(c.countryIso)
+          :c.countryIso;
+        select.append(new Option((countryName||c.countryIso)+' ('+c.airportCount+' airports)',c.countryIso));
       }
     }
     select.disabled=false;
@@ -143,6 +147,7 @@ async function loadPlayerReadData({local=false}={}){
     drawRealWorlds(data.worlds);
     fillCountries(data.countries);
     const first=data.airlines[0];
+    hasRealAirline=Boolean(first?.name);
     if(first?.name){
       doc.getElementById('player-airline-name').textContent=first.name;
       doc.getElementById('player-cash').textContent=first.cashUsd+' USD';
@@ -195,8 +200,14 @@ async function restoreSetupDraft(){
 
 async function loadRealOnboarding(){
  if(!auth)return;
- onboarding=createRealOnboardingClient({auth,origin:window.location.origin});
  const status=doc.getElementById('setup-draft-feedback');
+ if(hasRealAirline){
+   onboardingContext=null;
+   doc.getElementById('setup-create-airline').disabled=true;
+   status.textContent='Your real airline already exists. It is saved in Supabase and visible on the Overview page.';
+   return;
+ }
+ onboarding=createRealOnboardingClient({auth,origin:window.location.origin});
  try{
   const ctx=await onboarding.context();
   if(!ctx?.policy||!Array.isArray(ctx.worlds)||ctx.worlds.length===0)
