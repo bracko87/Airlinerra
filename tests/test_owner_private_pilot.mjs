@@ -103,3 +103,33 @@ test('owner World 1 wizard is independent of the read-only planned world directo
  assert.match(html,/id="setup-airport-results"/);
  assert.doesNotMatch(app,/options\.append\(new Option\(name\+' — '\+world\.state/);
 });
+
+test('planned World 1 airline trigger exception is consented, owner-only and not a public gate',async()=>{
+ const migration=await readFile(new URL('../supabase/migrations/20261028215500_airlinerra_owner_world1_airline_trigger_exception.sql',import.meta.url),'utf8');
+ assert.match(migration,/CREATE OR REPLACE FUNCTION airlinerra_game\.require_open_world_for_airline\(\)/i);
+ assert.match(migration,/NEW\.world_id = 1/);
+ assert.match(migration,/w\.state = 'planned'/);
+ assert.match(migration,/owner_premium_email_reservations/);
+ assert.match(migration,/owner_private_pilot_consents/);
+ assert.match(migration,/c\.version = 'owner_private_pilot_20261028'/);
+ assert.match(migration,/u\.email_confirmed_at IS NOT NULL/);
+ assert.match(migration,/coalesce\(u\.is_anonymous,false\) = false/);
+ assert.match(migration,/u\.deleted_at IS NULL/);
+ assert.match(migration,/u\.banned_until IS NULL OR u\.banned_until <= now\(\)/);
+ assert.match(migration,/RAISE EXCEPTION 'Airlinerra world is not open for airline registration'/);
+ assert.doesNotMatch(migration,/\bUPDATE\s+public\.airlinerra_game_worlds\b/i);
+ assert.doesNotMatch(migration,/\bUPDATE\s+airlinerra_game\.platform_release_gate\b/i);
+ assert.doesNotMatch(migration,/\bGRANT\s+(?:INSERT|ALL)\b/i);
+});
+
+test('airport details show the requested fields without crossed-out status, coordinates or type',async()=>{
+ const html=await readFile(new URL('../website/private-player-app.html',import.meta.url),'utf8');
+ const script=await readFile(new URL('../website/player-app.mjs',import.meta.url),'utf8');
+ for(const id of ['airport-details-name','airport-details-code','airport-details-location',
+   'airport-details-category','airport-details-runway','airport-details-surface',
+   'airport-passenger-demand','airport-cargo-demand'])assert.match(html,new RegExp('id="'+id+'"'));
+ for(const removed of ['airport-details-category-note','airport-details-coordinates','airport-details-type']){
+   assert.doesNotMatch(html,new RegExp('id="'+removed+'"'));
+   assert.doesNotMatch(script,new RegExp(removed));
+ }
+});
