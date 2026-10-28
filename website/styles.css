@@ -469,3 +469,12 @@ h2 span { color: var(--orange); }
 .platform-health button {border:1px solid rgba(255,255,255,.35);border-radius:6px;color:inherit;background:transparent;padding:4px 8px;cursor:pointer;font:inherit}
 .platform-health button:hover {background:rgba(255,255,255,.1)}
 @media(max-width:750px) {.platform-health{margin:10px 0}}
+
+/* Compact mobile header: keep both account entry points visible at 320px. */
+@media(max-width:400px){
+  .header-inner{gap:5px}
+  .site-header .brand img{width:109px}
+  .header-actions{gap:2px}
+  .header-signin,.header-register{font-size:10px;padding:7px 5px;min-height:33px}
+  .menu-toggle{height:37px;width:37px}
+}

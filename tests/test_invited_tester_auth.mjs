@@ -87,3 +87,17 @@ test('standard website build includes invited login, not general signup',async()
   const account=await readFile(new URL('../website/account.js',import.meta.url),'utf8');
   assert.doesNotMatch(account,/invited-tester-auth/);
 });
+
+test('read API token adapter rechecks same verified manager and refuses switched sessions',async()=>{
+  let sessionId='one';
+  const fakeAuth={
+    getUser:async()=>({data:{user:{id:'one',email_confirmed_at:'2026-10-28T12:00:00Z'}},error:null}),
+    getSession:async()=>({data:{session:{user:{id:sessionId},access_token:'example.jwt.token'}},error:null})
+  };
+  const tester=await createInvitedTesterAuth({...config(),loadSdk:async()=>({
+    createClient:()=>({auth:fakeAuth})
+  })});
+  assert.equal(await tester.getAccessToken(),'example.jwt.token');
+  sessionId='another-account';
+  await assert.rejects(tester.getAccessToken(),/Verified session unavailable/);
+});

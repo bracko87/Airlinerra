@@ -85,3 +85,11 @@ test('client forwards bounded read requests with verified session only',async()=
  await assert.rejects(createPlayerReadClient({auth,origin:ORIGIN}).overview(),/not deployed/);
  assert.equal(calls.length,1);
 });
+
+test('request bodies exceeding 512 bytes are rejected without database contact',async()=>{
+ const s=make();
+ const extra='z'.repeat(800);
+ const response=await s.handler(request('/api/v1/player/overview',{extra}));
+ assert.equal(response.status,400);
+ assert.equal(s.counts().connected,0);
+});
