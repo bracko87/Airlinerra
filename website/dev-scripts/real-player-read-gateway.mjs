@@ -17,10 +17,56 @@ export function validConnectionUrl(value){
      u.username.endsWith('.'+REF);
  }catch{return false;}
 }
+// Opt-in localhost-only, read-only proxy to the existing authenticated
+// Supabase Edge game service. No DB password, local fake catalog, or writes.
+export function createLiveReadOnlyPreviewHandler({fetchImpl=globalThis.fetch}={}){
+ const allowed=new Set([
+  '/api/v1/player/overview',
+  '/api/v1/player/airports',
+  '/api/v1/onboarding/context'
+ ]);
+ const error=(status,why)=>new Response(JSON.stringify({error:why}),{
+  status,headers:{'content-type':'application/json','cache-control':'no-store'}
+ });
+ return async request=>{
+  if(!(request instanceof Request))return error(400,'Invalid request');
+  const url=new URL(request.url);
+  if(url.origin!==ORIGIN||request.headers.get('origin')!==ORIGIN)
+   return error(403,'Local browser required');
+  if(!allowed.has(url.pathname)||url.search||request.method!=='POST')
+   return error(403,'Local preview is read-only');
+  const token=request.headers.get('authorization')||'';
+  if(!/^Bearer [A-Za-z0-9._~-]{16,8192}$/.test(token))
+   return error(401,'Verified session required');
+  if(request.headers.get('content-type')!=='application/json')
+   return error(415,'JSON only');
+  let body;
+  try{body=await request.text();if(new TextEncoder().encode(body).length>2048)
+   return error(413,'Request too large');}catch{return error(400,'Invalid body')}
+  try{
+   const response=await fetchImpl(AUTH_URL+'/functions/v1/airlinerra-game',{
+    method:'POST',headers:{
+     apikey:AIRLINERRA_INVITED_TESTER_PUBLIC_SETTINGS.publishableKey,
+     authorization:token,'x-airlinerra-route':url.pathname,
+     origin:'https://airlinerra.com','content-type':'application/json'
+    },body,redirect:'error',cache:'no-store',signal:AbortSignal.timeout(20000)
+   });
+   const type=response.headers.get('content-type')||'';
+   if(!type.includes('application/json'))return error(503,'Invalid game response');
+   const bytes=await response.arrayBuffer();
+   if(bytes.byteLength>2000000)return error(503,'Game response too large');
+   return new Response(bytes,{status:response.status,headers:{
+    'content-type':'application/json','cache-control':'no-store'
+   }});
+  }catch{return error(503,'Unable to load real airport data')}
+ };
+}
 export async function makeRealLocalPlayerHandler({
   env=process.env,loadPg=()=>import('pg'),
   fetchImpl=globalThis.fetch
 }={}){
+ if(env.AIRLINERRA_LOCAL_EDGE_READONLY==='1')
+  return createLiveReadOnlyPreviewHandler({fetchImpl});
  const url=env.AIRLINERRA_LOCAL_DATABASE_URL;
  if(!validConnectionUrl(url))return async()=>new Response(JSON.stringify({
   error:'Authenticated game-data service needs private PostgreSQL configuration.'
