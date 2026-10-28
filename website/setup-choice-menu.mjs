@@ -35,8 +35,15 @@ export function createDownwardMenu(select,{flags=false,placeholder='Select an op
    button.setAttribute('aria-selected',String(option.value===select.value));
    button.dataset.value=option.value;
    if(flags&&/^[A-Z]{2}$/.test(option.value))button.append(flagFor(option.value));
-   const span=document.createElement('span');span.textContent=option.textContent;
+   const span=document.createElement('span');span.className='down-menu-option-label';
+   span.textContent=option.textContent;
    button.append(span);
+   const category=option.dataset.category;
+   if(['Local','Regional','Medium','Large','Major Hub','Mega Hub'].includes(category)){
+    const badge=document.createElement('span');
+    badge.className='down-menu-category';
+    badge.textContent=category;button.append(badge);
+   }
    button.addEventListener('click',()=>{
     select.value=option.value;close();
     select.dispatchEvent(new Event('change',{bubbles:true}));
