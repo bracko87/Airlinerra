@@ -61,3 +61,14 @@ test('local browser adapter never works on production origin',async()=>{
  assert.equal(calls[0].url,origin+'/__local_player__/airports');
  assert.equal(calls[0].args.credentials,'omit');
 });
+
+test('local draft restores airport by exact approved key, even beyond the first page',async()=>{
+ const route='/__local_player__/airports';
+ const ok=await handleLocalCatalogRequest(send(route,{countryIso:'DE',airportKey:'OURAIRPORTS:301881'}));
+ assert.equal(ok.status,200);
+ assert.equal((await ok.json()).airports[0].name,'Berlin Brandenburg Airport');
+ const cross=await handleLocalCatalogRequest(send(route,{countryIso:'FR',airportKey:'OURAIRPORTS:301881'}));
+ assert.deepEqual((await cross.json()).airports,[]);
+ const invalid=await handleLocalCatalogRequest(send(route,{countryIso:'DE',airportKey:'bad'}));
+ assert.equal(invalid.status,400);
+});

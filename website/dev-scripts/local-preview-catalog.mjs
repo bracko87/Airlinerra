@@ -78,14 +78,16 @@ export async function handleLocalCatalogRequest(request,{catalog}={}){
      airlines:[],gameplayAvailable:false,readOnly:true
    });
  }
- const {countryIso,search='',offset=0}=body;
- if(Object.keys(body).some(k=>!['countryIso','search','offset'].includes(k))||
+ const {countryIso,search='',offset=0,airportKey=null}=body;
+ if(Object.keys(body).some(k=>!['countryIso','search','offset','airportKey'].includes(k))||
    typeof countryIso!=='string'||!/^[A-Z]{2}$/u.test(countryIso)||
    typeof search!=='string'||!searchRe.test(search)||
-   !Number.isInteger(offset)||offset<0||offset>3100)
+   !Number.isInteger(offset)||offset<0||offset>3100||
+   (airportKey!==null&&(typeof airportKey!=='string'||!/^OURAIRPORTS:[1-9][0-9]{0,18}$/u.test(airportKey)||search!==''||offset!==0)))
    return reply(400,{error:'Invalid airport filter'});
  const term=search.trim().toLocaleLowerCase('und');
  const rows=data.airports.filter(row=>row.country_iso===countryIso &&
+   (airportKey===null||row.airport_key===airportKey) &&
    (!term||[row.airport_name,row.airport_code,row.municipality]
      .some(v=>typeof v==='string'&&v.toLocaleLowerCase('und').includes(term))))
    .sort((a,b)=>a.airport_name.localeCompare(b.airport_name)||a.airport_key.localeCompare(b.airport_key));

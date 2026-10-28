@@ -18,6 +18,6 @@ export function createLocalCatalogClient({location,fetchImpl=(...args)=>fetch(..
  }
  return Object.freeze({
   overview:()=>post('/__local_player__/overview',{}),
-  airports:({countryIso,search='',offset=0})=>post('/__local_player__/airports',{countryIso,search,offset})
+  airports:({countryIso,search='',offset=0,airportKey=null})=>post('/__local_player__/airports',{countryIso,search,offset,airportKey})
  });
 }

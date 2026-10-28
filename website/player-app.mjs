@@ -181,7 +181,7 @@ async function restoreSetupDraft(){
  doc.getElementById('setup-country').value=saved.countryIso;
  doc.getElementById('setup-airline-name').value=saved.airlineName;
  try{
-  const data=await playerData.airports({countryIso:saved.countryIso,search:'',offset:0});
+  const data=await playerData.airports({countryIso:saved.countryIso,airportKey:saved.airportKey});
   const select=doc.getElementById('setup-airport-results');
   select.replaceChildren(new Option('Choose a home airport',''));
   for(const a of data.airports)select.append(new Option(a.name+' ('+a.code+')',a.key));
@@ -235,6 +235,12 @@ function prepareDemoSettings(){
   if(d&&['12','24'].includes(d.time))doc.getElementById('settings-time').value=d.time;
  }catch{/* no persisted settings */}
 }
+doc.getElementById('setup-country').addEventListener('change',()=>{
+ const select=doc.getElementById('setup-airport-results');
+ select.replaceChildren(new Option('Search and select an airport',''));
+ select.disabled=true;
+ doc.getElementById('setup-draft-feedback').textContent='Search for a home airport in the selected country.';
+});
 doc.getElementById('setup-airport-search').addEventListener('click',()=>{void airportSearch({setup:true});});
 doc.getElementById('airports-search').addEventListener('click',()=>{nextAirportOffset=null;void airportSearch();});
 doc.getElementById('airports-more').addEventListener('click',()=>{if(nextAirportOffset!==null)void airportSearch({offset:nextAirportOffset});});
