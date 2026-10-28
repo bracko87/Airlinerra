@@ -44,6 +44,13 @@ try{
  assert.equal(denied.status,403);
  const bad=await request('/__local_player__/airports',{countryIso:'XX',offset:999999});
  assert.equal(bad.status,400);
+ const registration=await request('/__local_registration__/');
+ assert.equal(registration.status,200);
+ assert.match(await registration.text(),/LOCAL TEST ONLY/);
+ for(const asset of ['registration.mjs','style.css','state.mjs']){
+  const res=await request('/__local_registration__/'+asset);
+  assert.equal(res.status,200);
+ }
  const hidden=await request('/dev-data/world1-approved-airports-2026-10-28.json');
  assert.equal(hidden.status,404);
  console.log('Local Airlinerra build-to-HTTP smoke passed: pages, worlds, 3140 airports, filters, origin protection and private snapshot.');

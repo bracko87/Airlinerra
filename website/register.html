@@ -2,8 +2,8 @@
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'">
-<title>Airlinerra — Registration</title><link rel="icon" href="assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="register.css"></head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'">
+<script type="module" src="register-local-entry.mjs"></script><title>Airlinerra — Registration</title><link rel="icon" href="assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="register.css"></head>
 <body>
 <header><a href="/" aria-label="Airlinerra homepage"><img src="assets/airlinerra-logo.png" alt="Airlinerra"></a><nav><a href="/">Home page</a><a href="/account.html?screen=sign-in">Sign in</a></nav></header>
 <main>
@@ -19,7 +19,8 @@
     <p>Public registration and the 7-day free trial will open together when Airlinerra is ready. Until then, account access is limited to invited testers.</p>
     <p>Already invited? Sign in using your private Airlinerra account.</p>
     <a class="cta" href="/account.html?screen=sign-in">Sign in to Airlinerra <span aria-hidden="true">→</span></a>
-    <p class="fineprint">No registration form is available yet. Airline creation, payments and game worlds remain closed during prelaunch.</p>
+    <p class="fineprint">No public registration form is available yet. Airline creation, payments and game worlds remain closed during prelaunch.</p>
+    <a class="local-registration-entry" id="local-registration-entry" hidden href="/__local_registration__/">Try the full registration walkthrough on localhost</a>
   </section>
   </div>
   <section class="steps"><h2>When registration opens</h2><div><span>01</span> Create and verify your manager account</div><div><span>02</span> Choose your game world and home airport</div><div><span>03</span> Create an airline, starting with $5,000,000 and no aircraft</div></section>

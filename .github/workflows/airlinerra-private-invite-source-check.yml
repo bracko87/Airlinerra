@@ -33,6 +33,9 @@ on:
       - 'website/private-tester-dashboard.html'
       - 'tests/test_invited_tester_dashboard.mjs'
       - 'website/invited-tester-page.mjs'
+      - 'website/dev-only/**'
+      - 'website/register-local-entry.mjs'
+      - 'tests/test_local_registration_flow.mjs'
       - 'website/local-demo-session.mjs'
       - 'tests/test_local_demo_flow.mjs'
       - 'website/invited-tester-page.css'
@@ -71,6 +74,8 @@ jobs:
           node --check website/invited-tester-entry.mjs
           node --check website/invited-tester-page.mjs
           node --check website/local-demo-session.mjs
+          node --check website/dev-only/registration.mjs
+          node --check website/dev-only/state.mjs
           node --check website/tester-dashboard.mjs
           node --check website/tester-dashboard-state.mjs
           node --check website/player-app.mjs
@@ -82,7 +87,7 @@ jobs:
           node --check website/player-app-model.mjs
       - name: Test invited-only callbacks, OTP scrubbing and provider gates
         run: |
-          node --test tests/test_homepage_account_entries.mjs tests/test_invited_tester_entry.mjs tests/test_invited_tester_auth.mjs tests/test_invited_tester_dashboard.mjs tests/test_player_app_prelaunch.mjs tests/test_player_read_api.mjs tests/test_local_demo_flow.mjs tests/test_local_preview_catalog.mjs tests/test_local_onboarding_draft.mjs tests/test_prelaunch_release_audit.mjs tests/test_hosted_auth_readiness.mjs tests/test_prelaunch_release_invariants.mjs
+          node --test tests/test_homepage_account_entries.mjs tests/test_invited_tester_entry.mjs tests/test_invited_tester_auth.mjs tests/test_invited_tester_dashboard.mjs tests/test_player_app_prelaunch.mjs tests/test_player_read_api.mjs tests/test_local_demo_flow.mjs tests/test_local_preview_catalog.mjs tests/test_local_onboarding_draft.mjs tests/test_local_registration_flow.mjs tests/test_prelaunch_release_audit.mjs tests/test_hosted_auth_readiness.mjs tests/test_prelaunch_release_invariants.mjs
       - name: Build ordinary main website with invitation-only account
         working-directory: website
         run: npm run build

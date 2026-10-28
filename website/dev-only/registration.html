@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Airlinerra — Local registration rehearsal</title>
+  <link rel="stylesheet" href="/__local_registration__/style.css">
+  <script type="module" src="/__local_registration__/registration.mjs"></script>
+</head>
+<body>
+<header><a href="/" aria-label="Airlinerra homepage"><img src="/assets/airlinerra-logo.png" alt="Airlinerra"></a><span>LOCAL TEST ONLY · NOT A REAL ACCOUNT</span><a href="/register.html">Back to registration</a></header>
+<main>
+ <p class="eyebrow">COMPLETE REGISTRATION WALKTHROUGH</p>
+ <h1>Start your airline journey</h1>
+ <p class="intro">Rehearse all onboarding screens using a simulated account, a local email inbox and the 3,140 approved World 1 airports. No real email is delivered; no Supabase account, password, airline or money is created.</p>
+ <ol class="progress" aria-label="Registration steps"><li id="progress-identity">1 Account</li><li id="progress-email">2 Email</li><li id="progress-password">3 Password</li><li id="progress-airline">4 Airline setup</li></ol>
+ <div id="error" role="alert" hidden></div>
+ <section id="stage-identity" class="panel" hidden>
+  <h2>Create a local test account</h2>
+  <p>Use an invented address ending in <strong>@example.test</strong>. Do not enter real account credentials.</p>
+  <form id="create-test-account">
+   <label for="test-name">Manager name</label><input id="test-name" required maxlength="50" autocomplete="off" placeholder="Your test manager name">
+   <label for="test-email">Test email</label><input id="test-email" required type="email" autocomplete="off" value="manager@example.test" maxlength="100">
+   <button class="primary" type="submit">Create test account and send simulated email</button>
+  </form>
+ </section>
+ <section id="stage-email" class="panel" hidden>
+  <h2>Confirm your email</h2>
+  <p>Airlinerra's local demo inbox contains a simulated confirmation email addressed to <strong id="inbox-address"></strong>.</p>
+  <article class="mail"><p class="mail-label">LOCAL DEMO INBOX · NO EMAIL SENT</p><h3>Confirm your Airlinerra account</h3><p>Click the link below to verify this simulated account. In production, this link would arrive through Supabase Auth and your configured email provider.</p><a id="confirmation-link" href="#">Confirm test email</a></article>
+ </section>
+ <section id="stage-password" class="panel" hidden>
+  <h2>Choose a test password</h2>
+  <p>Email confirmed in this local simulation. Use an invented password, not your actual Airlinerra password. The test password is checked for matching fields, then discarded immediately.</p>
+  <form id="test-password-form">
+   <label for="test-password">Test password</label><input type="password" id="test-password" required minlength="8" maxlength="128" autocomplete="off">
+   <label for="test-confirm-password">Repeat test password</label><input type="password" id="test-confirm-password" required minlength="8" maxlength="128" autocomplete="off">
+   <button class="primary" type="submit">Continue to airline setup</button>
+  </form>
+ </section>
+ <section id="stage-airline" class="panel" hidden>
+  <h2>Choose your airline details</h2>
+  <p>These options come from the dated, read-only Supabase airport snapshot. World registration is still closed; this step only saves a local draft.</p>
+  <form id="test-airline-form">
+   <label for="test-world">Game world</label><select id="test-world" required disabled><option>Loading worlds...</option></select>
+   <label for="test-country">Country</label><select id="test-country" required disabled><option>Loading countries...</option></select>
+   <label for="test-airport-query">Find home airport by name, municipality or code</label>
+   <div class="search"><input id="test-airport-query" maxlength="40" placeholder="e.g. Berlin" disabled>
+    <button id="test-search-airports" class="outline" type="button" disabled>Search</button></div>
+   <label for="test-airport">Home airport</label><select id="test-airport" required disabled><option value="">Choose an airport</option></select>
+   <label for="test-airline-name">Airline name</label><input id="test-airline-name" maxlength="60" minlength="3" required placeholder="Your sample airline name">
+   <p class="warning">No legal agreement is accepted and no real airline is created. Planned opening cash: $5,000,000; no funds are credited.</p>
+   <button class="primary" type="submit">Complete test and open local dashboard</button>
+  </form>
+ </section>
+ <button id="restart" class="link-button" type="button">Restart local registration test</button>
+</main>
+<footer>Airlinerra · NextQuest Studio · Completely local simulated signup and onboarding.</footer>
+</body></html>

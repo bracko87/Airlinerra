@@ -7,7 +7,7 @@ import {openPrivateTesterDashboard,PrivateTesterAccessDenied} from './tester-das
 import {createPlayerReadClient,PLAYER_READ_API_ENABLED} from './player-read-client.mjs';
 import {createLocalCatalogClient} from './local-catalog-client.mjs';
 import {saveLocalDraft,readLocalDraft,clearLocalDraft} from './local-onboarding-draft.mjs';
-import {isLocalDemoOrigin,hasLocalDemo,endLocalDemo,LOCAL_DEMO_MANAGER,LOCAL_DEMO_LOGIN_PATH} from './local-demo-session.mjs';
+import {isLocalDemoOrigin,hasLocalDemo,endLocalDemo,getLocalTestProfile,LOCAL_DEMO_MANAGER,LOCAL_DEMO_LOGIN_PATH} from './local-demo-session.mjs';
 import {
   PLAYER_APP_PATH,PLAYER_LOGIN_PATH,PLAYER_VIEWS,WORLD_LABELS,
   safePlayerView,playerViewUrl,verifiedManagerIdentity,onboardingReadiness
@@ -250,9 +250,11 @@ function showPreview(){
   preview=true;
   doc.getElementById('local-preview-note').hidden=false;
   doc.getElementById('local-preview-note').textContent='LOCAL DEMO ONLY — no real identity, database connection or airline activation.';
-  doc.getElementById('manager-name').textContent=LOCAL_DEMO_MANAGER.name;
-  for(const id of ['manager-email','setup-email'])doc.getElementById(id).textContent=LOCAL_DEMO_MANAGER.email;
-  doc.getElementById('top-email').textContent='LOCAL DEMO · Not signed in';
+  const localTest=getLocalTestProfile(window.sessionStorage,window.location);
+  const profile=localTest||LOCAL_DEMO_MANAGER;
+  doc.getElementById('manager-name').textContent=profile.name;
+  for(const id of ['manager-email','setup-email'])doc.getElementById(id).textContent=profile.email;
+  doc.getElementById('top-email').textContent=localTest?'LOCAL TEST ACCOUNT · Not Supabase':'LOCAL DEMO · Not signed in';
   doc.getElementById('manager-joined').textContent='Demo session';
   // Do not claim a verified Supabase account in an unauthenticated preview.
   doc.getElementById('manager-verified').textContent='Demo only · Not verified';

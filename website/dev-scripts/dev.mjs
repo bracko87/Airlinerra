@@ -36,6 +36,29 @@ createServer(async (req, res) => {
       res.writeHead(response.status,Object.fromEntries(response.headers.entries()));
       res.end(await response.text());return;
     }
+    // This simulated email/registration UI is served only by the loopback
+    // built-site preview. It is never copied into the Netlify build output.
+    const localRegistrationFiles={
+      '/__local_registration__/':'registration.html',
+      '/__local_registration__/registration.mjs':'registration.mjs',
+      '/__local_registration__/state.mjs':'state.mjs',
+      '/__local_registration__/style.css':'style.css'
+    };
+    if(Object.hasOwn(localRegistrationFiles,pathname)){
+      if(!process.argv.includes('--built')||port!==5188||
+         !['localhost:5188','127.0.0.1:5188'].includes(req.headers.host||'')||
+         req.method!=='GET'){
+        res.writeHead(403).end('Local preview only');return;
+      }
+      const file=path.resolve(sourceRoot,'dev-only',localRegistrationFiles[pathname]);
+      const body=await readFile(file);
+      res.writeHead(200,{
+        'Content-Type':types[path.extname(file)]||'text/html; charset=utf-8',
+        'Cache-Control':'no-store','X-Content-Type-Options':'nosniff',
+        'Content-Security-Policy':"default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'"
+      });
+      res.end(body);return;
+    }
     const filename = path.resolve(root, '.' + pathname);
     if (!filename.startsWith(root + path.sep)) { res.writeHead(403).end('Forbidden'); return; }
     if (!(await stat(filename)).isFile()) { res.writeHead(404).end('Not found'); return; }

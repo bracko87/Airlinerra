@@ -24,6 +24,21 @@ export function endLocalDemo(storage,location){
   storage?.removeItem?.(LOCAL_DEMO_KEY);
   return true;
 }
+const PROFILE_KEY='airlinerra-local-test-profile-v1';
+export function setLocalTestProfile(storage,location,profile){
+ if(!isLocalDemoOrigin(location)||typeof profile?.name!=='string'||
+   !/^[a-z0-9._%+-]+@example\.test$/iu.test(profile.email||'')||
+   profile.name.trim().length<2||profile.name.trim().length>50)
+   throw Error('Only local test profiles are allowed');
+ storage.setItem(PROFILE_KEY,JSON.stringify({name:profile.name.trim(),email:profile.email.toLowerCase()}));
+}
+export function getLocalTestProfile(storage,location){
+ if(!isLocalDemoOrigin(location))return null;
+ try{const d=JSON.parse(storage.getItem(PROFILE_KEY)||'null');
+  return typeof d?.name==='string'&&d.name.length>=2&&d.name.length<=50&&
+   typeof d.email==='string'&&d.email.endsWith('@example.test')?d:null;
+ }catch{return null}
+}
 export const LOCAL_DEMO_MANAGER=Object.freeze({
  name:'Local Demo Manager',email:'demo.manager@example.test'
 });
