@@ -10,8 +10,8 @@ test('public homepage exposes accessible sign-in and prelaunch registration link
  assert.match(css,/header-signin/);
  assert.doesNotMatch(css,/header-register/);
  assert.match(register,/7-DAY TRIAL & REGISTRATION/);
- assert.match(register,/Public registration and the 7-day free trial will open together/);
- assert.match(register,/No public registration form is available yet/);
+ assert.match(register,/Use the registration form below to create your own manager account/);
+ assert.doesNotMatch(register,/No public registration form is available yet/);
  assert.match(register,/href="\/account\.html\?screen=sign-in"/);
  assert.match(register,/id="real-registration-form" hidden/);
  assert.doesNotMatch(register,/service_role|sb_secret_/i);
@@ -33,8 +33,9 @@ test('real signup requires hosted signup enabled and approved legal pages',async
  assert.match(register,/id="real-registration-form" hidden/);
  assert.match(script,/provider.signupEnabled!==true/);
  assert.match(script,/api\/v1\/registration\/readiness/);
- assert.match(script,/readiness\?\.registrationReady!==true/);
+ assert.match(script,/readiness\?\.privateOwnerPilotAvailable===true/);
  assert.match(script,/data-airlinerra-legal-approved="true"/);
+ assert.match(script,/REVIEW DRAFT/);
  assert.match(script,/sdkClient.auth.signUp/);
  assert.match(script,/emailRedirectTo:origin\+'\/account.html\?screen=verify'/);
  assert.match(script,/auth:\{/);

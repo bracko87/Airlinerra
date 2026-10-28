@@ -147,3 +147,16 @@ test('one canonical real API composes the same protected services for localhost 
   enabled:true,origin:'https://attacker.example',verifyUserToken:auth,database:db
  }),/Trusted game API config/);
 });
+
+test('registered owner can proceed through the same real signup form when the private pilot is ready',async()=>{
+ const handler=createRegistrationReadinessHandler({database:{connect:async()=>({
+  query:async()=>({rows:[{gate_on:false,legal_on:false,world_on:false,airports_on:true,owner_pilot_on:true}]}),
+  release:()=>{}
+ })}});
+ const result=await handler(new Request(base+'/api/v1/registration/readiness'));
+ const payload=await result.json();
+ assert.equal(result.status,200);
+ assert.equal(payload.registrationReady,false);
+ assert.equal(payload.privateOwnerPilotAvailable,true);
+ assert.equal(payload.world1RegistrationOpen,false);
+});

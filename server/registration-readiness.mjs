@@ -12,7 +12,8 @@ export const REGISTRATION_READINESS_SQL=[
   '(select exists(select 1 from public.airlinerra_game_worlds',
   'where id=1 and state in (\'registration_open\',\'active\'))) as world_on,',
   '(select exists(select 1 from airlinerra_game.approved_game_airports',
-  'where world_id=1)) as airports_on'
+  'where world_id=1)) as airports_on,',
+  '(select exists(select 1 from airlinerra_game.owner_premium_email_reservations)) as owner_pilot_on'
 ].join(' ');
 const HEADERS={
  'content-type':'application/json; charset=utf-8','cache-control':'no-store',
@@ -38,6 +39,7 @@ export function createRegistrationReadinessHandler({database,origin='http://loca
    if(!flags.every(x=>typeof x==='boolean'))throw Error('Invalid release status');
    return respond(200,{
     registrationReady:flags.every(Boolean),
+    privateOwnerPilotAvailable:p.owner_pilot_on===true && p.airports_on===true,
     requiresLegalApproval:!p.legal_on,
     world1RegistrationOpen:p.world_on,
     flightsEnabled:false

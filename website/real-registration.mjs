@@ -1,6 +1,8 @@
 /** Actual hosted Supabase registration for Airlinerra.
  * Only hosted email confirmation and database-backed accounts are supported.
- * Provider signup and real published legal pages are prerequisites.
+ * Standard real signUp with email confirmation. Private pilot accounts follow
+ * the SAME form but acknowledge review-only legal documents instead of
+ * claiming that unapproved drafts are published Terms.
  */
 import {normalizedEmail,validatedPassword,validatedDisplayName} from './auth-rules.mjs';
 import {inspectInvitedTesterProvider,TESTER_AUTH_URL} from './invited-tester-entry.mjs';
@@ -14,10 +16,11 @@ const origin=window.location.origin;
 let sdkClient=null;
 async function officialDocument(path){
  const res=await fetch(path,{method:'GET',cache:'no-store',credentials:'omit',redirect:'error'});
- if(!res.ok||!String(res.headers.get('content-type')||'').includes('text/html'))return false;
- const text=await res.text();
- // A missing legal address or unfinished draft does not authorize signup.
- return text.includes('data-airlinerra-legal-approved="true"');
+ if(!res.ok||!String(res.headers.get('content-type')||'').includes('text/html'))return 'missing';
+ const html=await res.text();
+ if(html.includes('data-airlinerra-legal-approved="true"'))return 'approved';
+ if(html.includes('REVIEW DRAFT')&&html.includes('NOT YET EFFECTIVE'))return 'draft';
+ return 'missing';
 }
 async function initialize(){
  if(!allowed.has(origin)){status.textContent='Registration is not available on this domain.';return}
@@ -34,10 +37,21 @@ async function initialize(){
      credentials:'omit',cache:'no-store',redirect:'error'})
   ]);
   const readiness=readinessResponse.ok?await readinessResponse.json():null;
-  if(provider.signupEnabled!==true||!terms||!privacy||
-    readiness?.registrationReady!==true){
-   status.textContent='Registration is not open yet. Supabase signup, approved Terms/Privacy, World 1 registration, and the private backend must all be ready.';
+  const normal=readiness?.registrationReady===true &&
+    terms==='approved'&&privacy==='approved';
+  const ownerPilot=readiness?.privateOwnerPilotAvailable===true &&
+    terms==='draft'&&privacy==='draft';
+  if(provider.signupEnabled!==true||(!normal&&!ownerPilot)){
+   status.textContent='Account registration is not enabled yet. The real email service and protected game database must be ready.';
    return;
+  }
+  const consent=document.getElementById('registration-consent-description');
+  if(ownerPilot){
+   consent.textContent='I have reviewed the Terms and Privacy review drafts and understand that early game access is limited. These are not yet the final published policies.';
+   document.getElementById('registration-mode').textContent='Early-access registration · Real email confirmation';
+  }else{
+   consent.textContent='I have read and accept the published Terms of Service and acknowledge the Privacy Policy.';
+   document.getElementById('registration-mode').textContent='Register · Seven-day trial (no payment details)';
   }
   const sdk=await import(SUPABASE_SDK_IMPORT);
   sdkClient=sdk.createClient(conf.supabaseUrl,conf.publishableKey,{auth:{
@@ -45,9 +59,9 @@ async function initialize(){
    autoRefreshToken:true,storageKey:'airlinerra-invited-tester-v1'
   }});
   form.hidden=false;button.disabled=false;
-  status.textContent='Registration is open. Your confirmation email will be sent by Airlinerra.';
+  status.textContent='Register with your own email and password. Airlinerra sends a real confirmation email, then you sign in and set up your airline.';
  }catch{
-  status.textContent='Registration is unavailable. Verify the hosted Auth provider and published legal documents.';
+  status.textContent='Registration could not be verified. Check that Supabase signup, the game API, and email confirmation are enabled.';
  }
 }
 form.addEventListener('submit',async event=>{
