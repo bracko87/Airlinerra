@@ -118,7 +118,7 @@ export async function startLocalAuthPreview({
       } else if (pathname==='/auth-rules.mjs') {
         let script=body.toString('utf8');
         const defaultOff='export const PUBLIC_AUTH_ENABLED = false;';
-        const fixedOrigins="export const ALLOWED_AUTH_ORIGINS = Object.freeze(['http://localhost:5187', 'https://airlinerra.com']);";
+        const fixedOrigins="export const ALLOWED_AUTH_ORIGINS = Object.freeze(['http://localhost:5187', 'http://localhost:5188', 'https://airlinerra.com']);";
         if (!script.includes(defaultOff) || !script.includes(fixedOrigins)) {
           throw Error('Public Auth gates changed; local override refused.');
         }
