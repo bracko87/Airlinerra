@@ -118,7 +118,7 @@ jobs:
           test -f dist/tester-dashboard.mjs
           test -f dist/tester-dashboard-state.mjs
           grep -q 'id="tester-dashboard" hidden' dist/tester.html
-          grep -q 'PRIVATE PRELAUNCH ACCESS' dist/account.html
+          grep -q 'SECURE AIRLINERRA ACCOUNT' dist/account.html
           test -f dist/invited-tester-entry.mjs
           test -f dist/invited-tester-page.mjs
           test -f dist/invited-tester-auth.mjs
