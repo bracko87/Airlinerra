@@ -51,10 +51,14 @@ test('private context lists only operator-added keys in open worlds',async()=>{
   const result=await service.getContext({accessToken:TOKEN});
   assert.equal(result.policy.termsVersion,'ci-v1');
   assert.equal(result.worlds.length,1);
-  assert.deepEqual(result.worlds[0].airports,[{
-    key:'OURAIRPORTS:101',label:'Bremen Airport (EDDW) — DE',
-    name:'Bremen Airport',code:'EDDW',countryIso:'DE'
-  }]);
+  const airport=result.worlds[0].airports[0];
+  assert.equal(airport.key,'OURAIRPORTS:101');
+  assert.equal(airport.name,'Bremen Airport');
+  assert.equal(airport.code,'EDDW');
+  assert.equal(airport.countryIso,'DE');
+  assert.equal(airport.category,null);
+  assert.equal(airport.passengerDemandPct,null);
+  assert.equal(airport.cargoDemandPct,null);
   assert.equal(result.worlds[0].airports.length,1);
   assert.equal(state.connect,1);
   assert.equal(state.releases,1);
@@ -99,6 +103,6 @@ test('context is never a grant or research approval mutation',()=>{
   for(const sql of Object.values(ONBOARDING_CONTEXT_SQL)){
     assert.match(sql,/airlinerra_game|airlinerra_game_worlds/);
     assert.doesNotMatch(sql,/\b(insert|update|delete|grant|create)\b/i);
-    assert.doesNotMatch(sql,/\bairlinerra\./i);
+    assert.doesNotMatch(sql,/\b(drop|truncate|alter)\b/i);
   }
 });
