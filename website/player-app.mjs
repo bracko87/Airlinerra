@@ -36,7 +36,7 @@ function navigateTo(view){
     if(link.dataset.viewLink===name)link.setAttribute('aria-current','page');
     else link.removeAttribute('aria-current');
   }
-  doc.title='Airlinerra — '+name[0].toUpperCase()+name.slice(1);
+  doc.title='Airlinerra - '+name[0].toUpperCase()+name.slice(1);
   // Close dropdowns when changing pages, preserving keyboard navigation.
   for(const group of doc.querySelectorAll('.nav-group[open]'))group.open=false;
 }
@@ -385,7 +385,7 @@ doc.getElementById('setup-create-airline').addEventListener('click',()=>{
   status.textContent='Choose a world, country and approved home airport.';return;
  }
  if(name.length<3||name.length>60){
-  status.textContent='Enter an airline name containing 3–60 characters.';return;
+  status.textContent='Enter an airline name containing 3-60 characters.';return;
  }
  if(doc.getElementById('setup-airline-logo').files?.length&&!logoBlob){
   status.textContent='Select a valid airline logo or remove the invalid file.';return;
@@ -449,7 +449,7 @@ doc.getElementById('setup-save-draft').addEventListener('click',()=>{
   });
   renderSavedDraft(data);
  }catch{
-  doc.getElementById('setup-draft-feedback').textContent='Choose world, country, home airport and airline name (3–60 characters).';
+  doc.getElementById('setup-draft-feedback').textContent='Choose world, country, home airport and airline name (3-60 characters).';
  }
 });
 doc.getElementById('setup-clear-draft').addEventListener('click',()=>{
@@ -493,7 +493,7 @@ doc.getElementById('setup-retry-loading').addEventListener('click',()=>{
 function showPreview(){
   preview=true;
   doc.getElementById('local-preview-note').hidden=false;
-  doc.getElementById('local-preview-note').textContent='LOCAL DEMO ONLY — no real identity, database connection or airline activation.';
+  doc.getElementById('local-preview-note').textContent='LOCAL DEMO ONLY - no real identity, database connection or airline activation.';
   const localTest=getLocalTestProfile(window.sessionStorage,window.location);
   const profile=localTest||LOCAL_DEMO_MANAGER;
   doc.getElementById('manager-name').textContent=profile.name;
@@ -507,7 +507,7 @@ function showPreview(){
   doc.getElementById('setup-email').closest('.step').querySelector('p').firstChild.textContent='Simulated manager; no invitation verified. ';
   doc.getElementById('player-data-status').textContent='Simulated navigation; protected game API is not connected';
   signOut.disabled=false;
-  doc.title='Airlinerra — LOCAL DEMO · Player dashboard';
+  doc.title='Airlinerra - LOCAL DEMO · Player dashboard';
   visible('app');
 }
 async function initialize(){
