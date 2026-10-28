@@ -8,6 +8,8 @@ on:
       - 'website/invited-tester-entry.mjs'
       - 'website/tester-dashboard.mjs'
       - 'website/player-app.mjs'
+      - 'tests/test_owner_private_pilot.mjs'
+      - 'supabase/migrations/20261028215500_airlinerra_owner_world1_airline_trigger_exception.sql'
       - 'website/setup-choice-menu.mjs'
       - 'server/country-policy.mjs'
       - 'tests/test_onboarding_country_ui.mjs'
@@ -107,7 +109,7 @@ jobs:
           node --check website/player-app-model.mjs
       - name: Test invited-only callbacks, OTP scrubbing and provider gates
         run: |
-          node --test tests/test_homepage_account_entries.mjs tests/test_invited_tester_entry.mjs tests/test_invited_tester_auth.mjs tests/test_invited_tester_dashboard.mjs tests/test_player_app_prelaunch.mjs tests/test_first_login_routing.mjs tests/test_onboarding_country_ui.mjs tests/test_player_read_api.mjs tests/test_local_demo_flow.mjs tests/test_local_preview_catalog.mjs tests/test_local_onboarding_draft.mjs tests/test_local_registration_flow.mjs tests/test_registration_access.mjs tests/test_prelaunch_release_audit.mjs tests/test_hosted_auth_readiness.mjs tests/test_prelaunch_release_invariants.mjs
+          node --test tests/test_homepage_account_entries.mjs tests/test_invited_tester_entry.mjs tests/test_invited_tester_auth.mjs tests/test_invited_tester_dashboard.mjs tests/test_player_app_prelaunch.mjs tests/test_first_login_routing.mjs tests/test_onboarding_country_ui.mjs tests/test_owner_private_pilot.mjs tests/test_player_read_api.mjs tests/test_local_demo_flow.mjs tests/test_local_preview_catalog.mjs tests/test_local_onboarding_draft.mjs tests/test_local_registration_flow.mjs tests/test_registration_access.mjs tests/test_prelaunch_release_audit.mjs tests/test_hosted_auth_readiness.mjs tests/test_prelaunch_release_invariants.mjs
       - name: Build ordinary main website with invitation-only account
         working-directory: website
         run: npm run build
