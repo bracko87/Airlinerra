@@ -38,6 +38,12 @@ test('ordinary main build includes invite-only account, without registering play
     read('tester.html'),read('tester-dashboard.mjs'),read('invited-tester-page.mjs')
   ]);
   assert.match(dashboardHtml,/id="tester-dashboard" hidden/);
+  const playerHtml=await read('player.html');
+  assert.match(playerHtml,/id="player-app" hidden/);
+  assert.match(playerHtml,/invited-tester-config\.js/);
+  assert.match(playerHtml,/disabled>Create airline/);
+  assert.doesNotMatch(playerHtml,/id="register"|service_role|sb_secret_/);
+
   assert.match(dashboardHtml,/invited-tester-config\.js/);
   assert.match(dashboardHtml,/PRIVATE PRELAUNCH ACCESS/);
   assert.doesNotMatch(dashboardHtml,/id="register"|id="airline-onboarding"/);
@@ -46,7 +52,7 @@ test('ordinary main build includes invite-only account, without registering play
   assert.match(accountPage,/location\.replace\(PRIVATE_TESTER_DASHBOARD_PATH\)/);
   for(const name of [
     'index.html','invited-tester-entry.mjs','invited-tester-auth.mjs',
-    'invited-tester-page.css','tester-dashboard.css','tester-dashboard-state.mjs','assets/airlinerra-logo.png'
+    'invited-tester-page.css','tester-dashboard.css','tester-dashboard-state.mjs','player-app.mjs','player-app-model.mjs','player-app.css','assets/airlinerra-logo.png'
   ])assert.equal(await exists(name),true,name+' missing from normal build');
   for(const name of ['server','netlify/functions','apply-hosted-auth-templates.mjs']){
     assert.equal(await exists(name),false,name+' must not be published');

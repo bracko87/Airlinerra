@@ -2,6 +2,7 @@
 import {TESTER_ORIGIN,TESTER_AUTH_URL} from './invited-tester-entry.mjs';
 
 export const PRIVATE_TESTER_DASHBOARD_PATH='/tester.html';
+export const PRIVATE_PLAYER_APP_PATH='/player.html';
 export const PRIVATE_TESTER_LOGIN_PATH='/account.html?screen=sign-in';
 
 export class PrivateTesterAccessDenied extends Error {
@@ -22,7 +23,7 @@ export function isVerifiedInvitedUser(user){
 export async function openPrivateTesterDashboard({
   origin,pathname,config,inspectProvider,createAuth
 }={}){
-  if(origin!==TESTER_ORIGIN || pathname!==PRIVATE_TESTER_DASHBOARD_PATH ||
+  if(origin!==TESTER_ORIGIN || ![PRIVATE_TESTER_DASHBOARD_PATH,PRIVATE_PLAYER_APP_PATH].includes(pathname) ||
     config?.operatorPrelaunchApproved!==true ||
     config?.supabaseUrl!==TESTER_AUTH_URL ||
     !/^sb_publishable_[A-Za-z0-9_-]{16,128}$/.test(config?.publishableKey||'') ||

@@ -21,7 +21,8 @@ export async function addInviteOnlyAccount({siteDir,distDir}={}){
   const files=[
     'invited-tester-page.mjs','invited-tester-entry.mjs',
     'invited-tester-auth.mjs','invited-tester-page.css',
-    'tester-dashboard.mjs','tester-dashboard-state.mjs','tester-dashboard.css'
+    'tester-dashboard.mjs','tester-dashboard-state.mjs','tester-dashboard.css',
+    'player-app.mjs','player-app-model.mjs','player-app.css'
   ];
   for(const name of files){
     await cp(path.join(siteDir,name),path.join(distDir,name));
@@ -65,3 +66,18 @@ export async function addInviteOnlyAccount({siteDir,distDir}={}){
     '<script defer src="invited-tester-config.js"></script>\n  '+dashboardTag);
   await writeFile(path.join(distDir,'tester.html'),dashboardBuilt);
 }
+
+  // Preview-only player application. The static shell contains no game records,
+  // release flags or backend secrets. Protected Auth is verified client-side.
+  const playerSource=await readFile(path.join(siteDir,'private-player-app.html'),'utf8');
+  const playerTag='<script type="module" src="player-app.mjs"></script>';
+  if(!playerSource.includes(playerTag)||
+     !playerSource.includes('id="player-app" hidden')||
+     !playerSource.includes('PRIVATE PRELAUNCH')||
+     !playerSource.includes('disabled>Create airline')||
+     /<script[^>]+src="https?:|id="register"|service_role|sb_secret_/u.test(playerSource)){
+    throw new Error('Player application prelaunch safety checks failed.');
+  }
+  await writeFile(path.join(distDir,'player.html'),playerSource.replace(
+    playerTag,'<script defer src="invited-tester-config.js"></script>\n  '+playerTag
+  ));
