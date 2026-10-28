@@ -29,6 +29,8 @@ try{
  const page=await request('/player.html');
  assert.equal(page.status,200);
  assert.match(await page.text(),/PRIVATE PRELAUNCH/);
+ const readiness=await request('/api/v1/registration/readiness');
+ assert.equal(readiness.status,503,'Release preflight requires a private DB connection');
  const unavailable=await request('/api/v1/player/overview',{});
  assert.equal(unavailable.status,503,'No fake data without a private DB connection');
  const legacy=await request('/__local_player__/overview',{});

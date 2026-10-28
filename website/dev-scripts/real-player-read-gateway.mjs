@@ -8,10 +8,12 @@ import {createLegalConsentService} from '../../server/legal-consent-service.mjs'
 import {createLegalConsentHttpHandler} from '../../server/legal-consent-http-handler.mjs';
 import {createAirlineActivationService} from '../../server/airline-activation.mjs';
 import {createAirlineHttpHandler} from '../../server/airline-http-handler.mjs';
+import {createRegistrationReadinessHandler,REGISTRATION_READINESS_PATH} from '../../server/registration-readiness.mjs';
 import {AIRLINERRA_INVITED_TESTER_PUBLIC_SETTINGS} from '../invited-tester-public-settings.mjs';
 export const REAL_PLAYER_PATHS=Object.freeze([
  '/api/v1/player/overview','/api/v1/player/airports',
- '/api/v1/onboarding/context','/api/v1/legal/consents','/api/v1/airlines'
+ '/api/v1/onboarding/context','/api/v1/legal/consents','/api/v1/airlines',
+ REGISTRATION_READINESS_PATH
 ]);
 const REF='hwllkabgzaynalahvkpz';
 const ORIGIN='http://localhost:5188';
@@ -55,6 +57,7 @@ export async function makeRealLocalPlayerHandler({
  const readHandler=createPlayerReadHandler({
   enabled:true,verifyUserToken,database,origin:ORIGIN
  });
+ const registrationReadiness=createRegistrationReadinessHandler({database,origin:ORIGIN});
  const contextHandler=createOnboardingContextHttpHandler({
   contextService:createOnboardingContextService({
    enabled:true,verifyUserToken,database,
@@ -73,6 +76,7 @@ export async function makeRealLocalPlayerHandler({
  });
  return async function protectedGameHandler(request){
    const path=new URL(request.url).pathname;
+   if(path===REGISTRATION_READINESS_PATH)return registrationReadiness(request);
    if(path.startsWith('/api/v1/player/'))return readHandler(request);
    if(!REAL_PLAYER_PATHS.includes(path))return new Response('Not found',{status:404});
    const body=await request.text();

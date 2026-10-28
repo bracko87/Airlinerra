@@ -27,12 +27,16 @@ async function initialize(){
   status.textContent='Registration requires the trusted production Auth configuration.';return;
  }
  try{
-  const [provider,terms,privacy]=await Promise.all([
+  const [provider,terms,privacy,readinessResponse]=await Promise.all([
    inspectInvitedTesterProvider({publishableKey:conf.publishableKey}),
-   officialDocument('/terms.html'),officialDocument('/privacy.html')
+   officialDocument('/terms.html'),officialDocument('/privacy.html'),
+   fetch('/api/v1/registration/readiness',{method:'GET',
+     credentials:'omit',cache:'no-store',redirect:'error'})
   ]);
-  if(provider.signupEnabled!==true||!terms||!privacy){
-   status.textContent='Registration is not open yet. The real Supabase signup setting and approved legal documents must be ready first.';
+  const readiness=readinessResponse.ok?await readinessResponse.json():null;
+  if(provider.signupEnabled!==true||!terms||!privacy||
+    readiness?.registrationReady!==true){
+   status.textContent='Registration is not open yet. Supabase signup, approved Terms/Privacy, World 1 registration, and the private backend must all be ready.';
    return;
   }
   const sdk=await import(SUPABASE_SDK_IMPORT);

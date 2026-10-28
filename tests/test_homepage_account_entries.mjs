@@ -32,6 +32,8 @@ test('real signup requires hosted signup enabled and approved legal pages',async
  ]);
  assert.match(register,/id="real-registration-form" hidden/);
  assert.match(script,/provider.signupEnabled!==true/);
+ assert.match(script,/api\/v1\/registration\/readiness/);
+ assert.match(script,/readiness\?\.registrationReady!==true/);
  assert.match(script,/data-airlinerra-legal-approved="true"/);
  assert.match(script,/sdkClient.auth.signUp/);
  assert.match(script,/emailRedirectTo:origin\+'\/account.html\?screen=verify'/);
