@@ -6,6 +6,7 @@ import {createInvitedTesterAuth} from './invited-tester-auth.mjs';
 import {openPrivateTesterDashboard,PrivateTesterAccessDenied} from './tester-dashboard-state.mjs';
 import {createPlayerReadClient,PLAYER_READ_API_ENABLED} from './player-read-client.mjs';
 import {createLocalCatalogClient} from './local-catalog-client.mjs';
+import {saveLocalDraft,readLocalDraft,clearLocalDraft} from './local-onboarding-draft.mjs';
 import {isLocalDemoOrigin,hasLocalDemo,endLocalDemo,LOCAL_DEMO_MANAGER,LOCAL_DEMO_LOGIN_PATH} from './local-demo-session.mjs';
 import {
   PLAYER_APP_PATH,PLAYER_LOGIN_PATH,PLAYER_VIEWS,WORLD_LABELS,
@@ -75,6 +76,10 @@ function fillCountries(countries){
   doc.getElementById('setup-airport-search').disabled=false;
   doc.getElementById('airports-query').disabled=false;
   doc.getElementById('airports-search').disabled=false;
+  if(preview){
+    for(const id of ['setup-airline-name','setup-save-draft','setup-clear-draft'])
+      doc.getElementById(id).disabled=false;
+  }
 }
 function drawRealWorlds(worlds){
   const root=doc.getElementById('world-directory');
@@ -146,12 +151,89 @@ async function loadPlayerReadData({local=false}={}){
       :'Live private database · Read only';
     doc.getElementById('airport-heading').textContent='Approved airport directory';
     doc.getElementById('airport-description').textContent=data.airportsTotal+' approved simulation airports available for read-only lookup.';
+    if(local)await restoreSetupDraft();
   }catch{
     playerData=null;
     doc.getElementById('player-data-status').textContent=local
       ?'Local airport snapshot unavailable; no live database connection'
       :'Private game database not connected';
   }
+}
+function renderSavedDraft(draft){
+ const output=doc.getElementById('setup-draft-review');
+ output.replaceChildren();
+ for(const [key,value] of [
+  ['World','World '+String(draft.worldId).padStart(2,'0')],
+  ['Country',draft.countryIso],['Approved airport',draft.airportKey],
+  ['Airline name',draft.airlineName]
+ ]){
+  const p=doc.createElement('p'),b=doc.createElement('strong');
+  b.textContent=key+': ';p.append(b,doc.createTextNode(value));output.append(p);
+ }
+ doc.getElementById('setup-draft-summary').hidden=false;
+ doc.getElementById('setup-draft-feedback').textContent='Saved in this browser tab only. No airline or legal acceptance was created.';
+}
+async function restoreSetupDraft(){
+ if(!preview||!playerData)return;
+ const saved=readLocalDraft(window.sessionStorage,window.location);
+ if(!saved)return;
+ doc.getElementById('setup-world').value=String(saved.worldId);
+ doc.getElementById('setup-country').value=saved.countryIso;
+ doc.getElementById('setup-airline-name').value=saved.airlineName;
+ try{
+  const data=await playerData.airports({countryIso:saved.countryIso,search:'',offset:0});
+  const select=doc.getElementById('setup-airport-results');
+  select.replaceChildren(new Option('Choose a home airport',''));
+  for(const a of data.airports)select.append(new Option(a.name+' ('+a.code+')',a.key));
+  select.disabled=data.airports.length===0;
+  if(data.airports.some(x=>x.key===saved.airportKey))select.value=saved.airportKey;
+ }catch{/* Saved draft still shown, cannot confirm airport in this page */}
+ renderSavedDraft(saved);
+}
+doc.getElementById('setup-save-draft').addEventListener('click',()=>{
+ if(!preview||!playerData)return;
+ const airport=doc.getElementById('setup-airport-results');
+ if(airport.disabled||!airport.value){
+  doc.getElementById('setup-draft-feedback').textContent='Search and select an approved home airport first.';
+  return;
+ }
+ try{
+  const data=saveLocalDraft(window.sessionStorage,window.location,{
+   worldId:Number(doc.getElementById('setup-world').value),
+   countryIso:doc.getElementById('setup-country').value,
+   airportKey:airport.value,
+   airlineName:doc.getElementById('setup-airline-name').value
+  });
+  renderSavedDraft(data);
+ }catch{
+  doc.getElementById('setup-draft-feedback').textContent='Choose world, country, home airport and airline name (3–60 characters).';
+ }
+});
+doc.getElementById('setup-clear-draft').addEventListener('click',()=>{
+ if(!preview)return;
+ clearLocalDraft(window.sessionStorage,window.location);
+ for(const id of ['setup-world','setup-country'])doc.getElementById(id).selectedIndex=0;
+ for(const id of ['setup-airport','setup-airline-name'])doc.getElementById(id).value='';
+ doc.getElementById('setup-airport-results').replaceChildren(new Option('No results loaded',''));
+ doc.getElementById('setup-airport-results').disabled=true;
+ doc.getElementById('setup-draft-summary').hidden=true;
+ doc.getElementById('setup-draft-feedback').textContent='Local draft cleared. No airline was created.';
+});
+doc.getElementById('settings-save').addEventListener('click',()=>{
+ if(!preview)return;
+ const units=doc.getElementById('settings-units').value,time=doc.getElementById('settings-time').value;
+ if(!['km','mi'].includes(units)||!['12','24'].includes(time))return;
+ window.sessionStorage.setItem('airlinerra-local-demo-preferences',JSON.stringify({units,time}));
+ doc.getElementById('settings-feedback').textContent='Saved in this browser tab only.';
+});
+function prepareDemoSettings(){
+ if(!preview)return;
+ for(const id of ['settings-units','settings-time','settings-save'])doc.getElementById(id).disabled=false;
+ try{
+  const d=JSON.parse(window.sessionStorage.getItem('airlinerra-local-demo-preferences')||'null');
+  if(d&&['km','mi'].includes(d.units))doc.getElementById('settings-units').value=d.units;
+  if(d&&['12','24'].includes(d.time))doc.getElementById('settings-time').value=d.time;
+ }catch{/* no persisted settings */}
 }
 doc.getElementById('setup-airport-search').addEventListener('click',()=>{void airportSearch({setup:true});});
 doc.getElementById('airports-search').addEventListener('click',()=>{nextAirportOffset=null;void airportSearch();});
@@ -189,6 +271,7 @@ async function initialize(){
       return;
     }
     showPreview();
+    prepareDemoSettings();
     await loadPlayerReadData({local:true});
     return;
   }

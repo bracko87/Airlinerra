@@ -1,0 +1,1 @@
+Local-only resumable onboarding drafts, richer operational no-airline pages, weekly schedule grid, finances planned versus actual separation, and local preferences. No production writes or legal acceptance.

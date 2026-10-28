@@ -91,3 +91,18 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
   .header-link{font-size:10px}
   .header-tools button{padding:8px 11px;font-size:12px}
 }
+
+.setup-draft-actions{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:9px}
+.setup-draft-actions>button{border-radius:8px;padding:10px 15px;font-weight:750}
+.setup-draft-actions #setup-save-draft:not(:disabled){background:var(--orange);color:#fff;border:1px solid var(--orange)}
+.setup-draft-actions .secondary{margin:0}
+.draft-summary{border:1px solid #d9e6f5;background:#f5f9fe;border-radius:10px;padding:15px;margin-bottom:20px}
+.draft-summary h3{font-size:15px;color:var(--navy);margin:0 0 9px}.draft-summary p{margin:7px 0;font-size:12px}
+.week-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}
+.week-grid>div{border:1px solid var(--line);background:#f6f9fd;border-radius:9px;padding:13px 9px;min-height:108px;font-weight:800;color:var(--navy);font-size:12px}
+.week-grid span{display:block;margin-top:18px;color:#7e90a4;font-size:11px;font-weight:500}
+.local-settings{display:grid;gap:10px;max-width:440px;margin:15px 0}
+.local-settings label{color:#4a6784;font-size:12px;font-weight:700}
+.local-settings select{padding:11px;border:1px solid #ccdaeb;border-radius:8px}.local-settings #settings-save{justify-self:start}
+@media(max-width:770px){.week-grid{grid-template-columns:repeat(4,1fr)}.week-grid>div{min-height:80px}}
+@media(max-width:460px){.week-grid{grid-template-columns:repeat(2,1fr)}}
