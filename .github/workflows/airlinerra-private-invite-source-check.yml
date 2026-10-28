@@ -8,6 +8,9 @@ on:
       - 'website/invited-tester-entry.mjs'
       - 'website/tester-dashboard.mjs'
       - 'website/player-app.mjs'
+      - 'website/player-read-client.mjs'
+      - 'server/player-read-service.mjs'
+      - 'tests/test_player_read_api.mjs'
       - 'website/index.html'
       - 'website/styles.css'
       - 'website/register.html'
@@ -60,10 +63,12 @@ jobs:
           node --check website/tester-dashboard.mjs
           node --check website/tester-dashboard-state.mjs
           node --check website/player-app.mjs
+          node --check website/player-read-client.mjs
+          node --check server/player-read-service.mjs
           node --check website/player-app-model.mjs
       - name: Test invited-only callbacks, OTP scrubbing and provider gates
         run: |
-          node --test tests/test_homepage_account_entries.mjs tests/test_invited_tester_entry.mjs tests/test_invited_tester_auth.mjs tests/test_invited_tester_dashboard.mjs tests/test_player_app_prelaunch.mjs tests/test_hosted_auth_readiness.mjs tests/test_prelaunch_release_invariants.mjs
+          node --test tests/test_homepage_account_entries.mjs tests/test_invited_tester_entry.mjs tests/test_invited_tester_auth.mjs tests/test_invited_tester_dashboard.mjs tests/test_player_app_prelaunch.mjs tests/test_player_read_api.mjs tests/test_hosted_auth_readiness.mjs tests/test_prelaunch_release_invariants.mjs
       - name: Build ordinary main website with invitation-only account
         working-directory: website
         run: npm run build

@@ -49,6 +49,18 @@ export async function createInvitedTesterAuth({
     signIn:service.signIn,
     signOut:service.signOut,
     getUser:service.getUser,
+    // Read-only API token adapter: re-check the identity against Auth before
+    // taking a short-lived access token from the same client's session.
+    async getAccessToken(){
+      const user=await service.getUser();
+      if(!user?.id||!user.email_confirmed_at||user.is_anonymous===true||user.deleted_at)
+        throw new Error('Verified manager required.');
+      const {data,error}=await client.auth.getSession();
+      if(error||data?.session?.user?.id!==user.id||
+        typeof data.session.access_token!=='string')
+        throw new Error('Verified session unavailable.');
+      return data.session.access_token;
+    },
     requestPasswordReset:service.requestPasswordReset,
     completeCallback:service.completeCallback,
     updatePassword:service.updatePassword,
