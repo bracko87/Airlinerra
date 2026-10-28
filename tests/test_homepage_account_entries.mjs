@@ -63,3 +63,13 @@ test('operator-supplied legal notice is included, while unfinished policies cann
  for(const href of ['/impressum.html','/terms.html','/privacy.html'])
   assert.ok(register.includes('href="'+href+'"'),href);
 });
+
+test('legal pages are reachable from the public homepage and account entry',async()=>{
+ const [index,account]=await Promise.all([
+  read('../website/index.html'),read('../website/prelaunch-invited-account.html')
+ ]);
+ for(const page of ['/impressum.html','/terms.html','/privacy.html']){
+  assert.ok(index.includes('href="'+page+'"'),page+' home');
+  assert.ok(account.includes('href="'+page+'"'),page+' account');
+ }
+});
