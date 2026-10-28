@@ -33,6 +33,8 @@ jobs:
           node --test tests/test_invited_tester_auth.mjs tests/test_invited_tester_entry.mjs tests/test_hosted_auth_readiness.mjs tests/test_prelaunch_release_invariants.mjs
       - name: Verify manual bundle is opt-in and public build stays disabled
         run: node --test tests/test_invited_tester_manual_bundle.mjs
+      - name: Verify live hosted Auth STILL blocks public signup before packaging
+        run: node website/dev-scripts/check-invited-auth-readiness.mjs
       - name: Build approved invitation-only website artifact
         working-directory: website
         env:
