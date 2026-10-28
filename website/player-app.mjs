@@ -297,6 +297,67 @@ async function loadRealOnboarding(){
   status.textContent='Registration is not open yet. The official legal policy and World 1 must be approved before real airline creation.';
  }
 }
+async function prepareLogo(file){
+ if(!['image/png','image/jpeg','image/webp'].includes(file?.type)||file.size>6_000_000)
+  throw Error('Choose a PNG, JPG or WebP image smaller than 6 MB.');
+ const source=URL.createObjectURL(file);
+ try{
+  const image=new Image();
+  await new Promise((resolve,reject)=>{
+   image.onload=resolve;image.onerror=()=>reject(Error('Unable to read image.'));
+   image.src=source;
+  });
+  if(image.width<1||image.height<1||image.width>10000||image.height>10000)
+   throw Error('Invalid logo dimensions.');
+  const scale=Math.min(1,500/Math.max(image.width,image.height));
+  const canvas=doc.createElement('canvas');
+  canvas.width=Math.max(1,Math.round(image.width*scale));
+  canvas.height=Math.max(1,Math.round(image.height*scale));
+  canvas.getContext('2d').drawImage(image,0,0,canvas.width,canvas.height);
+  const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/webp',0.84));
+  if(!blob||blob.type!=='image/webp'||blob.size>1048576)
+   throw Error('Logo is too large. Choose a simpler image.');
+  return blob;
+ }finally{URL.revokeObjectURL(source);}
+}
+doc.getElementById('setup-airline-logo').addEventListener('change',async(event)=>{
+ const input=event.currentTarget,status=doc.getElementById('setup-logo-feedback');
+ logoBlob=null;
+ if(logoObjectUrl){URL.revokeObjectURL(logoObjectUrl);logoObjectUrl=null;}
+ const image=doc.getElementById('summary-airline-logo');
+ image.hidden=true;image.removeAttribute('src');
+ doc.getElementById('summary-logo-placeholder').hidden=false;
+ if(!input.files?.[0]){status.textContent='';return;}
+ try{
+  logoBlob=await prepareLogo(input.files[0]);
+  logoObjectUrl=URL.createObjectURL(logoBlob);
+  image.src=logoObjectUrl;image.hidden=false;
+  doc.getElementById('summary-logo-placeholder').hidden=true;
+  status.textContent='Logo ready to save with your airline.';
+ }catch(error){status.textContent=error.message;input.value='';}
+});
+doc.getElementById('setup-cancel-create').addEventListener('click',()=>{
+ doc.getElementById('setup-confirm-dialog').close();
+});
+doc.getElementById('setup-create-airline').addEventListener('click',()=>{
+ const status=doc.getElementById('setup-draft-feedback');
+ const worldId=Number(doc.getElementById('setup-world').value);
+ const country=doc.getElementById('setup-country').value;
+ const airport=doc.getElementById('setup-airport-results').value;
+ const name=doc.getElementById('setup-airline-name').value.trim();
+ const eligible=onboardingContext?.worlds.find(w=>w.worldId===worldId);
+ if(!eligible||!country||!airport||!eligible.airports.some(a=>a.key===airport)){
+  status.textContent='Choose a world, country and approved home airport.';return;
+ }
+ if(name.length<3||name.length>60){
+  status.textContent='Enter an airline name containing 3–60 characters.';return;
+ }
+ if(doc.getElementById('setup-airline-logo').files?.length&&!logoBlob){
+  status.textContent='Select a valid airline logo or remove the invalid file.';return;
+ }
+ summarize();
+ doc.getElementById('setup-confirm-dialog').showModal();
+});
 doc.getElementById('setup-final-create').addEventListener('click',async()=>{
  const status=doc.getElementById('setup-draft-feedback');
  if(!onboardingContext||!onboarding)return;
