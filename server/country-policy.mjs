@@ -4,12 +4,12 @@
  * administrating/parent country for the game's country selector.
  */
 export const TERRITORY_COUNTRY=Object.freeze({
- AI:'GB',AS:'US',AW:'NL',BM:'GB',BQ:'NL',CC:'AU',
+ AI:'GB',AS:'US',AW:'NL',AX:'FI',BL:'FR',BM:'GB',BQ:'NL',BV:'NO',CC:'AU',
  CK:'NZ',CW:'NL',CX:'AU',EH:'MA',FK:'GB',FO:'DK',
  GF:'FR',GG:'GB',GI:'GB',GL:'DK',GP:'FR',GU:'US',
- HK:'CN',IM:'GB',JE:'GB',KY:'GB',MO:'CN',MP:'US',
- MQ:'FR',NC:'FR',NF:'AU',NU:'NZ',PF:'FR',PM:'FR',
- PR:'US',RE:'FR',SH:'GB',SX:'NL',TC:'GB',
+ GS:'GB',HK:'CN',HM:'AU',IM:'GB',IO:'GB',JE:'GB',KY:'GB',MF:'FR',MO:'CN',MP:'US',
+ MQ:'FR',MS:'GB',NC:'FR',NF:'AU',NU:'NZ',PF:'FR',PM:'FR',PN:'GB',
+ PR:'US',RE:'FR',SH:'GB',SJ:'NO',SX:'NL',TC:'GB',TF:'FR',TK:'NZ',
  TW:'CN',UM:'US',VG:'GB',VI:'US',WF:'FR',
  XK:'RS',YT:'FR'
 });
