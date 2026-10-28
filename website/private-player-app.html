@@ -93,12 +93,15 @@
               <div class="step"><span>01</span><div><h2>Manager account</h2><p>Already verified through your invitation. <strong id="setup-email">Not connected</strong></p></div><em class="step-good" id="setup-account-state">Complete</em></div>
               <div class="step"><span>02</span><div><h2>Choose a world</h2><p>World 01 launches first. All worlds remain closed for registration.</p><label for="setup-world">Game world</label><select id="setup-world" disabled><option>World 01 — Not open</option></select></div><em>Pending</em></div>
               <div class="step"><span>03</span><div><h2>Country and home airport</h2><p>Choices will be loaded from the private World 01 airport catalog, not embedded in the browser.</p><label for="setup-country">Country</label><select id="setup-country" disabled><option>Waiting for private airport API</option></select><label for="setup-airport">Home airport</label><input id="setup-airport" disabled placeholder="Search airport name, city or code"><button id="setup-airport-search" type="button" disabled>Search airports</button><select id="setup-airport-results" aria-label="Matching home airports" disabled><option>No results loaded</option></select></div><em>Pending</em></div>
-              <div class="step"><span>04</span><div><h2>Airline name and agreement</h2><p>Final setup requires a verified name, official Terms and Privacy, and server authorization.</p><label for="setup-airline-name">Airline name</label><input id="setup-airline-name" type="text" disabled maxlength="60" placeholder="Name your airline (local draft only)"><div class="legal-note">Official legal acceptance is not open. No agreement has been accepted.</div></div><em>Locked</em></div>
+              <div class="step"><span>04</span><div><h2>Airline name and agreement</h2><p>Final setup requires a verified name, official Terms and Privacy, and server authorization.</p><label for="setup-airline-name">Airline name</label><input id="setup-airline-name" type="text" disabled maxlength="60" placeholder="Name your airline (local draft only)"><div class="legal-note">Before airline creation, review the legally approved documents shown below. No acceptance is recorded before you confirm.</div>
+<div id="setup-legal-approval"></div>
+<label><input type="checkbox" id="setup-accept-terms" disabled> I accept the published Terms (<span id="setup-terms-version">not yet available</span>)</label>
+<label><input type="checkbox" id="setup-accept-privacy" disabled> I acknowledge the Privacy Policy (<span id="setup-privacy-version">not yet available</span>)</label></div><em>Locked</em></div>
               <div class="setup-footer">
  <div class="setup-draft-actions"><button type="button" id="setup-save-draft" disabled>Save local setup draft</button><button type="button" id="setup-clear-draft" class="secondary" disabled>Clear draft</button></div>
  <p id="setup-draft-feedback" role="status" aria-live="polite">Complete the demo steps; airline creation is not open.</p>
  <div class="draft-summary" id="setup-draft-summary" hidden><h3>Local draft review · not an activated airline</h3><div id="setup-draft-review"></div></div>
- <button type="button" disabled>Create airline — not available</button>
+ <button type="button" id="setup-create-airline" disabled>Create airline</button>
  <p>Starting cash at activation: $5,000,000 USD. No funds, legal consent or airline records are created by this preview.</p>
  </div>
             </div>

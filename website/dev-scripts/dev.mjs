@@ -24,7 +24,7 @@ createServer(async (req, res) => {
       const chunks=[];
       for await(const chunk of req){
         size+=chunk.length;
-        if(size>512){res.writeHead(413).end('Body too large');return;}
+        if(size>2048){res.writeHead(413).end('Body too large');return;}
         chunks.push(chunk);
       }
       const request=new Request('http://localhost:5188'+pathname,{

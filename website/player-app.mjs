@@ -5,6 +5,7 @@ import {inspectInvitedTesterProvider,TESTER_ORIGIN} from './invited-tester-entry
 import {createInvitedTesterAuth,LOCAL_REAL_AUTH_ORIGIN} from './invited-tester-auth.mjs';
 import {openPrivateTesterDashboard,PrivateTesterAccessDenied} from './tester-dashboard-state.mjs';
 import {createPlayerReadClient,PLAYER_READ_API_ENABLED} from './player-read-client.mjs';
+import {createRealOnboardingClient} from './real-onboarding-client.mjs';
 import {createLocalCatalogClient} from './local-catalog-client.mjs';
 import {saveLocalDraft,readLocalDraft,clearLocalDraft} from './local-onboarding-draft.mjs';
 import {isLocalDemoOrigin,hasLocalDemo,endLocalDemo,getLocalTestProfile,LOCAL_DEMO_MANAGER,LOCAL_DEMO_LOGIN_PATH} from './local-demo-session.mjs';
@@ -62,6 +63,8 @@ function setManager(user){
   doc.getElementById('top-email').textContent=manager.email;
 }
 let playerData=null;
+let onboarding=null;
+let onboardingContext=null;
 let nextAirportOffset=null;
 function fillCountries(countries){
   for(const id of ['setup-country','airports-country']){
@@ -78,10 +81,8 @@ function fillCountries(countries){
   doc.getElementById('setup-airport-search').disabled=false;
   doc.getElementById('airports-query').disabled=false;
   doc.getElementById('airports-search').disabled=false;
-  if(preview){
-    for(const id of ['setup-airline-name','setup-save-draft','setup-clear-draft'])
-      doc.getElementById(id).disabled=false;
-  }
+  // No browser-only creation. The server releases the real wizard only after
+  // verifying the current legal policy and a registration-open world.
 }
 function drawRealWorlds(worlds){
   const root=doc.getElementById('world-directory');
@@ -151,7 +152,8 @@ async function loadPlayerReadData({local=false}={}){
       :'Live private database · Read only';
     doc.getElementById('airport-heading').textContent='Approved airport directory';
     doc.getElementById('airport-description').textContent=data.airportsTotal+' approved simulation airports available for read-only lookup.';
-    // Actual airline setup must be saved by the protected backend, not a local draft.
+    // Actual airline setup must be saved by the protected backend.
+    await loadRealOnboarding();
   }catch{
     playerData=null;
     doc.getElementById('player-data-status').textContent=local
@@ -190,6 +192,68 @@ async function restoreSetupDraft(){
  }catch{/* Saved draft still shown, cannot confirm airport in this page */}
  renderSavedDraft(saved);
 }
+
+async function loadRealOnboarding(){
+ if(!auth)return;
+ onboarding=createRealOnboardingClient({auth,origin:window.location.origin});
+ const status=doc.getElementById('setup-draft-feedback');
+ try{
+  const ctx=await onboarding.context();
+  if(!ctx?.policy||!Array.isArray(ctx.worlds)||ctx.worlds.length===0)
+   throw Error('No registration-open worlds');
+  onboardingContext=ctx;
+  const options=doc.getElementById('setup-world');
+  options.replaceChildren(new Option('Choose a world',''));
+  for(const world of ctx.worlds)options.append(new Option(world.name,String(world.worldId)));
+  options.disabled=false;
+  const info=doc.getElementById('setup-legal-approval');
+  info.replaceChildren();
+  for(const [name,url] of [['Terms',ctx.policy.termsUrl],['Privacy',ctx.policy.privacyUrl]]){
+   const link=doc.createElement('a');link.href=url;link.target='_blank';
+   link.rel='noopener noreferrer';link.textContent=name+' · Review full document';
+   info.append(link,doc.createTextNode('  '));
+  }
+  doc.getElementById('setup-terms-version').textContent=ctx.policy.termsVersion;
+  doc.getElementById('setup-privacy-version').textContent=ctx.policy.privacyVersion;
+  for(const id of ['setup-airline-name','setup-accept-terms','setup-accept-privacy','setup-create-airline'])
+   doc.getElementById(id).disabled=false;
+  status.textContent='Official documents and eligible worlds loaded from the protected database.';
+ }catch{
+  onboardingContext=null;
+  status.textContent='Registration is not open yet. The official legal policy and World 1 must be approved before real airline creation.';
+ }
+}
+doc.getElementById('setup-create-airline').addEventListener('click',async()=>{
+ const status=doc.getElementById('setup-draft-feedback');
+ if(!onboardingContext||!onboarding)return;
+ const btn=doc.getElementById('setup-create-airline');
+ btn.disabled=true;
+ try{
+  const worldId=Number(doc.getElementById('setup-world').value);
+  const country=doc.getElementById('setup-country').value;
+  const home=doc.getElementById('setup-airport-results').value;
+  const airlineName=doc.getElementById('setup-airline-name').value.trim();
+  const allowedWorld=onboardingContext.worlds.find(w=>w.worldId===worldId);
+  if(!allowedWorld?.airports.some(a=>a.key===home))throw Error('Select an approved home airport for an open world.');
+  if(!/^[A-Z]{2}$/.test(country))throw Error('Select a country');
+  if(!doc.getElementById('setup-accept-terms').checked||
+     !doc.getElementById('setup-accept-privacy').checked)
+   throw Error('Read and accept both official policy documents');
+  await onboarding.acceptLegal({
+   termsVersion:onboardingContext.policy.termsVersion,
+   privacyVersion:onboardingContext.policy.privacyVersion
+  });
+  const record=await onboarding.createAirline({worldId,homeAirportKey:home,airlineName});
+  if(!record?.airlineId)throw Error('Airline ID not returned');
+  status.textContent='Airline created and saved to Supabase. Your dashboard is ready.';
+  doc.getElementById('player-airline-name').textContent=airlineName;
+  doc.getElementById('player-cash').textContent=String(record.cashUsd)+' USD';
+  await loadPlayerReadData({local:window.location.origin==='http://localhost:5188'});
+  window.history.replaceState({},'','/player.html#overview');navigateTo('overview');
+ }catch(error){
+  status.textContent=error?.message||'Airline creation failed. No money was credited.';
+ }finally{btn.disabled=false;}
+});
 doc.getElementById('setup-save-draft').addEventListener('click',()=>{
  if(!preview||!playerData)return;
  const airport=doc.getElementById('setup-airport-results');

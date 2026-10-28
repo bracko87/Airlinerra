@@ -2,8 +2,17 @@
  * Requires explicit private DB credentials in process environment (never in dist).
  */
 import {createPlayerReadHandler} from '../../server/player-read-service.mjs';
+import {createOnboardingContextService} from '../../server/onboarding-context-service.mjs';
+import {createOnboardingContextHttpHandler} from '../../server/onboarding-context-http-handler.mjs';
+import {createLegalConsentService} from '../../server/legal-consent-service.mjs';
+import {createLegalConsentHttpHandler} from '../../server/legal-consent-http-handler.mjs';
+import {createAirlineActivationService} from '../../server/airline-activation.mjs';
+import {createAirlineHttpHandler} from '../../server/airline-http-handler.mjs';
 import {AIRLINERRA_INVITED_TESTER_PUBLIC_SETTINGS} from '../invited-tester-public-settings.mjs';
-export const REAL_PLAYER_PATHS=Object.freeze(['/api/v1/player/overview','/api/v1/player/airports']);
+export const REAL_PLAYER_PATHS=Object.freeze([
+ '/api/v1/player/overview','/api/v1/player/airports',
+ '/api/v1/onboarding/context','/api/v1/legal/consents','/api/v1/airlines'
+]);
 const REF='hwllkabgzaynalahvkpz';
 const ORIGIN='http://localhost:5188';
 const AUTH_URL='https://'+REF+'.supabase.co';
@@ -43,7 +52,40 @@ export async function makeRealLocalPlayerHandler({
   const user=await response.json();
   return {user,error:null};
  };
- return createPlayerReadHandler({
+ const readHandler=createPlayerReadHandler({
   enabled:true,verifyUserToken,database,origin:ORIGIN
  });
+ const contextHandler=createOnboardingContextHttpHandler({
+  contextService:createOnboardingContextService({
+   enabled:true,verifyUserToken,database,
+   documentPaths:{terms:'/terms.html',privacy:'/privacy.html'}
+  }),allowedOrigins:[ORIGIN],enabled:true
+ });
+ const legalHandler=createLegalConsentHttpHandler({
+  consentService:createLegalConsentService({
+   enabled:true,verifyUserToken,database
+  }),allowedOrigins:[ORIGIN],enabled:true
+ });
+ const airlineHandler=createAirlineHttpHandler({
+  activationService:createAirlineActivationService({
+   enabled:true,verifyUserToken,database
+  }),allowedOrigins:[ORIGIN],enabled:true
+ });
+ return async function protectedGameHandler(request){
+   const path=new URL(request.url).pathname;
+   if(path.startsWith('/api/v1/player/'))return readHandler(request);
+   if(!REAL_PLAYER_PATHS.includes(path))return new Response('Not found',{status:404});
+   const body=await request.text();
+   if(Buffer.byteLength(body,'utf8')>2048)
+     return new Response(JSON.stringify({error:'Request too large'}),{status:413,headers:{'content-type':'application/json'}});
+   const {pathname}=new URL(request.url);
+   const handler=pathname==='/api/v1/onboarding/context'?contextHandler:
+      pathname==='/api/v1/legal/consents'?legalHandler:airlineHandler;
+   const answer=await handler({
+      path:pathname,method:request.method,
+      headers:Object.fromEntries(request.headers.entries()),body
+   });
+   return new Response(answer.body,{status:answer.status,headers:answer.headers});
+ };
+
 }
