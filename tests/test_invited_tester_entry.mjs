@@ -149,7 +149,7 @@ test('main website ships ONLY invitation login; public player signup stays disab
   assert.match(build,/addInviteOnlyAccount\(\{siteDir,distDir\}\)/);
   assert.match(overlay,/invited-tester-entry\.mjs/);
   assert.match(rules,/export const PUBLIC_AUTH_ENABLED = false;/);
-  assert.match(shell,/PRIVATE PRELAUNCH ACCESS/);
+  assert.match(shell,/SECURE AIRLINERRA ACCOUNT/);
   assert.match(shell,/id="set-password"/);
   assert.doesNotMatch(shell,/id="register"/);
   assert.match(page,/operatorPrelaunchApproved!==true/);
