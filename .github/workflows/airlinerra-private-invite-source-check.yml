@@ -1,4 +1,4 @@
-name: Airlinerra private invitation source checks
+name: Airlinerra invitation-only main build checks
 
 on:
   workflow_dispatch:
@@ -12,6 +12,8 @@ on:
       - 'website/invited-tester-auth.mjs'
       - 'website/invited-tester-public-settings.mjs'
       - 'website/dev-scripts/build-invited-tester.mjs'
+      - 'website/dev-scripts/invited-overlay.mjs'
+      - 'website/dev-scripts/dev.mjs'
       - 'tests/test_invited_tester_manual_bundle.mjs'
       - '.github/workflows/airlinerra-manual-invited-tester-site.yml'
       - 'website/dev-scripts/build.mjs'
@@ -43,16 +45,18 @@ jobs:
       - name: Test invited-only callbacks, OTP scrubbing and provider gates
         run: |
           node --test tests/test_invited_tester_entry.mjs tests/test_invited_tester_auth.mjs tests/test_hosted_auth_readiness.mjs tests/test_prelaunch_release_invariants.mjs
-      - name: Build current unchanged public prelaunch site
+      - name: Build ordinary main website with invitation-only account
         working-directory: website
         run: npm run build
-      - name: Verify opt-in package and default build rollback
+      - name: Verify regular main build and safe localhost visual preview
         run: node --test tests/test_invited_tester_manual_bundle.mjs
-      - name: Assert invited-only modules and HTML were NOT published
+      - name: Assert invited-only account is included without public signup
         run: |
           test -f dist/account.html
-          test ! -e dist/prelaunch-invited-account.html
-          test ! -e dist/invited-tester-entry.mjs
-          test ! -e dist/invited-tester-page.mjs
-          test ! -e dist/invited-tester-auth.mjs
+          grep -q 'PRIVATE PRELAUNCH ACCESS' dist/account.html
+          test -f dist/invited-tester-entry.mjs
+          test -f dist/invited-tester-page.mjs
+          test -f dist/invited-tester-auth.mjs
+          test -f dist/invited-tester-config.js
+          ! grep -q 'id="register"' dist/account.html
           grep -q 'export const PUBLIC_AUTH_ENABLED = false;' dist/auth-rules.mjs
