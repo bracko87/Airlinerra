@@ -4,9 +4,9 @@
  * A future credential-scoped runtime injects verifyUserToken and a private pg pool.
  */
 import {verifiedPlayerId} from './airline-activation.mjs';
-import {countrySqlExpression,UN_COUNTRY_CODES,UN_COUNTRY_SET} from './country-policy.mjs';
+import {countrySqlExpression,GAME_COUNTRY_CODES,GAME_COUNTRY_SET} from './country-policy.mjs';
 const PARENT_ISO=countrySqlExpression('country_iso');
-const MEMBER_CODES=UN_COUNTRY_CODES.map(code=>"'"+code+"'").join(',');
+const MEMBER_CODES=GAME_COUNTRY_CODES.map(code=>"'"+code+"'").join(',');
 
 export const PLAYER_READ_PATHS=Object.freeze([
  '/api/v1/player/overview','/api/v1/player/airports'
@@ -80,7 +80,7 @@ export function createPlayerReadHandler({enabled=false,verifyUserToken,database,
    if(url.pathname===PLAYER_READ_PATHS[1]){
      country=data.countryIso;search=data.search??'';offset=data.offset??0;
      if(Object.keys(data).some(k=>!['countryIso','search','offset'].includes(k))||
-       typeof country!=='string'||!UN_COUNTRY_SET.has(country)||
+       typeof country!=='string'||!GAME_COUNTRY_SET.has(country)||
        typeof search!=='string'||!SAFE_SEARCH.test(search)||
        !Number.isInteger(offset)||offset<0||offset>3100)return respond(400,{error:'Invalid airport search'});
    }
