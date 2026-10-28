@@ -30,7 +30,7 @@ test('ordinary main build includes invite-only account, without registering play
   assert.match(configuration,/operatorPrelaunchApproved":true/);
   assert.match(configuration,/sb_publishable_[A-Za-z0-9_-]{16,128}/);
   assert.doesNotMatch(configuration,/sb_secret_|service_role|postgres:|postgresql:/);
-  assert.match(js,/Sign in with your real verified Airlinerra account/);
+  assert.match(js,/Sign in with your confirmed Airlinerra account/);
   assert.match(js,/config\?\.operatorPrelaunchApproved!==true/);
   assert.doesNotMatch(js,/\.signUp\(/);
   assert.match(publicRules,/export const PUBLIC_AUTH_ENABLED = false;/);
@@ -80,5 +80,5 @@ test('build remains distinct from automatic Netlify deployment and local UI need
   assert.doesNotMatch(source,/input\.disabled=true/);
   assert.match(source,/await inspectInvitedTesterProvider/);
   assert.doesNotMatch(source,/beginLocalDemo\(/);
-  assert.match(source,/Sign in with your real verified Airlinerra account/);
+  assert.match(source,/Sign in with your confirmed Airlinerra account/);
 });

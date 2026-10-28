@@ -22,3 +22,20 @@ test('public homepage exposes accessible sign-in and prelaunch registration link
  assert.match(regCss,/1220px/);
  assert.match(regCss,/registration-layout/);
 });
+test('real signup requires hosted signup enabled and approved legal pages',async()=>{
+ const {readFile}=await import('node:fs/promises');
+ const site=new URL('../website/',import.meta.url);
+ const [register,script,build]=await Promise.all([
+  readFile(new URL('register.html',site),'utf8'),
+  readFile(new URL('real-registration.mjs',site),'utf8'),
+  readFile(new URL('dev-scripts/build.mjs',site),'utf8')
+ ]);
+ assert.match(register,/id="real-registration-form" hidden/);
+ assert.match(script,/provider.signupEnabled!==true/);
+ assert.match(script,/data-airlinerra-legal-approved="true"/);
+ assert.match(script,/sdkClient.auth.signUp/);
+ assert.match(script,/emailRedirectTo:origin\+'\/account.html\?screen=verify'/);
+ assert.match(script,/auth:\{/);
+ assert.match(build,/real-registration.mjs/);
+ assert.doesNotMatch(script,/example.test|mock|simulate|fakeAccount|service_role|sb_secret_/i);
+});

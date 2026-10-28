@@ -72,10 +72,14 @@ test('email verification, recovery and invalid links use safe callback screens',
   }),/official domain/);
 });
 
-test('hosted provider must explicitly disable signup/anonymous and require email confirmation',async()=>{
+test('hosted provider supports verified sign-in and controlled signup state, but never anonymous or unconfirmed accounts',async()=>{
   assert.equal((await inspectInvitedTesterProvider({publishableKey:KEY,fetchImpl:secureFetch})).inviteOnly,true);
+  const open={...safe,disable_signup:false};
+  const allowed=await inspectInvitedTesterProvider({publishableKey:KEY,fetchImpl:async()=>response(open)});
+  assert.equal(allowed.signupEnabled,true);
+  assert.equal(allowed.inviteOnly,false);
   for(const data of [
-    {...safe,disable_signup:false},{...safe,disable_signup:null},
+    {...safe,disable_signup:null},
     {...safe,mailer_autoconfirm:true},
     {...safe,external:{...safe.external,email:false}},
     {...safe,external:{email:true,anonymous_users:true}},
@@ -101,7 +105,7 @@ test('unsafe hosted settings NEVER load an invited-tester SDK or client',async()
   await assert.rejects(openInvitedTesterEntry({
     href:url,replaceState:()=>{},
     publishableKey:KEY,
-    fetchImpl:async()=>response({...safe,disable_signup:false}),
+    fetchImpl:async()=>response({...safe,mailer_autoconfirm:true}),
     createAuth:async()=>{touched++;return auth();}
   }),/not authorized/);
   assert.equal(touched,0);
