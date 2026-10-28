@@ -25,6 +25,8 @@ async function loadCatalog(){
  world.replaceChildren(new Option('Select test world',''));
  for(const w of data.worlds){
   const option=new Option(w.name+' — '+w.state+' (preview only)',String(w.id));
+  // Only World 1 has approved airports in the local catalog.
+  option.disabled=Number(w.id)!==1;
   world.append(option);
  }
  world.value='1';world.disabled=false;
@@ -103,6 +105,7 @@ doc.getElementById('test-airline-form').addEventListener('submit',e=>{
    countryIso=doc.getElementById('test-country').value,
    airport=doc.getElementById('test-airport'),
    airlineName=doc.getElementById('test-airline-name').value;
+  if(worldId!==1)throw Error('Only World 1 has an approved airport catalog in this preview');
   if(airport.disabled||!airport.value||!Array.from(airport.options).some(x=>x.value===airport.value))
    throw Error('Select an approved home airport');
   saveLocalDraft(store,location,{worldId,countryIso,airportKey:airport.value,airlineName});
