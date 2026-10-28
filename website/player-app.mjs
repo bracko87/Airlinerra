@@ -109,7 +109,10 @@ function updateAirportDetails(){
  put('airport-details-category',SIX_CATEGORIES.has(airport.category)?airport.category:'Not classified');
  put('airport-details-category-note',airport.categoryFinalized?'Category finalized': 'Category provisional');
  put('airport-details-runway',Number.isFinite(airport.runwayLengthM)?airport.runwayLengthM.toLocaleString('en')+' m':null);
- put('airport-details-surface',airport.runwaySurface);
+ const rawSurface=String(airport.runwaySurface||'').trim();
+ const material=rawSurface.toUpperCase();
+ const surfaces={ASP:'Asphalt',ASPH:'Asphalt',CON:'Concrete',CONC:'Concrete',ASPHALT:'Asphalt',CONCRETE:'Concrete'};
+ put('airport-details-surface',surfaces[material]||rawSurface||null);
  const coords=Number.isFinite(airport.latitude)&&Number.isFinite(airport.longitude)
   ?airport.latitude.toFixed(4)+', '+airport.longitude.toFixed(4):null;
  put('airport-details-coordinates',coords);
