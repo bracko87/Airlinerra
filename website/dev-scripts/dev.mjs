@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 const sourceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const root = process.argv.includes('--built') ? path.resolve(sourceRoot,'../dist') : sourceRoot;
-const port = Number(process.env.PORT || 5187);
+const port = Number(process.env.PORT || (process.argv.includes('--built') ? 5188 : 5187));
 const types = {'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.webp':'image/webp','.png':'image/png','.ico':'image/x-icon'};
 createServer(async (req, res) => {
   try {
