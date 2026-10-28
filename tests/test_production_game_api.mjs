@@ -14,6 +14,8 @@ const token='a'.repeat(32);
 const uid='550e8400-e29b-41d4-a716-446655440000';
 test('production API requires pinned real database, explicit enabling and canonical origin',async()=>{
  assert.equal(validProductionDatabaseUrl(url),true);
+ assert.equal(validProductionDatabaseUrl(url+'?sslmode=require'),true);
+ assert.equal(validProductionDatabaseUrl(url+'?sslmode=disable'),false);
  for(const rejected of [
   '',null,'postgresql://postgres:password@db.other.supabase.co:5432/postgres',
   'postgresql://postgres.other:password@aws-0-eu-central-1.pooler.supabase.com:5432/postgres',

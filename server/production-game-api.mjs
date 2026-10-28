@@ -16,7 +16,10 @@ export function validProductionDatabaseUrl(value) {
   if(typeof value!=='string')return false;
   const u=new URL(value);
   if(!['postgres:','postgresql:'].includes(u.protocol)||!u.password||
-     u.pathname!=='/postgres'||u.search||u.hash)return false;
+     u.pathname!=='/postgres'||u.hash)return false;
+  if(u.searchParams.size>1||
+    (u.searchParams.size===1&&u.searchParams.get('sslmode')!=='require'))
+    return false;
   if(u.hostname==='db.'+REF+'.supabase.co')return u.username==='postgres';
   return u.hostname.endsWith('.pooler.supabase.com')&&u.username.endsWith('.'+REF);
  }catch{return false}
