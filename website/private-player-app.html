@@ -15,31 +15,61 @@
   <section id="player-loading" class="gate-panel" role="status"><h1>Opening Airlinerra…</h1><p>Verifying private access.</p></section>
   <section id="player-denied" class="gate-panel" hidden role="alert"><h1>Private access unavailable</h1><p>We could not verify an invited account. No private game records were loaded.</p><a href="/account.html?screen=sign-in">Return to sign in</a></section>
   <div id="player-app" hidden>
-    <aside class="sidebar">
-      <a class="brand" href="/" aria-label="Airlinerra homepage"><img src="assets/airlinerra-logo.png" alt="Airlinerra"></a>
-      <p class="side-kicker">PRIVATE PRELAUNCH</p>
-      <nav aria-label="Player application">
-        <span class="nav-label">MANAGER</span>
-        <a href="#overview" data-view-link="overview" aria-current="page">Overview</a>
-        <a href="#onboarding" data-view-link="onboarding">Airline setup</a>
-        <a href="#profile" data-view-link="profile">Manager profile</a>
-        <span class="nav-label">OPERATIONS</span>
-        <a href="#worlds" data-view-link="worlds">Game worlds</a>
-        <a href="#airports" data-view-link="airports">Airports</a>
-        <a href="#fleet" data-view-link="fleet">Fleet</a>
-        <a href="#routes" data-view-link="routes">Routes</a>
-        <a href="#schedule" data-view-link="schedule">Schedule</a>
-        <a href="#finances" data-view-link="finances">Finances</a>
-        <span class="nav-label">ACCOUNT</span>
-        <a href="#settings" data-view-link="settings">Settings</a>
-      </nav>
-      <div class="side-bottom"><a href="/tester.html">Tester account</a><a href="/">Public website</a></div>
-    </aside>
+    <header class="app-header">
+      <div class="app-header-inner">
+        <a class="brand" href="/" aria-label="Airlinerra public homepage"><img src="assets/airlinerra-logo.png" alt="Airlinerra"></a>
+        <div class="header-world" aria-label="Game availability">
+          <span class="top-label">WORLD 01 · PRELAUNCH</span>
+          <span class="top-subtitle">No airline activated</span>
+        </div>
+        <div class="header-tools">
+          <a class="header-link" href="/tester.html">Tester account</a>
+          <a class="header-link" href="/">Public website</a>
+          <span id="top-email">Invited account</span>
+          <button id="player-sign-out" type="button">Sign out</button>
+        </div>
+      </div>
+    </header>
+    <nav class="app-navigation" aria-label="Player application">
+      <div class="app-navigation-inner">
+        <div class="nav-group" data-nav-group="manager" role="group" aria-label="Manager">
+          <span class="nav-label">MANAGER</span>
+          <div class="nav-links">
+            <a href="#overview" data-view-link="overview" aria-current="page">Overview</a>
+            <a href="#onboarding" data-view-link="onboarding">Airline setup</a>
+            <a href="#profile" data-view-link="profile">Profile</a>
+          </div>
+        </div>
+        <div class="nav-group" data-nav-group="operations" role="group" aria-label="Operations">
+          <span class="nav-label">OPERATIONS</span>
+          <div class="nav-links">
+            <a href="#worlds" data-view-link="worlds">Game worlds</a>
+            <a href="#airports" data-view-link="airports">Airports</a>
+            <a href="#routes" data-view-link="routes">Routes</a>
+            <a href="#schedule" data-view-link="schedule">Schedule</a>
+          </div>
+        </div>
+        <div class="nav-group" data-nav-group="fleet" role="group" aria-label="Fleet">
+          <span class="nav-label">FLEET</span>
+          <div class="nav-links">
+            <a href="#fleet" data-view-link="fleet">Aircraft</a>
+          </div>
+        </div>
+        <div class="nav-group" data-nav-group="finance" role="group" aria-label="Finance">
+          <span class="nav-label">FINANCE</span>
+          <div class="nav-links">
+            <a href="#finances" data-view-link="finances">Finances</a>
+          </div>
+        </div>
+        <div class="nav-group" data-nav-group="account" role="group" aria-label="Account">
+          <span class="nav-label">ACCOUNT</span>
+          <div class="nav-links">
+            <a href="#settings" data-view-link="settings">Settings</a>
+          </div>
+        </div>
+      </div>
+    </nav>
     <div class="workspace">
-      <header class="topbar">
-        <div><span class="top-label">WORLD 01 · PRELAUNCH</span><span class="top-subtitle">No airline activated</span></div>
-        <div class="top-actions"><span id="top-email">Invited account</span><button id="player-sign-out" type="button">Sign out</button></div>
-      </header>
       <main id="player-main">
         <div class="notice" role="status"><strong>Development preview:</strong> This is the player interface, not an open game world. No airline, trial or flight operation can be created here. <span id="local-preview-note" hidden>Localhost — no live authentication or database connection.</span> <span id="player-data-status">Private game database not connected</span></div>
         <section data-player-view="overview">

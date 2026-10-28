@@ -19,3 +19,10 @@
 4. Do not mark **database-connected gameplay** or **airline onboarding** complete; these remain Batch 2/3.
 
 Security note: Static HTML cannot protect itself. All account information is hidden until verified client-side; any private future game data needs independent **server-side** ownership checks and no direct browser grants to `airlinerra_game`.
+
+## 28 October update — horizontal grouped navigation
+- Replaces the sidebar with a full-width horizontal, scrollable-on-mobile section bar.
+- Five permanent groups: Manager (Overview, Airline setup, Profile); Operations (Game worlds, Airports, Routes, Schedule); Fleet (Aircraft); Finance (Finances); Account (Settings).
+- Public website, tester account, verified email/local demo identity and sign-out remain in the top header.
+- The existing hash allowlist, active view state, localhost sign-in demo and production Auth guard remain unchanged.
+- Mobile navigation scrolls horizontally rather than hiding pages in a drawer. No server or Netlify changes.
