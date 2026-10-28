@@ -30,7 +30,7 @@ test('ordinary main build includes invite-only account, without registering play
   assert.match(configuration,/operatorPrelaunchApproved":true/);
   assert.match(configuration,/sb_publishable_[A-Za-z0-9_-]{16,128}/);
   assert.doesNotMatch(configuration,/sb_secret_|service_role|postgres:|postgresql:/);
-  assert.match(js,/Local visual preview only/);
+  assert.match(js,/LOCAL DASHBOARD DEMO/);
   assert.match(js,/config\?\.operatorPrelaunchApproved!==true/);
   assert.doesNotMatch(js,/\.signUp\(/);
   assert.match(publicRules,/export const PUBLIC_AUTH_ENABLED = false;/);
