@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {
   PLAYER_APP_PATH,PLAYER_VIEWS,WORLD_LABELS,
-  safePlayerView,playerViewUrl,verifiedManagerIdentity,onboardingReadiness,
+  safePlayerView,playerViewUrl,verifiedManagerIdentity,onboardingReadiness,managerLandingView,
   AIRLINE_CREATION_ENABLED,GAME_READ_API_CONNECTED
 } from '../website/player-app-model.mjs';
 import {openPrivateTesterDashboard,PrivateTesterAccessDenied} from '../website/tester-dashboard-state.mjs';
@@ -119,7 +119,7 @@ test('real account onboarding does not re-open creation for an existing airline'
 
 test('verified first-time account routes to real setup while a returning airline retains its dashboard',async()=>{
  const js=await readFile(new URL('../website/player-app.mjs',import.meta.url),'utf8');
- assert.match(js,/if\(!hasRealAirline && safePlayerView\(window.location.hash\)==='overview'\)/);
+ assert.match(js,/managerLandingView\(\{requestedView:'onboarding',hasAirline:hasRealAirline\}\)/);
  assert.match(js,/navigateTo\('onboarding'\)/);
  assert.match(js,/if\(hasRealAirline\)\{/);
  assert.match(js,/Your real airline already exists/);
@@ -137,7 +137,7 @@ test('real airline persists visibly in dashboard header while no-airline users a
  assert.match(js,/Premium Unlimited/);
  assert.match(js,/Registered airline/);
  assert.match(js,/No airline created · Complete airline setup/);
- assert.match(js,/if\(!hasRealAirline && safePlayerView\(window.location.hash\)==='overview'\)/);
+ assert.match(js,/managerLandingView\(\{requestedView:'onboarding',hasAirline:hasRealAirline\}\)/);
 });
 
 test('real dashboard displays complimentary unlimited membership only when server confirms it',async()=>{
