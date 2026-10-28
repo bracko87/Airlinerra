@@ -12,6 +12,7 @@ test('only 193 UN members and two observer states can appear as game countries',
  for(const code of ['FO','IM','GG','JE','XK','TW','HK','PR','EH','AX'])
   assert.equal(UN_COUNTRY_SET.has(code),false);
  assert.equal(parentCountryIso('FO'),'DK');
+ assert.equal(parentCountryIso('AX'),'FI');
  assert.equal(parentCountryIso('IM'),'GB');
  assert.equal(parentCountryIso('GF'),'FR');
  assert.equal(parentCountryIso('PR'),'US');
