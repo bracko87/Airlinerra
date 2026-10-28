@@ -38,6 +38,17 @@ on:
       - 'tests/test_hosted_auth_readiness.mjs'
       - 'tests/test_invited_tester_auth.mjs'
       - 'website/invited-tester-auth.mjs'
+      - 'website/register.html'
+      - 'website/real-registration.mjs'
+      - 'website/real-onboarding-client.mjs'
+      - 'website/player-app.mjs'
+      - 'website/private-player-app.html'
+      - 'website/invited-tester-entry.mjs'
+      - 'website/invited-tester-page.mjs'
+      - 'tests/test_homepage_account_entries.mjs'
+      - 'tests/test_local_onboarding_draft.mjs'
+      - 'tests/test_player_app_prelaunch.mjs'
+      - 'tests/test_real_local_player_gateway.mjs'
       - 'website/dev-scripts/dev-local-auth.mjs'
       - 'website/auth-rules.mjs'
       - 'tests/test_local_auth_preview.mjs'
@@ -81,6 +92,9 @@ jobs:
           node --check auth-client.mjs
           node --check auth-service.mjs
           node --check onboarding-api-client.mjs
+          node --check real-registration.mjs
+          node --check real-onboarding-client.mjs
+          node --check player-app.mjs
           node --check player-data-service.mjs
           node --check dev-scripts/dev-local-auth.mjs
       - name: Verify static prelaunch build
