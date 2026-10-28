@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {makeRealLocalPlayerHandler,validConnectionUrl} from '../website/dev-scripts/real-player-read-gateway.mjs';
 import {PLAYER_READ_SQL} from '../server/player-read-service.mjs';
+import {createCanonicalGameApi,CANONICAL_GAME_API_PATHS} from '../server/canonical-game-api.mjs';
 import {createRegistrationReadinessHandler,REGISTRATION_READINESS_SQL} from '../server/registration-readiness.mjs';
 
 const REF='hwllkabgzaynalahvkpz';
@@ -119,4 +120,30 @@ test('release preflight reports ready only when the real database says so',async
  assert.equal((await handler(new Request('http://attacker.test/api/v1/registration/readiness'))).status,403);
  assert.equal((await handler(new Request(base+'/api/v1/registration/readiness?debug=1'))).status,404);
  assert.equal((await handler(request({},'/api/v1/registration/readiness'))).status,405);
+});
+
+test('one canonical real API composes the same protected services for localhost and future official host',async()=>{
+ assert.ok(CANONICAL_GAME_API_PATHS.includes('/api/v1/airlines'));
+ assert.ok(CANONICAL_GAME_API_PATHS.includes('/api/v1/player/overview'));
+ assert.ok(CANONICAL_GAME_API_PATHS.includes('/api/v1/registration/readiness'));
+ assert.equal((await createCanonicalGameApi({enabled:false})(request())).status,503);
+ const db={connect:async()=>({
+  query:async()=>({rows:[]}),release:()=>{}
+ })};
+ const auth=async()=>({user:{id,email_confirmed_at:'2026-10-28T12:00:00Z'}});
+ for(const origin of [base,'https://airlinerra.com']){
+  const api=createCanonicalGameApi({enabled:true,origin,
+    verifyUserToken:auth,database:db});
+  const unknown=await api(new Request(origin+'/api/v1/not-a-route'));
+  assert.equal(unknown.status,404);
+  const cross=await api(new Request('https://attacker.example/api/v1/airlines'));
+  assert.equal(cross.status,403);
+  const noToken=await api(new Request(origin+'/api/v1/airlines',{
+   method:'POST',headers:{origin,'content-type':'application/json'},body:'{}'
+  }));
+  assert.equal(noToken.status,401);
+ }
+ assert.throws(()=>createCanonicalGameApi({
+  enabled:true,origin:'https://attacker.example',verifyUserToken:auth,database:db
+ }),/Trusted game API config/);
 });

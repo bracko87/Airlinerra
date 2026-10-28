@@ -42,6 +42,7 @@ on:
       - 'website/real-registration.mjs'
       - 'website/real-onboarding-client.mjs'
       - 'server/registration-readiness.mjs'
+      - 'server/canonical-game-api.mjs'
       - 'website/player-app.mjs'
       - 'website/private-player-app.html'
       - 'website/invited-tester-entry.mjs'
@@ -96,6 +97,7 @@ jobs:
           node --check real-registration.mjs
           node --check real-onboarding-client.mjs
           node --check ../server/registration-readiness.mjs
+          node --check ../server/canonical-game-api.mjs
           node --check player-app.mjs
           node --check player-data-service.mjs
           node --check dev-scripts/dev-local-auth.mjs
