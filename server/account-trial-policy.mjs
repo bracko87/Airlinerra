@@ -9,6 +9,16 @@ export const TRIAL_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
 export const STARTING_CAPITAL_USD = 5_000_000;
 export const STARTING_AIRCRAFT_COUNT = 0;
 
+// Owner-approved 28 Oct 2026: registration and the seven-day trial require
+// NO payment details, NEVER auto-convert, and incur NO automatic charge.
+// Paid membership must be a separate, explicit player choice after the trial.
+export const TRIAL_PAYMENT_METHOD_REQUIRED = false;
+export const TRIAL_AUTO_CONVERTS_TO_PAID = false;
+export const TRIAL_AUTO_CHARGE_ENABLED = false;
+export const PAID_MEMBERSHIP_REQUIRES_EXPLICIT_OPT_IN = true;
+export const TRIAL_START_EVENT = 'successful_airline_activation';
+export const TRIAL_EXPIRY_ACTION = 'await_explicit_membership_choice';
+
 function timestamp(value, label) {
   const d = value instanceof Date ? value : new Date(value);
   if (!Number.isFinite(d.getTime())) throw new Error('Invalid '+label+' timestamp.');

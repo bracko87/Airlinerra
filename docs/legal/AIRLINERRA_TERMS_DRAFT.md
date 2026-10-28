@@ -6,7 +6,7 @@ Service: Airlinerra, operated by Next Quest Studio (sole proprietorship), owner 
 Registered-business address: Horst-Embacher-Allee 3, 22850 Norderstedt, Germany.
 Business contact: contact@nextqueststudio.net.
 Commercial register: not entered, per the operator's published company legal notice.
-**STILL REQUIRED BEFORE APPROVAL:** independently verify whether a VAT identification number or other statutory disclosures apply; confirm the exact trial/payment/cancellation/withdrawal rules and obtain the operator's approval of the final text. Do not describe Next Quest Studio as a registered corporation.
+**STILL REQUIRED BEFORE APPROVAL:** independently verify whether a VAT identification number or other statutory disclosures apply; finalize subscription pricing, paid-checkout cancellation/withdrawal terms, retention and expired-account behavior, and obtain the operator's approval of the final text. Do not describe Next Quest Studio as a registered corporation.
 
 ## Service and account
 Airlinerra is an online fictional airline-management game. Players create an account, confirm their email, and create an airline in a designated game world. Managers must protect their credentials, may not impersonate others or interfere with game infrastructure, and should report account compromise.
@@ -18,7 +18,9 @@ Every new airline is initially allocated **$5,000,000 of in-game currency** and 
 Account creation and airline setup can open before real-world flight operations are enabled. During such periods, the account may access a dashboard without an operational world. Outages or adjustments may occur; avoid promising guaranteed uptime.
 
 ## Trials, payments and cancellation
-A **seven-day introductory trial** is planned. **REQUIRED BEFORE APPROVAL**: specify exactly when the trial clock starts, whether payment details are required, whether any charge is automatic, the actual subscription price, cancellation method, refund/withdrawal information applicable to EU consumers, and the effect of expiry on existing airlines. Do not imply that real billing is active until this is decided.
+**Owner-approved 28 October 2026:** Each eligible new manager receives a **7-day introductory trial**, beginning on successful, server-authorized airline creation (not merely account registration). **No credit card, bank account or other payment details are required to register or start the trial.** The trial **never automatically becomes a paid subscription**, and **no charge is taken at the end of the trial**. After the seven days, the player may separately and voluntarily choose a paid membership; without that explicit action, the player is not billed and trial access ends. The player's existing airline and game data must not be deleted merely for declining to subscribe; exact post-trial access and data-retention behavior still require implementation and final review.
+
+**STILL REQUIRED BEFORE APPROVAL:** set and display the subscription price and payment interval; finish the manual opt-in checkout, cancellation and refund/withdrawal information applicable to German/EU consumers; agree precisely what the player can see or edit after expiry. Do not imply that paid billing is active until the separate payment service has been built, verified and authorized.
 
 ## Account termination, content and prohibited conduct
 Describe suspension for cheating, abuse, fraud and breach of these terms; account deletion and data export/retention practices; any player content ownership/license; dispute process and support contacts. Preserve applicable statutory consumer rights rather than attempting to waive them.

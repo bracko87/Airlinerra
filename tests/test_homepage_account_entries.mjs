@@ -73,3 +73,24 @@ test('legal pages are reachable from the public homepage and account entry',asyn
   assert.ok(account.includes('href="'+page+'"'),page+' account');
  }
 });
+
+test('owner-approved trial has no payment requirement or automatic conversion across all public copy',async()=>{
+ const [home,register,terms,policy,legalDraft]=await Promise.all([
+  read('../website/index.html'),
+  read('../website/register.html'),
+  read('../website/terms.html'),
+  read('../server/account-trial-policy.mjs'),
+  read('../docs/legal/AIRLINERRA_TERMS_DRAFT.md')
+ ]);
+ assert.match(home,/no card required/i);
+ assert.match(home,/No automatic payment or upgrade/);
+ assert.match(register,/No payment details required/);
+ assert.match(register,/nothing is charged/);
+ assert.match(terms,/no credit card or other payment details/i);
+ assert.match(terms,/no automatic payment, no automatic upgrade and no charge/i);
+ assert.match(legalDraft,/never automatically becomes a paid subscription/);
+ assert.match(policy,/TRIAL_AUTO_CONVERTS_TO_PAID = false/);
+ assert.match(policy,/TRIAL_AUTO_CHARGE_ENABLED = false/);
+ assert.doesNotMatch(register,/name="(?:cardNumber|paymentMethod|iban)"/i);
+ assert.doesNotMatch(terms,/data-airlinerra-legal-approved="true"/);
+});

@@ -8,7 +8,10 @@ import {
 } from '../website/player-data-service.mjs';
 import {
   TRIAL_DAYS, TRIAL_DURATION_MS, STARTING_CAPITAL_USD,
-  STARTING_AIRCRAFT_COUNT, plannedTrialFromActivation, previewEntitlement
+  STARTING_AIRCRAFT_COUNT, plannedTrialFromActivation, previewEntitlement,
+  TRIAL_PAYMENT_METHOD_REQUIRED, TRIAL_AUTO_CONVERTS_TO_PAID,
+  TRIAL_AUTO_CHARGE_ENABLED, PAID_MEMBERSHIP_REQUIRES_EXPLICIT_OPT_IN,
+  TRIAL_START_EVENT, TRIAL_EXPIRY_ACTION
 } from '../server/account-trial-policy.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -238,4 +241,25 @@ test('SQL is still review-only with a closed-world trigger, airport FK and idemp
   assert.match(sql,/grant insert \(user_id, display_name, locale\)/);
   assert.match(sql,/grant update \(display_name, locale\)/);
   assert.doesNotMatch(sql,/grant select, insert, update \(display_name, locale, updated_at\)/);
+});
+
+test('owner-approved seven-day trial requires no card, no charge and explicit paid opt-in',()=>{
+  assert.equal(TRIAL_DAYS,7);
+  assert.equal(TRIAL_DURATION_MS,7*24*60*60*1000);
+  assert.equal(TRIAL_PAYMENT_METHOD_REQUIRED,false);
+  assert.equal(TRIAL_AUTO_CONVERTS_TO_PAID,false);
+  assert.equal(TRIAL_AUTO_CHARGE_ENABLED,false);
+  assert.equal(PAID_MEMBERSHIP_REQUIRES_EXPLICIT_OPT_IN,true);
+  assert.equal(TRIAL_START_EVENT,'successful_airline_activation');
+  assert.equal(TRIAL_EXPIRY_ACTION,'await_explicit_membership_choice');
+  const clock=plannedTrialFromActivation('2026-10-28T16:00:00.000Z');
+  assert.equal(clock.trial_started_at,'2026-10-28T16:00:00.000Z');
+  assert.equal(clock.trial_ends_at,'2026-11-04T16:00:00.000Z');
+  const expired=previewEntitlement({
+    membership_state:'trial',
+    trial_started_at:clock.trial_started_at,
+    trial_ends_at:clock.trial_ends_at
+  },'2026-11-04T16:00:00.000Z');
+  assert.equal(expired.state,'expired');
+  assert.equal(expired.millisecondsRemaining,0);
 });
