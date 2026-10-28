@@ -7,6 +7,7 @@
 import {normalizedEmail,validatedPassword,validatedDisplayName,passwordStrength} from './auth-rules.mjs';
 import {inspectInvitedTesterProvider,TESTER_AUTH_URL} from './invited-tester-entry.mjs';
 import {SUPABASE_SDK_IMPORT} from './auth-client.mjs';
+import {evaluateRegistrationAccess} from './registration-access.mjs';
 const allowed=new Set(['http://localhost:5188','https://airlinerra.com']);
 const form=document.getElementById('real-registration-form');
 const status=document.getElementById('registration-readiness');
@@ -71,16 +72,13 @@ async function initialize(){
   if(provider.signupEnabled!==true){
     blocked('Email registration is disabled in Supabase Authentication. Enable signups after activating the approved owner-only Before User Created hook.');return;
   }
-  const normal=readiness?.registrationReady===true &&
-    terms==='approved'&&privacy==='approved';
-  const ownerPilot=readiness?.privateOwnerPilotAvailable===true &&
-    terms==='draft'&&privacy==='draft';
-  if(provider.signupEnabled!==true||(!normal&&!ownerPilot)){
+  const access=evaluateRegistrationAccess({provider,readiness,terms,privacy});
+  if(access.mode==='closed'){
    blocked('Account registration is not yet authorized. Check the approved early-access backend and legal documents.');
    return;
   }
   const consent=document.getElementById('registration-consent-description');
-  if(ownerPilot){
+  if(access.mode==='owner-pilot'){
    consent.textContent='I have reviewed the Terms and Privacy review drafts and understand that early game access is limited. These are not yet the final published policies.';
    document.getElementById('registration-mode').textContent='Early-access registration · Real email confirmation';
   }else{
