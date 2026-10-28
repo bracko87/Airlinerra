@@ -1,5 +1,5 @@
-/** Prelaunch player application: route navigation and verified identity only.
- * Gameplay and database-backed onboarding stay disabled pending hosted API release.
+/** Real, verified manager dashboard and backend-gated onboarding.
+ * Gameplay flight operations remain separately disabled.
  */
 import {inspectInvitedTesterProvider,TESTER_ORIGIN} from './invited-tester-entry.mjs';
 import {createInvitedTesterAuth,LOCAL_REAL_AUTH_ORIGIN} from './invited-tester-auth.mjs';
