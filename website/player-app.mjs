@@ -388,8 +388,14 @@ doc.getElementById('setup-final-create').addEventListener('click',async()=>{
   if(!record?.airlineId)throw Error('Airline ID not returned');
   doc.getElementById('setup-confirm-dialog').close();
   if(logoBlob){try{await auth.uploadAirlineLogo({airlineId:record.airlineId,blob:logoBlob});}
-   catch{status.textContent='Airline created. Logo upload failed; you can add it later.';}}
-  if(!status.textContent.includes('Logo upload failed'))status.textContent='Airline created successfully.';
+   catch{
+    status.textContent='Your airline was created, but its logo could not be saved.';
+    const warning=doc.getElementById('player-logo-warning');
+    warning.textContent='Your airline was created successfully, but the logo upload failed.';
+    warning.hidden=false;
+   }}
+  if(!doc.getElementById('player-logo-warning').hidden)status.textContent='Airline created; logo upload needs attention.';
+  else status.textContent='Airline created successfully.';
   doc.getElementById('player-airline-name').textContent=airlineName;
   doc.getElementById('player-cash').textContent=String(record.cashUsd)+' USD';
   await loadPlayerReadData({local:window.location.origin==='http://localhost:5188'});
