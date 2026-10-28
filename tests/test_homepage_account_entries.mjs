@@ -11,7 +11,7 @@ test('public homepage exposes accessible sign-in and prelaunch registration link
  assert.doesNotMatch(css,/header-register/);
  assert.match(register,/7-DAY TRIAL & REGISTRATION/);
  assert.match(register,/Public registration and the 7-day free trial will open together/);
- assert.match(register,/No registration form is available yet/);
+ assert.match(register,/No public registration form is available yet/);
  assert.match(register,/href="\/account\.html\?screen=sign-in"/);
  assert.doesNotMatch(register,/<form|signUp\(|service_role|sb_secret_/i);
  assert.match(build,/'register.html', 'register.css'/);

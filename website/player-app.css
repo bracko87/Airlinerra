@@ -16,7 +16,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{ou
 .header-tools button{white-space:nowrap;background:#fff;border:1px solid #cbd9e7;padding:10px 14px;border-radius:8px;color:var(--navy);font-weight:750}
 .header-tools button:hover{background:#f2f7fd}
 .app-navigation{position:relative;z-index:30;background:#fff;border-bottom:1px solid #dbe6f2;box-shadow:0 5px 17px #092b5708}
-.app-navigation-inner{max-width:1540px;margin:0 auto;padding:0 24px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;overflow:visible}
+.app-navigation-inner{max-width:1540px;margin:0 auto;padding:0 24px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;overflow:visible;}
 .nav-group{position:relative;flex:none;min-width:115px}
 .nav-label{display:flex;align-items:center;justify-content:space-between;gap:13px;list-style:none;padding:17px 16px;font-size:13px;letter-spacing:.02em;color:#496580;font-weight:800;cursor:pointer;user-select:none;line-height:1.25;border-bottom:3px solid transparent}
 .nav-label::-webkit-details-marker{display:none}
