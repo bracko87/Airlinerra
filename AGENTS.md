@@ -1,5 +1,13 @@
 # Airlinerra repository instructions
 
+## CURRENT IMPLEMENTATION — 28 October 2026: REAL localhost authentication, no simulated signup
+The owner explicitly rejected all local demo identities, fake email confirmations, fake airline creation and mock world/airport catalogs. The canonical `npm run preview` serves the **actual compiled production site**, connects sign-in to the **real Airlinerra Supabase Auth** provider, requires a verified invited account, and offers a protected real read-only player API at `http://localhost:5188/api/v1/player/*`. The read API only works if the backend process has a project-validated `AIRLINERRA_LOCAL_DATABASE_URL` in its **private local environment**. This connection string must never be committed, pasted into chat, or exposed to the browser. With no DB connection, fail closed with 503; do not fall back to a snapshot or fabricate airlines.
+
+The earlier browser-tab fake registration route `/__local_registration__/` and snapshot API `/__local_player__/*` are no longer served by the preview server. Old source files or tests covering those historical mocks do not authorize using them again. Real signup is still provider-disabled; actual airline creation remains blocked by unpublished legal consent, closed worlds and release gates. Do not bypass these controls for a shortcut. Any future work must build real server-backed integration and obtain explicit approval before activating public signup or world release.
+
+Owner workflow is **commit to existing GitHub main → pull and verify against real Supabase on localhost → a single explicit manual Netlify release**, with no auto deploy, ZIP workflow or separate fake environment.
+
+
 ## LATEST — 28 October 2026: GitHub-first invitation-only website (replaces ZIP workflow)
 
 **Owner-approved release workflow:** (1) ChatGPT edits existing Airlinerra code and commits to `bracko87/Airlinerra` **main**, (2) owner pulls main and checks localhost if desired, (3) owner manually deploys the reviewed GitHub version to the existing Netlify project. **No TinyFish, no downloadable GitHub Actions ZIP, no extra repository, no auto deploy**, and never change owner's manual publishing settings without explicit new authorization.

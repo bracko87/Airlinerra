@@ -1,0 +1,11 @@
+# Airlinerra — production-equivalent localhost integration status (28 October 2026)
+
+The previously simulated registration and snapshot routes were removed from the normal preview server. Localhost sign-in now uses the same real Supabase Auth project as the production Airlinerra site, with the public publishable key and **fresh getUser verification**. No local token or synthetic identity is generated. Password reset emails still redirect to the official domain; no real local email callback is currently configured.
+
+The browser calls `POST /api/v1/player/overview` and `POST /api/v1/player/airports`, attaching a freshly verified session token. The local server verifies the token against hosted Supabase Auth and only then runs bounded parameterized read queries against the private approved-game schema. Database secrets remain in the local server environment, never in the static build or GitHub.
+
+To enable real read-only game data on localhost, obtain the **Airlinerra project** PostgreSQL connection URL using Supabase Dashboard → Connect → Session pooler and set the private environment variable `AIRLINERRA_LOCAL_DATABASE_URL` in the terminal running `npm run preview`. For example in PowerShell `$env:AIRLINERRA_LOCAL_DATABASE_URL = Read-Host 'Private Supabase PostgreSQL URL'` and then `npm run preview`. Never share or commit this URL. TLS verification is required; production certificates must be trusted. Without this variable the player API returns 503 rather than fake data.
+
+As of 2026-10-28, Supabase shows **1 confirmed account**, **0 airlines**, **0 open worlds**, **release gate disabled**, **0 approved published legal policies**. Consequently the full real path 'new account → real email verification → legal consent → world and home-airport choice → database airline creation → $5m ledger' is **NOT yet complete**. Public signup currently remains disabled by Supabase, independently of this website. Do not turn it on or bypass creation gates until legal documents and backend safety verification are complete and the owner explicitly approves.
+
+No Netlify deployment or Supabase data mutations in this batch. The production release still requires explicit owner approval and a real hosted Auth + private backend readiness review.
