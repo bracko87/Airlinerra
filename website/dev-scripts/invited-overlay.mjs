@@ -65,7 +65,6 @@ export async function addInviteOnlyAccount({siteDir,distDir}={}){
   const dashboardBuilt=dashboardSource.replace(dashboardTag,
     '<script defer src="invited-tester-config.js"></script>\n  '+dashboardTag);
   await writeFile(path.join(distDir,'tester.html'),dashboardBuilt);
-}
 
   // Preview-only player application. The static shell contains no game records,
   // release flags or backend secrets. Protected Auth is verified client-side.
@@ -81,3 +80,4 @@ export async function addInviteOnlyAccount({siteDir,distDir}={}){
   await writeFile(path.join(distDir,'player.html'),playerSource.replace(
     playerTag,'<script defer src="invited-tester-config.js"></script>\n  '+playerTag
   ));
+}
