@@ -57,9 +57,9 @@ async function showAuthenticatedUser(){
     throw new Error('Invitation identity is not verified.');
   }
   otpAuthorizesPassword=false;
-  // The player application reads the actual airline list and selects
-  // Airline Setup for first-time managers, Overview for existing managers.
-  window.location.replace('/player.html#overview');
+  // Open airline creation immediately after verification or sign-in. The player
+  // app checks real server-owned airlines and redirects returning managers to Overview.
+  window.location.replace('/player.html#onboarding');
 }
 
 doc.getElementById('sign-in').addEventListener('submit',e=>{
