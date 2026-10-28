@@ -6,9 +6,24 @@
  * freshly verified Auth user ID is stored, never client-supplied identity.
  */
 import { verifiedPlayerId } from './airline-activation.mjs';
+import { OWNER_PRIVATE_PILOT_VERSION } from './onboarding-context-service.mjs';
 
 const POLICY_VERSION = /^[A-Za-z0-9][A-Za-z0-9._-]{0,49}$/;
 
+export const INSERT_PRIVATE_PILOT_ACK_SQL=[
+ 'insert into airlinerra_game.owner_private_pilot_consents(player_id,version)',
+ 'select u.id,$2::text from auth.users u',
+ 'join airlinerra_game.owner_premium_email_reservations r on r.email=lower(btrim(u.email))',
+ 'where u.id=$1::uuid and u.email_confirmed_at is not null',
+ 'and coalesce(u.is_anonymous,false)=false and u.deleted_at is null',
+ 'and (u.banned_until is null or u.banned_until<=now())',
+ "and $2::text='owner_private_pilot_20261028'",
+ 'on conflict(player_id) do nothing returning acknowledged_at'
+].join(' ');
+export const READ_PRIVATE_PILOT_ACK_SQL=[
+ 'select acknowledged_at from airlinerra_game.owner_private_pilot_consents',
+ 'where player_id=$1::uuid and version=$2::text'
+].join(' ');
 export const READ_PUBLISHED_POLICY_SQL = [
   'select terms_version, privacy_version',
   'from airlinerra_game.legal_release_policy',
@@ -68,7 +83,7 @@ export function validatedPolicyAcceptance(value) {
 }
 
 export function createLegalConsentService({
-  verifyUserToken, database, enabled = false
+  verifyUserToken, database, enabled = false, enablePrivatePilot=false
 } = {}) {
   if (typeof verifyUserToken !== 'function' ||
       !database || typeof database.connect !== 'function') {
@@ -88,6 +103,26 @@ export function createLegalConsentService({
     try {
       await connection.query('BEGIN');
       transactionStarted = true;
+      // One verified owner may acknowledge REVIEW DRAFTS in a separate pilot table.
+      // This NEVER marks public Terms or Privacy as legally published.
+      if(enablePrivatePilot &&
+        requested.termsVersion===OWNER_PRIVATE_PILOT_VERSION &&
+        requested.privacyVersion===OWNER_PRIVATE_PILOT_VERSION){
+        const params=[playerId,OWNER_PRIVATE_PILOT_VERSION];
+        const inserted=await connection.query(INSERT_PRIVATE_PILOT_ACK_SQL,params);
+        let acceptedAt=inserted.rows?.[0]?.acknowledged_at??null;
+        if(acceptedAt===null){
+          const existing=await connection.query(READ_PRIVATE_PILOT_ACK_SQL,params);
+          acceptedAt=existing.rows?.[0]?.acknowledged_at??null;
+        }
+        if(acceptedAt===null)throw Error('Private pilot acknowledgement was not authorized.');
+        await connection.query('COMMIT');
+        transactionStarted=false;
+        return Object.freeze({
+          termsVersion:OWNER_PRIVATE_PILOT_VERSION,
+          privacyVersion:OWNER_PRIVATE_PILOT_VERSION,acceptedAt
+        });
+      }
       // Hold a shared lock on the current legal release while writing consent.
       const current = await connection.query(READ_PUBLISHED_POLICY_SQL);
       if (current.rows?.length !== 1) {

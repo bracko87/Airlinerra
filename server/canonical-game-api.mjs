@@ -35,11 +35,11 @@ export function createCanonicalGameApi({
  const readiness=createRegistrationReadinessHandler({database,origin});
  const context=createOnboardingContextHttpHandler({
   contextService:createOnboardingContextService({
-   enabled:true,verifyUserToken,database,documentPaths
+   enabled:true,verifyUserToken,database,documentPaths,enablePrivatePilot:true
   }),allowedOrigins:[origin],enabled:true
  });
  const legal=createLegalConsentHttpHandler({
-  consentService:createLegalConsentService({enabled:true,verifyUserToken,database}),
+  consentService:createLegalConsentService({enabled:true,verifyUserToken,database,enablePrivatePilot:true}),
   allowedOrigins:[origin],enabled:true
  });
  const createAirline=createAirlineHttpHandler({

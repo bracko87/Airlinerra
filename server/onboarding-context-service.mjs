@@ -11,6 +11,12 @@ export const ONBOARDING_CONTEXT_SQL = Object.freeze({
   airports: "select a.world_id, a.airport_key, a.airport_name, a.airport_code, a.country_iso from airlinerra_game.approved_game_airports a join public.airlinerra_game_worlds w on w.id=a.world_id and w.state in ('registration_open','active') order by a.world_id,a.airport_name nulls last,a.airport_key"
 });
 const SAFE_DOCUMENT = /^\/[A-Za-z0-9._/-]{1,160}\.html$/u;
+export const OWNER_PRIVATE_PILOT_VERSION='owner_private_pilot_20261028';
+export const OWNER_PRIVATE_PILOT_SQL=Object.freeze({
+ eligibility:"select exists(select 1 from auth.users u join airlinerra_game.owner_premium_email_reservations r on r.email=lower(btrim(u.email)) where u.id=$1::uuid and u.email_confirmed_at is not null and coalesce(u.is_anonymous,false)=false and u.deleted_at is null and (u.banned_until is null or u.banned_until<=now())) is_eligible",
+ worlds:"select id,name from public.airlinerra_game_worlds where id=1 and state in ('planned','registration_open','active')",
+ airports:"select world_id,airport_key,airport_name,airport_code,country_iso from airlinerra_game.approved_game_airports where world_id=1 order by airport_name nulls last,airport_key"
+});
 
 // Metadata is copied from the operator's already-approved game roster;
 // no airport research table is read by the player-facing service.
@@ -24,7 +30,7 @@ function airportDisplayLabel(row) {
     (country ? ' — ' + country : '');
 }
 export function createOnboardingContextService({
-  verifyUserToken, database, enabled=false, documentPaths
+  verifyUserToken, database, enabled=false, documentPaths,enablePrivatePilot=false
 }={}) {
   if(typeof verifyUserToken!=='function'||typeof database?.connect!=='function'){
     throw new Error('Trusted Auth verification and private PostgreSQL pool required.');
@@ -39,18 +45,24 @@ export function createOnboardingContextService({
       if(typeof accessToken!=='string'||accessToken.length<16){
         throw new Error('Verified account required.');
       }
-      verifiedPlayerId(await verifyUserToken(accessToken));
+      const playerId=verifiedPlayerId(await verifyUserToken(accessToken));
       const connection=await database.connect();
       try {
         const release=await connection.query(ONBOARDING_CONTEXT_SQL.ready);
         const policy=release.rows?.[0];
+        let privatePilot=false;
         if(release.rows?.length!==1||policy.enabled!==true||
-          !policy.terms_version||!policy.privacy_version){
-          throw new Error('Published legal documents and release approval required.');
+           !policy.terms_version||!policy.privacy_version){
+          if(!enablePrivatePilot)
+            throw Error('Published legal documents and release approval required.');
+          const check=await connection.query(OWNER_PRIVATE_PILOT_SQL.eligibility,[playerId]);
+          if(check.rows?.[0]?.is_eligible!==true)
+            throw Error('Published legal documents and release approval required.');
+          privatePilot=true;
         }
         const [worldResult,airportResult]=await Promise.all([
-          connection.query(ONBOARDING_CONTEXT_SQL.worlds),
-          connection.query(ONBOARDING_CONTEXT_SQL.airports)
+          connection.query(privatePilot?OWNER_PRIVATE_PILOT_SQL.worlds:ONBOARDING_CONTEXT_SQL.worlds),
+          connection.query(privatePilot?OWNER_PRIVATE_PILOT_SQL.airports:ONBOARDING_CONTEXT_SQL.airports)
         ]);
         const byWorld=new Map((worldResult.rows||[]).map(row=>[
           Number(row.id),{worldId:Number(row.id),name:String(row.name),airports:[]}
@@ -63,7 +75,9 @@ export function createOnboardingContextService({
           }
         }
         return Object.freeze({
-          policy:{termsVersion:policy.terms_version,privacyVersion:policy.privacy_version,
+          privatePilot,
+          policy:{termsVersion:privatePilot?OWNER_PRIVATE_PILOT_VERSION:policy.terms_version,
+            privacyVersion:privatePilot?OWNER_PRIVATE_PILOT_VERSION:policy.privacy_version,
             termsUrl:documentPaths.terms,privacyUrl:documentPaths.privacy},
           worlds:[...byWorld.values()].filter(world=>world.airports.length>0)
         });

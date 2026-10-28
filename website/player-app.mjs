@@ -220,7 +220,7 @@ async function loadRealOnboarding(){
  try{
   const ctx=await onboarding.context();
   if(!ctx?.policy||!Array.isArray(ctx.worlds)||ctx.worlds.length===0)
-   throw Error('No registration-open worlds');
+   throw Error('No eligible worlds for this manager');
   onboardingContext=ctx;
   const options=doc.getElementById('setup-world');
   options.replaceChildren(new Option('Choose a world',''));
@@ -233,11 +233,17 @@ async function loadRealOnboarding(){
    link.rel='noopener noreferrer';link.textContent=name+' · Review full document';
    info.append(link,doc.createTextNode('  '));
   }
-  doc.getElementById('setup-terms-version').textContent=ctx.policy.termsVersion;
-  doc.getElementById('setup-privacy-version').textContent=ctx.policy.privacyVersion;
+  doc.getElementById('setup-terms-version').textContent=ctx.privatePilot?'private pilot':ctx.policy.termsVersion;
+  doc.getElementById('setup-terms-description').textContent=ctx.privatePilot
+    ?' I acknowledge the Terms review draft ':' I accept the published Terms ';
+  doc.getElementById('setup-privacy-version').textContent=ctx.privatePilot?'review draft':ctx.policy.privacyVersion;
+  doc.getElementById('setup-privacy-description').textContent=ctx.privatePilot
+    ?' I acknowledge the Privacy review draft ':' I acknowledge the Privacy Policy ';
   for(const id of ['setup-airline-name','setup-accept-terms','setup-accept-privacy','setup-create-airline'])
    doc.getElementById(id).disabled=false;
-  status.textContent='Official documents and eligible worlds loaded from the protected database.';
+  status.textContent=ctx.privatePilot
+    ?'Invitation-only owner pilot: review drafts are not published Terms or Privacy. Unlimited premium, no expiry and no billing.'
+    :'Official documents and eligible worlds loaded from the protected database.';
  }catch{
   onboardingContext=null;
   status.textContent='Registration is not open yet. The official legal policy and World 1 must be approved before real airline creation.';
