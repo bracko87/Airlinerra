@@ -4,6 +4,7 @@
  */
 import {createCanonicalGameApi,CANONICAL_GAME_API_PATHS} from './canonical-game-api.mjs';
 import {createHostedAuthVerifier} from './hosted-auth-verifier.mjs';
+import {AIRLINERRA_INVITED_TESTER_PUBLIC_SETTINGS} from '../website/invited-tester-public-settings.mjs';
 
 const REF='hwllkabgzaynalahvkpz';
 export const PRODUCTION_ORIGIN='https://airlinerra.com';
@@ -48,7 +49,7 @@ export function createProductionGameApi({
       max:2,connectionTimeoutMillis:5000,idleTimeoutMillis:10000
     });
     const verified=createHostedAuthVerifier({
-      publishableKey:env.AIRLINERRA_PUBLIC_SUPABASE_KEY,
+      publishableKey:AIRLINERRA_INVITED_TESTER_PUBLIC_SETTINGS.publishableKey,
       fetchImpl
     });
     return createCanonicalGameApi({
