@@ -43,3 +43,19 @@ main{width:min(1220px,calc(100% - 80px));margin:75px auto 80px;padding:0}.regist
 .registration-layout{gap:clamp(20px,3vw,42px)}
 .registration-layout .card{margin-block:20px}
 @media(max-width:740px){.registration-layout{gap:16px}}
+
+
+/* Match the lighter Airlinerra visual rhythm without changing field behavior. */
+header nav{font-weight:600}
+.eyebrow{font-weight:680}
+.card{padding:27px;margin-block:20px}
+.card h2{font-weight:680}
+.status{font-weight:650}
+.cta,#real-registration-form button{font-weight:680}
+.steps h2{font-weight:670;margin-bottom:15px}
+.steps div{padding:11px 0}
+.steps span{font-weight:680}
+#real-registration-form label{font-weight:610}
+#real-registration-form .consent-links{font-weight:620}
+#registration-feedback{font-weight:620}
+@media(max-width:520px){.card{padding:20px}}
