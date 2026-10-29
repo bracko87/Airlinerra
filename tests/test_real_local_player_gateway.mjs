@@ -22,8 +22,26 @@ test('local player gateway rejects absent or unrelated database credentials',asy
  'postgresql://postgres:password@db.other.supabase.co:5432/postgres',
  'postgresql://postgres.'+REF+'@aws-0-eu-central-1.pooler.supabase.com:5432/postgres'])
  assert.equal(validConnectionUrl(candidate),false,candidate);
- const handler=await makeRealLocalPlayerHandler({env:{},loadPg:async()=>{throw Error('PG must not load')}});
- assert.equal((await handler(request())).status,503);
+ let forwarded=0;
+ const handler=await makeRealLocalPlayerHandler({
+  env:{},loadPg:async()=>{throw Error('PG must not load for ordinary local preview')},
+  fetchImpl:async(url,options)=>{
+   forwarded++;
+   assert.equal(url,'https://'+REF+'.supabase.co/functions/v1/airlinerra-game');
+   assert.equal(options.headers['x-airlinerra-route'],'/api/v1/player/overview');
+   return new Response(JSON.stringify({worlds:[],countries:[],airlines:[]}),{
+    status:200,headers:{'content-type':'application/json'}
+   });
+  }
+ });
+ assert.equal((await handler(request())).status,200);
+ assert.equal(forwarded,1);
+ assert.equal((await handler(request({},'/api/v1/airlines'))).status,403);
+ const missingDb=await makeRealLocalPlayerHandler({
+  env:{AIRLINERRA_LOCAL_USE_DATABASE:'1'},
+  loadPg:async()=>{throw Error('PG must not load without explicit valid connection')}
+ });
+ assert.equal((await missingDb(request())).status,503);
 });
 test('live read adapter verifies hosted identity before using private PostgreSQL',async()=>{
  let connected=0,released=0,queries=[],poolOptions,authCalls=0;
