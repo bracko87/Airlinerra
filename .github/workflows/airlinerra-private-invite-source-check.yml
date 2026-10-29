@@ -42,6 +42,7 @@ on:
       - 'website/airline-finance-charts.mjs'
       - 'website/airline-operations-center.mjs'
       - 'tests/test_operations_center_navigation.mjs'
+      - 'tests/test_airlinerra_visual_polish.mjs'
       - 'website/studio-footer.js'
       - 'website/studio-footer.css'
       - 'website/faq.html'
