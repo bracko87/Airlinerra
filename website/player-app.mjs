@@ -264,12 +264,15 @@ async function loadPlayerReadData({local=false}={}){
   readStage='display';
   if(!Array.isArray(data.worlds)||!Array.isArray(data.countries)||!Array.isArray(data.airlines))
    throw Error('Invalid game directory');
-  drawRealWorlds(data.worlds);
-  fillCountries(data.countries);
   const first=data.airlines[0];
   hasRealAirline=Boolean(first?.name);
   renderOverviewState(hasRealAirline);
-  workspaceController?.updateData({connected:true,airline:first||null,worlds:data.worlds,countries:data.countries,reader:playerData});
+  // Airline identity and cash must not disappear if an unrelated airport
+  // directory widget or planning panel fails to render.
+  try{drawRealWorlds(data.worlds);fillCountries(data.countries);}
+  catch{console.warn('Airlinerra secondary directory failed to display');}
+  try{workspaceController?.updateData({connected:true,airline:first||null,worlds:data.worlds,countries:data.countries,reader:playerData});}
+  catch{console.warn('Airlinerra secondary workspace failed to display');}
   doc.getElementById('player-data-status').hidden=true;
   doc.getElementById('player-data-retry').hidden=true;
   if(first?.name){
