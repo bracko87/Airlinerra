@@ -471,8 +471,13 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   if(id==='route-save'){
    const idea={from:selected('from'),to:selected('to'),flights:Number($('route-flights').value)};
    if(!validateRouteIdea(idea)){$('route-feedback').textContent='Choose two different approved airports and 1-28 departures per week.';return;}
-   draftWrite('route',idea);showRoute();
-   $('route-feedback').textContent='Route draft saved in this browser tab. No live route was created.';
+   const saved=Array.isArray(draft.routes)?draft.routes:[];
+   if(saved.length>=25){$('route-feedback').textContent='Route draft limit is 25. Remove old drafts in My routes.';return;}
+   const next=[...saved.filter(route=>route?.from?.key!==idea.from.key||route?.to?.key!==idea.to.key),idea];
+   draftWrite('route',idea);draftWrite('routes',next);
+   showRoute();
+   doc.dispatchEvent(new CustomEvent('airlinerra:route-draft-saved'));
+   $('route-feedback').textContent='Route draft saved in this browser tab under My routes. No live route was created.';
   }
   if(id==='fleet-plan-save'){
    const fleet={family:$('fleet-family').value,seats:Number($('fleet-seats').value),
