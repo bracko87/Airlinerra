@@ -67,37 +67,57 @@ function empty(doc,root,text){
  svg.append(node(doc,'text',{x:326,y:151,'text-anchor':'middle',
   class:'finance-chart-empty-hint'},'No simulated financial results are displayed.'));
 }
-function drawCash(doc,root,points){
+/** Real available cash plus verified known operating cost movements.
+ * One category is explicitly valid when no operating costs have been recorded.
+ */
+export function verifiedCashMix(cash,entries){
+ const balance=Number(cash);
+ if((typeof cash!=='string'&&typeof cash!=='number')||!Number.isFinite(balance)||balance<0)return null;
+ const costs=operatingMonthlyPoints(entries).reduce((total,p)=>total+p.expense,0);
+ if(!Number.isFinite(costs)||costs<0)return null;
+ const total=balance+costs;
+ return Object.freeze({balance,costs,total,cashShare:total>0?balance/total:0});
+}
+function drawCash(doc,root,mix){
  if(!root)return;
- if(!points.length){empty(doc,root,'Cash history is not available yet');return;}
- const svg=shell(doc,root,points.length===1?
-   'One verified cash balance point. No historical trend is available.':
-   'Cash balance history from the latest '+points.length+' verified ledger events');
- const min=Math.min(...points.map(p=>p.value)),max=Math.max(...points.map(p=>p.value));
- const spread=Math.max(max-min,Math.max(Math.abs(max),1)*0.03);
- const low=Math.max(0,min-spread*.25),high=max+spread*.25;
- const xAt=i=>points.length===1?326:72+i*(506/(points.length-1));
- const yAt=value=>219-(value-low)/(high-low)*178;
- if(points.length>1){
-  svg.append(node(doc,'polyline',{points:points.map((p,i)=>xAt(i)+','+yAt(p.value)).join(' '),
-   fill:'none',stroke:'#1b76c0','stroke-width':3,'stroke-linecap':'round',
-   'stroke-linejoin':'round'}));
+ root.replaceChildren();
+ if(!mix){
+  empty(doc,root,'Cash breakdown unavailable');return;
  }
- points.forEach((p,i)=>{
-  svg.append(node(doc,'circle',{cx:xAt(i),cy:yAt(p.value),r:5,
-   fill:'#ff6917',stroke:'#fff','stroke-width':2}));
- });
- svg.append(node(doc,'text',{x:8,y:42,class:'finance-chart-axis-label'},compact(high)));
- svg.append(node(doc,'text',{x:8,y:220,class:'finance-chart-axis-label'},compact(low)));
- const first=points[0],last=points[points.length-1];
- const date=t=>new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Berlin',day:'2-digit',
-   month:'short'}).format(new Date(t));
- svg.append(node(doc,'text',{x:points.length===1?326:72,y:250,'text-anchor':points.length===1?'middle':'start',
-  class:'finance-chart-axis-label'},date(first.time)));
- if(points.length>1)svg.append(node(doc,'text',{x:578,y:250,'text-anchor':'end',
-   class:'finance-chart-axis-label'},date(last.time)));
- if(points.length===1)svg.append(node(doc,'text',{x:326,y:Math.max(20,yAt(first.value)-13),
-  'text-anchor':'middle',class:'finance-chart-point-label'},usd(first.value)));
+ const wrapper=doc.createElement('div');wrapper.className='dashboard-donut-chart';
+ const svg=node(doc,'svg',{viewBox:'0 0 240 240',role:'img',
+  'aria-label':'Verified financial composition: available cash '+usd(mix.balance)+
+   ', recorded operating costs '+usd(mix.costs)});
+ const ring=node(doc,'circle',{cx:120,cy:120,r:86,fill:'none',stroke:'#092b57','stroke-width':29});
+ svg.append(ring);
+ if(mix.costs>0&&mix.total>0){
+  const pct=mix.costs/mix.total,perimeter=2*Math.PI*86;
+  const expenseArc=node(doc,'circle',{cx:120,cy:120,r:86,fill:'none',
+   stroke:'#ff6917','stroke-width':29,'stroke-dasharray':String(pct*perimeter)+' '+String(perimeter),
+   transform:'rotate(-90 120 120)'});
+  svg.append(expenseArc);
+ }
+ svg.append(node(doc,'circle',{cx:120,cy:120,r:64,fill:'#f5f9fe',stroke:'#dce8f6','stroke-width':1}));
+ svg.append(node(doc,'text',{x:120,y:115,'text-anchor':'middle',
+  fill:'#526b87','font-size':13},'AVAILABLE CASH'));
+ svg.append(node(doc,'text',{x:120,y:141,'text-anchor':'middle',
+  fill:'#092b57','font-weight':800,'font-size':24},compact(mix.balance)));
+ const legend=doc.createElement('div');legend.className='dashboard-donut-info';
+ const title=doc.createElement('strong');title.textContent=usd(mix.balance);
+ const available=doc.createElement('div');available.className='dashboard-donut-item';
+ const circle=doc.createElement('span');circle.className='dashboard-donut-key';
+ const a=doc.createElement('span');a.textContent='Available airline funds';available.append(circle,a);
+ const expense=doc.createElement('div');expense.className='dashboard-donut-item';
+ const orange=doc.createElement('span');orange.className='dashboard-donut-key orange';
+ const b=doc.createElement('span');b.textContent=mix.costs>0?
+  'Recognized operating costs: '+usd(mix.costs):'Operating costs: not recorded';
+ expense.append(orange,b);
+ const note=doc.createElement('small');
+ note.textContent=mix.costs>0?'Shares of available cash plus recorded operating costs.':
+  'One verified category. No fictional cost slice added.';
+ legend.append(title,available,expense,note);wrapper.append(svg,legend);root.append(wrapper);
+ root.setAttribute('aria-label','Verified cash balance '+usd(mix.balance)+
+  ', recorded operating costs '+usd(mix.costs));
 }
 function drawOperating(doc,root,points){
  if(!root)return;
@@ -126,12 +146,11 @@ export function renderFinancialCharts(doc,{cash=null,ledgerEntries=null}={}){
  const incomeRoot=doc.getElementById('dashboard-income-chart');
  const cashCaption=doc.getElementById('dashboard-cash-caption');
  const incomeCaption=doc.getElementById('dashboard-income-caption');
- const cashPoints=ledgerBalancePoints(cash,ledgerEntries);
- drawCash(doc,cashRoot,cashPoints);
- if(cashCaption)cashCaption.textContent=cashPoints.length===1?
-  'One real ledger point is recorded. A balance trend will develop as new transactions occur.':
-  cashPoints.length>1?'Based on the latest '+cashPoints.length+' verified financial transactions.':
-  'Cash history will appear once your airline has recorded ledger transactions.';
+ const mix=verifiedCashMix(cash,ledgerEntries);
+ drawCash(doc,cashRoot,mix);
+ if(cashCaption)cashCaption.textContent=mix?
+  'Navy: actual available funds. Orange: recorded operating costs, if any. No sample figures.':
+  'Verified financial composition will appear when your airline balance is available.';
  const opPoints=operatingMonthlyPoints(ledgerEntries);
  drawOperating(doc,incomeRoot,opPoints);
  if(incomeCaption)incomeCaption.textContent=opPoints.length?
