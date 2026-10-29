@@ -43,3 +43,7 @@ h1 span{color:var(--orange)}.intro>p:not(.prelaunch-banner){line-height:1.8;colo
 .account-panel select{min-height:46px;border:1px solid #cbd6e3;padding:10px 13px;border-radius:9px;background:#f6f8fa;width:100%;font:inherit}
 .account-panel select:disabled{cursor:not-allowed}
 .account-panel fieldset:disabled{opacity:.64}
+
+/* Shared Airlinerra card-spacing rhythm. */
+.account-layout{gap:clamp(20px,3vw,42px)}
+@media(max-width:900px){.account-layout{gap:20px}}
