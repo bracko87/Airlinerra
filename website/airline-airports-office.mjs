@@ -2,6 +2,7 @@
  * Airport data source is only the authenticated, approved World 1 catalog.
  * No simulation of fees, salaries, slots, demand, routes or flights.
  */
+import {createAirportCountryPicker,populateAirportCountries} from './airport-country-picker.mjs';
 const AIRPORT_KEY=/^(?:OURAIRPORTS:[1-9]\d{0,18}|FICTIONAL:fictional:[A-Z]{2}:[A-Z0-9]{2,8})$/;
 const currency=v=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(v);
 const safeLocalValue=(v)=>typeof v==='string'?v.trim():'';
@@ -52,7 +53,7 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
  const $=id=>doc.getElementById(id);
  const host=$('workspace-hubs'),profileHost=$('workspace-airport-profile');
  let live={connected:false,airline:null,countries:[],reader:null};
- let selectedAirport=null,activeAirport=null;
+ let selectedAirport=null,activeAirport=null,officePicker=null;
  const known=new Map();
  const entries=()=>{
   const current=readSession(session,key);
@@ -74,9 +75,8 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
     '<div class="airport-office-form"><label for="office-location-type">Office type</label>'+
     '<select id="office-location-type"><option value="hub">Additional hub</option><option value="station">Station</option></select>'+
     '<label for="office-country">Country</label><select id="office-country"><option value="">Choose country</option></select>'+
-    '<label for="office-search">Airport name, city or code</label><input id="office-search" maxlength="40" placeholder="Search approved airports">'+
-    '<button type="button" class="secondary" id="office-find">Search airports</button>'+
-    '<label for="office-result">Approved airport</label><select id="office-result" disabled><option value="">Search first</option></select>'+
+    '<label for="office-search">Filter airport</label><input id="office-search" maxlength="40" placeholder="Filter airports in selected country">'+
+    '<label for="office-result">Approved airport</label><select id="office-result" disabled><option value="">Choose country first</option></select>'+
     '<div class="airport-office-form-actions"><button type="button" class="primary" id="office-save">Save proposed location</button>'+
     '<button type="button" class="secondary" id="office-preview">Airport profile</button></div></div>'+
     '<p id="office-feedback" class="hint" role="status"></p>')+
@@ -115,6 +115,12 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
     '<p class="hint">Connections, operating airlines, flight frequency and passenger load statistics will appear when verified flight scheduling is connected.</p>');
  }
  const feedback=t=>{if($('office-feedback'))$('office-feedback').textContent=t};
+ officePicker=createAirportCountryPicker({
+  country:$('office-country'),search:$('office-search'),airport:$('office-result'),
+  getReader:()=>live.connected?live.reader:null,
+  onStatus:message=>feedback(message),
+  onSelect:airport=>{selectedAirport=airport;if(airport)remember(airport);}
+ });
  function remember(a){const normalized=normalizeApprovedAirport(a);if(normalized)known.set(normalized.key,normalized);return normalized}
  function headquarters(){
   const a=live.airline;
@@ -127,15 +133,7 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
    airport?.code?'Airport code: '+airport.code:'Airport code unavailable';
  }
  function directories(){
-  const select=$('office-country');if(!select)return;
-  const previous=select.value;
-  select.replaceChildren(new Option('Choose country',''));
-  const items=Array.isArray(live.countries)?live.countries:[];
-  for(const c of items.filter(x=>/^[A-Z]{2}$/.test(x?.countryIso||'')).sort((a,b)=>
-   countryLabel(a.countryIso).localeCompare(countryLabel(b.countryIso),'en'))){
-   select.add(new Option(countryLabel(c.countryIso)+' ('+c.airportCount+' airports)',c.countryIso));
-  }
-  if([...select.options].some(o=>o.value===previous))select.value=previous;
+  populateAirportCountries($('office-country'),live.countries,doc);
  }
  function renderList(type){
   const target=$(type==='hub'?'office-hub-list':'office-station-list');if(!target)return;
@@ -155,29 +153,9 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
   }
  }
  function selectAirport(){
-  const chosen=$('office-result')?.value;
-  return chosen?known.get(chosen)||null:null;
+  return officePicker.selected();
  }
- async function search(){
-  const country=$('office-country')?.value,query=$('office-search')?.value.trim()||'';
-  const select=$('office-result');
-  if(!select)return;
-  select.replaceChildren(new Option('Search first',''));select.disabled=true;selectedAirport=null;
-  if(!/^[A-Z]{2}$/.test(country)){feedback('Choose a country first.');return}
-  if(!live.connected||!live.reader){feedback('Airport catalog is not connected.');return}
-  feedback('Searching approved airports...');
-  try{
-   const page=await live.reader.airports({countryIso:country,search:query,offset:0});
-   if(page.countryIso!==country||!Array.isArray(page.airports))throw Error('Unexpected catalog');
-   for(const item of page.airports){
-    const a=remember(item);if(!a||a.countryIso!==country)continue;
-    const option=new Option(a.name+' ('+(a.code||'-')+')',a.key);select.add(option);
-   }
-   select.disabled=select.options.length<=1;
-   feedback(select.disabled?'No matching approved airports.':
-    'Select an airport. Search returns the first 50 matching approved airports.');
-  }catch{feedback('Airport search is unavailable. Please retry.')}
- }
+ async function search(){await officePicker.load();}
  function profileField(id,items){
   const root=$(id);if(!root)return;root.replaceChildren();
   for(const [label,value] of items)row(doc,label,String(value??'Data pending'),root);
