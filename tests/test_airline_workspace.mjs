@@ -5,18 +5,21 @@ import {AIRLINE_UI_DEFAULTS,AIRLINE_UI_VIEWS,cleanUiPreferences,financialScenari
 import {PLAYER_VIEWS} from '../website/player-app-model.mjs';
 const read=path=>readFile(new URL(path,import.meta.url),'utf8');
 
-test('19 safe management pages and dedicated settings menu stay linked',async()=>{
+test('22 safe management pages and operations/settings navigation stay linked',async()=>{
  const html=await read('../website/private-player-app.html');
- assert.equal(PLAYER_VIEWS.length,19);
+ assert.equal(PLAYER_VIEWS.length,22);
  assert.equal(new Set(PLAYER_VIEWS).size,19);
  for(const page of PLAYER_VIEWS)
   assert.match(html,new RegExp('data-player-view="'+page+'"'));
- assert.equal([...html.matchAll(/data-view-link="([^"]+)"/g)].length,19);
- assert.ok(html.indexOf('>Dashboard</a>')<html.indexOf('data-nav-group="manager"'));
- const manager=html.slice(html.indexOf('data-nav-group="manager"'),html.indexOf('data-nav-group="operations"'));
- assert.doesNotMatch(manager,/data-view-link="overview"/);
+ assert.equal([...html.matchAll(/data-view-link="([^"]+)"/g)].length,22);
+ assert.ok(html.indexOf('>Dashboard</a>')<html.indexOf('data-nav-group="operations"'));
+ assert.doesNotMatch(html,/data-nav-group="manager"/);
+ const operations=html.slice(html.indexOf('data-nav-group="operations"'),html.indexOf('data-nav-group="fleet"'));
+ for(const name of ['routes','route-list','hubs','schedule','service','tickets','staff'])
+  assert.match(operations,new RegExp('data-view-link="'+name+'"'));
+ assert.doesNotMatch(operations,/data-view-link="worlds"|data-view-link="airports"/);
  const settings=html.slice(html.indexOf('data-nav-group="settings"'),html.indexOf('</nav>'));
- for(const name of ['settings','interface','notifications','help'])
+ for(const name of ['airline','profile','rankings','worlds','airports','settings','interface','notifications','help'])
   assert.match(settings,new RegExp('data-view-link="'+name+'"'));
  assert.equal(new Set(AIRLINE_UI_VIEWS).size,17);
 });
