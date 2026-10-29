@@ -160,28 +160,76 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
   const root=$(id);if(!root)return;root.replaceChildren();
   for(const [label,value] of items)row(doc,label,String(value??'Data pending'),root);
  }
- function showProfile(a){
-  const airport=remember(a);if(!airport)return;
-  activeAirport=airport;
-  if($('airport-profile-name'))$('airport-profile-name').textContent=airport.name;
+ let profileLoadSerial=0;
+ const knownNumber=n=>typeof n==='number'&&Number.isFinite(n);
+ const num=n=>knownNumber(n)?new Intl.NumberFormat('en-US',{maximumFractionDigits:2}).format(n):'Data pending';
+ const count=n=>Number.isInteger(n)&&n>=0?String(n):'Data pending';
+ const textOrPending=v=>typeof v==='string'&&v.trim()?v:'Data pending';
+ function renderAirportProfile(airport,detail=null,loading=false){
+  const p=detail;
+  const name=p?.name||airport.name;
+  if($('airport-profile-name'))$('airport-profile-name').textContent=name;
+  const iso=p?.countryIso||airport.countryIso;
+  const municipality=p?.municipality||airport.municipality;
   if($('airport-profile-location'))$('airport-profile-location').textContent=
-   [airport.municipality,airport.countryIso?countryLabel(airport.countryIso):''].filter(Boolean).join(', ')||
-    'Location not yet available';
+   [municipality,iso?countryLabel(iso):''].filter(Boolean).join(', ')||
+    (loading?'Loading airport location...':'Location not reported');
+  const fallback=loading?'Loading airport data...':'Data pending';
+  const origin=p?.elevationStatus?.replaceAll('_',' ')||null;
+  const coordinates=p&&knownNumber(p.latitude)&&knownNumber(p.longitude)
+   ?p.latitude.toFixed(6)+', '+p.longitude.toFixed(6)+
+    (p.coordinatesStatus==='verified'?' (site checked)':' (source-reported; unverified)'):fallback;
+  const icao=p?(p.icao||'Not reported'):fallback;
+  const iata=p?(p.iata||'Not reported'):fallback;
+  const namesChecked=p?.nameChecked===true?'Source checked':'Source reported; not independently checked';
+  const category=p?.category?
+   p.category+(p.categoryStatus==='approved'?' (approved)':' (provisional)'):fallback;
+  const tz=p?.timezone?p.timezone+(p.timezoneStatus==='checked'?' (checked)':' (candidate)'):fallback;
+  const elevation=p&&knownNumber(p.elevationFt)?
+   num(p.elevationFt)+' ft ('+(origin||'source status unknown')+')':fallback;
   profileField('airport-profile-facts',[
-   ['Airport name',airport.name],['Airport code',airport.code||'Data pending'],
-   ['ICAO / IATA codes','Not fully verified'],['Country',airport.countryIso?countryLabel(airport.countryIso):'Data pending'],
-   ['Municipality',textValue(airport.municipality)],['Game world','Horizon (World 1)'],
-   ['Catalog key',airport.key],['Airport category','Data pending'],['Time zone','Data pending'],
-   ['Latitude / longitude','Data pending']]);
+   ['Airport name',name],['Name verification',p?namesChecked:fallback],
+   ['Airport code',airport.code||p?.code||fallback],
+   ['ICAO code',icao],['IATA code',iata],
+   ['Country',iso?countryLabel(iso):fallback],
+   ['Municipality',textOrPending(municipality)||fallback],
+   ['Region',p?textOrPending(p.region):fallback],
+   ['Game world','Horizon (World 1)'],['Catalog key',airport.key],
+   ['Airport category',category],['Time zone',tz],
+   ['Latitude / longitude',coordinates],['Elevation',elevation]
+  ]);
+  const runways=p?.runways;
+  const hasRunways=Array.isArray(runways)&&runways.length>0;
+  const knownRunways=hasRunways?runways.filter(r=>knownNumber(r.lengthM)):[];
+  const longest=knownRunways.length?Math.max(...knownRunways.map(r=>r.lengthM)):null;
+  const allOperational=hasRunways&&runways.every(r=>r.operationalStatus==='operational');
+  const lengthStatus=allOperational?'operational':'operational status unverified';
+  const runwayInfo=hasRunways
+   ?runways.map(r=>(r.name||'?')+': '+(knownNumber(r.lengthM)?num(r.lengthM)+'m':'length unknown')+
+      (r.surface?' / '+r.surface:'')).join('; '):fallback;
   profileField('airport-profile-infrastructure',[
-   ['Runway count','Data pending'],['Longest operational runway','Data pending'],
-   ['Runway surfaces','Data pending'],['Passenger terminals','Data pending'],
-   ['Gates / stands','Data pending'],['Available operating slots','Data pending'],
-   ['Airport operational status','Data pending']]);
+   ['Runway records',hasRunways?String(runways.length)+' ('+lengthStatus+')':fallback],
+   ['Longest recorded runway',longest!==null?num(longest)+' m ('+lengthStatus+')':fallback],
+   ['Runway designators / surfaces',runwayInfo],
+   ['Passenger terminals',p?count(p.facilities?.terminals):fallback],
+   ['Passenger gates',p?count(p.facilities?.gates):fallback],
+   ['Aircraft stands',p?count(p.facilities?.stands):fallback],
+   ['Available operating slots','Data pending'],
+   ['Aerodrome operating hours',p?textOrPending(p.facilities?.operatingHours):fallback],
+   ['Curfew restrictions',p?textOrPending(p.facilities?.curfew):fallback],
+   ['Noise restrictions',p?textOrPending(p.facilities?.noise):fallback],
+   ['Airport operational status','Not independently confirmed']
+  ]);
   profileField('airport-profile-demand',[
    ['Passenger demand (0-100%)','Data pending'],['Cargo demand (0-100%)','Data pending'],
    ['Annual passengers','Data pending'],['Annual cargo','Data pending'],
    ['Daily departures / arrivals','Data pending'],['Peak operating periods','Data pending']]);
+ }
+ function showProfile(a){
+  const airport=remember(a);if(!airport)return;
+  activeAirport=airport;
+  const serial=++profileLoadSerial;
+  renderAirportProfile(airport,null,live.connected&&typeof live.reader?.airportProfile==='function');
   const isOwnHeadquarters=live.connected&&live.airline?.homeAirportKey===airport.key;
   const ownDraft=entries().find(x=>x.key===airport.key);
   profileField('airport-profile-airlines',[
@@ -194,6 +242,18 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
    ['Airlines with active stations','Not connected'],['Operating airlines','Not connected'],
    ['Current commercial movements','Not connected']]);
   goTo?.('airport-profile');
+  if(!live.connected||typeof live.reader?.airportProfile!=='function')return;
+  // Per-airport authenticated lookup. Never infer missing values from a different airport.
+  live.reader.airportProfile(airport.key).then(result=>{
+   if(serial!==profileLoadSerial||activeAirport?.key!==airport.key)return;
+   if(result?.airport?.key!==airport.key)throw Error('Airport identity mismatch');
+   renderAirportProfile(airport,result.airport);
+  }).catch(()=>{
+   if(serial!==profileLoadSerial||activeAirport?.key!==airport.key)return;
+   renderAirportProfile(airport);
+   if($('airport-profile-location'))$('airport-profile-location').textContent=
+    'Detailed airport data temporarily unavailable - reopen the profile to retry';
+  });
  }
  const main=$('player-main');
  main?.addEventListener('click',async event=>{
