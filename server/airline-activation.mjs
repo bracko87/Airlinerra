@@ -9,7 +9,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const AIRPORT_KEY = /^(?:OURAIRPORTS:[1-9]\d{0,18}|FICTIONAL:fictional:[A-Z]{2}:[A-Z0-9]{2,8})$/u;
 export const AIRLINE_ACTIVATION_SQL =
   'select airline_id, newly_created, starting_balance_usd, trial_ends_at ' +
-  'from airlinerra_game.create_airline_once($1::uuid,$2::smallint,$3::text,$4::text)';
+  'from airlinerra_game.create_airline_with_codes($1::uuid,$2::smallint,$3::text,$4::text,$5::text,$6::text)';
 
 export function validatedActivationRequest(request) {
   if (request === null || typeof request !== 'object' || Array.isArray(request)) {
@@ -26,6 +26,10 @@ export function validatedActivationRequest(request) {
   if (name.length < 3 || name.length > 80 || /[\x00-\x1f\x7f<>]/u.test(name)) {
     throw new Error('Invalid airline name.');
   }
+  const icaoCode=String(request.icaoCode||'').trim().toUpperCase();
+  const iataCode=String(request.iataCode||'').trim().toUpperCase();
+  if(!/^[A-Z]{3}$/.test(icaoCode))throw new Error('ICAO code must contain 3 letters.');
+  if(!/^[A-Z0-9]{2}$/.test(iataCode)||!/\p{L}/u.test(iataCode))throw new Error('IATA code must contain 2 letters or a letter and number.');
   const airportKey = request.homeAirportKey;
   if (typeof airportKey !== 'string' || !AIRPORT_KEY.test(airportKey)) {
     throw new Error('Invalid home airport key.');
@@ -33,7 +37,8 @@ export function validatedActivationRequest(request) {
   return Object.freeze({
     worldId,
     airlineName:name,
-    homeAirportKey:airportKey
+    homeAirportKey:airportKey,
+    icaoCode,iataCode
   });
 }
 
@@ -76,7 +81,7 @@ export function createAirlineActivationService({
       // This is ONE private PostgreSQL function call. All membership, airline,
       // ledger and trial writes occur inside that same transaction.
       const result = await client.query(AIRLINE_ACTIVATION_SQL, [
-        playerId, valid.worldId, valid.airlineName, valid.homeAirportKey
+        playerId, valid.worldId, valid.airlineName, valid.homeAirportKey,valid.icaoCode,valid.iataCode
       ]);
       if (!Array.isArray(result.rows) || result.rows.length !== 1) {
         throw new Error('Airline activation returned an invalid result.');
