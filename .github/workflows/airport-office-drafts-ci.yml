@@ -32,7 +32,7 @@ jobs:
           node --check website/airport-office-client.mjs
           node --check website/airline-airports-office.mjs
           node --check website/player-app.mjs
-          node --test tests/test_airport_office_domain.mjs tests/test_airport_office_persistence.mjs tests/test_airport_office_profiles.mjs tests/test_airport_office_http.mjs tests/test_airport_office_browser.mjs tests/test_airport_office_release_gate.mjs
+          node --test tests/test_airport_office_domain.mjs tests/test_airport_office_persistence.mjs tests/test_airport_office_profiles.mjs tests/test_airport_office_http.mjs tests/test_airport_office_browser.mjs tests/test_airport_office_release_gate.mjs tests/test_airport_office_ui_persistence.mjs
       - name: Verify gated browser bundle builds
         working-directory: website
         run: npm run build
