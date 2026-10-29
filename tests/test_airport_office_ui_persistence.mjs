@@ -33,7 +33,7 @@ function mockDoc(){
  const doc={
   createElement:tag=>new FakeNode(tag),
   getElementById(id){
-   if(!els.has(id))els.set(id,new FakeNode(id==='office-country'||id==='office-result'||id==='office-location-type'?'select':'div'));
+   if(!els.has(id))els.set(id,new FakeNode(id==='office-country'||id==='office-result'||id==='office-location-type'?'select':id==='office-find'||id==='office-save'||id==='office-import-local'?'button':'div'));
    return els.get(id);
   },
   click(button){
