@@ -9,7 +9,7 @@ test('all requested airline operation views navigate without a Manager dropdown'
  const [html,model,app,overlay]=await Promise.all([
   read('../website/private-player-app.html'),read('../website/player-app-model.mjs'),
   read('../website/player-app.mjs'),read('../website/dev-scripts/invited-overlay.mjs')]);
- assert.equal(PLAYER_VIEWS.length,22);
+ assert.equal(PLAYER_VIEWS.length,23);
  const ops=html.slice(html.indexOf('data-nav-group="operations"'),html.indexOf('data-nav-group="fleet"'));
  for(const view of ['routes','route-list','hubs','schedule','service','tickets','staff']){
   assert.match(ops,new RegExp('data-view-link="'+view+'"'));
@@ -21,7 +21,7 @@ test('all requested airline operation views navigate without a Manager dropdown'
  assert.doesNotMatch(ops,/data-view-link="worlds"|data-view-link="airports"/);
  assert.doesNotMatch(html,/data-nav-group="manager"/);
  const settings=html.slice(html.indexOf('data-nav-group="settings"'),html.indexOf('</nav>'));
- for(const view of ['worlds','airports','airline','profile'])assert.match(settings,new RegExp('data-view-link="'+view+'"'));
+ for(const view of ['worlds','airports','airport-profile','airline','profile'])assert.match(settings,new RegExp('data-view-link="'+view+'"'));
  assert.match(app,/createOperationsCenter/);
  assert.match(app,/operationsController\?\.updateData/);
  assert.match(overlay,/'airline-operations-center.mjs'/);
