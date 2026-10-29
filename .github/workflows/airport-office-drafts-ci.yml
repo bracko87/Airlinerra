@@ -26,7 +26,12 @@ jobs:
         run: |
           node --check server/airport-office-domain.mjs
           node --check server/airport-office-persistence.mjs
-          node --test tests/test_airport_office_domain.mjs tests/test_airport_office_persistence.mjs tests/test_airport_office_profiles.mjs
+          node --check server/airport-office-http-handler.mjs
+          node --check server/canonical-game-api.mjs
+          node --check website/airport-office-client.mjs
+          node --check website/airline-airports-office.mjs
+          node --check website/player-app.mjs
+          node --test tests/test_airport_office_domain.mjs tests/test_airport_office_persistence.mjs tests/test_airport_office_profiles.mjs tests/test_airport_office_http.mjs tests/test_airport_office_browser.mjs
 
   airport-office-postgres:
     runs-on: ubuntu-latest
