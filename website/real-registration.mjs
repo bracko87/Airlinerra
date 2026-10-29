@@ -116,7 +116,14 @@ async function initialize(){
 form.addEventListener('submit',async event=>{
  event.preventDefault();
  updatePasswords();
- if(!sdkClient||!form.reportValidity())return;
+ if(!sdkClient){
+  registrationFeedback('error','Registration failed. The registration service is unavailable. Please refresh the page.');
+  return;
+ }
+ if(!form.reportValidity()){
+  registrationFeedback('error','Registration failed. Please complete the required fields and correct any highlighted information.');
+  return;
+ }
  button.disabled=true;
  registrationFeedback('pending','Submitting your registration request...');
  try{
