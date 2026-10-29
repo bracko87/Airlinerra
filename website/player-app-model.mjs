@@ -59,3 +59,12 @@ export function onboardingReadiness({worlds,airports,legal,gate}={}){
     reason:'Game registration is closed while secure database services and legal documents are prepared.'
   });
 }
+
+/** UI formatting only - ledger amounts remain exact server-side. */
+export function formatWholeUsd(value){
+ const amount=Number(value);
+ if(!Number.isFinite(amount)||amount<0||!Number.isSafeInteger(Math.round(amount)))return '-';
+ return new Intl.NumberFormat('en-US',{
+  style:'currency',currency:'USD',minimumFractionDigits:0,maximumFractionDigits:0
+ }).format(amount);
+}
