@@ -1,3 +1,16 @@
+# CURRENT - 29 October 2026: LOCALHOST MUST READ THE EXISTING WORLD 1 AIRLINE
+
+Owner showed authenticated localhost:5188 Dashboard and My Airline displaying "Not created" despite their real registered World 1 airline already existing on airlinerra.com. Supabase records confirm the same pinned project `hwllkabgzaynalahvkpz`, one verified existing owner airline, and the real initial balance; current read-only SQL for worlds/countries/airline returns 3/188/1 records. This is NOT a second GitHub project or a need for new registration.
+
+Root cause found in preview setup: ordinary `npm run preview` ran `makeRealLocalPlayerHandler` without `AIRLINERRA_LOCAL_EDGE_READONLY=1`, which fell back to a direct PostgreSQL adapter and 503 when local DB credentials were absent. Only `preview:setup` opted in to production Edge reads. The player UI silently swallowed the 503 and incorrectly displayed a non-created airline. Fixed:
+- `website/dev-scripts/real-player-read-gateway.mjs`: same production Supabase Edge authenticated READ-ONLY API is the DEFAULT for local previews, no DB secret required; disallow airline/legal writes. Direct local PG adapter now requires explicit developer opt-in `AIRLINERRA_LOCAL_USE_DATABASE=1`.
+- `website/dev-scripts/dev.mjs`: both preview commands default to production read-only game API. Only explicit `--local-db` enters developer DB mode. Startup displays clear API mode.
+- `website/player-app.mjs`, `website/private-player-app.html`, `website/player-app.css`, `website/airline-workspace.mjs`: display a visible connection error and Retry connection if the live read fails, never claim no airline exists without a successful authenticated owner read, and never enable new airline creation while current ownership is unknown.
+- Tests updated in `tests/test_real_local_player_gateway.mjs`, `tests/test_local_preview_http.mjs`, `tests/test_first_login_routing.mjs`. User must STOP the old localhost process, pull main, RESTART `npm run preview`, and then view Dashboard. Browser refresh alone does not update the old Node preview server. `docs/LOCAL_WORLD1_AIRLINE_SETUP_TEST.md` updated.
+
+No Netlify deployment, no DB mutations, no new airline, no public release gate changes. Full logged-in localhost E2E still requires user verification; do not claim a production/live browser pass until confirmed. User workflow GitHub main -> local browser test -> owner manual Netlify deploy. Use ASCII hyphens in text.
+
+---
 # CURRENT - 29 October 2026: FIRST RICH AIRLINE MANAGER WORKSPACE PASS
 
 The owner requested auditing and enriching ALL Airlinerra player pages, a full Settings dropdown similar to Tennis Legacy, and fuller airline-management content, starting with the UI before the rest of gameplay. User-provided references are AirlineSim and AirwaySim. Always use normal ASCII hyphens, not em-dashes, in user-facing copy. GitHub main -> owner localhost review -> owner manual Netlify deploy; never auto-deploy.
