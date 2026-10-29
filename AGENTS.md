@@ -1,3 +1,22 @@
+# CURRENT - 29 October 2026: OPERATIONAL MENU, DASHBOARD NEWS/FULL-WIDTH FLIGHTS, FINANCE DONUT
+
+Owner's screenshots asked to remove the orange selected-item stripe in dropdowns, remove the Manager top dropdown, move My Airline/Manager profile/World rankings plus Game Worlds and Airports to Settings, and give Operations distinct pages for Create a route, My Routes, Hubs, Flight Schedule, Cabin services, Ticket prices/analysis, and Personnel/Staff with high-level board and operational salary planning.
+
+GitHub main changes:
+- `website/private-player-app.html`: 22 view routes and 22 internal links, no Manager top dropdown; Settings now contains identity, profile, rankings, world/airport directory and general settings. Operations contains 7 requested links. Dashboard upper left Company news (owner-verified registration milestone), upper right airline statistics, full-width Current Flights underneath, finance charts under flights, full-width Management Insights below.
+- `website/player-app.css`: removed 3px orange inset stripe on selected dropdown item; preserved subtle blue selected state. Added layout, hub, route, ticket, staff salary columns, responsive settings dropdown scroll.
+- `website/airline-finance-charts.mjs`: replaced left cash line with navy/orange doughnut showing actual available airline cash and only recognized real operating expenses. If no expense exists, single true cash segment, no fabricated orange slice. Right income/expenses graph unchanged.
+- `website/airline-dashboard.mjs`: Company news from verified account airline and starting capital; no fabricated notifications; existing flight placeholder remains clearly disconnected until real flight engine.
+- `website/airline-operations-center.mjs` new account-local planning UI for My Routes (saved drafts, remove), Hubs (approved-airport search and add/remove planned hubs), ticket-price scenarios (user-entered seats, fare, load factor, flights, costs), 36+ board/crew/maintenance/ground/commercial roles and editable headcount/monthly USD salaries, live planned payroll calculation; NO actual purchase, hiring, route operation, pricing or financial server mutations. Uses account-scoped sessionStorage drafts. Module imported/initialized by `website/player-app.mjs`; included in static build `website/dev-scripts/invited-overlay.mjs`.
+- `website/airline-workspace.mjs`: creates up to 25 local route drafts and dispatches event so My Routes updates; synchronizes shared sessionStorage before writing to prevent clobbering other plans.
+- `website/player-app-model.mjs`: 22 allowlisted player views.
+- Tests updated: `tests/test_airline_workspace.mjs`, `tests/test_player_app_prelaunch.mjs`, `tests/test_registration_dashboard_polish.mjs`, `tests/test_financial_charts_and_studio_footer.mjs`, new `tests/test_operations_center_navigation.mjs`; CI package and workflow include tests and operations module syntax.
+- `docs/OPERATIONS_NAVIGATION_AND_DASHBOARD_20261029.md` records all designs and unimplemented live dependencies.
+- Focused source checks: 22 views and links, unique IDs, unchanged production prelaunch safety checks, route/hub/ticket/staff pure-function tests, Dashboard render DOM stub and module syntax pass. The full Node test suite and browser-based layout remain unverified until owner localhost test. Do not claim all simulation engines are live.
+
+No Netlify deploy, no Supabase changes, no real airline record mutations or public release flag modifications. Workflow: GitHub main -> owner `git pull --ff-only origin main` and `npm run preview` from existing website folder -> owner manual Netlify release after review. Normal ASCII hyphens.
+
+---
 # CURRENT - 29 October 2026: REAL-LEDGER FINANCIAL CHARTS, MANAGEMENT INSIGHTS AND GLOBAL STUDIO FOOTER
 
 Owner requested the two bottom Dashboard cards become financial graphs (cash balance trend and income vs expenses), plus an additional full-width Management Insights box below. Also wanted one global footer on game and public site pages, showing real civil time in Germany matching the 1 real day = 1 in-game day Airlinerra clock; Next Quest Studio company link; Terms, Privacy, FAQ, Pricing, Contact, Legal Notice; and text-only cross-promotion to ProPeloton Manager and Tennis Legacy: Rise to Glory.
