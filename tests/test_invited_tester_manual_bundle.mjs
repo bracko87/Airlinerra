@@ -53,7 +53,7 @@ test('ordinary main build includes invite-only account, without registering play
   assert.match(accountPage,/window\.location\.replace\('\/player\.html#onboarding'\)/);
   for(const name of [
     'index.html','invited-tester-entry.mjs','invited-tester-auth.mjs',
-    'invited-tester-page.css','tester-dashboard.css','tester-dashboard-state.mjs','player-app.mjs','player-app-model.mjs','player-app.css','local-demo-session.mjs','assets/airlinerra-logo.png'
+    'invited-tester-page.css','tester-dashboard.css','tester-dashboard-state.mjs','player-app.mjs','airline-workspace.mjs','player-app-model.mjs','player-app.css','local-demo-session.mjs','assets/airlinerra-logo.png'
   ])assert.equal(await exists(name),true,name+' missing from normal build');
   for(const name of ['server','netlify/functions','apply-hosted-auth-templates.mjs']){
     assert.equal(await exists(name),false,name+' must not be published');
