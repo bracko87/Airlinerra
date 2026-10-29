@@ -60,15 +60,6 @@ const navigation=()=>[
  button('staff','Staff'),button('service','Passenger service')
  ,'</div>'].join('');
 const pages=Object.freeze({
- 'overview':()=>card('Your airline command center',
-  '<p>Run your company through connected work areas: manage aircraft, evaluate routes, build a weekly timetable and monitor finances.</p>'+
-  navigation()+
-  '<div class="workspace-steps"><div><b>01</b><strong>Airline identity</strong><span>Company and home base</span></div>'+
-  '<div><b>02</b><strong>Aircraft</strong><span>Fleet and acquisition</span></div>'+
-  '<div><b>03</b><strong>Routes</strong><span>Airport and network planning</span></div>'+
-  '<div><b>04</b><strong>Schedule</strong><span>7-day rotations and execution</span></div></div>'+
-  small('Only the account, company, cash and airport catalog are connected to the game server today. Planning work is not submitted as live operations.'),
-  'MANAGEMENT OVERVIEW'),
  'airline':()=>card('Company identity',
   '<div class="detail-row"><span>Airline</span><strong id="office-airline">Not created</strong></div>'+
   '<div class="detail-row"><span>ICAO airline code</span><strong id="office-icao">-</strong></div>'+
@@ -238,9 +229,9 @@ const pages=Object.freeze({
    'SERVICE STRATEGY'),
  'worlds':()=>card('World structure',
    '<div class="workspace-task-list">'+
-   '<div><strong>World 1 - Founding World</strong><span>Private owner testing, real-time world, independent airline ledger</span></div>'+
-   '<div><strong>World 2</strong><span>Separate economy, not open yet</span></div>'+
-   '<div><strong>World 3</strong><span>Separate economy, not open yet</span></div></div>'+
+   '<div><strong>Horizon - World 1</strong><span>Private owner testing, real-time world, independent airline ledger</span></div>'+
+   '<div><strong>Atlas - World 2</strong><span>Separate economy, not open yet</span></div>'+
+   '<div><strong>Odyssey - World 3</strong><span>Separate economy, not open yet</span></div></div>'+
    small('One real day equals one game day. Future worlds are not selectable until server authorization allows them.'),
    'SIMULATION STRUCTURE'),
  'airport-insights':()=>card('Understanding the airport catalog',
@@ -454,7 +445,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    'office-airline':connected?(airline?.name||'Not created'):unknown,
    'office-icao':connected?(airline?.icaoCode||'Not assigned'):unknown,
    'office-iata':connected?(airline?.iataCode||'Not assigned'):unknown,
-   'office-world':connected?(airline?.worldId?'World '+airline.worldId:'Not selected'):unknown,
+   'office-world':connected?(airline?.worldId?(data.worlds.find(w=>Number(w.id)===Number(airline.worldId))?.name||'World '+airline.worldId):'Not selected'):unknown,
    'office-home':connected?home:unknown,'office-cash':connected&&airline?.cashUsd!==undefined?currency(airline.cashUsd):'-',
    'office-premium':connected?(airline?.premiumUnlimited===true?'Premium Unlimited':airline?'Registered account':'Not registered'):unknown,
    'finance-live-cash':connected&&airline?.cashUsd!==undefined?currency(airline.cashUsd):'-'
