@@ -15,6 +15,9 @@ test('all requested airline operation views navigate without a Manager dropdown'
   assert.match(ops,new RegExp('data-view-link="'+view+'"'));
   assert.match(html,new RegExp('data-player-view="'+view+'"'));
  }
+ const expectedOrder=['hubs','route-list','routes','schedule','service','tickets','staff'];
+ const actualOrder=[...ops.matchAll(/data-view-link="([^"]+)"/g)].map(match=>match[1]);
+ assert.deepEqual(actualOrder,expectedOrder);
  assert.doesNotMatch(ops,/data-view-link="worlds"|data-view-link="airports"/);
  assert.doesNotMatch(html,/data-nav-group="manager"/);
  const settings=html.slice(html.indexOf('data-nav-group="settings"'),html.indexOf('</nav>'));
@@ -37,8 +40,10 @@ test('current flights full width below authentic company news; cash uses game-co
  assert.match(view,/id="dashboard-cash-chart"/);
  assert.match(css,/dashboard-flights-full/);
  assert.match(css,/dashboard-donut-chart/);
- assert.match(finance,/stroke:'#ff6917'/);
- assert.match(finance,/stroke:'#092b57'/);
+ assert.match(finance,/income:'#1976bf'/);
+ assert.match(finance,/expenses:'#ff741f'/);
+ assert.match(finance,/stroke:FINANCE_CHART_COLORS.income/);
+ assert.match(finance,/stroke:FINANCE_CHART_COLORS.expenses/);
  assert.match(dashboard,/renderCompanyNews\(doc,airline,worlds,ledgerEntries\)/);
  assert.doesNotMatch(css,/\.nav-links a\[aria-current="page"\]\{[^}]*inset 3px 0 var\(--orange\)/);
 });
