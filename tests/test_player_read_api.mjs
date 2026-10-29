@@ -100,3 +100,30 @@ test('owner-approved, verified premium is calculated server-side from private en
  assert.match(PLAYER_READ_SQL.airlines,/email_confirmed_at is not null/);
  assert.match(PLAYER_READ_SQL.airlines,/owner_player_id=\$1::uuid/);
 });
+
+test('owner-registered airline returns the approved home airport name and code',async()=>{
+ const rows={...baseRows,airlines:[{
+  id:UUID,world_id:1,name:'Test airline',home_airport_key:'OURAIRPORTS:4610',
+  home_airport_name:'Belgrade Nikola Tesla Airport',home_airport_code:'LYBE',
+  cash_usd:'5000000.00',complimentary_premium:true
+ }]};
+ const response=await make({rows}).handler(request('/api/v1/player/overview'));
+ assert.equal(response.status,200);
+ const data=await response.json();
+ assert.equal(data.airlines[0].homeAirportName,'Belgrade Nikola Tesla Airport');
+ assert.equal(data.airlines[0].homeAirportCode,'LYBE');
+ assert.equal(data.airlines[0].premiumUnlimited,true);
+ assert.equal(data.airlines[0].cashUsd,'5000000.00');
+});
+test('approved fictional game airport is not dropped from Serbia airport search',async()=>{
+ const rows={...baseRows,airports:[{
+  airport_key:'FICTIONAL:fictional:RS:LYAL',
+  airport_name:'Aleksandrovo Airport',airport_code:'LYAL',
+  country_iso:'RS',municipality:'Nova Crnja'
+ }]};
+ const response=await make({rows}).handler(request('/api/v1/player/airports',{countryIso:'RS'}));
+ assert.equal(response.status,200);
+ const data=await response.json();
+ assert.equal(data.airports[0].code,'LYAL');
+ assert.equal(data.airports[0].name,'Aleksandrovo Airport');
+});
