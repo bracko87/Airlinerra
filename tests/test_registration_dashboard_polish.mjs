@@ -59,10 +59,12 @@ test('Dashboard is a standalone first navigation link, not a Manager submenu ent
  ]);
  const nav=html.slice(html.indexOf('<nav class="app-navigation"'),html.indexOf('</nav>')+6);
  assert.match(nav,/<a class="nav-direct" href="#overview" data-view-link="overview">Dashboard<\/a>/);
- assert.ok(nav.indexOf('>Dashboard</a>')<nav.indexOf('data-nav-group="manager"'));
- const manager=nav.slice(nav.indexOf('data-nav-group="manager"'),nav.indexOf('data-nav-group="operations"'));
- assert.doesNotMatch(manager,/data-view-link="overview"/);
- assert.match(manager,/data-view-link="profile"/);
+ assert.ok(nav.indexOf('>Dashboard</a>')<nav.indexOf('data-nav-group="operations"'));
+ assert.doesNotMatch(nav,/data-nav-group="manager"/);
+ const settings=nav.slice(nav.indexOf('data-nav-group="settings"'));
+ assert.match(settings,/data-view-link="profile"/);
+ assert.match(settings,/data-view-link="worlds"/);
+ assert.match(settings,/data-view-link="airports"/);
  assert.equal([...nav.matchAll(/data-view-link="overview"/g)].length,1);
  assert.match(script,/renderOverviewState\(hasRealAirline\)/);
  assert.match(script,/formatWholeUsd\(first\.cashUsd\)/);
