@@ -291,3 +291,12 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
 @media(max-width:660px){.workspace-task-list,.workspace-route-form,.workspace-money-grid,
  .workspace-kpis{grid-template-columns:1fr}.workspace-schedule-controls{display:grid;grid-template-columns:1fr 1fr}
  .workspace-schedule-controls select,.workspace-schedule-controls input:not([type=checkbox]){width:100%}}
+
+
+/* A failed game-data request must be visible. Never represent failure as a new account. */
+.game-data-banner{display:flex;align-items:center;justify-content:space-between;gap:14px;
+ margin:12px 0 19px;padding:14px 16px;border-radius:10px;
+ background:#fff0eb;color:#87391a;border:1px solid #f0b09a;font-size:13px;font-weight:700}
+.game-data-banner .secondary{flex-shrink:0;margin:0;background:#fff;color:#87391a;border-color:#e99f82}
+@media(max-width:650px){.game-data-banner{align-items:stretch;flex-direction:column}}
+:root[data-ui-theme="dark"] .game-data-banner{background:#452a29;color:#ffe0cc;border-color:#9a5a4a}
