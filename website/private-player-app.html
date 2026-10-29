@@ -132,35 +132,51 @@
               <p class="dashboard-data-note" id="dashboard-traffic-note">Passenger, cargo and network statistics are awaiting live flight operations.</p>
             </article>
           </div>
-          <div class="dashboard-bottom-grid">
-            <article class="panel dashboard-finance-panel">
-              <span class="panel-kicker">FINANCIAL OVERVIEW</span><h2>Airline finances</h2>
-              <div class="dashboard-financial-highlight"><span>Available cash</span>
-                <strong id="dashboard-finance-cash">-</strong>
-                <small>Verified airline balance</small>
+          <div class="dashboard-bottom-grid dashboard-charts-grid">
+            <article class="panel dashboard-chart-panel">
+              <span class="panel-kicker">FINANCIAL ANALYTICS</span>
+              <h2>Cash balance trend</h2>
+              <div class="dashboard-chart-heading"><span>Current balance</span><strong id="dashboard-finance-cash">-</strong></div>
+              <div class="dashboard-chart-canvas" id="dashboard-cash-chart" role="img" aria-label="Cash balance trend. Waiting for verified financial records.">
+                <p class="dashboard-chart-empty">Loading financial history...</p>
               </div>
-              <div class="dashboard-financial-rows">
-                <div><span>Operating revenue</span><strong id="dashboard-finance-revenue">Not available</strong></div>
-                <div><span>Operating expenses</span><strong id="dashboard-finance-expenses">Not available</strong></div>
-                <div><span>Net operating result</span><strong id="dashboard-finance-net">Not available</strong></div>
-              </div>
-              <h3 class="dashboard-subtitle">Latest financial activity</h3>
-              <div id="dashboard-ledger-activity" aria-live="polite">
-                <p class="dashboard-data-note">Loading ledger entries...</p>
-              </div>
-              <button type="button" class="secondary" data-go-view="finances">View finances</button>
+              <p id="dashboard-cash-caption" class="dashboard-data-note">Based on your airline's real financial ledger.</p>
             </article>
-            <article class="panel dashboard-news-panel">
-              <span class="panel-kicker">AIRLINE UPDATES</span><h2>Notifications and company news</h2>
-              <div id="dashboard-news-items" aria-live="polite">
-                <div class="dashboard-news-empty">
-                  <strong>Notifications are not connected yet</strong>
-                  <p>Company announcements, aircraft events and flight alerts will appear here when the notification service is available.</p>
-                </div>
+            <article class="panel dashboard-chart-panel">
+              <span class="panel-kicker">FINANCIAL ANALYTICS</span>
+              <h2>Income vs expenses</h2>
+              <div class="dashboard-chart-legend"><span><i class="dashboard-legend-dot dashboard-income-dot" aria-hidden="true"></i> Income</span><span><i class="dashboard-legend-dot dashboard-expense-dot" aria-hidden="true"></i> Expenses</span></div>
+              <div class="dashboard-chart-canvas" id="dashboard-income-chart" role="img" aria-label="Operating income versus expenses. Waiting for transaction data.">
+                <p class="dashboard-chart-empty">Waiting for operating transactions...</p>
               </div>
-              <p class="dashboard-data-note">Updates will be specific to your airline and game world.</p>
+              <p id="dashboard-income-caption" class="dashboard-data-note">Only recognized operating transactions appear here. Starting capital is excluded.</p>
             </article>
           </div>
+          <article class="panel dashboard-insights-panel">
+            <span class="panel-kicker">YOUR AIRLINE</span>
+            <div class="dashboard-insights-heading"><div><h2>Management insights</h2><p>Useful next decisions for your airline, based on the features currently available.</p></div></div>
+            <div id="dashboard-insights-items" class="dashboard-insights-grid">
+              <div class="dashboard-insight">
+                <span class="dashboard-insight-label">FLEET PLANNING</span>
+                <h3>Plan your first aircraft</h3>
+                <p>Review aircraft size, range and financing before choosing routes.</p>
+                <button type="button" class="secondary" data-go-view="fleet">Explore fleet</button>
+              </div>
+              <div class="dashboard-insight">
+                <span class="dashboard-insight-label">NETWORK STRATEGY</span>
+                <h3>Research destinations</h3>
+                <p>Browse approved airports and prepare a route plan.</p>
+                <button type="button" class="secondary" data-go-view="routes">Plan routes</button>
+              </div>
+              <div class="dashboard-insight">
+                <span class="dashboard-insight-label">CASH MANAGEMENT</span>
+                <h3>Review the operating budget</h3>
+                <p>Estimate operating costs without changing your real airline balance.</p>
+                <button type="button" class="secondary" data-go-view="finances">Open finances</button>
+              </div>
+            </div>
+            <p class="dashboard-data-note">Planning guidance only. Recommendations do not create purchases, routes or financial transactions.</p>
+          </article>
         </section>
         <section data-player-view="onboarding" hidden>
           <div class="page-head"><div><p class="eyebrow">AIRLINE REGISTRATION</p><h1>Create your airline</h1><p>Choose your world, country, home airport and airline identity.</p></div></div>
