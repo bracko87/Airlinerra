@@ -203,7 +203,7 @@ jobs:
           test "$PGHOST" = "127.0.0.1"
           test "$PGDATABASE" = "airlinerra_disposable"
           psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261029154000_airlinerra_airport_office_drafts.sql
-          psql -X -v ON_ERROR_STOP=1 -c "SELECT CASE WHEN relrowsecurity THEN 'RLS enabled' ELSE 1/0::text END FROM pg_class WHERE oid='airlinerra_game.airport_offices'::regclass;"
+          psql -X -v ON_ERROR_STOP=1 -tAc "SELECT relrowsecurity FROM pg_class WHERE oid='airlinerra_game.airport_offices'::regclass" | grep -Fxq t
       - name: Exercise 3140-airport approval bridge with disposable PostgreSQL only
         shell: bash
         run: |
