@@ -7,6 +7,7 @@ import {AIRLINERRA_INVITED_TESTER_PUBLIC_SETTINGS as settings} from '../website/
 
 export const PRODUCTION_ORIGIN='https://airlinerra.com';
 export const EDGE_FUNCTION_URL='https://hwllkabgzaynalahvkpz.supabase.co/functions/v1/airlinerra-game';
+export const AIRPORT_PROFILE_EDGE_URL='https://hwllkabgzaynalahvkpz.supabase.co/functions/v1/airlinerra-airport-profile';
 const TOKEN=/^Bearer [A-Za-z0-9._~-]{16,8192}$/u;
 const HEADERS={'content-type':'application/json; charset=utf-8','cache-control':'no-store',
  'x-content-type-options':'nosniff','referrer-policy':'no-referrer'};
@@ -40,7 +41,7 @@ export function createProductionGameApi({origin=PRODUCTION_ORIGIN,fetchImpl=glob
     'content-type':'application/json',
     authorization:isReadiness?'Bearer '+settings.publishableKey:userBearer
    };
-   const upstream=await fetchImpl(EDGE_FUNCTION_URL,{
+   const upstream=await fetchImpl(url.pathname==='/api/v1/player/airport-profile'?AIRPORT_PROFILE_EDGE_URL:EDGE_FUNCTION_URL,{
     method:request.method,headers,body,cache:'no-store',redirect:'error',
     signal:AbortSignal.timeout(20000)
    });

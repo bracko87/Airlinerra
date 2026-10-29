@@ -12,7 +12,7 @@ import {createAirlineHttpHandler} from './airline-http-handler.mjs';
 import {createRegistrationReadinessHandler,REGISTRATION_READINESS_PATH} from './registration-readiness.mjs';
 
 export const CANONICAL_GAME_API_PATHS=Object.freeze([
- '/api/v1/player/overview','/api/v1/player/airports',
+ '/api/v1/player/overview','/api/v1/player/airports','/api/v1/player/airport-profile',
  '/api/v1/onboarding/context','/api/v1/legal/consents','/api/v1/airlines',
  REGISTRATION_READINESS_PATH
 ]);

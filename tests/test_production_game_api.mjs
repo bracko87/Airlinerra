@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {createProductionGameApi,EDGE_FUNCTION_URL,PRODUCTION_ORIGIN} from '../server/production-game-api.mjs';
+import {createProductionGameApi,EDGE_FUNCTION_URL,AIRPORT_PROFILE_EDGE_URL,PRODUCTION_ORIGIN} from '../server/production-game-api.mjs';
 import {CANONICAL_GAME_API_PATHS} from '../server/canonical-game-api.mjs';
 import {AIRLINERRA_INVITED_TESTER_PUBLIC_SETTINGS as settings} from '../website/invited-tester-public-settings.mjs';
 
@@ -40,8 +40,10 @@ test('all private routes forward only real bearer tokens and bounded JSON to pin
   }));
   assert.equal(res.status,200,path);
  }
- assert.equal(seen.length,5);
- assert.ok(seen.every(x=>x.url===EDGE_FUNCTION_URL &&
+ assert.equal(seen.length,6);
+ assert.ok(seen.every(x=>
+   x.url===(x.options.headers['x-airlinerra-route']==='/api/v1/player/airport-profile'
+      ?AIRPORT_PROFILE_EDGE_URL:EDGE_FUNCTION_URL) &&
    x.options.headers.authorization===token &&
    x.options.headers.apikey===settings.publishableKey));
  assert.equal((await app(new Request(origin+'/api/v1/airlines',{
