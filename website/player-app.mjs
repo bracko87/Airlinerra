@@ -65,7 +65,9 @@ function setManager(user){
   doc.getElementById('top-email').textContent=manager.email;
   if(!workspaceController){
    workspaceController=createAirlineWorkspace({
-    doc,identity:user.id,storage:window.localStorage,session:window.sessionStorage,
+    doc,identity:user.id,
+    storage:(()=>{try{return window.localStorage}catch{return null}})(),
+    session:(()=>{try{return window.sessionStorage}catch{return null}})(),
     goTo:view=>{
      window.history.replaceState({},'',playerViewUrl(view));
      navigateTo(view);
