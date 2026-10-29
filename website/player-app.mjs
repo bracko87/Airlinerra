@@ -255,11 +255,13 @@ async function airportSearch({setup=false,offset=0}={}){
 async function loadPlayerReadData({local=false}={}){
  if(!auth)return;
  let readSucceeded=false;
- // A failing general Overview API must never block the separately
- // authenticated and owner-approved airline setup endpoint.
+ let readStage='api';
+ // Read failures and UI errors must be distinguished. Both otherwise looked
+ // like "no airline" and concealed their actual cause.
  try{
   playerData=createPlayerReadClient({auth,origin:window.location.origin,enabled:true,local});
   const data=await playerData.overview();
+  readStage='display';
   if(!Array.isArray(data.worlds)||!Array.isArray(data.countries)||!Array.isArray(data.airlines))
    throw Error('Invalid game directory');
   drawRealWorlds(data.worlds);
@@ -291,6 +293,12 @@ async function loadPlayerReadData({local=false}={}){
    data.airportsTotal+' approved airports in the game.';
   readSucceeded=true;
  }catch(error){
+  // Only safe diagnostic labels are shown: never print bearer tokens,
+  // request bodies or private database errors.
+  const code=/^GAME_API_HTTP_[1-5][0-9]{2}$/.test(String(error?.message||''))
+   ?String(error.message).replace('GAME_API_HTTP_','HTTP '):
+   (readStage==='api'?'Request failed':'Display failed');
+  console.warn('Airlinerra player overview',readStage,code);
   playerData=null;
   hasRealAirline=false; // Unknown because the protected read failed - NOT proof no airline exists.
   workspaceController?.updateData({connected:false,airline:null,reader:null});
@@ -306,7 +314,10 @@ async function loadPlayerReadData({local=false}={}){
   doc.getElementById('overview-activation-progress').textContent='Not checked';
   const box=doc.getElementById('player-data-status');
   doc.getElementById('player-data-message').textContent=
-   'Unable to load your existing airline from the World 1 game database. Please retry the connection - no new registration is needed.';
+   (readStage==='api'
+    ?'Airline data request failed ('+code+').'
+    :'Airline data was received but the page could not display it ('+code+').')+
+   ' No new registration is needed. Please retry the connection.';
   box.hidden=false;
   doc.getElementById('player-data-retry').hidden=false;
   doc.getElementById('setup-create-airline').disabled=true;
