@@ -74,6 +74,7 @@
             <a href="#rankings" data-view-link="rankings">World rankings</a>
             <a href="#worlds" data-view-link="worlds">Game worlds</a>
             <a href="#airports" data-view-link="airports">Airports</a>
+            <a href="#airport-profile" data-view-link="airport-profile">Airport profiles</a>
             <a href="#settings" data-view-link="settings">General preferences</a>
             <a href="#interface" data-view-link="interface">Interface</a>
             <a href="#notifications" data-view-link="notifications">Notifications</a>
@@ -259,6 +260,10 @@
           <div class="page-head"><div><p class="eyebrow">WORLD 01 CATALOG</p><h1>Airports</h1><p>Browse airports in the selected game world.</p></div></div>
           <article class="panel"><span class="panel-kicker">SECURE DATA CONNECTION</span><h2 id="airport-heading">Airport directory</h2><p id="airport-description">Search the airport directory by country or airport name.</p><div class="filters"><label for="airports-country">Country<select id="airports-country" disabled><option>Waiting for private API</option></select></label><label for="airports-query">Airport name or code<input id="airports-query" disabled maxlength="40" placeholder="Search approved airport catalog"></label></div><div class="search-actions"><button type="button" id="airports-search" disabled>Search airports</button><button type="button" id="airports-more" disabled hidden>Load more</button></div><div id="airport-results" class="empty" role="status">Choose a country to browse airports.</div></article><div id="workspace-airport-insights"></div>
         </section>
+        <section data-player-view="airport-profile" hidden>
+          <div class="page-head"><div><p class="eyebrow">AIRPORT DIRECTORY</p><h1>Airport information</h1><p>Verified airport details and the future live airport operations center.</p></div></div>
+          <div id="workspace-airport-profile"></div>
+        </section>
         <section data-player-view="fleet" hidden>
  <div class="page-head"><div><p class="eyebrow">FLEET MANAGEMENT</p><h1>Fleet</h1><p>Aircraft purchasing, leasing, maintenance and utilisation.</p></div></div>
  <div id="workspace-fleet"></div></section>
@@ -295,7 +300,7 @@
 </section>
         <section data-player-view="airline" hidden><div class="page-head"><div><p class="eyebrow">MY AIRLINE</p><h1>Airline office</h1><p>Your registered company, home airport and management roadmap.</p></div></div><div id="workspace-airline"></div></section>
         <section data-player-view="route-list" hidden><div class="page-head"><div><p class="eyebrow">OPERATIONS</p><h1>My routes</h1><p>Saved route drafts and live route status.</p></div></div><div id="workspace-route-list"></div></section>
-        <section data-player-view="hubs" hidden><div class="page-head"><div><p class="eyebrow">OPERATIONS</p><h1>Hubs and airport operations</h1><p>Home-base and planned hub operations.</p></div></div><div id="workspace-hubs"></div></section>
+        <section data-player-view="hubs" hidden><div class="page-head"><div><p class="eyebrow">OPERATIONS</p><h1>Hubs, stations and airport operations</h1><p>Company headquarters, operational hubs and staffed airport representation.</p></div></div><div id="workspace-hubs"></div></section>
         <section data-player-view="tickets" hidden><div class="page-head"><div><p class="eyebrow">OPERATIONS</p><h1>Ticket prices and analysis</h1><p>Cabin fares, load factors and route revenue scenarios.</p></div></div><div id="workspace-tickets"></div></section>
         <section data-player-view="staff" hidden><div class="page-head"><div><p class="eyebrow">HUMAN RESOURCES</p><h1>Personnel</h1><p>Plan flight crews, ground teams and operational staffing.</p></div></div><div id="workspace-staff"></div></section>
         <section data-player-view="rankings" hidden><div class="page-head"><div><p class="eyebrow">MULTIPLAYER WORLD</p><h1>World rankings</h1><p>Competition and performance across airlines in your game world.</p></div></div><div id="workspace-rankings"></div></section>
