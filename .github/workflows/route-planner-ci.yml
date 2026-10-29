@@ -1,0 +1,44 @@
+name: Airlinerra route planner and airport selectors (isolated)
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'website/airport-country-picker.mjs'
+      - 'website/airline-airports-office.mjs'
+      - 'website/airline-workspace.mjs'
+      - 'website/route-planner.mjs'
+      - 'website/route-map.mjs'
+      - 'website/world-outlines.mjs'
+      - 'website/player-app.css'
+      - 'website/dev-scripts/invited-overlay.mjs'
+      - 'website/package.json'
+      - 'server/player-read-service.mjs'
+      - 'tests/test_route_planner_ui.mjs'
+      - '.github/workflows/route-planner-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  route-planner:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check browser and server module syntax
+        run: |
+          node --check website/airport-country-picker.mjs
+          node --check website/route-planner.mjs
+          node --check website/route-map.mjs
+          node --check website/world-outlines.mjs
+          node --check website/airline-airports-office.mjs
+          node --check website/airline-workspace.mjs
+          node --check server/player-read-service.mjs
+      - name: Run focused airport and route planning tests
+        run: |
+          node --test tests/test_route_planner_ui.mjs tests/test_airport_office_profiles.mjs tests/test_operations_center_navigation.mjs
+      - name: Build complete private website with new route modules
+        working-directory: website
+        run: npm run build
