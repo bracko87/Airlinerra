@@ -1,3 +1,20 @@
+# CURRENT - 29 October 2026: LIGHTER TYPOGRAPHY, FINANCE BLUE/ORANGE, DATE-FIRST COMPANY NEWS, HUB-FIRST OPERATIONS
+
+Owner requested a lighter, less-bold and tighter appearance across the entire project; company news must show exactly two visual rows (date - title, then 1-2 line summary) with no leading A icon; graphs must show bright Airlinerra blue + orange rather than nearly-black navy; Operations should begin with Hubs, then My Routes, then Create a Route (My airline continues under Settings).
+
+Implemented on GitHub main:
+- `website/airline-dashboard.mjs` exports `renderCompanyNews` and builds one safe HTML-free story: German-localized real event date in first row, ASCII hyphen, headline; summary on second row. No decorative initial; no extra announcement status paragraph. Falls back to "Date unavailable" rather than inventing dates when a verified record is missing.
+- `website/private-player-app.html`: Ops order Hubs -> My routes -> Create a route -> Flight schedule -> Cabin services -> Tickets -> Personnel; removed static news footnote; renamed doughnut heading to "Cash and cost breakdown".
+- `website/airline-finance-charts.mjs`: shared `FINANCE_CHART_COLORS` values #1976bf (blue) and #ff741f (orange) across cash doughnut and income/expense bars. No fabricated expense arc if no costs are recorded.
+- `website/player-app.css`: consistent 18px desktop / 16px mobile card rhythm, reduced nonessential font-weight and card padding, real date/headline text aligned on first row, summary clamped to 2 lines, deleted legacy icon styling; full dark-mode support retained.
+- `website/styles.css`, `website/register.css`, `website/account.css`, `website/legal.css`, `website/studio-footer.css`, `website/invited-tester-page.css`, `website/tester-dashboard.css`: lighter headings/labels/buttons, reduced excess spacing while preserving readable sizes and responsive layout.
+- Updated `tests/test_operations_center_navigation.mjs` (hub-first order, expected palette) and `tests/test_player_app_prelaunch.mjs`. New `tests/test_airlinerra_visual_polish.mjs` has 5 tests for news, chart data/color, menu ordering and cross-site typography; included in package test command and CI.
+- `docs/AIRLINERRA_VISUAL_POLISH_20261029.md` records specs and safety.
+- Source-level JS syntax checks passed, 5 new focused tests passed, and 4 updated operations tests passed when all files were included. Verified 22 player page links/views and unique DOM IDs. Full `npm run build` and complete Node suite cannot be run against user's local GitHub repo in this environment and still require user localhost test.
+
+No Supabase, Netlify, billing, airline ledger, live routes, world gates or account writes for this UI-only change. Use owner's workflow: stop preview -> `git pull --ff-only origin main` -> `npm run preview` from website directory. ASCII hyphens in user-facing UI.
+
+---
 # CURRENT - 29 October 2026: OPERATIONAL MENU, DASHBOARD NEWS/FULL-WIDTH FLIGHTS, FINANCE DONUT
 
 Owner's screenshots asked to remove the orange selected-item stripe in dropdowns, remove the Manager top dropdown, move My Airline/Manager profile/World rankings plus Game Worlds and Airports to Settings, and give Operations distinct pages for Create a route, My Routes, Hubs, Flight Schedule, Cabin services, Ticket prices/analysis, and Personnel/Staff with high-level board and operational salary planning.
