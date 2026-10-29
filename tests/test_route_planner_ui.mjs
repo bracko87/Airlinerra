@@ -5,6 +5,7 @@ import {airportFlag,populateAirportCountries,createAirportCountryPicker} from '.
 import {airportCoordinates,routeDistanceKm,renderRouteMap} from '../website/route-map.mjs';
 import {routePlannerMarkup} from '../website/route-planner.mjs';
 import {WORLD_OUTLINES} from '../website/world-outlines.mjs';
+import {PLAYER_READ_SQL} from '../server/player-read-service.mjs';
 const read=p=>readFile(new URL(p,import.meta.url),'utf8');
 class FakeOption{
  constructor(label,value){this.textContent=label;this.value=value;this.dataset={};}
@@ -101,6 +102,9 @@ test('manager route page is coded and bundled, with valid map and no invented op
   read('../website/player-app.css')
  ]);
  const view=routePlannerMarkup();
+ assert.match(PLAYER_READ_SQL.airports,/from airlinerra_game\.approved_game_airports a left join/);
+ assert.match(PLAYER_READ_SQL.airports,/latitude_deg::text as latitude_deg/);
+ assert.match(PLAYER_READ_SQL.airports,/where a\.world_id=1/);
  for(const id of ['route-from-country','route-to-country','route-map-canvas','route-distance',
   'route-plan-save','route-plan-number','route-from-summary','route-to-summary'])assert.ok(view.includes(id),id);
  assert.match(operations,/createRoutePlanner/);
