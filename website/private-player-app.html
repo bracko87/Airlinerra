@@ -34,8 +34,11 @@
         <details class="nav-group" data-nav-group="manager" aria-label="Manager">
           <summary class="nav-label">Manager<span class="chevron" aria-hidden="true"></span></summary>
           <div class="nav-links" role="group" aria-label="Manager pages">
+            <a href="#airline" data-view-link="airline">My airline</a>
             <a href="#onboarding" data-view-link="onboarding">Airline setup</a>
             <a href="#profile" data-view-link="profile">Manager profile</a>
+            <a href="#staff" data-view-link="staff">Personnel and staff</a>
+            <a href="#rankings" data-view-link="rankings">World rankings</a>
           </div>
         </details>
         <details class="nav-group" data-nav-group="operations" aria-label="Operations">
@@ -43,28 +46,40 @@
           <div class="nav-links" role="group" aria-label="Operations pages">
             <a href="#worlds" data-view-link="worlds">Game worlds</a>
             <a href="#airports" data-view-link="airports">Airports</a>
-            <a href="#routes" data-view-link="routes">Routes</a>
-            <a href="#schedule" data-view-link="schedule">Schedule</a>
+            <a href="#routes" data-view-link="routes">Route planning</a>
+            <a href="#schedule" data-view-link="schedule">Flight schedule</a>
+            <a href="#service" data-view-link="service">Passenger and cargo services</a>
           </div>
         </details>
         <details class="nav-group" data-nav-group="fleet" aria-label="Fleet">
           <summary class="nav-label">Fleet<span class="chevron" aria-hidden="true"></span></summary>
           <div class="nav-links" role="group" aria-label="Fleet pages">
-            <a href="#fleet" data-view-link="fleet">Aircraft</a>
+            <a href="#fleet" data-view-link="fleet">My fleet</a>
+            <a href="#aircraft-market" data-view-link="aircraft-market">Aircraft marketplace</a>
+            <a href="#maintenance" data-view-link="maintenance">Maintenance</a>
           </div>
         </details>
         <details class="nav-group" data-nav-group="finance" aria-label="Finance">
           <summary class="nav-label">Finance<span class="chevron" aria-hidden="true"></span></summary>
           <div class="nav-links" role="group" aria-label="Finance pages">
-            <a href="#finances" data-view-link="finances">Finances</a>
+            <a href="#finances" data-view-link="finances">Finances and planning</a>
           </div>
         </details>
         <details class="nav-group" data-nav-group="account" aria-label="Account">
           <summary class="nav-label">Account<span class="chevron" aria-hidden="true"></span></summary>
           <div class="nav-links" role="group" aria-label="Account pages">
-            <a href="#settings" data-view-link="settings">Settings</a>
+            <a href="/account.html?screen=sign-in">Account sign-in</a>
             <a href="/tester.html">Tester account</a>
             <a href="/">Public website</a>
+          </div>
+        </details>
+        <details class="nav-group" data-nav-group="settings" aria-label="Settings menu">
+          <summary class="nav-label">Settings<span class="chevron" aria-hidden="true"></span></summary>
+          <div class="nav-links" role="group" aria-label="Settings pages">
+            <a href="#settings" data-view-link="settings">General preferences</a>
+            <a href="#interface" data-view-link="interface">Interface</a>
+            <a href="#notifications" data-view-link="notifications">Notifications</a>
+            <a href="#help" data-view-link="help">Help and guide</a>
           </div>
         </details>
       </div>
@@ -163,13 +178,40 @@
         <section data-player-view="finances" hidden><div class="page-head"><div><p class="eyebrow">FINANCIAL OVERVIEW</p><h1>Finances</h1><p>Monitor real balances, operating costs and audited transactions.</p></div></div>
  <div class="two-cols"><article class="panel"><span class="panel-kicker">OPENING CAPITAL · AFTER AIRLINE CREATION</span><h2>$5,000,000 USD</h2><p>The real opening capital is credited by the backend after successful airline creation.</p><span class="pill">Only on activation</span></article>
  <article class="panel"><span class="panel-kicker">ACTUAL LEDGER</span><h2>Not available</h2><p>No airline exists for this demo. Real revenue, expenses, borrowing and balances come from the secure ledger.</p><span class="pill">No transactions</span></article></div></section>
-        <section data-player-view="settings" hidden><div class="page-head"><div><p class="eyebrow">ACCOUNT</p><h1>Settings</h1><p>Manage your airline preferences.</p></div></div>
- <article class="panel narrow"><div class="detail-row"><span>Account type</span><strong>Airlinerra manager</strong></div><div class="detail-row"><span>Account management</span><strong>Supabase Auth (production only)</strong></div>
- <p class="muted">Choose your preferred units and time format.</p>
- <div class="local-settings"><label for="settings-units">Distance units</label><select id="settings-units" disabled><option value="km">Kilometers</option><option value="mi">Miles</option></select>
- <label for="settings-time">Time format</label><select id="settings-time" disabled><option value="24">24-hour</option><option value="12">12-hour</option></select>
- <button id="settings-save" class="secondary" type="button" disabled>Save local preferences</button><p id="settings-feedback" aria-live="polite" role="status"></p></div>
- <a class="text-link" href="/tester.html">Go to tester account</a></article></section>
+        <section data-player-view="settings" hidden>
+ <div class="page-head"><div><p class="eyebrow">SETTINGS</p><h1>General preferences</h1><p>Personalize your game display and time formats.</p></div></div>
+ <div class="settings-layout">
+  <article class="panel"><span class="panel-kicker">GENERAL</span>
+   <h2>Language, time and distance</h2>
+   <div class="settings-fields">
+    <label for="settings-language">Language</label><select id="settings-language"><option value="en">English</option></select>
+    <p class="hint">English is the currently available interface language.</p>
+    <label for="settings-units">Distance units</label><select id="settings-units"><option value="km">Kilometers (km)</option><option value="mi">Miles (mi)</option></select>
+    <label for="settings-time">Clock format</label><select id="settings-time"><option value="24">24-hour</option><option value="12">12-hour (AM/PM)</option></select>
+    <label for="settings-date">Date format</label><select id="settings-date"><option value="dmy">DD/MM/YYYY</option><option value="mdy">MM/DD/YYYY</option><option value="ymd">YYYY-MM-DD</option></select>
+    <label for="settings-timezone">Display time zone</label><select id="settings-timezone"><option value="local">My device time zone</option><option value="utc">UTC</option></select>
+    <div class="settings-actions"><button id="settings-save" class="primary" type="button">Save preferences</button><button class="secondary" id="settings-reset" type="button">Restore defaults</button></div>
+    <p id="settings-feedback" aria-live="polite" role="status"></p>
+   </div>
+  </article>
+  <article class="panel"><span class="panel-kicker">PREVIEW</span><h2>Your display formats</h2>
+   <div class="detail-row"><span>Distance example</span><strong id="settings-distance-example">1,200 km</strong></div>
+   <div class="detail-row"><span>Clock example</span><strong id="settings-clock-example">14:30</strong></div>
+   <div class="detail-row"><span>Date example</span><strong id="settings-date-example">29/10/2026</strong></div>
+   <p class="hint">These preferences are saved in this browser for your verified account. They do not change the World 1 server clock or game calculations.</p>
+   <button type="button" class="secondary" data-workspace-go="interface">Interface preferences</button>
+  </article>
+ </div>
+</section>
+        <section data-player-view="airline" hidden><div class="page-head"><div><p class="eyebrow">MY AIRLINE</p><h1>Airline office</h1><p>Your registered company, home airport and management roadmap.</p></div></div><div id="workspace-airline"></div></section>
+        <section data-player-view="staff" hidden><div class="page-head"><div><p class="eyebrow">HUMAN RESOURCES</p><h1>Personnel</h1><p>Plan flight crews, ground teams and operational staffing.</p></div></div><div id="workspace-staff"></div></section>
+        <section data-player-view="rankings" hidden><div class="page-head"><div><p class="eyebrow">MULTIPLAYER WORLD</p><h1>World rankings</h1><p>Competition and performance across airlines in your game world.</p></div></div><div id="workspace-rankings"></div></section>
+        <section data-player-view="service" hidden><div class="page-head"><div><p class="eyebrow">ONBOARD PRODUCT</p><h1>Passenger and cargo services</h1><p>Plan cabin classes, onboard services and your product strategy.</p></div></div><div id="workspace-service"></div></section>
+        <section data-player-view="aircraft-market" hidden><div class="page-head"><div><p class="eyebrow">FLEET ACQUISITION</p><h1>Aircraft marketplace</h1><p>Explore purchasing, leasing and model requirements.</p></div></div><div id="workspace-aircraft-market"></div></section>
+        <section data-player-view="maintenance" hidden><div class="page-head"><div><p class="eyebrow">ENGINEERING</p><h1>Maintenance</h1><p>Aircraft airworthiness, technical planning and maintenance checks.</p></div></div><div id="workspace-maintenance"></div></section>
+        <section data-player-view="interface" hidden><div class="page-head"><div><p class="eyebrow">SETTINGS</p><h1>Interface</h1><p>Layout, motion and your preferred starting page.</p></div></div><div id="workspace-interface"></div></section>
+        <section data-player-view="notifications" hidden><div class="page-head"><div><p class="eyebrow">SETTINGS</p><h1>Notifications</h1><p>Control local display options and review notification delivery availability.</p></div></div><div id="workspace-notifications"></div></section>
+        <section data-player-view="help" hidden><div class="page-head"><div><p class="eyebrow">SUPPORT</p><h1>Help and guide</h1><p>Learn how to grow your airline step by step.</p></div></div><div id="workspace-help"></div></section>
         <footer class="footer">Airlinerra · NextQuest Studio <span>Manage your airline</span></footer>
       </main>
     </div>
