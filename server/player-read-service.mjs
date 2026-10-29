@@ -14,7 +14,7 @@ export const PLAYER_READ_PATHS=Object.freeze([
 export const PLAYER_READ_SQL=Object.freeze({
  worlds:'select id,name,state from public.airlinerra_game_worlds order by id',
  countries:"select "+PARENT_ISO+" as country_iso,count(*)::integer as airport_count from airlinerra_game.approved_game_airports where world_id=1 and "+PARENT_ISO+" in ("+MEMBER_CODES+") group by "+PARENT_ISO+" order by "+PARENT_ISO,
- airlines:"select a.id,a.world_id,a.name,a.home_airport_key,a.cash_usd::text as cash_usd,a.created_at,h.airport_name as home_airport_name,h.airport_code as home_airport_code, (e.membership_state='active' and exists(select 1 from airlinerra_game.owner_premium_email_reservations r join auth.users u on r.email=lower(btrim(u.email)) where u.id=a.owner_player_id and u.email_confirmed_at is not null)) as complimentary_premium from airlinerra_game.airlines a left join airlinerra_game.account_entitlements e on e.player_id=a.owner_player_id left join airlinerra_game.approved_game_airports h on h.world_id=a.world_id and h.airport_key=a.home_airport_key where a.owner_player_id=$1::uuid order by a.world_id limit 3",
+ airlines:"select a.id,a.world_id,a.name,a.home_airport_key,a.cash_usd::text as cash_usd,a.created_at,a.icao_code,a.iata_code,h.airport_name as home_airport_name,h.airport_code as home_airport_code, (e.membership_state='active' and exists(select 1 from airlinerra_game.owner_premium_email_reservations r join auth.users u on r.email=lower(btrim(u.email)) where u.id=a.owner_player_id and u.email_confirmed_at is not null)) as complimentary_premium from airlinerra_game.airlines a left join airlinerra_game.account_entitlements e on e.player_id=a.owner_player_id left join airlinerra_game.approved_game_airports h on h.world_id=a.world_id and h.airport_key=a.home_airport_key where a.owner_player_id=$1::uuid order by a.world_id limit 3",
  airports:"select airport_key,airport_name,airport_code,"+PARENT_ISO+" as country_iso,municipality from airlinerra_game.approved_game_airports where world_id=1 and "+PARENT_ISO+"=$1::text and "+PARENT_ISO+" in ("+MEMBER_CODES+") and ($2::text='' or strpos(lower(coalesce(airport_name,'')),lower($2::text))>0 or strpos(lower(coalesce(airport_code,'')),lower($2::text))>0 or strpos(lower(coalesce(municipality,'')),lower($2::text))>0) order by airport_name nulls last,airport_key limit 51 offset $3::integer"
 });
 const ORIGIN='https://airlinerra.com';
@@ -116,7 +116,9 @@ export function createPlayerReadHandler({enabled=false,verifyUserToken,database,
            throw Error('Invalid airline record');
          const airline={id:row.id,worldId:Number(row.world_id),name:row.name,
            homeAirportKey:row.home_airport_key,homeAirportName:typeof row.home_airport_name==='string'?row.home_airport_name:null,
-           homeAirportCode:typeof row.home_airport_code==='string'?row.home_airport_code:null,cashUsd:String(row.cash_usd)};
+           homeAirportCode:typeof row.home_airport_code==='string'?row.home_airport_code:null,
+           icaoCode:typeof row.icao_code==='string'?row.icao_code:null,
+           iataCode:typeof row.iata_code==='string'?row.iata_code:null,cashUsd:String(row.cash_usd)};
          if(row.complimentary_premium===true)airline.premiumUnlimited=true;
          return airline;
        });
