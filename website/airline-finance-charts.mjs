@@ -3,6 +3,9 @@
  * operating income, and unrecognized transaction kinds are not classified.
  */
 const NS='http://www.w3.org/2000/svg';
+export const FINANCE_CHART_COLORS=Object.freeze({
+ income:'#1976bf',expenses:'#ff741f'
+});
 const INCOME=new Set(['PASSENGER_REVENUE','TICKET_REVENUE','CARGO_REVENUE','ANCILLARY_REVENUE','ROUTE_REVENUE','OPERATING_REVENUE','FARE_REVENUE']);
 const EXPENSE=new Set(['FUEL_COST','FUEL_EXPENSE','AIRPORT_FEE','AIRPORT_FEES','STAFF_SALARY','STAFF_COST','CREW_COST','MAINTENANCE_COST','LEASE_PAYMENT','LEASE_COST','SERVICE_COST','MARKETING_COST','INSURANCE_COST','OPERATING_EXPENSE']);
 export function ledgerBalancePoints(balance,entries){
@@ -88,12 +91,12 @@ function drawCash(doc,root,mix){
  const svg=node(doc,'svg',{viewBox:'0 0 240 240',role:'img',
   'aria-label':'Verified financial composition: available cash '+usd(mix.balance)+
    ', recorded operating costs '+usd(mix.costs)});
- const ring=node(doc,'circle',{cx:120,cy:120,r:86,fill:'none',stroke:'#092b57','stroke-width':29});
+ const ring=node(doc,'circle',{cx:120,cy:120,r:86,fill:'none',stroke:FINANCE_CHART_COLORS.income,'stroke-width':29});
  svg.append(ring);
  if(mix.costs>0&&mix.total>0){
   const pct=mix.costs/mix.total,perimeter=2*Math.PI*86;
   const expenseArc=node(doc,'circle',{cx:120,cy:120,r:86,fill:'none',
-   stroke:'#ff6917','stroke-width':29,'stroke-dasharray':String(pct*perimeter)+' '+String(perimeter),
+   stroke:FINANCE_CHART_COLORS.expenses,'stroke-width':29,'stroke-dasharray':String(pct*perimeter)+' '+String(perimeter),
    transform:'rotate(-90 120 120)'});
   svg.append(expenseArc);
  }
@@ -101,7 +104,7 @@ function drawCash(doc,root,mix){
  svg.append(node(doc,'text',{x:120,y:115,'text-anchor':'middle',
   fill:'#526b87','font-size':13},'AVAILABLE CASH'));
  svg.append(node(doc,'text',{x:120,y:141,'text-anchor':'middle',
-  fill:'#092b57','font-weight':800,'font-size':24},compact(mix.balance)));
+  fill:FINANCE_CHART_COLORS.income,'font-weight':650,'font-size':24},compact(mix.balance)));
  const legend=doc.createElement('div');legend.className='dashboard-donut-info';
  const title=doc.createElement('strong');title.textContent=usd(mix.balance);
  const available=doc.createElement('div');available.className='dashboard-donut-item';
@@ -127,7 +130,7 @@ function drawOperating(doc,root,points){
  points.forEach((p,i)=>{
   const midpoint=(i+.5)*520/points.length+65;
   const width=Math.min(34,125/points.length);
-  for(const [index,key,fill] of [[0,'income','#1679bd'],[1,'expense','#ff8a3d']]){
+  for(const [index,key,fill] of [[0,'income',FINANCE_CHART_COLORS.income],[1,'expense',FINANCE_CHART_COLORS.expenses]]){
    const value=p[key],h=value/max*172;
    if(value>0)svg.append(node(doc,'rect',{
     x:midpoint+(index===0?-width-2:2),y:217-h,width,height:h,rx:3,fill
