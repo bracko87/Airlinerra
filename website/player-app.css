@@ -667,7 +667,7 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
 .route-planner-prep strong{font-size:13px;color:var(--navy);font-weight:650}
 .route-planner-prep .hint{font-size:12px}
 .route-planner-panel+.route-planner-panel{margin-top:var(--manager-card-gap,18px)}
-.route-planner-grid .route-planner-panel{margin-bottom:0}
+.route-planner-grid .route-planner-panel{margin:0}
 .route-planner-airport .workspace-label{display:block}
 #route-flights{max-width:260px;min-height:43px;padding:10px 12px}
 #office-result,#office-country,#route-from-country,#route-to-country{max-height:50px}
