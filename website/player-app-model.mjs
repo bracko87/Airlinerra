@@ -11,9 +11,9 @@ export const PLAYER_VIEWS=Object.freeze([
 ]);
 const VIEW_SET=new Set(PLAYER_VIEWS);
 export const WORLD_LABELS=Object.freeze([
-  Object.freeze({id:1,name:'World 01',status:'Planned'}),
-  Object.freeze({id:2,name:'World 02',status:'Planned'}),
-  Object.freeze({id:3,name:'World 03',status:'Planned'})
+  Object.freeze({id:1,name:'Horizon',status:'Private testing'}),
+  Object.freeze({id:2,name:'Atlas',status:'Planned'}),
+  Object.freeze({id:3,name:'Odyssey',status:'Planned'})
 ]);
 export function safePlayerView(hash){
   const candidate=typeof hash==='string'?hash.replace(/^#/u,''):'';
