@@ -90,7 +90,7 @@ test('grouped horizontal dropdowns keep all ten game routes accessible',async()=
   assert.match(html,/<nav class="app-navigation" aria-label="Player application">/);
   assert.doesNotMatch(html,/class="sidebar"/);
   const order=['operations','fleet','finance','account','settings'];
-  const expected={operations:['routes','route-list','hubs','schedule','service','tickets','staff'],
+  const expected={operations:['hubs','route-list','routes','schedule','service','tickets','staff'],
     fleet:['fleet','aircraft-market','maintenance'],finance:['finances'],account:[],
     settings:['airline','onboarding','profile','rankings','worlds','airports','settings','interface','notifications','help']};
   const dashboard='<a class="nav-direct" href="#overview" data-view-link="overview">Dashboard</a>';
