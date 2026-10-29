@@ -61,7 +61,8 @@ test('new operations menu begins with hub review and continues to routes',async(
 test('consistent medium-weight compact design across app, public, account and legal pages',async()=>{
  const paths=[
   '../website/player-app.css','../website/styles.css','../website/register.css',
-  '../website/account.css','../website/legal.css','../website/studio-footer.css'
+  '../website/account.css','../website/legal.css','../website/studio-footer.css',
+  '../website/invited-tester-page.css','../website/tester-dashboard.css'
  ];
  const css=await Promise.all(paths.map(read));
  assert.match(css[0],/--manager-card-gap:18px/);
