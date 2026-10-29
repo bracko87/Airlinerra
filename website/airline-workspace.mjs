@@ -345,7 +345,9 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   $(statusId).textContent=safelySave(storage,prefKey,preferences)?'Defaults restored.':'Defaults applied for this session.';
  }
  function draftWrite(key,val){
-  draft={...draft,[key]:val};
+  // Another operations panel may have changed a separate field in the same
+  // account-local session draft. Refresh it before writing to avoid erasing it.
+  draft={...(safelyLoad(session,draftKey)||draft),[key]:val};
   return safelySave(session,draftKey,draft);
  }
  function populateCountries(){
@@ -471,7 +473,8 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   if(id==='route-save'){
    const idea={from:selected('from'),to:selected('to'),flights:Number($('route-flights').value)};
    if(!validateRouteIdea(idea)){$('route-feedback').textContent='Choose two different approved airports and 1-28 departures per week.';return;}
-   const saved=Array.isArray(draft.routes)?draft.routes:[];
+   const freshest=safelyLoad(session,draftKey)||draft;
+   const saved=Array.isArray(freshest.routes)?freshest.routes:[];
    if(saved.length>=25){$('route-feedback').textContent='Route draft limit is 25. Remove old drafts in My routes.';return;}
    const next=[...saved.filter(route=>route?.from?.key!==idea.from.key||route?.to?.key!==idea.to.key),idea];
    draftWrite('route',idea);draftWrite('routes',next);
