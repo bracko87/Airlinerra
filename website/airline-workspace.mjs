@@ -312,7 +312,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   throw Error('A verified account is required for airline workspace');
  const prefKey=PREF_KEY+identity,draftKey=DRAFT_KEY+identity;
  let preferences=cleanUiPreferences(safelyLoad(storage,prefKey));
- let data={airline:null,countries:[],worlds:[],reader:null},draft=safelyLoad(session,draftKey)||{};
+ let data={connected:false,airline:null,countries:[],worlds:[],reader:null},draft=safelyLoad(session,draftKey)||{};
  const $=id=>doc.getElementById(id);
  for(const [name,render] of Object.entries(pages)){
   const el=$('workspace-'+name);if(el)el.innerHTML=render();
@@ -443,15 +443,17 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
  function updateData(next={}){
   data={...data,...next};
   const airline=data.airline;
+  const connected=data.connected===true;
+  const unknown='Game data not loaded';
   const home=airline?.homeAirportName?
    airline.homeAirportName+(airline.homeAirportCode?' ('+airline.homeAirportCode+')':''):
    (airline?.homeAirportKey||'-');
   const values={
-   'office-airline':airline?.name||'Not created',
-   'office-world':airline?.worldId?'World '+airline.worldId:'Not selected',
-   'office-home':home,'office-cash':airline?.cashUsd!==undefined?currency(airline.cashUsd):'-',
-   'office-premium':airline?.premiumUnlimited===true?'Premium Unlimited':airline?'Registered account':'Not registered',
-   'finance-live-cash':airline?.cashUsd!==undefined?currency(airline.cashUsd):'-'
+   'office-airline':connected?(airline?.name||'Not created'):unknown,
+   'office-world':connected?(airline?.worldId?'World '+airline.worldId:'Not selected'):unknown,
+   'office-home':connected?home:unknown,'office-cash':connected&&airline?.cashUsd!==undefined?currency(airline.cashUsd):'-',
+   'office-premium':connected?(airline?.premiumUnlimited===true?'Premium Unlimited':airline?'Registered account':'Not registered'):unknown,
+   'finance-live-cash':connected&&airline?.cashUsd!==undefined?currency(airline.cashUsd):'-'
   };
   for(const [id,value] of Object.entries(values)){if($(id))$(id).textContent=value;}
   populateCountries();
