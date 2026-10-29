@@ -204,8 +204,15 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
    ['Passenger demand (0-100%)','Data pending'],['Cargo demand (0-100%)','Data pending'],
    ['Annual passengers','Data pending'],['Annual cargo','Data pending'],
    ['Daily departures / arrivals','Data pending'],['Peak operating periods','Data pending']]);
+  const isOwnHeadquarters=live.connected&&live.airline?.homeAirportKey===airport.key;
+  const ownDraft=entries().find(x=>x.key===airport.key);
   profileField('airport-profile-airlines',[
-   ['Verified airport headquarters','Not connected'],['Airlines with active hubs','Not connected'],
+   ['Your verified airline headquarters',isOwnHeadquarters?
+    (live.airline.name||'Your airline')+' (registered HQ)':'Not your headquarters'],
+   ['Your planned office',ownDraft?(ownDraft.type==='hub'?'Hub':'Station')+' - proposal only':
+    isOwnHeadquarters?'Main home base':'No proposal'],
+   ['Other airlines with headquarters','Not connected'],
+   ['Airlines with active hubs','Not connected'],
    ['Airlines with active stations','Not connected'],['Operating airlines','Not connected'],
    ['Current commercial movements','Not connected']]);
   goTo?.('airport-profile');
