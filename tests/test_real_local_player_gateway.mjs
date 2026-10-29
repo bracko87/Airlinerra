@@ -204,3 +204,35 @@ test('opt-in local World 1 preview proxies only authenticated read requests',asy
  assert.equal((await handler(request({},'/api/v1/player/overview','bad'))).status,401);
  assert.equal(calls,2);
 });
+
+test('normal localhost preview returns the previously registered owner airline from the shared game API',async()=>{
+ const airline={
+  id:'550e8400-e29b-41d4-a716-446655440000',
+  worldId:1,name:'Existing airline',cashUsd:'5000000.00',
+  homeAirportKey:'OURAIRPORTS:4610',
+  homeAirportName:'Belgrade Nikola Tesla Airport',homeAirportCode:'LYBE'
+ };
+ let forwarded=0;
+ const handler=await makeRealLocalPlayerHandler({
+  env:{},loadPg:async()=>{throw Error('Direct database should never be needed')},
+  fetchImpl:async(url,options)=>{
+   forwarded++;
+   assert.equal(options.headers.origin,'https://airlinerra.com');
+   assert.equal(options.headers.authorization,'Bearer '+token);
+   assert.equal(options.headers['x-airlinerra-route'],'/api/v1/player/overview');
+   return new Response(JSON.stringify({worlds:[{id:1,name:'Founding World',state:'planned'}],countries:[],airlines:[airline]}),{
+    status:200,headers:{'content-type':'application/json'}
+   });
+  }
+ });
+ const response=await handler(request());
+ assert.equal(response.status,200);
+ const data=await response.json();
+ assert.equal(data.airlines.length,1);
+ assert.equal(data.airlines[0].name,'Existing airline');
+ assert.equal(data.airlines[0].homeAirportCode,'LYBE');
+ assert.equal(data.airlines[0].cashUsd,'5000000.00');
+ assert.equal(forwarded,1);
+ assert.equal((await handler(request({},'/api/v1/airlines'))).status,403);
+ assert.equal(forwarded,1,'No write may be forwarded through the local read-only preview');
+});
