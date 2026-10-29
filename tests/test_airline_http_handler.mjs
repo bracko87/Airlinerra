@@ -10,7 +10,8 @@ const TOKEN = 'test-only-bearer-access-token-123';
 const BODY = JSON.stringify({
   worldId: 1,
   airlineName: 'Aurelia Airways',
-  homeAirportKey: 'OURAIRPORTS:101'
+  homeAirportKey: 'OURAIRPORTS:101',
+  icaoCode:'AUA',iataCode:'AU'
 });
 
 function request(overrides = {}) {
@@ -112,12 +113,14 @@ test('rejects oversized, invalid, unknown and attacker-supplied owner fields', a
   assert.equal(huge.status, 413);
   assert.equal(calls.length, 0);
   assert.deepEqual(parseOnboardingBody(BODY),
-    { worldId: 1, airlineName: 'Aurelia Airways', homeAirportKey: 'OURAIRPORTS:101' });
+    { worldId: 1, airlineName: 'Aurelia Airways', homeAirportKey: 'OURAIRPORTS:101',icaoCode:'AUA',iataCode:'AU' });
   const fiction = parseOnboardingBody(JSON.stringify({
     worldId:1,airlineName:'Aleksandrovo Air',
-    homeAirportKey:'FICTIONAL:fictional:RS:LYAL'
+    homeAirportKey:'FICTIONAL:fictional:RS:LYAL',icaoCode:'AXA',iataCode:'AX'
   }));
   assert.equal(fiction.homeAirportKey,'FICTIONAL:fictional:RS:LYAL');
+  assert.equal(fiction.icaoCode,'AXA');
+  assert.equal(fiction.iataCode,'AX');
 });
 
 test('valid request returns exact cash string and never leaks tokens', async () => {
