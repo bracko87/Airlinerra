@@ -1,5 +1,7 @@
-/** Production-equivalent authenticated read service, bound to localhost only.
- * Requires explicit private DB credentials in process environment (never in dist).
+/** Localhost-only Airlinerra bridge. Normal built-site preview uses the same
+ * authenticated Supabase game API as production, but ONLY for allowed reads.
+ * A direct PostgreSQL adapter requires an explicit developer opt-in and private
+ * credentials in the server environment; never expose either to the browser.
  */
 import {createCanonicalGameApi,CANONICAL_GAME_API_PATHS} from '../../server/canonical-game-api.mjs';
 import {AIRLINERRA_INVITED_TESTER_PUBLIC_SETTINGS} from '../invited-tester-public-settings.mjs';
@@ -65,7 +67,9 @@ export async function makeRealLocalPlayerHandler({
   env=process.env,loadPg=()=>import('pg'),
   fetchImpl=globalThis.fetch
 }={}){
- if(env.AIRLINERRA_LOCAL_EDGE_READONLY==='1')
+ // Read-only Edge proxy is the default, including ordinary npm run preview.
+ // Database mode is opt-in and never selected merely because credentials exist.
+ if(env.AIRLINERRA_LOCAL_USE_DATABASE!=='1')
   return createLiveReadOnlyPreviewHandler({fetchImpl});
  const url=env.AIRLINERRA_LOCAL_DATABASE_URL;
  if(!validConnectionUrl(url))return async()=>new Response(JSON.stringify({
