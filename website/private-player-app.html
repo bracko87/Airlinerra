@@ -35,7 +35,7 @@
           <summary class="nav-label">Manager<span class="chevron" aria-hidden="true"></span></summary>
           <div class="nav-links" role="group" aria-label="Manager pages">
             <a href="#airline" data-view-link="airline">My airline</a>
-            <a href="#onboarding" data-view-link="onboarding">Airline setup</a>
+            <a href="#onboarding" data-view-link="onboarding" data-setup-only hidden>Airline setup</a>
             <a href="#profile" data-view-link="profile">Manager profile</a>
             <a href="#staff" data-view-link="staff">Personnel and staff</a>
             <a href="#rankings" data-view-link="rankings">World rankings</a>
@@ -92,22 +92,25 @@
           <button id="player-data-retry" type="button" class="secondary" hidden>Retry connection</button>
         </div>
         <section data-player-view="overview">
-          <div class="page-head"><div><p class="eyebrow">MANAGER CONSOLE</p><h1>Overview</h1><p>Your home for airline operations once the first world opens.</p></div><button class="primary" type="button" data-go-view="onboarding">Explore setup</button></div>
+          <div class="page-head"><div><h1>Overview</h1><p id="overview-subtitle">Your airline and business activity at a glance.</p></div><button class="primary" type="button" data-go-view="onboarding" data-setup-only hidden>Set up your airline</button></div>
           <div class="kpi-grid">
-            <article class="kpi"><span>Airline</span><strong id="player-airline-name">Not created</strong><img id="player-existing-logo" alt="Airline logo" hidden><small id="player-airline-note">Awaiting onboarding</small></article>
+            <article class="kpi airline-identity-kpi">
+  <div class="airline-identity-text"><span>Airline</span><strong id="player-airline-name">Not created</strong><small id="player-airline-note">Awaiting onboarding</small></div>
+  <div class="airline-identity-brand"><img id="player-existing-logo" alt="Airline logo" hidden></div>
+</article>
             <article class="kpi"><span>Available cash</span><strong id="player-cash">-</strong><small id="player-cash-note">No airline ledger yet</small></article>
             <article class="kpi"><span>Aircraft</span><strong>-</strong><small>Fleet not connected</small></article>
             <article class="kpi"><span>Active routes</span><strong>-</strong><small>Operations closed</small></article>
           </div>
           <p id="player-logo-warning" role="alert" class="hint" hidden></p>
           <div class="two-cols">
-            <article class="panel"><span class="panel-kicker">NEXT STEPS</span><h2 id="overview-progress-title">Set up your airline</h2><p id="overview-progress-description">Choose your world, home airport and airline name to create your company.</p><div class="progress-line"><span>Account verified</span><b>Ready</b></div><div class="progress-line"><span>World and home airport</span><b id="overview-home-progress">Pending</b></div><div class="progress-line"><span>Airline activation</span><b id="overview-activation-progress">Locked</b></div><button class="secondary" type="button" data-go-view="onboarding">View setup flow</button></article>
+            <article class="panel"><span class="panel-kicker">NEXT STEPS</span><h2 id="overview-progress-title">Set up your airline</h2><p id="overview-progress-description">Choose your world, home airport and airline name to create your company.</p><div class="progress-line"><span>Account verified</span><b>Ready</b></div><div class="progress-line"><span>World and home airport</span><b id="overview-home-progress">Pending</b></div><div class="progress-line"><span>Airline activation</span><b id="overview-activation-progress">Locked</b></div><button class="secondary" type="button" data-go-view="onboarding" data-setup-only hidden>View setup flow</button></article>
             <article class="panel"><span class="panel-kicker">GET STARTED</span><h2>Build your airline</h2><p id="overview-get-started-description">Start with $5,000,000 and no aircraft. Choose your home airport, then explore fleet, routes and scheduling.</p><div class="mini-row"><span>Starting budget</span><strong>$5,000,000</strong></div><div class="mini-row"><span>Starting aircraft</span><strong>0</strong></div><button class="secondary" type="button" data-go-view="worlds">View worlds</button></article>
           </div>
           <div id="workspace-overview"></div>
         </section>
         <section data-player-view="onboarding" hidden>
-          <div class="page-head"><div><p class="eyebrow">YOUR NEW AIRLINE</p><h1>Create your airline</h1><p>Choose your world, country, home airport and airline identity.</p></div></div>
+          <div class="page-head"><div><p class="eyebrow">AIRLINE REGISTRATION</p><h1>Create your airline</h1><p>Choose your world, country, home airport and airline identity.</p></div></div>
           <div class="setup-layout">
             <div class="panel">
               <div class="step"><span>01</span><div><h2>Manager account</h2><p>Signed in as <strong id="setup-email">Not connected</strong></p></div><em class="step-good" id="setup-account-state">Complete</em></div>
