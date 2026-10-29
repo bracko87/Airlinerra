@@ -4,12 +4,13 @@
  * A future credential-scoped runtime injects verifyUserToken and a private pg pool.
  */
 import {verifiedPlayerId} from './airline-activation.mjs';
+import {AIRPORT_PROFILE_PATH,AIRPORT_PROFILE_SQL,serializeAirportProfile,validAirportKey} from './airport-profile-service.mjs';
 import {countrySqlExpression,GAME_COUNTRY_CODES,GAME_COUNTRY_SET} from './country-policy.mjs';
 const PARENT_ISO=countrySqlExpression('country_iso');
 const MEMBER_CODES=GAME_COUNTRY_CODES.map(code=>"'"+code+"'").join(',');
 
 export const PLAYER_READ_PATHS=Object.freeze([
- '/api/v1/player/overview','/api/v1/player/airports'
+ '/api/v1/player/overview','/api/v1/player/airports',AIRPORT_PROFILE_PATH
 ]);
 export const PLAYER_READ_SQL=Object.freeze({
  worlds:'select id,name,state from public.airlinerra_game_worlds order by id',
@@ -83,6 +84,10 @@ export function createPlayerReadHandler({enabled=false,verifyUserToken,database,
    if(!data)return respond(400,{error:'Invalid request'});
    if(url.pathname===PLAYER_READ_PATHS[0]&&Object.keys(data).length!==0)return respond(400,{error:'Invalid request'});
    let country='',search='',offset=0;
+   const profileKey=url.pathname===AIRPORT_PROFILE_PATH?data.airportKey:null;
+   if(url.pathname===AIRPORT_PROFILE_PATH&&
+      (Object.keys(data).length!==1||!validAirportKey(profileKey)))
+     return respond(400,{error:'Invalid airport profile request'});
    if(url.pathname===PLAYER_READ_PATHS[1]){
      country=data.countryIso;search=data.search??'';offset=data.offset??0;
      if(Object.keys(data).some(k=>!['countryIso','search','offset'].includes(k))||
@@ -146,6 +151,13 @@ export function createPlayerReadHandler({enabled=false,verifyUserToken,database,
        }
        return respond(200,{worlds,countries,airlines,ledgerEntries,
          airportsTotal:countries.reduce((n,c)=>n+c.airportCount,0),gameplayAvailable:false});
+     }
+     if(url.pathname===AIRPORT_PROFILE_PATH){
+       phase='airport-profile';
+       const rows=expectArray((await client.query(AIRPORT_PROFILE_SQL,[profileKey])).rows);
+       if(rows.length===0)return respond(404,{error:'Airport not in approved World 1 roster'});
+       if(rows.length!==1)return respond(503,{error:'Airport profile is unavailable'});
+       return respond(200,{airport:serializeAirportProfile(rows[0])});
      }
      phase='airport-search';
      const rows=expectArray((await client.query(PLAYER_READ_SQL.airports,[country,search.trim(),offset])).rows);
