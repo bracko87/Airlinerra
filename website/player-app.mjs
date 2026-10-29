@@ -8,6 +8,7 @@ import {createPlayerReadClient,PLAYER_READ_API_ENABLED} from './player-read-clie
 import {createRealOnboardingClient} from './real-onboarding-client.mjs';
 import {createDownwardMenu} from './setup-choice-menu.mjs';
 import {createAirlineWorkspace} from './airline-workspace.mjs';
+import {renderAirlineDashboard,worldDisplayName} from './airline-dashboard.mjs';
 import {createLocalCatalogClient} from './local-catalog-client.mjs';
 import {saveLocalDraft,readLocalDraft,clearLocalDraft} from './local-onboarding-draft.mjs';
 import {isLocalDemoOrigin,hasLocalDemo,endLocalDemo,getLocalTestProfile,LOCAL_DEMO_MANAGER,LOCAL_DEMO_LOGIN_PATH} from './local-demo-session.mjs';
@@ -84,15 +85,7 @@ function renderOverviewState(hasAirline){
   ?'Your airline and business activity at a glance.'
   :'Create your first airline to begin managing routes and aircraft.';
  doc.getElementById('player-cash-note').textContent=hasAirline?'Available airline funds':'No airline ledger yet';
- doc.getElementById('overview-progress-title').textContent=hasAirline?'Your airline is ready':'Set up your airline';
- doc.getElementById('overview-progress-description').textContent=hasAirline
-  ?'Your account, airline and home airport are registered in World 1.'
-  :'Choose your world, home airport and airline name to create your company.';
- doc.getElementById('overview-home-progress').textContent=hasAirline?'Complete':'Pending';
- doc.getElementById('overview-activation-progress').textContent=hasAirline?'Complete':'Locked';
- doc.getElementById('overview-get-started-description').textContent=hasAirline
-  ?'Your airline starts with $5,000,000 and no aircraft. Explore game worlds, fleet and routes.'
-  :'Start with $5,000,000 and no aircraft. Choose your home airport, then explore fleet, routes and scheduling.';
+
 }
 let playerData=null;
 let onboarding=null;
@@ -219,10 +212,10 @@ function drawRealWorlds(worlds){
   for(const world of worlds){
     const card=doc.createElement('article');card.className='world-card';
     const header=doc.createElement('span');header.className='world-number';
-    header.textContent='WORLD '+String(world.id).padStart(2,'0');
+    header.textContent='AIRLINERRA - WORLD '+String(world.id).padStart(2,'0');
     const title=doc.createElement('h2');title.textContent=world.name;
     const status=doc.createElement('span');status.className='pill';
-    status.textContent=world.id===1?'World 1 - Founding World':'Not available';
+    status.textContent=world.id===1?'First world - private testing':'Future world - not open';
     card.append(header,title,status);root.append(card);
   }
 }
@@ -277,6 +270,7 @@ async function loadPlayerReadData({local=false}={}){
   renderOverviewState(hasRealAirline);
   // Airline identity and cash must not disappear if an unrelated airport
   // directory widget or planning panel fails to render.
+  renderAirlineDashboard(doc,{airline:first||null,worlds:data.worlds,ledgerEntries:data.ledgerEntries});
   try{drawRealWorlds(data.worlds);fillCountries(data.countries);}
   catch{console.warn('Airlinerra secondary directory failed to display');}
   try{workspaceController?.updateData({connected:true,airline:first||null,worlds:data.worlds,countries:data.countries,reader:playerData});}
@@ -284,7 +278,7 @@ async function loadPlayerReadData({local=false}={}){
   doc.getElementById('player-data-status').hidden=true;
   doc.getElementById('player-data-retry').hidden=true;
   if(first?.name){
-   doc.getElementById('top-world').textContent='WORLD '+String(first.worldId).padStart(2,'0');
+   doc.getElementById('top-world').textContent=worldDisplayName(first.worldId,data.worlds);
    doc.getElementById('top-airline-state').textContent=first.name+
     (first.premiumUnlimited===true?' - Premium Unlimited':' - Registered airline');
    doc.getElementById('player-airline-name').textContent=first.name;
@@ -297,7 +291,7 @@ async function loadPlayerReadData({local=false}={}){
    }
   }else{
    doc.getElementById('top-airline-state').textContent='Create your airline';
-   doc.getElementById('top-world').textContent='WORLD 01';
+   doc.getElementById('top-world').textContent=worldDisplayName(1,data.worlds);
   }
   doc.getElementById('airport-heading').textContent='Airport directory';
   doc.getElementById('airport-description').textContent=
@@ -313,16 +307,12 @@ async function loadPlayerReadData({local=false}={}){
   playerData=null;
   hasRealAirline=false; // Unknown because the protected read failed - NOT proof no airline exists.
   workspaceController?.updateData({connected:false,airline:null,reader:null});
+  renderAirlineDashboard(doc,{airline:null,ledgerEntries:null});
   doc.getElementById('top-airline-state').textContent='Airline data unavailable';
   doc.getElementById('player-airline-name').textContent='Unable to load';
   doc.getElementById('player-airline-note').textContent='Connection unavailable';
   doc.getElementById('player-cash').textContent='-';
   doc.getElementById('player-cash-note').textContent='Balance not loaded';
-  doc.getElementById('overview-progress-title').textContent='Reconnect your existing airline';
-  doc.getElementById('overview-progress-description').textContent=
-   'Your verified account is signed in, but the game-data connection failed. Do not register again or create another airline.';
-  doc.getElementById('overview-home-progress').textContent='Not checked';
-  doc.getElementById('overview-activation-progress').textContent='Not checked';
   const box=doc.getElementById('player-data-status');
   doc.getElementById('player-data-message').textContent=
    (readStage==='api'
