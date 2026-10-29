@@ -11,8 +11,8 @@ import {TESTER_ORIGIN,TESTER_AUTH_URL} from '../website/invited-tester-entry.mjs
 
 test('player application has complete distinct navigation and bounded hash routes',()=>{
   assert.equal(PLAYER_APP_PATH,'/player.html');
-  assert.deepEqual(PLAYER_VIEWS,['overview','onboarding','profile','worlds','airports','fleet','routes','schedule','finances','settings']);
-  assert.equal(new Set(PLAYER_VIEWS).size,10);
+  assert.deepEqual(PLAYER_VIEWS,['overview','onboarding','profile','worlds','airports','fleet','routes','schedule','finances','settings','airline','staff','rankings','service','aircraft-market','maintenance','interface','notifications','help']);
+  assert.equal(new Set(PLAYER_VIEWS).size,19);
   assert.equal(safePlayerView('#fleet'),'fleet');
   assert.equal(safePlayerView('#unknown'),'overview');
   assert.equal(safePlayerView('#access_token=do-not-process'),'overview');
@@ -89,9 +89,10 @@ test('grouped horizontal dropdowns keep all ten game routes accessible',async()=
   ]);
   assert.match(html,/<nav class="app-navigation" aria-label="Player application">/);
   assert.doesNotMatch(html,/class="sidebar"/);
-  const order=['manager','operations','fleet','finance','account'];
-  const expected={manager:['onboarding','profile'],operations:['worlds','airports','routes','schedule'],
-    fleet:['fleet'],finance:['finances'],account:['settings']};
+  const order=['manager','operations','fleet','finance','account','settings'];
+  const expected={manager:['airline','onboarding','profile','staff','rankings'],operations:['worlds','airports','routes','schedule','service'],
+    fleet:['fleet','aircraft-market','maintenance'],finance:['finances'],account:[],
+    settings:['settings','interface','notifications','help']};
   const dashboard='<a class="nav-direct" href="#overview" data-view-link="overview">Dashboard</a>';
   assert.ok(html.includes(dashboard),'Dashboard is a separate first navigation link');
   assert.ok(html.indexOf(dashboard)<html.indexOf('data-nav-group="manager"'));
