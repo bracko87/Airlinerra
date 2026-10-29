@@ -63,6 +63,27 @@ function setManager(user){
   doc.getElementById('setup-email').textContent=manager.email;
   doc.getElementById('top-email').textContent=manager.email;
 }
+/** Format cash for display only; never mutate the financial ledger. */
+function formatWholeUsd(value){
+ const amount=Number(value);
+ if(!Number.isFinite(amount)||amount<0||!Number.isSafeInteger(Math.round(amount)))return '-';
+ return new Intl.NumberFormat('en-US',{
+  style:'currency',currency:'USD',minimumFractionDigits:0,maximumFractionDigits:0
+ }).format(amount);
+}
+function renderOverviewState(hasAirline){
+ doc.getElementById('player-airline-note').textContent=hasAirline?'Airline created successfully':'Awaiting onboarding';
+ doc.getElementById('player-cash-note').textContent=hasAirline?'Available airline funds':'No airline ledger yet';
+ doc.getElementById('overview-progress-title').textContent=hasAirline?'Your airline is ready':'Set up your airline';
+ doc.getElementById('overview-progress-description').textContent=hasAirline
+  ?'Your account, airline and home airport are registered in World 1.'
+  :'Choose your world, home airport and airline name to create your company.';
+ doc.getElementById('overview-home-progress').textContent=hasAirline?'Complete':'Pending';
+ doc.getElementById('overview-activation-progress').textContent=hasAirline?'Complete':'Locked';
+ doc.getElementById('overview-get-started-description').textContent=hasAirline
+  ?'Your airline starts with $5,000,000 and no aircraft. Explore game worlds, fleet and routes.'
+  :'Start with $5,000,000 and no aircraft. Choose your home airport, then explore fleet, routes and scheduling.';
+}
 let playerData=null;
 let onboarding=null;
 let onboardingContext=null;
@@ -240,12 +261,13 @@ async function loadPlayerReadData({local=false}={}){
   fillCountries(data.countries);
   const first=data.airlines[0];
   hasRealAirline=Boolean(first?.name);
+  renderOverviewState(hasRealAirline);
   if(first?.name){
    doc.getElementById('top-world').textContent='WORLD '+String(first.worldId).padStart(2,'0');
    doc.getElementById('top-airline-state').textContent=first.name+
     (first.premiumUnlimited===true?' - Premium Unlimited':' - Registered airline');
    doc.getElementById('player-airline-name').textContent=first.name;
-   doc.getElementById('player-cash').textContent=first.cashUsd+' USD';
+   doc.getElementById('player-cash').textContent=formatWholeUsd(first.cashUsd);
    if(first.id&&auth?.getAirlineLogoUrl){
     auth.getAirlineLogoUrl(first.id).then(url=>{
      const img=doc.getElementById('player-existing-logo');
