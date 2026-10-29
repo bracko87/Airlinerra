@@ -1,0 +1,41 @@
+name: Airport profile authenticated read integration
+on:
+  pull_request:
+    paths:
+      - 'server/airport-profile-*'
+      - 'server/player-read-service.mjs'
+      - 'server/canonical-game-api.mjs'
+      - 'server/production-game-api.mjs'
+      - 'website/player-read-client.mjs'
+      - 'website/airline-airports-office.mjs'
+      - 'website/dev-scripts/real-player-read-gateway.mjs'
+      - 'website/netlify/functions/airlinerra-game.mjs'
+      - 'website/package.json'
+      - 'tests/test_airport_profile_database_integration.mjs'
+      - '.github/workflows/airport-profile-read.yml'
+  workflow_dispatch:
+jobs:
+  airport-profile-read:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm ci --prefix website --ignore-scripts
+      - name: Check module syntax
+        run: |
+          node --check server/airport-profile-service.mjs
+          node --check server/player-read-service.mjs
+          node --check server/canonical-game-api.mjs
+          node --check server/production-game-api.mjs
+          node --check website/player-read-client.mjs
+          node --check website/airline-airports-office.mjs
+          node --check website/dev-scripts/real-player-read-gateway.mjs
+          node --check website/netlify/functions/airlinerra-game.mjs
+      - name: Airport profile and existing player API regression
+        run: node --test tests/test_airport_profile_database_integration.mjs tests/test_airport_office_profiles.mjs tests/test_player_read_api.mjs tests/test_real_local_player_gateway.mjs tests/test_production_game_api.mjs
+      - name: Verify static preview build
+        run: npm run build --prefix website
