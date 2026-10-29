@@ -575,3 +575,65 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
  #player-main .dashboard-full-flights>.panel,
  #player-main .dashboard-insights-panel{padding:17px}
 }
+
+
+/* Airport operations office - distinct headquarters, hub and station panels. */
+.airport-office-panel{margin-bottom:var(--manager-card-gap,18px)}
+.airport-office-headquarters,.airport-profile-head{
+ display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;
+ padding:14px 17px;border:1px solid var(--line);border-radius:10px;background:#f7faff
+}
+.airport-office-headquarters h3,.airport-profile-head h3{
+ font-size:19px;font-weight:670;margin:4px 0;color:var(--navy)
+}
+.airport-office-headquarters p{margin:2px 0}
+.airport-office-headquarters .secondary,.airport-profile-head .secondary{margin:0}
+.airport-office-form{display:grid;grid-template-columns:minmax(160px,.7fr) minmax(260px,1.6fr);
+ gap:12px 18px;align-items:center;max-width:900px;padding:16px 0}
+.airport-office-form label{font-size:12px;font-weight:600;color:var(--navy)}
+.airport-office-form select,.airport-office-form input{
+ width:100%;min-width:0;min-height:43px;padding:10px 12px;border:1px solid #cbd9e7;
+ background:#f7f9fc;border-radius:9px;color:var(--navy)
+}
+.airport-office-form>button{grid-column:2;justify-self:start;margin:0}
+.airport-office-form-actions{grid-column:2;display:flex;gap:10px;flex-wrap:wrap}
+.airport-office-form-actions .secondary{margin:0}
+.airport-office-summary{display:flex;justify-content:space-between;gap:12px;
+ border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:11px 0;
+ color:var(--muted);font-size:12px}
+.airport-office-summary strong{font-weight:630;color:var(--navy)}
+.airport-office-list-row{
+ display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap;
+ background:#f8fbff;border:1px solid var(--line);border-radius:10px;padding:12px 15px
+}
+.airport-office-list-row>div:first-child{display:grid;gap:4px}
+.airport-office-list-row strong{color:var(--navy);font-weight:650}
+.airport-office-row-actions{display:flex;flex-wrap:wrap;gap:8px}
+.airport-office-row-actions .secondary{margin:0;padding:9px 13px}
+.airport-office-cost-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.airport-office-cost-grid>div{display:grid;gap:5px;border:1px solid var(--line);
+ border-radius:10px;background:#f8fbff;padding:13px 15px}
+.airport-office-cost-grid strong{color:var(--navy);font-weight:640}
+.airport-office-cost-grid span{font-size:12px;color:var(--muted)}
+.airport-profile-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 24px}
+.airport-profile-fact{display:flex;justify-content:space-between;gap:12px;align-items:baseline;
+ border-bottom:1px solid var(--line);padding:12px 0;min-width:0}
+.airport-profile-fact span{color:var(--muted);font-size:12px}
+.airport-profile-fact strong{color:var(--navy);font-weight:620;text-align:right;
+ overflow-wrap:anywhere;max-width:60%;font-size:12px}
+.airport-flight-board{border:1px solid var(--line);border-radius:10px;overflow:auto}
+.airport-flight-columns{min-width:640px;display:grid;grid-template-columns:85px 1fr 100px 1.5fr 1fr;
+ gap:12px;padding:12px 15px;background:#f1f6fd;font-size:12px;color:var(--navy);font-weight:620}
+.airport-flight-board>p{padding:35px 16px;text-align:center;margin:0;color:var(--muted);font-size:12px}
+.airport-result{gap:12px;flex-wrap:wrap}
+.airport-profile-link{margin:0!important;padding:8px 12px!important}
+:root[data-ui-theme="dark"] .airport-office-headquarters,
+:root[data-ui-theme="dark"] .airport-profile-head,
+:root[data-ui-theme="dark"] .airport-office-list-row,
+:root[data-ui-theme="dark"] .airport-office-cost-grid>div{background:#20364e;border-color:#3b526b}
+:root[data-ui-theme="dark"] .airport-flight-columns{background:#20364e}
+@media(max-width:800px){
+ .airport-office-form{grid-template-columns:1fr}
+ .airport-office-form>button,.airport-office-form-actions{grid-column:1}
+ .airport-office-cost-grid,.airport-profile-facts{grid-template-columns:1fr}
+}
