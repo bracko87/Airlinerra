@@ -88,9 +88,11 @@ export function createPlayerReadHandler({enabled=false,verifyUserToken,database,
    try{playerId=verifiedPlayerId(await verifyUserToken(token));}
    catch{return respond(401,{error:'Verified account required'});}
    let client;
+   let phase='db-connect';
    try{
      client=await database.connect();
      if(url.pathname===PLAYER_READ_PATHS[0]){
+       phase='world-directory';
        const worlds=expectArray((await client.query(PLAYER_READ_SQL.worlds)).rows).map(row=>{
          const id=Number(row.id);
          if(!Number.isInteger(id)||id<1||id>3||typeof row.name!=='string'||
@@ -98,6 +100,7 @@ export function createPlayerReadHandler({enabled=false,verifyUserToken,database,
          return {id,name:row.name,state:row.state};
        });
        if(worlds.length!==3||new Set(worlds.map(w=>w.id)).size!==3)throw Error('Incomplete worlds');
+       phase='country-directory';
        const countries=expectArray((await client.query(PLAYER_READ_SQL.countries)).rows).map(row=>{
          const airportCount=Number(row.airport_count);
          if(!/^[A-Z]{2}$/u.test(row.country_iso||'')||!Number.isInteger(airportCount)||airportCount<1)
@@ -106,6 +109,7 @@ export function createPlayerReadHandler({enabled=false,verifyUserToken,database,
        });
        if(countries.length>250||new Set(countries.map(c=>c.countryIso)).size!==countries.length)
          throw Error('Invalid country directory');
+       phase='airline-directory';
        const airlines=expectArray((await client.query(PLAYER_READ_SQL.airlines,[playerId])).rows).map(row=>{
          if(typeof row.id!=='string'||!Number.isInteger(Number(row.world_id))||
            typeof row.name!=='string'||!/^\d+(\.\d+)?$/u.test(String(row.cash_usd)))
@@ -119,13 +123,20 @@ export function createPlayerReadHandler({enabled=false,verifyUserToken,database,
        return respond(200,{worlds,countries,airlines,airportsTotal:countries.reduce((n,c)=>n+c.airportCount,0),
          gameplayAvailable:false});
      }
+     phase='airport-search';
      const rows=expectArray((await client.query(PLAYER_READ_SQL.airports,[country,search.trim(),offset])).rows);
      if(rows.length>51)throw Error('Invalid page size');
      const hasMore=rows.length>50;
      const airports=rows.slice(0,50).map(airport);
      if(airports.some(a=>a.countryIso!==country))throw Error('Cross-country airport data');
      return respond(200,{airports,nextOffset:hasMore?offset+50:null,countryIso:country});
-   }catch{
+   }catch(error){
+     // Do not log SQL, tokens, user IDs, airline records or stack traces.
+     // A fixed phase name and optional PostgreSQL SQLSTATE are sufficient
+     // for debugging without leaking the authenticated user's information.
+     const sqlstate=typeof error?.code==='string'&&/^[A-Z0-9]{5}$/.test(error.code)
+       ?error.code:'NONE';
+     console.error('Airlinerra player read failure',phase,'SQLSTATE',sqlstate);
      return respond(503,{error:'Player data service unavailable'});
    }finally{try{client?.release();}catch{/* no unsafe log */}}
  };
