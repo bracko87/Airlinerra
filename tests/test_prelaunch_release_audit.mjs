@@ -11,7 +11,8 @@ test('production gameplay release gates remain closed',async()=>{
  assert.match(model,/GAME_READ_API_CONNECTED=false/);
  assert.match(client,/PLAYER_READ_API_ENABLED=false/);
  assert.match(page,/id="setup-create-airline" disabled>Create my airline/);
- assert.match(page,/No balance is credited by loading this page/);
+ assert.match(page,/Starting capital: \$5,000,000 USD/);
+ assert.match(page,/id="player-cash"/);
  assert.match(site,/process\.argv\.includes\('--built'\)/);
  assert.match(netlify,/\[functions\]/);
  assert.match(netlify,/directory = "netlify\/functions"/);
