@@ -27,7 +27,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{ou
 .nav-links{position:absolute;left:0;top:100%;display:flex;flex-direction:column;min-width:220px;gap:4px;background:#fff;box-shadow:0 18px 34px #092b5722;border:1px solid var(--line);padding:10px;border-radius:0 0 12px 12px;z-index:50}
 .nav-links a{white-space:nowrap;padding:10px 12px;font-size:13px;font-weight:700;color:#496580;border-radius:8px}
 .nav-links a:hover{background:#f0f5fb;color:var(--navy)}
-.nav-links a[aria-current="page"]{background:#e8f2fc;color:var(--navy);box-shadow:inset 3px 0 var(--orange)}
+.nav-links a[aria-current="page"]{background:#e8f2fc;color:var(--navy);box-shadow:none}
 .workspace{min-width:0;width:100%}
 #player-main{max-width:1540px;margin:auto;padding:26px 24px 36px}.notice{background:#fff4e9;border:1px solid #ffdfc9;border-left:4px solid var(--orange);border-radius:9px;padding:12px 16px;margin-bottom:30px;color:#644323;font-size:12px;line-height:1.7}
 .notice strong{color:#9a470c}.page-head{display:flex;align-items:end;justify-content:space-between;gap:20px;margin:0 0 26px}.eyebrow,.panel-kicker{font-weight:850;font-size:11px;letter-spacing:.14em;color:var(--orange);margin:0 0 10px}
@@ -422,3 +422,62 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
 :root[data-ui-theme="dark"] .finance-chart-point-label{fill:#f3f6ff}
 @media(max-width:890px){.dashboard-insights-grid{grid-template-columns:1fr}}
 @media(max-width:650px){.dashboard-insights-panel{padding:18px}}
+
+/* Dashboard: airline news in upper-left and uninterrupted flight operations below. */
+.dashboard-operations-grid{grid-template-columns:minmax(0,1.55fr) minmax(280px,1fr)}
+.dashboard-news-panel{min-height:280px;min-width:0}
+.dashboard-company-news{display:grid;gap:12px;margin:15px 0}
+.dashboard-company-story{display:flex;gap:14px;align-items:flex-start;background:#f4f8fe;
+ border:1px solid var(--line);padding:17px 18px;border-radius:11px}
+.dashboard-company-story-mark{font-weight:800;color:var(--orange);border-radius:50%;font-size:16px;
+ flex:none;width:36px;height:36px;display:grid;place-items:center;background:#fff0e4}
+.dashboard-company-story strong{font-size:14px;color:var(--navy)}
+.dashboard-company-story p{font-size:12px;margin:4px 0 0}
+.dashboard-company-story time{display:block;font-size:11px;color:var(--muted);margin-top:6px}
+.dashboard-full-flights{margin-bottom:var(--manager-card-gap,20px)}
+.dashboard-full-flights>.panel{padding:23px 25px}
+.dashboard-flights-full .dashboard-flight-table{min-width:600px}
+.dashboard-flights-full .dashboard-empty-cell{padding:54px 20px}
+.dashboard-traffic-panel{min-width:0}
+.dashboard-donut-chart{display:flex;align-items:center;justify-content:center;gap:18px;min-height:255px}
+.dashboard-donut-chart svg{width:min(52%,245px);height:auto;max-height:245px}
+.dashboard-donut-info{min-width:0;flex:1;display:grid;gap:7px}
+.dashboard-donut-info strong{color:var(--navy);font-size:17px}
+.dashboard-donut-info small{color:var(--muted);font-size:12px}
+.dashboard-donut-info .dashboard-donut-item{display:flex;align-items:center;gap:8px;color:var(--muted)}
+.dashboard-donut-key{width:11px;height:11px;border-radius:3px;display:inline-block;background:#092b57}
+.dashboard-donut-key.orange{background:var(--orange)}
+.operations-route-table{display:grid;gap:10px;margin-top:16px}
+.operations-saved-row{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) auto;
+ align-items:center;gap:12px;background:#f8fbff;border:1px solid var(--line);
+ border-radius:9px;padding:12px 14px}
+.operations-saved-row strong{font-size:13px;color:var(--navy)}
+.operations-saved-row span{font-size:12px;color:var(--muted)}
+.operations-saved-row .secondary{margin-top:0}
+.operations-hub-form{display:grid;grid-template-columns:minmax(170px,1fr) minmax(0,2fr);
+ align-items:center;gap:9px 18px;max-width:760px;margin-top:18px}
+.operations-hub-form input,.operations-hub-form select,.operations-staff-row input{border:1px solid #cbd9e7;
+ border-radius:9px;padding:10px 12px;background:#f7f9fc;color:var(--navy);width:100%;min-width:0}
+.operations-hub-form>.primary,.operations-hub-form>.secondary{grid-column:2;justify-self:start;margin:0}
+.operations-staff-department{border:1px solid var(--line);border-radius:10px;margin:14px 0;overflow:hidden}
+.operations-staff-department summary{padding:14px 17px;cursor:pointer;background:#f0f6fd;
+ font-size:14px;font-weight:800;color:var(--navy)}
+.operations-staff-table{padding:5px 16px}
+.operations-staff-row{display:grid;grid-template-columns:minmax(200px,2fr) minmax(85px,.55fr) minmax(125px,.8fr);
+ align-items:center;gap:12px;border-bottom:1px solid var(--line);padding:10px 0}
+.operations-staff-row:last-child{border-bottom:0}
+.operations-staff-row>div{display:grid;gap:3px;min-width:0}
+.operations-staff-row strong{color:var(--navy);font-size:12px}
+.operations-staff-row small{color:var(--muted);font-size:11px}
+.operations-staff-row input{font-variant-numeric:tabular-nums}
+:root[data-ui-theme="dark"] .dashboard-company-story,
+:root[data-ui-theme="dark"] .operations-saved-row,
+:root[data-ui-theme="dark"] .operations-staff-department summary{background:#21364c}
+:root[data-ui-theme="dark"] .dashboard-company-story-mark{background:#483320}
+@media(max-width:1000px){.dashboard-operations-grid{grid-template-columns:1fr}}
+@media(max-width:760px){.dashboard-donut-chart{flex-direction:column}
+ .dashboard-donut-chart svg{width:min(70%,245px)}.dashboard-donut-info{width:100%}
+ .operations-saved-row{grid-template-columns:1fr}.operations-hub-form{grid-template-columns:1fr}
+ .operations-hub-form>.primary,.operations-hub-form>.secondary{grid-column:1}
+ .operations-staff-row{grid-template-columns:minmax(0,1fr) 70px 95px;gap:8px}
+ .operations-staff-table{padding:5px 9px}}
