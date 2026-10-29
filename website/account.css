@@ -47,3 +47,22 @@ h1 span{color:var(--orange)}.intro>p:not(.prelaunch-banner){line-height:1.8;colo
 /* Shared Airlinerra card-spacing rhythm. */
 .account-layout{gap:clamp(20px,3vw,42px)}
 @media(max-width:900px){.account-layout{gap:20px}}
+
+
+/* Moderate typography and reduce excessive whitespace across account forms. */
+.account-layout{margin-top:42px;margin-bottom:58px}
+.intro{padding-top:28px}
+h1{font-weight:750}
+.eyebrow{font-weight:680}
+.account-card{padding:clamp(20px,3vw,32px)}
+.account-card-heading h2{font-weight:690}
+.account-card-heading p{margin-bottom:18px}
+.intro-benefits{gap:14px;margin-top:25px;font-weight:570}
+.benefit-number{font-weight:680}
+.tab{font-weight:600}
+.account-panel{padding-top:17px}
+.account-panel label{font-weight:600}
+.account-panel h3{font-weight:660}
+.primary-button{font-weight:660}
+.preview-link{font-weight:620}
+@media(max-width:900px){.account-layout{margin-top:18px}}
