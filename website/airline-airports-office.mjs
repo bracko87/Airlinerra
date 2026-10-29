@@ -143,7 +143,7 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
  function updateBrowserDraftNote(){
   const note=$('office-local-draft-note'),importButton=$('office-import-local');
   const local=localEntries(),saved=Array.isArray(remoteEntries)?remoteEntries:[];
-  const remaining=local.filter(d=>!saved.some(x=>x.key===d.key));
+  const remaining=local.filter(d=>!saved.some(x=>x.key===d.key&&x.type===d.type));
   if(note)note.textContent=serverMode()?
     (remaining.length?remaining.length+' browser-only proposals are not yet saved on the server. You can import them explicitly.':
      'Browser-only proposals are kept separate from permanent offices.'):
@@ -290,7 +290,7 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
       'Server confirmed removal, but reloading the office list failed. Please retry.'):
       'That office draft was already removed.');
     }catch{feedback('Server removal failed. No local draft was changed.')}
-    finally{remoteBusy=false;target.disabled=false}
+    finally{remoteBusy=false;target.disabled=false;updateBrowserDraftNote()}
     return;
    }
    const rows=entries(),next=rows.filter(a=>a.key!==key);
@@ -304,7 +304,7 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
   if(target.id==='office-import-local'){
    if(!serverMode()||remoteBusy||!Array.isArray(remoteEntries)||!live.airline?.id)return;
    // Deliberate, user-initiated import only; never transfer browser drafts at login.
-   const candidates=localEntries().filter(x=>!remoteEntries.some(y=>y.key===x.key));
+   const candidates=localEntries().filter(x=>!remoteEntries.some(y=>y.key===x.key&&y.type===x.type));
    if(!candidates.length){updateBrowserDraftNote();return;}
    remoteBusy=true;target.disabled=true;
    const imported=[];
@@ -359,7 +359,7 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
      feedback(loaded?'Permanent office draft saved. No fees or salaries were charged.':
       'Server accepted the draft, but the saved list could not be reloaded. Please retry.');
     }catch{feedback('Server save failed. No browser-only drafts were changed.')}
-    finally{remoteBusy=false;target.disabled=false}
+    finally{remoteBusy=false;target.disabled=false;updateBrowserDraftNote()}
     return;
    }
    if(!saveSession(session,keyForAccount(),[...entries(),proposed.entry])){
