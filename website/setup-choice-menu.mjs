@@ -90,6 +90,13 @@ export function createDownwardMenu(select,{flags=false,placeholder='Select an op
   }
  });
  if(search){
+  // Typing while the closed country control is focused opens the search.
+  trigger.addEventListener('keydown',event=>{
+   if(event.ctrlKey||event.metaKey||event.altKey||event.key.length!==1)return;
+   event.preventDefault();
+   if(panel.hidden)trigger.click();
+   search.value+=event.key;filter();search.focus();
+  });
   search.addEventListener('input',filter);
   search.addEventListener('keydown',event=>{
    if(event.key==='Enter'){
