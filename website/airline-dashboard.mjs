@@ -28,6 +28,22 @@ export function normalizeDashboardLedger(entries){
  ).map(entry=>Object.freeze({kind:entry.kind,amountUsd:String(entry.amountUsd),
   recordedAt:entry.recordedAt}));
 }
+function renderCompanyNews(doc,airline,worlds,entries){
+ const root=doc.getElementById('dashboard-news-items');if(!root)return;
+ root.replaceChildren();
+ if(!airline?.name){const p=doc.createElement('p');p.className='dashboard-data-note';p.textContent='Connect an airline to view recorded company milestones.';root.append(p);return;}
+ const event=Array.isArray(entries)?entries.find(e=>e.kind==='STARTING_CAPITAL'&&Number.isFinite(Date.parse(e.recordedAt))):null;
+ const row=doc.createElement('div');row.className='dashboard-company-story';
+ const mark=doc.createElement('span');mark.className='dashboard-company-story-mark';mark.textContent='A';
+ const body=doc.createElement('div'),title=doc.createElement('strong'),desc=doc.createElement('p');
+ title.textContent=airline.name+' registered on '+worldDisplayName(airline.worldId,worlds);
+ desc.textContent=event?'Opening capital was recorded. You can plan your network and fleet.':'Your airline is verified. New milestones will appear when recorded.';
+ body.append(title,desc);
+ if(event){const time=doc.createElement('time');time.dateTime=new Date(event.recordedAt).toISOString();
+ time.textContent=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Berlin',day:'2-digit',month:'short',year:'numeric'}).format(new Date(event.recordedAt));body.append(time);}
+ row.append(mark,body);root.append(row);
+ const note=doc.createElement('p');note.className='dashboard-data-note';note.textContent='Live operational bulletins are not connected yet.';root.append(note);
+}
 export function renderAirlineDashboard(doc,{airline=null,worlds=[],ledgerEntries=null}={}){
  const $=id=>doc.getElementById(id);
  if($('dashboard-finance-cash'))
@@ -49,5 +65,6 @@ export function renderAirlineDashboard(doc,{airline=null,worlds=[],ledgerEntries
   cell.textContent='Flight tracking is not connected yet. Live flights will appear here when the operations engine is active.';
   tr.append(cell);body.replaceChildren(tr);
  }
+ renderCompanyNews(doc,airline,worlds,ledgerEntries);
  renderFinancialCharts(doc,{cash:airline?.cashUsd??null,ledgerEntries});
 }
