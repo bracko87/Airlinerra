@@ -250,7 +250,11 @@ async function airportSearch({setup=false,offset=0}={}){
         const row=doc.createElement('div');row.className='airport-result';
         const name=doc.createElement('strong');name.textContent=airport.name+' ('+airport.code+')';
         const place=doc.createElement('span');place.textContent=airport.countryIso+(airport.municipality?' · '+airport.municipality:'');
-        row.append(name,place);output.append(row);
+        const open=doc.createElement('button');open.type='button';open.className='secondary airport-profile-link';
+        open.textContent='Airport profile';open.addEventListener('click',()=>{
+          operationsController?.openAirport(airport);
+        });
+        row.append(name,place,open);output.append(row);
       }
       if(!output.children.length)output.textContent='No matching airports in this search.';
       nextAirportOffset=Number.isInteger(result.nextOffset)?result.nextOffset:null;
