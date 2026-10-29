@@ -10,7 +10,7 @@ import {
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const USER='11111111-1111-4111-8111-111111111111';
 const AIRLINE='22222222-2222-4222-8222-222222222222';
-const request={worldId:1,airlineName:' North Star Airways ',homeAirportKey:'OURAIRPORTS:101'};
+const request={worldId:1,airlineName:' North Star Airways ',homeAirportKey:'OURAIRPORTS:101',icaoCode:' nsa ',iataCode:' n1 '};
 const validUser=()=>({user:{id:USER,email_confirmed_at:'2026-10-26T08:00:00.000Z',is_anonymous:false},error:null});
 
 function createFakeDb({failAt=null,rows=null}={}) {
@@ -52,7 +52,7 @@ test('private adapter defaults closed and never checks token or calls database',
 
 test('invalid payloads are rejected without injecting unsafe SQL identifiers', () => {
   assert.deepEqual(validatedActivationRequest(request),{
-    worldId:1,airlineName:'North Star Airways',homeAirportKey:'OURAIRPORTS:101'
+    worldId:1,airlineName:'North Star Airways',homeAirportKey:'OURAIRPORTS:101',icaoCode:'NSA',iataCode:'N1'
   });
   for(const invalid of [
     null,{}, {worldId:0,airlineName:'ACME',homeAirportKey:'OURAIRPORTS:1'},
@@ -65,15 +65,18 @@ test('invalid payloads are rejected without injecting unsafe SQL identifiers', (
   ]) assert.throws(()=>validatedActivationRequest(invalid));
   assert.deepEqual(validatedActivationRequest({
     worldId:1,airlineName:'Aleksandrovo Air',
-    homeAirportKey:'FICTIONAL:fictional:RS:LYAL'
+    homeAirportKey:'FICTIONAL:fictional:RS:LYAL',icaoCode:'ALA',iataCode:'A1'
   }),{
     worldId:1,airlineName:'Aleksandrovo Air',
-    homeAirportKey:'FICTIONAL:fictional:RS:LYAL'
+    homeAirportKey:'FICTIONAL:fictional:RS:LYAL',icaoCode:'ALA',iataCode:'A1'
   });
   assert.throws(()=>validatedActivationRequest({
-    worldId:1,airlineName:'Old Numerical Airport',homeAirportKey:101
+    worldId:1,airlineName:'Old Numerical Airport',homeAirportKey:101,icaoCode:'AAA',iataCode:'A1'
   }),/Invalid home airport key/);
-  assert.ok(AIRLINE_ACTIVATION_SQL.includes('$1::uuid,$2::smallint,$3::text,$4::text'));
+  for(const values of [{icaoCode:'AA'}, {icaoCode:'A1C'}, {iataCode:'11'}, {iataCode:'1'}, {iataCode:'A??'}]){
+    assert.throws(()=>validatedActivationRequest({...request,...values}),/ICAO|IATA/);
+  }
+  assert.ok(AIRLINE_ACTIVATION_SQL.includes('$1::uuid,$2::smallint,$3::text,$4::text,$5::text,$6::text'));
 });
 
 test('trusted verified Auth user ID overrides caller-supplied account identifiers', async () => {
@@ -88,7 +91,7 @@ test('trusted verified Auth user ID overrides caller-supplied account identifier
   assert.deepEqual(calls.map(c=>c[0]==='query'?c[1]:c[0]),
     ['connect','BEGIN',AIRLINE_ACTIVATION_SQL,'COMMIT','release']);
   const values=calls.find(c=>c[1]===AIRLINE_ACTIVATION_SQL)[2];
-  assert.deepEqual(values,[USER,1,'North Star Airways','OURAIRPORTS:101']);
+  assert.deepEqual(values,[USER,1,'North Star Airways','OURAIRPORTS:101','NSA','N1']);
 });
 
 test('unverified, anonymous or spoofed identities are rejected before connection', async () => {
