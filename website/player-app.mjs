@@ -8,6 +8,7 @@ import {createPlayerReadClient,PLAYER_READ_API_ENABLED} from './player-read-clie
 import {createRealOnboardingClient} from './real-onboarding-client.mjs';
 import {createDownwardMenu} from './setup-choice-menu.mjs';
 import {createAirlineWorkspace} from './airline-workspace.mjs';
+import {createOperationsCenter} from './airline-operations-center.mjs';
 import {renderAirlineDashboard,worldDisplayName} from './airline-dashboard.mjs';
 import {createLocalCatalogClient} from './local-catalog-client.mjs';
 import {saveLocalDraft,readLocalDraft,clearLocalDraft} from './local-onboarding-draft.mjs';
@@ -77,6 +78,13 @@ function setManager(user){
     }
    });
   }
+  if(!operationsController){
+    operationsController=createOperationsCenter({
+      doc,identity:user.id,
+      session:(()=>{try{return window.sessionStorage}catch{return null}})(),
+      goTo:view=>{window.history.replaceState({},'',playerViewUrl(view));navigateTo(view);}
+    });
+  }
 }
 function renderOverviewState(hasAirline){
  doc.getElementById('player-airline-note').textContent=hasAirline?'':'Awaiting onboarding';
@@ -92,6 +100,7 @@ let onboarding=null;
 let onboardingContext=null;
 let hasRealAirline=false;
 let workspaceController=null;
+let operationsController=null;
 // Initial verified login is redirected; explicit later navigation is respected.
 let initialManagerLanding=false;
 let nextAirportOffset=null;
@@ -273,7 +282,10 @@ async function loadPlayerReadData({local=false}={}){
   renderAirlineDashboard(doc,{airline:first||null,worlds:data.worlds,ledgerEntries:data.ledgerEntries});
   try{drawRealWorlds(data.worlds);fillCountries(data.countries);}
   catch{console.warn('Airlinerra secondary directory failed to display');}
-  try{workspaceController?.updateData({connected:true,airline:first||null,worlds:data.worlds,countries:data.countries,reader:playerData});}
+  try{
+    workspaceController?.updateData({connected:true,airline:first||null,worlds:data.worlds,countries:data.countries,reader:playerData});
+    operationsController?.updateData({connected:true,airline:first||null,worlds:data.worlds,countries:data.countries,reader:playerData});
+  }
   catch{console.warn('Airlinerra secondary workspace failed to display');}
   doc.getElementById('player-data-status').hidden=true;
   doc.getElementById('player-data-retry').hidden=true;
@@ -307,6 +319,7 @@ async function loadPlayerReadData({local=false}={}){
   playerData=null;
   hasRealAirline=false; // Unknown because the protected read failed - NOT proof no airline exists.
   workspaceController?.updateData({connected:false,airline:null,reader:null});
+  operationsController?.updateData({connected:false,airline:null,reader:null});
   renderAirlineDashboard(doc,{airline:null,ledgerEntries:null});
   doc.getElementById('top-airline-state').textContent='Airline data unavailable';
   doc.getElementById('player-airline-name').textContent='Unable to load';
