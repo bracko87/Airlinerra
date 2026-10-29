@@ -17,7 +17,11 @@ export function createRealOnboardingClient({auth,origin,fetchImpl=(...args)=>fet
   let result;try{result=await response.json()}catch{throw Error('Invalid server response')}
   if(!response.ok){
    if(response.status===401)throw Error('Your account session expired. Sign in again.');
-   if(response.status===409)throw Error('The legal policy or airline status changed. Refresh the page.');
+   if(response.status===409)throw Error(
+    String(result?.error||'').includes('ICAO/IATA')
+      ?'This airline name, ICAO code or IATA code is already taken in this world. Choose another.'
+      :'Airline identity is already registered or the legal policy changed. Refresh the page.'
+   );
    if(response.status===503)throw Error('Airline setup is temporarily unavailable. Please try again.');
    throw Error(typeof result?.error==='string'?result.error:'Onboarding request rejected');
   }
