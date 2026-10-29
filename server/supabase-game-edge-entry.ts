@@ -19,7 +19,7 @@ async function gameApi(){
  if(!api)api=Promise.resolve().then(()=>{
   const database=new Pool({connectionString:dbUrl,ssl:{rejectUnauthorized:true},
    max:2,idleTimeoutMillis:10000,connectionTimeoutMillis:5000});
-  return createCanonicalGameApi({enabled:true,origin:ORIGIN,database,
+  return createCanonicalGameApi({enabled:true,airportOfficeDraftsEnabled:false,origin:ORIGIN,database,
    verifyUserToken:createHostedAuthVerifier({publishableKey:settings.publishableKey}),
    documentPaths:{terms:'/terms.html',privacy:'/privacy.html'}});
  }).catch(error=>{api=null;throw error});

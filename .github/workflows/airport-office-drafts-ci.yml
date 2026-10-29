@@ -1,0 +1,93 @@
+name: Airport office draft foundation (isolated, no deployment)
+
+on:
+  pull_request:
+    paths:
+      - 'server/airport-office-*.mjs'
+      - 'tests/test_airport_office*.mjs'
+      - 'tests/e2e/airport-office-disposable.mjs'
+      - 'supabase/migrations/*airport_office*'
+      - 'website/package.json'
+      - '.github/workflows/airport-office-drafts-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  airport-office-node:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check private modules and run ONLY relevant office regressions
+        run: |
+          node --check server/airport-office-domain.mjs
+          node --check server/airport-office-persistence.mjs
+          node --check server/airport-office-http-handler.mjs
+          node --check server/canonical-game-api.mjs
+          node --check website/airport-office-client.mjs
+          node --check website/airline-airports-office.mjs
+          node --check website/player-app.mjs
+          node --test tests/test_airport_office_domain.mjs tests/test_airport_office_persistence.mjs tests/test_airport_office_profiles.mjs tests/test_airport_office_http.mjs tests/test_airport_office_browser.mjs tests/test_airport_office_release_gate.mjs tests/test_airport_office_ui_persistence.mjs
+      - name: Verify gated browser bundle builds
+        working-directory: website
+        run: npm run build
+
+  airport-office-postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable-office-only
+          POSTGRES_DB: airlinerra_office_disposable
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d airlinerra_office_disposable"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: disposable-office-only
+      PGDATABASE: airlinerra_office_disposable
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install exact locked PostgreSQL client dependency
+        working-directory: website
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Install PostgreSQL client when missing
+        run: |
+          if ! command -v psql >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y postgresql-client
+          fi
+      - name: Bootstrap throwaway game schema and validate office migration twice
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = "127.0.0.1"
+          test "$PGDATABASE" = "airlinerra_office_disposable"
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/bootstrap_auth_stubs.sql
+          psql -X -v ON_ERROR_STOP=1 -f docs/sql/airlinerra_game_identity_schema_prelaunch.sql
+          psql -X -v ON_ERROR_STOP=1 -f docs/sql/airlinerra_game_activation_prelaunch.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261029154000_airlinerra_airport_office_drafts.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261029154000_airlinerra_airport_office_drafts.sql
+          psql -X -v ON_ERROR_STOP=1 -Atc "select relrowsecurity from pg_class where oid='airlinerra_game.airport_offices'::regclass" | grep -Fxq t
+          psql -X -v ON_ERROR_STOP=1 -Atc "select not has_table_privilege('authenticated','airlinerra_game.airport_offices','SELECT') and not has_table_privilege('anon','airlinerra_game.airport_offices','SELECT')" | grep -Fxq t
+          psql -X -v ON_ERROR_STOP=1 -Atc "select count(*)=2 from pg_constraint where conrelid='airlinerra_game.airport_offices'::regclass and contype='f'" | grep -Fxq t
+          echo "Office schema is private and constrained. No production service accessed."
+      - name: End-to-end owner/world isolation against disposable PostgreSQL only
+        run: node tests/e2e/airport-office-disposable.mjs

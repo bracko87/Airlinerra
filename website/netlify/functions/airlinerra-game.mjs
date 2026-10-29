@@ -6,6 +6,7 @@ import {createProductionGameApi} from '../../../server/production-game-api.mjs';
 export const config={
  path:[
   '/api/v1/player/overview','/api/v1/player/airports',
+  '/api/v1/player/airport-offices',
   '/api/v1/onboarding/context','/api/v1/legal/consents',
   '/api/v1/airlines','/api/v1/registration/readiness'
  ],

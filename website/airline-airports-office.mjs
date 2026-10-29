@@ -53,8 +53,10 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
  const host=$('workspace-hubs'),profileHost=$('workspace-airport-profile');
  let live={connected:false,airline:null,countries:[],reader:null};
  let selectedAirport=null,activeAirport=null;
+ let remoteEntries=null,remoteRequest=0,remoteBusy=false,remoteOwner=null;
  const known=new Map();
- const entries=()=>{
+ const serverMode=()=>Boolean(live.officeClient);
+ const localEntries=()=>{
   const current=readSession(session,key);
   if(Array.isArray(current.airportOffices))return current.airportOffices.filter(x=>x?.status==='draft'&&
    ['hub','station'].includes(x.type)&&normalizeApprovedAirport(x));
@@ -63,6 +65,27 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
    ...x,type:'hub',status:'draft',countryIso:x.countryIso||null
   })):[];
  };
+ const entries=()=>serverMode()?(remoteEntries||[]):localEntries();
+ async function refreshRemote({announce=true}={}){
+  const request=++remoteRequest;
+  remoteEntries=null;renderList('hub');renderList('station');
+  if(!serverMode()||!live.connected||!live.airline?.id)return false;
+  const client=live.officeClient,worldId=Number(live.airline.worldId),owner=remoteOwner;
+  try{
+   const rows=await client.list({worldId});
+   if(request!==remoteRequest||client!==live.officeClient||owner!==remoteOwner)return false;
+   remoteEntries=rows.map(entry=>({...entry,minimumStaff:entry.type==='station'?1:null}));
+   for(const entry of remoteEntries)remember(entry);
+   renderList('hub');renderList('station');updateBrowserDraftNote();
+   if(announce)feedback('Permanent office drafts loaded. No offices are active.');
+   return true;
+  }catch{
+   if(request!==remoteRequest)return false;
+   remoteEntries=null;renderList('hub');renderList('station');updateBrowserDraftNote();
+   feedback('Saved office drafts could not be loaded. Browser proposals were not changed.');
+   return false;
+  }
+ }
  if(host){
   host.innerHTML=panel('HEADQUARTERS','Registered headquarters',
    '<p class="hint">This is the airport chosen when the airline was created. It is company identity, not an additional paid hub.</p>'+
@@ -79,7 +102,9 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
     '<label for="office-result">Approved airport</label><select id="office-result" disabled><option value="">Search first</option></select>'+
     '<div class="airport-office-form-actions"><button type="button" class="primary" id="office-save">Save proposed location</button>'+
     '<button type="button" class="secondary" id="office-preview">Airport profile</button></div></div>'+
-    '<p id="office-feedback" class="hint" role="status"></p>')+
+    '<p id="office-feedback" class="hint" role="status"></p>'+
+    '<p id="office-local-draft-note" class="hint"></p>'+
+    '<button type="button" class="secondary" id="office-import-local" hidden>Import browser proposals into my airline</button>')+
    panel('NETWORK LOCATIONS','My hubs',
     '<div class="airport-office-summary"><span>Active additional hubs</span><strong>Not connected</strong></div>'+
     '<div id="office-hub-list" class="operations-route-table"></div>')+
@@ -115,6 +140,24 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
     '<p class="hint">Connections, operating airlines, flight frequency and passenger load statistics will appear when verified flight scheduling is connected.</p>');
  }
  const feedback=t=>{if($('office-feedback'))$('office-feedback').textContent=t};
+ function updateBrowserDraftNote(){
+  const note=$('office-local-draft-note'),importButton=$('office-import-local');
+  const local=localEntries(),saved=Array.isArray(remoteEntries)?remoteEntries:[];
+  const remaining=local.filter(d=>!saved.some(x=>x.key===d.key&&x.type===d.type));
+  if(note)note.textContent=serverMode()?
+    (remaining.length?remaining.length+' browser-only proposals are not yet saved on the server. You can import them explicitly.':
+     'Browser-only proposals are kept separate from permanent offices.'):
+    'These proposals are browser-only until permanent office saving is enabled.';
+  if(importButton){
+   importButton.hidden=!serverMode()||!live.connected||!Array.isArray(remoteEntries)||!remaining.length;
+   importButton.disabled=remoteBusy;
+  }
+ }
+ function retainUnimported(imported){
+  if(!imported.length)return true;
+  const remainder=localEntries().filter(x=>!imported.includes(x.key));
+  return saveSession(session,key,remainder);
+ }
  function remember(a){const normalized=normalizeApprovedAirport(a);if(normalized)known.set(normalized.key,normalized);return normalized}
  function headquarters(){
   const a=live.airline;
@@ -141,6 +184,9 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
   const target=$(type==='hub'?'office-hub-list':'office-station-list');if(!target)return;
   target.replaceChildren();
   const items=entries().filter(e=>e.type===type);
+  if(serverMode()&&remoteEntries===null){
+   target.append(createText(doc,'p','Server office drafts are not loaded.','hint'));return;
+  }
   if(!items.length){target.append(createText(doc,'p',
    type==='hub'?'No additional hub proposals saved.':'No station proposals saved.','hint'));return}
   for(const office of items){
@@ -150,7 +196,8 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
     createText(doc,'span',type==='hub'?
       'Additional hub - proposal only':'Station - proposal only; 1 planned representative minimum','hint'));
    const actions=doc.createElement('div');actions.className='airport-office-row-actions';
-   actions.append(button(doc,'Airport profile','view',office.key),button(doc,'Remove draft','remove',office.key));
+   actions.append(button(doc,'Airport profile','view',office.key),button(doc,
+    serverMode()?'Remove server draft':'Remove draft','remove',office.key));
    line.append(text,actions);target.append(line);remember(office);
   }
  }
@@ -231,12 +278,66 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
   }
   if(action==='remove'){
    const key=target.dataset.airportKey;
+   if(remoteBusy)return;
+   if(serverMode()){
+    if(!Array.isArray(remoteEntries)){feedback('Server office drafts are unavailable.');return}
+    if(!remoteEntries.some(e=>e.key===key))return;
+    remoteBusy=true;target.disabled=true;
+    try{
+     const removed=await live.officeClient.remove({worldId:Number(live.airline?.worldId),airportKey:key});
+     const loaded=await refreshRemote({announce:false});
+     feedback(removed?(loaded?'Permanent office draft removed. No active office was changed.':
+      'Server confirmed removal, but reloading the office list failed. Please retry.'):
+      'That office draft was already removed.');
+    }catch{feedback('Server removal failed. No local draft was changed.')}
+    finally{remoteBusy=false;target.disabled=false;updateBrowserDraftNote()}
+    return;
+   }
    const rows=entries(),next=rows.filter(a=>a.key!==key);
    if(rows.length===next.length)return;
    if(!saveSession(session,keyForAccount(),next)){
     feedback('Unable to save removal. Browser session storage is unavailable.');return;
    }
-   renderList('hub');renderList('station');feedback('Office proposal removed. No active airport office was changed.');
+   renderList('hub');renderList('station');updateBrowserDraftNote();feedback('Office proposal removed. No active airport office was changed.');
+   return;
+  }
+  if(target.id==='office-import-local'){
+   if(!serverMode()||remoteBusy||!Array.isArray(remoteEntries)||!live.airline?.id)return;
+   // Deliberate, user-initiated import only; never transfer browser drafts at login.
+   const candidates=localEntries().filter(x=>!remoteEntries.some(y=>y.key===x.key&&y.type===x.type));
+   if(!candidates.length){updateBrowserDraftNote();return;}
+   remoteBusy=true;target.disabled=true;
+   const imported=[];
+   try{
+    for(const item of candidates){
+     if(item.key===live.airline.homeAirportKey)continue;
+     await live.officeClient.save({
+      worldId:Number(live.airline.worldId),airportKey:item.key,type:item.type
+     });
+     imported.push(item.key);
+    }
+    const loaded=await refreshRemote({announce:false});
+    if(!loaded){
+     feedback('Server accepted '+imported.length+' proposals, but could not verify them yet. Browser copies were kept.');
+     return;
+    }
+    const confirmed=imported.filter(k=>remoteEntries.some(x=>x.key===k));
+    if(!retainUnimported(confirmed)){
+     feedback('Server drafts saved, but browser copies could not be cleared. No office was charged.');
+     return;
+    }
+    updateBrowserDraftNote();
+    feedback(confirmed.length+' proposals imported permanently. Existing server drafts were not duplicated.');
+   }catch{
+    const loaded=await refreshRemote({announce:false});
+    if(loaded){
+     const confirmed=imported.filter(k=>remoteEntries.some(x=>x.key===k));
+     if(!retainUnimported(confirmed))
+      feedback('Import interrupted; permanent drafts saved, but browser copies remain unchanged.');
+     else feedback('Import interrupted. '+confirmed.length+' were verified and remaining browser proposals were retained.');
+    }else feedback('Import interrupted. Browser copies were retained until permanent saving can be verified.');
+    updateBrowserDraftNote();
+   }finally{remoteBusy=false;target.disabled=false;updateBrowserDraftNote();}
    return;
   }
   if(target.id==='office-find'){await search();return;}
@@ -249,10 +350,22 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
    const proposed=proposeAirportOffice({type:$('office-location-type')?.value,airport:a,
     homeAirportKey:live.airline.homeAirportKey,existing:entries()});
    if(!proposed.ok){feedback(proposed.reason);return;}
+   if(serverMode()){
+    if(remoteBusy||!Array.isArray(remoteEntries)){feedback('Server drafts are not ready.');return;}
+    remoteBusy=true;target.disabled=true;
+    try{
+     await live.officeClient.save({worldId:Number(live.airline.worldId),airportKey:proposed.entry.key,type:proposed.entry.type});
+     const loaded=await refreshRemote({announce:false});
+     feedback(loaded?'Permanent office draft saved. No fees or salaries were charged.':
+      'Server accepted the draft, but the saved list could not be reloaded. Please retry.');
+    }catch{feedback('Server save failed. No browser-only drafts were changed.')}
+    finally{remoteBusy=false;target.disabled=false;updateBrowserDraftNote()}
+    return;
+   }
    if(!saveSession(session,keyForAccount(),[...entries(),proposed.entry])){
     feedback('Browser session storage is not available. Your proposal was not saved.');return;
    }
-   renderList('hub');renderList('station');
+   renderList('hub');renderList('station');updateBrowserDraftNote();
    feedback((proposed.entry.type==='station'?'Station':'Hub')+
     ' proposal saved in this browser session. No fees or salaries were charged.');
   }
@@ -260,8 +373,16 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
  // Keep the private account draft key aligned with Route/Staff planning.
  function keyForAccount(){return key}
  function updateData(value){
+  const before=remoteOwner,prevClient=live.officeClient;
   live={...live,...value};
-  headquarters();directories();renderList('hub');renderList('station');
+  const owner=live.connected&&serverMode()&&live.airline?.id?
+   String(live.airline.id)+':'+String(live.airline.worldId):null;
+  remoteOwner=owner;
+  if(owner!==before||live.officeClient!==prevClient){
+   ++remoteRequest;remoteEntries=null;
+  }
+  headquarters();directories();renderList('hub');renderList('station');updateBrowserDraftNote();
+  if(owner&&(owner!==before||live.officeClient!==prevClient))void refreshRemote();
  }
  function openAirport(airport){
   const a=remember(airport);if(!a)return false;

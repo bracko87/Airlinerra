@@ -5,6 +5,7 @@ import {inspectInvitedTesterProvider,TESTER_ORIGIN} from './invited-tester-entry
 import {createInvitedTesterAuth,LOCAL_REAL_AUTH_ORIGIN} from './invited-tester-auth.mjs';
 import {openPrivateTesterDashboard,PrivateTesterAccessDenied} from './tester-dashboard-state.mjs';
 import {createPlayerReadClient,PLAYER_READ_API_ENABLED} from './player-read-client.mjs';
+import {createAirportOfficeClient,AIRPORT_OFFICE_DRAFT_API_ENABLED} from './airport-office-client.mjs';
 import {createRealOnboardingClient} from './real-onboarding-client.mjs';
 import {createDownwardMenu} from './setup-choice-menu.mjs';
 import {createAirlineWorkspace} from './airline-workspace.mjs';
@@ -275,6 +276,8 @@ async function loadPlayerReadData({local=false}={}){
  try{
   playerData=createPlayerReadClient({auth,origin:window.location.origin,enabled:true,local});
   const data=await playerData.overview();
+  const officeClient=AIRPORT_OFFICE_DRAFT_API_ENABLED?
+   createAirportOfficeClient({auth,origin:window.location.origin,local,enabled:true}):null;
   readStage='display';
   if(!Array.isArray(data.worlds)||!Array.isArray(data.countries)||!Array.isArray(data.airlines))
    throw Error('Invalid game directory');
@@ -288,7 +291,7 @@ async function loadPlayerReadData({local=false}={}){
   catch{console.warn('Airlinerra secondary directory failed to display');}
   try{
     workspaceController?.updateData({connected:true,airline:first||null,worlds:data.worlds,countries:data.countries,reader:playerData});
-    operationsController?.updateData({connected:true,airline:first||null,worlds:data.worlds,countries:data.countries,reader:playerData});
+    operationsController?.updateData({connected:true,airline:first||null,worlds:data.worlds,countries:data.countries,reader:playerData,officeClient});
   }
   catch{console.warn('Airlinerra secondary workspace failed to display');}
   doc.getElementById('player-data-status').hidden=true;
