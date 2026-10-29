@@ -69,7 +69,7 @@ export function createCanonicalGameApi({
   if(url.pathname===AIRPORT_OFFICE_API_PATH){
    if(request.method!=='POST')return respond(405,'Method not allowed');
    const body=await request.text();
-   if(Buffer.byteLength(body,'utf8')>512)return respond(413,'Request too large');
+   if(new TextEncoder().encode(body).byteLength>512)return respond(413,'Request too large');
    const result=await airportOffices({path:url.pathname,method:request.method,
     headers:Object.fromEntries(request.headers.entries()),body});
    return new Response(result.body,{status:result.status,headers:result.headers});
@@ -77,7 +77,7 @@ export function createCanonicalGameApi({
   if(url.pathname.startsWith('/api/v1/player/'))return read(request);
   if(request.method!=='POST')return respond(405,'Method not allowed');
   const body=await request.text();
-  if(Buffer.byteLength(body,'utf8')>2048)return respond(413,'Request body too large');
+  if(new TextEncoder().encode(body).byteLength>2048)return respond(413,'Request body too large');
   try{
    const result=await handlers[url.pathname]({
     path:url.pathname,method:request.method,
