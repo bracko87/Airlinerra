@@ -19,3 +19,16 @@ button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid var(-
 
 @media(max-width:940px){header,main,footer{width:calc(100% - 56px)}main{gap:30px}}
 @media(max-width:740px){header,main,footer{width:calc(100% - 36px)}main{grid-template-columns:1fr}}
+
+
+/* Match the site's lighter navigation and form rhythm. */
+main{margin-top:48px;gap:34px}
+.card{padding:28px}
+h1{font-weight:750;margin-bottom:20px}
+h2{font-weight:660}
+header span,.kicker{font-weight:650;letter-spacing:.12em}
+.public-home-link{font-weight:620}
+label{font-weight:600}
+form{margin-top:20px}
+.intro .note{margin-top:24px}
+@media(max-width:780px){.card{padding:21px}main{margin-top:28px;gap:20px}}
