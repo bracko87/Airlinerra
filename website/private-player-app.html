@@ -103,11 +103,64 @@
             <article class="kpi"><span>Active routes</span><strong>-</strong><small>Operations closed</small></article>
           </div>
           <p id="player-logo-warning" role="alert" class="hint" hidden></p>
-          <div class="two-cols">
-            <article class="panel"><span class="panel-kicker">NEXT STEPS</span><h2 id="overview-progress-title">Set up your airline</h2><p id="overview-progress-description">Choose your world, home airport and airline name to create your company.</p><div class="progress-line"><span>Account verified</span><b>Ready</b></div><div class="progress-line"><span>World and home airport</span><b id="overview-home-progress">Pending</b></div><div class="progress-line"><span>Airline activation</span><b id="overview-activation-progress">Locked</b></div><button class="secondary" type="button" data-go-view="onboarding" data-setup-only hidden>View setup flow</button></article>
-            <article class="panel"><span class="panel-kicker">GET STARTED</span><h2>Build your airline</h2><p id="overview-get-started-description">Start with $5,000,000 and no aircraft. Choose your home airport, then explore fleet, routes and scheduling.</p><div class="mini-row"><span>Starting budget</span><strong>$5,000,000</strong></div><div class="mini-row"><span>Starting aircraft</span><strong>0</strong></div><button class="secondary" type="button" data-go-view="worlds">View worlds</button></article>
+          <div class="dashboard-operations-grid">
+            <article class="panel dashboard-flights-panel">
+              <div class="dashboard-section-title">
+                <div><span class="panel-kicker">FLIGHT OPERATIONS</span><h2>Current flights</h2>
+                  <p>Live departures, routes, assigned aircraft and flight status.</p></div>
+                <span class="dashboard-count" id="dashboard-flights-count">-</span>
+              </div>
+              <div class="dashboard-table-scroll">
+                <table class="dashboard-flight-table">
+                  <thead><tr><th>Flight</th><th>Route</th><th>Aircraft</th><th>Status</th><th>Arrival</th></tr></thead>
+                  <tbody id="dashboard-flights-body">
+                    <tr><td colspan="5" class="dashboard-empty-cell">Flight tracking is not connected yet. Live flights will appear here when the operations engine is active.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <p class="dashboard-data-note" id="dashboard-flights-note">Up to 10 current flights will be shown when flight data becomes available.</p>
+            </article>
+            <article class="panel dashboard-traffic-panel">
+              <span class="panel-kicker">NETWORK AND TRAFFIC</span><h2>Airline statistics</h2>
+              <div class="dashboard-stat-list">
+                <div><span>Passengers transported</span><strong id="dashboard-passengers">Not available</strong></div>
+                <div><span>Cargo transported</span><strong id="dashboard-cargo">Not available</strong></div>
+                <div><span>Airports served</span><strong id="dashboard-served-airports">Not available</strong></div>
+                <div><span>Active routes</span><strong id="dashboard-active-routes">Not available</strong></div>
+                <div><span>Completed flights</span><strong id="dashboard-completed-flights">Not available</strong></div>
+              </div>
+              <p class="dashboard-data-note" id="dashboard-traffic-note">Passenger, cargo and network statistics are awaiting live flight operations.</p>
+            </article>
           </div>
-          <div id="workspace-overview"></div>
+          <div class="dashboard-bottom-grid">
+            <article class="panel dashboard-finance-panel">
+              <span class="panel-kicker">FINANCIAL OVERVIEW</span><h2>Airline finances</h2>
+              <div class="dashboard-financial-highlight"><span>Available cash</span>
+                <strong id="dashboard-finance-cash">-</strong>
+                <small>Verified airline balance</small>
+              </div>
+              <div class="dashboard-financial-rows">
+                <div><span>Operating revenue</span><strong id="dashboard-finance-revenue">Not available</strong></div>
+                <div><span>Operating expenses</span><strong id="dashboard-finance-expenses">Not available</strong></div>
+                <div><span>Net operating result</span><strong id="dashboard-finance-net">Not available</strong></div>
+              </div>
+              <h3 class="dashboard-subtitle">Latest financial activity</h3>
+              <div id="dashboard-ledger-activity" aria-live="polite">
+                <p class="dashboard-data-note">Loading ledger entries...</p>
+              </div>
+              <button type="button" class="secondary" data-go-view="finances">View finances</button>
+            </article>
+            <article class="panel dashboard-news-panel">
+              <span class="panel-kicker">AIRLINE UPDATES</span><h2>Notifications and company news</h2>
+              <div id="dashboard-news-items" aria-live="polite">
+                <div class="dashboard-news-empty">
+                  <strong>Notifications are not connected yet</strong>
+                  <p>Company announcements, aircraft events and flight alerts will appear here when the notification service is available.</p>
+                </div>
+              </div>
+              <p class="dashboard-data-note">Updates will be specific to your airline and game world.</p>
+            </article>
+          </div>
         </section>
         <section data-player-view="onboarding" hidden>
           <div class="page-head"><div><p class="eyebrow">AIRLINE REGISTRATION</p><h1>Create your airline</h1><p>Choose your world, country, home airport and airline identity.</p></div></div>
