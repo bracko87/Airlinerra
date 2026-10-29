@@ -14,6 +14,22 @@ const status=document.getElementById('registration-readiness');
 const feedback=document.getElementById('registration-feedback');
 const button=document.getElementById('real-register-submit');
 const origin=window.location.origin;
+function registrationFeedback(kind,message){
+ feedback.dataset.status=kind;
+ feedback.setAttribute('role',kind==='error'?'alert':'status');
+ feedback.textContent=message;
+}
+function registrationErrorMessage(error){
+ const reason=String(error?.message||'').toLowerCase();
+ if(reason.includes('password')&&reason.includes('weak'))return 'The password is too weak. Choose a stronger password.';
+ if(reason.includes('rate limit')||reason.includes('too many')||reason.includes('over_email_send_rate_limit'))return 'Too many attempts. Please try again later.';
+ if(reason.includes('email')&&(reason.includes('invalid')||reason.includes('not valid')))return 'Enter a valid email address.';
+ if(reason.includes('already registered')||reason.includes('already exists'))return 'This account may already exist. Try signing in or resetting the password.';
+ if(reason.includes('signup')&&reason.includes('disabled'))return 'Email registration is currently disabled.';
+ if(reason.includes('not allowed')||reason.includes('not authorized')||reason.includes('before_user_created')||reason.includes('hook'))return 'Account registration is not authorized for this email address.';
+ if(reason.includes('network')||reason.includes('failed to fetch'))return 'Network error. Check your connection and try again.';
+ return 'Registration could not be completed. Verify your details and try again.';
+}
 let sdkClient=null;
 const passwordInput=document.getElementById('new-manager-password');
 const confirmInput=document.getElementById('new-manager-password-confirm');
@@ -102,7 +118,7 @@ form.addEventListener('submit',async event=>{
  updatePasswords();
  if(!sdkClient||!form.reportValidity())return;
  button.disabled=true;
- feedback.textContent='Submitting registration…';
+ registrationFeedback('pending','Submitting your registration request...');
  try{
   if(!document.getElementById('new-manager-consent').checked)throw Error('Review both legal documents');
   const email=normalizedEmail(document.getElementById('new-manager-email').value);
@@ -116,10 +132,12 @@ form.addEventListener('submit',async event=>{
    }
   });
   if(error)throw error;
-  feedback.textContent='If registration was accepted, check your inbox for the Airlinerra confirmation email. Confirm it to proceed to airline setup.';
+  registrationFeedback('success','Registration request accepted. Please check your email for the Airlinerra confirmation link. Also check your spam folder. Confirm your email to continue to airline setup.');
   passwordInput.value='';confirmInput.value='';updatePasswords();
- }catch{
-  feedback.textContent='Registration was not completed. Check your details or contact support.';
+ }catch(error){
+  const message=error?.message==='Passwords do not match.'||error?.message==='Review both legal documents'
+   ?error.message:registrationErrorMessage(error);
+  registrationFeedback('error','Registration failed. '+message);
  }finally{button.disabled=false;}
 });
 void initialize();
