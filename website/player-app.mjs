@@ -12,7 +12,7 @@ import {saveLocalDraft,readLocalDraft,clearLocalDraft} from './local-onboarding-
 import {isLocalDemoOrigin,hasLocalDemo,endLocalDemo,getLocalTestProfile,LOCAL_DEMO_MANAGER,LOCAL_DEMO_LOGIN_PATH} from './local-demo-session.mjs';
 import {
   PLAYER_APP_PATH,PLAYER_LOGIN_PATH,PLAYER_VIEWS,WORLD_LABELS,
-  safePlayerView,playerViewUrl,verifiedManagerIdentity,onboardingReadiness,managerLandingView
+  safePlayerView,playerViewUrl,verifiedManagerIdentity,onboardingReadiness,managerLandingView,formatWholeUsd
 } from './player-app-model.mjs';
 
 const doc=window.document;
@@ -62,14 +62,6 @@ function setManager(user){
   doc.getElementById('manager-joined').textContent=manager.joined||'Not provided';
   doc.getElementById('setup-email').textContent=manager.email;
   doc.getElementById('top-email').textContent=manager.email;
-}
-/** Format cash for display only; never mutate the financial ledger. */
-function formatWholeUsd(value){
- const amount=Number(value);
- if(!Number.isFinite(amount)||amount<0||!Number.isSafeInteger(Math.round(amount)))return '-';
- return new Intl.NumberFormat('en-US',{
-  style:'currency',currency:'USD',minimumFractionDigits:0,maximumFractionDigits:0
- }).format(amount);
 }
 function renderOverviewState(hasAirline){
  doc.getElementById('player-airline-note').textContent=hasAirline?'Airline created successfully':'Awaiting onboarding';
