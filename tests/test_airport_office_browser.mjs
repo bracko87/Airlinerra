@@ -58,7 +58,7 @@ test('browser workspace keeps local-only plans separate and build copies gated c
  ]);
  assert.match(office,/const localEntries=/);
  assert.match(office,/remoteEntries/);
- assert.match(office,/NOT automatically uploaded/);
+ assert.match(office,/never transfer browser drafts at login/);
  assert.match(office,/officeClient\.save/);
  assert.match(office,/officeClient\.remove/);
  assert.match(operations,/airportOfficeController\?\.updateData\(value\)/);
