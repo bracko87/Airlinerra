@@ -15,8 +15,10 @@ export function createPlayerReadClient({auth,origin,enabled=PLAYER_READ_API_ENAB
      body:JSON.stringify(payload),cache:'no-store',redirect:'error',credentials:'omit',
      mode:'same-origin',referrerPolicy:'no-referrer'
    });
-   if(response.status===401)throw Error('Session expired');
-   if(!response.ok)throw Error('Player database service unavailable');
+   if(response.status===401)throw Error('GAME_API_HTTP_401');
+   if(!response.ok)throw Error('GAME_API_HTTP_'+String(response.status));
+   // A successful network call is not sufficient if the game API returned
+   // a malformed body. Keep a separate status for safe UI troubleshooting.
    const data=await response.json();
    if(!data||typeof data!=='object'||Array.isArray(data))throw Error('Invalid player data response');
    return data;
