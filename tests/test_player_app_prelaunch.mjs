@@ -19,7 +19,7 @@ test('player application has complete distinct navigation and bounded hash route
   assert.equal(playerViewUrl('profile'),'/player.html#profile');
   assert.equal(playerViewUrl('https://hostile.example'),'/player.html#overview');
   assert.equal(WORLD_LABELS.length,3);
-  assert.equal(WORLD_LABELS.every(w=>w.status==='Planned'),true);
+  assert.deepEqual(WORLD_LABELS.map(w=>w.name),['Horizon','Atlas','Odyssey']);
 });
 
 test('profile is display only and requires verified invitation',()=>{
