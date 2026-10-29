@@ -33,9 +33,10 @@ test('finance charts and management insights are placed below operations',async(
  assert.ok(overview.includes('dashboard-cash-chart'));
  assert.ok(overview.includes('dashboard-income-chart'));
  assert.ok(overview.includes('dashboard-insights-items'));
- assert.ok(!overview.includes('dashboard-news-items'));
+ assert.ok(overview.includes('dashboard-news-items'));
+ assert.ok(overview.includes('dashboard-full-flights'));
  assert.ok(!overview.includes('dashboard-ledger-activity'));
- for(const section of ['finance-chart-grid','dashboard-insights-grid','dashboard-chart-panel'])
+ for(const section of ['finance-chart-grid','dashboard-insights-grid','dashboard-chart-panel','dashboard-donut-chart'])
   assert.ok(css.includes(section));
  assert.match(js,/renderFinancialCharts\(doc,\{cash:airline\?\.cashUsd\?\?null,ledgerEntries\}\)/);
  assert.match(assets,/'airline-finance-charts.mjs'/);
