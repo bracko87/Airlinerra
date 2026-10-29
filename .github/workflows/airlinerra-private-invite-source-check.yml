@@ -40,6 +40,8 @@ on:
       - 'tests/test_airlinerra_operational_dashboard.mjs'
       - 'website/airline-dashboard.mjs'
       - 'website/airline-finance-charts.mjs'
+      - 'website/airline-operations-center.mjs'
+      - 'tests/test_operations_center_navigation.mjs'
       - 'website/studio-footer.js'
       - 'website/studio-footer.css'
       - 'website/faq.html'
