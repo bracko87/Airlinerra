@@ -11,7 +11,7 @@ const TOKEN=/^Bearer [A-Za-z0-9._~-]{16,8192}$/u;
 const HEADERS={'content-type':'application/json; charset=utf-8','cache-control':'no-store',
  'x-content-type-options':'nosniff','referrer-policy':'no-referrer'};
 function fail(status,error){return new Response(JSON.stringify({error}),{status,headers:HEADERS});}
-export function createProductionGameApi({origin=PRODUCTION_ORIGIN,fetchImpl=globalThis.fetch}={}){
+export function createProductionGameApi({origin=PRODUCTION_ORIGIN,fetchImpl=globalThis.fetch,airportOfficeDraftsEnabled=false}={}){
  if(origin!==PRODUCTION_ORIGIN||typeof fetchImpl!=='function')
   throw Error('Pinned Airlinerra production API required');
  return async function realGameApi(request){
@@ -19,6 +19,10 @@ export function createProductionGameApi({origin=PRODUCTION_ORIGIN,fetchImpl=glob
   const url=new URL(request.url);
   if(url.origin!==PRODUCTION_ORIGIN||url.search||url.hash)return fail(403,'Forbidden');
   if(!CANONICAL_GAME_API_PATHS.includes(url.pathname))return fail(404,'Not found');
+  const isOfficeDraft=url.pathname==='/api/v1/player/airport-offices';
+  // Independent release gate: an unprepared production Edge deployment must never
+  // receive office writes merely because Netlify registers the URL.
+  if(isOfficeDraft&&airportOfficeDraftsEnabled!==true)return fail(503,'Airport office drafts are not enabled');
   const isReadiness=url.pathname==='/api/v1/registration/readiness';
   if(request.method!==(isReadiness?'GET':'POST'))return fail(405,'Method not allowed');
   const userBearer=request.headers.get('authorization')||'';
@@ -29,7 +33,7 @@ export function createProductionGameApi({origin=PRODUCTION_ORIGIN,fetchImpl=glob
   if(!isReadiness){
    try{
     body=await request.text();
-    if(new TextEncoder().encode(body).byteLength>2048)return fail(413,'Request too large');
+    if(new TextEncoder().encode(body).byteLength>(isOfficeDraft?512:2048))return fail(413,'Request too large');
    }catch{return fail(400,'Invalid request body')}
   }
   try{
