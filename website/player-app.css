@@ -481,3 +481,9 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
  .operations-hub-form>.primary,.operations-hub-form>.secondary{grid-column:1}
  .operations-staff-row{grid-template-columns:minmax(0,1fr) 70px 95px;gap:8px}
  .operations-staff-table{padding:5px 9px}}
+
+.operations-staff-heading{display:grid;grid-template-columns:minmax(200px,2fr) minmax(85px,.55fr) minmax(125px,.8fr);
+ gap:12px;padding:11px 0;background:#f8fbff;border-bottom:1px solid var(--line);font-size:11px;color:var(--muted)}
+.operations-staff-heading strong{font-size:11px;color:var(--muted)}
+.nav-links{max-height:min(68vh,560px);overflow-y:auto;overscroll-behavior:contain}
+@media(max-width:760px){.operations-staff-heading{grid-template-columns:minmax(0,1fr) 70px 95px;gap:8px}}
