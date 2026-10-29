@@ -35,7 +35,9 @@ test('player waits for verified Auth before routing; API errors never pretend an
  assert.match(script,/initialManagerLanding=false;/);
  assert.match(script,/setup-retry-loading/);
  assert.match(html,/id="setup-retry-loading"[^>]*hidden/);
- assert.match(script,/Unable to load your existing airline from the World 1 game database/);
+ assert.match(script,/Airline data request failed/);
+ assert.match(script,/Airline data was received but the page could not display it/);
+ assert.match(script,/GAME_API_HTTP_/);
  assert.match(script,/if\(readSucceeded\)await loadRealOnboarding\(\)/);
  assert.match(script,/Do not register again or create another airline/);
  assert.match(script,/doc\.getElementById\('player-data-retry'\)/);
