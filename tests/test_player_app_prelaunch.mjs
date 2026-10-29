@@ -89,13 +89,13 @@ test('grouped horizontal dropdowns keep all ten game routes accessible',async()=
   ]);
   assert.match(html,/<nav class="app-navigation" aria-label="Player application">/);
   assert.doesNotMatch(html,/class="sidebar"/);
-  const order=['manager','operations','fleet','finance','account','settings'];
-  const expected={manager:['airline','onboarding','profile','staff','rankings'],operations:['worlds','airports','routes','schedule','service'],
+  const order=['operations','fleet','finance','account','settings'];
+  const expected={operations:['routes','route-list','hubs','schedule','service','tickets','staff'],
     fleet:['fleet','aircraft-market','maintenance'],finance:['finances'],account:[],
-    settings:['settings','interface','notifications','help']};
+    settings:['airline','onboarding','profile','rankings','worlds','airports','settings','interface','notifications','help']};
   const dashboard='<a class="nav-direct" href="#overview" data-view-link="overview">Dashboard</a>';
   assert.ok(html.includes(dashboard),'Dashboard is a separate first navigation link');
-  assert.ok(html.indexOf(dashboard)<html.indexOf('data-nav-group="manager"'));
+  assert.ok(html.indexOf(dashboard)<html.indexOf('data-nav-group="operations"'));
   assert.equal([...html.matchAll(/data-view-link="overview"/g)].length,1);
   const indexes=order.map(name=>html.indexOf('data-nav-group="'+name+'"'));
   assert.ok(indexes.every((n,i)=>n>=0&&(i===0||n>indexes[i-1])));
