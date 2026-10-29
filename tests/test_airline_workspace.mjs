@@ -94,10 +94,10 @@ test('settings and planning work remain local drafts until server-side execution
  assert.match(workspace,/id="schedule-hours"/);
  assert.match(workspace,/for\(let hour=0;hour<24;hour\+\+\)/);
  assert.match(workspace,/for\(let day=0;day<7;day\+\+\)/);
- assert.match(workspace,/cabin-economy/);
- assert.match(workspace,/cabin-premium/);
- assert.match(workspace,/cabin-business/);
- assert.match(workspace,/cabin-first/);
+ assert.match(workspace,/\['economy','Economy'\]/);
+ assert.match(workspace,/\['premium','Premium economy'\]/);
+ assert.match(workspace,/\['business','Business'\]/);
+ assert.match(workspace,/\['first','First'\]/);
  assert.match(workspace,/Account verification and recovery/);
  assert.match(html,/settings-timezone/);
  assert.match(model,/AIRLINE_CREATION_ENABLED=false/);
