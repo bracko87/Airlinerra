@@ -26,8 +26,9 @@ export function validatedActivationRequest(request) {
   if (name.length < 3 || name.length > 80 || /[\x00-\x1f\x7f<>]/u.test(name)) {
     throw new Error('Invalid airline name.');
   }
-  const icaoCode=String(request.icaoCode||'').trim().toUpperCase();
-  const iataCode=String(request.iataCode||'').trim().toUpperCase();
+  if(typeof request.icaoCode!=='string'||typeof request.iataCode!=='string')throw new Error('ICAO and IATA codes are required.');
+  const icaoCode=request.icaoCode.trim().toUpperCase();
+  const iataCode=request.iataCode.trim().toUpperCase();
   if(!/^[A-Z]{3}$/.test(icaoCode))throw new Error('ICAO code must contain 3 letters.');
   if(!/^[A-Z0-9]{2}$/.test(iataCode)||!/\p{L}/u.test(iataCode))throw new Error('IATA code must contain 2 letters or a letter and number.');
   const airportKey = request.homeAirportKey;
