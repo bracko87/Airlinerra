@@ -335,3 +335,48 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
 .airline-code-fields input{font-variant-numeric:tabular-nums;text-transform:uppercase;letter-spacing:.1em;font-weight:800}
 #setup-airline-code-hint{max-width:450px;line-height:1.55;margin-top:9px}
 @media(max-width:520px){.airline-code-fields{grid-template-columns:1fr;gap:2px}}
+
+
+/* Operational overview - authentic data, not onboarding or sample gameplay. */
+.dashboard-operations-grid,.dashboard-bottom-grid{display:grid;gap:var(--manager-card-gap,20px);
+ grid-template-columns:minmax(0,1.55fr) minmax(280px,1fr);margin-bottom:var(--manager-card-gap,20px)}
+.dashboard-bottom-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.dashboard-operations-grid .panel,.dashboard-bottom-grid .panel{min-width:0;padding:23px 25px}
+.dashboard-section-title{display:flex;align-items:start;justify-content:space-between;gap:16px;margin-bottom:16px}
+.dashboard-section-title h2,.dashboard-bottom-grid h2,.dashboard-traffic-panel h2{margin:2px 0 6px}
+.dashboard-section-title p{font-size:12px;color:var(--muted);margin:0}
+.dashboard-count{font-size:11px;font-weight:750;color:var(--muted);background:#f1f6fb;border:1px solid var(--line);
+ padding:7px 9px;border-radius:8px;white-space:nowrap}
+.dashboard-table-scroll{max-width:100%;overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+.dashboard-flight-table{width:100%;border-collapse:collapse;text-align:left;min-width:510px}
+.dashboard-flight-table th{padding:12px 10px;background:#f3f7fc;color:#526b84;font-weight:800;font-size:11px;white-space:nowrap}
+.dashboard-flight-table td{border-top:1px solid var(--line);padding:14px 10px;font-size:12px;color:var(--navy)}
+.dashboard-flight-table td.dashboard-empty-cell{text-align:center;color:#74869a;padding:39px 23px;line-height:1.65}
+.dashboard-data-note{font-size:12px;color:var(--muted);margin:12px 0 0}
+.dashboard-stat-list{margin-top:18px}
+.dashboard-stat-list>div,.dashboard-financial-rows>div{display:flex;align-items:center;justify-content:space-between;
+ gap:18px;border-top:1px solid var(--line);padding:13px 0;font-size:13px}
+.dashboard-stat-list span,.dashboard-financial-rows span{color:var(--muted)}
+.dashboard-stat-list strong,.dashboard-financial-rows strong{color:var(--navy);font-size:12px;text-align:right}
+.dashboard-financial-highlight{padding:17px 19px;border:1px solid #dce8f6;border-radius:10px;background:#f4f8fd;
+ display:flex;flex-direction:column;gap:3px;margin:18px 0}
+.dashboard-financial-highlight span,.dashboard-financial-highlight small{font-size:12px;color:var(--muted)}
+.dashboard-financial-highlight strong{font-size:29px;line-height:1.4;color:var(--navy);font-variant-numeric:tabular-nums}
+.dashboard-subtitle{color:var(--navy);font-size:14px;margin:19px 0 9px}
+.dashboard-ledger-row{display:flex;align-items:center;justify-content:space-between;gap:15px;
+ padding:11px 0;border-top:1px solid var(--line)}
+.dashboard-ledger-row>div{display:grid;gap:4px}
+.dashboard-ledger-row strong{color:var(--navy);font-size:12px}
+.dashboard-ledger-row small{font-size:11px;color:var(--muted)}
+.dashboard-ledger-amount{font-variant-numeric:tabular-nums;white-space:nowrap}
+.dashboard-finance-panel>.secondary{margin-top:14px}
+.dashboard-news-empty{padding:23px;background:#f4f8fd;border:1px solid #e0eaf4;border-radius:10px;margin-top:16px}
+.dashboard-news-empty strong{font-size:13px;color:var(--navy)}
+.dashboard-news-empty p{font-size:12px;color:var(--muted);margin:8px 0 0}
+:root[data-ui-theme="dark"] .dashboard-count,:root[data-ui-theme="dark"] .dashboard-news-empty,
+:root[data-ui-theme="dark"] .dashboard-financial-highlight,
+:root[data-ui-theme="dark"] .dashboard-flight-table th{background:#20364e;border-color:#364e67;color:var(--ink)}
+:root[data-ui-theme="dark"] .dashboard-flight-table td{color:var(--ink)}
+@media(max-width:1000px){.dashboard-operations-grid,.dashboard-bottom-grid{grid-template-columns:1fr}}
+@media(max-width:680px){.dashboard-operations-grid .panel,.dashboard-bottom-grid .panel{padding:18px}
+ .dashboard-financial-highlight strong{font-size:25px}}
