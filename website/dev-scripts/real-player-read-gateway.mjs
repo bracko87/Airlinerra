@@ -27,9 +27,12 @@ export function createLiveReadOnlyPreviewHandler({fetchImpl=globalThis.fetch}={}
   '/api/v1/player/airports',
   '/api/v1/onboarding/context'
  ]);
- const error=(status,why)=>new Response(JSON.stringify({error:why}),{
-  status,headers:{'content-type':'application/json','cache-control':'no-store'}
- });
+ const error=(status,why)=>{
+  console.warn('Airlinerra local read-only gateway:',status,why);
+  return new Response(JSON.stringify({error:why}),{
+   status,headers:{'content-type':'application/json','cache-control':'no-store'}
+  });
+ };
  return async request=>{
   if(!(request instanceof Request))return error(400,'Invalid request');
   const url=new URL(request.url);
@@ -53,6 +56,7 @@ export function createLiveReadOnlyPreviewHandler({fetchImpl=globalThis.fetch}={}
      origin:'https://airlinerra.com','content-type':'application/json'
     },body,redirect:'error',cache:'no-store',signal:AbortSignal.timeout(20000)
    });
+   if(!response.ok)console.warn('Airlinerra shared game API:',url.pathname,'HTTP',response.status);
    const type=response.headers.get('content-type')||'';
    if(!type.includes('application/json'))return error(503,'Invalid game response');
    const bytes=await response.arrayBuffer();
