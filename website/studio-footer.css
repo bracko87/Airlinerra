@@ -72,3 +72,13 @@ footer.studio-footer .platform-health button:hover{background:#eef5fa}
  footer.studio-footer .studio-footer-bottom{display:block}
  footer.studio-footer .studio-footer-bottom>span{display:block;margin-bottom:6px}
 }
+
+
+/* Global footer: compact spacing and calm link typography. */
+footer.studio-footer .studio-footer-inner{padding-top:23px;padding-bottom:15px}
+footer.studio-footer .studio-footer-top{gap:20px 26px}
+footer.studio-footer .studio-footer-column{gap:6px}
+footer.studio-footer .studio-footer-column>strong{font-weight:650}
+footer.studio-footer .studio-footer-studio{font-weight:700}
+footer.studio-footer time{font-weight:600}
+footer.studio-footer .studio-footer-bottom{margin-top:18px;padding-top:13px}
