@@ -5,13 +5,13 @@ import {AIRLINE_UI_DEFAULTS,AIRLINE_UI_VIEWS,cleanUiPreferences,financialScenari
 import {PLAYER_VIEWS} from '../website/player-app-model.mjs';
 const read=path=>readFile(new URL(path,import.meta.url),'utf8');
 
-test('22 safe management pages and operations/settings navigation stay linked',async()=>{
+test('23 safe management pages and operations/settings navigation stay linked',async()=>{
  const html=await read('../website/private-player-app.html');
- assert.equal(PLAYER_VIEWS.length,22);
- assert.equal(new Set(PLAYER_VIEWS).size,19);
+ assert.equal(PLAYER_VIEWS.length,23);
+ assert.equal(new Set(PLAYER_VIEWS).size,23);
  for(const page of PLAYER_VIEWS)
   assert.match(html,new RegExp('data-player-view="'+page+'"'));
- assert.equal([...html.matchAll(/data-view-link="([^"]+)"/g)].length,22);
+ assert.equal([...html.matchAll(/data-view-link="([^"]+)"/g)].length,23);
  assert.ok(html.indexOf('>Dashboard</a>')<html.indexOf('data-nav-group="operations"'));
  assert.doesNotMatch(html,/data-nav-group="manager"/);
  const operations=html.slice(html.indexOf('data-nav-group="operations"'),html.indexOf('data-nav-group="fleet"'));
