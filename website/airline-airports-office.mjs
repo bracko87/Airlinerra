@@ -53,8 +53,10 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
  const host=$('workspace-hubs'),profileHost=$('workspace-airport-profile');
  let live={connected:false,airline:null,countries:[],reader:null};
  let selectedAirport=null,activeAirport=null;
+ let remoteEntries=null,remoteRequest=0,remoteBusy=false;
  const known=new Map();
- const entries=()=>{
+ const serverMode=()=>Boolean(live.officeClient);
+ const localEntries=()=>{
   const current=readSession(session,key);
   if(Array.isArray(current.airportOffices))return current.airportOffices.filter(x=>x?.status==='draft'&&
    ['hub','station'].includes(x.type)&&normalizeApprovedAirport(x));
@@ -63,6 +65,25 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
    ...x,type:'hub',status:'draft',countryIso:x.countryIso||null
   })):[];
  };
+ const entries=()=>serverMode()?(remoteEntries||[]):localEntries();
+ async function refreshRemote(){
+  const request=++remoteRequest;
+  remoteEntries=null;renderList('hub');renderList('station');
+  if(!serverMode()||!live.connected||!live.airline?.id)return;
+  const client=live.officeClient,worldId=Number(live.airline.worldId);
+  try{
+   const rows=await client.list({worldId});
+   if(request!==remoteRequest||client!==live.officeClient)return;
+   remoteEntries=rows.map(entry=>({...entry,minimumStaff:entry.type==='station'?1:null}));
+   for(const entry of remoteEntries)remember(entry);
+   renderList('hub');renderList('station');
+   feedback('Server-saved office drafts loaded. No offices are active.');
+  }catch{
+   if(request!==remoteRequest)return;
+   remoteEntries=null;renderList('hub');renderList('station');
+   feedback('Server office drafts unavailable. No browser-only proposals were submitted.');
+  }
+ }
  if(host){
   host.innerHTML=panel('HEADQUARTERS','Registered headquarters',
    '<p class="hint">This is the airport chosen when the airline was created. It is company identity, not an additional paid hub.</p>'+
@@ -79,7 +100,8 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
     '<label for="office-result">Approved airport</label><select id="office-result" disabled><option value="">Search first</option></select>'+
     '<div class="airport-office-form-actions"><button type="button" class="primary" id="office-save">Save proposed location</button>'+
     '<button type="button" class="secondary" id="office-preview">Airport profile</button></div></div>'+
-    '<p id="office-feedback" class="hint" role="status"></p>')+
+    '<p id="office-feedback" class="hint" role="status"></p>'+
+    '<p id="office-local-draft-note" class="hint"></p>')+
    panel('NETWORK LOCATIONS','My hubs',
     '<div class="airport-office-summary"><span>Active additional hubs</span><strong>Not connected</strong></div>'+
     '<div id="office-hub-list" class="operations-route-table"></div>')+
@@ -141,6 +163,9 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
   const target=$(type==='hub'?'office-hub-list':'office-station-list');if(!target)return;
   target.replaceChildren();
   const items=entries().filter(e=>e.type===type);
+  if(serverMode()&&remoteEntries===null){
+   target.append(createText(doc,'p','Server office drafts are not loaded.','hint'));return;
+  }
   if(!items.length){target.append(createText(doc,'p',
    type==='hub'?'No additional hub proposals saved.':'No station proposals saved.','hint'));return}
   for(const office of items){
@@ -150,7 +175,8 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
     createText(doc,'span',type==='hub'?
       'Additional hub - proposal only':'Station - proposal only; 1 planned representative minimum','hint'));
    const actions=doc.createElement('div');actions.className='airport-office-row-actions';
-   actions.append(button(doc,'Airport profile','view',office.key),button(doc,'Remove draft','remove',office.key));
+   actions.append(button(doc,'Airport profile','view',office.key),button(doc,
+    serverMode()?'Remove server draft':'Remove draft','remove',office.key));
    line.append(text,actions);target.append(line);remember(office);
   }
  }
@@ -231,6 +257,19 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
   }
   if(action==='remove'){
    const key=target.dataset.airportKey;
+   if(remoteBusy)return;
+   if(serverMode()){
+    if(!Array.isArray(remoteEntries)){feedback('Server office drafts are unavailable.');return}
+    if(!remoteEntries.some(e=>e.key===key))return;
+    remoteBusy=true;target.disabled=true;
+    try{
+     await live.officeClient.remove({worldId:Number(live.airline?.worldId),airportKey:key});
+     await refreshRemote();
+     feedback('Server office draft removed. No active airport office was changed.');
+    }catch{feedback('Server removal failed. No local draft was changed.')}
+    finally{remoteBusy=false;target.disabled=false}
+    return;
+   }
    const rows=entries(),next=rows.filter(a=>a.key!==key);
    if(rows.length===next.length)return;
    if(!saveSession(session,keyForAccount(),next)){
@@ -249,6 +288,17 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
    const proposed=proposeAirportOffice({type:$('office-location-type')?.value,airport:a,
     homeAirportKey:live.airline.homeAirportKey,existing:entries()});
    if(!proposed.ok){feedback(proposed.reason);return;}
+   if(serverMode()){
+    if(remoteBusy||!Array.isArray(remoteEntries)){feedback('Server drafts are not ready.');return;}
+    remoteBusy=true;target.disabled=true;
+    try{
+     await live.officeClient.save({worldId:Number(live.airline.worldId),airportKey:proposed.entry.key,type:proposed.entry.type});
+     await refreshRemote();
+     feedback('Server office draft saved. No fees or salaries were charged.');
+    }catch{feedback('Server save failed. No browser-only drafts were changed.')}
+    finally{remoteBusy=false;target.disabled=false}
+    return;
+   }
    if(!saveSession(session,keyForAccount(),[...entries(),proposed.entry])){
     feedback('Browser session storage is not available. Your proposal was not saved.');return;
    }
@@ -262,6 +312,12 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
  function updateData(value){
   live={...live,...value};
   headquarters();directories();renderList('hub');renderList('station');
+  const note=$('office-local-draft-note');
+  if(note)note.textContent=serverMode()?
+   String(localEntries().length)+' browser-only drafts remain separate and are NOT automatically uploaded.':
+   'These proposals are browser-only until the private office backend is enabled.';
+  if(serverMode())void refreshRemote();
+  else{++remoteRequest;remoteEntries=null;}
  }
  function openAirport(airport){
   const a=remember(airport);if(!a)return false;
