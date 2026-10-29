@@ -215,6 +215,11 @@ export function createOperationsCenter({doc,identity,session,goTo}={}){
    const summary=doc.createElement('summary');summary.textContent=department+' ('+roles.length+' roles)';
    details.append(summary);
    const table=doc.createElement('div');table.className='operations-staff-table';
+   const heading=doc.createElement('div');heading.className='operations-staff-heading';
+   for(const label of ['Role and responsibilities','Planned staff','Monthly salary (USD)']){
+    const cell=doc.createElement('strong');cell.textContent=label;heading.append(cell);
+   }
+   table.append(heading);
    for(const [title,desc] of roles){
     const i=cursor++;
     const row=doc.createElement('div');row.className='operations-staff-row';
@@ -292,7 +297,7 @@ export function createOperationsCenter({doc,identity,session,goTo}={}){
   if(id==='operations-hub-find')await findHub();
   if(id==='operations-hub-save'){
    const select=$('operations-hub-result'),opt=select?.selectedOptions?.[0];
-   if(!server.connected||!opt||!select.value||select.disabled){
+   if(!server.connected||!server.airline?.id||!opt||!select.value||select.disabled){
     message('operations-hub-feedback','Choose an approved airport first.');return;
    }
    const hubs=Array.isArray(state.hubs)?state.hubs:[];
@@ -301,7 +306,9 @@ export function createOperationsCenter({doc,identity,session,goTo}={}){
    if(hubs.some(x=>x.key===hub.key)||server.airline?.homeAirportKey===hub.key){
     message('operations-hub-feedback','That airport is already your home airport or planned hub.');return;
    }
-   state={...state,hubs:[...hubs,hub]};persist();renderHubs();
+   state={...state,hubs:[...hubs,hub]};
+   const persisted=persist();renderHubs();
+   if(!persisted){message('operations-hub-feedback','Browser storage is unavailable. The draft will only remain in this session.');return;}
    message('operations-hub-feedback','Hub draft saved locally. No real hub was opened.');
   }
   if(id==='ops-price-calc')priceResults();
