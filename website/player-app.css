@@ -194,3 +194,100 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
 .down-menu-option[hidden],.down-menu-empty[hidden]{display:none!important}
 .down-menu-empty{font-size:12px;color:#667d95;text-align:center;padding:13px 6px;margin:0}
 @media(max-width:760px){.nav-direct{min-height:49px;padding:0 11px;font-size:12px}}
+
+
+/* Airline operating workspace - all draft planning is browser-only. */
+#player-main [id^="workspace-"]{min-width:0}
+.workspace-panel{margin-bottom:18px}
+.workspace-panel h2{margin-top:4px}
+.workspace-panel .hint{margin:13px 0 4px}
+.workspace-quick-links{display:flex;flex-wrap:wrap;gap:9px;margin:17px 0}
+.workspace-quick-links .secondary{margin:0;font-size:12px;padding:9px 13px}
+.workspace-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:20px 0 5px}
+.workspace-steps>div{display:flex;flex-direction:column;gap:5px;background:#f2f7fd;border:1px solid #dbe8f5;border-radius:11px;padding:14px}
+.workspace-steps b{font-size:12px;color:var(--orange)}
+.workspace-steps strong{color:var(--navy);font-size:13px}
+.workspace-steps span{font-size:12px;color:#58708c}
+.workspace-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin:16px 0}
+.workspace-kpis>div{border:1px solid var(--line);background:#f6f9fe;border-radius:10px;padding:17px}
+.workspace-kpis span{display:block;font-size:12px;color:var(--muted);margin-bottom:7px}
+.workspace-kpis strong{font-size:17px;color:var(--navy);overflow-wrap:anywhere}
+.workspace-state{background:#f4f7fb;border:1px solid #dae6f1;border-left:3px solid var(--orange);
+ padding:12px 14px;border-radius:8px;font-size:12px;color:#47617d;margin:17px 0}
+.workspace-task-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:18px 0}
+.workspace-task-list>div{border:1px solid var(--line);border-radius:10px;padding:13px 15px;display:grid;gap:5px}
+.workspace-task-list strong{color:var(--navy);font-size:13px}
+.workspace-task-list span{color:var(--muted);font-size:12px}
+.workspace-label{display:block;margin:14px 0 5px;color:#526b84;font-weight:700;font-size:12px}
+.workspace-panel input:not([type=checkbox]),.workspace-panel select,.settings-layout input,.settings-layout select{
+ display:block;width:100%;max-width:510px;border:1px solid #c7d7e9;border-radius:8px;
+ color:var(--navy);background:#f7f9fc;padding:11px 12px;margin-top:5px;
+ min-height:44px;font:inherit}
+.workspace-panel input:focus-visible,.workspace-panel select:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+.workspace-panel fieldset{min-width:0;border:1px solid var(--line);border-radius:10px;padding:16px;margin:0}
+.workspace-panel fieldset legend{color:var(--navy);font-weight:800;padding:0 7px;font-size:13px}
+.workspace-actions{display:flex;flex-wrap:wrap;align-items:center;gap:11px;margin:19px 0 4px}
+.workspace-actions .secondary,.workspace-actions .primary{margin:0}
+.workspace-route-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin:22px 0}
+.workspace-money-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:20px;row-gap:4px}
+.workspace-detail{background:#f4f8fe;border:1px solid #d9e6f3;border-radius:10px;
+ padding:15px;margin:14px 0;white-space:normal;overflow-wrap:anywhere;font-size:13px;color:#385a76}
+.workspace-detail:empty{display:none}
+.workspace-schedule-controls{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;margin-bottom:18px}
+.workspace-schedule-controls .workspace-label{margin:0}
+.workspace-schedule-controls select,.workspace-schedule-controls input:not([type=checkbox]){width:160px;max-width:100%}
+.workspace-schedule-controls button{margin:0}
+.workspace-table-scroll{max-width:100%;overflow:auto;border:1px solid var(--line);border-radius:12px}
+.workspace-week{width:100%;border-collapse:collapse;table-layout:fixed;min-width:680px;font-size:11px}
+.workspace-week th,.workspace-week td{border-bottom:1px solid #e8eef5;border-right:1px solid #edf1f7;text-align:left;padding:8px 6px;vertical-align:top}
+.workspace-week thead th{background:#eaf2fb;color:var(--navy);position:sticky;top:0;z-index:1}
+.workspace-week tbody th{color:#526c87;width:65px;background:#f8fafd;font-variant-numeric:tabular-nums}
+.workspace-week td{height:38px}
+.workspace-flight-draft{display:inline-block;margin:2px 0;padding:4px 5px;border-radius:5px;background:#fff1e8;
+ color:#a64b12;font-weight:700;font-size:10px;overflow-wrap:anywhere}
+.workspace-time-open{color:#b4c0ce}
+.settings-layout{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(260px,.75fr);align-items:start;gap:20px}
+.settings-fields{display:grid;gap:8px;max-width:570px}
+.settings-fields>label{font-size:13px;font-weight:750;color:var(--navy);margin-top:7px}
+.settings-fields select{max-width:100%}
+.settings-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px;align-items:center}
+.settings-actions .secondary,.settings-actions .primary{margin:0}
+#settings-feedback,#interface-status,#notification-status{font-size:12px;font-weight:700;color:#226c46}
+.workspace-checkbox{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--navy);font-weight:700}
+.workspace-checkbox input{width:18px;height:18px;flex:none;accent-color:var(--orange)}
+.workspace-faq{border-bottom:1px solid var(--line);padding:13px 0}
+.workspace-faq summary{color:var(--navy);font-weight:750;cursor:pointer}
+.workspace-faq p{font-size:13px;margin:10px 0 0}
+.workspace-support{display:flex;gap:18px;flex-wrap:wrap}
+.workspace-support a{color:#1b5f9e;font-weight:700;text-decoration:underline}
+/* Stored interface preferences apply to all management pages. */
+:root[data-ui-density="compact"] .panel{padding:18px}
+:root[data-ui-density="compact"] .kpi{padding:16px}
+:root[data-ui-density="compact"] .workspace-task-list>div{padding:8px 11px}
+:root[data-ui-density="compact"] .detail-row{padding:9px 0}
+:root[data-ui-hints="hide"] .workspace-panel>.hint{display:none}
+:root[data-ui-motion="reduced"] *,:root[data-ui-motion="reduced"] *::before,
+:root[data-ui-motion="reduced"] *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+:root[data-ui-theme="dark"]{color-scheme:dark;--navy:#e2eeff;--deep:#e9f2ff;--ink:#dce7f7;--muted:#a8b9cc;--bg:#101b2b;--line:#31435a}
+:root[data-ui-theme="dark"] body{background:var(--bg);color:var(--ink)}
+:root[data-ui-theme="dark"] .app-header,:root[data-ui-theme="dark"] .app-navigation,
+:root[data-ui-theme="dark"] .panel,:root[data-ui-theme="dark"] .kpi,
+:root[data-ui-theme="dark"] .world-card,:root[data-ui-theme="dark"] .nav-links{background:#182b40;color:var(--ink)}
+:root[data-ui-theme="dark"] .workspace-task-list>div,:root[data-ui-theme="dark"] .workspace-kpis>div,
+:root[data-ui-theme="dark"] .workspace-steps>div,:root[data-ui-theme="dark"] .workspace-state,
+:root[data-ui-theme="dark"] .workspace-detail,:root[data-ui-theme="dark"] .workspace-panel fieldset,
+:root[data-ui-theme="dark"] .workspace-week thead th,:root[data-ui-theme="dark"] .workspace-week tbody th{background:#20364e;border-color:#364e67;color:var(--ink)}
+:root[data-ui-theme="dark"] .workspace-panel input:not([type=checkbox]),
+:root[data-ui-theme="dark"] .workspace-panel select,:root[data-ui-theme="dark"] .settings-layout select,
+:root[data-ui-theme="dark"] .settings-layout input{background:#1b3047;color:var(--ink);border-color:#45617c}
+:root[data-ui-theme="dark"] .workspace-task-list span,:root[data-ui-theme="dark"] .workspace-steps span,
+:root[data-ui-theme="dark"] .workspace-state,:root[data-ui-theme="dark"] .workspace-label{color:#a7bdd3}
+:root[data-ui-theme="dark"] .workspace-week th,:root[data-ui-theme="dark"] .workspace-week td{border-color:#31435a}
+:root[data-ui-theme="dark"] .workspace-flight-draft{background:#523723;color:#ffca9d}
+:root[data-ui-theme="dark"] .secondary{background:#233952;color:#e2eeff;border-color:#466788}
+:root[data-ui-theme="dark"] .nav-label:hover,:root[data-ui-theme="dark"] .nav-group[open]>.nav-label{background:#24405e}
+@media(max-width:920px){.settings-layout{grid-template-columns:1fr}.workspace-steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:660px){.workspace-task-list,.workspace-route-form,.workspace-money-grid,
+ .workspace-kpis{grid-template-columns:1fr}.workspace-schedule-controls{display:grid;grid-template-columns:1fr 1fr}
+ .workspace-schedule-controls select,.workspace-schedule-controls input:not([type=checkbox]){width:100%}}
