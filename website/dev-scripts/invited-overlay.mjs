@@ -22,7 +22,7 @@ export async function addInviteOnlyAccount({siteDir,distDir}={}){
     'invited-tester-page.mjs','invited-tester-entry.mjs',
     'invited-tester-auth.mjs','invited-tester-page.css',
     'tester-dashboard.mjs','tester-dashboard-state.mjs','tester-dashboard.css',
-    'player-app.mjs','setup-choice-menu.mjs','airline-workspace.mjs','airline-dashboard.mjs','airline-finance-charts.mjs','player-app-model.mjs','player-app.css','player-read-client.mjs','real-onboarding-client.mjs',
+    'player-app.mjs','setup-choice-menu.mjs','airline-workspace.mjs','airline-operations-center.mjs','airline-dashboard.mjs','airline-finance-charts.mjs','player-app-model.mjs','player-app.css','player-read-client.mjs','real-onboarding-client.mjs',
     'local-demo-session.mjs','local-catalog-client.mjs','local-onboarding-draft.mjs'
   ];
   for(const name of files){
