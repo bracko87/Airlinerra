@@ -7,9 +7,13 @@ import {REAL_PLAYER_PATHS,makeRealLocalPlayerHandler} from './real-player-read-g
 const sourceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const root = process.argv.includes('--built') ? path.resolve(sourceRoot,'../dist') : sourceRoot;
 const port = Number(process.env.PORT || (process.argv.includes('--built') ? 5188 : 5187));
-const realPlayerHandler=process.argv.includes('--built') && port===5188
-  ?await makeRealLocalPlayerHandler({env:process.argv.includes('--edge-readonly')
-    ?{...process.env,AIRLINERRA_LOCAL_EDGE_READONLY:'1'}:process.env}):null;
+const isBuilt=process.argv.includes('--built');
+const localApiEnabled=isBuilt&&port===5188;
+const useLocalDb=process.argv.includes('--local-db');
+const realPlayerHandler=localApiEnabled
+  ?await makeRealLocalPlayerHandler({env:{
+    ...process.env,AIRLINERRA_LOCAL_USE_DATABASE:useLocalDb?'1':'0'
+  }}):null;
 const types = {'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.webp':'image/webp','.png':'image/png','.ico':'image/x-icon'};
 createServer(async (req, res) => {
   try {
@@ -46,4 +50,9 @@ createServer(async (req, res) => {
     res.writeHead(200, { 'Content-Type': types[path.extname(filename)] || 'application/octet-stream', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' });
     res.end(body);
   } catch { res.writeHead(404).end('Not found'); }
-}).listen(port, '127.0.0.1', () => console.log(`Airlinerra ${process.argv.includes('--built')?'built-site preview':'source development'} server: http://localhost:${port}`));
+}).listen(port, '127.0.0.1', () => {
+  console.log(`Airlinerra ${isBuilt?'built-site preview':'source development'} server: http://localhost:${port}`);
+  if(localApiEnabled)console.log(useLocalDb
+    ?'API mode: explicit private PostgreSQL development adapter'
+    :'API mode: production Supabase game data, authenticated READ ONLY. Airline creation is disabled locally.');
+});
