@@ -36,6 +36,7 @@ on:
       - 'website/player-app.css'
       - 'website/private-player-app.html'
       - 'tests/test_player_app_prelaunch.mjs'
+      - 'tests/test_airline_workspace.mjs'
       - 'tests/test_first_login_routing.mjs'
       - 'website/tester-dashboard-state.mjs'
       - 'website/tester-dashboard.css'
