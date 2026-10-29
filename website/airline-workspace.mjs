@@ -443,7 +443,9 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
  function updateData(next={}){
   data={...data,...next};
   const airline=data.airline;
-  const home=airline?.homeAirportKey||'-';
+  const home=airline?.homeAirportName?
+   airline.homeAirportName+(airline.homeAirportCode?' ('+airline.homeAirportCode+')':''):
+   (airline?.homeAirportKey||'-');
   const values={
    'office-airline':airline?.name||'Not created',
    'office-world':airline?.worldId?'World '+airline.worldId:'Not selected',
