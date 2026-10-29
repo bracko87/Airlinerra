@@ -429,8 +429,6 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
 .dashboard-company-news{display:grid;gap:12px;margin:15px 0}
 .dashboard-company-story{display:flex;gap:14px;align-items:flex-start;background:#f4f8fe;
  border:1px solid var(--line);padding:17px 18px;border-radius:11px}
-.dashboard-company-story-mark{font-weight:800;color:var(--orange);border-radius:50%;font-size:16px;
- flex:none;width:36px;height:36px;display:grid;place-items:center;background:#fff0e4}
 .dashboard-company-story strong{font-size:14px;color:var(--navy)}
 .dashboard-company-story p{font-size:12px;margin:4px 0 0}
 .dashboard-company-story time{display:block;font-size:11px;color:var(--muted);margin-top:6px}
@@ -473,7 +471,6 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
 :root[data-ui-theme="dark"] .dashboard-company-story,
 :root[data-ui-theme="dark"] .operations-saved-row,
 :root[data-ui-theme="dark"] .operations-staff-department summary{background:#21364c}
-:root[data-ui-theme="dark"] .dashboard-company-story-mark{background:#483320}
 @media(max-width:1000px){.dashboard-operations-grid{grid-template-columns:1fr}}
 @media(max-width:760px){.dashboard-donut-chart{flex-direction:column}
  .dashboard-donut-chart svg{width:min(70%,245px)}.dashboard-donut-info{width:100%}
@@ -547,6 +544,7 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
 }
 #player-main .dashboard-company-story-heading time,
 #player-main .dashboard-company-date-missing{
+ display:inline;margin:0;font-size:12px;line-height:1.5;
  color:#647b95;font-weight:500;white-space:nowrap
 }
 #player-main .dashboard-company-story-separator{white-space:pre;color:#8497ab}
