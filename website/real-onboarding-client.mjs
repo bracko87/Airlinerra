@@ -28,7 +28,7 @@ export function createRealOnboardingClient({auth,origin,fetchImpl=(...args)=>fet
   acceptLegal:({termsVersion,privacyVersion})=>post('/api/v1/legal/consents',{
    termsVersion,privacyVersion,acceptTerms:true,acceptPrivacy:true
   }),
-  createAirline:({worldId,airlineName,homeAirportKey})=>
-   post('/api/v1/airlines',{worldId,airlineName,homeAirportKey})
+  createAirline:({worldId,airlineName,homeAirportKey,icaoCode,iataCode})=>
+   post('/api/v1/airlines',{worldId,airlineName,homeAirportKey,icaoCode,iataCode})
  });
 }
