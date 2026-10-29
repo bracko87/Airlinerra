@@ -1,3 +1,17 @@
+# CURRENT - 29 October 2026: LOCALHOST WORLD 1 DATA ERROR, PHASED DIAGNOSTICS
+
+The user reopened localhost:5188 after the previous fix and still received the "Unable to load existing airline" banner, while the browser console showed a blocked `esm.sh` source map URL. The source-map CSP warning is not evidence of the airline-data failure. Database verification confirmed: World 1 has the existing user-owned Panonian airline, $5,000,000 and Belgrade Nikola Tesla Airport. The same verified Supabase Auth user ID in 09:23 UTC logs owns that airline. Direct execution of the canonical read SQL returned 3 worlds, 188 countries and 1 matching airline. Do not ask them to register or create a second company.
+
+This round has added:
+- `website/player-read-client.mjs`: return safe `GAME_API_HTTP_<status>` errors rather than hiding every failed HTTP status.
+- `website/player-app.mjs`: distinguish game API failures from page-rendering errors (the old broad catch hid both), display phase and safe HTTP code in the existing Retry banner. Isolate secondary world/airport and workspace panel rendering so they cannot erase an authenticated company's header/cash.
+- `website/dev-scripts/real-player-read-gateway.mjs`: emit route and HTTP status only, never auth tokens, response body or personally identifiable information.
+- `server/player-read-service.mjs`: log only fixed read phase and optional PostgreSQL SQLSTATE on failure; never log SQL, secrets, airline data or user IDs. Active Supabase Edge function `airlinerra-game` is now version 7, and still preserves read-only authorization/closed public release.
+- `tests/test_first_login_routing.mjs`: revised for distinct backend/render messages.
+
+These source checks and code syntax have passed, and existing DB queries and owner ID have been verified. BUT the real logged-in localhost browser has not yet been retested after this change. There is no permission to access the user's live browser session or bearer token. The next test needs user to stop the old localhost preview server, pull GitHub main, rerun `npm run preview`, and click Retry. The banner will show either `HTTP NNN` or `Display failed`; the local terminal prints upstream status. Use safe server logs to identify an actual SQL failure phase if one appears. Do NOT claim the underlying connection is confirmed fixed until successful user test.
+
+---
 # CURRENT - 29 October 2026: LOCALHOST MUST READ THE EXISTING WORLD 1 AIRLINE
 
 Owner showed authenticated localhost:5188 Dashboard and My Airline displaying "Not created" despite their real registered World 1 airline already existing on airlinerra.com. Supabase records confirm the same pinned project `hwllkabgzaynalahvkpz`, one verified existing owner airline, and the real initial balance; current read-only SQL for worlds/countries/airline returns 3/188/1 records. This is NOT a second GitHub project or a need for new registration.
