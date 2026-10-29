@@ -10,9 +10,11 @@ import {createLegalConsentHttpHandler} from './legal-consent-http-handler.mjs';
 import {createAirlineActivationService} from './airline-activation.mjs';
 import {createAirlineHttpHandler} from './airline-http-handler.mjs';
 import {createRegistrationReadinessHandler,REGISTRATION_READINESS_PATH} from './registration-readiness.mjs';
+import {createAirportOfficePersistence} from './airport-office-persistence.mjs';
+import {createAirportOfficeHttpHandler,AIRPORT_OFFICE_API_PATH} from './airport-office-http-handler.mjs';
 
 export const CANONICAL_GAME_API_PATHS=Object.freeze([
- '/api/v1/player/overview','/api/v1/player/airports',
+ '/api/v1/player/overview','/api/v1/player/airports',AIRPORT_OFFICE_API_PATH,
  '/api/v1/onboarding/context','/api/v1/legal/consents','/api/v1/airlines',
  REGISTRATION_READINESS_PATH
 ]);
@@ -23,7 +25,7 @@ function respond(status,error){return new Response(JSON.stringify({error}),{
 });}
 
 export function createCanonicalGameApi({
- enabled=false,origin,verifyUserToken,database,
+ enabled=false,airportOfficeDraftsEnabled=false,origin,verifyUserToken,database,
  documentPaths={terms:'/terms.html',privacy:'/privacy.html'}
 }={}){
  if(!enabled)return async()=>respond(503,'Game account API is not enabled');
@@ -47,7 +49,13 @@ export function createCanonicalGameApi({
    enabled:true,verifyUserToken,database
   }),allowedOrigins:[origin],enabled:true
  });
+ const airportOffices=createAirportOfficeHttpHandler({
+  officeService:createAirportOfficePersistence({
+   enabled:airportOfficeDraftsEnabled===true,verifyUserToken,database
+  }),origin,enabled:airportOfficeDraftsEnabled===true
+ });
  const handlers={
+  [AIRPORT_OFFICE_API_PATH]:airportOffices,
   '/api/v1/onboarding/context':context,
   '/api/v1/legal/consents':legal,
   '/api/v1/airlines':createAirline
@@ -58,6 +66,14 @@ export function createCanonicalGameApi({
   if(url.origin!==origin||url.search||url.hash)return respond(403,'Forbidden');
   if(!CANONICAL_GAME_API_PATHS.includes(url.pathname))return respond(404,'Not found');
   if(url.pathname===REGISTRATION_READINESS_PATH)return readiness(request);
+  if(url.pathname===AIRPORT_OFFICE_API_PATH){
+   if(request.method!=='POST')return respond(405,'Method not allowed');
+   const body=await request.text();
+   if(Buffer.byteLength(body,'utf8')>512)return respond(413,'Request too large');
+   const result=await airportOffices({path:url.pathname,method:request.method,
+    headers:Object.fromEntries(request.headers.entries()),body});
+   return new Response(result.body,{status:result.status,headers:result.headers});
+  }
   if(url.pathname.startsWith('/api/v1/player/'))return read(request);
   if(request.method!=='POST')return respond(405,'Method not allowed');
   const body=await request.text();
