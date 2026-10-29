@@ -151,6 +151,8 @@ function summarize(){
  const airport=doc.getElementById('setup-airport-results');
  const name=doc.getElementById('setup-airline-name').value.trim();
  doc.getElementById('summary-airline-name').textContent=name||'Not entered';
+ doc.getElementById('summary-airline-icao').textContent=doc.getElementById('setup-airline-icao').value||'Not entered';
+ doc.getElementById('summary-airline-iata').textContent=doc.getElementById('setup-airline-iata').value||'Not entered';
  doc.getElementById('summary-world').textContent=world.value?(world.selectedOptions[0]?.textContent||'World 01'):'Not selected';
  doc.getElementById('summary-country').textContent=country.value?countryNameOf(country.value):'Not selected';
  doc.getElementById('summary-airport').textContent=airport.value?(airport.selectedOptions[0]?.textContent||'Not selected'):'Not selected';
@@ -421,7 +423,7 @@ async function loadRealOnboarding(){
   doc.getElementById('setup-privacy-version').textContent=ctx.privatePilot?'review draft':ctx.policy.privacyVersion;
   doc.getElementById('setup-privacy-description').textContent=ctx.privatePilot
     ?' I acknowledge the Privacy review draft ':' I acknowledge the Privacy Policy ';
-  for(const id of ['setup-airline-name','setup-accept-terms','setup-accept-privacy','setup-create-airline'])
+  for(const id of ['setup-airline-name','setup-airline-icao','setup-airline-iata','setup-accept-terms','setup-accept-privacy','setup-create-airline'])
    doc.getElementById(id).disabled=false;
   status.textContent='Choose your country, home airport and airline name.';
   doc.getElementById('setup-airline-logo').disabled=false;
@@ -436,7 +438,7 @@ async function loadRealOnboarding(){
   world.replaceChildren(new Option('Select a world',''));
   world.disabled=true;refreshMenu('setup-world');
   fillSetupCountries();
-  for(const id of ['setup-airline-name','setup-airline-logo','setup-accept-terms','setup-accept-privacy','setup-create-airline'])
+  for(const id of ['setup-airline-name','setup-airline-icao','setup-airline-iata','setup-airline-logo','setup-accept-terms','setup-accept-privacy','setup-create-airline'])
    doc.getElementById(id).disabled=true;
   status.textContent='Unable to load World 1 airline setup. Please select Retry.';
  }
@@ -489,12 +491,20 @@ doc.getElementById('setup-create-airline').addEventListener('click',()=>{
  const country=doc.getElementById('setup-country').value;
  const airport=doc.getElementById('setup-airport-results').value;
  const name=doc.getElementById('setup-airline-name').value.trim();
+ const icaoCode=doc.getElementById('setup-airline-icao').value.trim().toUpperCase();
+ const iataCode=doc.getElementById('setup-airline-iata').value.trim().toUpperCase();
  const eligible=onboardingContext?.worlds.find(w=>w.worldId===worldId);
  if(!eligible||!country||!airport||!eligible.airports.some(a=>a.key===airport)){
   status.textContent='Choose a world, country and approved home airport.';return;
  }
  if(name.length<3||name.length>60){
   status.textContent='Enter an airline name containing 3-60 characters.';return;
+ }
+ if(!/^[A-Z]{3}$/.test(icaoCode)){
+  status.textContent='Your ICAO code must contain exactly three letters.';return;
+ }
+ if(!/^[A-Z0-9]{2}$/.test(iataCode)||!/[A-Z]/.test(iataCode)){
+  status.textContent='Your IATA code must contain two letters or a letter and number.';return;
  }
  if(doc.getElementById('setup-airline-logo').files?.length&&!logoBlob){
   status.textContent='Select a valid airline logo or remove the invalid file.';return;
@@ -512,6 +522,9 @@ doc.getElementById('setup-final-create').addEventListener('click',async()=>{
   const country=doc.getElementById('setup-country').value;
   const home=doc.getElementById('setup-airport-results').value;
   const airlineName=doc.getElementById('setup-airline-name').value.trim();
+  const icaoCode=doc.getElementById('setup-airline-icao').value.trim().toUpperCase();
+  const iataCode=doc.getElementById('setup-airline-iata').value.trim().toUpperCase();
+  if(!/^[A-Z]{3}$/.test(icaoCode)||!/^[A-Z0-9]{2}$/.test(iataCode)||!/[A-Z]/.test(iataCode))throw Error('Enter valid ICAO and IATA codes.');
   const allowedWorld=onboardingContext.worlds.find(w=>w.worldId===worldId);
   if(!allowedWorld?.airports.some(a=>a.key===home))throw Error('Select an approved home airport for an open world.');
   if(!/^[A-Z]{2}$/.test(country))throw Error('Select a country');
@@ -522,7 +535,7 @@ doc.getElementById('setup-final-create').addEventListener('click',async()=>{
    termsVersion:onboardingContext.policy.termsVersion,
    privacyVersion:onboardingContext.policy.privacyVersion
   });
-  const record=await onboarding.createAirline({worldId,homeAirportKey:home,airlineName});
+  const record=await onboarding.createAirline({worldId,homeAirportKey:home,airlineName,icaoCode,iataCode});
   if(!record?.airlineId)throw Error('Airline ID not returned');
   doc.getElementById('setup-confirm-dialog').close();
   if(logoBlob){try{await auth.uploadAirlineLogo({airlineId:record.airlineId,blob:logoBlob});}
@@ -576,6 +589,13 @@ doc.getElementById('setup-country').addEventListener('change',()=>{loadSetupAirp
 doc.getElementById('setup-world').addEventListener('change',fillSetupCountries);
 doc.getElementById('setup-airport-results').addEventListener('change',summarize);
 doc.getElementById('setup-airline-name').addEventListener('input',summarize);
+for(const id of ['setup-airline-icao','setup-airline-iata']){
+ doc.getElementById(id).addEventListener('input',event=>{
+  const input=event.currentTarget;
+  input.value=input.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,id.endsWith('icao')?3:2);
+  summarize();
+ });
+}
 doc.getElementById('setup-airport-search').addEventListener('click',()=>{void airportSearch({setup:true});});
 doc.getElementById('airports-search').addEventListener('click',()=>{nextAirportOffset=null;void airportSearch();});
 doc.getElementById('airports-more').addEventListener('click',()=>{if(nextAirportOffset!==null)void airportSearch({offset:nextAirportOffset});});
