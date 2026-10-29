@@ -30,6 +30,7 @@ on:
       - 'website/styles.css'
       - 'website/register.html'
       - 'website/register.css'
+      - 'tests/test_registration_dashboard_polish.mjs'
       - 'tests/test_homepage_account_entries.mjs'
       - 'website/player-app-model.mjs'
       - 'website/player-app.css'
