@@ -26,9 +26,11 @@ test('overview no longer has onboarding checklist or command-center navigation c
  for(const text of ['NEXT STEPS','GET STARTED','MANAGEMENT OVERVIEW','Your airline command center',
   'id="overview-progress-title"','id="workspace-overview"'])assert.ok(!section.includes(text),text);
  for(const id of ['dashboard-flights-body','dashboard-passengers','dashboard-cargo','dashboard-served-airports',
-  'dashboard-active-routes','dashboard-completed-flights','dashboard-finance-cash','dashboard-ledger-activity','dashboard-news-items'])
+  'dashboard-active-routes','dashboard-completed-flights','dashboard-finance-cash','dashboard-cash-chart','dashboard-income-chart','dashboard-insights-items'])
   assert.ok(section.includes('id="'+id+'"'),id);
  assert.match(app,/renderAirlineDashboard\(doc,\{airline:first/);
  assert.match(build,/'airline-dashboard.mjs'/);
+ assert.match(build,/'airline-finance-charts.mjs'/);
+ assert.doesNotMatch(section,/Notifications and company news/);
  assert.doesNotMatch(workspace,/Your airline command center/);
 });
