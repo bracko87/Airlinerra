@@ -36,3 +36,22 @@ footer{max-width:1220px;margin:35px auto 0;padding:28px 24px 38px;display:flex;j
 
 @media(max-width:940px){.site-header,footer{padding-left:28px;padding-right:28px}main{padding-left:28px;padding-right:28px}}
 @media(max-width:740px){.site-header,footer{padding-left:18px;padding-right:18px}main{padding-left:18px;padding-right:18px}}
+
+
+/* Shared lightweight hierarchy and compact vertical card spacing. */
+main{margin-top:46px}
+.hero{margin-bottom:24px}
+h1{font-weight:740}
+h2{font-weight:670}
+.tiny,.eyebrow,.card-kicker{font-weight:680;letter-spacing:.12em}
+.preview{font-weight:620}
+.tiles{gap:18px}
+.card{padding:25px}
+.card-description{margin-bottom:18px}
+.details>div,.status-list>div{padding:12px 0}
+dd{font-weight:620}
+button,.home-link,.secondary{font-weight:630}
+.status-list>div{font-weight:570}
+.status-tag{font-weight:650}
+.next{margin-top:20px;padding:25px 29px}
+@media(max-width:520px){.card{padding:19px}.next{padding:21px}}
