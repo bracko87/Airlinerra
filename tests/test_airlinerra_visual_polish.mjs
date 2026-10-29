@@ -39,7 +39,7 @@ test('without financial milestone, news does not fabricate a date',()=>{
  renderCompanyNews(doc,{name:'Panonian',worldId:1},[{id:1,name:'Horizon'}],[]);
  assert.equal(items.children[0].children[0].children[0].textContent,'Date unavailable');
 });
-test('Airlinerra finance palette is bright blue and orange; no fictional expense slice',()=>{
+test('Airlinerra finance palette is bright blue and orange; no fictional expense slice',async()=>{
  assert.deepEqual(FINANCE_CHART_COLORS,{income:'#1976bf',expenses:'#ff741f'});
  const mix=verifiedCashMix('5000000.00',[{kind:'STARTING_CAPITAL',
   amountUsd:'5000000.00',recordedAt:'2026-10-29T08:12:26Z'}]);
