@@ -29,7 +29,8 @@ function visible(view){
   app.hidden=view!=='app';
 }
 function navigateTo(view){
-  const name=safePlayerView('#'+view);
+  const selected=safePlayerView('#'+view);
+  const name=selected==='onboarding'&&hasRealAirline?'overview':selected;
   for(const section of doc.querySelectorAll('[data-player-view]')){
     section.hidden=section.dataset.playerView!==name;
   }
@@ -76,7 +77,11 @@ function setManager(user){
   }
 }
 function renderOverviewState(hasAirline){
- doc.getElementById('player-airline-note').textContent=hasAirline?'Airline created successfully':'Awaiting onboarding';
+ doc.getElementById('player-airline-note').textContent=hasAirline?'':'Awaiting onboarding';
+ doc.querySelectorAll('[data-setup-only]').forEach(element=>{element.hidden=hasAirline;});
+ doc.getElementById('overview-subtitle').textContent=hasAirline
+  ?'Your airline and business activity at a glance.'
+  :'Create your first airline to begin managing routes and aircraft.';
  doc.getElementById('player-cash-note').textContent=hasAirline?'Available airline funds':'No airline ledger yet';
  doc.getElementById('overview-progress-title').textContent=hasAirline?'Your airline is ready':'Set up your airline';
  doc.getElementById('overview-progress-description').textContent=hasAirline
@@ -633,8 +638,7 @@ async function initialize(){
         window.history.replaceState({},'',playerViewUrl('onboarding'));
         navigateTo('onboarding');
       }
-      doc.getElementById('local-preview-note').hidden=false;
-      doc.getElementById('local-preview-note').textContent='Verified live Supabase identity · Production game gates enforced';
+      doc.getElementById('local-preview-note').hidden=true;
       visible('app');
       await loadPlayerReadData({local:true});
     }catch{
