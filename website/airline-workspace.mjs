@@ -71,6 +71,8 @@ const pages=Object.freeze({
   'MANAGEMENT OVERVIEW'),
  'airline':()=>card('Company identity',
   '<div class="detail-row"><span>Airline</span><strong id="office-airline">Not created</strong></div>'+
+  '<div class="detail-row"><span>ICAO airline code</span><strong id="office-icao">-</strong></div>'+
+  '<div class="detail-row"><span>IATA airline code</span><strong id="office-iata">-</strong></div>'+
   '<div class="detail-row"><span>World</span><strong id="office-world">-</strong></div>'+
   '<div class="detail-row"><span>Home airport</span><strong id="office-home">-</strong></div>'+
   '<div class="detail-row"><span>Available cash</span><strong id="office-cash">-</strong></div>'+
@@ -450,6 +452,8 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    (airline?.homeAirportKey||'-');
   const values={
    'office-airline':connected?(airline?.name||'Not created'):unknown,
+   'office-icao':connected?(airline?.icaoCode||'Not assigned'):unknown,
+   'office-iata':connected?(airline?.iataCode||'Not assigned'):unknown,
    'office-world':connected?(airline?.worldId?'World '+airline.worldId:'Not selected'):unknown,
    'office-home':connected?home:unknown,'office-cash':connected&&airline?.cashUsd!==undefined?currency(airline.cashUsd):'-',
    'office-premium':connected?(airline?.premiumUnlimited===true?'Premium Unlimited':airline?'Registered account':'Not registered'):unknown,
