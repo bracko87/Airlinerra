@@ -4,6 +4,7 @@
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {createCanonicalGameApi} from '../../server/canonical-game-api.mjs';
+import {createProductionGameApi,EDGE_FUNCTION_URL} from '../../server/production-game-api.mjs';
 
 const ORIGIN='http://localhost:5188';
 const PATH='/api/v1/player/airport-offices';
@@ -34,6 +35,37 @@ const game=createCanonicalGameApi({
  enabled:true,airportOfficeDraftsEnabled:true,
  origin:ORIGIN,verifyUserToken:auth,database:pool
 });
+// Simulate the real Netlify -> Supabase Edge request transport while retaining
+// the same disposable PostgreSQL backing store and test-only verified identity.
+const HOSTED_ORIGIN='https://airlinerra.com';
+const edgeGame=createCanonicalGameApi({
+ enabled:true,airportOfficeDraftsEnabled:true,
+ origin:HOSTED_ORIGIN,verifyUserToken:auth,database:pool
+});
+const proxy=createProductionGameApi({airportOfficeDraftsEnabled:true,
+ fetchImpl:async(url,upstream)=>{
+  assert.equal(url,EDGE_FUNCTION_URL,'pinned project endpoint');
+  assert.equal(upstream.headers.origin,HOSTED_ORIGIN,'Edge sees pinned origin');
+  return edgeGame(new Request(HOSTED_ORIGIN+upstream.headers['x-airlinerra-route'],{
+   method:upstream.method,
+   headers:{
+    origin:upstream.headers.origin,
+    authorization:upstream.headers.authorization,
+    'content-type':upstream.headers['content-type']
+   },
+   body:upstream.body
+  }));
+ }
+});
+async function proxyPost(token,data){
+ const request=new Request(HOSTED_ORIGIN+PATH,{
+  method:'POST',
+  headers:{origin:HOSTED_ORIGIN,'content-type':'application/json',authorization:'Bearer '+token},
+  body:JSON.stringify(data)
+ });
+ const response=await proxy(request);
+ return {status:response.status,body:await response.json()};
+}
 const post=async(token,data,{origin=ORIGIN}={})=>{
  const response=await game(new Request(ORIGIN+PATH,{
   method:'POST',headers:{'content-type':'application/json',origin,
@@ -119,12 +151,26 @@ try{
  assert.equal((await remove(token1,1,airports.sarajevo)).body.removed,true);
  assert.equal((await remove(token1,1,airports.sarajevo)).body.removed,false,'repeat delete is safe');
  assert.equal((await list(token1,1)).body.offices.length,1);
+ // The complete Netlify -> Edge canonical API -> private PostgreSQL chain,
+ // using in-process Edge emulation and no actual external network traffic.
+ const viaProxy=await proxyPost(token1,{
+  operation:'save',worldId:1,airportKey:airports.sarajevo,type:'station'
+ });
+ assert.equal(viaProxy.status,201,'real proxy chain accepts valid save');
+ assert.equal(viaProxy.body.office.status,'draft');
+ assert.equal((await proxyPost(token2,{operation:'list',worldId:1})).body.offices.length,1,
+  'second owner sees only their own office through Netlify');
+ assert.equal((await proxyPost(token1,{operation:'list',worldId:1})).body.offices.length,2,
+  'same owner sees two drafts via proxy');
+ assert.equal((await proxyPost(token1,{
+  operation:'remove',worldId:1,airportKey:airports.sarajevo
+ })).body.removed,true,'proxied delete is owner-scoped');
  const money=await pool.query('select id,cash_usd::text from airlinerra_game.airlines order by id');
  assert.equal(money.rows.length,3);
  assert.ok(money.rows.every(row=>Number(row.cash_usd)===5000000),'no money charged');
  assert.equal(Number((await pool.query('select count(*) as n from airlinerra_game.airline_ledger')).rows[0].n),0,'no ledger entries');
  assert.equal(Number((await pool.query("select count(*) as n from airlinerra_game.airport_offices where office_status <> 'draft'")).rows[0].n),0,'never active');
- console.log('PASS: CI-local API/Auth/Postgres owner isolation, 2 worlds, concurrency, data protection, no charges');
+ console.log('PASS: CI-local Netlify -> in-process Edge -> Auth verifier -> PostgreSQL owner/world isolation, concurrency, no charges');
 } finally {
  await pool.end();
 }
