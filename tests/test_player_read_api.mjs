@@ -8,6 +8,7 @@ const baseRows={
  worlds:[{id:1,name:'World 01',state:'planned'},{id:2,name:'World 02',state:'planned'},{id:3,name:'World 03',state:'planned'}],
  countries:[{country_iso:'DE',airport_count:2},{country_iso:'FR',airport_count:1}],
  airlines:[],
+ ledger:[{entry_kind:'STARTING_CAPITAL',amount_usd:'5000000.00',recorded_at:'2026-10-29T08:12:26.559Z'}],
  airports:[{airport_key:'OURAIRPORTS:111',airport_name:'Berlin Airport',airport_code:'EDDB',country_iso:'DE',municipality:'Berlin'}]
 };
 function make({enabled=true,verified=true,rows=baseRows}={}){
@@ -16,6 +17,7 @@ function make({enabled=true,verified=true,rows=baseRows}={}){
    query:async(sql,params)=>{queries.push({sql,params});if(sql===PLAYER_READ_SQL.worlds)return {rows:rows.worlds};
      if(sql===PLAYER_READ_SQL.countries)return {rows:rows.countries};
      if(sql===PLAYER_READ_SQL.airlines)return {rows:rows.airlines};
+     if(sql===PLAYER_READ_SQL.ledger)return {rows:rows.ledger};
      if(sql===PLAYER_READ_SQL.airports)return {rows:rows.airports};
      throw Error('Unexpected query');},
    release:()=>{released++;}
@@ -114,6 +116,7 @@ test('owner-registered airline returns the approved home airport name and code',
  assert.equal(data.airlines[0].homeAirportCode,'LYBE');
  assert.equal(data.airlines[0].premiumUnlimited,true);
  assert.equal(data.airlines[0].cashUsd,'5000000.00');
+ assert.deepEqual(data.ledgerEntries,[{kind:'STARTING_CAPITAL',amountUsd:'5000000.00',recordedAt:'2026-10-29T08:12:26.559Z'}]);
 });
 test('approved fictional game airport is not dropped from Serbia airport search',async()=>{
  const rows={...baseRows,airports:[{
