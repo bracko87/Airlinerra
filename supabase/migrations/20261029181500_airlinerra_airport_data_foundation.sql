@@ -216,7 +216,11 @@ revoke all on table
  airlinerra_game.airport_field_evidence,
  airlinerra_game.airport_data_work_queue
  from public,anon,authenticated;
-revoke all on all sequences in schema airlinerra_game from anon,authenticated;
+revoke all on sequence
+ airlinerra_game.airport_capacity_observations_id_seq,
+ airlinerra_game.airport_traffic_observations_id_seq,
+ airlinerra_game.airport_field_evidence_evidence_id_seq
+ from public,anon,authenticated;
 
 -- Base directory: approved airports are THE ONLY allowed source set.
 -- Code entries remain labelled source-unverified (none are reviewed).
