@@ -86,7 +86,11 @@
     </nav>
     <div class="workspace">
       <main id="player-main">
-        <span id="local-preview-note" hidden></span><span id="player-data-status" hidden></span>
+        <span id="local-preview-note" hidden></span>
+        <div id="player-data-status" class="game-data-banner" role="status" aria-live="polite" hidden>
+          <span id="player-data-message"></span>
+          <button id="player-data-retry" type="button" class="secondary" hidden>Retry connection</button>
+        </div>
         <section data-player-view="overview">
           <div class="page-head"><div><p class="eyebrow">MANAGER CONSOLE</p><h1>Overview</h1><p>Your home for airline operations once the first world opens.</p></div><button class="primary" type="button" data-go-view="onboarding">Explore setup</button></div>
           <div class="kpi-grid">
