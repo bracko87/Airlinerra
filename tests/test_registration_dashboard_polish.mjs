@@ -40,6 +40,8 @@ test('country flag picker lets users search by typed name without selecting a wr
  assert.match(script,/search\.type='search'/);
  assert.match(script,/search\.placeholder='Type a country name\.\.\.'/);
  assert.match(script,/search\.addEventListener\('input',filter\)/);
+ assert.match(script,/trigger\.addEventListener\('keydown',event=>\{/);
+ assert.match(script,/search\.value\+=event\.key;filter\(\);search\.focus\(\)/);
  assert.match(script,/\.normalize\('NFD'\)/);
  assert.match(script,/option\.dataset\.search/);
  assert.match(script,/option\.hidden=!match/);
