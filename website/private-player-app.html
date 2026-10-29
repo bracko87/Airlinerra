@@ -100,6 +100,7 @@
             <article class="panel"><span class="panel-kicker">NEXT STEPS</span><h2 id="overview-progress-title">Set up your airline</h2><p id="overview-progress-description">Choose your world, home airport and airline name to create your company.</p><div class="progress-line"><span>Account verified</span><b>Ready</b></div><div class="progress-line"><span>World and home airport</span><b id="overview-home-progress">Pending</b></div><div class="progress-line"><span>Airline activation</span><b id="overview-activation-progress">Locked</b></div><button class="secondary" type="button" data-go-view="onboarding">View setup flow</button></article>
             <article class="panel"><span class="panel-kicker">GET STARTED</span><h2>Build your airline</h2><p id="overview-get-started-description">Start with $5,000,000 and no aircraft. Choose your home airport, then explore fleet, routes and scheduling.</p><div class="mini-row"><span>Starting budget</span><strong>$5,000,000</strong></div><div class="mini-row"><span>Starting aircraft</span><strong>0</strong></div><button class="secondary" type="button" data-go-view="worlds">View worlds</button></article>
           </div>
+          <div id="workspace-overview"></div>
         </section>
         <section data-player-view="onboarding" hidden>
           <div class="page-head"><div><p class="eyebrow">YOUR NEW AIRLINE</p><h1>Create your airline</h1><p>Choose your world, country, home airport and airline identity.</p></div></div>
@@ -159,25 +160,21 @@
         </section>
         <section data-player-view="worlds" hidden>
           <div class="page-head"><div><p class="eyebrow">SIMULATION WORLDS</p><h1>Game worlds</h1><p>Each world has its own independent airline economy. One real day equals one game day.</p></div></div>
-          <div class="world-grid" id="world-directory"></div><p class="hint">These are proposed release-state labels. Live selectable worlds must come from the protected backend.</p>
+          <div class="world-grid" id="world-directory"></div><div id="workspace-worlds"></div>
         </section>
         <section data-player-view="airports" hidden>
           <div class="page-head"><div><p class="eyebrow">WORLD 01 CATALOG</p><h1>Airports</h1><p>Browse airports in the selected game world.</p></div></div>
-          <article class="panel"><span class="panel-kicker">SECURE DATA CONNECTION</span><h2 id="airport-heading">Airport directory</h2><p id="airport-description">Search the airport directory by country or airport name.</p><div class="filters"><label for="airports-country">Country<select id="airports-country" disabled><option>Waiting for private API</option></select></label><label for="airports-query">Airport name or code<input id="airports-query" disabled maxlength="40" placeholder="Search approved airport catalog"></label></div><div class="search-actions"><button type="button" id="airports-search" disabled>Search airports</button><button type="button" id="airports-more" disabled hidden>Load more</button></div><div id="airport-results" class="empty" role="status">Choose a country to browse airports.</div></article>
+          <article class="panel"><span class="panel-kicker">SECURE DATA CONNECTION</span><h2 id="airport-heading">Airport directory</h2><p id="airport-description">Search the airport directory by country or airport name.</p><div class="filters"><label for="airports-country">Country<select id="airports-country" disabled><option>Waiting for private API</option></select></label><label for="airports-query">Airport name or code<input id="airports-query" disabled maxlength="40" placeholder="Search approved airport catalog"></label></div><div class="search-actions"><button type="button" id="airports-search" disabled>Search airports</button><button type="button" id="airports-more" disabled hidden>Load more</button></div><div id="airport-results" class="empty" role="status">Choose a country to browse airports.</div></article><div id="workspace-airport-insights"></div>
         </section>
         <section data-player-view="fleet" hidden>
  <div class="page-head"><div><p class="eyebrow">FLEET MANAGEMENT</p><h1>Fleet</h1><p>Aircraft purchasing, leasing, maintenance and utilisation.</p></div></div>
- <div class="kpi-grid"><article class="kpi"><span>Owned aircraft</span><strong>-</strong><small>No airline activated</small></article><article class="kpi"><span>Leased aircraft</span><strong>-</strong><small>Not connected</small></article><article class="kpi"><span>Maintenance</span><strong>-</strong><small>No airframes</small></article><article class="kpi"><span>Available capacity</span><strong>-</strong><small>No schedules</small></article></div>
- <article class="panel empty-panel"><h2>Your fleet will appear here</h2><p>Aircraft models, actual new/used airframe inventory and maintenance must be connected before purchases or leases.</p><button class="secondary" data-go-view="onboarding" type="button">Review airline setup</button></article></section>
+ <div id="workspace-fleet"></div></section>
         <section data-player-view="routes" hidden><div class="page-head"><div><p class="eyebrow">ROUTE NETWORK</p><h1>Routes</h1><p>Build connections between approved departure and destination airports.</p></div></div>
- <article class="panel empty-panel"><h2>No route network yet</h2><p>Browse approved World 1 airports now. Creating routes requires an activated airline, aircraft assignment and live passenger/cargo demand.</p><button class="secondary" data-go-view="airports" type="button">Browse approved airports</button></article></section>
+ <div id="workspace-routes"></div></section>
         <section data-player-view="schedule" hidden><div class="page-head"><div><p class="eyebrow">FLIGHT SCHEDULING</p><h1>Flight schedule</h1><p>Seven-day timetable, with 24-hour planning once an aircraft is assigned.</p></div></div>
- <article class="panel"><span class="panel-kicker">WEEKLY OPERATIONS · EMPTY TEMPLATE</span><div class="week-grid">
- <div>Mon<span>No aircraft</span></div><div>Tue<span>No aircraft</span></div><div>Wed<span>No aircraft</span></div><div>Thu<span>No aircraft</span></div><div>Fri<span>No aircraft</span></div><div>Sat<span>No aircraft</span></div><div>Sun<span>No aircraft</span></div>
- </div><p class="muted">No actual flights are scheduled. Full hour-by-hour operations will be connected to the flight engine.</p></article></section>
+ <div id="workspace-schedule"></div></section>
         <section data-player-view="finances" hidden><div class="page-head"><div><p class="eyebrow">FINANCIAL OVERVIEW</p><h1>Finances</h1><p>Monitor real balances, operating costs and audited transactions.</p></div></div>
- <div class="two-cols"><article class="panel"><span class="panel-kicker">OPENING CAPITAL · AFTER AIRLINE CREATION</span><h2>$5,000,000 USD</h2><p>The real opening capital is credited by the backend after successful airline creation.</p><span class="pill">Only on activation</span></article>
- <article class="panel"><span class="panel-kicker">ACTUAL LEDGER</span><h2>Not available</h2><p>No airline exists for this demo. Real revenue, expenses, borrowing and balances come from the secure ledger.</p><span class="pill">No transactions</span></article></div></section>
+ <div id="workspace-finances"></div></section>
         <section data-player-view="settings" hidden>
  <div class="page-head"><div><p class="eyebrow">SETTINGS</p><h1>General preferences</h1><p>Personalize your game display and time formats.</p></div></div>
  <div class="settings-layout">
