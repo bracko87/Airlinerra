@@ -28,7 +28,7 @@ export function normalizeDashboardLedger(entries){
  ).map(entry=>Object.freeze({kind:entry.kind,amountUsd:String(entry.amountUsd),
   recordedAt:entry.recordedAt}));
 }
-function renderCompanyNews(doc,airline,worlds,entries){
+export function renderCompanyNews(doc,airline,worlds,entries){
  const root=doc.getElementById('dashboard-news-items');if(!root)return;
  root.replaceChildren();
  if(!airline?.name){const p=doc.createElement('p');p.className='dashboard-data-note';p.textContent='Connect an airline to view recorded company milestones.';root.append(p);return;}
