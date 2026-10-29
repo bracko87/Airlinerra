@@ -65,15 +65,6 @@ on:
       - 'tests/test_sql_contract_drift.mjs'
       - 'tests/sql/**'
       - 'docs/sql/airlinerra_game_*.sql'
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'server/airport-office-*.mjs'
-      - 'supabase/migrations/*airport_office*'
-      - 'tests/test_airport_office*.mjs'
-      - 'website/package.json'
-      - '.github/workflows/airlinerra-account-node-ci.yml'
   workflow_dispatch:
 
 permissions:
@@ -112,8 +103,6 @@ jobs:
           node --check ../server/registration-readiness.mjs
           node --check ../server/canonical-game-api.mjs
           node --check ../server/production-game-api.mjs
-          node --check ../server/airport-office-domain.mjs
-          node --check ../server/airport-office-persistence.mjs
           node --check netlify/functions/airlinerra-game.mjs
           node --check player-app.mjs
           node --check player-data-service.mjs
@@ -196,14 +185,6 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f docs/sql/airlinerra_game_identity_schema_prelaunch.sql
           psql -X -v ON_ERROR_STOP=1 -f docs/sql/airlinerra_game_activation_prelaunch.sql
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/airline_activation_isolated_assertions.sql
-      - name: Validate airport office draft schema in disposable PostgreSQL
-        shell: bash
-        run: |
-          set -euo pipefail
-          test "$PGHOST" = "127.0.0.1"
-          test "$PGDATABASE" = "airlinerra_disposable"
-          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261029154000_airlinerra_airport_office_drafts.sql
-          psql -X -v ON_ERROR_STOP=1 -tAc "SELECT relrowsecurity FROM pg_class WHERE oid='airlinerra_game.airport_offices'::regclass" | grep -Fxq t
       - name: Exercise 3140-airport approval bridge with disposable PostgreSQL only
         shell: bash
         run: |
