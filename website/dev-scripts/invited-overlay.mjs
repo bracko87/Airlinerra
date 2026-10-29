@@ -71,10 +71,15 @@ export async function addInviteOnlyAccount({siteDir,distDir}={}){
   // release flags or backend secrets. Protected Auth is verified client-side.
   const playerSource=await readFile(path.join(siteDir,'private-player-app.html'),'utf8');
   const playerTag='<script type="module" src="player-app.mjs"></script>';
+  // Check stable security/DOM contracts, not editable marketing copy.
+  // Cosmetic text such as "YOUR NEW AIRLINE" may be renamed without changing
+  // the authenticated onboarding and closed-by-default creation safeguards.
   if(!playerSource.includes(playerTag)||
      !playerSource.includes('id="player-app" hidden')||
-     !playerSource.includes('YOUR NEW AIRLINE')||
-     !playerSource.includes('disabled>Create my airline')||
+     !playerSource.includes('data-player-view="onboarding" hidden')||
+     !playerSource.includes('id="setup-confirm-dialog"')||
+     !playerSource.includes('id="setup-airline-name"')||
+     !playerSource.includes('id="setup-create-airline" disabled')||
      /<script[^>]+src="https?:|id="register"|service_role|sb_secret_/u.test(playerSource)){
     throw new Error('Player application prelaunch safety checks failed.');
   }
