@@ -31,6 +31,7 @@ function visible(view){
 function navigateTo(view){
   const selected=safePlayerView('#'+view);
   const name=selected==='onboarding'&&hasRealAirline?'overview':selected;
+  if(name!==selected)window.history.replaceState({},'',playerViewUrl(name));
   for(const section of doc.querySelectorAll('[data-player-view]')){
     section.hidden=section.dataset.playerView!==name;
   }
@@ -592,7 +593,7 @@ doc.getElementById('setup-airline-name').addEventListener('input',summarize);
 for(const id of ['setup-airline-icao','setup-airline-iata']){
  doc.getElementById(id).addEventListener('input',event=>{
   const input=event.currentTarget;
-  input.value=input.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,id.endsWith('icao')?3:2);
+  input.value=input.value.toUpperCase().replace(id.endsWith('icao')?/[^A-Z]/g:/[^A-Z0-9]/g,'').slice(0,id.endsWith('icao')?3:2);
   summarize();
  });
 }
