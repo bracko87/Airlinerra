@@ -267,7 +267,9 @@ async function loadPlayerReadData({local=false}={}){
   const first=data.airlines[0];
   hasRealAirline=Boolean(first?.name);
   renderOverviewState(hasRealAirline);
-  workspaceController?.updateData({airline:first||null,worlds:data.worlds,countries:data.countries,reader:playerData});
+  workspaceController?.updateData({connected:true,airline:first||null,worlds:data.worlds,countries:data.countries,reader:playerData});
+  doc.getElementById('player-data-status').hidden=true;
+  doc.getElementById('player-data-retry').hidden=true;
   if(first?.name){
    doc.getElementById('top-world').textContent='WORLD '+String(first.worldId).padStart(2,'0');
    doc.getElementById('top-airline-state').textContent=first.name+
@@ -288,15 +290,34 @@ async function loadPlayerReadData({local=false}={}){
   doc.getElementById('airport-description').textContent=
    data.airportsTotal+' approved airports in the game.';
   readSucceeded=true;
- }catch{
+ }catch(error){
   playerData=null;
-  doc.getElementById('player-data-status').textContent='Game overview is currently unavailable.';
+  hasRealAirline=false; // Unknown because the protected read failed - NOT proof no airline exists.
+  workspaceController?.updateData({connected:false,airline:null,reader:null});
+  doc.getElementById('top-airline-state').textContent='Airline data unavailable';
+  doc.getElementById('player-airline-name').textContent='Unable to load';
+  doc.getElementById('player-airline-note').textContent='Connection unavailable';
+  doc.getElementById('player-cash').textContent='-';
+  doc.getElementById('player-cash-note').textContent='Balance not loaded';
+  doc.getElementById('overview-progress-title').textContent='Reconnect your existing airline';
+  doc.getElementById('overview-progress-description').textContent=
+   'Your verified account is signed in, but the game-data connection failed. Do not register again or create another airline.';
+  doc.getElementById('overview-home-progress').textContent='Not checked';
+  doc.getElementById('overview-activation-progress').textContent='Not checked';
+  const box=doc.getElementById('player-data-status');
+  doc.getElementById('player-data-message').textContent=
+   'Unable to load your existing airline from the World 1 game database. Please retry the connection - no new registration is needed.';
+  box.hidden=false;
+  doc.getElementById('player-data-retry').hidden=false;
+  doc.getElementById('setup-create-airline').disabled=true;
+  doc.getElementById('setup-draft-feedback').textContent=
+   'Existing airline status cannot be verified. Retry the database connection instead of creating another airline.';
  }
- // This is independent of the general read API and controls all setup
- // options. All airports come from verified protected server context.
- await loadRealOnboarding();
+ // Confirm existing company ownership before enabling airline creation.
+ // The protected setup endpoint is never used as evidence that an airline is missing.
+ if(readSucceeded)await loadRealOnboarding();
  const canSetup=Boolean(onboardingContext);
- const needsRetry=(!readSucceeded&&!canSetup)||(!hasRealAirline&&!canSetup);
+ const needsRetry=!readSucceeded||(!hasRealAirline&&!canSetup);
  doc.getElementById('setup-retry-loading').hidden=!needsRetry;
  if(readSucceeded&&initialManagerLanding){
   const destination=managerLandingView({requestedView:'onboarding',hasAirline:hasRealAirline});
@@ -305,18 +326,10 @@ async function loadPlayerReadData({local=false}={}){
   navigateTo(landing);
   initialManagerLanding=false;
  }
- if(!readSucceeded&&canSetup){
-  // Stay on the authorized setup page. Its choices and activation remain
-  // protected by the backend, even when overview data is unavailable.
-  doc.getElementById('top-airline-state').textContent='Create your airline';
-  if(initialManagerLanding){
-   window.history.replaceState({},'',playerViewUrl('onboarding'));
-   navigateTo('onboarding');
-   initialManagerLanding=false;
-  }
- }else if(!readSucceeded&&!canSetup){
-  doc.getElementById('setup-draft-feedback').textContent=
-   'Unable to load airline setup. Please select Retry.';
+ if(!readSucceeded&&initialManagerLanding){
+  window.history.replaceState({},'',playerViewUrl('overview'));
+  navigateTo('overview');
+  initialManagerLanding=false;
  }
 }
 function renderSavedDraft(draft){
@@ -547,6 +560,13 @@ doc.getElementById('setup-airline-name').addEventListener('input',summarize);
 doc.getElementById('setup-airport-search').addEventListener('click',()=>{void airportSearch({setup:true});});
 doc.getElementById('airports-search').addEventListener('click',()=>{nextAirportOffset=null;void airportSearch();});
 doc.getElementById('airports-more').addEventListener('click',()=>{if(nextAirportOffset!==null)void airportSearch({offset:nextAirportOffset});});
+doc.getElementById('player-data-retry').addEventListener('click',async()=>{
+ const button=doc.getElementById('player-data-retry');
+ button.disabled=true;
+ doc.getElementById('player-data-message').textContent='Reconnecting to the World 1 game database...';
+ try{await loadPlayerReadData({local:window.location.origin==='http://localhost:5188'});}
+ finally{button.disabled=false;}
+});
 doc.getElementById('setup-retry-loading').addEventListener('click',()=>{
  const button=doc.getElementById('setup-retry-loading');button.hidden=true;
  doc.getElementById('setup-draft-feedback').textContent='Loading your airline setup…';
@@ -567,7 +587,8 @@ function showPreview(){
   doc.getElementById('setup-account-state').textContent=localTest?'Local test complete':'Demo';
   doc.getElementById('setup-account-state').classList.remove('step-good');
   doc.getElementById('setup-email').closest('.step').querySelector('p').firstChild.textContent='Simulated manager; no invitation verified. ';
-  doc.getElementById('player-data-status').textContent='Simulated navigation; protected game API is not connected';
+  doc.getElementById('player-data-message').textContent='Simulated navigation - protected game API is not connected';
+  doc.getElementById('player-data-status').hidden=false;
   signOut.disabled=false;
   doc.title='Airlinerra - LOCAL DEMO - Player dashboard';
   visible('app');
