@@ -66,7 +66,7 @@ test('live read adapter verifies hosted identity before using private PostgreSQL
    }
  }
  const handler=await makeRealLocalPlayerHandler({
-  env:{AIRLINERRA_LOCAL_DATABASE_URL:connection},
+  env:{AIRLINERRA_LOCAL_USE_DATABASE:'1',AIRLINERRA_LOCAL_DATABASE_URL:connection},
   loadPg:async()=>({Pool}),
   fetchImpl:async(url,options)=>{
    authCalls++;
@@ -96,7 +96,7 @@ test('live read adapter verifies hosted identity before using private PostgreSQL
 test('unverified hosted identity fails before database connection',async()=>{
  let connected=0;
  const handler=await makeRealLocalPlayerHandler({
-  env:{AIRLINERRA_LOCAL_DATABASE_URL:connection},
+  env:{AIRLINERRA_LOCAL_USE_DATABASE:'1',AIRLINERRA_LOCAL_DATABASE_URL:connection},
   loadPg:async()=>({Pool:class {
    async connect(){connected++;throw Error('should not connect');}
   }}),
