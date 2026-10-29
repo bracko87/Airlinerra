@@ -1,3 +1,4 @@
+import {routePlannerMarkup,createRoutePlanner} from './route-planner.mjs';
 /** Airlinerra airline-management workspace.
  * Real server read models stay separate from local-only planning. All page
  * structure in this module is constant markup authored by the application.
@@ -122,31 +123,7 @@ const pages=Object.freeze({
   card('Maintenance decision guide',
    '<p>Inspect aircraft condition and maintenance deadlines before placing flights. Aircraft must remain unavailable while grounded or in a required inspection window.</p>',
    'SAFETY'),
- 'routes':()=>card('Route workshop',
-   '<p>Select approved airports from the actual World 1 directory to prepare a route idea. This does not create a commercial route, calculate passenger demand or reserve slots.</p>'+
-   '<div class="workspace-route-form">'+
-   '<fieldset><legend>Departure</legend>'+
-   field('route-from-country','Country','<select id="route-from-country"><option value="">Choose country</option></select>')+
-   field('route-from-search','Airport name or code','<input id="route-from-search" maxlength="40" placeholder="Search approved airports">')+
-   '<button type="button" id="route-from-find" class="secondary">Find departures</button>'+
-   field('route-from-airport','Airport','<select id="route-from-airport" disabled><option value="">Search first</option></select>')+'</fieldset>'+
-   '<fieldset><legend>Destination</legend>'+
-   field('route-to-country','Country','<select id="route-to-country"><option value="">Choose country</option></select>')+
-   field('route-to-search','Airport name or code','<input id="route-to-search" maxlength="40" placeholder="Search approved airports">')+
-   '<button type="button" id="route-to-find" class="secondary">Find destinations</button>'+
-   field('route-to-airport','Airport','<select id="route-to-airport" disabled><option value="">Search first</option></select>')+'</fieldset></div>'+
-   field('route-flights','Proposed departures per week','<input id="route-flights" type="number" min="1" max="28" value="7">')+
-   '<div class="workspace-actions"><button type="button" class="primary" id="route-save">Save route draft</button>'+button('schedule','Open weekly timetable')+'</div>'+
-   '<p id="route-feedback" class="hint" role="status"></p>'+
-   '<div id="route-draft-review" class="workspace-detail"></div>',
-   'APPROVED AIRPORTS')+
-  card('Before opening a route',
-   '<div class="workspace-task-list">'+
-   '<div><strong>Demand</strong><span>Passenger and cargo forecasts are not yet calculated</span></div>'+
-   '<div><strong>Aircraft</strong><span>Check range, payload, seats and runway access</span></div>'+
-   '<div><strong>Slots</strong><span>Departure/arrival windows and turnaround capacity</span></div>'+
-   '<div><strong>Economics</strong><span>Estimate fares, operating cost and break-even load</span></div></div>',
-   'NETWORK REQUIREMENTS'),
+ 'routes':()=>routePlannerMarkup(),
  'schedule':()=>card('Seven-day flight planner',
    '<p>Plan a draft flight in a 24-hour weekly grid. All times are planning labels, not reserved slots or executed flights.</p>'+
    '<div class="workspace-schedule-controls">'+
@@ -453,7 +430,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    'finance-live-cash':connected&&airline?.cashUsd!==undefined?currency(airline.cashUsd):'-'
   };
   for(const [id,value] of Object.entries(values)){if($(id))$(id).textContent=value;}
-  populateCountries();
+  routePlannerController.updateData(data);
  }
  doc.getElementById('player-main')?.addEventListener('click',async event=>{
   const nav=event.target.closest('[data-workspace-go]');
@@ -539,6 +516,9 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
  });
  for(const id of ['settings-time','settings-date','settings-units'])
   $(id)?.addEventListener('change',examples);
+ const routePlannerController=createRoutePlanner({
+  doc,getData:()=>data,loadDraft:()=>safelyLoad(session,draftKey)||{},draftWrite
+ });
  applyPreferences();loadDraftForms();
  return Object.freeze({updateData,getLandingView:()=>preferences.landing,formatDistance:km=>
   preferences.units==='mi'?(Number(km)*0.621371).toFixed(0)+' mi':Number(km).toFixed(0)+' km'});
