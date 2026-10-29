@@ -33,7 +33,9 @@ test('real signup requires hosted signup enabled and approved legal pages',async
  assert.match(register,/id="real-registration-form" hidden/);
  assert.match(script,/provider.signupEnabled!==true/);
  assert.match(script,/api\/v1\/registration\/readiness/);
- assert.match(script,/readiness\?\.privateOwnerPilotAvailable===true/);
+ const access=await read('../website/registration-access.mjs');
+ assert.match(script,/evaluateRegistrationAccess\(\{provider,readiness,terms,privacy\}\)/);
+ assert.match(access,/readiness\.privateOwnerPilotAvailable===true/);
  assert.match(script,/data-airlinerra-legal-approved="true"/);
  assert.match(script,/REVIEW DRAFT/);
  assert.match(script,/sdkClient.auth.signUp/);
