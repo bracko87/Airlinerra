@@ -140,7 +140,8 @@ test('real airline persists visibly in dashboard header while no-airline users a
  assert.match(js,/first\.premiumUnlimited===true/);
  assert.match(js,/Premium Unlimited/);
  assert.match(js,/Registered airline/);
- assert.match(js,/No airline created · Complete airline setup/);
+ assert.match(js,/renderOverviewState\(hasRealAirline\)/);
+ assert.match(js,/doc\.getElementById\('player-cash'\)\.textContent=formatWholeUsd\(first\.cashUsd\)/);
  assert.match(js,/managerLandingView\(\{requestedView:'onboarding',hasAirline:hasRealAirline\}\)/);
 });
 
