@@ -2,6 +2,7 @@
  * The only connected figures today are the owned airline cash and its
  * owner-scoped ledger. Never substitute imaginary flights or traffic.
  */
+import {renderFinancialCharts} from './airline-finance-charts.mjs';
 export const AIRLINERRA_WORLD_NAMES=Object.freeze({
  1:'Horizon',2:'Atlas',3:'Odyssey'
 });
@@ -48,32 +49,5 @@ export function renderAirlineDashboard(doc,{airline=null,worlds=[],ledgerEntries
   cell.textContent='Flight tracking is not connected yet. Live flights will appear here when the operations engine is active.';
   tr.append(cell);body.replaceChildren(tr);
  }
- const root=$('dashboard-ledger-activity');
- if(!root)return;
- root.replaceChildren();
- const rows=normalizeDashboardLedger(ledgerEntries);
- if(rows===null){
-  const note=doc.createElement('p');note.className='dashboard-data-note';
-  note.textContent=airline?'Financial activity is temporarily unavailable.':'Create an airline to view its financial history.';
-  root.append(note);return;
- }
- if(!rows.length){
-  const note=doc.createElement('p');note.className='dashboard-data-note';
-  note.textContent='No recorded financial transactions yet.';
-  root.append(note);return;
- }
- for(const item of rows){
-  const row=doc.createElement('div');row.className='dashboard-ledger-row';
-  const left=doc.createElement('div'),name=doc.createElement('strong');
-  const label=item.kind==='STARTING_CAPITAL'?'Starting capital':
-    item.kind.toLowerCase().replace(/_/g,' ').replace(/^./,c=>c.toUpperCase());
-  name.textContent=label;
-  const date=doc.createElement('small');
-  date.textContent=new Intl.DateTimeFormat('en-GB',{day:'2-digit',month:'short',year:'numeric',
-   timeZone:'UTC'}).format(new Date(item.recordedAt));
-  left.append(name,date);
-  const amount=doc.createElement('strong');amount.className='dashboard-ledger-amount';
-  amount.textContent=dashboardMoney(item.amountUsd);
-  row.append(left,amount);root.append(row);
- }
+ renderFinancialCharts(doc,{cash:airline?.cashUsd??null,ledgerEntries});
 }
