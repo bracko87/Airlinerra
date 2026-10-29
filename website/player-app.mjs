@@ -7,6 +7,7 @@ import {openPrivateTesterDashboard,PrivateTesterAccessDenied} from './tester-das
 import {createPlayerReadClient,PLAYER_READ_API_ENABLED} from './player-read-client.mjs';
 import {createRealOnboardingClient} from './real-onboarding-client.mjs';
 import {createDownwardMenu} from './setup-choice-menu.mjs';
+import {createAirlineWorkspace} from './airline-workspace.mjs';
 import {createLocalCatalogClient} from './local-catalog-client.mjs';
 import {saveLocalDraft,readLocalDraft,clearLocalDraft} from './local-onboarding-draft.mjs';
 import {isLocalDemoOrigin,hasLocalDemo,endLocalDemo,getLocalTestProfile,LOCAL_DEMO_MANAGER,LOCAL_DEMO_LOGIN_PATH} from './local-demo-session.mjs';
@@ -62,6 +63,15 @@ function setManager(user){
   doc.getElementById('manager-joined').textContent=manager.joined||'Not provided';
   doc.getElementById('setup-email').textContent=manager.email;
   doc.getElementById('top-email').textContent=manager.email;
+  if(!workspaceController){
+   workspaceController=createAirlineWorkspace({
+    doc,identity:user.id,storage:window.localStorage,session:window.sessionStorage,
+    goTo:view=>{
+     window.history.replaceState({},'',playerViewUrl(view));
+     navigateTo(view);
+    }
+   });
+  }
 }
 function renderOverviewState(hasAirline){
  doc.getElementById('player-airline-note').textContent=hasAirline?'Airline created successfully':'Awaiting onboarding';
@@ -80,6 +90,7 @@ let playerData=null;
 let onboarding=null;
 let onboardingContext=null;
 let hasRealAirline=false;
+let workspaceController=null;
 // Initial verified login is redirected; explicit later navigation is respected.
 let initialManagerLanding=false;
 let nextAirportOffset=null;
@@ -254,6 +265,7 @@ async function loadPlayerReadData({local=false}={}){
   const first=data.airlines[0];
   hasRealAirline=Boolean(first?.name);
   renderOverviewState(hasRealAirline);
+  workspaceController?.updateData({airline:first||null,worlds:data.worlds,countries:data.countries,reader:playerData});
   if(first?.name){
    doc.getElementById('top-world').textContent='WORLD '+String(first.worldId).padStart(2,'0');
    doc.getElementById('top-airline-state').textContent=first.name+
@@ -286,8 +298,9 @@ async function loadPlayerReadData({local=false}={}){
  doc.getElementById('setup-retry-loading').hidden=!needsRetry;
  if(readSucceeded&&initialManagerLanding){
   const destination=managerLandingView({requestedView:'onboarding',hasAirline:hasRealAirline});
-  window.history.replaceState({},'',playerViewUrl(destination));
-  navigateTo(destination);
+  const landing=hasRealAirline?(workspaceController?.getLandingView()||destination):destination;
+  window.history.replaceState({},'',playerViewUrl(landing));
+  navigateTo(landing);
   initialManagerLanding=false;
  }
  if(!readSucceeded&&canSetup){
@@ -488,7 +501,8 @@ doc.getElementById('setup-final-create').addEventListener('click',async()=>{
   if(!doc.getElementById('player-logo-warning').hidden)status.textContent='Airline created; logo upload needs attention.';
   else status.textContent='Airline created successfully.';
   doc.getElementById('player-airline-name').textContent=airlineName;
-  doc.getElementById('player-cash').textContent=String(record.cashUsd)+' USD';
+  doc.getElementById('player-cash').textContent=formatWholeUsd(record.cashUsd);
+  workspaceController?.updateData({airline:{id:record.airlineId,worldId,name:airlineName,homeAirportKey:home,cashUsd:record.cashUsd}});
   await loadPlayerReadData({local:window.location.origin==='http://localhost:5188'});
   window.history.replaceState({},'','/player.html#overview');navigateTo('overview');
  }catch(error){
@@ -524,22 +538,6 @@ doc.getElementById('setup-clear-draft').addEventListener('click',()=>{
  doc.getElementById('setup-draft-summary').hidden=true;
  doc.getElementById('setup-draft-feedback').textContent='Local draft cleared. No airline was created.';
 });
-doc.getElementById('settings-save').addEventListener('click',()=>{
- if(!preview)return;
- const units=doc.getElementById('settings-units').value,time=doc.getElementById('settings-time').value;
- if(!['km','mi'].includes(units)||!['12','24'].includes(time))return;
- window.sessionStorage.setItem('airlinerra-local-demo-preferences',JSON.stringify({units,time}));
- doc.getElementById('settings-feedback').textContent='Saved in this browser tab only.';
-});
-function prepareDemoSettings(){
- if(!preview)return;
- for(const id of ['settings-units','settings-time','settings-save'])doc.getElementById(id).disabled=false;
- try{
-  const d=JSON.parse(window.sessionStorage.getItem('airlinerra-local-demo-preferences')||'null');
-  if(d&&['km','mi'].includes(d.units))doc.getElementById('settings-units').value=d.units;
-  if(d&&['12','24'].includes(d.time))doc.getElementById('settings-time').value=d.time;
- }catch{/* no persisted settings */}
-}
 doc.getElementById('setup-country').addEventListener('change',()=>{loadSetupAirports();});
 doc.getElementById('setup-world').addEventListener('change',fillSetupCountries);
 doc.getElementById('setup-airport-results').addEventListener('change',summarize);
@@ -569,7 +567,7 @@ function showPreview(){
   doc.getElementById('setup-email').closest('.step').querySelector('p').firstChild.textContent='Simulated manager; no invitation verified. ';
   doc.getElementById('player-data-status').textContent='Simulated navigation; protected game API is not connected';
   signOut.disabled=false;
-  doc.title='Airlinerra - LOCAL DEMO · Player dashboard';
+  doc.title='Airlinerra - LOCAL DEMO - Player dashboard';
   visible('app');
 }
 async function initialize(){
