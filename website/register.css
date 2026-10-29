@@ -38,3 +38,8 @@ main{width:min(1220px,calc(100% - 80px));margin:75px auto 80px;padding:0}.regist
 #registration-feedback[data-status="pending"]{color:#455b77;background:#f1f5fa;border:1px solid #d8e2ec}
 #registration-feedback[data-status="success"]{color:#17663d;background:#e8f7ee;border:1px solid #91d4ab}
 #registration-feedback[data-status="error"]{color:#a12626;background:#fff0f0;border:1px solid #e5a1a1}
+
+/* Shared Airlinerra card-spacing rhythm. */
+.registration-layout{gap:clamp(20px,3vw,42px)}
+.registration-layout .card{margin-block:20px}
+@media(max-width:740px){.registration-layout{gap:16px}}
