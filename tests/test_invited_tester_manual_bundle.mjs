@@ -42,6 +42,10 @@ test('ordinary main build includes invite-only account, without registering play
   const playerHtml=await read('player.html');
   assert.match(playerHtml,/id="player-app" hidden/);
   assert.match(playerHtml,/invited-tester-config\.js/);
+  assert.match(playerHtml,/data-player-view="onboarding" hidden/);
+  assert.match(playerHtml,/id="setup-confirm-dialog"/);
+  assert.match(playerHtml,/id="setup-create-airline" disabled/);
+  assert.match(playerHtml,/AIRLINE REGISTRATION/);
   assert.match(playerHtml,/disabled>Create my airline/);
   assert.doesNotMatch(playerHtml,/id="register"|service_role|sb_secret_/);
 
@@ -83,4 +87,16 @@ test('build remains distinct from automatic Netlify deployment and local UI need
   assert.match(source,/await inspectInvitedTesterProvider/);
   assert.doesNotMatch(source,/beginLocalDemo\(/);
   assert.match(source,/Sign in with your confirmed Airlinerra account/);
+});
+
+test('build checks protected onboarding controls instead of the old display heading',async()=>{
+  const [overlay,html]=await Promise.all([
+    readFile(new URL('../website/dev-scripts/invited-overlay.mjs',import.meta.url),'utf8'),
+    readFile(new URL('../website/private-player-app.html',import.meta.url),'utf8')
+  ]);
+  assert.match(overlay,/playerSource\.includes\('data-player-view="onboarding" hidden'\)/);
+  assert.match(overlay,/playerSource\.includes\('id="setup-confirm-dialog"'\)/);
+  assert.match(overlay,/playerSource\.includes\('id="setup-create-airline" disabled'\)/);
+  assert.doesNotMatch(overlay,/!playerSource\.includes\('YOUR NEW AIRLINE'\)/);
+  assert.match(html,/AIRLINE REGISTRATION/);
 });
