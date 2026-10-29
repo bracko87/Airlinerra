@@ -481,3 +481,15 @@ h2 span { color: var(--orange); }
 .features-grid{gap:20px}
 .faq-grid{gap:clamp(24px,4vw,44px)}
 @media(max-width:760px){.features-grid{gap:16px}}
+
+
+/* Global typography refinement - reserve heavier weight for display titles. */
+.section{padding:88px 0}
+.eyebrow{font-weight:670;letter-spacing:.14em}
+h2{font-weight:720}
+.hero h1{font-weight:780}
+.button{font-weight:640}
+.header-signin{font-weight:630}
+.nav-link{font-weight:570}
+.hero-proof strong{font-weight:650}
+@media(max-width:740px){.section{padding:66px 0}}
