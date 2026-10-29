@@ -39,15 +39,17 @@ export function parseOnboardingBody(body) {
   if (!object || Array.isArray(object) || typeof object !== 'object') {
     throw new Error('A JSON object is required.');
   }
-  const expected = new Set(['worldId', 'airlineName', 'homeAirportKey']);
+  const expected = new Set(['worldId', 'airlineName', 'homeAirportKey', 'icaoCode', 'iataCode']);
   const keys = Object.keys(object);
-  if (keys.length !== 3 || keys.some(key => !expected.has(key))) {
+  if (keys.length !== 5 || keys.some(key => !expected.has(key))) {
     throw new Error('Unexpected airline creation fields.');
   }
   return Object.freeze({
     worldId: object.worldId,
     airlineName: object.airlineName,
-    homeAirportKey: object.homeAirportKey
+    homeAirportKey: object.homeAirportKey,
+    icaoCode:object.icaoCode,
+    iataCode:object.iataCode
   });
 }
 
@@ -114,7 +116,7 @@ export function createAirlineHttpHandler({
       // The body never includes raw SQL failures, access tokens, DB credentials
       // or table details. Distinguish only known user-actionable cases.
       if (error?.code === '23505') {
-        return json(409, { error: 'An airline already exists in this world.' });
+        return json(409, { error: 'The airline name or ICAO/IATA code is already taken in this world.' });
       }
       if (typeof error?.message === 'string' &&
           /verified player authentication|verified player/i.test(error.message)) {
