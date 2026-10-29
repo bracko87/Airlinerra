@@ -16,7 +16,7 @@ function header(headers,name){
  return key&&typeof headers[key]==='string'?headers[key]:null;
 }
 export function parseOfficeRequest(body){
- if(typeof body!=='string'||Buffer.byteLength(body,'utf8')>512)throw Error('Invalid or oversized request.');
+ if(typeof body!=='string'||new TextEncoder().encode(body).byteLength>512)throw Error('Invalid or oversized request.');
  let value;
  try{value=JSON.parse(body)}catch{throw Error('Invalid JSON request.')}
  if(!value||Array.isArray(value)||typeof value!=='object')throw Error('Invalid request.');
