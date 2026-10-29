@@ -33,16 +33,30 @@ function renderCompanyNews(doc,airline,worlds,entries){
  root.replaceChildren();
  if(!airline?.name){const p=doc.createElement('p');p.className='dashboard-data-note';p.textContent='Connect an airline to view recorded company milestones.';root.append(p);return;}
  const event=Array.isArray(entries)?entries.find(e=>e.kind==='STARTING_CAPITAL'&&Number.isFinite(Date.parse(e.recordedAt))):null;
- const row=doc.createElement('div');row.className='dashboard-company-story';
- const mark=doc.createElement('span');mark.className='dashboard-company-story-mark';mark.textContent='A';
- const body=doc.createElement('div'),title=doc.createElement('strong'),desc=doc.createElement('p');
+ // Two compact rows: verified date - headline; a short one/two-line summary.
+ // No icon, invented timestamp, or additional status copy inside the story.
+ const row=doc.createElement('article');row.className='dashboard-company-story';
+ const heading=doc.createElement('div');heading.className='dashboard-company-story-heading';
+ if(event){
+  const time=doc.createElement('time');const date=new Date(event.recordedAt);
+  time.dateTime=date.toISOString();
+  time.textContent=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Berlin',
+   day:'2-digit',month:'short',year:'numeric'}).format(date);
+  heading.append(time);
+ }else{
+  const unknown=doc.createElement('span');unknown.className='dashboard-company-date-missing';
+  unknown.textContent='Date unavailable';heading.append(unknown);
+ }
+ const separator=doc.createElement('span');separator.className='dashboard-company-story-separator';
+ separator.textContent=' - ';
+ const title=doc.createElement('span');title.className='dashboard-company-story-title';
  title.textContent=airline.name+' registered on '+worldDisplayName(airline.worldId,worlds);
- desc.textContent=event?'Opening capital was recorded. You can plan your network and fleet.':'Your airline is verified. New milestones will appear when recorded.';
- body.append(title,desc);
- if(event){const time=doc.createElement('time');time.dateTime=new Date(event.recordedAt).toISOString();
- time.textContent=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Berlin',day:'2-digit',month:'short',year:'numeric'}).format(new Date(event.recordedAt));body.append(time);}
- row.append(mark,body);root.append(row);
- const note=doc.createElement('p');note.className='dashboard-data-note';note.textContent='Live operational bulletins are not connected yet.';root.append(note);
+ heading.append(separator,title);
+ const description=doc.createElement('p');description.className='dashboard-company-story-description';
+ description.textContent=event?
+  'Opening capital recorded. You can now plan your fleet and network.':
+  'Your airline is registered. More company milestones will appear when recorded.';
+ row.append(heading,description);root.append(row);
 }
 export function renderAirlineDashboard(doc,{airline=null,worlds=[],ledgerEntries=null}={}){
  const $=id=>doc.getElementById(id);
