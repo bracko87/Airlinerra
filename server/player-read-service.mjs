@@ -16,7 +16,7 @@ export const PLAYER_READ_SQL=Object.freeze({
  countries:"select "+PARENT_ISO+" as country_iso,count(*)::integer as airport_count from airlinerra_game.approved_game_airports where world_id=1 and "+PARENT_ISO+" in ("+MEMBER_CODES+") group by "+PARENT_ISO+" order by "+PARENT_ISO,
  airlines:"select a.id,a.world_id,a.name,a.home_airport_key,a.cash_usd::text as cash_usd,a.created_at,a.icao_code,a.iata_code,h.airport_name as home_airport_name,h.airport_code as home_airport_code, (e.membership_state='active' and exists(select 1 from airlinerra_game.owner_premium_email_reservations r join auth.users u on r.email=lower(btrim(u.email)) where u.id=a.owner_player_id and u.email_confirmed_at is not null)) as complimentary_premium from airlinerra_game.airlines a left join airlinerra_game.account_entitlements e on e.player_id=a.owner_player_id left join airlinerra_game.approved_game_airports h on h.world_id=a.world_id and h.airport_key=a.home_airport_key where a.owner_player_id=$1::uuid order by a.world_id limit 3",
  ledger:"select entry_kind,amount_usd::text as amount_usd,recorded_at from airlinerra_game.airline_ledger where airline_id=$1::uuid order by recorded_at desc,id desc limit 5",
- airports:"select airport_key,airport_name,airport_code,"+PARENT_ISO+" as country_iso,municipality from airlinerra_game.approved_game_airports where world_id=1 and "+PARENT_ISO+"=$1::text and "+PARENT_ISO+" in ("+MEMBER_CODES+") and ($2::text='' or strpos(lower(coalesce(airport_name,'')),lower($2::text))>0 or strpos(lower(coalesce(airport_code,'')),lower($2::text))>0 or strpos(lower(coalesce(municipality,'')),lower($2::text))>0) order by airport_name nulls last,airport_key limit 51 offset $3::integer"
+ airports:"select a.airport_key,a.airport_name,a.airport_code,"+countrySqlExpression('a.country_iso')+" as country_iso,a.municipality,c.latitude_deg::text as latitude_deg,c.longitude_deg::text as longitude_deg from airlinerra_game.approved_game_airports a left join airlinerra.airport_game_world1_catalog c on c.airport_key=a.airport_key and c.world_number=a.world_id where a.world_id=1 and "+countrySqlExpression('a.country_iso')+"=$1::text and "+countrySqlExpression('a.country_iso')+" in ("+MEMBER_CODES+") and ($2::text='' or strpos(lower(coalesce(a.airport_name,'')),lower($2::text))>0 or strpos(lower(coalesce(a.airport_code,'')),lower($2::text))>0 or strpos(lower(coalesce(a.municipality,'')),lower($2::text))>0) order by a.airport_name nulls last,a.airport_key limit 51 offset $3::integer"
 });
 const ORIGIN='https://airlinerra.com';
 const BEARER=/^Bearer ([A-Za-z0-9._~-]{16,8192})$/u;
@@ -33,8 +33,13 @@ function airport(row){
  if(typeof row?.airport_key!=='string'||!(/^(?:OURAIRPORTS:[1-9][0-9]{0,18}|FICTIONAL:fictional:[A-Z]{2}:[A-Z0-9]{3,8})$/u.test(row.airport_key))||
    typeof row.airport_name!=='string'||!row.airport_name.trim()||
    typeof row.country_iso!=='string'||!/^[A-Z]{2}$/u.test(row.country_iso))throw Error('Invalid approved airport');
+ const latitude=row.latitude_deg===null||row.latitude_deg===undefined?null:Number(row.latitude_deg);
+ const longitude=row.longitude_deg===null||row.longitude_deg===undefined?null:Number(row.longitude_deg);
+ const coordinatesOk=Number.isFinite(latitude)&&Number.isFinite(longitude)&&
+  Math.abs(latitude)<=90&&Math.abs(longitude)<=180;
  return {key:row.airport_key,name:row.airport_name,code:String(row.airport_code||''),
-   countryIso:row.country_iso,municipality:typeof row.municipality==='string'?row.municipality:''};
+   countryIso:row.country_iso,municipality:typeof row.municipality==='string'?row.municipality:'',
+   latitude:coordinatesOk?latitude:null,longitude:coordinatesOk?longitude:null};
 }
 async function readBody(request){
  const n=request.headers.get('content-length');
