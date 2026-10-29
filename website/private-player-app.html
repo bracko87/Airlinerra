@@ -31,24 +31,16 @@
     <nav class="app-navigation" aria-label="Player application">
       <div class="app-navigation-inner">
         <a class="nav-direct" href="#overview" data-view-link="overview">Dashboard</a>
-        <details class="nav-group" data-nav-group="manager" aria-label="Manager">
-          <summary class="nav-label">Manager<span class="chevron" aria-hidden="true"></span></summary>
-          <div class="nav-links" role="group" aria-label="Manager pages">
-            <a href="#airline" data-view-link="airline">My airline</a>
-            <a href="#onboarding" data-view-link="onboarding" data-setup-only hidden>Airline setup</a>
-            <a href="#profile" data-view-link="profile">Manager profile</a>
-            <a href="#staff" data-view-link="staff">Personnel and staff</a>
-            <a href="#rankings" data-view-link="rankings">World rankings</a>
-          </div>
-        </details>
         <details class="nav-group" data-nav-group="operations" aria-label="Operations">
           <summary class="nav-label">Operations<span class="chevron" aria-hidden="true"></span></summary>
           <div class="nav-links" role="group" aria-label="Operations pages">
-            <a href="#worlds" data-view-link="worlds">Game worlds</a>
-            <a href="#airports" data-view-link="airports">Airports</a>
-            <a href="#routes" data-view-link="routes">Route planning</a>
+            <a href="#routes" data-view-link="routes">Create a route</a>
+            <a href="#route-list" data-view-link="route-list">My routes</a>
+            <a href="#hubs" data-view-link="hubs">Hubs and airport operations</a>
             <a href="#schedule" data-view-link="schedule">Flight schedule</a>
-            <a href="#service" data-view-link="service">Passenger and cargo services</a>
+            <a href="#service" data-view-link="service">Cabin services</a>
+            <a href="#tickets" data-view-link="tickets">Ticket prices and analysis</a>
+            <a href="#staff" data-view-link="staff">Personnel and staff</a>
           </div>
         </details>
         <details class="nav-group" data-nav-group="fleet" aria-label="Fleet">
@@ -76,6 +68,12 @@
         <details class="nav-group" data-nav-group="settings" aria-label="Settings menu">
           <summary class="nav-label">Settings<span class="chevron" aria-hidden="true"></span></summary>
           <div class="nav-links" role="group" aria-label="Settings pages">
+            <a href="#airline" data-view-link="airline">My airline</a>
+            <a href="#onboarding" data-view-link="onboarding" data-setup-only hidden>Airline setup</a>
+            <a href="#profile" data-view-link="profile">Manager profile</a>
+            <a href="#rankings" data-view-link="rankings">World rankings</a>
+            <a href="#worlds" data-view-link="worlds">Game worlds</a>
+            <a href="#airports" data-view-link="airports">Airports</a>
             <a href="#settings" data-view-link="settings">General preferences</a>
             <a href="#interface" data-view-link="interface">Interface</a>
             <a href="#notifications" data-view-link="notifications">Notifications</a>
@@ -104,7 +102,27 @@
           </div>
           <p id="player-logo-warning" role="alert" class="hint" hidden></p>
           <div class="dashboard-operations-grid">
-            <article class="panel dashboard-flights-panel">
+            <article class="panel dashboard-news-panel">
+              <span class="panel-kicker">AIRLINE NEWS</span><h2>Company news</h2>
+              <div id="dashboard-news-items" class="dashboard-company-news" aria-live="polite">
+                <p class="dashboard-data-note">Checking recorded company milestones...</p>
+              </div>
+              <p class="dashboard-data-note">Verified company milestones and future airline notices will appear here.</p>
+            </article>
+            <article class="panel dashboard-traffic-panel">
+              <span class="panel-kicker">NETWORK AND TRAFFIC</span><h2>Airline statistics</h2>
+              <div class="dashboard-stat-list">
+                <div><span>Passengers transported</span><strong id="dashboard-passengers">Not available</strong></div>
+                <div><span>Cargo transported</span><strong id="dashboard-cargo">Not available</strong></div>
+                <div><span>Airports served</span><strong id="dashboard-served-airports">Not available</strong></div>
+                <div><span>Active routes</span><strong id="dashboard-active-routes">Not available</strong></div>
+                <div><span>Completed flights</span><strong id="dashboard-completed-flights">Not available</strong></div>
+              </div>
+              <p class="dashboard-data-note" id="dashboard-traffic-note">Passenger, cargo and network statistics are awaiting live flight operations.</p>
+            </article>
+          </div>
+          <div class="dashboard-full-flights">
+            <article class="panel dashboard-flights-panel dashboard-flights-full">
               <div class="dashboard-section-title">
                 <div><span class="panel-kicker">FLIGHT OPERATIONS</span><h2>Current flights</h2>
                   <p>Live departures, routes, assigned aircraft and flight status.</p></div>
@@ -119,17 +137,6 @@
                 </table>
               </div>
               <p class="dashboard-data-note" id="dashboard-flights-note">Up to 10 current flights will be shown when flight data becomes available.</p>
-            </article>
-            <article class="panel dashboard-traffic-panel">
-              <span class="panel-kicker">NETWORK AND TRAFFIC</span><h2>Airline statistics</h2>
-              <div class="dashboard-stat-list">
-                <div><span>Passengers transported</span><strong id="dashboard-passengers">Not available</strong></div>
-                <div><span>Cargo transported</span><strong id="dashboard-cargo">Not available</strong></div>
-                <div><span>Airports served</span><strong id="dashboard-served-airports">Not available</strong></div>
-                <div><span>Active routes</span><strong id="dashboard-active-routes">Not available</strong></div>
-                <div><span>Completed flights</span><strong id="dashboard-completed-flights">Not available</strong></div>
-              </div>
-              <p class="dashboard-data-note" id="dashboard-traffic-note">Passenger, cargo and network statistics are awaiting live flight operations.</p>
             </article>
           </div>
           <div class="dashboard-bottom-grid dashboard-charts-grid">
@@ -287,6 +294,9 @@
  </div>
 </section>
         <section data-player-view="airline" hidden><div class="page-head"><div><p class="eyebrow">MY AIRLINE</p><h1>Airline office</h1><p>Your registered company, home airport and management roadmap.</p></div></div><div id="workspace-airline"></div></section>
+        <section data-player-view="route-list" hidden><div class="page-head"><div><p class="eyebrow">OPERATIONS</p><h1>My routes</h1><p>Saved route drafts and live route status.</p></div></div><div id="workspace-route-list"></div></section>
+        <section data-player-view="hubs" hidden><div class="page-head"><div><p class="eyebrow">OPERATIONS</p><h1>Hubs and airport operations</h1><p>Home-base and planned hub operations.</p></div></div><div id="workspace-hubs"></div></section>
+        <section data-player-view="tickets" hidden><div class="page-head"><div><p class="eyebrow">OPERATIONS</p><h1>Ticket prices and analysis</h1><p>Cabin fares, load factors and route revenue scenarios.</p></div></div><div id="workspace-tickets"></div></section>
         <section data-player-view="staff" hidden><div class="page-head"><div><p class="eyebrow">HUMAN RESOURCES</p><h1>Personnel</h1><p>Plan flight crews, ground teams and operational staffing.</p></div></div><div id="workspace-staff"></div></section>
         <section data-player-view="rankings" hidden><div class="page-head"><div><p class="eyebrow">MULTIPLAYER WORLD</p><h1>World rankings</h1><p>Competition and performance across airlines in your game world.</p></div></div><div id="workspace-rankings"></div></section>
         <section data-player-view="service" hidden><div class="page-head"><div><p class="eyebrow">ONBOARD PRODUCT</p><h1>Passenger and cargo services</h1><p>Plan cabin classes, onboard services and your product strategy.</p></div></div><div id="workspace-service"></div></section>
