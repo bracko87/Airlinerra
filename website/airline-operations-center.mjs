@@ -2,6 +2,7 @@
  * No hiring, flight, price, hub or route mutation calls. Only authenticated
  * World 1 reads for approved airport lookup; drafts live in sessionStorage.
  */
+import {createAirportOffice} from './airline-airports-office.mjs';
 export const STAFF_DEPARTMENTS=Object.freeze({
  'Board and Executive':[
   ['Chairperson','Oversight and governance'],['Chief Executive Officer','Overall airline leadership'],
@@ -82,25 +83,6 @@ export function createOperationsCenter({doc,identity,session,goTo}={}){
   '<div class="workspace-actions"><button type="button" class="secondary" data-ops-page="routes">Create a route</button></div>'+
   '<p id="operations-routes-feedback" class="hint" role="status"></p>',
   'ROUTE DIRECTORY');
- if(root.hubs)root.hubs.innerHTML=card('Headquarters and hubs',
-  '<div class="detail-row"><span>Verified home airport</span><strong id="operations-home-airport">Not connected</strong></div>'+
-  '<p class="hint">The home airport is read from your real airline. Potential new hubs are private planning drafts only.</p>'+
-  '<div class="operations-hub-form">'+
-  '<label for="operations-hub-country">Country</label><select id="operations-hub-country"><option value="">Choose country</option></select>'+
-  '<label for="operations-hub-search">Airport name or code</label><input id="operations-hub-search" maxlength="40" placeholder="Search an approved airport">'+
-  '<button id="operations-hub-find" type="button" class="secondary">Search airports</button>'+
-  '<label for="operations-hub-result">Airport</label><select id="operations-hub-result" disabled><option value="">Search first</option></select>'+
-  '<button type="button" class="primary" id="operations-hub-save">Save planned hub</button></div>'+
-  '<p id="operations-hub-feedback" class="hint" role="status"></p>'+
-  '<div id="operations-hubs-list" class="operations-route-table"></div>',
-  'HUB OPERATIONS')+
-  card('Hub operations',
-   '<div class="workspace-task-list">'+
-   '<div><strong>Terminal capacity</strong><span>Passenger demand, gates and slot availability require the live airport engine</span></div>'+
-   '<div><strong>Ground handling</strong><span>Station staffing, turnaround and baggage planning</span></div>'+
-   '<div><strong>Aircraft basing</strong><span>Aircraft allocation, maintenance and crew coverage</span></div>'+
-   '<div><strong>Hub network</strong><span>Connecting passengers and cargo transfer planning</span></div></div>'+
-   '<p class="hint">No hub is opened, no fees charged and no airport slot reserved by saving a plan.</p>','OPERATIONAL REQUIREMENTS');
  if(root.tickets)root.tickets.innerHTML=card('Ticket prices and fare analysis',
   '<p class="hint">Enter your own fare, seat capacity, expected load factor and per-flight costs. All output is a planning scenario, not a passenger-demand forecast or a live ticket price.</p>'+
   '<div class="workspace-money-grid">'+
@@ -134,7 +116,7 @@ export function createOperationsCenter({doc,identity,session,goTo}={}){
   '<p class="hint">Budget estimates only. No employees are hired, no salaries charged, and no staff market orders are placed.</p>',
   'STAFF AND SALARIES');
  let state=storageRead(session,key);
- const persist=()=>storageWrite(session,key,state);
+ const persist=()=>storageWrite(session,key,{...storageRead(session,key),...state});
  const message=(id,text)=>{if($(id))$(id).textContent=text};
  function renderRoutes(){
   const root=$('operations-route-list');if(!root)return;
@@ -275,6 +257,7 @@ export function createOperationsCenter({doc,identity,session,goTo}={}){
    server.airline.homeAirportName+' ('+(server.airline.homeAirportCode||'-')+')':
    'Not available';message('operations-home-airport',server.connected?home:'Not connected');
   renderRoutes();renderHubs();
+  airportOfficeController?.updateData(value);
  }
  const main=$('player-main');
  main?.addEventListener('click',async e=>{
@@ -341,5 +324,6 @@ export function createOperationsCenter({doc,identity,session,goTo}={}){
   }
  }
  initStaff();renderRoutes();renderHubs();
- return Object.freeze({updateData});
+ const airportOfficeController=createAirportOffice({doc,identity,session,goTo});
+ return Object.freeze({updateData,openAirport:airport=>airportOfficeController.openAirport(airport)});
 }
