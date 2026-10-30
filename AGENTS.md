@@ -1,3 +1,12 @@
+# CURRENT - 30 October 2026: AIRPORT CLASSIFICATION EXCEPTION RESOLUTION
+
+- **Aleksandrovo Airport, Serbia (`FICTIONAL:fictional:RS:LYAL`) is REGIONAL**, per explicit owner instruction on 30 October 2026. The canonical `data/airports/fictional_airports.csv` now assigns `Regional`, with the same fictional 2,200 m asphalt runway. Any older section of this document describing the airport as Local/Level 1 is historical and superseded. Keep `minimum_eligible_level=1` as a runway-screen minimum, not the approved category.
+- Supabase project `hwllkabgzaynalahvkpz`, World 1 has 3,141 existing airport records assigned to exactly six **provisional** categories. Four evidence-based provisional upgrades were saved: Tho Xuan and Chu Lai Regional -> Medium; Xuzhou Guanyin Medium -> Large; Liege Medium -> Major Hub. Misrata stays Regional. Never auto-approve or reclassify all other airports from runway length.
+- Supabase `airlinerra_game.airport_classification_tier_guidance` (policy `airlinerra-six-tier-screen-v1`) contains provisional **game** bands, not authoritative aviation standards; `airport_classification_case_decision` stores six reviewed exceptions; `airport_classification_completion_progress` separates zero open flagged exceptions from **zero independent final approvals**. The 2,200 m fictional runway is in `airport_fictional_runway_design`; do not fabricate a real observed runway.
+- Before another classification audit, query the above Supabase tables and existing review queues. Do not recreate completed work, conflate screening with final verification, or import the outdated historical Local designation.
+
+---
+
 # CURRENT - 29 October 2026: AIRPORT OFFICE REDESIGN AND DEDICATED AIRPORT PROFILE
 
 Owner requested distinct Headquarters, Hubs and Stations instead of the combined "Headquarters and hubs" card. HQ is the permanent user-selected home airport (Panonian: Belgrade LYBE). Additional hubs are large operating bases, stations are smaller staffed airline presences requiring >=1 employee when opened. Future category/size/service-dependent opening charges, monthly desk fees and salaries, plus comprehensive detailed airport profile with airlines, runway/slot/demand and live flight/route data.
