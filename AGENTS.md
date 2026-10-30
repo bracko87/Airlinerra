@@ -1,3 +1,10 @@
+# CURRENT 30 OCT 2026 — GROUP 3 RUNWAY WIDTHS 76 REMAIN; THIRD AUTHORITY BATCH COMPLETE
+
+- Live Airlinerra World 1 Supabase `hwllkabgzaynalahvkpz`: 3,141 selected airports (3,140 real + fictional Aleksandrovo), 4,022 real physical runway records, no additional airports. `airport_runway_world1_width_completion` now has **3,946 populated runway widths, 76 remaining NULL**. Previously 78 widths missing. All permanent values saved and guarded with exact source runway ID, pair and length; sources preserved in `airport_runway_width_source_evidence`.
+- THIS batch added exactly two **authority-backed** widths: **VOGB Kalaburagi India, 09/27, 3,175m long, 45m wide** from official Indian AIP `https://aim-india.aai.aero/eaip/eaip-v2-04-2026/eAIP/IN-AD%202.1VOGB-en-GB.html`; **WAPF Karel Sadsuitubun Indonesia, 13/31, 2,350m long, 45m wide** from Indonesian Ministry of Transportation airport profile `https://hubud.kemenhub.go.id/bandara/81`. No operational-status or category changes. Source records have authority evidence grades and exact URL.
+- Do not re-check 12 runway widths completed over three batches (earlier 7, then 3, now 2). Continue the **76 still missing**, using original source evidence only; never assume 45 metres. Track Chizhou JUH runway 2,400 to 2,800m reported extension separately in `airport_runway_length_change_review`, no unverified length overwrite. U.S. 55-hub current physical audit remains complete, runway live NOTAM operating verification remains pending.
+
+---
 # CURRENT 30 OCTOBER 2026 — GROUP 3 RUNWAY WIDTHS 78 MISSING; SECOND BATCH COMPLETE
 
 - Live Airlinerra World 1 Supabase `hwllkabgzaynalahvkpz`: **3,141 selected airports** = 3,140 real + one fictional Aleksandrovo. **4,022 individual real runway pairs**, NOT 4,022 airports. Today's two carefully source-backed width batches added **10 measurements** in `airlinerra_game.airport_runway_inventory` and dated source details in `airport_runway_width_source_evidence`. **3,944/4,022 widths populated; 78 NULL remain**. Primary reference is live `airport_runway_world1_width_completion`.
