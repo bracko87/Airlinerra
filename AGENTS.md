@@ -1,3 +1,13 @@
+# CURRENT - 30 October 2026: AIRPORT GROUP 3 RUNWAY INVENTORY CHECKPOINT
+
+- Supabase Airlinerra project `hwllkabgzaynalahvkpz` (World 1): **do NOT restart Group 3 runway auditing from zero**. Consult these persisted private-schema views: `airlinerra_game.airport_runway_group3_progress` (counts), `airport_runway_coverage_status` (per-airport provenance and readiness), and `airport_runway_detail_research_queue` (real airports lacking runway-level rows).
+- As of the verified checkpoint: 3,141 airport profiles; 3,921 detailed runway rows across 3,101 airports; **39 real airports still need detailed runway records** (34 US/FAA NASR, 5 other national AIP/OurAirports); one fictional airport Aleksandrovo has its separately documented 2,200 m asphalt game runway, not a real observed runway. Exactly one runway row is source-verified and 3,920 are `historical_unverified`. Never claim physical runway records are current/operational based only on historical data. 88 runway rows lack width; three newly added KSEA source rows intentionally have surface NULL.
+- Seattle-Tacoma Airport `OURAIRPORTS:3875` was filled with three source-backed historical FAA AIP runway pairs (16C/34C, 16L/34R, 16R/34L) and exited the missing-detail queue. The FAA HTML AIP supports runway designators and dimensions; current operating status and surface remain unknown. FAA 2026-10-29 NASR subscription is preferred for remaining 34 US airports. Source attribution is in the inventory rows.
+- The old `airlinerra_game.airport_data_work_queue` `runways` category was reconciled: 39 `pending` (missing detail), 3,101 `review_required` (historical inventory needs verification), 1 `not_applicable` (fictional real-world verification). Do not count all 3,141 as raw missing runway work.
+- Mixed asphalt/concrete surface spellings (e.g. `CON/ASP`, `ASPH-CONC`, `asphalt/concrete`) are normalized for *reporting only*, with original raw source values preserved. Source-reported physical eligibility is not a claim of operational FAA/AIP approval. Keep the six provisional airport categories unchanged during runway research.
+
+---
+
 # CURRENT - 30 October 2026: AIRPORT CLASSIFICATION EXCEPTION RESOLUTION
 
 - **Aleksandrovo Airport, Serbia (`FICTIONAL:fictional:RS:LYAL`) is REGIONAL**, per explicit owner instruction on 30 October 2026. The canonical `data/airports/fictional_airports.csv` now assigns `Regional`, with the same fictional 2,200 m asphalt runway. Any older section of this document describing the airport as Local/Level 1 is historical and superseded. Keep `minimum_eligible_level=1` as a runway-screen minimum, not the approved category.
