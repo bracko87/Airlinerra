@@ -1,2 +1,2 @@
 source_airport_id,country_iso,airport_name,ident,gps_code,runway_length_m,runway_surface,minimum_eligible_level,runway_status,source_type,assigned_category
-fictional:RS:LYAL,RS,Aleksandrovo Airport,LYAL,LYAL,2200.0,Asphalt,1,RUNWAY_QUALIFIED,FICTIONAL,Local
+fictional:RS:LYAL,RS,Aleksandrovo Airport,LYAL,LYAL,2200.0,Asphalt,1,RUNWAY_QUALIFIED,FICTIONAL,Regional
