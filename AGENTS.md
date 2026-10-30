@@ -1,3 +1,13 @@
+# CURRENT - 30 October 2026: GROUP 3 FAA AIRPORT RUNWAY INTAKE (11 US AIRPORTS)
+
+- This checkpoint supersedes the earlier Group 3 missing-detail count below; **read Supabase live progress views rather than historic counts**. World 1 production DB `hwllkabgzaynalahvkpz`: after this pass, **3,944** detailed runway records across **3,112** airports, leaving **28 real airport profiles lacking individual runway rows (23 US + 5 elsewhere)**. Fictional Aleksandrovo remains separate. Old runway work queue reconciled to `pending=28`, `review_required=3112`, `not_applicable=1`.
+- 11 US airports were filled from published FAA Airport/Facility Directory / Chart Supplement pages: KABQ (3), PHNL (4), PADK (1), PABE (3), KSAV (2), PAPO (1), PAKT (1), PAFA (3), PANI (1), PAGK (2), PAMC (2). **23 source-backed runway rows added.** Dimensions converted from feet by multiplying 0.3048; source date and URL stored on every row. Paved and gravel runway materials remain distinct, and non-paved runways shorter than 1,200m are kept for physical completeness, not considered eligible to open commercial jet services.
+- These 23 rows are `historical_unverified` with `operational_status=unknown`: the FAA documents were published during 2025 or early 2026, **not a validated October 29 NASR full-cycle import**. Exactly one pre-existing runway inventory row remains independently verified. No blanket runway status/certification updates, no airport category changes, no game activation.
+- The FAA 2026-10-29 cycle is officially posted at `https://www.faa.gov/air_traffic/flight_info/aeronav/Aero_Data/NASR_Subscription/2026-10-29/`, but bulk CSV could not be retrieved in the current workspace. DO NOT CLAIM the remaining 23 US airports were processed. Continue `airlinerra_game.airport_runway_detail_research_queue`, match by airport key and FAA LID/ICAO and import individual runway pairs with provenance; verify source and runway identity.
+- The remaining five international airports are separate in the queue. Never recreate or overwrite existing runway rows from summaries or infer current operating status from historic physical dimensions.
+
+---
+
 # CURRENT - 30 October 2026: AIRPORT GROUP 3 RUNWAY INVENTORY CHECKPOINT
 
 - Supabase Airlinerra project `hwllkabgzaynalahvkpz` (World 1): **do NOT restart Group 3 runway auditing from zero**. Consult these persisted private-schema views: `airlinerra_game.airport_runway_group3_progress` (counts), `airport_runway_coverage_status` (per-airport provenance and readiness), and `airport_runway_detail_research_queue` (real airports lacking runway-level rows).
