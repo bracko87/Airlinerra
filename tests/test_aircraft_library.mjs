@@ -127,25 +127,35 @@ test('the deployable private player UI contains Settings link, section, and no a
 });
 
 
-test('aircraft directory uses sortable columns and an accessible full-profile window',async()=>{
+test('aircraft directory uses sortable columns and a full-width profile page',async()=>{
  const page=await readFile(new URL('../website/private-player-app.html',import.meta.url),'utf8');
  const client=await readFile(new URL('../website/aircraft-library.mjs',import.meta.url),'utf8');
  const styles=await readFile(new URL('../website/aircraft-library.css',import.meta.url),'utf8');
- assert.match(page,/<dialog id="aircraft-library-detail" class="library-profile-dialog"/);
+ assert.match(page,/data-player-view="aircraft-profile" hidden/);
+ assert.match(page,/id="aircraft-library-detail" class="library-profile-page"/);
+ assert.match(page,/href="#aircraft-library" data-view-link="aircraft-library" class="library-profile-back"/);
  assert.match(page,/id="aircraft-library-results"[^>]*role="region" tabindex="0"/);
  assert.match(client,/element\('table','library-table'\)/);
  assert.match(client,/element\('thead',''\)/);
  assert.match(client,/element\('tbody',''\)/);
  assert.match(client,/sortRecords\(filtered\(\)\)/);
  assert.match(client,/data-aircraft-id|dataset\.aircraftId/);
- assert.match(client,/detail\.showModal\(\)/);
- assert.match(client,/detail\.close\(\)/);
+ assert.match(client,/window\.location\.hash='aircraft-profile'/);
+ assert.doesNotMatch(client,/showModal\(\)|detail\.close\(\)/);
  assert.match(client,/library-profile-image/);
  assert.match(client,/specificationGroup\('Source & operational qualifications'/);
  assert.match(client,/a\.conditionalTakeoffM/);
  assert.doesNotMatch(client,/library-aircraft-card/);
  assert.doesNotMatch(client,/\.innerHTML/);
  assert.match(styles,/\.library-table/);
- assert.match(styles,/\.library-profile-dialog::backdrop/);
+ assert.match(styles,/\.library-profile-page\{width:100%/);
+ assert.doesNotMatch(styles,/::backdrop/);
  assert.match(styles,/\.library-profile-image/);
+});
+
+
+test('full-page aircraft profile is a supported player view',async()=>{
+ const model=await import('../website/player-app-model.mjs');
+ assert.equal(model.safePlayerView('#aircraft-profile'),'aircraft-profile');
+ assert.equal(model.playerViewUrl('aircraft-profile'),'/player.html#aircraft-profile');
 });
