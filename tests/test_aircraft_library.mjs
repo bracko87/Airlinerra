@@ -125,3 +125,27 @@ test('the deployable private player UI contains Settings link, section, and no a
  assert.doesNotMatch(client,/\.innerHTML/);
  assert.doesNotMatch(client,/purchaseAircraft|buyAircraft|dispatchFlight/);
 });
+
+
+test('aircraft directory uses sortable columns and an accessible full-profile window',async()=>{
+ const page=await readFile(new URL('../website/private-player-app.html',import.meta.url),'utf8');
+ const client=await readFile(new URL('../website/aircraft-library.mjs',import.meta.url),'utf8');
+ const styles=await readFile(new URL('../website/aircraft-library.css',import.meta.url),'utf8');
+ assert.match(page,/<dialog id="aircraft-library-detail" class="library-profile-dialog"/);
+ assert.match(page,/id="aircraft-library-results"[^>]*role="region" tabindex="0"/);
+ assert.match(client,/element\('table','library-table'\)/);
+ assert.match(client,/element\('thead',''\)/);
+ assert.match(client,/element\('tbody',''\)/);
+ assert.match(client,/sortRecords\(filtered\(\)\)/);
+ assert.match(client,/data-aircraft-id|dataset\.aircraftId/);
+ assert.match(client,/detail\.showModal\(\)/);
+ assert.match(client,/detail\.close\(\)/);
+ assert.match(client,/library-profile-image/);
+ assert.match(client,/specificationGroup\('Source & operational qualifications'/);
+ assert.match(client,/a\.conditionalTakeoffM/);
+ assert.doesNotMatch(client,/library-aircraft-card/);
+ assert.doesNotMatch(client,/\.innerHTML/);
+ assert.match(styles,/\.library-table/);
+ assert.match(styles,/\.library-profile-dialog::backdrop/);
+ assert.match(styles,/\.library-profile-image/);
+});
