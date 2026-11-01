@@ -75,8 +75,15 @@ test('build remains distinct from automatic Netlify deployment and local UI need
   assert.match(netlify,/base = "website"/);
   assert.match(netlify,/\[functions\]/);
   assert.match(netlify,/directory = "netlify\/functions"/);
-  assert.equal(JSON.parse(packageJson).scripts.preview,
+  const commands=JSON.parse(packageJson).scripts;
+  assert.equal(commands.preview,
     'npm run build && node dev-scripts/dev.mjs --built');
+  // One player-facing build: dev/start and preview cannot diverge into
+  // the disabled raw-source account mockup on port 5187.
+  assert.equal(commands.dev,'npm run preview');
+  assert.equal(commands.start,'npm run preview');
+  assert.equal(commands['dev:source'],'node dev-scripts/dev.mjs');
+  assert.match(netlify,/publish = "\.\.\/dist"/);
   assert.match(dev,/process\.argv\.includes\('--built'\)/);
   assert.match(dev,/--built'\) \? 5188 : 5187/);
   assert.match(dev,/process\.env\.PORT/);
