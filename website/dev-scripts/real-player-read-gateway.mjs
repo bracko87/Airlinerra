@@ -26,6 +26,7 @@ export function createLiveReadOnlyPreviewHandler({fetchImpl=globalThis.fetch}={}
   '/api/v1/player/overview',
   '/api/v1/player/airports',
   '/api/v1/player/airport-profile',
+  '/api/v1/player/aircraft-library',
   '/api/v1/onboarding/context'
  ]);
  const error=(status,why)=>{
@@ -50,7 +51,8 @@ export function createLiveReadOnlyPreviewHandler({fetchImpl=globalThis.fetch}={}
   try{body=await request.text();if(new TextEncoder().encode(body).length>2048)
    return error(413,'Request too large');}catch{return error(400,'Invalid body')}
   try{
-   const edge=url.pathname==='/api/v1/player/airport-profile'?'airlinerra-airport-profile':'airlinerra-game';
+   const edge=url.pathname==='/api/v1/player/airport-profile'?'airlinerra-airport-profile':
+     url.pathname==='/api/v1/player/aircraft-library'?'airlinerra-aircraft-library':'airlinerra-game';
    const response=await fetchImpl(AUTH_URL+'/functions/v1/'+edge,{
     method:'POST',headers:{
      apikey:AIRLINERRA_INVITED_TESTER_PUBLIC_SETTINGS.publishableKey,
