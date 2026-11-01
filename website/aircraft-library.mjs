@@ -7,7 +7,7 @@ const label=(name,value,unit='')=>{
  row.className='library-spec';
  const term=document.createElement('span');term.textContent=name;
  const val=document.createElement('strong');val.textContent=value===null||value===undefined?'Not recorded':
-   typeof value==='number'?format(value)+(unit?' '+unit:''):String(value);
+   typeof value==='number'?(unit==='year'?String(value):format(value)+(unit?' '+unit:'')):String(value);
  row.append(term,val);return row;
 };
 function element(tag,cls,text){
@@ -47,7 +47,6 @@ export function createAircraftLibrary({doc,getReader}={}){
  }
  function showDetail(a){
   if(!a)return;
-  if(detail.open)detail.close();
   detail.replaceChildren();
   const sheet=element('div','library-profile-content');
   const header=element('div','library-profile-header');
@@ -56,10 +55,7 @@ export function createAircraftLibrary({doc,getReader}={}){
   const title=element('h2','',a.manufacturer+' '+a.model);
   title.id='aircraft-library-profile-title';
   heading.append(title,element('p','library-profile-subtitle',a.family+' · '+a.configuration.replaceAll('-',' ')+' · '+a.useType));
-  const close=element('button','library-profile-close','Close ×');
-  close.type='button';close.setAttribute('aria-label','Close aircraft profile');
-  close.addEventListener('click',()=>detail.close());
-  header.append(heading,close);
+  header.append(heading);
   const hero=element('div','library-profile-hero');
   const image=element('div','library-profile-image');
   image.setAttribute('role','img');
@@ -98,8 +94,8 @@ export function createAircraftLibrary({doc,getReader}={}){
     ['Manufacturer',a.manufacturer],['Aircraft family',a.family],['Model',a.model],
     ['Configuration',a.configuration],['Role',a.useType],
     ['Civilian service status',a.serviceStatus],['New-aircraft production',a.productionStatus],
-    ['First production year',a.productionStart],
-    ['End production year'+(a.productionEndEstimated?' (estimated)':''),a.productionEnd]
+    ['First production year',a.productionStart,'year'],
+    ['End production year'+(a.productionEndEstimated?' (estimated)':''),a.productionEnd,'year']
    ]),
    specificationGroup('Passenger, cargo & fuel',[
     ['Typical seats',a.seats],['Maximum seats',a.maxSeats],
@@ -140,7 +136,8 @@ export function createAircraftLibrary({doc,getReader}={}){
    'Read-only reference. Buying, assigning or dispatching aircraft is not available from this library.'));
   detail.append(sheet);
   detail.setAttribute('aria-labelledby','aircraft-library-profile-title');
-  detail.showModal();
+  window.location.hash='aircraft-profile';
+  window.scrollTo(0,0);
  }
  function sortRecords(records){
   const key=sortKey,dir=sortDirection==='asc'?1:-1;
