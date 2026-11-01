@@ -4,13 +4,14 @@
  * A future credential-scoped runtime injects verifyUserToken and a private pg pool.
  */
 import {verifiedPlayerId} from './airline-activation.mjs';
+import {AIRCRAFT_LIBRARY_PATH,AIRCRAFT_LIBRARY_SQL,serializeAircraftLibrary} from './aircraft-library-query.mjs';
 import {AIRPORT_PROFILE_PATH,AIRPORT_PROFILE_SQL,serializeAirportProfile,validAirportKey} from './airport-profile-service.mjs';
 import {countrySqlExpression,GAME_COUNTRY_CODES,GAME_COUNTRY_SET} from './country-policy.mjs';
 const PARENT_ISO=countrySqlExpression('country_iso');
 const MEMBER_CODES=GAME_COUNTRY_CODES.map(code=>"'"+code+"'").join(',');
 
 export const PLAYER_READ_PATHS=Object.freeze([
- '/api/v1/player/overview','/api/v1/player/airports',AIRPORT_PROFILE_PATH
+ '/api/v1/player/overview','/api/v1/player/airports',AIRPORT_PROFILE_PATH,AIRCRAFT_LIBRARY_PATH
 ]);
 export const PLAYER_READ_SQL=Object.freeze({
  worlds:'select id,name,state from public.airlinerra_game_worlds order by id',
@@ -82,7 +83,8 @@ export function createPlayerReadHandler({enabled=false,verifyUserToken,database,
    if(!token)return respond(401,{error:'Verified account required'});
    const data=await readBody(request);
    if(!data)return respond(400,{error:'Invalid request'});
-   if(url.pathname===PLAYER_READ_PATHS[0]&&Object.keys(data).length!==0)return respond(400,{error:'Invalid request'});
+   if((url.pathname===PLAYER_READ_PATHS[0]||url.pathname===AIRCRAFT_LIBRARY_PATH)&&Object.keys(data).length!==0)
+     return respond(400,{error:'Invalid request'});
    let country='',search='',offset=0;
    const profileKey=url.pathname===AIRPORT_PROFILE_PATH?data.airportKey:null;
    if(url.pathname===AIRPORT_PROFILE_PATH&&
@@ -151,6 +153,10 @@ export function createPlayerReadHandler({enabled=false,verifyUserToken,database,
        }
        return respond(200,{worlds,countries,airlines,ledgerEntries,
          airportsTotal:countries.reduce((n,c)=>n+c.airportCount,0),gameplayAvailable:false});
+     }
+     if(url.pathname===AIRCRAFT_LIBRARY_PATH){
+       phase='aircraft-library';
+       return respond(200,serializeAircraftLibrary(expectArray((await client.query(AIRCRAFT_LIBRARY_SQL)).rows)));
      }
      if(url.pathname===AIRPORT_PROFILE_PATH){
        phase='airport-profile';
