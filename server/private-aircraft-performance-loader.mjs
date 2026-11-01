@@ -97,21 +97,39 @@ export function createPrivateAircraftPerformanceReferenceLoader({database,enable
 }
 
 export function createPrivateAircraftPerformanceRunwayResearchService({
-  referenceLoader,runwayScreeningService,enabled=false
+  referenceLoader,runwayScreeningService,readinessService,enabled=false
 }={}) {
   if(!referenceLoader || typeof referenceLoader.calculate!=='function' ||
-     !runwayScreeningService || typeof runwayScreeningService.screen!=='function') {
-    throw new Error('Private reference and runway screening services required.');
+     !runwayScreeningService || typeof runwayScreeningService.screen!=='function' ||
+     (readinessService!==undefined && typeof readinessService?.inspect!=='function')) {
+    throw new Error('Private reference, readiness and runway screening services required.');
   }
   return Object.freeze({
-    async evaluate({request,aircraftScenario}={}) {
+    async evaluate({request,aircraftScenario,configurationId}={}) {
       const s=validateAircraftOperatingScenario(aircraftScenario);
       if(!enabled) throw new Error('Private aircraft runway composition disabled.');
+      // The readiness check is private and prelaunch-only. When supplied it runs
+      // BEFORE any performance/airport research and fails closed for every hold.
+      let catalogReadiness=null;
+      if(readinessService) {
+        catalogReadiness=await readinessService.inspect({
+          configurationId,aircraftVariantKey:s.aircraftVariantKey
+        });
+        if(catalogReadiness?.researchScreeningAllowed!==true) {
+          return Object.freeze({
+            aircraftVariantKey:s.aircraftVariantKey,
+            catalogReadiness,
+            referenceStatus:'CATALOG_GAME_GATE_BLOCKED',
+            referenceBlockers:Object.freeze(['AIRCRAFT_CATALOG_RESTRICTION']),
+            runwayResearch:null,schedulingAllowed:false
+          });
+        }
+      }
       const result=await referenceLoader.calculate(s);
       if(result.status!=='REVIEWED_REFERENCE_POINT_SELECTED') {
         return Object.freeze({
           referenceStatus:result.status,referenceBlockers:result.blockers,
-          aircraftVariantKey:s.aircraftVariantKey,
+          aircraftVariantKey:s.aircraftVariantKey,catalogReadiness,
           runwayResearch:null,schedulingAllowed:false
         });
       }
@@ -124,7 +142,7 @@ export function createPrivateAircraftPerformanceRunwayResearchService({
         }
       });
       return Object.freeze({
-        aircraftVariantKey:s.aircraftVariantKey,
+        aircraftVariantKey:s.aircraftVariantKey,catalogReadiness,
         referenceStatus:result.status,
         requiredDistancesM:result.requiredDistancesM,
         referencePointMassKg:result.referencePointMassKg,
