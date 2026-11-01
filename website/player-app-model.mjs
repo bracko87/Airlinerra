@@ -5,7 +5,7 @@
 export const PLAYER_APP_PATH='/player.html';
 export const PLAYER_LOGIN_PATH='/account.html?screen=sign-in';
 export const PLAYER_VIEWS=Object.freeze([
-  'overview','onboarding','profile','worlds','airports','aircraft-library','airport-profile','fleet',
+  'overview','onboarding','profile','worlds','airports','aircraft-library','aircraft-profile','airport-profile','fleet',
   'routes','route-list','hubs','tickets','schedule','finances','settings','airline','staff','rankings',
   'service','aircraft-market','maintenance','interface','notifications','help'
 ]);
