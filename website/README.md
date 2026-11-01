@@ -30,6 +30,36 @@ npm run dev
   inspection of raw source files; it is not the deployable game and its old
   disabled account mockup is NOT a sign-in page.
 
+## Aircraft Library (private Settings menu)
+
+The prelaunch player application now includes **Settings → Aircraft Library**
+directly after **Airports**. This is a read-only search/filter/details page for
+the **188 configurations across 69 aircraft families** held in the Airlinerra
+Supabase catalog. It covers passenger, cargo and combi variants; all fuel
+capacities are shown in kilograms, distances in km or m, and aircraft technical
+figures retain research / fictional-game labels. Conditional float-runway
+values are shown ONLY with the explicit amphibious-equipment warning; no
+flight or purchase authorization is implied.
+
+- Browser entry: `http://localhost:5188/player.html#aircraft-library`
+  (requires confirmed private account).
+- Source page: `website/private-player-app.html`.
+- UI module/styles: `website/aircraft-library.mjs` /
+  `website/aircraft-library.css`.
+- Authenticated read route: `/api/v1/player/aircraft-library`.
+- Dedicated Supabase Edge function: `airlinerra-aircraft-library`, deployed
+  in project `hwllkabgzaynalahvkpz`. It independently verifies the
+  confirmed user session and reads the DB; neither Netlify nor the browser
+  receives private database credentials.
+- Netlify `main` commits are **not deployed automatically**: manually upload
+  the latest built `dist/` content when you want the hosted website updated.
+- Run `npm test` for the aircraft-library regression tests; `npm run dev`
+  rebuilds and opens the same player-facing application.
+
+The database provides **100% conditional GAME DATA COVERAGE**, not 100%
+manufacturer-verified specifications. The broader factual checklist is still
+182/188. The library cannot buy/lease aircraft or dispatch flights.
+
 ## What goes to Netlify
 
 The root `netlify.toml` builds from `website/` with `npm run build`
