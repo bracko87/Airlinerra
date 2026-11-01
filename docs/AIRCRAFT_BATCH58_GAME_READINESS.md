@@ -63,8 +63,10 @@ git pull origin main
 cd website
 node --test ../tests/test_private_aircraft_game_readiness.mjs ../tests/test_private_aircraft_performance_loader.mjs
 npm run build
-npm run dev
+npm run preview
 ```
+
+The login page at http://localhost:5187/account.html is the source-only disabled mockup. The built invite-only sign-in is served at http://localhost:5188/account.html?screen=sign-in after `npm run preview` (which runs the build itself). Only confirmed Supabase accounts can sign in, and the hosted provider must allow invited-user authentication. No public signup is enabled by this command.
 
 The AI-side checks executed the 15 committed JavaScript test assertions in
 a compatible V8 runtime, **not** the full Node-native test runner or a local
