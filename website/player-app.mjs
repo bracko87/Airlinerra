@@ -5,6 +5,7 @@ import {inspectInvitedTesterProvider,TESTER_ORIGIN} from './invited-tester-entry
 import {createInvitedTesterAuth,LOCAL_REAL_AUTH_ORIGIN} from './invited-tester-auth.mjs';
 import {openPrivateTesterDashboard,PrivateTesterAccessDenied} from './tester-dashboard-state.mjs';
 import {createPlayerReadClient,PLAYER_READ_API_ENABLED} from './player-read-client.mjs';
+import {createAircraftLibrary} from './aircraft-library.mjs';
 import {createRealOnboardingClient} from './real-onboarding-client.mjs';
 import {createDownwardMenu} from './setup-choice-menu.mjs';
 import {createAirlineWorkspace} from './airline-workspace.mjs';
@@ -25,6 +26,7 @@ const app=doc.getElementById('player-app');
 const signOut=doc.getElementById('player-sign-out');
 let auth=null;
 let preview=false;
+let aircraftLibraryController=null;
 function visible(view){
   loading.hidden=view!=='loading';
   denied.hidden=view!=='denied';
@@ -44,6 +46,7 @@ function navigateTo(view){
   doc.title='Airlinerra - '+name[0].toUpperCase()+name.slice(1);
   // Close dropdowns when changing pages, preserving keyboard navigation.
   for(const group of doc.querySelectorAll('.nav-group[open]'))group.open=false;
+  if(name==='aircraft-library'&&aircraftLibraryController)void aircraftLibraryController.load();
 }
 function drawWorldDirectory(){
   const root=doc.getElementById('world-directory');
@@ -96,6 +99,7 @@ function renderOverviewState(hasAirline){
 
 }
 let playerData=null;
+aircraftLibraryController=createAircraftLibrary({doc,getReader:()=>playerData});
 let onboarding=null;
 let onboardingContext=null;
 let hasRealAirline=false;
@@ -313,6 +317,7 @@ async function loadPlayerReadData({local=false}={}){
   doc.getElementById('airport-description').textContent=
    data.airportsTotal+' approved airports in the game.';
   readSucceeded=true;
+  if(safePlayerView(window.location.hash)==='aircraft-library')void aircraftLibraryController.load();
  }catch(error){
   // Only safe diagnostic labels are shown: never print bearer tokens,
   // request bodies or private database errors.
