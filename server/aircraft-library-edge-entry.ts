@@ -42,7 +42,9 @@ Deno.serve(async(request:Request)=>{
  let body='';
  try{
   body=await request.text();
-  if(new TextEncoder().encode(body).byteLength>32 || Object.keys(JSON.parse(body||'null')).length!==0)
+  const parsed=JSON.parse(body);
+  if(new TextEncoder().encode(body).byteLength>32 || !parsed || typeof parsed!=='object' ||
+     Array.isArray(parsed) || Object.keys(parsed).length!==0)
    return reply(400,{error:'Invalid library request'});
  }catch{return reply(400,{error:'Invalid library request'});}
  if(!await verified(token))return reply(401,{error:'Verified session required'});
