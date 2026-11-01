@@ -1,35 +1,79 @@
-# Airlinerra website
+# Airlinerra — one prelaunch build
 
-This is the original Airlinerra homepage design from October 19, 2026, restored to GitHub `main` with its artwork, interactive previews, and a public RLS-protected Supabase connectivity test.
+All normal Airlinerra development commands use **one assembled application**:
+the homepage, invitation-only Supabase sign-in/password recovery, private player
+dashboard, airline setup screens, and game UI. There is no separate player app
+to install or second game to operate.
 
-## Develop on Windows
+## Windows CMD: run the same site that is deployed
 
-From the already cloned repository:
+From your Airlinerra GitHub clone:
 
 ```cmd
-cd C:\Users\Aleks\Desktop\Airlinerra\github
 git pull origin main
 cd website
-npm run build
-npm run preview
+npm run dev
 ```
 
-Then visit **http://localhost:5188/** for the built invitation-only preview and sign in at **http://localhost:5188/account.html?screen=sign-in**. The original `npm run dev` command still starts the source-only design mockup at **http://localhost:5187/**; its account form is intentionally disabled and is not the working invited-user login. Airlinerra deliberately uses port **5187** so it does not conflict with Famioo on **5173**. Keep the development terminal open while testing. To stop the local server, press Ctrl+C. The port can be overridden with a `PORT` environment variable if necessary.
+- Open **http://localhost:5188/** for the homepage.
+- Open **http://localhost:5188/account.html?screen=sign-in** to sign in.
+- `npm run dev`, `npm start` and `npm run preview` all run the **same**
+  `npm run build && node dev-scripts/dev.mjs --built` pipeline.
+- `npm run build` alone creates the static deployment output in
+  **repository-root `dist/`** without starting a server.
+- Keep CMD open while testing. Press **Ctrl+C** to stop. Restart `npm run dev`
+  after changing source files; the static built copy must be regenerated.
+- **Port 5188 is the only normal local player-facing development URL.**
+  The former source-only preview on 5187 is no longer launched by
+  `npm run dev` or `npm start`.
+- An advanced, explicitly named `npm run dev:source` remains for developer-only
+  inspection of raw source files; it is not the deployable game and its old
+  disabled account mockup is NOT a sign-in page.
 
-`npm run build` writes static deployment files into the repository-level `dist/` directory for local verification. Netlify uses the repository's **root `netlify.toml`** to publish `website/` directly, without a build command. The airport research data is not published.
+## What goes to Netlify
 
-The static `/health` page verifies hosting. The homepage footer checks the public `airlinerra_site_status` endpoint. It does not enable airline accounts, live gameplay, subscriptions, or payments. Never add Supabase service-role keys or other secrets to public frontend files.
+The root `netlify.toml` builds from `website/` with `npm run build`
+and publishes **`../dist`**. This is the **same** `dist/` content served
+by the unified local command. The build overlay intentionally replaces the
+obsolete source `account.html` mockup with the invited-user sign-in page
+and includes `player.html` and `tester.html`.
 
-## Account foundation preview (October 26, 2026)
+If manually uploading a site to Netlify, upload **the contents of the built
+`dist/` directory**, not the raw `website/` directory. Uploading raw
+source would bring back the disabled mockup. GitHub `main` changes do not
+automatically change a manually published Netlify site: build and upload
+the latest `dist/` when you want to update the hosted prelaunch version.
 
-The **prelaunch account experience** now exists at **http://localhost:5187/account.html** after `npm run dev`.
-It includes previews for sign-in, registration, forgotten-password request, password reset, email confirmation and a three-world directory.
+The local built preview can proxy authenticated **read-only** game data through
+the existing Supabase Edge API; it does not itself activate airline creation
+or live flight operations. The Netlify host must have its supported game API
+deployed/configured separately for authenticated hosted operations.
 
-- **Public registration is NOT open**: all four forms use disabled fieldsets. There is no live Supabase Auth client, no account creation, no transactional email and no playable world enabled by this change.
-- `auth-rules.mjs` contains input validation, explicitly allowed callback origins, world status and the hard-off `PUBLIC_AUTH_ENABLED` flag. This **client-side flag is not a security boundary**. Separately disable public signups through Supabase Auth's server-side configuration until SMTP, domain, callbacks, legal terms, rate controls and backend security are ready.
-- `auth-service.mjs` is an injection-based contract for an official, version-pinned Supabase Auth client to be wired at a later approved gate. It requires both the caller and static gate to be enabled, so no Auth service calls are made now.
-- `npm test` from `website/` runs the Node regression suite under `tests/test_account_foundation.mjs`.
-- `npm run build` copies the account preview and auth modules into the static output. It does not deploy the site.
-- Keep the current homepage's public seven-day-trial buttons as prelaunch notices until the owner authorizes a separate live authentication launch.
-- **World 01 remains planned, not open**; Worlds 02 and 03 remain planned. No world registration, aircraft, airline balances or payments are created by account previews.
-- Before activation: secure the chosen production domain; verify inbox/transactional SMTP; install a pinned `@supabase/supabase-js` dependency with lockfile; verify exact production and development redirect allowlists; implement working callback and reset UI; add RLS-backed profiles/world memberships, abuse controls and legal acceptance; test every account lifecycle; review Netlify deployment settings and get explicit launch approval.
+## Private prelaunch, not public game launch
+
+- Public Supabase signup and commercial player registration remain controlled
+  by independent hosted provider, database, legal and onboarding gates.
+- Private sign-in requires an invited/authorized, email-confirmed account and
+  working Supabase Auth. The browser build contains only the public publishable
+  key, never a service-role secret.
+- World 1 commercial operations, payments, and real flights are **not** enabled
+  simply because the sign-in page or dashboard is visible.
+- A site deployed to a public domain can still be visited by anyone; **invite-only
+  sign-in is access control for the player area, not password protection for
+  the public homepage**. An entirely private website would require a separate
+  hosting-level access control.
+- The original airport research and server credentials are not included
+  in the published static bundle.
+
+## Validation
+
+```cmd
+cd website
+npm test
+npm run build
+npm run dev
+```
+
+Build/host tests are in `tests/test_invited_tester_manual_bundle.mjs`.
+For the owner, the **single normal command is `npm run dev`** and the
+**single local address begins with `http://localhost:5188/`**.
