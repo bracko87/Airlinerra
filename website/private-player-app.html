@@ -9,6 +9,7 @@
   <title>Airlinerra - Airline manager</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="player-app.css">
+  <link rel="stylesheet" href="aircraft-library.css">
   <script type="module" src="player-app.mjs"></script>
 <link rel="stylesheet" href="/studio-footer.css"><script defer src="/studio-footer.js"></script></head>
 <body>
@@ -74,6 +75,7 @@
             <a href="#rankings" data-view-link="rankings">World rankings</a>
             <a href="#worlds" data-view-link="worlds">Game worlds</a>
             <a href="#airports" data-view-link="airports">Airports</a>
+            <a href="#aircraft-library" data-view-link="aircraft-library">Aircraft Library</a>
             <a href="#airport-profile" data-view-link="airport-profile">Airport profiles</a>
             <a href="#settings" data-view-link="settings">General preferences</a>
             <a href="#interface" data-view-link="interface">Interface</a>
@@ -259,6 +261,42 @@
         <section data-player-view="airports" hidden>
           <div class="page-head"><div><p class="eyebrow">WORLD 01 CATALOG</p><h1>Airports</h1><p>Browse airports in the selected game world.</p></div></div>
           <article class="panel"><span class="panel-kicker">SECURE DATA CONNECTION</span><h2 id="airport-heading">Airport directory</h2><p id="airport-description">Search the airport directory by country or airport name.</p><div class="filters"><label for="airports-country">Country<select id="airports-country" disabled><option>Waiting for private API</option></select></label><label for="airports-query">Airport name or code<input id="airports-query" disabled maxlength="40" placeholder="Search approved airport catalog"></label></div><div class="search-actions"><button type="button" id="airports-search" disabled>Search airports</button><button type="button" id="airports-more" disabled hidden>Load more</button></div><div id="airport-results" class="empty" role="status">Choose a country to browse airports.</div></article><div id="workspace-airport-insights"></div>
+        </section>
+        <section data-player-view="aircraft-library" hidden>
+          <div class="page-head"><div><p class="eyebrow">SETTINGS · AIRCRAFT CATALOG</p>
+            <h1>Aircraft Library</h1>
+            <p>Explore the 188 aircraft configurations in Airlinerra. All quantities are game-planning references; some are estimated.</p>
+          </div></div>
+          <article class="panel">
+            <span class="panel-kicker">WORLDWIDE CIVILIAN AIRCRAFT · READ ONLY</span>
+            <h2>Find an aircraft</h2>
+            <div class="library-toolbar">
+              <label for="aircraft-library-search">Search model or family
+                <input id="aircraft-library-search" type="search" autocomplete="off" maxlength="80" placeholder="e.g. Airbus A320, Boeing 737, ATR"></label>
+              <label for="aircraft-library-manufacturer">Manufacturer
+                <select id="aircraft-library-manufacturer"><option value="">All manufacturers</option></select></label>
+              <label for="aircraft-library-type">Aircraft role
+                <select id="aircraft-library-type">
+                 <option value="">All types</option><option value="passenger">Passenger</option>
+                 <option value="cargo">Cargo</option><option value="combi">Combi</option>
+                </select></label>
+              <label for="aircraft-library-production">New-aircraft production
+                <select id="aircraft-library-production">
+                 <option value="">All production statuses</option>
+                 <option value="in_production">Still produced</option>
+                 <option value="discontinued">No longer produced</option>
+                 <option value="unverified">Not confirmed</option>
+                </select></label>
+            </div>
+            <div class="library-summary"><span id="aircraft-library-count">Aircraft catalog</span>
+              <span>Fuel in kg · Distance in km and m</span></div>
+            <p id="aircraft-library-status" class="muted" role="status" aria-live="polite">Open this page to load the secure aircraft database.</p>
+            <button type="button" class="secondary" id="aircraft-library-retry" hidden>Retry library connection</button>
+            <div id="aircraft-library-results" class="library-results" aria-label="Aircraft configurations"></div>
+            <button type="button" class="secondary library-more" id="aircraft-library-more" hidden>Load more aircraft</button>
+          </article>
+          <article class="panel" id="aircraft-library-detail" hidden aria-label="Selected aircraft technical specifications"></article>
+          <p class="muted">Library information is read-only. Aircraft purchasing, assignment, maintenance clearance and commercial flights are not enabled here. Published specifications and fictional game estimates are kept distinct.</p>
         </section>
         <section data-player-view="airport-profile" hidden>
           <div class="page-head"><div><p class="eyebrow">AIRPORT DIRECTORY</p><h1>Airport information</h1><p>Verified airport details and the future live airport operations center.</p></div></div>
