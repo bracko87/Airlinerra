@@ -25,7 +25,7 @@ export function createAircraftLibrary({doc,getReader}={}){
  const type=$('aircraft-library-type'),production=$('aircraft-library-production');
  if(![status,list,detail,more,search,maker,type,production].every(Boolean))
   throw Error('Aircraft library page markup missing');
- let aircraft=null,pending=null,visibleCount=18,selectedId=null;
+ let aircraft=null,pending=null,visibleCount=40,sortKey='manufacturer',sortDirection='asc';
  function statusMessage(message){status.textContent=message}
  function filtered(){
   if(!aircraft)return [];
@@ -38,82 +38,173 @@ export function createAircraftLibrary({doc,getReader}={}){
      String(t||'').toLocaleLowerCase('en').includes(q));
   });
  }
- function showDetail(a){
-  detail.replaceChildren();
-  if(!a){detail.hidden=true;return;}
-  detail.hidden=false;
-  const head=element('div','library-detail-heading');
-  const title=element('h2','',a.manufacturer+' '+a.model);
-  const subtype=element('p','muted',a.family+' family · '+a.configuration+' · '+a.useType);
-  head.append(title,subtype);
-  detail.append(head);
-  const warnings=element('p','library-disclaimer',
-   a.readinessGate!=='PROVISIONAL_DATA_ONLY'
-    ?'Special restriction: '+(a.holdReason||a.readinessGate)+'. Not available for unrestricted game operations.'
-    :'Planning reference only. The library does not authorize operations or claim aircraft ownership.');
-  detail.append(warnings);
-  const provenance=element('p','library-evidence',a.gameEstimate||a.productionEndEstimated
-   ?'Includes fictional GAME ESTIMATES; see individual conditional fields.':
-   a.technicalReview==='verified'
-   ?'Technical record marked verified; other fields may still be provisional.'
-   :'Technical data currently marked RESEARCH; values can include simplified game estimates.');
-  detail.append(provenance);
+ function specificationGroup(name,fields){
+  const group=element('section','library-profile-group');
+  group.append(element('h3','',name));
   const specs=element('div','library-specs');
-  const pairs=[
-   ['Manufacturer',a.manufacturer],['Family',a.family],['Configuration',a.configuration],
-   ['Service',a.serviceStatus||'Unknown'],['New aircraft production',a.productionStatus||'Unknown'],
-   ['Original production start',a.productionStart,'year'],
-   ['End of production'+(a.productionEndEstimated?' (game estimate)':''),a.productionEnd,'year'],
-   ['Typical passenger seats',a.seats],['Maximum passenger seats',a.maxSeats],
-   ['Cargo capacity (alternative configurations may apply)',a.cargoKg,'kg'],
-   ['Fuel tank capacity',a.fuelKg,'kg'],['Flight range',a.rangeKm,'km'],
-   ['Cruise speed',a.speedKmh,'km/h'],['Maximum takeoff weight',a.mtowKg,'kg'],
-   ['Maximum landing weight',a.mlwKg,'kg'],
-   ['Takeoff runway – published/reference',a.takeoffM,'m'],
-   ['Landing runway – published/reference',a.landingM,'m'],
-   ['Wingspan',a.wingspanM,'m'],['Aircraft length',a.lengthM,'m'],
-   ['Aircraft height',a.heightM,'m']
+  for(const [title,value,unit] of fields)specs.append(label(title,value,unit||''));
+  group.append(specs);return group;
+ }
+ function showDetail(a){
+  if(!a)return;
+  if(detail.open)detail.close();
+  detail.replaceChildren();
+  const sheet=element('div','library-profile-content');
+  const header=element('div','library-profile-header');
+  const heading=element('div','');
+  heading.append(element('p','library-profile-kicker','AIRLINERRA · AIRCRAFT PROFILE'));
+  const title=element('h2','',a.manufacturer+' '+a.model);
+  title.id='aircraft-library-profile-title';
+  heading.append(title,element('p','library-profile-subtitle',a.family+' · '+a.configuration.replaceAll('-',' ')+' · '+a.useType));
+  const close=element('button','library-profile-close','Close ×');
+  close.type='button';close.setAttribute('aria-label','Close aircraft profile');
+  close.addEventListener('click',()=>detail.close());
+  header.append(heading,close);
+  const hero=element('div','library-profile-hero');
+  const image=element('div','library-profile-image');
+  image.setAttribute('role','img');
+  image.setAttribute('aria-label','Space reserved for a photograph of '+a.model);
+  const icon=element('span','library-profile-plane','✈');
+  icon.setAttribute('aria-hidden','true');
+  image.append(icon,element('strong','','Aircraft photo'),element('span','','Image space reserved · no verified model photo yet'));
+  const highlights=element('div','library-profile-highlights');
+  const summary=[
+   ['Role',a.useType],['Passenger seats',a.seats??a.maxSeats],
+   ['Cargo payload',a.cargoKg===null?'Not recorded':format(a.cargoKg)+' kg'],
+   ['Range',a.rangeKm===null?'Not recorded':format(a.rangeKm)+' km'],
+   ['Fuel tank',a.fuelKg===null?'Not recorded':format(a.fuelKg)+' kg'],
+   ['Production',a.productionStatus?.replaceAll('_',' ')||'Unconfirmed']
   ];
-  for(const [key,value,unit] of pairs)specs.append(label(key,value,unit==='year'?'':unit||''));
-  if(a.requiredEquipment==='AMPHIBIOUS_FLOATS_WITH_WHEELS'){
-   specs.append(label('Conditional game takeoff – only with amphibious wheels',a.conditionalTakeoffM,'m'));
-   specs.append(label('Conditional game landing – only with amphibious wheels',a.conditionalLandingM,'m'));
-   detail.append(element('p','library-disclaimer','Straight floats cannot operate on paved runways. Conditional game values are fictional and do not remove the runway hold.'));
+  for(const [name,value] of summary){
+   const item=element('div','library-profile-highlight');
+   item.append(element('span','',name),element('strong','',String(value??'Not recorded')));
+   highlights.append(item);
   }
-  if(a.useType==='combi')detail.append(element('p','library-disclaimer',
-   'Passenger seats and maximum cargo capacity are not necessarily available simultaneously. The loading engine must enforce the selected layout.'));
-  detail.append(specs);
+  hero.append(image,highlights);
+  sheet.append(header,hero);
+  if(a.readinessGate!=='PROVISIONAL_DATA_ONLY')
+   sheet.append(element('p','library-disclaimer',
+    'Operating restriction: '+(a.holdReason||a.readinessGate)+'. This catalog entry does not grant flight clearance.'));
+  if(a.gameEstimate||a.productionEndEstimated)
+   sheet.append(element('p','library-evidence',
+    'Some figures are fictional game-planning estimates, not independently verified manufacturer specifications.'));
+  else sheet.append(element('p','library-evidence',
+    a.technicalReview==='verified'
+     ?'Technical record marked verified; other data may still be provisional.'
+     :'Technical data marked RESEARCH; treat specifications as provisional.'));
+  const groups=element('div','library-profile-groups');
+  groups.append(
+   specificationGroup('Identity & production',[
+    ['Manufacturer',a.manufacturer],['Aircraft family',a.family],['Model',a.model],
+    ['Configuration',a.configuration],['Role',a.useType],
+    ['Civilian service status',a.serviceStatus],['New-aircraft production',a.productionStatus],
+    ['First production year',a.productionStart],
+    ['End production year'+(a.productionEndEstimated?' (estimated)':''),a.productionEnd]
+   ]),
+   specificationGroup('Passenger, cargo & fuel',[
+    ['Typical seats',a.seats],['Maximum seats',a.maxSeats],
+    ['Maximum cargo payload',a.cargoKg,'kg'],
+    ['Fuel tank capacity',a.fuelKg,'kg']
+   ]),
+   specificationGroup('Flight performance & weights',[
+    ['Flight range',a.rangeKm,'km'],['Cruise speed',a.speedKmh,'km/h'],
+    ['Takeoff runway · published/reference',a.takeoffM,'m'],
+    ['Landing runway · published/reference',a.landingM,'m'],
+    ['Maximum takeoff weight',a.mtowKg,'kg'],
+    ['Maximum landing weight',a.mlwKg,'kg']
+   ]),
+   specificationGroup('Dimensions',[
+    ['Wingspan',a.wingspanM,'m'],['Aircraft length',a.lengthM,'m'],
+    ['Aircraft height',a.heightM,'m']
+   ]),
+   specificationGroup('Source & operational qualifications',[
+    ['Technical review',a.technicalReview],
+    ['Fictional game estimate',a.gameEstimate?'Yes':'No'],
+    ['Operational readiness gate',a.readinessGate],
+    ['Restriction reason',a.holdReason],
+    ['Required equipment',a.requiredEquipment]
+   ])
+  );
+  if(a.requiredEquipment==='AMPHIBIOUS_FLOATS_WITH_WHEELS'){
+   groups.append(specificationGroup('Conditional amphibious-wheel reference',[
+    ['Conditional takeoff (game estimate)',a.conditionalTakeoffM,'m'],
+    ['Conditional landing (game estimate)',a.conditionalLandingM,'m']
+   ]));
+   sheet.append(element('p','library-disclaimer',
+    'Straight floats cannot use paved runways. These conditional figures require the specified equipment and do not remove the runway hold.'));
+  }
+  sheet.append(groups);
+  if(a.useType==='combi')sheet.append(element('p','library-disclaimer',
+   'Combi aircraft cannot necessarily carry maximum passenger seats and maximum cargo payload at the same time.'));
+  sheet.append(element('p','library-profile-footer',
+   'Read-only reference. Buying, assigning or dispatching aircraft is not available from this library.'));
+  detail.append(sheet);
+  detail.setAttribute('aria-labelledby','aircraft-library-profile-title');
+  detail.showModal();
+ }
+ function sortRecords(records){
+  const key=sortKey,dir=sortDirection==='asc'?1:-1;
+  return [...records].sort((a,b)=>{
+   const av=a[key],bv=b[key];
+   if(av===null||av===undefined)return bv===null||bv===undefined?0:1;
+   if(bv===null||bv===undefined)return -1;
+   const result=typeof av==='number'&&typeof bv==='number'?av-bv:
+    String(av).localeCompare(String(bv),'en',{numeric:true,sensitivity:'base'});
+   return result?result*dir:a.manufacturer.localeCompare(b.manufacturer,'en')||
+     a.model.localeCompare(b.model,'en',{numeric:true});
+  });
  }
  function draw(){
-  const data=filtered();
+  const data=sortRecords(filtered());
   $('aircraft-library-count').textContent=String(data.length)+' of '+String(aircraft?.length||0)+' configurations';
   list.replaceChildren();
-  for(const a of data.slice(0,visibleCount)){
-   const card=doc.createElement('button');
-   card.type='button';card.className='library-aircraft-card';card.dataset.aircraftId=String(a.id);
-   if(a.id===selectedId)card.setAttribute('aria-pressed','true');
-   const top=element('span','library-aircraft-maker',a.manufacturer+' · '+a.family);
-   const model=element('strong','library-aircraft-model',a.model);
-   const config=element('span','library-aircraft-configuration',a.configuration.replaceAll('-',' '));
-   const figures=element('span','library-aircraft-figures',
-     (a.useType==='cargo'?'Cargo':a.useType==='combi'?'Combi':'Passenger')+
-     ' · '+(a.useType==='cargo'?format(a.cargoKg)+' kg':
-       format(a.seats??a.maxSeats)+' seats')+
-     ' · '+format(a.rangeKm)+' km');
-   const tag=element('span','library-aircraft-tag',a.readinessGate!=='PROVISIONAL_DATA_ONLY'
-     ?'Special restriction':a.gameEstimate?'Game estimate':a.technicalReview==='verified'?'Reference data':'Research data');
-   card.append(top,model,config,figures,tag);
-   list.append(card);
+  const table=element('table','library-table');
+  const thead=element('thead','');
+  const header=element('tr','');
+  const columns=[
+   ['manufacturer','Manufacturer'],['model','Model / family'],['useType','Role'],
+   ['seats','Seats'],['cargoKg','Cargo (kg)'],['rangeKm','Range (km)'],
+   ['speedKmh','Cruise (km/h)'],['fuelKg','Fuel (kg)'],
+   ['productionStatus','Production']
+  ];
+  for(const [key,text] of columns){
+   const th=element('th','');
+   th.scope='col';th.setAttribute('aria-sort',key===sortKey?(sortDirection==='asc'?'ascending':'descending'):'none');
+   const button=element('button','library-sort',text+(key===sortKey?(sortDirection==='asc'?' ↑':' ↓'):''));
+   button.type='button';button.dataset.sortKey=key;
+   button.title='Sort by '+text;
+   th.append(button);header.append(th);
   }
+  thead.append(header);table.append(thead);
+  const body=element('tbody','');
+  for(const a of data.slice(0,visibleCount)){
+   const row=element('tr','library-table-row');
+   row.dataset.aircraftId=String(a.id);
+   const values=[
+    a.manufacturer,null,a.useType,
+    a.seats??a.maxSeats,a.cargoKg,a.rangeKm,a.speedKmh,a.fuelKg,
+    a.productionStatus?.replaceAll('_',' ')||'Unconfirmed'
+   ];
+   for(let i=0;i<values.length;i++){
+    const td=element('td',i>=3&&i<=7?'library-numeric':'');
+    if(i===1){
+     const open=element('button','library-model-link',a.model);
+     open.type='button';open.setAttribute('aria-label','Open profile for '+a.manufacturer+' '+a.model);
+     td.append(open,element('span','library-table-family',a.family+' · '+a.configuration.replaceAll('-',' ')));
+    }else if(i===8){
+     td.append(element('span','library-production-status',values[i]));
+    }else td.textContent=(values[i]===null||values[i]===undefined)?'—':
+      typeof values[i]==='number'?format(values[i]):String(values[i]);
+    row.append(td);
+   }
+   body.append(row);
+  }
+  table.append(body);list.append(table);
   if(!data.length)list.append(element('p','library-no-results','No aircraft match these filters.'));
   more.hidden=data.length<=visibleCount;
   more.disabled=data.length<=visibleCount;
-  if(selectedId!==null){
-   const selected=aircraft.find(a=>a.id===selectedId);
-   showDetail(selected||null);
-  }
   statusMessage(aircraft?.length
-   ?'Live read-only aircraft catalog loaded. '+aircraft.length+' configurations. Values labelled research or game estimate are provisional.'
+   ?'Live read-only aircraft catalog loaded. '+aircraft.length+' configurations. Research and game estimates are provisional.'
    :'Aircraft library not connected.');
  }
  function setupManufacturers(){
@@ -149,19 +240,21 @@ export function createAircraftLibrary({doc,getReader}={}){
   return pending;
  }
  for(const field of [search,maker,type,production])field.addEventListener('input',()=>{
-  visibleCount=18;selectedId=null;showDetail(null);if(aircraft)draw();
+  visibleCount=40;if(aircraft)draw();
  });
  list.addEventListener('click',e=>{
-  const card=e.target.closest('[data-aircraft-id]');
-  if(!card||!aircraft)return;
-  const id=Number(card.dataset.aircraftId);
-  const match=aircraft.find(a=>a.id===id);
-  if(!match)return;
-  selectedId=id;showDetail(match);
-  for(const child of list.querySelectorAll('[data-aircraft-id]'))
-   child.setAttribute('aria-pressed',String(Number(child.dataset.aircraftId)===id));
+  const sort=e.target.closest('[data-sort-key]');
+  if(sort){
+   const key=sort.dataset.sortKey;
+   sortDirection=sortKey===key&&sortDirection==='asc'?'desc':'asc';
+   sortKey=key;if(aircraft)draw();return;
+  }
+  const row=e.target.closest('[data-aircraft-id]');
+  if(!row||!aircraft)return;
+  const match=aircraft.find(a=>a.id===Number(row.dataset.aircraftId));
+  if(match)showDetail(match);
  });
- more.addEventListener('click',()=>{visibleCount+=18;if(aircraft)draw()});
+ more.addEventListener('click',()=>{visibleCount+=40;if(aircraft)draw()});
  $('aircraft-library-retry').addEventListener('click',()=>{ $('aircraft-library-retry').hidden=true;void load() });
  return Object.freeze({load});
 }
