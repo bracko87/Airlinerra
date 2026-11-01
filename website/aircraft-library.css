@@ -26,9 +26,13 @@
 .library-production-status{font-weight:650;text-transform:capitalize;white-space:nowrap}
 .library-no-results{margin:0;text-align:center;color:#65768a;padding:28px}
 .library-more{margin-bottom:16px}
-.library-profile-dialog{width:min(1080px,calc(100vw - 32px));max-height:min(92vh,980px);padding:0;border:1px solid #d9e4f0;border-radius:16px;background:white;color:#173752;box-shadow:0 24px 88px #06204755;overflow:auto}
-.library-profile-dialog::backdrop{background:#061d39b8;backdrop-filter:blur(2px)}
-.library-profile-content{padding:28px 34px 24px}
+.library-profile-navigation{display:flex;justify-content:space-between;align-items:center;gap:18px;margin-bottom:20px;flex-wrap:wrap}
+.library-profile-back{display:inline-flex;align-items:center;padding:9px 15px;border:1px solid #cdddec;border-radius:9px;background:white;color:#123c64;font-size:13px;font-weight:800}
+.library-profile-back:hover{color:#c65313;border-color:#ff6917;background:#fff8f4}
+.library-profile-read-only{font-size:11px;font-weight:850;color:#e05c10;letter-spacing:.12em}
+.library-profile-page{width:100%;min-height:70vh;color:#173752;background:transparent}
+.library-profile-empty{border:1px solid #dce6f1;background:white;border-radius:12px;padding:28px}
+.library-profile-content{padding:0 0 26px}
 .library-profile-header{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;margin-bottom:18px}
 .library-profile-kicker{margin:0 0 6px;font-size:11px;font-weight:850;letter-spacing:.13em;color:#e05c10}
 .library-profile-header h2{font-size:clamp(22px,2.8vw,32px);margin:0 0 5px;color:#082d57}
