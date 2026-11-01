@@ -295,8 +295,19 @@
             <div id="aircraft-library-results" class="library-results" role="region" tabindex="0" aria-label="Sortable aircraft directory; scroll horizontally to see all columns"></div>
             <button type="button" class="secondary library-more" id="aircraft-library-more" hidden>Load more aircraft</button>
           </article>
-          <dialog id="aircraft-library-detail" class="library-profile-dialog" aria-label="Aircraft technical profile"></dialog>
           <p class="muted">Library information is read-only. Aircraft purchasing, assignment, maintenance clearance and commercial flights are not enabled here. Published specifications and fictional game estimates are kept distinct.</p>
+        </section>
+        <section data-player-view="aircraft-profile" hidden>
+          <div class="aircraft-profile-navigation">
+            <a href="#aircraft-library" data-view-link="aircraft-library" class="library-profile-back">← Back to Aircraft Library</a>
+            <span class="library-profile-read-only">AIRCRAFT TECHNICAL PROFILE · READ ONLY</span>
+          </div>
+          <div id="aircraft-library-detail" class="library-profile-page" role="region" aria-label="Selected aircraft technical specifications">
+            <div class="library-profile-empty">
+              <h2>No aircraft selected</h2>
+              <p>Choose an aircraft from the Aircraft Library to view its full technical profile.</p>
+            </div>
+          </div>
         </section>
         <section data-player-view="airport-profile" hidden>
           <div class="page-head"><div><p class="eyebrow">AIRPORT DIRECTORY</p><h1>Airport information</h1><p>Verified airport details and the future live airport operations center.</p></div></div>
