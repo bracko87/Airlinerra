@@ -173,7 +173,7 @@ test('first eleven Airbus artwork paths map by exact model and role',async()=>{
  assert.equal(examples.length,11);
  for(const [model,useType] of examples){
   assert.equal(aircraftImagePath({manufacturer:'Airbus',model,useType}),
-   '/assets/airplanes/'+encodeURIComponent('Airbus '+model+' '+useType+'.png'));
+   'https://hwllkabgzaynalahvkpz.supabase.co/storage/v1/object/public/Admin/Airplanes/'+encodeURIComponent('Airbus '+model+' '+useType+'.png'));
  }
  assert.equal(aircraftImagePath({manufacturer:'Airbus',model:'A321-200',useType:'combi'}),null);
  assert.equal(aircraftImagePath({manufacturer:'Boeing',model:'A321-200',useType:'cargo'}),null);
