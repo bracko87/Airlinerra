@@ -16,6 +16,25 @@ function element(tag,cls,text){
  if(text!==undefined)node.textContent=text;
  return node;
 }
+// These are exact, approved image filenames; never guess a picture for other variants.
+// Files belong in website/assets/airplanes/ and are served as static assets.
+const aircraftImages=new Map([
+ ['Airbus|A300-600F|cargo','Airbus A300-600F cargo.png'],
+ ['Airbus|A300-600R|passenger','Airbus A300-600R passenger.png'],
+ ['Airbus|A310-300|cargo','Airbus A310-300 cargo.png'],
+ ['Airbus|A310-300|passenger','Airbus A310-300 passenger.png'],
+ ['Airbus|A319-100|passenger','Airbus A319-100 passenger.png'],
+ ['Airbus|A319neo|passenger','Airbus A319neo passenger.png'],
+ ['Airbus|A320-200|passenger','Airbus A320-200 passenger.png'],
+ ['Airbus|A320neo|passenger','Airbus A320neo passenger.png'],
+ ['Airbus|A321-100|passenger','Airbus A321-100 passenger.png'],
+ ['Airbus|A321-200|cargo','Airbus A321-200 cargo.png'],
+ ['Airbus|A321-200|passenger','Airbus A321-200 passenger.png']
+]);
+export function aircraftImagePath(a){
+ const filename=aircraftImages.get([a.manufacturer,a.model,a.useType].join('|'));
+ return filename?'/assets/airplanes/'+encodeURIComponent(filename):null;
+}
 export function createAircraftLibrary({doc,getReader}={}){
  if(!doc||typeof getReader!=='function')throw Error('Aircraft library document and authenticated reader required');
  const $=id=>doc.getElementById(id);
@@ -62,7 +81,19 @@ export function createAircraftLibrary({doc,getReader}={}){
   image.setAttribute('aria-label','Space reserved for a photograph of '+a.model);
   const icon=element('span','library-profile-plane','✈');
   icon.setAttribute('aria-hidden','true');
-  image.append(icon,element('strong','','Aircraft photo'),element('span','','Image space reserved · no verified model photo yet'));
+  const placeholder=element('div','library-profile-image-placeholder');
+  placeholder.append(icon,element('strong','','Aircraft photo'),element('span','','Image not yet available'));
+  const path=aircraftImagePath(a);
+  if(path){
+   const picture=element('img','library-profile-aircraft-photo');
+   picture.alt=a.manufacturer+' '+a.model+' '+a.useType+' aircraft, unbranded side profile';
+   picture.loading='lazy';picture.decoding='async';
+   picture.addEventListener('load',()=>{placeholder.hidden=true});
+   picture.addEventListener('error',()=>{picture.remove();placeholder.hidden=false});
+   image.append(picture);
+   picture.src=path;
+  }
+  image.append(placeholder);
   const highlights=element('div','library-profile-highlights');
   const summary=[
    ['Role',a.useType],['Passenger seats',a.seats??a.maxSeats],
