@@ -33,7 +33,7 @@ const aircraftImages=new Map([
 ]);
 export function aircraftImagePath(a){
  const filename=aircraftImages.get([a.manufacturer,a.model,a.useType].join('|'));
- return filename?'/assets/airplanes/'+encodeURIComponent(filename):null;
+ return filename?'https://hwllkabgzaynalahvkpz.supabase.co/storage/v1/object/public/Admin/Airplanes/'+encodeURIComponent(filename):null;
 }
 export function createAircraftLibrary({doc,getReader}={}){
  if(!doc||typeof getReader!=='function')throw Error('Aircraft library document and authenticated reader required');
