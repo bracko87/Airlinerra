@@ -159,3 +159,22 @@ test('full-page aircraft profile is a supported player view',async()=>{
  assert.equal(model.safePlayerView('#aircraft-profile'),'aircraft-profile');
  assert.equal(model.playerViewUrl('aircraft-profile'),'/player.html#aircraft-profile');
 });
+
+
+test('first eleven Airbus artwork paths map by exact model and role',async()=>{
+ const {aircraftImagePath}=await import('../website/aircraft-library.mjs');
+ const examples=[
+ ['A300-600F','cargo'],['A300-600R','passenger'],
+ ['A310-300','cargo'],['A310-300','passenger'],
+ ['A319-100','passenger'],['A319neo','passenger'],
+ ['A320-200','passenger'],['A320neo','passenger'],
+ ['A321-100','passenger'],['A321-200','cargo'],['A321-200','passenger']
+ ];
+ assert.equal(examples.length,11);
+ for(const [model,useType] of examples){
+  assert.equal(aircraftImagePath({manufacturer:'Airbus',model,useType}),
+   '/assets/airplanes/'+encodeURIComponent('Airbus '+model+' '+useType+'.png'));
+ }
+ assert.equal(aircraftImagePath({manufacturer:'Airbus',model:'A321-200',useType:'combi'}),null);
+ assert.equal(aircraftImagePath({manufacturer:'Boeing',model:'A321-200',useType:'cargo'}),null);
+});
