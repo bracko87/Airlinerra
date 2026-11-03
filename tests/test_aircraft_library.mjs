@@ -161,20 +161,24 @@ test('full-page aircraft profile is a supported player view',async()=>{
 });
 
 
-test('first eleven Airbus artwork paths map by exact model and role',async()=>{
+test('all 76 verified public Supabase aircraft images have exact model-and-role mapping',async()=>{
  const {aircraftImagePath}=await import('../website/aircraft-library.mjs');
- const examples=[
- ['A300-600F','cargo'],['A300-600R','passenger'],
- ['A310-300','cargo'],['A310-300','passenger'],
- ['A319-100','passenger'],['A319neo','passenger'],
- ['A320-200','passenger'],['A320neo','passenger'],
- ['A321-100','passenger'],['A321-200','cargo'],['A321-200','passenger']
+ const base='https://hwllkabgzaynalahvkpz.supabase.co/storage/v1/object/public/Admin/Airplanes/';
+ const cases=[
+  [{manufacturer:'Airbus',model:'A300-600F',useType:'cargo'},'Airbus A300-600F cargo.png'],
+  [{manufacturer:'Airbus',model:'A330-200P2F',useType:'cargo'},'Airbus  A330-200P2F cargo.png'],
+  [{manufacturer:'Airbus Canada',model:'A220-300',useType:'passenger'},'Airbus Canada A220-300 passenger.png'],
+  [{manufacturer:'Antonov',model:'An-74TK-100',useType:'combi'},'Antonov An-74TK-100 combi.png'],
+  [{manufacturer:'ATR',model:'ATR 72-600F',useType:'cargo'},'ATR 72-600F cargo.png'],
+  [{manufacturer:'Boeing',model:'737-600',useType:'passenger'},'Boeing  737-600 passenger.png'],
+  [{manufacturer:'Boeing',model:'737-900ER',useType:'passenger'},'Boeing 737-900ER passenge.png'],
+  [{manufacturer:'Boeing',model:'Boeing 737-400',useType:'cargo'},'Boeing 737-400 cargo.png']
  ];
- assert.equal(examples.length,11);
- for(const [model,useType] of examples){
-  assert.equal(aircraftImagePath({manufacturer:'Airbus',model,useType}),
-   'https://hwllkabgzaynalahvkpz.supabase.co/storage/v1/object/public/Admin/Airplanes/'+encodeURIComponent('Airbus '+model+' '+useType+'.png'));
- }
+ for(const [aircraft,filename] of cases)
+  assert.equal(aircraftImagePath(aircraft),base+encodeURIComponent(filename));
+ assert.equal(aircraftImagePath({manufacturer:'Boeing',model:'737-900ER',useType:'cargo'}),null);
  assert.equal(aircraftImagePath({manufacturer:'Airbus',model:'A321-200',useType:'combi'}),null);
- assert.equal(aircraftImagePath({manufacturer:'Boeing',model:'A321-200',useType:'cargo'}),null);
+ const source=await readFile(new URL('../website/aircraft-library.mjs',import.meta.url),'utf8');
+ const mappingSection=source.split('const aircraftImages=new Map([')[1].split(']);')[0];
+ assert.equal((mappingSection.match(/^ \[/gm)||[]).length,76);
 });
