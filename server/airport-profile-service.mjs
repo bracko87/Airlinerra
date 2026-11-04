@@ -22,6 +22,17 @@ export const AIRPORT_PROFILE_SQL=`
         f.terminal_count,f.passenger_gate_count,f.aircraft_stand_count,
         f.operating_hours_local,f.curfew_details,f.noise_restrictions,
         f.facility_status,
+        ops.game_operating_hours_summary,ops.operating_hours_basis AS game_operating_hours_basis,
+        ops.max_day_game_noise_class,ops.max_night_game_noise_class,
+        ops.noise_limit_basis,ops.time_restrictions AS game_time_restrictions,
+        wx.forecast_status,wx.is_current AS forecast_is_current,
+        wx.provider_fetched_at AS weather_provider_fetched_at,
+        wx.forecast_valid_through AS weather_valid_through,
+        wx.temperature_c AS weather_temperature_c,wx.weather_symbol,
+        wx.precipitation_mm AS weather_precipitation_mm,
+        wx.wind_speed_kmh AS weather_wind_kmh,
+        wx.next_24h_local_3hourly AS weather_next_24h,
+        wx.required_attribution AS weather_attribution,
         (
           SELECT jsonb_agg(
             jsonb_build_object(
@@ -40,6 +51,10 @@ export const AIRPORT_PROFILE_SQL=`
     ON p.world_id=a.world_id AND p.airport_key=a.airport_key
  LEFT JOIN airlinerra_game.airport_facilities f
     ON f.world_id=a.world_id AND f.airport_key=a.airport_key
+ LEFT JOIN airlinerra_game.section5_airport_operating_summary_v1 ops
+    ON ops.world_id=a.world_id AND ops.airport_key=a.airport_key
+ LEFT JOIN airlinerra_game.section5_airport_weather_profile_v1 wx
+    ON wx.world_id=a.world_id AND wx.airport_key=a.airport_key
  WHERE a.world_id=1 AND a.airport_key=$1::text
  LIMIT 1`;
 const nullableString=x=>typeof x==='string'&&x.trim()?x.trim():null;
@@ -85,10 +100,53 @@ export function serializeAirportProfile(row){
    terminals:countOrNull(row.terminal_count),
    gates:countOrNull(row.passenger_gate_count),
    stands:countOrNull(row.aircraft_stand_count),
-   operatingHours:nullableString(row.operating_hours_local),
-   curfew:nullableString(row.curfew_details),
-   noise:nullableString(row.noise_restrictions),
+   operatingHours:nullableString(row.game_operating_hours_summary)||
+     nullableString(row.operating_hours_local),
+   curfew:nullableString(row.curfew_details)||
+     (Array.isArray(row.game_time_restrictions)&&row.game_time_restrictions.length?
+      row.game_time_restrictions.map(r=>[r.localStart,r.localEnd].join('-')+
+       ' '+(r.operation||'both')+' ('+(r.kind||'restriction')+')').join('; '):null),
+   noise:nullableString(row.noise_restrictions)||
+     ('Game max noise class: daytime '+(countOrNull(row.max_day_game_noise_class)??5)+
+      '/5, nighttime '+(countOrNull(row.max_night_game_noise_class)??5)+
+      '/5 (game estimates, not ICAO certifications)'),
    status:nullableString(row.facility_status)
+  },
+  operations:{
+   hoursBasis:nullableString(row.game_operating_hours_basis),
+   noiseBasis:nullableString(row.noise_limit_basis),
+   dayMaxNoiseClass:countOrNull(row.max_day_game_noise_class),
+   nightMaxNoiseClass:countOrNull(row.max_night_game_noise_class),
+   timeRestrictions:Array.isArray(row.game_time_restrictions)?
+     row.game_time_restrictions.slice(0,20).map(item=>({
+       code:nullableString(item.code),kind:nullableString(item.kind),
+       operation:nullableString(item.operation),
+       localStart:nullableString(item.localStart),
+       localEnd:nullableString(item.localEnd),
+       source:nullableString(item.source),
+       details:nullableString(item.details),
+       gameEnforcement:item.gameEnforcement===true,
+       exceptionsExpected:item.exceptionsExpected===true
+     })):[]
+  },
+  weather:{
+   status:nullableString(row.forecast_status)||'AWAITING_FIRST_FORECAST',
+   isCurrent:row.forecast_is_current===true,
+   fetchedAt:nullableString(row.weather_provider_fetched_at),
+   validThrough:nullableString(row.weather_valid_through),
+   temperatureC:numberOrNull(row.weather_temperature_c),
+   symbol:nullableString(row.weather_symbol),
+   precipitationMm:numberOrNull(row.weather_precipitation_mm),
+   windKmh:numberOrNull(row.weather_wind_kmh),
+   attribution:nullableString(row.weather_attribution),
+   next24h:Array.isArray(row.weather_next_24h)?
+    row.weather_next_24h.slice(0,10).map(point=>({
+      time:nullableString(point.time),
+      temperatureC:numberOrNull(point.temperature_c),
+      symbol:nullableString(point.weather_symbol),
+      precipitationMm:numberOrNull(point.precipitation_mm),
+      windKmh:numberOrNull(point.wind_speed_kmh)
+    })):[]
   }
  });
 }
