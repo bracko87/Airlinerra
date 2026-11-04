@@ -52,6 +52,14 @@ export const AIRPORT_PROFILE_SQL=`
         wx.wind_speed_kmh AS weather_wind_kmh,
         wx.next_24h_local_3hourly AS weather_next_24h,
         wx.required_attribution AS weather_attribution,
+        fw.longest_paved_runway_m AS full_weight_longest_paved_runway_m,
+        fw.airport_elevation_ft AS full_weight_airport_elevation_ft,
+        fw.total_configurations_screened AS full_weight_aircraft_screened,
+        fw.full_weight_both_pass_configurations AS full_weight_both_pass,
+        fw.full_weight_takeoff_pass_configurations AS full_weight_takeoff_pass,
+        fw.full_weight_landing_pass_configurations AS full_weight_landing_pass,
+        fw.site_specific_performance_review_recommended AS full_weight_high_elevation_review,
+        fw.calculation_basis AS full_weight_game_calculation_basis,
         (
           SELECT jsonb_agg(
             jsonb_build_object(
@@ -76,6 +84,8 @@ export const AIRPORT_PROFILE_SQL=`
     ON chapter.world_id=a.world_id AND chapter.airport_key=a.airport_key
  LEFT JOIN airlinerra_game.section5_airport_curfew_research_audit_v2 curfew
     ON curfew.world_id=a.world_id AND curfew.airport_key=a.airport_key
+ LEFT JOIN airlinerra_game.section5_full_weight_airport_summary_v2 fw
+    ON fw.world_id=a.world_id AND fw.airport_key=a.airport_key
  LEFT JOIN airlinerra_game.section5_airport_weather_profile_v1 wx
     ON wx.world_id=a.world_id AND wx.airport_key=a.airport_key
  WHERE a.world_id=1 AND a.airport_key=$1::text
@@ -172,6 +182,18 @@ export function serializeAirportProfile(row){
        gameEnforcement:item.gameEnforcement===true,
        exceptionsExpected:item.exceptionsExpected===true
      })):[]
+  },
+  runwayFullWeight:{
+   gameLengthScreenImplemented:row.full_weight_aircraft_screened!==null&&row.full_weight_aircraft_screened!==undefined,
+   allAircraftConfigurations:countOrNull(row.full_weight_aircraft_screened),
+   passingBothAtStructuralMaximumWeight:countOrNull(row.full_weight_both_pass),
+   passingFullWeightTakeoff:countOrNull(row.full_weight_takeoff_pass),
+   passingFullWeightLanding:countOrNull(row.full_weight_landing_pass),
+   maximumPavedPhysicalRunwayM:numberOrNull(row.full_weight_longest_paved_runway_m),
+   referenceAirportElevationFt:numberOrNull(row.full_weight_airport_elevation_ft),
+   highElevationSiteStudyRecommended:row.full_weight_high_elevation_review===true,
+   dataKind:nullableString(row.full_weight_game_calculation_basis),
+   realWorldDispatchApproved:false
   },
   weather:{
    status:nullableString(row.forecast_status)||'AWAITING_FIRST_FORECAST',
