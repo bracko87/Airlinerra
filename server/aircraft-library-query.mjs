@@ -29,7 +29,14 @@ select c.id::int as id,m.name as manufacturer,f.family_name as family,
  cert.official_icao_chapter AS official_icao_chapter,
  cert.noise_certificate_status AS icao_noise_status,
  cert.certification_match_basis AS icao_noise_match_basis,
- cert.evidence_url AS icao_noise_source
+ cert.evidence_url AS icao_noise_source,
+ fullref.mtow_kg AS full_weight_reference_mtow_kg,
+ fullref.mlw_kg AS full_weight_reference_mlw_kg,
+ fullref.game_full_weight_takeoff_reference_m AS full_weight_takeoff_reference_m,
+ fullref.game_full_weight_landing_reference_m AS full_weight_landing_reference_m,
+ fullref.reference_evidence_class AS full_weight_evidence_class,
+ fullref.full_weight_assumption AS full_weight_assumption,
+ fullref.game_formula_version AS full_weight_formula_version
 from airlinerra.aircraft_configurations c
 join airlinerra.aircraft_variants v on v.id=c.variant_id
 join airlinerra.aircraft_families f on f.id=v.family_id
@@ -37,6 +44,7 @@ join airlinerra.aircraft_manufacturers m on m.id=f.manufacturer_id
 join airlinerra.aircraft_game_data_coverage_v1 coverage on coverage.configuration_id=c.id
 join airlinerra.aircraft_configuration_game_readiness_v1 ready on ready.configuration_id=c.id
 left join airlinerra_game.section5_icao_aircraft_certification_v2 cert on cert.configuration_id=c.id
+left join airlinerra_game.section5_full_weight_aircraft_reference_v2 fullref on fullref.configuration_id=c.id
 left join lateral (
  select t.* from airlinerra.aircraft_technical_specs t
  where t.configuration_id=c.id
@@ -83,6 +91,14 @@ export function serializeAircraftLibrary(rows){
    mtowKg:num(r.mtow_kg),mlwKg:num(r.mlw_kg),fuelKg:num(r.fuel_kg),
    rangeKm:num(r.range_km),speedKmh:num(r.speed_kmh),
    takeoffM:num(r.takeoff_m),landingM:num(r.landing_m),
+   fullWeightReferenceMtowKg:num(r.full_weight_reference_mtow_kg),
+   fullWeightReferenceMlwKg:num(r.full_weight_reference_mlw_kg),
+   fullWeightTakeoffReferenceM:num(r.full_weight_takeoff_reference_m),
+   fullWeightLandingReferenceM:num(r.full_weight_landing_reference_m),
+   fullWeightEvidenceClass:safeText(r.full_weight_evidence_class,128),
+   fullWeightAssumption:safeText(r.full_weight_assumption,600),
+   fullWeightGameFormula:safeText(r.full_weight_formula_version,100),
+
    wingspanM:num(r.wingspan_m),lengthM:num(r.length_m),heightM:num(r.height_m),
    technicalReview:r.technical_review_status==='verified'?'verified':'research',
    gameEstimate:r.game_estimation_type==='FICTIONAL_GAME_ONLY',
