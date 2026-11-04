@@ -25,6 +25,25 @@ export const AIRPORT_PROFILE_SQL=`
         ops.game_operating_hours_summary,ops.operating_hours_basis AS game_operating_hours_basis,
         ops.max_day_game_noise_class,ops.max_night_game_noise_class,
         ops.noise_limit_basis,ops.time_restrictions AS game_time_restrictions,
+        chapter.research_status AS icao_noise_research_status,
+        chapter.documented_prohibited_chapters AS icao_prohibited_chapters,
+        chapter.documented_restriction_kind AS icao_rule_kind,
+        chapter.cumulative_margin_requirement_epndb AS icao_minimum_margin_epndb,
+        chapter.source_url AS icao_noise_source,
+        curfew.evidence_status AS curfew_research_status,
+        (
+          SELECT coalesce(jsonb_agg(jsonb_build_object(
+            'code',nr.rule_code,'kind',nr.rule_kind,
+            'operation',nr.affected_operations,
+            'localStart',nr.window_start_local::text,
+            'localEnd',nr.window_end_local::text,
+            'chapter',nr.documented_icao_chapter,
+            'enforcement',nr.game_enforcement_status,
+            'source',nr.evidence_source_url,'notes',nr.evidence_note
+          ) ORDER BY nr.rule_code),'[]'::jsonb)
+          FROM airlinerra_game.section5_airport_official_noise_rules_v2 nr
+          WHERE nr.world_id=a.world_id AND nr.airport_key=a.airport_key
+        ) AS icao_airport_noise_rules,
         wx.forecast_status,wx.is_current AS forecast_is_current,
         wx.provider_fetched_at AS weather_provider_fetched_at,
         wx.forecast_valid_through AS weather_valid_through,
@@ -53,6 +72,10 @@ export const AIRPORT_PROFILE_SQL=`
     ON f.world_id=a.world_id AND f.airport_key=a.airport_key
  LEFT JOIN airlinerra_game.section5_airport_operating_summary_v1 ops
     ON ops.world_id=a.world_id AND ops.airport_key=a.airport_key
+ LEFT JOIN airlinerra_game.section5_airport_icao_chapter_policy_v2 chapter
+    ON chapter.world_id=a.world_id AND chapter.airport_key=a.airport_key
+ LEFT JOIN airlinerra_game.section5_airport_curfew_research_audit_v2 curfew
+    ON curfew.world_id=a.world_id AND curfew.airport_key=a.airport_key
  LEFT JOIN airlinerra_game.section5_airport_weather_profile_v1 wx
     ON wx.world_id=a.world_id AND wx.airport_key=a.airport_key
  WHERE a.world_id=1 AND a.airport_key=$1::text
@@ -108,17 +131,36 @@ export function serializeAirportProfile(row){
      (Array.isArray(row.game_time_restrictions)&&row.game_time_restrictions.length?
       row.game_time_restrictions.map(r=>[r.localStart,r.localEnd].join('-')+
        ' '+(r.operation||'both')+' ('+(r.kind||'restriction')+')').join('; '):null),
-   noise:nullableString(row.noise_restrictions)||
-     ('Game max noise class: daytime '+(countOrNull(row.max_day_game_noise_class)??5)+
-      '/5, nighttime '+(countOrNull(row.max_night_game_noise_class)??5)+
-      '/5 (game estimates, not ICAO certifications)'),
+   noise:'ICAO Annex 16 aircraft certification Chapters; airport noise-rule verification: '+
+     (nullableString(row.icao_noise_research_status)||'NOT_INDIVIDUALLY_VERIFIED')+
+     '. See operations.icaoNoiseRules for sourced restrictions. Prior five-class noise scale retired.',
+   historicalNoiseNotes:nullableString(row.noise_restrictions),
    status:nullableString(row.facility_status)
   },
   operations:{
    hoursBasis:nullableString(row.game_operating_hours_basis),
    noiseBasis:nullableString(row.noise_limit_basis),
-   dayMaxNoiseClass:countOrNull(row.max_day_game_noise_class),
-   nightMaxNoiseClass:countOrNull(row.max_night_game_noise_class),
+   dayMaxNoiseClass:null,
+   nightMaxNoiseClass:null,
+   legacyFiveClassNoiseScaleRetired:true,
+   curfewResearchStatus:nullableString(row.curfew_research_status)||'NOT_INDIVIDUALLY_VERIFIED',
+   icaoNoiseRules:{
+     researchStatus:nullableString(row.icao_noise_research_status)||'NOT_INDIVIDUALLY_VERIFIED',
+     prohibitedChapters:Array.isArray(row.icao_prohibited_chapters)?
+       row.icao_prohibited_chapters.filter(n=>Number.isInteger(n)&&[2,3,4,5,6,10,14].includes(n)):[],
+     restrictionKind:nullableString(row.icao_rule_kind),
+     minimumCumulativeMarginEpndb:numberOrNull(row.icao_minimum_margin_epndb),
+     source:nullableString(row.icao_noise_source),
+     rules:Array.isArray(row.icao_airport_noise_rules)?
+       row.icao_airport_noise_rules.slice(0,20).map(r=>({
+         code:nullableString(r.code),kind:nullableString(r.kind),
+         operation:nullableString(r.operation),
+         localStart:nullableString(r.localStart),localEnd:nullableString(r.localEnd),
+         chapter:countOrNull(r.chapter),
+         enforcement:nullableString(r.enforcement),
+         source:nullableString(r.source),notes:nullableString(r.notes)
+       })):[]
+   },
    timeRestrictions:Array.isArray(row.game_time_restrictions)?
      row.game_time_restrictions.slice(0,20).map(item=>({
        code:nullableString(item.code),kind:nullableString(item.kind),
