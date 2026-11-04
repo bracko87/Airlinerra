@@ -166,7 +166,8 @@ export function createAircraftLibrary({doc,getReader}={}){
    ['Cargo payload',a.cargoKg===null?'Not recorded':format(a.cargoKg)+' kg'],
    ['Range',a.rangeKm===null?'Not recorded':format(a.rangeKm)+' km'],
    ['Fuel tank',a.fuelKg===null?'Not recorded':format(a.fuelKg)+' kg'],
-   ['Production',a.productionStatus?.replaceAll('_',' ')||'Unconfirmed']
+   ['Production',a.productionStatus?.replaceAll('_',' ')||'Unconfirmed'],
+   ['Noise class',a.gameNoiseClass?String(a.gameNoiseClass)+'/5 (game estimate)':'Not rated']
   ];
   for(const [name,value] of summary){
    const item=element('div','library-profile-highlight');
@@ -210,7 +211,12 @@ export function createAircraftLibrary({doc,getReader}={}){
     ['Wingspan',a.wingspanM,'m'],['Aircraft length',a.lengthM,'m'],
     ['Aircraft height',a.heightM,'m']
    ]),
-   specificationGroup('Source & operational qualifications',[
+   specificationGroup('Noise & airport eligibility',[
+     ['Relative aircraft noise class (1 very quiet to 5 very loud)',a.gameNoiseClass],
+     ['Noise rating basis','Estimated gameplay class, not ICAO-certified data'],
+     ['Airport access','Subject to airport day/night class and curfew rules']
+    ]),
+    specificationGroup('Source & operational qualifications',[
     ['Technical review',a.technicalReview],
     ['Fictional game estimate',a.gameEstimate?'Yes':'No'],
     ['Operational readiness gate',a.readinessGate],
@@ -224,7 +230,7 @@ export function createAircraftLibrary({doc,getReader}={}){
     ['Conditional landing (game estimate)',a.conditionalLandingM,'m']
    ]));
    sheet.append(element('p','library-disclaimer',
-    'Straight floats cannot use paved runways. These conditional figures require the specified equipment and do not remove the runway hold.'));
+    'Airlinerra assumes retractable amphibious landing wheels are installed for these game configurations. These runway distances are fictional game estimates, not certified real-world performance.'));
   }
   sheet.append(groups);
   if(a.useType==='combi')sheet.append(element('p','library-disclaimer',
