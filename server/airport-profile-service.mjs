@@ -62,6 +62,8 @@ const numberOrNull=x=>{
  if(x===null||x===undefined||x==='')return null;
  const n=Number(x);return Number.isFinite(n)?n:null;
 };
+const isoDateOrNull=x=>x instanceof Date&&!Number.isNaN(x.getTime())?
+ x.toISOString():nullableString(x);
 const countOrNull=x=>{
  const n=numberOrNull(x);
  return n!==null&&Number.isInteger(n)&&n>=0?n:null;
@@ -132,8 +134,8 @@ export function serializeAirportProfile(row){
   weather:{
    status:nullableString(row.forecast_status)||'AWAITING_FIRST_FORECAST',
    isCurrent:row.forecast_is_current===true,
-   fetchedAt:nullableString(row.weather_provider_fetched_at),
-   validThrough:nullableString(row.weather_valid_through),
+   fetchedAt:isoDateOrNull(row.weather_provider_fetched_at),
+   validThrough:isoDateOrNull(row.weather_valid_through),
    temperatureC:numberOrNull(row.weather_temperature_c),
    symbol:nullableString(row.weather_symbol),
    precipitationMm:numberOrNull(row.weather_precipitation_mm),
