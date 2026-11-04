@@ -102,6 +102,9 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
    '<div id="airport-profile-facts" class="airport-profile-facts"></div>')+
    panel('AIRPORT INFRASTRUCTURE','Runways, terminals and slots',
     '<div id="airport-profile-infrastructure" class="airport-profile-facts"></div>')+
+   panel('AIRPORT WEATHER','Daily forecast · 3-hour temperature changes',
+    '<div id="airport-profile-weather" class="airport-profile-facts"></div>'+
+    '<p id="airport-profile-weather-credit" class="hint">Forecast data by MET Norway, CC BY 4.0. Flight delays not modelled yet.</p>')+
    panel('MARKET DEMAND','Passenger and cargo demand',
     '<p class="hint">Passenger/cargo demand, annual traffic and route potential will be populated from verified data. No artificial percentages.</p>'+
     '<div id="airport-profile-demand" class="airport-profile-facts"></div>')+
@@ -218,8 +221,37 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
    ['Aerodrome operating hours',p?textOrPending(p.facilities?.operatingHours):fallback],
    ['Curfew restrictions',p?textOrPending(p.facilities?.curfew):fallback],
    ['Noise restrictions',p?textOrPending(p.facilities?.noise):fallback],
+   ['Aircraft noise scale','1 = very quiet, 5 = very loud (estimated game classes)'],
+   ['Operation verification',p?textOrPending(p.operations?.hoursBasis):fallback],
    ['Airport operational status','Not independently confirmed']
   ]);
+  const wx=p?.weather||null;
+  const weatherReady=Boolean(wx?.isCurrent&&knownNumber(wx?.temperatureC));
+  const weatherName=code=>typeof code==='string'&&code?
+    code.replace(/_day|_night|_polartwilight/g,'').replace(/_/g,' ').
+      replace(/(rain|snow|cloudy|thunder|fog)/gi,' $1').replace(/ +/g,' ').trim():'Unavailable';
+  const weatherHour=iso=>{
+    const ms=Date.parse(iso||'');if(!Number.isFinite(ms))return 'Time unknown';
+    try{return new Intl.DateTimeFormat('en-GB',{timeZone:p?.timezone||'UTC',
+      weekday:'short',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(ms))}
+    catch{return 'Time unavailable'}
+  };
+  const timeline=Array.isArray(wx?.next24h)?wx.next24h.map(point=>
+   weatherHour(point.time)+' — '+(knownNumber(point.temperatureC)?num(point.temperatureC)+' °C':'-')+
+   (point.symbol?' · '+weatherName(point.symbol):'')).join('; '):'';
+  profileField('airport-profile-weather',[
+   ['Forecast status',weatherReady?'Current':'No current forecast available'],
+   ['Current forecast temperature',weatherReady?num(wx.temperatureC)+' °C':fallback],
+   ['Conditions',weatherReady?weatherName(wx.symbol):fallback],
+   ['Wind',weatherReady?num(wx.windKmh)+' km/h':fallback],
+   ['Precipitation (forecast)',weatherReady?num(wx.precipitationMm)+' mm':fallback],
+   ['Daily temperature updates','Eight 3-hour periods from one daily forecast'],
+   ['Next 24-hour periods',weatherReady?(timeline||'Pending'):'Pending'],
+   ['Weather-related flight delays','Not enabled yet']
+  ]);
+  const credit=$('airport-profile-weather-credit');
+  if(credit)credit.textContent=wx?.attribution||
+    'Forecast data by the Norwegian Meteorological Institute (MET Norway), CC BY 4.0. Weather delay effects are not enabled yet.';
   profileField('airport-profile-demand',[
    ['Passenger demand (0-100%)','Data pending'],['Cargo demand (0-100%)','Data pending'],
    ['Annual passengers','Data pending'],['Annual cargo','Data pending'],
