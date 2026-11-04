@@ -26,14 +26,17 @@ select c.id::int as id,m.name as manufacturer,f.family_name as family,
  coverage.amphibious_only_paved_landing_m as conditional_landing_m,
  coverage.mandatory_equipment as required_equipment,
  ready.route_game_gate as readiness_gate,ready.release_hold_reason as hold_reason,
- noise.game_noise_class as game_noise_class,noise.classification_confidence as noise_confidence
+ cert.official_icao_chapter AS official_icao_chapter,
+ cert.noise_certificate_status AS icao_noise_status,
+ cert.certification_match_basis AS icao_noise_match_basis,
+ cert.evidence_url AS icao_noise_source
 from airlinerra.aircraft_configurations c
 join airlinerra.aircraft_variants v on v.id=c.variant_id
 join airlinerra.aircraft_families f on f.id=v.family_id
 join airlinerra.aircraft_manufacturers m on m.id=f.manufacturer_id
 join airlinerra.aircraft_game_data_coverage_v1 coverage on coverage.configuration_id=c.id
 join airlinerra.aircraft_configuration_game_readiness_v1 ready on ready.configuration_id=c.id
-left join airlinerra_game.section5_aircraft_noise_profiles_v1 noise on noise.configuration_id=c.id
+left join airlinerra_game.section5_icao_aircraft_certification_v2 cert on cert.configuration_id=c.id
 left join lateral (
  select t.* from airlinerra.aircraft_technical_specs t
  where t.configuration_id=c.id
@@ -89,8 +92,12 @@ export function serializeAircraftLibrary(rows){
      ?'AMPHIBIOUS_FLOATS_WITH_WHEELS':null,
    readinessGate:safeText(r.readiness_gate,80),
    holdReason:safeText(r.hold_reason,100),
-   gameNoiseClass:num(r.game_noise_class,1,5),
-   noiseClassificationConfidence:safeText(r.noise_confidence,40)
+   gameNoiseClass:null,
+   noiseClassificationConfidence:'LEGACY_FIVE_CLASS_SCALE_RETIRED',
+   icaoNoiseChapter:num(r.official_icao_chapter,2,14),
+   icaoNoiseStatus:safeText(r.icao_noise_status,64)||'CERTIFICATE_NOT_VERIFIED',
+   icaoNoiseMatchBasis:safeText(r.icao_noise_match_basis,128),
+   icaoNoiseSource:safeText(r.icao_noise_source,512)
   };
  });
  return Object.freeze({aircraft,total:aircraft.length,readOnly:true,
