@@ -25,13 +25,15 @@ select c.id::int as id,m.name as manufacturer,f.family_name as family,
  coverage.amphibious_only_paved_takeoff_m as conditional_takeoff_m,
  coverage.amphibious_only_paved_landing_m as conditional_landing_m,
  coverage.mandatory_equipment as required_equipment,
- ready.route_game_gate as readiness_gate,ready.release_hold_reason as hold_reason
+ ready.route_game_gate as readiness_gate,ready.release_hold_reason as hold_reason,
+ noise.game_noise_class as game_noise_class,noise.classification_confidence as noise_confidence
 from airlinerra.aircraft_configurations c
 join airlinerra.aircraft_variants v on v.id=c.variant_id
 join airlinerra.aircraft_families f on f.id=v.family_id
 join airlinerra.aircraft_manufacturers m on m.id=f.manufacturer_id
 join airlinerra.aircraft_game_data_coverage_v1 coverage on coverage.configuration_id=c.id
 join airlinerra.aircraft_configuration_game_readiness_v1 ready on ready.configuration_id=c.id
+left join airlinerra_game.section5_aircraft_noise_profiles_v1 noise on noise.configuration_id=c.id
 left join lateral (
  select t.* from airlinerra.aircraft_technical_specs t
  where t.configuration_id=c.id
@@ -86,7 +88,9 @@ export function serializeAircraftLibrary(rows){
    requiredEquipment:r.required_equipment==='AMPHIBIOUS_FLOATS_WITH_WHEELS'
      ?'AMPHIBIOUS_FLOATS_WITH_WHEELS':null,
    readinessGate:safeText(r.readiness_gate,80),
-   holdReason:safeText(r.hold_reason,100)
+   holdReason:safeText(r.hold_reason,100),
+   gameNoiseClass:num(r.game_noise_class,1,5),
+   noiseClassificationConfidence:safeText(r.noise_confidence,40)
   };
  });
  return Object.freeze({aircraft,total:aircraft.length,readOnly:true,
