@@ -301,3 +301,18 @@ test('hub and station pages list ten slim records per page with independent pagi
  assert.match(css,/\.airport-office-list-row\{display:grid/);
  assert.match(css,/\.airport-office-page-caption/);
 });
+
+
+test('verified headquarters is pinned as main hub and main station without a paid office record',async()=>{
+ const office=await read('../website/airline-airports-office.mjs');
+ const css=await read('../website/player-app.css');
+ assert.match(office,/const home=live\.connected&&live\.airline\?\.homeAirportKey\?/);
+ assert.match(office,/const pinned=home\?\{\.\.\.home,type,home:true,status:'registered'\}:null/);
+ assert.match(office,/Main hub · headquarters/);
+ assert.match(office,/Main station · headquarters/);
+ assert.match(office,/if\(!office\.home\)actions\.append\(button\(doc,'Remove draft'/);
+ assert.match(office,/items\.slice\(first,first\+OFFICE_PAGE_SIZE\)/);
+ assert.match(office,/office\.key!==live\.airline\?\.homeAirportKey/);
+ assert.match(css,/\.airport-profile-identity \.airport-profile-office-actions\{display:grid/);
+ assert.match(css,/#player-main \.airport-profile-identity \.airport-profile-office-buttons \.secondary\{appearance:none;border:0/);
+});
