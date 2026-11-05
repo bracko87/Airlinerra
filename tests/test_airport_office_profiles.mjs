@@ -52,15 +52,16 @@ test('headquarters, hubs, stations are distinct - with honest missing operationa
   assert.ok(office.includes(heading),heading);
  }
  for(const feature of ['runway','slots','Passenger demand','Cargo demand',
-  'Time zone','Flights per day','Operating airlines','Station desk fee'])
+  'Time zone','Flights per day','Operating airlines','Request hub','Open station'])
   assert.ok(office.toLowerCase().includes(feature.toLowerCase()),feature);
- assert.match(office,/No fees or salaries were charged/);
+ assert.match(office,/No airport office, staffing, fees or slots have been activated/);
  assert.match(office,/Not connected/);
  assert.match(office,/Data pending/);
  assert.match(office,/station'\?1:null/);
  assert.match(office,/if\(!live.connected\|\|!live.airline\?\.id\)/);
  assert.doesNotMatch(office,/fetch\(|from\('airlines'\)|insert\(|update\(/);
- for(const style of ['airport-office-headquarters','airport-office-cost-grid','airport-profile-facts','airport-flight-board'])
+ for(const style of ['airport-office-headquarters','airport-office-list-row','airport-office-pagination',
+  'airport-profile-office-actions','airport-profile-facts','airport-flight-board'])
   assert.ok(styles.includes(style),style);
 });
 
@@ -256,4 +257,47 @@ test('airlines table has headers and computes honest example weekly movement sha
  assert.match(styles,/\.airport-network-airline-head,.airport-network-airline-row\{display:grid;grid-template-columns:170px 145px repeat\(3/);
  assert.match(source,/sample flight movements only, not passenger market share/);
  assert.doesNotMatch(source,/\['statistics','Statistics'\]/);
+});
+
+
+test('registered headquarters remains unchanged; remove independent planning form and cost model',async()=>{
+ const office=await read('../website/airline-airports-office.mjs');
+ const hq=office.slice(office.indexOf("panel('HEADQUARTERS','Registered headquarters'"),
+  office.indexOf("panel('NETWORK LOCATIONS','My hubs'"));
+ assert.match(hq,/This is the airport chosen when the airline was created/);
+ assert.match(hq,/id="airport-office-hq-name"/);
+ assert.match(hq,/data-office-action="home-profile"/);
+ assert.doesNotMatch(office,/Plan an airport office/);
+ assert.doesNotMatch(office,/panel\('COST MODEL'/);
+ for(const removed of ['office-country','office-search','office-result','office-location-type',
+  'office-save','office-preview'])assert.ok(!office.includes("'"+removed+"'")&&!office.includes('id="'+removed+'"'),removed);
+ assert.match(office,/panel\('NETWORK LOCATIONS','My hubs'/);
+ assert.match(office,/panel\('AIRPORT REPRESENTATION','My stations'/);
+});
+test('airport profile offers safe station and hub request actions without opening offices',async()=>{
+ const office=await read('../website/airline-airports-office.mjs');
+ assert.match(office,/data-office-action="plan-station" disabled>Open station/);
+ assert.match(office,/data-office-action="plan-hub" disabled>Request hub/);
+ assert.match(office,/function refreshOfficeActions\(airport,loading=false\)/);
+ assert.match(office,/airport\?\.key===live\.airline\?\.homeAirportKey/);
+ assert.match(office,/activeAirport=effective/);
+ assert.match(office,/proposeAirportOffice\(\{type,airport,/);
+ assert.match(office,/saveSession\(session,keyForAccount\(\),\[\.\.\.entries\(\),proposed\.entry\]\)/);
+ assert.match(office,/No airport office, staffing, fees or slots have been activated/);
+});
+test('hub and station pages list ten slim records per page with independent pagination',async()=>{
+ const [office,css]=await Promise.all([
+  read('../website/airline-airports-office.mjs'),read('../website/player-app.css')
+ ]);
+ assert.match(office,/const OFFICE_PAGE_SIZE=10;/);
+ assert.match(office,/const listPages=\{hub:0,station:0\}/);
+ assert.match(office,/items\.slice\(first,first\+OFFICE_PAGE_SIZE\)/);
+ assert.match(office,/const pages=Math\.ceil\(items\.length\/OFFICE_PAGE_SIZE\)/);
+ assert.match(office,/Math\.min\(Math\.max\(0,listPages\[type\]\),pages-1\)/);
+ assert.match(office,/previous\.disabled=page===0;next\.disabled=page===pages-1/);
+ assert.match(office,/action==='page'/);
+ assert.match(office,/id="office-hub-pagination"/);
+ assert.match(office,/id="office-station-pagination"/);
+ assert.match(css,/\.airport-office-list-row\{display:grid/);
+ assert.match(css,/\.airport-office-page-caption/);
 });
