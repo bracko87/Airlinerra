@@ -138,7 +138,7 @@ export function createAircraftLibrary({doc,getReader}={}){
   group.append(element('h3','','Aircraft in game'));
   const usage=element('div','library-fleet-total');
   const count=Number.isSafeInteger(a.fleetInUse)&&a.fleetInUse>=0?a.fleetInUse:null;
-  usage.append(element('span','','Currently in use'),element('strong','',count===null?'—':format(count)));
+  usage.append(element('span','','Currently in use'),element('span','library-fleet-count',count===null?'—':format(count)));
   group.append(usage,element('h4','library-fleet-title','Top 3 airlines by quantity'));
   if(!Array.isArray(a.topAirlines)||a.topAirlines.length===0){
    group.append(element('p','library-fleet-empty',
@@ -202,9 +202,7 @@ export function createAircraftLibrary({doc,getReader}={}){
   }
   hero.append(image,highlights);
   sheet.append(header,hero);
-  if(a.readinessGate!=='PROVISIONAL_DATA_ONLY')
-   sheet.append(element('p','library-disclaimer',
-    'Operating restriction: '+(a.holdReason||a.readinessGate)+'. This catalog entry does not grant flight clearance.'));
+  // The route/game readiness gate is enforced server-side, not printed as a technical error on this page.
   // Evidence and qualification details remain available in the specification panels below.
   const groups=element('div','library-profile-groups');
   groups.append(
