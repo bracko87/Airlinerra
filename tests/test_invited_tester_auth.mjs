@@ -123,3 +123,66 @@ test('real localhost Auth uses localhost for callback requests, never a producti
    redirectTo:'http://localhost:5188/account.html?screen=reset'
  }}]);
 });
+
+
+test('verified manager can edit only personal Auth metadata with input validation',async()=>{
+ const id='11111111-1111-4111-8111-111111111111';
+ let manager={id,email:'pilot@example.com',email_confirmed_at:'2026-11-05T10:00:00Z',
+  user_metadata:{display_name:'Old Pilot'}};
+ const calls=[];
+ const tester=await createInvitedTesterAuth({...config(),loadSdk:async()=>({
+  createClient:()=>({auth:{
+   getUser:async()=>({data:{user:manager},error:null}),
+   updateUser:async payload=>{
+    calls.push(payload);
+    manager={...manager,user_metadata:{...manager.user_metadata,...payload.data}};
+    return {data:{user:manager},error:null};
+   }
+  }})
+ })});
+ const next=await tester.updateManagerProfile({
+  displayName:'  New Pilot  ',hometown:' Novi Sad ',country:' Serbia '
+ });
+ assert.equal(next.user_metadata.display_name,'New Pilot');
+ assert.equal(next.user_metadata.hometown,'Novi Sad');
+ assert.equal(next.user_metadata.country,'Serbia');
+ assert.deepEqual(calls,[{data:{display_name:'New Pilot',hometown:'Novi Sad',country:'Serbia'}}]);
+ for(const details of [
+  {displayName:'X',hometown:'Berlin',country:'Germany'},
+  {displayName:'Valid Pilot',hometown:'<script>',country:''},
+  {displayName:'Valid Pilot',hometown:'Clean',country:'A'.repeat(81)},
+  {displayName:'Valid Pilot',hometown:'Line\nBreak',country:'Germany'}
+ ])await assert.rejects(tester.updateManagerProfile(details));
+ assert.equal(calls.length,1,'invalid profile edits must never reach the provider');
+ manager={...manager,email_confirmed_at:null};
+ await assert.rejects(tester.updateManagerProfile({displayName:'Valid Pilot'}),/Verified account required/);
+ assert.equal(calls.length,1);
+});
+test('authenticated airline logo upsert replaces previous content at the same private file path',async()=>{
+ const userId='11111111-1111-4111-8111-111111111111';
+ const airlineId='22222222-2222-4222-8222-222222222222';
+ const calls=[];
+ const auth=await createInvitedTesterAuth({...config(),loadSdk:async()=>({
+  createClient:()=>({
+   auth:{getUser:async()=>({data:{user:{id:userId,email_confirmed_at:'2026-11-05T10:00:00Z'}},error:null})},
+   storage:{from:bucket=>{
+    assert.equal(bucket,'airlinerra-airline-logos');
+    return {
+     upload:async(path,blob,options)=>{calls.push({path,options,blob});return {error:null};},
+     createSignedUrl:async(path,seconds)=>({data:{signedUrl:'https://sample.test/logo'},error:null})
+    };
+   }}
+  })
+ })});
+ const file=new Blob(['new-logo'],{type:'image/webp'});
+ for(let i=0;i<2;i++)assert.equal(await auth.uploadAirlineLogo({airlineId,blob:file}),
+  userId+'/'+airlineId+'/logo.webp');
+ assert.equal(calls.length,2);
+ assert.equal(calls[0].path,calls[1].path);
+ assert.equal(calls[0].options.upsert,true);
+ assert.equal(calls[0].options.contentType,'image/webp');
+ assert.ok(Number(calls[0].options.cacheControl)<=60);
+ await assert.rejects(auth.uploadAirlineLogo({airlineId,blob:new Blob(['bad'],{type:'image/png'})}),
+  /Invalid airline logo/);
+ assert.equal(calls.length,2);
+});
