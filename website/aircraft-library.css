@@ -77,9 +77,21 @@
 .library-profile-action{display:inline-flex;align-items:center;background:#fff;border:1px solid #d2dfed;border-radius:7px;padding:8px 13px;color:#184167;font-weight:750;font-size:12px;cursor:default;user-select:none}
 .library-profile-hero{align-items:stretch}
 .library-profile-image{height:320px;min-height:0;max-height:320px;padding:0;border:1px solid #dce6f1}
-.library-profile-aircraft-photo{width:100%;height:100%;max-height:100%;object-fit:cover;object-position:center bottom}
+.library-profile-aircraft-photo{width:100%;height:100%;max-height:100%;object-fit:cover;object-position:center 94%;transform:translateY(6px) scale(.90);transform-origin:center center}
 .library-profile-highlights{height:320px;grid-template-rows:repeat(4,minmax(0,1fr));align-items:stretch}
 .library-profile-highlight{padding:7px 12px;min-height:0}
 .library-profile-group{background:#fff}
 .library-profile-highlight{background:#fff}
 @media(max-width:700px){.aircraft-profile-navigation{align-items:flex-start}.library-profile-actions{justify-content:flex-start}.library-profile-image{height:280px;min-height:0;max-height:280px}.library-profile-highlights{height:auto;grid-template-rows:repeat(4,minmax(70px,auto))}}
+
+/* Live aircraft usage card: compact database-backed totals and ranked airline operators. */
+.library-fleet-total{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:10px 0 12px;border-bottom:1px solid #eaf0f7}
+.library-fleet-total span{font-size:12px;color:#61788f}
+.library-fleet-total strong{font-size:21px;font-weight:850;color:#113a65;font-variant-numeric:tabular-nums}
+.library-fleet-title{margin:13px 0 6px;color:#173d60;font-size:12px;font-weight:800}
+.library-fleet-operators{margin:0;padding-left:22px}
+.library-fleet-operator{padding:9px 0;border-bottom:1px solid #edf2f7;font-size:12px;color:#173d60}
+.library-fleet-operator:last-child{border-bottom:0}
+.library-fleet-operator::marker{color:#61788f;font-weight:700}
+.library-fleet-operator strong{float:right;margin-left:12px;font-variant-numeric:tabular-nums}
+.library-fleet-empty{color:#69819a;margin:10px 0;font-size:12px}
