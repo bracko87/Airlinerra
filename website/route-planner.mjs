@@ -285,8 +285,8 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   const chosen=timeline.events.filter(x=>x.proposed);
   const stands=[...new Set(chosen.map(x=>x.departureStand||'unknown'))];
   const label=stands.length===1?
-   (stands[0]==='terminal'?'Terminal (previous arrival)':
-    stands[0]==='remote'?'Remote stand (previous arrival)':'Unverified — no confirmed previous stand'):
+   (stands[0]==='terminal'?'Terminal (previous planned arrival)':
+    stands[0]==='remote'?'Remote stand (previous planned arrival)':'Unverified — no confirmed previous stand'):
    stands.length>1?'Different or unverified by weekday':'No flight days selected';
   message('route-departure-stand-derived',label);
   for(let day=0;day<7;day++){
