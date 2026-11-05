@@ -463,6 +463,32 @@ async function loadRealOnboarding(){
   status.textContent='Unable to load World 1 airline setup. Please select Retry.';
  }
 }
+async function loadManageAirlineLogo(){
+ const image=doc.getElementById('manage-airline-logo-preview');
+ const placeholder=doc.getElementById('manage-airline-logo-placeholder');
+ if(!image||!placeholder)return;
+ const id=currentAirline?.id,serial=++manageLogoRequest;
+ if(!id||!auth?.getAirlineLogoUrl){
+  image.hidden=true;image.removeAttribute('src');placeholder.hidden=false;
+  placeholder.textContent='No registered airline logo available';return;
+ }
+ try{
+  const url=await auth.getAirlineLogoUrl(id);
+  if(serial!==manageLogoRequest||currentAirline?.id!==id||manageLogoBlob)return;
+  if(url){image.src=url;image.hidden=false;placeholder.hidden=true;}
+  else{image.hidden=true;image.removeAttribute('src');placeholder.hidden=false;placeholder.textContent='No logo uploaded';}
+ }catch{
+  if(serial===manageLogoRequest){image.hidden=true;placeholder.hidden=false;placeholder.textContent='Logo preview unavailable';}
+ }
+}
+function clearManageLogoSelection(){
+ if(manageLogoPreviewUrl){URL.revokeObjectURL(manageLogoPreviewUrl);manageLogoPreviewUrl=null;}
+ manageLogoBlob=null;
+ const field=doc.getElementById('manage-airline-logo-file');
+ if(field)field.value='';
+ const button=doc.getElementById('manage-airline-logo-save');
+ if(button)button.disabled=true;
+}
 async function prepareLogo(file){
  if(!['image/png','image/jpeg','image/webp'].includes(file?.type)||file.size>6_000_000)
   throw Error('Choose a PNG, JPG or WebP image smaller than 6 MB.');
