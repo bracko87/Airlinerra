@@ -33,11 +33,19 @@ const picker=(side,title)=>'<fieldset class="route-planner-airport"><legend>'+ti
  '<p id="route-'+side+'-count" class="hint" role="status">Choose a country or search all approved airports.</p>'+
  '<div id="route-'+side+'-summary" class="route-selection-summary">Select an airport.</div></fieldset>';
 const dayNames=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
-const dayControl=(label,i)=>
- '<div class="route-week-day"><label class="route-week-day-label" for="route-day-'+i+'">'+label+'</label>'+
- '<label class="route-week-check"><input type="checkbox" data-route-day="'+i+'" id="route-day-'+i+'">'+
- '<span>Fly</span></label><input type="time" data-route-time="'+i+'" aria-label="'+label+
- ' departure time" value="09:00" disabled></div>';
+const dayShort=['Mo','Tu','We','Th','Fr','Sa','Su'];
+const weekRow=(label,render)=>'<div class="route-week-row-label">'+label+'</div>'+dayNames.map((day,i)=>
+ '<div class="route-week-cell">'+render(day,i)+'</div>').join('');
+const weekTable=()=>'<div class="route-week-scroll"><div class="route-week-grid" role="group" aria-label="Weekly flight assignments">'+
+ weekRow('Day',day=>'<span class="route-week-heading">'+day+'</span>')+
+ weekRow('Fly',(_,i)=>'<input type="checkbox" data-route-day="'+i+'" id="route-day-'+i+'" aria-label="Fly on '+dayNames[i]+'">')+
+ weekRow('Departure',(_,i)=>'<input type="time" data-route-time="'+i+'" value="09:00" disabled aria-label="'+dayNames[i]+' departure time">')+
+ weekRow('Estimated arrival',(_,i)=>'<output id="route-arrival-'+i+'" class="route-week-estimate">Pending</output>')+
+ weekRow('Slot availability',()=>'<span class="route-week-pending">Unverified</span>')+
+ '</div></div>';
+const routeSetupField=(id,label,input)=>'<label class="route-setup-field" for="'+id+'"><span>'+label+'</span>'+input+'</label>';
+const optionalFare=(id,label)=>routeSetupField(id,label,
+ '<div class="route-fare-input"><span>$</span><input id="'+id+'" type="number" min="0" max="100000" step="1" inputmode="decimal" placeholder="Not set"></div>');
 const routeCheckDetails =
   '<p class="hint">This is a factual preview, not a departure authorization. Unknown or unconnected checks never count as passed.</p>'+
   '<div class="route-check-grid">'+
@@ -74,17 +82,40 @@ export function routePlannerMarkup(){
    '<div class="route-map-facts"><h3>Route information and limitations</h3>'+routeCheckDetails+'</div>')+
  '</div>'+
  section('STEP 2','Aircraft and weekly departures',
-  '<p class="hint">Choose an aircraft and the weekday and local departure time for each flight. A schedule saved here is only a browser draft, never a reserved slot.</p>'+
-  '<div class="route-aircraft-choice">'+field('route-aircraft','Aircraft for this flight',
-   '<select id="route-aircraft"><option value="">No available owned aircraft (fleet not connected)</option></select>')+
-  '<p id="route-aircraft-feedback" class="hint">Aircraft ownership and tail-specific assignments must be connected before any flight can be activated.</p></div>'+
-  '<div class="route-week-grid" role="group" aria-label="Weekly departure days and local times">'+
-  dayNames.map(dayControl).join('')+'</div>'+
+  '<div class="route-step2-top">'+
+   routeSetupField('route-aircraft','Aircraft','<select id="route-aircraft"><option value="">Choose aircraft</option></select>')+
+   routeSetupField('route-departure-stand','Departure boarding','<select id="route-departure-stand"><option value="terminal">Terminal</option><option value="remote">Remote stand</option></select>')+
+   routeSetupField('route-arrival-stand','Arrival boarding','<select id="route-arrival-stand"><option value="terminal">Terminal</option><option value="remote">Remote stand</option></select>')+
+   routeSetupField('route-turnaround','Target turnaround (minutes)','<input id="route-turnaround" type="number" min="45" max="360" step="15" value="45">')+
+  '</div>'+
+  '<p class="route-subtle-note" id="route-aircraft-feedback">Aircraft availability is not connected.</p>'+
+  weekTable()+
   '<div class="route-week-footer"><span id="route-flights" class="route-week-count">0 departures/week</span>'+
-  '<p class="hint">Departure times use the origin airport’s local time; timezone conflicts and arrival slots require server validation.</p></div>'+
-  '<div class="workspace-actions"><button type="button" id="route-plan-save" class="primary">Save flight schedule draft</button>'+
-  '<button type="button" class="secondary" data-workspace-go="route-list">My routes</button></div>'+
-  '<p id="route-plan-status" class="hint" role="status"></p>'+
+  '<span>Origin local time · times and stands require verification</span></div>'+
+  '<div class="route-flight-calculations">'+
+   '<div><span>Aircraft cruise speed</span><strong id="route-cruise-speed">Pending verified data</strong></div>'+
+   '<div><span>Estimated airborne time</span><strong id="route-airborne-time">Pending verified performance</strong></div>'+
+   '<div><span>Required minimum turnaround</span><strong id="route-min-turnaround">Unverified · 45 min planning floor</strong></div>'+
+   '<div><span>Arrival / rotation checks</span><strong id="route-rotation-check">Pending aircraft and slot rules</strong></div>'+
+  '</div>')+
+ section('STEP 3','Ticket prices and onboard services',
+  '<div class="route-pricing-grid">'+
+   optionalFare('route-fare-economy','Economy fare')+
+   optionalFare('route-fare-premium','Premium Economy fare')+
+   optionalFare('route-fare-business','Business fare')+
+   optionalFare('route-fare-first','First Class fare')+
+  '</div>'+
+  '<div class="route-service-grid">'+
+   routeSetupField('route-onboard-service','Onboard service','<select id="route-onboard-service"><option value="standard">Standard</option><option value="basic">Basic</option><option value="enhanced">Enhanced</option></select>')+
+   routeSetupField('route-baggage-service','Baggage package','<select id="route-baggage-service"><option value="standard">Standard</option><option value="hand-only">Hand baggage only</option><option value="checked">Checked baggage included</option></select>')+
+   routeSetupField('route-cargo-service','Cargo on this flight','<select id="route-cargo-service"><option value="none">No cargo</option><option value="requested">Request belly cargo (unverified)</option></select>')+
+  '</div>'+
+  '<p class="route-subtle-note">Draft settings only. Pricing, cargo capacity and services are not yet operationally enforced.</p>'+
+  '<div class="workspace-actions route-apply-actions">'+
+   '<button type="button" id="route-plan-save" class="primary">Apply route draft</button>'+
+   '<button type="button" id="route-plan-new" class="secondary">Create new route</button>'+
+   '<button type="button" class="route-text-action" data-workspace-go="route-list">My routes</button></div>'+
+  '<p id="route-plan-status" class="hint" role="status" aria-live="polite"></p>'+
   '<div id="route-plan-review" class="workspace-detail"></div>')+
  '';
 }
