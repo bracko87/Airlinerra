@@ -884,3 +884,54 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
 :root[data-ui-theme="dark"] .route-week-day input[type=time],:root[data-ui-theme="dark"] .route-aircraft-choice select{background:#192f45;color:#eaf3ff;border-color:#3b526b}
 @media(max-width:1000px){.route-planner-first-step{grid-template-columns:minmax(0,1fr)}.route-week-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(max-width:680px){.route-week-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.route-check-grid{grid-template-columns:1fr}.route-planner-first-step .route-map-canvas{height:300px}}
+
+
+/* Search once, select once: real-image flags in fully custom accessible menus.
+   Native selects are retained as state holders for the approved airport picker. */
+.route-native-country,.route-native-airport{display:none!important}
+.route-country-picker,.route-airport-combobox{position:relative;min-width:0}
+.route-country-trigger{display:flex;align-items:center;gap:11px;width:100%;min-height:42px;
+ padding:9px 12px;background:#f8fafc;border:1px solid #cbd9e7;border-radius:9px;
+ color:var(--navy);font-size:12px;text-align:left;cursor:pointer}
+.route-country-trigger>span:nth-last-child(2){flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.route-country-trigger .route-chevron{font-size:19px;color:var(--navy);line-height:1}
+.route-country-trigger .route-country-flag{position:static;transform:none;display:inline-block;width:20px;height:14px;flex:none;object-fit:cover;border-radius:2px}
+.route-country-trigger .route-country-flag[hidden]{display:none!important}
+.route-country-list,.route-airport-suggestions{position:absolute;left:0;right:0;top:calc(100% + 4px);
+ z-index:45;max-height:275px;overflow-y:auto;overscroll-behavior:contain;
+ background:#fff;border:1px solid #b7cce3;border-radius:9px;box-shadow:0 12px 30px rgba(5,29,62,.16);padding:5px}
+.route-country-list[hidden],.route-airport-suggestions[hidden]{display:none!important}
+.route-country-option,.route-airport-option{display:flex;gap:10px;align-items:center;text-align:left;
+ border:0!important;border-radius:6px;background:transparent!important;color:var(--navy);
+ width:100%;min-height:39px;padding:8px 10px;cursor:pointer;font-size:12px;
+ box-shadow:none!important;font-weight:500}
+.route-country-option .route-summary-flag,.route-airport-option .route-summary-flag{position:static;
+ flex:0 0 20px;width:20px;height:13px;object-fit:cover}
+.route-country-option:hover,.route-airport-option:hover,
+.route-country-option:focus-visible,.route-airport-option:focus-visible{background:#edf3fb!important;outline:2px solid #b3cee9}
+.route-country-option[aria-selected="true"]{color:var(--orange);font-weight:700}
+.route-country-option>span,.route-airport-option>span{overflow-wrap:anywhere;line-height:1.4}
+.route-airport-combobox input[type=search]{width:100%;box-sizing:border-box;padding:9px 12px;
+ border:1px solid #cbd9e7;border-radius:9px;background:#f8fafc;color:var(--navy);min-height:42px}
+.route-airport-combobox input[type=search]:focus,.route-country-trigger:focus-visible{
+ outline:2px solid #6ba3d4;outline-offset:1px}
+.route-planner-first-step .route-map-canvas{height:340px;background:#e1e5e9}
+.route-map-facts{border-top:1px solid var(--line);margin-top:16px;padding-top:14px}
+.route-map-facts h3{font-size:15px;color:var(--navy);margin:0 0 5px}
+.route-map-facts>.hint{margin:0 0 12px;font-size:11px}
+.route-map-facts .route-check-grid{margin:6px 0 10px;gap:0 17px}
+.route-map-facts .route-check-item{padding:10px 0;align-items:start;gap:8px;display:grid}
+.route-map-facts .route-check-item>span{max-width:none;font-size:11px}
+.route-map-facts .route-check-item>strong{text-align:left;font-size:12px;font-weight:600;line-height:1.45}
+.route-map-facts .route-check-message{font-size:11px;line-height:1.5;margin-top:12px}
+:root[data-ui-theme="dark"] .route-country-trigger,
+:root[data-ui-theme="dark"] .route-airport-combobox input[type=search],
+:root[data-ui-theme="dark"] .route-country-list,
+:root[data-ui-theme="dark"] .route-airport-suggestions{background:#192f45;color:#e8f2fb;border-color:#3b526b}
+:root[data-ui-theme="dark"] .route-country-option,
+:root[data-ui-theme="dark"] .route-airport-option,
+:root[data-ui-theme="dark"] .route-map-facts h3{color:#e8f2fb}
+:root[data-ui-theme="dark"] .route-country-option:hover,
+:root[data-ui-theme="dark"] .route-airport-option:hover{background:#304865!important}
+@media(max-width:680px){.route-map-facts .route-check-grid{grid-template-columns:1fr}
+ .route-planner-first-step .route-map-canvas{height:290px}}
