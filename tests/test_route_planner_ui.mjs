@@ -166,3 +166,61 @@ test('route planning has two steps, stacked airport lookup, real flag indicators
  assert.match(ui,/Aircraft, crew, airport slots and traffic rights require verification/);
  assert.match(work,/createRoutePlanner/);
 });
+
+
+test('country-free airport search returns approved airports across multiple countries and selects from one input',async()=>{
+ const original=globalThis.Option;globalThis.Option=FakeOption;
+ try{
+  const country=new FakeControl(),search=new FakeControl(),airportSelect=new FakeControl();
+  const results=[],calls=[],selected=[];
+  const picker=createAirportCountryPicker({country,search,airport:airportSelect,
+   getReader:()=>({airports:async({countryIso,search:q,offset})=>{
+    calls.push({countryIso,q,offset});
+    return {countryIso:'',airports:[
+     {...airport('OURAIRPORTS:2155','Brussels Airport','EBBR','BE'),latitude:50.901402,longitude:4.48444},
+     {...airport('OURAIRPORTS:111','Brussels South Airport','EBCI','BE'),latitude:50.459,longitude:4.453},
+     {...airport('OURAIRPORTS:4610','Belgrade Brussels Example','LYXX','RS'),latitude:44.8,longitude:20.3}
+    ],nextOffset:null};
+   }}),
+   onResults:(list,ready)=>{if(ready)results.push(list)},
+   onSelect:choice=>selected.push(choice?.key||null)
+  });
+  country.value='';search.value='brus';await picker.load();
+  assert.equal(calls.length,1);
+  assert.deepEqual(calls[0],{countryIso:'',q:'brus',offset:0});
+  assert.equal(picker.getAirports().length,3);
+  assert.equal(results.at(-1).length,3);
+  assert.equal(picker.choose('OURAIRPORTS:2155'),true);
+  assert.equal(picker.selected().name,'Brussels Airport');
+  assert.equal(search.value,'Brussels Airport');
+  assert.equal(selected.at(-1),'OURAIRPORTS:2155');
+ }finally{globalThis.Option=original}
+});
+test('airports now use one visible autocomplete, actual-image country flags and route facts below map',async()=>{
+ const [src,style,map]=await Promise.all([
+  read('../website/route-planner.mjs'),read('../website/player-app.css'),read('../website/route-map.mjs')
+ ]);
+ const ui=routePlannerMarkup();
+ for(const side of ['from','to']){
+  assert.match(ui,new RegExp('id="route-'+side+'-country-list"'));
+  assert.match(ui,new RegExp('id="route-'+side+'-suggestions"'));
+  assert.match(ui,new RegExp('id="route-'+side+'-search"'));
+  assert.match(ui,new RegExp('id="route-'+side+'-airport" class="route-native-airport"'));
+  assert.match(ui,new RegExp('id="route-'+side+'-country" tabindex="-1"'));
+ }
+ assert.match(src,/button\.dataset\.routeCountryChoice=side/);
+ assert.match(src,/flagcdn\.com\/w40/);
+ assert.match(src,/button\.dataset\.routeAirportKey=a\.key/);
+ assert.match(src,/onResults:\(results,ready\)=>renderSuggestions/);
+ assert.match(src,/p\?\.key===a\.key&&typeof p\.latitude==='number'/);
+ assert.match(src,/drawMap\(\);/);
+ const mapPos=ui.indexOf('route-map-canvas');
+ const detailsPos=ui.indexOf('Route information and limitations');
+ const schedulePos=ui.indexOf('STEP 2');
+ assert.ok(mapPos>=0&&detailsPos>mapPos&&schedulePos>detailsPos);
+ assert.match(style,/\.route-native-country,\.route-native-airport\{display:none!important\}/);
+ assert.match(style,/\.route-country-list,\.route-airport-suggestions\{position:absolute/);
+ assert.match(map,/WORLD_BORDER_LINES_50M/);
+ assert.match(map,/stroke:'#315c85'/);
+ assert.match(map,/stroke:'#ff6917'/);
+});
