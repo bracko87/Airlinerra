@@ -119,3 +119,50 @@ test('manager route page is coded and bundled, with valid map and no invented op
  assert.match(css,/route-planner-grid/);
  assert.doesNotMatch(view,/298 km|0h 47m|3,400 m|slot capacity.*high/i);
 });
+
+
+test('Panonian uses provisional PA prefix while real saved airline IATA codes take priority',async()=>{
+ const {flightPrefixFor,flightNumberFor,validLocalDeparture}=await import('../website/route-planner.mjs');
+ assert.deepEqual(flightPrefixFor({name:'Panonian',iataCode:null}),{prefix:'PA',provisional:true});
+ assert.deepEqual(flightPrefixFor({name:'Panonian',iataCode:'PN'}),{prefix:'PN',provisional:false});
+ assert.deepEqual(flightPrefixFor({name:'Other Air',iataCode:null}),{prefix:null,provisional:true});
+ assert.equal(flightNumberFor('PA','101'),'PA101');
+ assert.equal(flightNumberFor('PA','0001'),'PA0001');
+ for(const x of ['','A1B','00000','-2'])assert.equal(flightNumberFor('PA',x),null);
+ assert.equal(flightNumberFor(null,'101'),null);
+ assert.equal(validLocalDeparture('00:00'),true);
+ assert.equal(validLocalDeparture('23:59'),true);
+ assert.equal(validLocalDeparture('24:00'),false);
+});
+test('route planning has two steps, stacked airport lookup, real flag indicators and local weekday schedule',async()=>{
+ const [ui,css,picker,work]=await Promise.all([
+  read('../website/route-planner.mjs'),read('../website/player-app.css'),
+  read('../website/airport-country-picker.mjs'),read('../website/airline-workspace.mjs')
+ ]);
+ const view=routePlannerMarkup();
+ for(const id of ['route-number-prefix','route-prefix-note','route-plan-number',
+  'route-from-hub','route-to-hub','route-from-country-flag','route-to-country-flag',
+  'route-from-search','route-to-search','route-from-airport','route-to-airport',
+  'route-plan-preview','route-map-canvas','route-aircraft','route-flights',
+  'route-slot-check','route-traffic-rights','route-origin-demand','route-destination-demand',
+  'route-origin-restrictions','route-destination-restrictions','route-plan-save']){
+  assert.ok(view.includes('id="'+id+'"'),id);
+ }
+ for(let day=0;day<7;day++){
+  assert.ok(view.includes('data-route-day="'+day+'"'));
+  assert.ok(view.includes('data-route-time="'+day+'"'));
+ }
+ assert.ok(view.indexOf('route-number-prefix')<view.indexOf('route-from-hub'));
+ assert.ok(view.indexOf('route-from-hub')<view.indexOf('route-to-hub'));
+ assert.ok(view.indexOf('route-to-hub')<view.indexOf('route-map-canvas'));
+ assert.ok(view.indexOf('route-map-canvas')<view.indexOf('route-aircraft'));
+ assert.doesNotMatch(view,/AIRPORT OVERVIEW|ROUTE METRICS|PREPARE YOUR ROUTE/);
+ assert.match(css,/\.route-week-grid\{display:grid;grid-template-columns:repeat\(7/);
+ assert.match(css,/\.route-country-flag/);
+ assert.match(picker,/const choose=key=>/);
+ assert.match(ui,/reader\.airportProfile\(homeKey\)/);
+ assert.match(ui,/pickers\[side\]\.choose\(home\.key\)/);
+ assert.match(ui,/aircraftId:flightAircraft,status:'draft',operationallyVerified:false/);
+ assert.match(ui,/Aircraft, crew, airport slots and traffic rights require verification/);
+ assert.match(work,/createRoutePlanner/);
+});
