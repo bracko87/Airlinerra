@@ -8,6 +8,7 @@ on:
       - "website/aircraft-library.mjs"
       - "website/aircraft-library.css"
       - "tests/test_aircraft_live_usage.mjs"
+      - "tests/test_aircraft_library.mjs"
       - ".github/workflows/aircraft-profile-live-usage-ci.yml"
   workflow_dispatch:
 
@@ -27,5 +28,6 @@ jobs:
           node --check server/aircraft-library-query.mjs
           node --check website/aircraft-library.mjs
           node --check tests/test_aircraft_live_usage.mjs
+          node --check tests/test_aircraft_library.mjs
       - name: Test image framing, actual fleet usage and operator ranking
-        run: node --test tests/test_aircraft_live_usage.mjs
+        run: node --test tests/test_aircraft_live_usage.mjs tests/test_aircraft_library.mjs
