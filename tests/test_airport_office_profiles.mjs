@@ -63,3 +63,26 @@ test('headquarters, hubs, stations are distinct - with honest missing operationa
  for(const style of ['airport-office-headquarters','airport-office-cost-grid','airport-profile-facts','airport-flight-board'])
   assert.ok(styles.includes(style),style);
 });
+
+test('airport profile hides internal labels and places weather and country flag in header',async()=>{
+ const [html,office,styles]=await Promise.all([
+  read('../website/private-player-app.html'),
+  read('../website/airline-airports-office.mjs'),
+  read('../website/player-app.css')
+ ]);
+ assert.match(html,/class="airport-profile-back" data-office-action="back"/);
+ assert.match(html,/airport-profile-navline/);
+ assert.match(office,/id="airport-weather-summary-temperature"/);
+ assert.match(office,/id="airport-weather-summary-conditions"/);
+ assert.match(office,/id="airport-weather-summary-wind"/);
+ assert.match(office,/https:\/\/flagcdn\.com\/w40\//);
+ for(const label of ["['Name verification'","['Region'","['Game world'","['Catalog key'"])
+  assert.ok(!office.includes(label),label);
+ assert.ok(!office.includes('World 1 approved airport'));
+ assert.ok(!office.includes(' (source-reported; unverified)'));
+ assert.match(office,/\['Airport category',category\]/);
+ assert.match(office,/\['Time zone',tz\]/);
+ assert.match(office,/\['Elevation',elevation\]/);
+ assert.match(office,/Forecast source: /);
+ assert.match(styles,/\.airport-profile-weather-summary/);
+});
