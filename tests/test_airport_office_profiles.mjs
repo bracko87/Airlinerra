@@ -177,8 +177,10 @@ test('airport statistics tabs show airline lists, daily date groups, destination
   {route:'Departure · Barcelona'}
  ]);
  assert.deepEqual(destinations,['Barcelona','Vienna']);
- for(const heading of ['Airlines','Statistics','Destinations','Cargo'])
+ for(const heading of ['Airlines','Destinations','Cargo'])
   assert.ok(source.includes("'"+heading+"'"),heading);
+ assert.doesNotMatch(source,/\['statistics','Statistics'\]/);
+ assert.doesNotMatch(source,/function showStatistics\(/);
  assert.match(source,/createAirportNetworkTabs/);
  assert.match(source,/airport-network-destination-select/);
  assert.match(source,/No airline cargo movements have been recorded/);
@@ -220,4 +222,38 @@ test('only a signed authenticated company-logo URL replaces the illustrative moc
  assert.match(office,/networkTabs\.setOwnerLogo\(name,ownLogoUrl\)/);
  assert.match(operations,/createAirportOffice\(\{doc,identity,session,goTo,getAirlineLogoUrl\}\)/);
  assert.match(player,/getAirlineLogoUrl:airlineId=>auth\?\.getAirlineLogoUrl/);
+});
+
+test('white framed airport logos and unboxed origin are consistent across flight board and destinations',async()=>{
+ const [styles,source]=await Promise.all([
+  read('../website/player-app.css'),read('../website/airport-network-tabs.mjs')
+ ]);
+ assert.match(styles,/\.airport-airline-logo-crop\{[^}]*border:1px solid #cedae8[^}]*background:#fff/);
+ assert.match(source,/fill:'#fff',rx:7/);
+ assert.match(source,/el\(doc,'img','airport-airline-logo-actual'\)/);
+ assert.match(source,/el\(doc,'span','airport-network-origin-name',airport\?\.name/);
+ assert.doesNotMatch(source,/el\(doc,'strong','',airport\?\.name/);
+ assert.match(styles,/\.airport-network-origin \.airport-network-origin-name\{[^}]*background:transparent;border:0;padding:0/);
+});
+test('airlines table has headers and computes honest example weekly movement shares',async()=>{
+ const [source,styles]=await Promise.all([
+  read('../website/airport-network-tabs.mjs'),read('../website/player-app.css')
+ ]);
+ const {summarizePreviewAirlineOperations}=await import('../website/airport-network-tabs.mjs');
+ const {DEMO_AIRPORT_FLIGHTS}=await import('../website/airline-airports-office.mjs');
+ const summary=summarizePreviewAirlineOperations(DEMO_AIRPORT_FLIGHTS);
+ assert.equal(summary.length,9);
+ assert.equal(summary.reduce((n,row)=>n+row.weeklyFlights,0),25);
+ const panonian=summary.find(row=>row.name==='Panonian');
+ assert.deepEqual(panonian,{
+  name:'Panonian',weeklyFlights:6,dailyAverage:6/7,movementSharePercent:24
+ });
+ assert.equal(summary.reduce((n,row)=>n+row.movementSharePercent,0),100);
+ assert.deepEqual(summarizePreviewAirlineOperations([]),[]);
+ for(const heading of ['Airline','Logo','Flights / day','Flights / week','Share of flights'])
+  assert.ok(source.includes("'"+heading+"'"),heading);
+ assert.match(source,/airport-network-airline-head/);
+ assert.match(styles,/\.airport-network-airline-head,.airport-network-airline-row\{display:grid;grid-template-columns:170px 145px repeat\(3/);
+ assert.match(source,/sample flight movements only, not passenger market share/);
+ assert.doesNotMatch(source,/\['statistics','Statistics'\]/);
 });
