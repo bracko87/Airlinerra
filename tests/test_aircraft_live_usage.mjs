@@ -48,6 +48,8 @@ test('UI shows usage totals and three operators, with no crossed-out qualificati
  assert.match(js,/No airlines currently use this aircraft configuration/);
  assert.doesNotMatch(js,/Source & operational qualifications/);
  assert.doesNotMatch(js,/Classification evidence/);
- assert.match(css,/scale\(\.90\)/);
- assert.match(css,/object-position:center 94%/);
+ assert.match(css,/height:380px;min-height:380px;max-height:380px/);
+ assert.match(css,/object-fit:contain/);
+ assert.match(css,/object-position:center center;transform:none/);
+ assert.doesNotMatch(css,/object-fit:cover/);
 });
