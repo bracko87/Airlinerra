@@ -99,7 +99,7 @@ test('settings and planning work remain local drafts until server-side execution
  assert.match(workspace,/No live route was created/);
  assert.match(workspace,/No flight was scheduled with the server/);
  assert.match(workspace,/No aircraft layout was changed/);
- assert.match(workspace,/No authenticated aircraft-inventory endpoint/);
+ assert.match(workspace,/live owned-aircraft inventory, acquisition and scheduling engines are not connected/);
  assert.match(workspace,/role="status"/);
  assert.match(workspace,/id="schedule-hours"/);
  assert.match(workspace,/for\(let hour=0;hour<24;hour\+\+\)/);
