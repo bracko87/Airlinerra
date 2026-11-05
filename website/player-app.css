@@ -935,3 +935,30 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
 :root[data-ui-theme="dark"] .route-airport-option:hover{background:#304865!important}
 @media(max-width:680px){.route-map-facts .route-check-grid{grid-template-columns:1fr}
  .route-planner-first-step .route-map-canvas{height:290px}}
+
+
+/* Give the full-width timetable its own clear separation from both step-one panels. */
+#workspace-routes>.route-planner-first-step+.route-planner-panel{
+ margin-top:28px;
+}
+#workspace-routes>.route-planner-panel+.route-planner-panel{
+ margin-top:24px;
+}
+#workspace-routes>.route-planner-first-step{
+ row-gap:22px;column-gap:20px;
+}
+#workspace-routes>.route-planner-first-step>.route-planner-panel{
+ min-width:0;
+}
+.fleet-test-aircraft{display:grid;gap:10px;margin:15px 0 10px}
+.fleet-test-aircraft-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+ padding:12px 14px;border:1px solid var(--line);border-radius:9px;background:#f8fbff;
+ color:var(--navy);font-size:12px}
+.fleet-test-aircraft-row strong{font-size:13px;font-weight:650}
+.fleet-test-aircraft-row span{font-variant-numeric:tabular-nums}
+.fleet-test-aircraft-row small{color:var(--muted);margin-left:auto;font-size:11px}
+:root[data-ui-theme="dark"] .fleet-test-aircraft-row{background:#20364e}
+@media(max-width:680px){
+ #workspace-routes>.route-planner-first-step+.route-planner-panel{margin-top:24px}
+ .fleet-test-aircraft-row small{flex-basis:100%;margin-left:0}
+}
