@@ -48,7 +48,7 @@ test('headquarters, hubs, stations are distinct - with honest missing operationa
  ]);
  for(const heading of ['Registered headquarters','My hubs','My stations','Airport profile',
   'Runways, terminals and slots','Passenger and cargo demand','Airlines and airport presence',
-  'Departures and arrivals','Airlines, statistics and destinations']){
+  'Departures and arrivals','Airlines, flights and destinations']){
   assert.ok(office.includes(heading),heading);
  }
  for(const feature of ['runway','slots','Passenger demand','Cargo demand',
@@ -161,13 +161,13 @@ test('flight board has correct six-column order with cropped mock airline logos'
   read('../website/dev-scripts/invited-overlay.mjs')
  ]);
  assert.match(office,/<span>Time<\/span><span>Flight<\/span><span>Airline<\/span><span>Logo<\/span><span>Origin \/ destination<\/span><span>Status<\/span>/);
- assert.match(office,/createAirportAirlineLogo\(doc,flight.airline\)/);
+ assert.match(office,/createAirportAirlineLogo\(doc,flight.airline,live.airline/);
  assert.match(office,/route:'Departure · Barcelona'/);
  assert.match(styles,/\.airport-airline-logo-crop\{[^}]*overflow:hidden/);
  assert.match(styles,/\.airport-flight-columns>span:last-child/);
  assert.match(builder,/'airport-network-tabs.mjs'/);
 });
-test('airport network tabs present airline cards, daily statistics, destination dropdown and cargo data without pretending to be live',async()=>{
+test('airport statistics tabs show airline lists, daily date groups, destination dropdown and cargo data without pretending to be live',async()=>{
  const [source,css]=await Promise.all([
   read('../website/airport-network-tabs.mjs'),read('../website/player-app.css')
  ]);
@@ -186,4 +186,38 @@ test('airport network tabs present airline cards, daily statistics, destination 
  assert.match(source,/role','tab'/);
  assert.match(css,/\.airport-network-tabs/);
  assert.match(css,/data-columns="4"/);
+});
+
+test('airport statistics use five simple bars, small nearby links and subtle text tabs',async()=>{
+ const [office,css,net]=await Promise.all([
+  read('../website/airline-airports-office.mjs'),
+  read('../website/player-app.css'),
+  read('../website/airport-network-tabs.mjs')
+ ]);
+ assert.match(office,/className='airport-demand-bars'/);
+ assert.match(office,/airport-demand-segment/);
+ assert.match(office,/setAttribute\('aria-label',label\+': group '/);
+ assert.ok(!office.includes("'Game airport','airport-nearby-tag'"));
+ assert.match(office,/AIRPORT STATISTICS/);
+ assert.match(css,/\.airport-demand-segment\.is-active\{background:#0b3d80/);
+ assert.match(css,/\.airport-network-tab\[aria-selected="true"\]\{background:transparent;border-bottom-color:var\(--orange\)/);
+ assert.match(css,/\.airport-network-airline-row/);
+ assert.match(css,/\.airport-network-day-title/);
+ assert.match(net,/airport-network-airline-list/);
+ assert.match(net,/airport-network-day-empty/);
+ assert.match(net,/renderDayGroups\(destination\)/);
+});
+test('only a signed authenticated company-logo URL replaces the illustrative mock crop',async()=>{
+ const [tabs,office,operations,player]=await Promise.all([
+  read('../website/airport-network-tabs.mjs'),
+  read('../website/airline-airports-office.mjs'),
+  read('../website/airline-operations-center.mjs'),
+  read('../website/player-app.mjs')
+ ]);
+ assert.match(tabs,/verifiedLogoUrl\.startsWith\(signedPrefix\)/);
+ assert.match(tabs,/class.*airport-airline-logo-actual/);
+ assert.match(office,/getAirlineLogoUrl\(airline.id\)/);
+ assert.match(office,/networkTabs\.setOwnerLogo\(name,ownLogoUrl\)/);
+ assert.match(operations,/createAirportOffice\(\{doc,identity,session,goTo,getAirlineLogoUrl\}\)/);
+ assert.match(player,/getAirlineLogoUrl:airlineId=>auth\?\.getAirlineLogoUrl/);
 });
