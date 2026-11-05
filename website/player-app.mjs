@@ -84,6 +84,7 @@ function setManager(user){
   if(!operationsController){
     operationsController=createOperationsCenter({
       doc,identity:user.id,
+      getAirlineLogoUrl:airlineId=>auth?.getAirlineLogoUrl?.(airlineId)??Promise.resolve(null),
       session:(()=>{try{return window.sessionStorage}catch{return null}})(),
       goTo:view=>{window.history.replaceState({},'',playerViewUrl(view));navigateTo(view);}
     });
