@@ -4,6 +4,7 @@
  */
 import {createAirportCountryPicker,populateAirportCountries} from './airport-country-picker.mjs';
 import {renderAirportLocationMap} from './route-map.mjs';
+import {createAirportAirlineLogo,createAirportNetworkTabs} from './airport-network-tabs.mjs';
 const AIRPORT_KEY=/^(?:OURAIRPORTS:[1-9]\d{0,18}|FICTIONAL:fictional:[A-Z]{2}:[A-Z0-9]{2,8})$/;
 const currency=v=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(v);
 const safeLocalValue=(v)=>typeof v==='string'?v.trim():'';
@@ -93,7 +94,7 @@ export const DEMO_AIRPORT_FLIGHTS=Object.freeze([
  {time:'09:40',airline:'Danube Sky',flight:'DS 307',route:'Arrival · Athens',status:'Approaching'},
  {time:'10:55',airline:'Northwind Air',flight:'NW 511',route:'Departure · Copenhagen',status:'On time'},
  {time:'12:20',airline:'Blue Meridian',flight:'BM 082',route:'Arrival · Zurich',status:'On time'},
- {time:'13:45',airline:'Panonian',flight:'PN 205',route:'Departure · Rome',status:'Scheduled'},
+ {time:'13:45',airline:'Panonian',flight:'PN 205',route:'Departure · Barcelona',status:'Scheduled'},
  {time:'15:15',airline:'Cloudpath Aviation',flight:'CP 166',route:'Arrival · Madrid',status:'Scheduled'},
  {time:'17:05',airline:'Alpine Star',flight:'AS 730',route:'Departure · Munich',status:'Scheduled'},
  {time:'19:30',airline:'Eastline Air',flight:'EL 428',route:'Arrival · Istanbul',status:'Scheduled'}
@@ -202,21 +203,26 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
    '<div id="airport-profile-map" class="airport-location-map-canvas"></div></div></div>')+
    panel('AIRPORT INFRASTRUCTURE','Runways, terminals and slots',
     '<div id="airport-profile-infrastructure" class="airport-profile-facts"></div>')+
+   panel('LAND CONNECTIONS','Nearby airports within 100 km',
+    '<p class="hint">Straight-line distance, not driving distance. Only approved game airports are listed.</p>'+
+    '<div id="airport-nearby-airports" class="airport-nearby-list"></div>')+
    panel('AIRPORT WEATHER','Current conditions and forecast',
     '<div id="airport-profile-weather" class="airport-profile-facts"></div>'+
     '<p id="airport-profile-weather-credit" class="hint">Forecast data by MET Norway, CC BY 4.0. Flight delays not modelled yet.</p>')+
    panel('MARKET DEMAND','Passenger and cargo demand',
-    '<p class="hint">Demand percentages rank airports within World 1; annual outbound traffic is rounded from game baselines.</p>'+
+    '<p class="hint">Demand is shown in five traffic groups; annual outbound traffic is rounded from game baselines.</p>'+
     '<div id="airport-profile-demand" class="airport-profile-facts"></div>')+
    panel('AIRLINE ACTIVITY','Airlines and airport presence',
     '<div id="airport-profile-airlines" class="airport-profile-facts"></div>')+
    panel('FLIGHT BOARD','Departures and arrivals',
     '<p class="airport-flight-preview-notice">Fictional preview — 10 example flights. No real flight schedule or booking.</p>'+
-    '<div class="airport-flight-board"><div class="airport-flight-columns"><span>Time</span><span>Airline</span><span>Flight</span><span>Origin / destination</span><span>Status</span></div>'+
+    '<div class="airport-flight-board"><div class="airport-flight-columns"><span>Time</span><span>Flight</span><span>Airline</span><span>Logo</span><span>Origin / destination</span><span>Status</span></div>'+
     '<div id="airport-flight-preview-rows"></div></div>')+
-   panel('AIRPORT ROUTE NETWORK','Destinations and frequencies',
-    '<p class="hint">Connections, operating airlines, flight frequency and passenger load statistics will appear when verified flight scheduling is connected.</p>');
+   panel('AIRPORT NETWORK','Airlines, statistics and destinations',
+    '<div id="airport-network-tabs"></div>');
  }
+ const networkTabs=createAirportNetworkTabs({doc,host:$('airport-network-tabs'),
+  flights:DEMO_AIRPORT_FLIGHTS});
  const feedback=t=>{if($('office-feedback'))$('office-feedback').textContent=t};
  officePicker=createAirportCountryPicker({
   country:$('office-country'),search:$('office-search'),airport:$('office-result'),
@@ -329,6 +335,28 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
    ['Noise restrictions',p?simpleAirportNoise(p):fallback],
    ['Airport operational status','Not independently confirmed']
   ]);
+  const nearRoot=$('airport-nearby-airports');
+  if(nearRoot){
+   nearRoot.replaceChildren();
+   const nearby=p?.nearbyAirports;
+   if(Array.isArray(nearby)){
+    if(!nearby.length)nearRoot.append(createText(doc,'p',
+     'No other approved airports within 100 km.','hint'));
+    for(const near of nearby){
+     if(!near?.key||!near?.name||!knownNumber(near.distanceKm))continue;
+     const nameButton=button(doc,near.name,'nearby',near.key);
+     nameButton.className='airport-nearby-airport-link';
+     const info=doc.createElement('div');info.className='airport-nearby-identity';
+     info.append(nameButton);
+     if(near.fictional)info.append(createText(doc,'span','Game airport','airport-nearby-tag'));
+     const line=doc.createElement('div');line.className='airport-nearby-row';
+     line.append(info,createText(doc,'strong',num(near.distanceKm)+' km','airport-nearby-distance'));
+     nearRoot.append(line);
+     remember({key:near.key,name:near.name,code:near.iata||'',countryIso:null,municipality:''});
+    }
+   }else nearRoot.append(createText(doc,'p',loading?'Loading nearby airports...':
+    'Nearby airport data unavailable.','hint'));
+  }
   const wx=p?.weather||null;
   const weatherReady=Boolean(wx?.isCurrent&&knownNumber(wx?.temperatureC));
   const weatherName=code=>typeof code==='string'&&code?
@@ -366,15 +394,16 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
      doc.createTextNode(' · Flight delays are not simulated yet.'));
   }
   const demand=p?.demand;
+  const groupLabel=value=>Number.isInteger(value)&&value>=1&&value<=5?
+   'Group '+value+' of 5':fallback;
   profileField('airport-profile-demand',[
-   ['Passenger demand (0-100%)',Number.isInteger(demand?.passengerPercent)?
-    demand.passengerPercent+'%':fallback],
-   ['Cargo demand (0-100%)',Number.isInteger(demand?.cargoPercent)?
-    demand.cargoPercent+'%':fallback],
+   ['Passenger demand',groupLabel(demand?.passengerGroup)],
+   ['Cargo demand',groupLabel(demand?.cargoGroup)],
    ['Annual departing passengers',compactAnnual(demand?.annualDepartingPassengers)],
    ['Annual outbound cargo',typeof demand?.annualOutboundCargoTonnes==='number'?
     compactAnnual(demand.annualOutboundCargoTonnes)+' tonnes':fallback]
   ]);
+  networkTabs.setAirport({...airport,name,timezone:tz},p);
   const activity=p?.airportActivity;
   const shownCount=v=>Number.isInteger(v)&&v>=0?String(v):'—';
   profileField('airport-profile-airlines',[
@@ -390,11 +419,12 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
   root.replaceChildren();
   for(const flight of DEMO_AIRPORT_FLIGHTS){
    const line=doc.createElement('div');line.className='airport-flight-sample-row';
-   for(const field of ['time','airline','flight','route','status']){
-    const cell=doc.createElement('span');cell.textContent=flight[field];
-    if(field==='status')cell.className='airport-flight-sample-status';
-    line.append(cell);
-   }
+   line.append(createText(doc,'span',flight.time,'airport-flight-time'),
+    createText(doc,'span',flight.flight,'airport-flight-number'),
+    createText(doc,'span',flight.airline,'airport-flight-carrier'),
+    createAirportAirlineLogo(doc,flight.airline),
+    createText(doc,'span',flight.route,'airport-flight-route'),
+    createText(doc,'span',flight.status,'airport-flight-sample-status'));
    root.append(line);
   }
  }
@@ -427,7 +457,7 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
    if(!live.airline?.homeAirportKey){feedback('No verified home airport.');return}
    const a=known.get(live.airline.homeAirportKey);if(a)showProfile(a);return;
   }
-  if(action==='view'){
+  if(action==='view'||action==='nearby'){
    const a=known.get(target.dataset.airportKey);if(a)showProfile(a);return;
   }
   if(action==='remove'){
