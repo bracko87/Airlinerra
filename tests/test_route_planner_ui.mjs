@@ -308,3 +308,17 @@ test('My Routes is a plain one-line table with weekday indicators and a text edi
  assert.match(styles,/\.operations-route-directory-row\{/);
  assert.match(styles,/#player-main \.route-text-action,#player-main \.operations-route-open-text/);
 });
+
+
+test('saved legacy route ideas remain editable while applied drafts reset the form',async()=>{
+ const src=await read('../website/route-planner.mjs');
+ assert.match(src,/editingLegacyIndex=null/);
+ assert.match(src,/editingLegacyIndex=route\.flightNumber\?null:index/);
+ assert.match(src,/i!==editingLegacyIndex/);
+ assert.match(src,/message\('route-plan-status',route\.flightNumber\?/);
+ assert.match(src,/await resetRouteForm\(\)/);
+ assert.match(src,/showDetails\(\);/);
+ const css=await read('../website/player-app.css');
+ assert.match(css,/#player-main \.operations-route-directory-row \.operations-route-open-text\{/);
+ assert.match(css,/justify-self:end/);
+});
