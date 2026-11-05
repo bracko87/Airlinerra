@@ -58,6 +58,17 @@ export const AIRPORT_PROFILE_SQL=`
         wx.required_attribution AS weather_attribution,
         traffic.daily_outbound_passengers,traffic.daily_outbound_cargo_tonnes,
         traffic.passenger_demand_percentile,traffic.cargo_demand_percentile,
+        (SELECT count(*)::integer FROM airlinerra_game.airlines hq
+          WHERE hq.world_id=a.world_id AND hq.home_airport_key=a.airport_key)
+          AS registered_airline_headquarters_count,
+        (SELECT count(*)::integer FROM airlinerra_game.airport_offices ao
+          WHERE ao.world_id=a.world_id AND ao.airport_key=a.airport_key
+          AND ao.office_type='hub' AND ao.office_status='active')
+          AS active_airline_hubs_count,
+        (SELECT count(*)::integer FROM airlinerra_game.airport_offices ao
+          WHERE ao.world_id=a.world_id AND ao.airport_key=a.airport_key
+          AND ao.office_type='station' AND ao.office_status='active')
+          AS active_airline_stations_count,
         fw.longest_paved_runway_m AS full_weight_longest_paved_runway_m,
         fw.airport_elevation_ft AS full_weight_airport_elevation_ft,
         fw.total_configurations_screened AS full_weight_aircraft_screened,
@@ -226,6 +237,14 @@ export function serializeAirportProfile(row){
    highElevationSiteStudyRecommended:row.full_weight_high_elevation_review===true,
    dataKind:nullableString(row.full_weight_game_calculation_basis),
    realWorldDispatchApproved:false
+  },
+  airportActivity:{
+   registeredHeadquarters:countOrNull(row.registered_airline_headquarters_count),
+   activeHubs:countOrNull(row.active_airline_hubs_count),
+   activeStations:countOrNull(row.active_airline_stations_count),
+   // Flight schedules and operating-airline movements are not connected.
+   dailyFlights:null,
+   operatingAirlines:null
   },
   demand:{
    passengerPercent:percentageOrNull(row.passenger_demand_percentile),
