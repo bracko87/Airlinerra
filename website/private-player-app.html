@@ -69,9 +69,9 @@
         <details class="nav-group" data-nav-group="settings" aria-label="Settings menu">
           <summary class="nav-label">Settings<span class="chevron" aria-hidden="true"></span></summary>
           <div class="nav-links" role="group" aria-label="Settings pages">
-            <a href="#airline" data-view-link="airline">My airline</a>
+            <a href="#airline" data-view-link="airline">Manage airline</a>
             <a href="#onboarding" data-view-link="onboarding" data-setup-only hidden>Airline setup</a>
-            <a href="#profile" data-view-link="profile">Manager profile</a>
+            <a href="#profile" data-view-link="profile">Manage account</a>
             <a href="#rankings" data-view-link="rankings">World rankings</a>
             <a href="#worlds" data-view-link="worlds">Game worlds</a>
             <a href="#airports" data-view-link="airports">Airports</a>
@@ -251,10 +251,31 @@
           </div>
         </section>
         <section data-player-view="profile" hidden>
-          <div class="page-head"><div><p class="eyebrow">YOUR IDENTITY</p><h1>Manager profile</h1><p>Account identity is read from the verified Supabase Auth session.</p></div></div>
-          <article class="panel narrow"><span class="panel-kicker">ACCOUNT DETAILS</span><div class="profile-avatar" aria-hidden="true">AM</div><div class="detail-row"><span>Display name</span><strong id="manager-name">Airline manager</strong></div><div class="detail-row"><span>Email address</span><strong id="manager-email">Not connected</strong></div><div class="detail-row"><span>Email status</span><strong id="manager-verified">Verified email</strong></div><div class="detail-row"><span>Account created</span><strong id="manager-joined">-</strong></div><p class="muted">Your account details are verified and protected.</p><a class="text-link" href="/account.html?screen=forgot">Password recovery</a></article>
-        </section>
-        <section data-player-view="worlds" hidden>
+          <div class="page-head"><div><p class="eyebrow">ACCOUNT SETTINGS</p><h1>Manage account</h1><p>Update your personal account details and password security.</p></div></div>
+          <article class="panel manager-account-panel">
+           <span class="panel-kicker">ACCOUNT DETAILS</span>
+           <form id="manager-profile-form" class="manager-profile-form">
+            <div class="manager-profile-fields">
+             <label for="manager-name">Display name<input id="manager-name" name="displayName" type="text" autocomplete="nickname" minlength="2" maxlength="40" required></label>
+             <div class="manager-profile-readonly"><span>Email address</span><strong id="manager-email">Not connected</strong></div>
+             <label for="manager-hometown">Real-life hometown (optional)<input id="manager-hometown" name="hometown" type="text" autocomplete="address-level2" maxlength="80" placeholder="Your hometown"></label>
+             <label for="manager-country">Real-life country (optional)<input id="manager-country" name="country" type="text" autocomplete="country-name" maxlength="80" placeholder="Your country"></label>
+             <div class="manager-profile-readonly"><span>Email status</span><strong id="manager-verified">Verified email</strong></div>
+             <div class="manager-profile-readonly"><span>Account created</span><strong id="manager-joined">—</strong></div>
+            </div>
+            <p class="hint">Hometown and country are optional and private to your account. They are not shown on an airline's public page.</p>
+            <div class="manager-profile-actions"><button class="primary" type="submit" id="manager-save">Save account details</button></div>
+            <p id="manager-profile-status" class="hint" role="status" aria-live="polite"></p>
+           </form>
+           <div class="manager-password-section">
+            <h2>Password and security</h2>
+            <p class="hint">Request a secure password-change link at your verified email address.</p>
+            <button type="button" class="secondary" id="manager-change-password">Change password</button>
+            <p id="manager-password-status" class="hint" role="status" aria-live="polite"></p>
+           </div>
+          </article>
+         </section>
+         <section data-player-view="worlds" hidden>
           <div class="page-head"><div><p class="eyebrow">SIMULATION WORLDS</p><h1>Game worlds</h1><p>Each world has its own independent airline economy. One real day equals one game day.</p></div></div>
           <div class="world-grid" id="world-directory"></div><div id="workspace-worlds"></div>
         </section>
@@ -347,7 +368,7 @@
   </article>
  </div>
 </section>
-        <section data-player-view="airline" hidden><div class="page-head"><div><p class="eyebrow">MY AIRLINE</p><h1>Airline office</h1><p>Your registered company, home airport and management roadmap.</p></div></div><div id="workspace-airline"></div></section>
+        <section data-player-view="airline" hidden><div class="page-head"><div><p class="eyebrow">AIRLINE SETTINGS</p><h1>Manage airline</h1><p>Manage your company identity, logo and future public airline page.</p></div></div><div id="workspace-airline"></div></section>
         <section data-player-view="route-list" hidden><div class="page-head"><div><p class="eyebrow">OPERATIONS</p><h1>My routes</h1><p>Saved route drafts and live route status.</p></div></div><div id="workspace-route-list"></div></section>
         <section data-player-view="hubs" hidden><div class="page-head"><div><p class="eyebrow">OPERATIONS</p><h1>Hubs, stations and airport operations</h1><p>Company headquarters, operational hubs and staffed airport representation.</p></div></div><div id="workspace-hubs"></div></section>
         <section data-player-view="tickets" hidden><div class="page-head"><div><p class="eyebrow">OPERATIONS</p><h1>Ticket prices and analysis</h1><p>Cabin fares, load factors and route revenue scenarios.</p></div></div><div id="workspace-tickets"></div></section>
