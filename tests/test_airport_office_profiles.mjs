@@ -48,10 +48,10 @@ test('headquarters, hubs, stations are distinct - with honest missing operationa
  ]);
  for(const heading of ['Registered headquarters','My hubs','My stations','Airport profile',
   'Runways, terminals and slots','Passenger and cargo demand','Airlines and airport presence',
-  'Departures and arrivals','Destinations and frequencies']){
+  'Departures and arrivals','Airlines, statistics and destinations']){
   assert.ok(office.includes(heading),heading);
  }
- for(const feature of ['runway','slots','Passenger demand (0-100%)','Cargo demand (0-100%)',
+ for(const feature of ['runway','slots','Passenger demand','Cargo demand',
   'Time zone','Flights per day','Operating airlines','Station desk fee'])
   assert.ok(office.toLowerCase().includes(feature.toLowerCase()),feature);
  assert.match(office,/No fees or salaries were charged/);
@@ -140,4 +140,50 @@ test('airport profile is a shared airport view with ten explicitly fictional fli
  assert.match(routeMap,/WORLD_BORDER_LINES_50M/);
  assert.match(routeMap,/C-3-5-9-11-9-17/);
  assert.match(borders,/Natural Earth 1:50m/);
+});
+
+test('traffic groups and nearby-airport panel do not expose daily passenger thresholds',async()=>{
+ const office=await read('../website/airline-airports-office.mjs');
+ const styles=await read('../website/player-app.css');
+ assert.match(office,/Nearby airports within 100 km/);
+ assert.match(office,/Straight-line distance, not driving distance/);
+ assert.match(office,/airport-nearby-airports/);
+ assert.match(office,/groupLabel\(demand\?\.passengerGroup\)/);
+ assert.match(office,/groupLabel\(demand\?\.cargoGroup\)/);
+ assert.doesNotMatch(office,/Passenger demand \(0-100%\)/);
+ assert.doesNotMatch(office,/Cargo demand \(0-100%\)/);
+ assert.match(styles,/\.airport-nearby-row/);
+});
+test('flight board has correct six-column order with cropped mock airline logos',async()=>{
+ const [office,styles,builder]=await Promise.all([
+  read('../website/airline-airports-office.mjs'),
+  read('../website/player-app.css'),
+  read('../website/dev-scripts/invited-overlay.mjs')
+ ]);
+ assert.match(office,/<span>Time<\/span><span>Flight<\/span><span>Airline<\/span><span>Logo<\/span><span>Origin \/ destination<\/span><span>Status<\/span>/);
+ assert.match(office,/createAirportAirlineLogo\(doc,flight.airline\)/);
+ assert.match(office,/route:'Departure · Barcelona'/);
+ assert.match(styles,/\.airport-airline-logo-crop\{[^}]*overflow:hidden/);
+ assert.match(styles,/\.airport-flight-columns>span:last-child/);
+ assert.match(builder,/'airport-network-tabs.mjs'/);
+});
+test('airport network tabs present airline cards, daily statistics, destination dropdown and cargo data without pretending to be live',async()=>{
+ const [source,css]=await Promise.all([
+  read('../website/airport-network-tabs.mjs'),read('../website/player-app.css')
+ ]);
+ const {sampleAirportDestinations}=await import('../website/airport-network-tabs.mjs');
+ const destinations=sampleAirportDestinations([
+  {route:'Departure · Barcelona'},{route:'Arrival · Vienna'},
+  {route:'Departure · Barcelona'}
+ ]);
+ assert.deepEqual(destinations,['Barcelona','Vienna']);
+ for(const heading of ['Airlines','Statistics','Destinations','Cargo'])
+  assert.ok(source.includes("'"+heading+"'"),heading);
+ assert.match(source,/createAirportNetworkTabs/);
+ assert.match(source,/airport-network-destination-select/);
+ assert.match(source,/No airline cargo movements have been recorded/);
+ assert.match(source,/SCHEDULE_DAYS/);
+ assert.match(source,/role','tab'/);
+ assert.match(css,/\.airport-network-tabs/);
+ assert.match(css,/data-columns="4"/);
 });
