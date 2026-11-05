@@ -1097,3 +1097,32 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
 #player-main .operations-route-directory-row .operations-route-open-text{
  justify-self:end;text-align:right;font-weight:400
 }
+
+
+/* One editable arrival stand. Departure parking derives from the aircraft's preceding arrival. */
+#workspace-routes .route-step2-top{grid-template-columns:minmax(260px,1.3fr) repeat(2,minmax(180px,1fr))}
+#workspace-routes .route-position-bar{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding:8px 0;border-bottom:1px solid var(--line);font-size:12px}
+#workspace-routes .route-position-bar>span{color:var(--muted)}
+#workspace-routes .route-position-bar>strong{font-weight:550;color:var(--navy)}
+#workspace-routes .route-position-status{margin:9px 0 15px;font-size:12px;color:var(--muted)}
+#workspace-routes .route-position-status.has-conflict{color:#bd3228;font-weight:600}
+.route-aircraft-timeline-panel,.fleet-aircraft-timeline{margin:17px 0 18px}
+.route-aircraft-timeline-panel{border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+.route-aircraft-timeline-panel>summary{font-size:12px;color:var(--navy);text-decoration:underline;text-underline-offset:3px;cursor:pointer;font-weight:400}
+.route-aircraft-timeline-panel[open]>summary{margin-bottom:12px}
+.aircraft-weekly-timeline-scroll{width:100%;overflow-x:auto}
+.aircraft-weekly-timeline-table{min-width:880px;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.aircraft-weekly-timeline-row{display:grid;grid-template-columns:95px 80px 80px minmax(110px,1fr) minmax(145px,1.2fr) 104px 100px;gap:10px;align-items:center;padding:11px 12px;border-bottom:1px solid var(--line);font-size:11px;color:var(--navy)}
+.aircraft-weekly-timeline-row.is-heading{background:#f1f6fc;color:var(--muted)}
+.aircraft-weekly-timeline-row.is-proposed{background:#fff9f4}
+.aircraft-weekly-timeline-row>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.aircraft-weekly-timeline-error{color:#ba312d;font-weight:550;font-size:12px;margin:10px 0}
+.fleet-aircraft-timeline{border-top:1px solid var(--line);padding-top:16px}
+.fleet-aircraft-timeline>h3{font-size:15px;color:var(--navy);margin:0 0 8px}
+#player-main .fleet-aircraft-timeline-link{border:0!important;box-shadow:none!important;background:transparent!important;color:var(--navy);padding:2px 0!important;text-decoration:underline;text-underline-offset:3px;font-size:11px;font-weight:400;margin-left:auto;cursor:pointer}
+#player-main .fleet-aircraft-timeline-link:hover{color:var(--orange)}
+#player-main .fleet-aircraft-timeline-link:focus-visible{outline:2px solid var(--orange);outline-offset:3px}
+:root[data-ui-theme="dark"] .aircraft-weekly-timeline-row.is-heading{background:#243a55}
+:root[data-ui-theme="dark"] .aircraft-weekly-timeline-row.is-proposed{background:#3a2e25}
+@media(max-width:950px){#workspace-routes .route-step2-top{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){#workspace-routes .route-step2-top{grid-template-columns:1fr}}
