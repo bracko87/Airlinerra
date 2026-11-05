@@ -30,6 +30,10 @@ export const AIRPORT_PROFILE_SQL=`
         chapter.documented_restriction_kind AS icao_rule_kind,
         chapter.cumulative_margin_requirement_epndb AS icao_minimum_margin_epndb,
         chapter.source_url AS icao_noise_source,
+        national.minimum_icao_chapter AS national_jet_min_chapter,
+        national.country_rule_group AS national_jet_rule_scope,
+        national.legal_source_url AS national_jet_rule_source,
+        national.permit_exception_note AS national_jet_rule_exceptions,
         curfew.evidence_status AS curfew_research_status,
         (
           SELECT coalesce(jsonb_agg(jsonb_build_object(
@@ -82,6 +86,10 @@ export const AIRPORT_PROFILE_SQL=`
     ON ops.world_id=a.world_id AND ops.airport_key=a.airport_key
  LEFT JOIN airlinerra_game.section5_airport_icao_chapter_policy_v2 chapter
     ON chapter.world_id=a.world_id AND chapter.airport_key=a.airport_key
+ LEFT JOIN airlinerra_game.section5_country_civil_jet_chapter_minimum_v1 national
+    ON national.country_iso=a.country_iso
+    AND (a.country_iso<>'FR'
+      OR (p.latitude_deg BETWEEN 41 AND 52 AND p.longitude_deg BETWEEN -6 AND 10))
  LEFT JOIN airlinerra_game.section5_airport_curfew_research_audit_v2 curfew
     ON curfew.world_id=a.world_id AND curfew.airport_key=a.airport_key
  LEFT JOIN airlinerra_game.section5_full_weight_airport_summary_v2 fw
@@ -161,6 +169,10 @@ export function serializeAirportProfile(row){
      restrictionKind:nullableString(row.icao_rule_kind),
      minimumCumulativeMarginEpndb:numberOrNull(row.icao_minimum_margin_epndb),
      source:nullableString(row.icao_noise_source),
+     nationalCivilJetMinimumChapter:countOrNull(row.national_jet_min_chapter),
+     nationalCivilJetMinimumScope:nullableString(row.national_jet_rule_scope),
+     nationalCivilJetNoiseSource:nullableString(row.national_jet_rule_source),
+     nationalCivilJetExceptions:nullableString(row.national_jet_rule_exceptions),
      rules:Array.isArray(row.icao_airport_noise_rules)?
        row.icao_airport_noise_rules.slice(0,20).map(r=>({
          code:nullableString(r.code),kind:nullableString(r.kind),
