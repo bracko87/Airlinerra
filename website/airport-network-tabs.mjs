@@ -162,7 +162,7 @@ export function createAirportNetworkTabs({doc,host,flights=[]}={}){
   return root;
  }
  function showAirlines(){
-  pane.append(note(doc,'Fictional preview — sample flight movements only, not passenger market share. Real airline operations and daily snapshots will appear after scheduling is connected.'));
+  pane.append(note(doc,'Fictional preview — sample flight movements only, not passenger market share. Flights/day is the seven-day average; share is the portion of example arrivals and departures. Real figures will update once per in-game day after scheduling is connected.'));
   const list=el(doc,'div','airport-network-airline-list');
   const header=el(doc,'div','airport-network-airline-head');
   for(const label of ['Airline','Logo','Flights / day','Flights / week','Share of flights'])
