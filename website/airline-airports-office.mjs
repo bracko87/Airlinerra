@@ -178,7 +178,12 @@ export function createAirportOffice({doc,session,identity,goTo,getAirlineLogoUrl
  if(profileHost){
   profileHost.innerHTML=panel('AIRPORT DIRECTORY','Airport profile',
    '<div class="airport-profile-head"><div class="airport-profile-identity">'+
-   '<h3 id="airport-profile-name">Select an airport</h3><p id="airport-profile-location" class="hint"></p></div>'+
+   '<h3 id="airport-profile-name">Select an airport</h3><p id="airport-profile-location" class="hint"></p>'+
+   '<div class="airport-profile-office-actions">'+
+   '<div class="airport-profile-office-buttons">'+
+   '<button type="button" class="secondary" data-office-action="plan-station" disabled>Open station</button>'+
+   '<button type="button" class="secondary" data-office-action="plan-hub" disabled>Request hub</button></div>'+
+   '<p id="airport-profile-office-feedback" class="hint" role="status" aria-live="polite">Draft requests only. No office is activated.</p></div></div>'+
    '<div class="airport-profile-weather-summary" role="status" aria-live="polite">'+
    '<span class="airport-weather-summary-label">AIRPORT WEATHER · FORECAST</span>'+
    '<div class="airport-weather-summary-main"><span id="airport-weather-summary-icon"></span>'+
@@ -186,12 +191,7 @@ export function createAirportOffice({doc,session,identity,goTo,getAirlineLogoUrl
    '<div class="airport-weather-summary-details">'+
    '<span id="airport-weather-summary-conditions">Loading airport weather...</span>'+
    '<span id="airport-weather-summary-wind"></span></div></div></div>'+
-   '<div class="airport-profile-office-actions">'+
-    '<div class="airport-profile-office-buttons">'+
-    '<button type="button" class="secondary" data-office-action="plan-station" disabled>Open station</button>'+
-    '<button type="button" class="secondary" data-office-action="plan-hub" disabled>Request hub</button></div>'+
-    '<p id="airport-profile-office-feedback" class="hint" role="status" aria-live="polite">Actions create local draft requests only. No station or hub is activated yet.</p></div>'+
-    '<div class="airport-profile-main"><div id="airport-profile-facts" class="airport-profile-facts"></div>'+
+   '<div class="airport-profile-main"><div id="airport-profile-facts" class="airport-profile-facts"></div>'+
    '<div class="airport-location-map-pane"><div class="airport-location-map-heading">AIRPORT LOCATION</div>'+
    '<div id="airport-profile-map" class="airport-location-map-canvas"></div></div></div>')+
    panel('AIRPORT INFRASTRUCTURE','Runways, terminals and slots',
@@ -234,11 +234,14 @@ export function createAirportOffice({doc,session,identity,goTo,getAirlineLogoUrl
   if(!target)return;
   target.replaceChildren();
   pagination?.replaceChildren();
-  const items=entries().filter(e=>e.type===type);
+  const home=live.connected&&live.airline?.homeAirportKey?
+   known.get(live.airline.homeAirportKey):null;
+  const pinned=home?{...home,type,home:true,status:'registered'}:null;
+  const items=[...(pinned?[pinned]:[]),
+   ...entries().filter(e=>e.type===type&&e.key!==live.airline?.homeAirportKey)];
   if(!items.length){
    listPages[type]=0;
-   target.append(createText(doc,'p',
-    type==='hub'?'No additional hub requests yet.':'No station requests yet.','hint'));
+   target.append(createText(doc,'p','No '+(type==='hub'?'hubs':'stations')+' are available.','hint'));
    return;
   }
   const pages=Math.ceil(items.length/OFFICE_PAGE_SIZE);
@@ -248,10 +251,11 @@ export function createAirportOffice({doc,session,identity,goTo,getAirlineLogoUrl
    const line=doc.createElement('div');line.className='airport-office-list-row';
    line.append(createText(doc,'span',office.name,'airport-office-list-name'),
     createText(doc,'span',office.code||'—','airport-office-list-code'),
-    createText(doc,'span',type==='hub'?'Hub request · draft':'Station request · draft','airport-office-list-status'));
+    createText(doc,'span',office.home?(type==='hub'?'Main hub · headquarters':'Main station · headquarters'):
+     type==='hub'?'Hub request · draft':'Station request · draft','airport-office-list-status'));
    const actions=doc.createElement('div');actions.className='airport-office-row-actions';
-   actions.append(button(doc,'Airport profile','view',office.key),
-    button(doc,'Remove draft','remove',office.key));
+   actions.append(button(doc,'Airport profile','view',office.key));
+   if(!office.home)actions.append(button(doc,'Remove draft','remove',office.key));
    line.append(actions);target.append(line);remember(office);
   }
   if(pagination){
