@@ -7,6 +7,83 @@ const AIRPORT_KEY=/^(?:OURAIRPORTS:[1-9]\d{0,18}|FICTIONAL:fictional:[A-Z]{2}:[A
 const currency=v=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(v);
 const safeLocalValue=(v)=>typeof v==='string'?v.trim():'';
 const textValue=(v)=>typeof v==='string'&&v.trim()?v.trim():'Data pending';
+export const compactAnnual=value=>{
+ if(typeof value!=='number'||!Number.isFinite(value)||value<0)return 'Data pending';
+ return new Intl.NumberFormat('en-US',{notation:'compact',compactDisplay:'short',
+  maximumFractionDigits:value<1000||(value>=10000&&value<1000000)?0:1}).format(value);
+};
+export const simpleAirportHours=value=>{
+ const raw=typeof value==='string'?value.trim():'';
+ if(!raw)return 'Not specified';
+ if(/^24\/7\b/i.test(raw))return 'Open 24 hours in game';
+ return raw.replace(/\s*\([^)]*\)/g,'').trim()||'Not specified';
+};
+export const simpleAirportCurfew=profile=>{
+ const raw=profile?.facilities?.curfew;
+ if(typeof raw==='string'&&raw.trim())return raw.replace(/\s*\([^)]*\)/g,'').trim();
+ const windows=profile?.operations?.timeRestrictions;
+ if(Array.isArray(windows)&&windows.length){
+  const times=windows.filter(x=>x?.localStart&&x?.localEnd)
+   .map(x=>x.localStart+'–'+x.localEnd).slice(0,3);
+  return times.length?times.join(', '):'Restrictions apply';
+ }
+ return profile?.operations?.hoursBasis==='GAME_DEFAULT_24_7_UNLESS_DOCUMENTED_EXCEPTION'?
+  'No game curfew':'Not specified';
+};
+export const simpleAirportNoise=profile=>{
+ const policy=profile?.operations?.icaoNoiseRules;
+ const minimum=policy?.nationalCivilJetMinimumChapter;
+ if(Number.isInteger(minimum)&&minimum>=2&&minimum<=14)return 'Chapter '+minimum+' or higher';
+ const prohibited=Array.isArray(policy?.prohibitedChapters)?
+  policy.prohibitedChapters.filter(x=>Number.isInteger(x)&&x>=2&&x<=14):[];
+ if(prohibited.length)return 'Chapter '+[...new Set(prohibited)].sort((a,b)=>a-b).join(', ')+' restricted';
+ const documented=Array.isArray(policy?.rules)?policy.rules.filter(r=>
+  Number.isInteger(r?.chapter)&&r.chapter>=2&&r.chapter<=14):[];
+ if(documented.length)return 'Chapter '+[...new Set(documented.map(r=>r.chapter))].sort((a,b)=>a-b).join(', ')+' restriction';
+ return 'Not specified';
+};
+export const airportWeatherType=symbol=>{
+ const s=String(symbol||'').toLowerCase();
+ if(/thunder/.test(s))return 'thunder';
+ if(/snow|sleet/.test(s))return 'snow';
+ if(/rain|showers|drizzle/.test(s))return 'rain';
+ if(/fog|mist/.test(s))return 'fog';
+ if(/partlycloudy|fair/.test(s))return 'partlycloudy';
+ if(/cloudy/.test(s))return 'cloudy';
+ if(/clearsky/.test(s))return 'sunny';
+ return 'cloudy';
+};
+function makeAirportWeatherIcon(doc,symbol){
+ const ns='http://www.w3.org/2000/svg',svg=doc.createElementNS(ns,'svg');
+ for(const [k,v] of Object.entries({viewBox:'0 0 48 48',fill:'none',stroke:'currentColor',
+  'stroke-width':'2.4','stroke-linecap':'round','stroke-linejoin':'round',
+  'aria-hidden':'true',class:'airport-weather-icon'}))svg.setAttribute(k,v);
+ const add=(tag,attrs)=>{
+  const el=doc.createElementNS(ns,tag);
+  for(const [k,v] of Object.entries(attrs))el.setAttribute(k,String(v));
+  svg.append(el);
+ };
+ const sun=(cx,cy,r)=>{
+  add('circle',{cx,cy,r,stroke:'#e9a52d'});
+  for(let i=0;i<8;i++){
+   const a=i*Math.PI/4;
+   add('line',{x1:cx+Math.cos(a)*(r+4),y1:cy+Math.sin(a)*(r+4),
+    x2:cx+Math.cos(a)*(r+7),y2:cy+Math.sin(a)*(r+7),stroke:'#e9a52d'});
+  }
+ };
+ const type=airportWeatherType(symbol);
+ if(type==='sunny')sun(24,24,9);
+ else{
+  if(type==='partlycloudy')sun(17,16,6);
+  add('path',{d:'M15 36h19a8 8 0 0 0 1-16 11 11 0 0 0-20-2 9 9 0 0 0 0 18Z'});
+  if(type==='rain')for(const x of [17,25,33])add('line',{x1:x,y1:39,x2:x-2,y2:44});
+  if(type==='snow')for(const x of [18,26,34])add('path',{d:'M'+x+' 39v6m-3-3h6'});
+  if(type==='fog')for(const y of [41,45])add('line',{x1:13,y1:y,x2:37,y2:y});
+  if(type==='thunder')add('path',{d:'M25 36l-5 7h6l-2 5 10-10h-7'});
+ }
+ return svg;
+}
+
 export function normalizeApprovedAirport(a){
  if(!a||!AIRPORT_KEY.test(a.key||'')||typeof a.name!=='string'||!a.name.trim())return null;
  return Object.freeze({key:a.key,name:a.name.trim(),code:safeLocalValue(a.code),
@@ -100,17 +177,18 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
    '<h3 id="airport-profile-name">Select an airport</h3><p id="airport-profile-location" class="hint"></p></div>'+
    '<div class="airport-profile-weather-summary" role="status" aria-live="polite">'+
    '<span class="airport-weather-summary-label">AIRPORT WEATHER · FORECAST</span>'+
-   '<strong id="airport-weather-summary-temperature">—</strong>'+
+   '<div class="airport-weather-summary-main"><span id="airport-weather-summary-icon"></span>'+
+    '<strong id="airport-weather-summary-temperature">—</strong></div>'+
    '<span id="airport-weather-summary-conditions">Loading airport weather...</span>'+
    '<span id="airport-weather-summary-wind"></span></div></div>'+
    '<div id="airport-profile-facts" class="airport-profile-facts"></div>')+
    panel('AIRPORT INFRASTRUCTURE','Runways, terminals and slots',
     '<div id="airport-profile-infrastructure" class="airport-profile-facts"></div>')+
-   panel('AIRPORT WEATHER','Daily forecast · 3-hour temperature changes',
+   panel('AIRPORT WEATHER','Current conditions and forecast',
     '<div id="airport-profile-weather" class="airport-profile-facts"></div>'+
     '<p id="airport-profile-weather-credit" class="hint">Forecast data by MET Norway, CC BY 4.0. Flight delays not modelled yet.</p>')+
    panel('MARKET DEMAND','Passenger and cargo demand',
-    '<p class="hint">Passenger/cargo demand, annual traffic and route potential will be populated from verified data. No artificial percentages.</p>'+
+    '<p class="hint">Demand percentages rank airports within World 1; annual outbound traffic is rounded from game baselines.</p>'+
     '<div id="airport-profile-demand" class="airport-profile-facts"></div>')+
    panel('AIRLINE ACTIVITY','Airlines and airport presence',
     '<div id="airport-profile-airlines" class="airport-profile-facts"></div>'+
@@ -224,11 +302,9 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
    ['Passenger gates',p?count(p.facilities?.gates):fallback],
    ['Aircraft stands',p?count(p.facilities?.stands):fallback],
    ['Available operating slots','Data pending'],
-   ['Aerodrome operating hours',p?textOrPending(p.facilities?.operatingHours):fallback],
-   ['Curfew restrictions',p?textOrPending(p.facilities?.curfew):fallback],
-   ['Noise restrictions',p?textOrPending(p.facilities?.noise):fallback],
-   ['Aircraft noise scale','1 = very quiet, 5 = very loud (estimated game classes)'],
-   ['Operation verification',p?textOrPending(p.operations?.hoursBasis):fallback],
+   ['Aerodrome operating hours',p?simpleAirportHours(p.facilities?.operatingHours):fallback],
+   ['Curfew restrictions',p?simpleAirportCurfew(p):fallback],
+   ['Noise restrictions',p?simpleAirportNoise(p):fallback],
    ['Airport operational status','Not independently confirmed']
   ]);
   const wx=p?.weather||null;
@@ -236,6 +312,8 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
   const weatherName=code=>typeof code==='string'&&code?
     code.replace(/_day|_night|_polartwilight/g,'').replace(/_/g,' ').
       replace(/(rain|snow|cloudy|thunder|fog)/gi,' $1').replace(/ +/g,' ').trim():'Unavailable';
+  const headerIcon=$('airport-weather-summary-icon');
+  if(headerIcon)headerIcon.replaceChildren(makeAirportWeatherIcon(doc,weatherReady?wx.symbol:null));
   const headerTemperature=$('airport-weather-summary-temperature');
   if(headerTemperature)headerTemperature.textContent=weatherReady?num(wx.temperatureC)+' °C':'—';
   const headerConditions=$('airport-weather-summary-conditions');
@@ -245,21 +323,11 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
   const headerWind=$('airport-weather-summary-wind');
   if(headerWind)headerWind.textContent=weatherReady&&knownNumber(wx.windKmh)?
    'Wind '+num(wx.windKmh)+' km/h':'';
-  const weatherHour=iso=>{
-    const ms=Date.parse(iso||'');if(!Number.isFinite(ms))return 'Time unknown';
-    try{return new Intl.DateTimeFormat('en-GB',{timeZone:p?.timezone||'UTC',
-      weekday:'short',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(ms))}
-    catch{return 'Time unavailable'}
-  };
-  const timeline=Array.isArray(wx?.next24h)?wx.next24h.map(point=>
-   weatherHour(point.time)+' — '+(knownNumber(point.temperatureC)?num(point.temperatureC)+' °C':'-')+
-   (point.symbol?' · '+weatherName(point.symbol):'')).join('; '):'';
   profileField('airport-profile-weather',[
    ['Temperature',weatherReady?num(wx.temperatureC)+' °C':fallback],
    ['Conditions',weatherReady?weatherName(wx.symbol):fallback],
    ['Wind',weatherReady&&knownNumber(wx.windKmh)?num(wx.windKmh)+' km/h':fallback],
-   ['Precipitation (forecast)',weatherReady&&knownNumber(wx.precipitationMm)?num(wx.precipitationMm)+' mm':fallback],
-   ['Next 24 hours',weatherReady?(timeline||'Pending'):'Forecast unavailable']
+   ['Precipitation (forecast)',weatherReady&&knownNumber(wx.precipitationMm)?num(wx.precipitationMm)+' mm':fallback]
   ]);
   const credit=$('airport-profile-weather-credit');
   if(credit){
@@ -273,12 +341,18 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
    licenseLink.textContent='CC BY 4.0';
    credit.replaceChildren(doc.createTextNode('Forecast source: '),sourceLink,
      doc.createTextNode(' · Licence: '),licenseLink,
-     doc.createTextNode(' · 3-hour display generated by Airlinerra. Flight delays are not simulated yet.'));
+     doc.createTextNode(' · Flight delays are not simulated yet.'));
   }
+  const demand=p?.demand;
   profileField('airport-profile-demand',[
-   ['Passenger demand (0-100%)','Data pending'],['Cargo demand (0-100%)','Data pending'],
-   ['Annual passengers','Data pending'],['Annual cargo','Data pending'],
-   ['Daily departures / arrivals','Data pending'],['Peak operating periods','Data pending']]);
+   ['Passenger demand (0-100%)',Number.isInteger(demand?.passengerPercent)?
+    demand.passengerPercent+'%':fallback],
+   ['Cargo demand (0-100%)',Number.isInteger(demand?.cargoPercent)?
+    demand.cargoPercent+'%':fallback],
+   ['Annual departing passengers',compactAnnual(demand?.annualDepartingPassengers)],
+   ['Annual outbound cargo',typeof demand?.annualOutboundCargoTonnes==='number'?
+    compactAnnual(demand.annualOutboundCargoTonnes)+' tonnes':fallback]
+  ]);
  }
  function showProfile(a){
   const airport=remember(a);if(!airport)return;
