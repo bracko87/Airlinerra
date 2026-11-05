@@ -162,7 +162,8 @@ test('route planning has two steps, stacked airport lookup, real flag indicators
  assert.match(picker,/const choose=key=>/);
  assert.match(ui,/reader\.airportProfile\(homeKey\)/);
  assert.match(ui,/pickers\[side\]\.choose\(home\.key\)/);
- assert.match(ui,/aircraftId:flightAircraft,status:'draft',operationallyVerified:false/);
+ assert.match(ui,/aircraftId:flightAircraft,testAircraft:simulationAircraft\?true:false/);
+ assert.match(ui,/status:'draft',operationallyVerified:false/);
  assert.match(ui,/Aircraft, crew, airport slots and traffic rights require verification/);
  assert.match(work,/createRoutePlanner/);
 });
