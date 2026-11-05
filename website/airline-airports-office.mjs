@@ -540,5 +540,5 @@ export function createAirportOffice({doc,session,identity,goTo,getAirlineLogoUrl
   showProfile(a);return true;
  }
  updateData({});
- return Object.freeze({updateData,openAirport,getActiveAirport:()=>activeAirport});
+ return Object.freeze({updateData,openAirport,refreshAirlineLogo:refreshOwnLogo,getActiveAirport:()=>activeAirport});
 }
