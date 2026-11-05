@@ -86,3 +86,9 @@ test('airport profile hides internal labels and places weather and country flag 
  assert.match(office,/Forecast source: /);
  assert.match(styles,/\.airport-profile-weather-summary/);
 });
+
+test('header weather icon is bounded to a compact 40px vector',async()=>{
+ const styles=await read('../website/player-app.css');
+ assert.match(styles,/\.airport-weather-icon\{[^}]*width:40px;height:40px/);
+ assert.match(styles,/\.airport-weather-summary-main\{[^}]*display:flex/);
+});
