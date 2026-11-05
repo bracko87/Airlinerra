@@ -93,8 +93,10 @@ const pages=Object.freeze({
   'fleet':()=>card('Fleet inventory',
    '<div class="workspace-kpis"><div><span>Owned aircraft</span><strong>Not connected</strong></div>'+
    '<div><span>Leased aircraft</span><strong>Not connected</strong></div>'+
-   '<div><span>Available seats</span><strong>Not connected</strong></div></div>'+
-   status('No authenticated aircraft-inventory endpoint is available yet. This page does not claim you own, lease or operate aircraft.')+
+   '<div><span>Available seats</span><strong>Not connected</strong></div>'+
+   '<div><span>Test aircraft</span><strong id="fleet-test-count">0</strong></div></div>'+
+   '<div id="fleet-test-aircraft" class="fleet-test-aircraft"></div>'+
+   status('Only simulation aircraft are shown below. The live owned-aircraft inventory, acquisition and scheduling engines are not connected.')+
    button('aircraft-market','Explore acquisition')+button('maintenance','Maintenance planning'),
    'AIRCRAFT INVENTORY')+
   card('Fleet acquisition brief',
@@ -441,6 +443,23 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    'finance-live-cash':connected&&airline?.cashUsd!==undefined?currency(airline.cashUsd):'-'
   };
   for(const [id,value] of Object.entries(values)){if($(id))$(id).textContent=value;}
+  const testAircraft=connected&&Array.isArray(airline?.testAircraft)?
+   airline.testAircraft.filter(a=>a?.testOnly===true&&a.operationallyAllowed===false):[];
+  if($('fleet-test-count'))$('fleet-test-count').textContent=String(testAircraft.length);
+  const holder=$('fleet-test-aircraft');
+  if(holder){
+   holder.replaceChildren();
+   for(const aircraft of testAircraft){
+    const row=doc.createElement('div');row.className='fleet-test-aircraft-row';
+    const title=doc.createElement('strong');
+    title.textContent='Airbus '+String(aircraft.model||'Aircraft');
+    const registration=doc.createElement('span');
+    registration.textContent=String(aircraft.registration||'TEST');
+    const state=doc.createElement('small');
+    state.textContent='Simulation only · not owned · cannot operate flights';
+    row.append(title,registration,state);holder.append(row);
+   }
+  }
   routePlannerController.updateData(data);
  }
  doc.getElementById('player-main')?.addEventListener('click',async event=>{
