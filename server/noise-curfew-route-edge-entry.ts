@@ -38,7 +38,7 @@ SELECT dep.airport_code origin_code,arr.airport_code destination_code,
  arr.denied_by_game_chapter_rule arr_game_chapter,
  dep.requires_special_noise_or_slot_review dep_review,
  arr.requires_special_noise_or_slot_review arr_review,
- dep.local_airport_time dep_local,arr.local_airport_time arr_local,
+ dep.local_airport_time::text dep_local,arr.local_airport_time::text arr_local,
  dep.airport_chapter_evidence_status dep_airport_evidence,
  arr.airport_chapter_evidence_status arr_airport_evidence
 FROM dep CROSS JOIN arr`;
@@ -109,7 +109,8 @@ Deno.serve(async(request:Request)=>{
     note:'Based on source-backed or clearly estimated game noise Chapter and documented local operating limits. PRELIMINARY does not imply official airport or flight approval.'
   });
  }catch(error){
-  const code=typeof error?.code==='string'&&/^[A-Z0-9]{5}$/.test(error.code)?error.code:'NONE';
+  const sqlError=error as {code?:unknown}|null;
+  const code=typeof sqlError?.code==='string'&&/^[A-Z0-9]{5}$/.test(sqlError.code)?sqlError.code:'NONE';
   console.error('Airlinerra noise curfew read failed, SQLSTATE',code);
   return respond(503,{error:'Noise and curfew route check temporarily unavailable'});
  }finally{try{client?.release()}catch{/* ignore */}}
