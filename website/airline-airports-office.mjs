@@ -139,13 +139,14 @@ const countryLabel=code=>{
  if(!code)return 'Data pending';
  try{return new Intl.DisplayNames(['en'],{type:'region'}).of(code)||code}catch{return code}
 };
-export function createAirportOffice({doc,session,identity,goTo}={}){
+export function createAirportOffice({doc,session,identity,goTo,getAirlineLogoUrl}={}){
  if(!doc||typeof identity!=='string'||!/^[\w-]{3,128}$/.test(identity))
   throw Error('Verified account required for airport office');
  const key='airlinerra.local.workplan.v1.'+identity;
  const $=id=>doc.getElementById(id);
  const host=$('workspace-hubs'),profileHost=$('workspace-airport-profile');
  let live={connected:false,airline:null,countries:[],reader:null};
+ let ownLogoUrl=null,logoLoadSerial=0;
  let selectedAirport=null,activeAirport=null,officePicker=null;
  const known=new Map();
  const entries=()=>{
@@ -218,7 +219,7 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
     '<p class="airport-flight-preview-notice">Fictional preview — 10 example flights. No real flight schedule or booking.</p>'+
     '<div class="airport-flight-board"><div class="airport-flight-columns"><span>Time</span><span>Flight</span><span>Airline</span><span>Logo</span><span>Origin / destination</span><span>Status</span></div>'+
     '<div id="airport-flight-preview-rows"></div></div>')+
-   panel('AIRPORT NETWORK','Airlines, statistics and destinations',
+   panel('AIRPORT STATISTICS','Airlines, flights and destinations',
     '<div id="airport-network-tabs"></div>');
  }
  const networkTabs=createAirportNetworkTabs({doc,host:$('airport-network-tabs'),
@@ -348,7 +349,7 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
      nameButton.className='airport-nearby-airport-link';
      const info=doc.createElement('div');info.className='airport-nearby-identity';
      info.append(nameButton);
-     if(near.fictional)info.append(createText(doc,'span','Game airport','airport-nearby-tag'));
+     // All listed airports are approved; hide internal fictional/real catalog labels.
      const line=doc.createElement('div');line.className='airport-nearby-row';
      line.append(info,createText(doc,'strong',num(near.distanceKm)+' km','airport-nearby-distance'));
      nearRoot.append(line);
@@ -396,6 +397,23 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
   const demand=p?.demand;
   const groupLabel=value=>Number.isInteger(value)&&value>=1&&value<=5?
    'Group '+value+' of 5':fallback;
+  const demandBars=(label,value)=>{
+   const root=$('airport-profile-demand');
+   if(!root||!Number.isInteger(value)||value<1||value>5)return;
+   for(const line of root.querySelectorAll('.airport-profile-fact')){
+    if(line.querySelector('span')?.textContent!==label)continue;
+    const figure=line.querySelector('strong');if(!figure)return;
+    const bars=doc.createElement('span');bars.className='airport-demand-bars';
+    bars.setAttribute('role','img');bars.setAttribute('aria-label',label+': group '+value+' of 5');
+    for(let index=1;index<=5;index++){
+     const segment=doc.createElement('span');
+     segment.className='airport-demand-segment'+(index<=value?' is-active':'');
+     segment.setAttribute('aria-hidden','true');
+     bars.append(segment);
+    }
+    figure.replaceChildren(bars);break;
+   }
+  };
   profileField('airport-profile-demand',[
    ['Passenger demand',groupLabel(demand?.passengerGroup)],
    ['Cargo demand',groupLabel(demand?.cargoGroup)],
@@ -403,6 +421,8 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
    ['Annual outbound cargo',typeof demand?.annualOutboundCargoTonnes==='number'?
     compactAnnual(demand.annualOutboundCargoTonnes)+' tonnes':fallback]
   ]);
+  demandBars('Passenger demand',demand?.passengerGroup);
+  demandBars('Cargo demand',demand?.cargoGroup);
   networkTabs.setAirport({...airport,name,timezone:tz},p);
   const activity=p?.airportActivity;
   const shownCount=v=>Number.isInteger(v)&&v>=0?String(v):'—';
@@ -422,11 +442,27 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
    line.append(createText(doc,'span',flight.time,'airport-flight-time'),
     createText(doc,'span',flight.flight,'airport-flight-number'),
     createText(doc,'span',flight.airline,'airport-flight-carrier'),
-    createAirportAirlineLogo(doc,flight.airline),
+    createAirportAirlineLogo(doc,flight.airline,live.airline?.name===flight.airline?ownLogoUrl:null),
     createText(doc,'span',flight.route,'airport-flight-route'),
     createText(doc,'span',flight.status,'airport-flight-sample-status'));
    root.append(line);
   }
+ }
+ function refreshOwnLogo(){
+  const airline=live.airline,serial=++logoLoadSerial;
+  const name=airline?.name||'';
+  if(!live.connected||!airline?.id||typeof getAirlineLogoUrl!=='function'){
+   ownLogoUrl=null;networkTabs.setOwnerLogo(name,null);return;
+  }
+  Promise.resolve().then(()=>getAirlineLogoUrl(airline.id)).then(url=>{
+   if(serial!==logoLoadSerial||!live.connected||live.airline?.id!==airline.id)return;
+   ownLogoUrl=typeof url==='string'?url:null;
+   networkTabs.setOwnerLogo(name,ownLogoUrl);
+   renderDemoFlightBoard();
+  }).catch(()=>{
+   if(serial!==logoLoadSerial)return;
+   ownLogoUrl=null;networkTabs.setOwnerLogo(name,null);renderDemoFlightBoard();
+  });
  }
  function showProfile(a){
   const airport=remember(a);if(!airport)return;
@@ -434,6 +470,7 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
   const serial=++profileLoadSerial;
   renderAirportProfile(airport,null,live.connected&&typeof live.reader?.airportProfile==='function');
   renderDemoFlightBoard();
+  refreshOwnLogo();
   goTo?.('airport-profile');
   if(!live.connected||typeof live.reader?.airportProfile!=='function')return;
   // Per-airport authenticated lookup. Never infer missing values from a different airport.
@@ -491,6 +528,10 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
  // Keep the private account draft key aligned with Route/Staff planning.
  function keyForAccount(){return key}
  function updateData(value){
+  if(value?.airline?.id!==undefined&&value.airline.id!==live.airline?.id){
+   ++logoLoadSerial;ownLogoUrl=null;
+  }
+  if(value?.connected===false){++logoLoadSerial;ownLogoUrl=null;}
   live={...live,...value};
   headquarters();directories();renderList('hub');renderList('station');
  }
