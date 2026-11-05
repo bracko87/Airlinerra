@@ -653,33 +653,53 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   if(!schedule.length||schedule.some(row=>!validLocalDeparture(row.time))){
    message('route-plan-status','Select at least one weekday and a valid local departure time.');return;
   }
+  const operation=validateFlightDraftOptions({
+   departureStand:$('route-departure-stand')?.value,
+   arrivalStand:$('route-arrival-stand')?.value,
+   turnaroundMinutes:Number($('route-turnaround')?.value),
+   fares:Object.fromEntries(['economy','premium','business','first'].map(label=>
+    [label,$('route-fare-'+label)?.value||''])),
+   onboard:$('route-onboard-service')?.value,
+   baggage:$('route-baggage-service')?.value,
+   cargo:$('route-cargo-service')?.value
+  });
+  if(!operation){
+   message('route-plan-status','Check turnaround (45–360 minutes), fares ($0–100,000), stand and service choices.');
+   return;
+  }
   const flightAircraft=$('route-aircraft')?.value||null;
   const simulationAircraft=(Array.isArray(data?.airline?.testAircraft)?
    data.airline.testAircraft:[]).find(a=>a.id===flightAircraft&&
     a.testOnly===true&&a.operationallyAllowed===false);
-  // Aircraft and slots are NOT silently accepted: this creates a local browser draft.
+  const available=Array.isArray(data?.airline?.testAircraft)?data.airline.testAircraft:[];
+  if(flightAircraft&&!available.some(a=>a.id===flightAircraft)){
+   message('route-plan-status','Selected aircraft is not available in this airline. Choose another.');
+   return;
+  }
+  // No live financial, schedule or aircraft mutations: local browser-session draft only.
   const draft={from,to,flightNumber,flights:schedule.length,schedule,
-   aircraftId:flightAircraft,testAircraft:simulationAircraft?true:false,
+   aircraftId:flightAircraft,
+   aircraftLabel:simulationAircraft?'Airbus '+simulationAircraft.model+' · '+simulationAircraft.registration:null,
+   testAircraft:Boolean(simulationAircraft),operation,
    status:'draft',operationallyVerified:false};
   const latest=loadDraft?.()||{},routes=Array.isArray(latest.routes)?latest.routes:[];
-  const filtered=routes.filter(x=>x?.flightNumber!==flightNumber);
+  if(routes.some(x=>x?.flightNumber===flightNumber&&x?.flightNumber!==editingFlightNumber)){
+   message('route-plan-status','Flight number already exists. Open that draft from My routes to edit it.');
+   return;
+  }
+  const filtered=routes.filter(x=>x?.flightNumber!==editingFlightNumber&&x?.flightNumber!==flightNumber);
   if(filtered.length>=25){
-   message('route-plan-status','Maximum 25 local route drafts. Remove another draft in My routes.');return;
+   message('route-plan-status','Maximum 25 route drafts. Remove another draft in My routes.');
+   return;
   }
   if(!draftWrite('routes',[...filtered,draft])||!draftWrite('route',draft)){
-   message('route-plan-status','Browser storage unavailable. Flight draft was not saved.');return;
-  }
-  const review=$('route-plan-review');
-  if(review){
-   review.replaceChildren();
-   const line=doc.createElement('p');
-   line.textContent='Saved '+flightNumber+': '+from.name+' → '+to.name+
-    ' · '+schedule.map(x=>days[x.day]+' '+x.time).join(', ')+
-    '. Local draft only; no aircraft or slots reserved.';
-   review.append(line);
+   message('route-plan-status','Browser storage unavailable. Route draft was not saved.');
+   return;
   }
   doc.dispatchEvent(new CustomEvent('airlinerra:route-draft-saved'));
-  message('route-plan-status','Flight timetable draft saved. Activation is blocked until aircraft, slots, crew and traffic rights are verified.');
+  await resetRouteForm();
+  message('route-plan-status',flightNumber+' saved as a local route draft. Ready for another route. Use My routes to edit it. No flight or slot was activated.');
+
  });
  function updateData(data){
   for(const side of ['from','to'])
