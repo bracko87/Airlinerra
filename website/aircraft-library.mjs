@@ -16,6 +16,22 @@ function element(tag,cls,text){
  if(text!==undefined)node.textContent=text;
  return node;
 }
+// Passenger appeal is a game-balancing preference, not a safety or certification score.
+function popularityBars(score){
+ const wrap=element('div','library-popularity-rating');
+ if(!Number.isInteger(score)||score<1||score>6){
+  wrap.append(element('span','library-popularity-na','Not applicable'));
+  return wrap;
+ }
+ wrap.setAttribute('role','img');
+ wrap.setAttribute('aria-label','Passenger popularity '+score+' out of 6');
+ const bars=element('div','library-popularity-bars');
+ bars.setAttribute('aria-hidden','true');
+ for(let level=1;level<=6;level++)bars.append(element('span',
+  level<=score?'library-popularity-on':'library-popularity-off'));
+ wrap.append(bars,element('span','library-popularity-value',score+'/6'));
+ return wrap;
+}
 // These are exact, approved image filenames; never guess a picture for other variants.
 // Images are hosted in the public Admin/Airplanes Supabase Storage folder.
 // Verified against public Supabase Storage objects and aircraft configuration model/role records.
@@ -193,11 +209,14 @@ export function createAircraftLibrary({doc,getReader}={}){
    ['Range',a.rangeKm===null?'Not recorded':format(a.rangeKm)+' km'],
    ['Fuel tank',a.fuelKg===null?'Not recorded':format(a.fuelKg)+' kg'],
    ['Production',a.productionStatus?.replaceAll('_',' ')||'Unconfirmed'],
-   ['Noise chapter',noiseChapter===null||noiseChapter===undefined?'—':'Chapter '+noiseChapter]
+   ['Noise chapter',noiseChapter===null||noiseChapter===undefined?'—':'Chapter '+noiseChapter],
+   ['Passenger popularity',a.passengerPopularityScore]
   ];
   for(const [name,value] of summary){
    const item=element('div','library-profile-highlight');
-   item.append(element('span','',name),element('strong','',String(value??'Not recorded')));
+   item.append(element('span','',name));
+   item.append(name==='Passenger popularity'?popularityBars(value):
+    element('strong','',String(value??'Not recorded')));
    highlights.append(item);
   }
   hero.append(image,highlights);
