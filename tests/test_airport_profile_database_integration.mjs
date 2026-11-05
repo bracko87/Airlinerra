@@ -107,7 +107,7 @@ test('airport-wide metrics show sourced HQ and active offices without inventing 
 });
 
 test('five bands depend on daily traffic rather than percent rank or airport maximum',()=>{
- assert.deepEqual([0,999,1000,4999,5000,14999,15000,49999,50000].map(passengerTrafficGroup),
+ assert.deepEqual([0,999,1000,9999,10000,24999,25000,74999,75000].map(passengerTrafficGroup),
   [1,1,2,2,3,3,4,4,5]);
  assert.deepEqual([0,0.99,1,9.99,10,99.99,100,999.99,1000].map(cargoTrafficGroup),
   [1,1,2,2,3,3,4,4,5]);
