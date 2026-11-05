@@ -2,7 +2,6 @@
  * Airport data source is only the authenticated, approved World 1 catalog.
  * No simulation of fees, salaries, slots, demand, routes or flights.
  */
-import {createAirportCountryPicker,populateAirportCountries} from './airport-country-picker.mjs';
 import {renderAirportLocationMap} from './route-map.mjs';
 import {createAirportAirlineLogo,createAirportNetworkTabs} from './airport-network-tabs.mjs';
 const AIRPORT_KEY=/^(?:OURAIRPORTS:[1-9]\d{0,18}|FICTIONAL:fictional:[A-Z]{2}:[A-Z0-9]{2,8})$/;
@@ -147,7 +146,9 @@ export function createAirportOffice({doc,session,identity,goTo,getAirlineLogoUrl
  const host=$('workspace-hubs'),profileHost=$('workspace-airport-profile');
  let live={connected:false,airline:null,countries:[],reader:null};
  let ownLogoUrl=null,logoLoadSerial=0;
- let selectedAirport=null,activeAirport=null,officePicker=null;
+ let activeAirport=null;
+ const OFFICE_PAGE_SIZE=10;
+ const listPages={hub:0,station:0};
  const known=new Map();
  const entries=()=>{
   const current=readSession(session,key);
@@ -164,29 +165,15 @@ export function createAirportOffice({doc,session,identity,goTo,getAirlineLogoUrl
    '<div class="airport-office-headquarters"><div><span class="hint">Home airport</span><h3 id="airport-office-hq-name">Checking...</h3>'+
    '<p id="airport-office-hq-code" class="hint"></p></div>'+
    '<button type="button" class="secondary" data-office-action="home-profile">Airport profile</button></div>')+
-   panel('HUBS AND STATIONS','Plan an airport office',
-    '<p class="hint">Hubs support aircraft and connecting operations. A station is a smaller local presence, normally requiring at least one representative. Both remain proposals until the airport fees, staffing and activation engine are ready.</p>'+
-    '<div class="airport-office-form"><label for="office-location-type">Office type</label>'+
-    '<select id="office-location-type"><option value="hub">Additional hub</option><option value="station">Station</option></select>'+
-    '<label for="office-country">Country</label><select id="office-country"><option value="">Choose country</option></select>'+
-    '<label for="office-search">Filter airport</label><input id="office-search" maxlength="40" placeholder="Filter airports in selected country">'+
-    '<label for="office-result">Approved airport</label><select id="office-result" disabled><option value="">Choose country first</option></select>'+
-    '<div class="airport-office-form-actions"><button type="button" class="primary" id="office-save">Save proposed location</button>'+
-    '<button type="button" class="secondary" id="office-preview">Airport profile</button></div></div>'+
-    '<p id="office-feedback" class="hint" role="status"></p>')+
    panel('NETWORK LOCATIONS','My hubs',
     '<div class="airport-office-summary"><span>Active additional hubs</span><strong>Not connected</strong></div>'+
-    '<div id="office-hub-list" class="operations-route-table"></div>')+
+    '<div id="office-hub-list" class="operations-route-table"></div>'+
+    '<div id="office-hub-pagination" class="airport-office-pagination"></div>')+
    panel('AIRPORT REPRESENTATION','My stations',
-    '<p class="hint">One proposed local representative per station is the minimum staffing concept. Salaries and airport desk fees will be configured before activation.</p>'+
+    '<p class="hint">Stations will open automatically when a real route is activated. Until then, airport-profile actions create draft requests only.</p>'+
     '<div class="airport-office-summary"><span>Active stations</span><strong>Not connected</strong></div>'+
-    '<div id="office-station-list" class="operations-route-table"></div>')+
-   panel('COST MODEL','Office costs - future activation',
-    '<div class="airport-office-cost-grid"><div><strong>Hub opening charge</strong><span>Airport-dependent - not configured</span></div>'+
-    '<div><strong>Hub recurring charge</strong><span>Size, slots, services and aircraft basing - data pending</span></div>'+
-    '<div><strong>Station desk fee</strong><span>Airport-dependent recurring charge - not configured</span></div>'+
-    '<div><strong>Station representative</strong><span>At least one employee; salary table pending integration</span></div></div>'+
-    '<p class="hint">Saving an office proposal does not open a hub or station, reserve slots, hire staff or spend airline funds.</p>');
+    '<div id="office-station-list" class="operations-route-table"></div>'+
+    '<div id="office-station-pagination" class="airport-office-pagination"></div>');
  }
  if(profileHost){
   profileHost.innerHTML=panel('AIRPORT DIRECTORY','Airport profile',
@@ -199,7 +186,12 @@ export function createAirportOffice({doc,session,identity,goTo,getAirlineLogoUrl
    '<div class="airport-weather-summary-details">'+
    '<span id="airport-weather-summary-conditions">Loading airport weather...</span>'+
    '<span id="airport-weather-summary-wind"></span></div></div></div>'+
-   '<div class="airport-profile-main"><div id="airport-profile-facts" class="airport-profile-facts"></div>'+
+   '<div class="airport-profile-office-actions">'+
+    '<div class="airport-profile-office-buttons">'+
+    '<button type="button" class="secondary" data-office-action="plan-station" disabled>Open station</button>'+
+    '<button type="button" class="secondary" data-office-action="plan-hub" disabled>Request hub</button></div>'+
+    '<p id="airport-profile-office-feedback" class="hint" role="status" aria-live="polite">Actions create local draft requests only. No station or hub is activated yet.</p></div>'+
+    '<div class="airport-profile-main"><div id="airport-profile-facts" class="airport-profile-facts"></div>'+
    '<div class="airport-location-map-pane"><div class="airport-location-map-heading">AIRPORT LOCATION</div>'+
    '<div id="airport-profile-map" class="airport-location-map-canvas"></div></div></div>')+
    panel('AIRPORT INFRASTRUCTURE','Runways, terminals and slots',
@@ -224,13 +216,7 @@ export function createAirportOffice({doc,session,identity,goTo,getAirlineLogoUrl
  }
  const networkTabs=createAirportNetworkTabs({doc,host:$('airport-network-tabs'),
   flights:DEMO_AIRPORT_FLIGHTS});
- const feedback=t=>{if($('office-feedback'))$('office-feedback').textContent=t};
- officePicker=createAirportCountryPicker({
-  country:$('office-country'),search:$('office-search'),airport:$('office-result'),
-  getReader:()=>live.connected?live.reader:null,
-  onStatus:message=>feedback(message),
-  onSelect:airport=>{selectedAirport=airport;if(airport)remember(airport);}
- });
+ const feedback=t=>{if($('airport-profile-office-feedback'))$('airport-profile-office-feedback').textContent=t};
  function remember(a){const normalized=normalizeApprovedAirport(a);if(normalized)known.set(normalized.key,normalized);return normalized}
  function headquarters(){
   const a=live.airline;
@@ -242,30 +228,43 @@ export function createAirportOffice({doc,session,identity,goTo,getAirlineLogoUrl
   if($('airport-office-hq-code'))$('airport-office-hq-code').textContent=
    airport?.code?'Airport code: '+airport.code:'Airport code unavailable';
  }
- function directories(){
-  populateAirportCountries($('office-country'),live.countries,doc);
- }
  function renderList(type){
-  const target=$(type==='hub'?'office-hub-list':'office-station-list');if(!target)return;
+  const target=$(type==='hub'?'office-hub-list':'office-station-list');
+  const pagination=$(type==='hub'?'office-hub-pagination':'office-station-pagination');
+  if(!target)return;
   target.replaceChildren();
+  pagination?.replaceChildren();
   const items=entries().filter(e=>e.type===type);
-  if(!items.length){target.append(createText(doc,'p',
-   type==='hub'?'No additional hub proposals saved.':'No station proposals saved.','hint'));return}
-  for(const office of items){
+  if(!items.length){
+   listPages[type]=0;
+   target.append(createText(doc,'p',
+    type==='hub'?'No additional hub requests yet.':'No station requests yet.','hint'));
+   return;
+  }
+  const pages=Math.ceil(items.length/OFFICE_PAGE_SIZE);
+  listPages[type]=Math.min(Math.max(0,listPages[type]),pages-1);
+  const page=listPages[type],first=page*OFFICE_PAGE_SIZE;
+  for(const office of items.slice(first,first+OFFICE_PAGE_SIZE)){
    const line=doc.createElement('div');line.className='airport-office-list-row';
-   const text=doc.createElement('div');
-   text.append(createText(doc,'strong',office.name+' ('+(office.code||'-')+')'),
-    createText(doc,'span',type==='hub'?
-      'Additional hub - proposal only':'Station - proposal only; 1 planned representative minimum','hint'));
+   line.append(createText(doc,'span',office.name,'airport-office-list-name'),
+    createText(doc,'span',office.code||'—','airport-office-list-code'),
+    createText(doc,'span',type==='hub'?'Hub request · draft':'Station request · draft','airport-office-list-status'));
    const actions=doc.createElement('div');actions.className='airport-office-row-actions';
-   actions.append(button(doc,'Airport profile','view',office.key),button(doc,'Remove draft','remove',office.key));
-   line.append(text,actions);target.append(line);remember(office);
+   actions.append(button(doc,'Airport profile','view',office.key),
+    button(doc,'Remove draft','remove',office.key));
+   line.append(actions);target.append(line);remember(office);
+  }
+  if(pagination){
+   const label=createText(doc,'span','Page '+(page+1)+' of '+pages+
+    ' · '+items.length+' '+(type==='hub'?'hub':'station')+' requests','airport-office-page-caption');
+   const previous=button(doc,'Previous','page'),next=button(doc,'Next','page');
+   previous.dataset.officeType=next.dataset.officeType=type;
+   previous.dataset.officePage=String(page-1);
+   next.dataset.officePage=String(page+1);
+   previous.disabled=page===0;next.disabled=page===pages-1;
+   pagination.append(label,previous,next);
   }
  }
- function selectAirport(){
-  return officePicker.selected();
- }
- async function search(){await officePicker.load();}
  function profileField(id,items){
   const root=$(id);if(!root)return;root.replaceChildren();
   for(const [label,value] of items)row(doc,label,String(value??'Data pending'),root);
