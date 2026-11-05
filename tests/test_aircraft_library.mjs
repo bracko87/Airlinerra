@@ -52,7 +52,7 @@ test('catalog serializer rejects duplicate IDs, malformed types or excessive rec
  assert.throws(()=>serializeAircraftLibrary([]),/Invalid aircraft catalog size/);
  assert.throws(()=>serializeAircraftLibrary([sample,{...sample}]),/Invalid aircraft catalog record/);
  assert.throws(()=>serializeAircraftLibrary([{...sample,use_type:'fighter'}]),/Invalid aircraft catalog record/);
- assert.throws(()=>serializeAircraftLibrary(new Array(201).fill(sample)),/Invalid aircraft catalog size/);
+ assert.throws(()=>serializeAircraftLibrary(new Array(1001).fill(sample)),/Invalid aircraft catalog size/);
 });
 const token='a'.repeat(32);
 const id='550e8400-e29b-41d4-a716-446655440000';
@@ -143,7 +143,7 @@ test('aircraft directory uses sortable columns and a full-width profile page',as
  assert.match(client,/window\.location\.hash='aircraft-profile'/);
  assert.doesNotMatch(client,/showModal\(\)|detail\.close\(\)/);
  assert.match(client,/library-profile-image/);
- assert.match(client,/specificationGroup\('Source & operational qualifications'/);
+ assert.match(client,/liveFleetGroup\(a\)/);
  assert.match(client,/a\.conditionalTakeoffM/);
  assert.doesNotMatch(client,/library-aircraft-card/);
  assert.doesNotMatch(client,/\.innerHTML/);
