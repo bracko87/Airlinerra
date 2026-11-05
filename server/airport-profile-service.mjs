@@ -163,10 +163,10 @@ const countOrNull=x=>{
  return n!==null&&Number.isInteger(n)&&n>=0?n:null;
 };
 /** Fixed World 1 traffic tiers. Thresholds stay out of the player-facing UI.
- * Passenger: <1k, <5k, <15k, <50k, then above (per day).
+ * Passenger: <1k, <10k, <25k, <75k, then above (per day).
  * Cargo: <1, <10, <100, <1000, then above (tonnes per day).
  */
-export const passengerTrafficGroup=value=>trafficGroup(value,[1000,5000,15000,50000]);
+export const passengerTrafficGroup=value=>trafficGroup(value,[1000,10000,25000,75000]);
 export const cargoTrafficGroup=value=>trafficGroup(value,[1,10,100,1000]);
 function trafficGroup(value,limits){
  const n=numberOrNull(value);
