@@ -4,7 +4,7 @@ Status: player-facing navigation and informational planning pages only, **not ec
 
 ## Main menu order
 
-Dashboard | Holding (locked) | Operations | Fleet | Infrastructure | Employees | Marketing | Finance | Statistics | Account | Settings.
+Dashboard | Holding (open information page) | Operations | Fleet | Infrastructure | Employees | Marketing | Finance | Statistics | Account | Settings.
 
 - **Operations:** Hubs and airport operations, routes, schedules, cabin services, ticket pricing.
 - **Fleet:** Fleet, aircraft market, and maintenance for aircraft already operated.
@@ -12,13 +12,13 @@ Dashboard | Holding (locked) | Operations | Fleet | Infrastructure | Employees |
 - **Employees:** Employee overview, pilots, cabin crew, ground crew, technical staff, board and management, wages and salaries.
 - **Marketing:** Airline reputation, advertising campaigns, and commissioned route research.
 - **Statistics:** Overview, airlines, airports, aircraft, rankings.
-- **Holding:** visible but disabled. Does not allow creation, purchase, or legal operation.
+- **Holding:** the navigation link is open, with an informational holding-planning page. Holding creation and financial actions remain unavailable.
 
 ## Future Holding rules — design proposal
 
 Minimum eligibility: **60 completed in-game days** since the original airline started operations. This is a floor, not automatic approval. The actual company creation flow must also check:
 
-1. A material one-time holding formation charge, cash reserve and ongoing administration costs. Final amounts are undecided.
+1. A material one-time holding formation charge, cash reserve and ongoing administration costs. Final amounts are undecided; the page explicitly displays **To be announced**, not an invented cost.
 2. Verified safety and operational record, plus a minimum amount of operating experience.
 3. Country registration, business licensing and any applicable aviation approvals.
 4. No existing compliance or insolvency restriction.
@@ -52,7 +52,7 @@ Separate airline, airport and aircraft measures. Rankings should be limited to v
 
 ## Enforcement and migration notes
 
-- Holding is a visible, grey, non-clickable navigation label; planning page is informational if opened by a direct URL.
+- Holding is a clickable, first-class navigation link; its page explains earliest eligibility (60 completed in-game operating days), formation fee/reserves/ongoing costs (not yet set), regulatory requirements and possible subsidiary types. Page access does not create companies, grant permissions or charge money.
 - Existing user accounts, airline creation, flight scheduling, payment, aircraft release gates, RLS and official results are unchanged.
 - Never turn client-side time-in-game estimates into permission checks; holding eligibility needs authoritative server game time and original airline start date.
 - No frontend form may create daughter companies, debit funds, alter salaries, purchase buildings or change reputation until vetted authenticated server endpoints exist.
@@ -65,3 +65,9 @@ Separate airline, airport and aircraft measures. Rankings should be limited to v
 3. Build and test server-side permission, ownership, inventory, payroll and finance contracts.
 4. Wire actual operational events into reputation/statistics with auditable calculations.
 5. Enable specific controls only after backend, security, migration and UI integration tests are satisfied.
+
+## 2026-11-05 follow-up: aircraft image and navigation polish
+
+- Aircraft profile image frame raised from 320 px to 380 px on desktop, and 300 px on narrow screens. It now uses `object-fit:contain`, centered with no `translateY` or zoom; the entire nose, tail and landing gear should stay visible. Image asset quality still depends on the source artwork.
+- Desktop top-level navigation uses `justify-content:space-between` to occupy the full 1540 px content width, while smaller screen widths wrap labels without clipping menus.
+- The Holding navigation item is a normal page link. Financial holding features remain server-disabled; no formation fee has yet been decided.
