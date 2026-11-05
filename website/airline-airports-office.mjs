@@ -456,7 +456,7 @@ export function createAirportOffice({doc,session,identity,goTo,getAirlineLogoUrl
   }
   Promise.resolve().then(()=>getAirlineLogoUrl(airline.id)).then(url=>{
    if(serial!==logoLoadSerial||!live.connected||live.airline?.id!==airline.id)return;
-   ownLogoUrl=typeof url==='string'?url:null;
+   ownLogoUrl=typeof url==='string'?url+(url.includes('?')?'&':'?')+'logo_refresh='+Date.now():null;
    networkTabs.setOwnerLogo(name,ownLogoUrl);
    renderDemoFlightBoard();
   }).catch(()=>{
