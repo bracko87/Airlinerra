@@ -9,7 +9,7 @@ test('all requested airline operation views navigate without a Manager dropdown'
  const [html,model,app,overlay]=await Promise.all([
   read('../website/private-player-app.html'),read('../website/player-app-model.mjs'),
   read('../website/player-app.mjs'),read('../website/dev-scripts/invited-overlay.mjs')]);
- assert.equal(PLAYER_VIEWS.length,23);
+ assert.equal(PLAYER_VIEWS.length,25);
  const ops=html.slice(html.indexOf('data-nav-group="operations"'),html.indexOf('data-nav-group="fleet"'));
  for(const view of ['routes','route-list','hubs','schedule','service','tickets','staff']){
   assert.match(ops,new RegExp('data-view-link="'+view+'"'));
