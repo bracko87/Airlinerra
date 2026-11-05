@@ -65,6 +65,23 @@ BEGIN
   RAISE EXCEPTION 'SNA Sunday/Monday crossover failed: %',verdict;
  END IF;
 
- RAISE NOTICE 'SECTION5: eight flight schedule regression tests passed.';
+
+ SELECT airlinerra_game.section5_timed_route_schedule_gate_v1(
+ 1::smallint,'OURAIRPORTS:5395','OURAIRPORTS:5405',72::bigint,
+ '2026-11-05T14:00:00Z'::timestamptz,'2026-11-05T17:00:00Z'::timestamptz)->>'decision'
+ INTO verdict;
+ IF verdict<>'SPECIAL_WRITTEN_AIRPORT_PERMISSION_REVIEW_REQUIRED' THEN
+  RAISE EXCEPTION 'OTZ/SCC written airport permission review failed: %',verdict;
+ END IF;
+
+ SELECT airlinerra_game.section5_timed_route_schedule_gate_v1(
+ 1::smallint,'OURAIRPORTS:5395','OURAIRPORTS:2218',7::bigint,
+ '2026-11-05T14:00:00Z'::timestamptz,'2026-11-05T17:00:00Z'::timestamptz)->>'requiresSpecialWrittenAirportPermissionReview'
+ INTO verdict;
+ IF verdict<>'false' THEN
+  RAISE EXCEPTION 'Written permission incorrectly flagged for smaller aircraft: %',verdict;
+ END IF;
+
+ RAISE NOTICE 'SECTION5: ten flight schedule regression tests passed.';
 END;
 $tests$;
