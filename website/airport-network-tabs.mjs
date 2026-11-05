@@ -62,6 +62,7 @@ function airportLocalDate(timezone){
 }
 function labels(doc,headers,values,empty){
  const grid=el(doc,'div','airport-network-data-table');
+ grid.dataset.columns=String(headers.length);
  const top=el(doc,'div','airport-network-data-row airport-network-data-head');
  for(const title of headers)top.append(el(doc,'span','',title));
  grid.append(top);
