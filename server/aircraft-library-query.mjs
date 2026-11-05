@@ -9,6 +9,8 @@ select c.id::int as id,m.name as manufacturer,f.family_name as family,
  c.typical_passenger_seats as seats,c.maximum_passenger_seats as max_seats,
  c.maximum_cargo_payload_kg as cargo_kg,
  media.storage_object_path as image_storage_object_path,
+ coalesce(fleet_usage.total_in_use,0)::integer as fleet_in_use,
+ coalesce(fleet_usage.top_airlines,'[]'::jsonb) as top_airlines,
  v.production_start_year as production_start,v.production_end_year as factual_production_end,
  coverage.game_planning_end_year as planning_production_end,
  coverage.game_planning_newbuild_status as game_production_status,
@@ -53,6 +55,25 @@ join airlinerra.aircraft_manufacturers m on m.id=f.manufacturer_id
 join airlinerra.aircraft_game_data_coverage_v1 coverage on coverage.configuration_id=c.id
 join airlinerra.aircraft_configuration_game_readiness_v1 ready on ready.configuration_id=c.id
 left join airlinerra.aircraft_configuration_media media on media.configuration_id=c.id and media.is_approved
+left join lateral (
+ select
+  (select count(*)::integer
+   from airlinerra_game.airline_aircraft_inventory aircraft
+   where aircraft.configuration_id=c.id and aircraft.fleet_status='in_service') as total_in_use,
+  (select coalesce(jsonb_agg(
+    jsonb_build_object('airlineName',leaders.airline_name,'quantity',leaders.quantity)
+    order by leaders.quantity desc,leaders.airline_name asc
+  ),'[]'::jsonb)
+   from (
+    select airline.name as airline_name,count(*)::integer as quantity
+    from airlinerra_game.airline_aircraft_inventory aircraft
+    join airlinerra_game.airlines airline on airline.id=aircraft.airline_id
+    where aircraft.configuration_id=c.id and aircraft.fleet_status='in_service'
+    group by airline.id,airline.name
+    order by quantity desc,airline.name asc,airline.id
+    limit 3
+   ) leaders) as top_airlines
+) fleet_usage on true
 left join airlinerra_game.section5_icao_aircraft_certification_v2 cert on cert.configuration_id=c.id
 left join airlinerra_game.section5_aircraft_representative_engine_v1 representative on representative.configuration_id=c.id
 left join airlinerra_game.section5_aircraft_representative_noise_baseline_v1 noisegame on noisegame.configuration_id=c.id
@@ -97,6 +118,11 @@ export function serializeAircraftLibrary(rows){
    imagePath:typeof r.image_storage_object_path==='string' &&
     /^Airplanes\/[^/\\\r\n]{1,180}\.(?:png|jpg|jpeg|webp)$/iu.test(r.image_storage_object_path)
      ?r.image_storage_object_path:null,
+   fleetInUse:num(r.fleet_in_use,0,100000000)??0,
+   topAirlines:Array.isArray(r.top_airlines)?r.top_airlines.slice(0,3)
+    .filter(item=>item&&safeText(item.airlineName,120)&&
+      Number.isSafeInteger(Number(item.quantity))&&Number(item.quantity)>0)
+    .map(item=>({airlineName:item.airlineName,quantity:Number(item.quantity)})):[],
    seats:num(r.seats,0,1000),maxSeats:num(r.max_seats,0,1000),
    cargoKg:num(r.cargo_kg,0),productionStart:num(r.production_start,1900,2100),
    productionEnd:num(r.planning_production_end,1900,2100),
