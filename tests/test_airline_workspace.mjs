@@ -106,3 +106,53 @@ test('settings and planning work remain local drafts until server-side execution
  assert.match(model,/AIRLINE_CREATION_ENABLED=false/);
  assert.match(client,/PLAYER_READ_API_ENABLED=false/);
 });
+
+
+test('Manage airline replaces membership and strategy with one owner-scoped logo editor and planned public page',async()=>{
+ const [html,workspace,css,app]=await Promise.all([
+  read('../website/private-player-app.html'),
+  read('../website/airline-workspace.mjs'),
+  read('../website/player-app.css'),
+  read('../website/player-app.mjs')
+ ]);
+ assert.match(html,/data-view-link="airline">Manage airline<\/a>/);
+ assert.match(html,/<h1>Manage airline<\/h1>/);
+ const start=workspace.indexOf("'airline':()=>card('Company identity'");
+ const end=workspace.indexOf("'fleet':()=>",start);
+ assert.ok(start>=0&&end>start);
+ const page=workspace.slice(start,end);
+ assert.ok(!page.includes('<span>Membership</span>'));
+ assert.ok(!page.includes('Build your company'));
+ assert.ok(!page.includes('STRATEGY'));
+ assert.match(page,/id="manage-airline-logo-file"/);
+ assert.match(page,/id="manage-airline-logo-save" disabled/);
+ assert.match(page,/id="manage-airline-logo-preview"/);
+ assert.match(page,/Public airline presentation/);
+ assert.match(page,/This editor is not active yet/);
+ assert.match(page,/name, ICAO\/IATA codes and home airport remain fixed/);
+ assert.match(app,/auth\.uploadAirlineLogo\(\{airlineId:id,blob:manageLogoBlob\}\)/);
+ assert.match(app,/clearManageLogoSelection\(\)/);
+ assert.match(app,/operationsController\?\.refreshAirlineLogo\?\.\(\)/);
+ assert.match(css,/\.manage-airline-logo-layout\{display:grid/);
+});
+test('Manage account uses a full-width editable private profile with secure password reset flow',async()=>{
+ const [html,app,css]=await Promise.all([
+  read('../website/private-player-app.html'),
+  read('../website/player-app.mjs'),
+  read('../website/player-app.css')
+ ]);
+ assert.match(html,/data-view-link="profile">Manage account<\/a>/);
+ const start=html.indexOf('data-player-view="profile"'),end=html.indexOf('data-player-view="worlds"',start);
+ assert.ok(start>=0&&end>start);
+ const page=html.slice(start,end);
+ assert.match(page,/class="panel manager-account-panel"/);
+ assert.doesNotMatch(page,/class="panel narrow"/);
+ assert.doesNotMatch(page,/profile-avatar/);
+ assert.match(page,/id="manager-profile-form"/);
+ for(const id of ['manager-name','manager-hometown','manager-country','manager-email',
+  'manager-joined','manager-change-password','manager-save'])assert.ok(page.includes('id="'+id+'"'),id);
+ assert.match(page,/Hometown and country are optional and private/);
+ assert.match(app,/auth\.updateManagerProfile\(/);
+ assert.match(app,/auth\.requestPasswordReset\(user\.email\)/);
+ assert.match(css,/#player-main \.manager-account-panel\{width:100%;max-width:none\}/);
+});
