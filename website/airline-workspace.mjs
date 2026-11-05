@@ -1,4 +1,5 @@
 import {routePlannerMarkup,createRoutePlanner} from './route-planner.mjs';
+import {buildAircraftWeeklyTimeline,renderAircraftWeeklyTimeline} from './aircraft-weekly-timeline.mjs';
 /** Airlinerra airline-management workspace.
  * Real server read models stay separate from local-only planning. All page
  * structure in this module is constant markup authored by the application.
@@ -96,6 +97,7 @@ const pages=Object.freeze({
    '<div><span>Available seats</span><strong>Not connected</strong></div>'+
    '<div><span>Test aircraft</span><strong id="fleet-test-count">0</strong></div></div>'+
    '<div id="fleet-test-aircraft" class="fleet-test-aircraft"></div>'+
+   '<section id="fleet-aircraft-timeline" class="fleet-aircraft-timeline" hidden><h3 id="fleet-aircraft-timeline-heading">Aircraft weekly timeline</h3><p class="route-subtle-note">Drafted flights only. This does not represent the aircraft’s confirmed live location or slots.</p><div id="fleet-aircraft-timeline-content"></div></section>'+
    status('Only simulation aircraft are shown below. The live owned-aircraft inventory, acquisition and scheduling engines are not connected.')+
    button('aircraft-market','Explore acquisition')+button('maintenance','Maintenance planning'),
    'AIRCRAFT INVENTORY')+
@@ -446,6 +448,8 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   const testAircraft=connected&&Array.isArray(airline?.testAircraft)?
    airline.testAircraft.filter(a=>a?.testOnly===true&&a.operationallyAllowed===false):[];
   if($('fleet-test-count'))$('fleet-test-count').textContent=String(testAircraft.length);
+  const timelinePanel=$('fleet-aircraft-timeline');
+  if(timelinePanel)timelinePanel.hidden=true;
   const holder=$('fleet-test-aircraft');
   if(holder){
    holder.replaceChildren();
@@ -457,12 +461,33 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
     registration.textContent=String(aircraft.registration||'TEST');
     const state=doc.createElement('small');
     state.textContent='Simulation only · not owned · cannot operate flights';
-    row.append(title,registration,state);holder.append(row);
+    const openTimeline=doc.createElement('button');
+    openTimeline.type='button';openTimeline.className='fleet-aircraft-timeline-link';
+    openTimeline.dataset.fleetAircraftTimeline=String(aircraft.id);
+    openTimeline.textContent='Schedule timeline';
+    row.append(title,registration,state,openTimeline);holder.append(row);
    }
   }
   routePlannerController.updateData(data);
  }
  doc.getElementById('player-main')?.addEventListener('click',async event=>{
+  const timelineLink=event.target.closest('[data-fleet-aircraft-timeline]');
+  if(timelineLink){
+   const aircraftId=timelineLink.dataset.fleetAircraftTimeline;
+   const allowed=Array.isArray(data.airline?.testAircraft)&&data.airline.testAircraft.some(
+    a=>a?.id===aircraftId&&a.testOnly===true&&a.operationallyAllowed===false);
+   const holder=$('fleet-aircraft-timeline'),heading=$('fleet-aircraft-timeline-heading');
+   if(!allowed||!holder)return;
+   const newest=safelyLoad(session,draftKey)||{};
+   const routes=Array.isArray(newest.routes)?newest.routes:[];
+   const timeline=buildAircraftWeeklyTimeline({aircraftId,routes,
+    homeAirportKey:data.airline?.homeAirportKey||null});
+   const record=data.airline.testAircraft.find(a=>a.id===aircraftId);
+   if(heading)heading.textContent='Airbus '+String(record.model)+' · '+String(record.registration)+' — weekly timeline';
+   renderAircraftWeeklyTimeline(doc,$('fleet-aircraft-timeline-content'),timeline);
+   holder.hidden=false;
+   return;
+  }
   const nav=event.target.closest('[data-workspace-go]');
   if(nav){const to=nav.dataset.workspaceGo;if(AIRLINE_UI_VIEWS.includes(to)&&typeof goTo==='function')goTo(to);return;}
   const id=event.target.closest('button')?.id;
