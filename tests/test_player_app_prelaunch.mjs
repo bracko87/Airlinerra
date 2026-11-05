@@ -11,8 +11,10 @@ import {TESTER_ORIGIN,TESTER_AUTH_URL} from '../website/invited-tester-entry.mjs
 
 test('player application has complete distinct navigation and bounded hash routes',()=>{
   assert.equal(PLAYER_APP_PATH,'/player.html');
-  assert.deepEqual(PLAYER_VIEWS,['overview','onboarding','profile','worlds','airports','airport-profile','fleet','routes','route-list','hubs','tickets','schedule','finances','settings','airline','staff','rankings','service','aircraft-market','maintenance','interface','notifications','help']);
-  assert.equal(new Set(PLAYER_VIEWS).size,23);
+  assert.equal(PLAYER_VIEWS.length,43);
+  assert.equal(new Set(PLAYER_VIEWS).size,PLAYER_VIEWS.length);
+  for(const route of ['aircraft-library','aircraft-profile','airport-profile','holding','infrastructure','staff','employees-pilots','employees-board','employees-payroll','marketing-reputation','marketing-research','statistics','rankings'])
+   assert.ok(PLAYER_VIEWS.includes(route),route);
   assert.equal(safePlayerView('#fleet'),'fleet');
   assert.equal(safePlayerView('#unknown'),'overview');
   assert.equal(safePlayerView('#access_token=do-not-process'),'overview');
@@ -89,10 +91,18 @@ test('grouped horizontal dropdowns keep all ten game routes accessible',async()=
   ]);
   assert.match(html,/<nav class="app-navigation" aria-label="Player application">/);
   assert.doesNotMatch(html,/class="sidebar"/);
-  const order=['operations','fleet','finance','account','settings'];
-  const expected={operations:['hubs','route-list','routes','schedule','service','tickets','staff'],
-    fleet:['fleet','aircraft-market','maintenance'],finance:['finances'],account:[],
-    settings:['airline','onboarding','profile','rankings','worlds','airports','airport-profile','settings','interface','notifications','help']};
+  const order=['operations','fleet','infrastructure','employees','marketing','finance','statistics','account','settings'];
+  const expected={
+    operations:['hubs','route-list','routes','schedule','service','tickets'],
+    fleet:['fleet','aircraft-market','maintenance'],
+    infrastructure:['infrastructure','infrastructure-hq','infrastructure-maintenance','infrastructure-facilities'],
+    employees:['staff','employees-pilots','employees-cabin','employees-ground','employees-technical','employees-board','employees-payroll'],
+    marketing:['marketing-reputation','marketing-campaigns','marketing-research'],
+    finance:['finances'],
+    statistics:['statistics','statistics-airlines','statistics-airports','statistics-aircraft','rankings'],
+    account:[],
+    settings:['airline','onboarding','profile','worlds','airports','aircraft-library','airport-profile','settings','interface','notifications','help']
+  };
   const dashboard='<a class="nav-direct" href="#overview" data-view-link="overview">Dashboard</a>';
   assert.ok(html.includes(dashboard),'Dashboard is a separate first navigation link');
   assert.ok(html.indexOf(dashboard)<html.indexOf('data-nav-group="operations"'));
@@ -105,7 +115,8 @@ test('grouped horizontal dropdowns keep all ten game routes accessible',async()=
     assert.match(segment,/class="chevron"/);
     assert.deepEqual([...segment.matchAll(/data-view-link="([^"]+)"/g)].map(x=>x[1]),expected[order[i]]);
   }
-  assert.equal([...html.matchAll(/data-view-link="([^"]+)"/g)].length,PLAYER_VIEWS.length);
+  assert.equal([...html.matchAll(/data-view-link="([^"]+)"/g)].length,PLAYER_VIEWS.length-2);
+  assert.match(html,/class="nav-direct nav-disabled" aria-disabled="true"[^>]*>Holding/);
   assert.match(css,/\.app-navigation-inner\{[^}]*overflow:visible;/);
   assert.match(css,/\.nav-links a\[aria-current="page"\]/);
   assert.match(css,/#player-main\{max-width:1540px;/);
