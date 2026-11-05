@@ -58,6 +58,32 @@ export const AIRPORT_PROFILE_SQL=`
         wx.required_attribution AS weather_attribution,
         traffic.daily_outbound_passengers,traffic.daily_outbound_cargo_tonnes,
         traffic.passenger_demand_percentile,traffic.cargo_demand_percentile,
+        (SELECT COALESCE(jsonb_agg(jsonb_build_object(
+          'key',ne.airport_key,'name',ne.airport_name,
+          'iata',ne.iata,'distanceKm',ne.distance_km)
+          ORDER BY ne.distance_km,ne.airport_name),'[]'::jsonb)
+         FROM (
+          SELECT candidates.* FROM (
+           SELECT a2.airport_key,a2.airport_name,p2.iata_reported AS iata,
+            ROUND((6371.0088*ACOS(LEAST(1,GREATEST(-1,
+             SIN(RADIANS(p.latitude_deg::double precision))*
+             SIN(RADIANS(p2.latitude_deg::double precision))+
+             COS(RADIANS(p.latitude_deg::double precision))*
+             COS(RADIANS(p2.latitude_deg::double precision))*
+             COS(RADIANS(p2.longitude_deg::double precision-
+                         p.longitude_deg::double precision))
+            ))))::numeric,1) AS distance_km
+           FROM airlinerra_game.approved_game_airports a2
+           JOIN airlinerra_game.airport_reference_profiles p2
+            ON p2.world_id=a2.world_id AND p2.airport_key=a2.airport_key
+           WHERE a2.world_id=a.world_id AND a2.airport_key<>a.airport_key
+            AND p.latitude_deg IS NOT NULL AND p.longitude_deg IS NOT NULL
+            AND p2.latitude_deg BETWEEN p.latitude_deg-1 AND p.latitude_deg+1
+            AND p2.longitude_deg BETWEEN p.longitude_deg-2 AND p.longitude_deg+2
+          ) candidates WHERE candidates.distance_km <=100
+          ORDER BY candidates.distance_km,candidates.airport_name
+          LIMIT 12
+         ) ne) AS nearby_airports,
         (SELECT count(*)::integer FROM airlinerra_game.airlines hq
           WHERE hq.world_id=a.world_id AND hq.home_airport_key=a.airport_key)
           AS registered_airline_headquarters_count,
@@ -136,6 +162,17 @@ const countOrNull=x=>{
  const n=numberOrNull(x);
  return n!==null&&Number.isInteger(n)&&n>=0?n:null;
 };
+/** Fixed World 1 traffic tiers. Thresholds stay out of the player-facing UI.
+ * Passenger: <1k, <5k, <15k, <50k, then above (per day).
+ * Cargo: <1, <10, <100, <1000, then above (tonnes per day).
+ */
+export const passengerTrafficGroup=value=>trafficGroup(value,[1000,5000,15000,50000]);
+export const cargoTrafficGroup=value=>trafficGroup(value,[1,10,100,1000]);
+function trafficGroup(value,limits){
+ const n=numberOrNull(value);
+ if(n===null||n<0)return null;
+ return 1+limits.filter(limit=>n>=limit).length;
+}
 const percentageOrNull=x=>{
  const n=numberOrNull(x);
  return n!==null&&Number.isInteger(n)&&n>=0&&n<=100?n:null;
@@ -246,7 +283,18 @@ export function serializeAirportProfile(row){
    dailyFlights:null,
    operatingAirlines:null
   },
+  nearbyAirports:Array.isArray(row.nearby_airports)?
+   row.nearby_airports.slice(0,12).filter(n=>
+    validAirportKey(n?.key)&&numberOrNull(n?.distanceKm)!==null&&
+    numberOrNull(n.distanceKm)>=0&&numberOrNull(n.distanceKm)<=100
+   ).map(n=>({
+    key:n.key,name:nullableString(n.name),iata:nullableString(n.iata),
+    distanceKm:numberOrNull(n.distanceKm),
+    fictional:n.key.startsWith('FICTIONAL:')
+   })):[],
   demand:{
+   passengerGroup:passengerTrafficGroup(row.daily_outbound_passengers),
+   cargoGroup:cargoTrafficGroup(row.daily_outbound_cargo_tonnes),
    passengerPercent:percentageOrNull(row.passenger_demand_percentile),
    cargoPercent:percentageOrNull(row.cargo_demand_percentile),
    annualDepartingPassengers:countOrNull(row.daily_outbound_passengers)===null?
