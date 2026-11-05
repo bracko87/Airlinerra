@@ -133,13 +133,35 @@ export const flightNumberFor=(prefix,number)=>{
   prefix+digits:null;
 };
 export const validLocalDeparture=time=>/^([01]\d|2[0-3]):[0-5]\d$/.test(String(time||''));
+// Draft-only service settings: no pricing, aircraft performance or slot claims.
+export const validateFlightDraftOptions=({departureStand,arrivalStand,turnaroundMinutes,fares,onboard,baggage,cargo}={})=>{
+ if(!['terminal','remote'].includes(departureStand)||!['terminal','remote'].includes(arrivalStand)||
+  !Number.isInteger(turnaroundMinutes)||turnaroundMinutes<45||turnaroundMinutes>360||
+  !['standard','basic','enhanced'].includes(onboard)||
+  !['standard','hand-only','checked'].includes(baggage)||
+  !['none','requested'].includes(cargo))return null;
+ const prices={};
+ for(const key of ['economy','premium','business','first']){
+  const raw=fares?.[key];
+  if(raw===null||raw===undefined||String(raw).trim()===''){prices[key]=null;continue;}
+  const amount=Number(raw);
+  if(!Number.isSafeInteger(amount)||amount<0||amount>100000)return null;
+  prices[key]=amount;
+ }
+ return {departureStand,arrivalStand,turnaroundMinutes,fares:prices,
+  service:{onboard,baggage,cargo},operationallyVerified:false};
+};
+export const routeWeekdays=schedule=>{
+ const rows=Array.isArray(schedule)?schedule:[];
+ return dayShort.map((label,day)=>({label,active:rows.some(row=>row?.day===day)}));
+};
 export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
  if(!doc||typeof getData!=='function'||typeof draftWrite!=='function')
   throw Error('Verified route planner data required');
  const $=id=>doc.getElementById(id);
  const days=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
  let homeKey=null,homeLocation=null,currentAirlineId=null,homeTicket=0,detailTicket=0;
- let lastKeys='',airportProfiles={};
+ let lastKeys='',airportProfiles={},editingFlightNumber=null,editSerial=0;
  const pickers={},selected=side=>pickers[side]?.selected()||null;
  const message=(id,value)=>{if($(id))$(id).textContent=value;};
  const countryFlag=side=>{
@@ -231,6 +253,12 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    if(time)time.disabled=!check?.checked;
   }
   message('route-flights',schedule.length+' '+(schedule.length===1?'departure':'departures')+'/week');
+  for(let day=0;day<7;day++)
+   message('route-arrival-'+day,schedule.some(x=>x.day===day)?'Pending':'—');
+  const target=Number($('route-turnaround')?.value);
+  message('route-rotation-check',Number.isInteger(target)&&target>=45&&target<=360?
+   'Target '+target+' min · slots and aircraft rotations not verified':
+   'Choose a turnaround between 45 and 360 minutes');
  };
  const flagNode=iso=>{
   if(!/^[A-Z]{2}$/.test(iso||''))return null;
@@ -318,7 +346,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   if(title)title.textContent=from&&to?
    (from.code||from.name)+' – '+(to.code||to.name):'Select two airports';
   drawMap();
-  message('route-block-time','Aircraft required');
+  message('route-block-time','Pending verified aircraft performance');
   message('route-market',from&&to?
    (from.countryIso===to.countryIso?'Domestic route':'International route'):'Select airports');
   const validPair=Boolean(from&&to&&from.key!==to.key);
