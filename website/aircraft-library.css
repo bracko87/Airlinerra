@@ -98,3 +98,11 @@
 
 /* Keep smaller mobile aircraft profile artwork centered lower in the display window. */
 @media(max-width:700px){.library-profile-aircraft-photo{transform:translateY(18px) scale(.90)}}
+
+/* Passenger-popularity scale: six fixed blue/gray blocks, next to Noise chapter. */
+.library-popularity-rating{display:flex;align-items:center;gap:9px;flex-wrap:wrap;min-width:0}
+.library-popularity-bars{display:flex;align-items:center;gap:4px}
+.library-popularity-bars span{display:block;width:16px;height:11px;border-radius:3px;background:#d4dfeb;border:1px solid #c8d6e3}
+.library-popularity-bars .library-popularity-on{background:#247fd1;border-color:#247fd1}
+.library-popularity-value{font-size:12px;color:#173d60;font-weight:650;font-variant-numeric:tabular-nums}
+.library-popularity-na{font-size:12px;color:#73869b}
