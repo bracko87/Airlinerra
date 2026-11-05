@@ -252,7 +252,7 @@ test('Panonian A319 fixture appears only as nonoperational simulation choice and
 
 test('three-step flight draft screen includes daily aircraft assignments and prices without fabricated flight calculations',async()=>{
  const ui=routePlannerMarkup(),source=await read('../website/route-planner.mjs');
- for(const id of ['route-departure-stand','route-arrival-stand','route-turnaround',
+ for(const id of ['route-departure-stand-derived','route-arrival-stand','route-turnaround',
   'route-cruise-speed','route-airborne-time','route-min-turnaround','route-rotation-check',
   'route-fare-economy','route-fare-premium','route-fare-business','route-fare-first',
   'route-onboard-service','route-baggage-service','route-cargo-service',
@@ -265,6 +265,7 @@ test('three-step flight draft screen includes daily aircraft assignments and pri
   assert.ok(ui.includes('data-route-day="'+day+'"'));
   assert.ok(ui.includes('data-route-time="'+day+'"'));
   assert.ok(ui.includes('id="route-arrival-'+day+'"'));
+  assert.ok(ui.includes('id="route-stand-'+day+'"'));
  }
  assert.match(source,/status:'draft',operationallyVerified:false/);
  assert.match(source,/await resetRouteForm\(\)/);
@@ -275,18 +276,19 @@ test('three-step flight draft screen includes daily aircraft assignments and pri
 test('route fare and service draft validation limits values without implying live bookings',async()=>{
  const {validateFlightDraftOptions,routeWeekdays}=await import('../website/route-planner.mjs');
  const good={
-  departureStand:'remote',arrivalStand:'terminal',turnaroundMinutes:60,
+  arrivalStand:'terminal',turnaroundMinutes:60,
   fares:{economy:'100',premium:'',business:'200',first:null},
   onboard:'standard',baggage:'checked',cargo:'requested'
  };
  const result=validateFlightDraftOptions(good);
  assert.equal(result.operationallyVerified,false);
  assert.deepEqual(result.fares,{economy:100,premium:null,business:200,first:null});
- assert.equal(result.departureStand,'remote');
+ assert.equal('departureStand' in result,false);
+ assert.equal(result.arrivalStand,'terminal');
  assert.equal(result.turnaroundMinutes,60);
  for(const bad of [
   {...good,turnaroundMinutes:30},{...good,turnaroundMinutes:361},
-  {...good,departureStand:'cargo'},{...good,onboard:'unsafe'},
+  {...good,arrivalStand:'cargo'},{...good,onboard:'unsafe'},
   {...good,fares:{...good.fares,economy:'101.5'}},
   {...good,fares:{...good.fares,first:'-1'}},
   {...good,fares:{...good.fares,business:'100001'}}
@@ -321,4 +323,23 @@ test('saved legacy route ideas remain editable while applied drafts reset the fo
  const css=await read('../website/player-app.css');
  assert.match(css,/#player-main \.operations-route-directory-row \.operations-route-open-text\{/);
  assert.match(css,/justify-self:end/);
+});
+
+
+test('Step 2 can only choose destination arrival stand and derives departure stand from previous flight',async()=>{
+ const source=await read('../website/route-planner.mjs');
+ const markup=routePlannerMarkup();
+ assert.ok(!markup.includes('id="route-departure-stand"'));
+ assert.ok(markup.includes('id="route-departure-stand-derived"'));
+ assert.ok(markup.includes('id="route-aircraft-position-status"'));
+ assert.ok(markup.includes('id="route-aircraft-timeline-content"'));
+ assert.match(source,/const timeline=selectedAircraftTimeline\(\)/);
+ assert.match(source,/if\(timeline\.errors\.length\)/);
+ assert.match(source,/Aircraft schedule conflict:/);
+ assert.match(source,/arrivalStand:\$\('route-arrival-stand'\)\?\.value/);
+ assert.match(source,/renderAircraftWeeklyTimeline\(doc,\$\('route-aircraft-timeline-content'\),timeline\)/);
+ const office=await read('../website/airline-workspace.mjs');
+ assert.match(office,/fleet-aircraft-timeline-content/);
+ assert.match(office,/data-fleet-aircraft-timeline/);
+ assert.match(office,/buildAircraftWeeklyTimeline\(\{aircraftId,routes,/);
 });
