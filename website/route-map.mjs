@@ -3,6 +3,7 @@
  * made-up airport coordinates, block times, slots or demand.
  */
 import {WORLD_OUTLINES} from './world-outlines.mjs';
+import {WORLD_BORDER_LINES_50M} from './world-borders-50m.mjs';
 const NS='http://www.w3.org/2000/svg';
 const RAD=Math.PI/180;
 export function airportCoordinates(a){
@@ -125,8 +126,9 @@ export function renderAirportLocationMap(container,airport,{doc=globalThis.docum
    ', latitude '+point.lat.toFixed(4)+', longitude '+point.lon.toFixed(4)
  });
  svg.append(makeSvg(doc,'rect',{width,height,fill:'#092b57'}));
- const land=makeSvg(doc,'g',{fill:'#092b57',stroke:'#fff','stroke-width':1.2,
-  'stroke-linejoin':'round'});
+ const land=makeSvg(doc,'g',{fill:'#092b57',stroke:'#fff','stroke-width':0.75,
+  'stroke-opacity':0.74,'stroke-linejoin':'round',
+  'shape-rendering':'geometricPrecision'});
  for(const ring of WORLD_OUTLINES){
   if(!Array.isArray(ring)||ring.length<3)continue;
   const pts=ring.map(([lon,lat])=>xy(lon,lat));
@@ -139,12 +141,29 @@ export function renderAirportLocationMap(container,airport,{doc=globalThis.docum
   }));
  }
  svg.append(land);
+ // A separate, more detailed public-domain 1:50m international boundary layer.
+ // Land and sea stay the same navy; only country edges are white.
+ const borders=makeSvg(doc,'g',{fill:'none',stroke:'#fff','stroke-width':1.1,
+  'stroke-linecap':'round','stroke-linejoin':'round',
+  'shape-rendering':'geometricPrecision'});
+ for(const line of WORLD_BORDER_LINES_50M){
+  if(!Array.isArray(line)||line.length<2)continue;
+  const pts=line.map(([lon,lat])=>xy(lon,lat));
+  if(pts.some((p,i)=>i>0&&Math.abs(p[0]-pts[i-1][0])>width*.65))continue;
+  const xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]);
+  if(Math.max(...xs)<-25||Math.min(...xs)>width+25||
+   Math.max(...ys)<-25||Math.min(...ys)>height+25)continue;
+  borders.append(makeSvg(doc,'path',{
+   d:pts.map(([x,y],i)=>(i?'L':'M')+x.toFixed(2)+' '+y.toFixed(2)).join(' ')
+  }));
+ }
+ svg.append(borders);
  const pin=makeSvg(doc,'g',{transform:'translate('+(width/2)+' '+(height/2)+')'});
  pin.append(makeSvg(doc,'path',{
-  d:'M0 0C-5-7-14-17-14-26a14 14 0 1 1 28 0C14-17 5-7 0 0Z',
+  d:'M0 0C-3-5-9-11-9-17a9 9 0 1 1 18 0C9-11 3-5 0 0Z',
   fill:'#ff6917',stroke:'#ff6917','stroke-width':2
  }));
- pin.append(makeSvg(doc,'circle',{cx:0,cy:-26,r:5,fill:'#fff'}));
+ pin.append(makeSvg(doc,'circle',{cx:0,cy:-17,r:3,fill:'#fff'}));
  svg.append(pin);container.append(svg);
  return {latitude:point.lat,longitude:point.lon};
 }
