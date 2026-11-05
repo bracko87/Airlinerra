@@ -1,0 +1,43 @@
+name: Strategic management navigation (isolated)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "website/private-player-app.html"
+      - "website/player-app-model.mjs"
+      - "website/player-app.css"
+      - "website/aircraft-library.mjs"
+      - "website/aircraft-library.css"
+      - "tests/test_strategic_navigation.mjs"
+      - "tests/test_player_app_prelaunch.mjs"
+      - "tests/test_airline_workspace.mjs"
+      - "tests/test_operations_center_navigation.mjs"
+      - ".github/workflows/strategic-management-navigation-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  navigation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check player and aircraft module syntax
+        run: |
+          node --check website/player-app-model.mjs
+          node --check website/aircraft-library.mjs
+          node --check tests/test_strategic_navigation.mjs
+      - name: Test management navigation and existing screens
+        run: |
+          node --test \
+            tests/test_strategic_navigation.mjs \
+            tests/test_operations_center_navigation.mjs \
+            tests/test_airline_workspace.mjs \
+            tests/test_player_app_prelaunch.mjs \
+            tests/test_aircraft_live_usage.mjs \
+            tests/test_aircraft_library.mjs
