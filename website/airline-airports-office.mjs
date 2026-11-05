@@ -274,12 +274,34 @@ export function createAirportOffice({doc,session,identity,goTo,getAirlineLogoUrl
  const num=n=>knownNumber(n)?new Intl.NumberFormat('en-US',{maximumFractionDigits:2}).format(n):'Data pending';
  const count=n=>Number.isInteger(n)&&n>=0?String(n):'Data pending';
  const textOrPending=v=>typeof v==='string'&&v.trim()?v:'Data pending';
+ function refreshOfficeActions(airport,loading=false){
+  const request=entries().find(x=>x.key===airport?.key);
+  const home=airport?.key===live.airline?.homeAirportKey;
+  const permitted=Boolean(live.connected&&live.airline?.id&&airport?.countryIso&&!home&&!request);
+  for(const action of ['plan-station','plan-hub']){
+   const control=profileHost?.querySelector('[data-office-action="'+action+'"]');
+   if(control)control.disabled=!permitted;
+  }
+  const note=$('airport-profile-office-feedback');
+  if(!note)return;
+  note.textContent=!live.connected||!live.airline?.id?
+   'Connect your registered airline before requesting an airport office.':
+   home?'This airport is already your registered headquarters.':
+   loading&&!airport?.countryIso?'Checking airport details before allowing requests...':
+   !airport?.countryIso?'Airport country is unavailable. Requests cannot be created here.':
+   request?'An '+(request.type==='hub'?'additional hub':'station')+
+    ' draft is already saved for this airport. No office is active.':
+   'Open station and Request hub save draft requests in this browser only. No airport office is activated yet.';
+ }
  function renderAirportProfile(airport,detail=null,loading=false){
   const p=detail;
   const name=p?.name||airport.name;
   if($('airport-profile-name'))$('airport-profile-name').textContent=name;
   const iso=p?.countryIso||airport.countryIso;
   const municipality=p?.municipality||airport.municipality;
+  const effective=iso?remember({...airport,name,countryIso:iso,municipality}):airport;
+  if(activeAirport?.key===airport.key)activeAirport=effective;
+  refreshOfficeActions(effective,loading);
   const location=$('airport-profile-location');
   if(location){
    const locationText=[municipality,iso?countryLabel(iso):''].filter(Boolean).join(', ')||
@@ -506,22 +528,28 @@ export function createAirportOffice({doc,session,identity,goTo,getAirlineLogoUrl
    renderList('hub');renderList('station');feedback('Office proposal removed. No active airport office was changed.');
    return;
   }
-  if(target.id==='office-find'){await search();return;}
-  if(target.id==='office-preview'){
-   const a=selectAirport();if(!a){feedback('Choose an approved airport first.');return;}showProfile(a);return;
+  if(action==='page'){
+   const type=target.dataset.officeType,requested=Number(target.dataset.officePage);
+   if(!['hub','station'].includes(type)||!Number.isInteger(requested))return;
+   listPages[type]=requested;
+   renderList(type);return;
   }
-  if(target.id==='office-save'){
-   if(!live.connected||!live.airline?.id){feedback('Your airline must be verified before planning an office.');return;}
-   const a=selectAirport();
-   const proposed=proposeAirportOffice({type:$('office-location-type')?.value,airport:a,
+  if(action==='plan-station'||action==='plan-hub'){
+   if(!live.connected||!live.airline?.id){
+    feedback('You need a verified airline to submit an office request.');return;
+   }
+   const airport=activeAirport,type=action==='plan-hub'?'hub':'station';
+   const proposed=proposeAirportOffice({type,airport,
     homeAirportKey:live.airline.homeAirportKey,existing:entries()});
    if(!proposed.ok){feedback(proposed.reason);return;}
    if(!saveSession(session,keyForAccount(),[...entries(),proposed.entry])){
-    feedback('Browser session storage is not available. Your proposal was not saved.');return;
+    feedback('Unable to save this draft in your browser. No airport office was opened.');return;
    }
    renderList('hub');renderList('station');
-   feedback((proposed.entry.type==='station'?'Station':'Hub')+
-    ' proposal saved in this browser session. No fees or salaries were charged.');
+   refreshOfficeActions(airport);
+   feedback((type==='hub'?'Hub request':'Station request')+
+    ' saved as a local draft. No airport office, staffing, fees or slots have been activated.');
+   return;
   }
  });
  // Keep the private account draft key aligned with Route/Staff planning.
@@ -532,7 +560,8 @@ export function createAirportOffice({doc,session,identity,goTo,getAirlineLogoUrl
   }
   if(value?.connected===false){++logoLoadSerial;ownLogoUrl=null;}
   live={...live,...value};
-  headquarters();directories();renderList('hub');renderList('station');
+  headquarters();renderList('hub');renderList('station');
+  if(activeAirport)refreshOfficeActions(activeAirport);
  }
  function openAirport(airport){
   const a=remember(airport);if(!a)return false;
