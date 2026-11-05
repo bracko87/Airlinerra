@@ -66,7 +66,7 @@ function storageWrite(storage,key,state){
  try{storage?.setItem(key,JSON.stringify(state));return true}catch{return false}
 }
 const card=(title,body,kicker='OPERATIONS PLANNING')=>'<article class="panel workspace-panel"><span class="panel-kicker">'+kicker+'</span><h2>'+title+'</h2>'+body+'</article>';
-export function createOperationsCenter({doc,identity,session,goTo}={}){
+export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogoUrl}={}){
  if(!doc||!identity||typeof identity!=='string'||!/^[\w-]{3,128}$/.test(identity))throw Error('Verified account required');
  const key='airlinerra.local.workplan.v1.'+identity;
  const $=id=>doc.getElementById(id);
@@ -324,6 +324,6 @@ export function createOperationsCenter({doc,identity,session,goTo}={}){
   }
  }
  initStaff();renderRoutes();renderHubs();
- const airportOfficeController=createAirportOffice({doc,identity,session,goTo});
+ const airportOfficeController=createAirportOffice({doc,identity,session,goTo,getAirlineLogoUrl});
  return Object.freeze({updateData,openAirport:airport=>airportOfficeController.openAirport(airport)});
 }
