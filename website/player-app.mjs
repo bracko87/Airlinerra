@@ -301,6 +301,7 @@ async function loadPlayerReadData({local=false}={}){
     operationsController?.updateData({connected:true,airline:first||null,worlds:data.worlds,countries:data.countries,reader:playerData});
   }
   catch{console.warn('Airlinerra secondary workspace failed to display');}
+  if(first?.id)void loadManageAirlineLogo();
   doc.getElementById('player-data-status').hidden=true;
   doc.getElementById('player-data-retry').hidden=true;
   if(first?.name){
