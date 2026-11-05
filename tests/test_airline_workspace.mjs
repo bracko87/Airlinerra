@@ -12,7 +12,7 @@ test('expanded management pages and operations/settings navigation stay linked',
  for(const page of PLAYER_VIEWS)
   assert.match(html,new RegExp('data-player-view="'+page+'"'));
  // Holding is locked and aircraft-profile is opened from a chosen aircraft, not a menu item.
- assert.equal([...html.matchAll(/data-view-link="([^"]+)"/g)].length,PLAYER_VIEWS.length-2);
+ assert.equal([...html.slice(html.indexOf('<nav class="app-navigation"'),html.indexOf('</nav>')+6).matchAll(/data-view-link="([^"]+)"/g)].length,PLAYER_VIEWS.length-2);
  assert.ok(html.indexOf('>Dashboard</a>')<html.indexOf('data-nav-group="operations"'));
  assert.match(html,/aria-disabled="true"[^>]*>Holding/);
  assert.doesNotMatch(html,/data-nav-group="manager"/);
