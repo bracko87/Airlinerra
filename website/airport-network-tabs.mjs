@@ -25,8 +25,20 @@ const svgEl=(doc,tag,attrs={})=>{
  for(const [name,value] of Object.entries(attrs))node.setAttribute(name,String(value));
  return node;
 };
-export function createAirportAirlineLogo(doc,name){
+export function createAirportAirlineLogo(doc,name,verifiedLogoUrl=null){
  const logo=el(doc,'span','airport-airline-logo-crop');
+ // A short-lived URL may only come from the authenticated owner's storage read.
+ // Never derive another user's private storage path from their airline name.
+ const signedPrefix='https://hwllkabgzaynalahvkpz.supabase.co/storage/v1/object/sign/airlinerra-airline-logos/';
+ if(typeof verifiedLogoUrl==='string'&&verifiedLogoUrl.startsWith(signedPrefix)){
+  const img=el(doc,'img','airport-airline-logo-actual');
+  img.alt=name+' airline logo';
+  img.src=verifiedLogoUrl;
+  img.loading='lazy';img.decoding='async';
+  logo.setAttribute('title',name+' current company logo');
+  logo.append(img);
+  return logo;
+ }
  logo.setAttribute('role','img');
  logo.setAttribute('aria-label','Illustrative, unofficial '+name+' logo crop');
  const idx=Math.max(0,['Panonian','Aurora Connect','Silver Atlas Air','Danube Sky','Northwind Air',
@@ -88,6 +100,8 @@ const formatAmount=(n,suffix='')=>typeof n==='number'&&Number.isFinite(n)&&n>=0?
 export function createAirportNetworkTabs({doc,host,flights=[]}={}){
  if(!host)return {setAirport:()=>{}};
  let airport=null,detail=null,active='airlines',destination='';
+ let ownAirlineName='',ownLogoUrl=null;
+ const logoFor=name=>name===ownAirlineName?ownLogoUrl:null;
  const tabs=el(doc,'div','airport-network-tabs');
  tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label','Airport network information');
  const buttons=new Map();
@@ -104,35 +118,63 @@ export function createAirportNetworkTabs({doc,host,flights=[]}={}){
  const carrierRows=()=>[...new Set(flights.map(f=>f.airline))].map(name=>({
   name,examples:flights.filter(f=>f.airline===name).length
  }));
- function showAirlines(){
-  pane.append(note(doc,'Illustrative airline previews only. Actual operating airlines and flight frequency will come from recorded schedules.'));
-  const cards=el(doc,'div','airport-network-airlines');
-  for(const airline of carrierRows()){
-   const card=el(doc,'div','airport-network-airline-card');
-   card.append(createAirportAirlineLogo(doc,airline.name),
-    el(doc,'strong','',airline.name),
-    el(doc,'span','',airline.examples+' example '+(airline.examples===1?'flight':'flights')+' on the preview board'));
-   cards.append(card);
+ function renderDayGroups(destinationFilter=null){
+  const base=airportLocalDate(detail?.timezone||'Europe/Berlin');
+  const root=el(doc,'div','airport-network-week-list');
+  for(let offset=0;offset<7;offset++){
+   const day=new Date(base.getTime()+offset*86400000);
+   const weekday=WEEKDAY[day.getUTCDay()];
+   const title=new Intl.DateTimeFormat('en-GB',{
+    timeZone:'UTC',weekday:'long',day:'numeric',month:'long'
+   }).format(day);
+   const section=el(doc,'section','airport-network-day');
+   section.append(el(doc,'h3','airport-network-day-title',title));
+   const entries=flights.map((f,i)=>({...f,index:i})).filter(f=>
+    (destinationFilter===null||f.route.split('·').slice(1).join('·').trim()===destinationFilter)
+    && SCHEDULE_DAYS[f.index%SCHEDULE_DAYS.length].includes(weekday));
+   if(!entries.length)section.append(el(doc,'p','airport-network-day-empty','No sample flights'));
+   for(const flight of entries){
+    const line=el(doc,'div','airport-network-day-flight');
+    line.append(el(doc,'span','airport-network-day-time',flight.time),
+     el(doc,'span','airport-network-day-number',flight.flight),
+     el(doc,'span','airport-network-day-airline',flight.airline),
+     createAirportAirlineLogo(doc,flight.airline,logoFor(flight.airline)),
+     el(doc,'span','airport-network-day-route',flight.route));
+    section.append(line);
+   }
+   root.append(section);
   }
-  pane.append(cards);
+  return root;
+ }
+ function showAirlines(){
+  pane.append(note(doc,'Fictional airlines and example flight counts. Actual airline operations will be listed when schedules are available.'));
+  const list=el(doc,'div','airport-network-airline-list');
+  for(const airline of carrierRows()){
+   const line=el(doc,'div','airport-network-airline-row');
+   line.append(el(doc,'span','airport-network-airline-name',airline.name),
+    createAirportAirlineLogo(doc,airline.name,logoFor(airline.name)),
+    el(doc,'span','airport-network-airline-operations',
+     airline.examples+' example '+(airline.examples===1?'flight':'flights')+' on preview board'));
+   list.append(line);
+  }
+  pane.append(list);
  }
  function showStatistics(){
-  pane.append(note(doc,'Airline-level daily passenger figures are not available until live flight results are recorded. The example-flight counts below are fictional.'));
-  const metrics=el(doc,'div','airport-network-metrics');
+  pane.append(note(doc,'Daily flight activity below is fictional until real airline schedules and completed-flight statistics are connected.'));
+  pane.append(renderDayGroups());
+  const metrics=el(doc,'div','airport-network-metrics airport-network-bottom-metrics');
   metrics.append(item(doc,'Annual departing passengers',formatAmount(detail?.demand?.annualDepartingPassengers)),
    item(doc,'Registered airline headquarters',
     Number.isInteger(detail?.airportActivity?.registeredHeadquarters)?
      String(detail.airportActivity.registeredHeadquarters):'—'),
-   item(doc,'Last daily airline update','Awaiting operations'));
+   item(doc,'Real daily airline data','Awaiting operations'));
   pane.append(metrics);
-  pane.append(labels(doc,['Airline (example)','Preview flights','Actual passengers/day'],
-   carrierRows().map(r=>[r.name,String(r.examples),'—'])));
  }
  function showDestinations(){
   const origin=el(doc,'div','airport-network-origin');
   origin.append(el(doc,'span','','Origin airport'),
    el(doc,'strong','',airport?.name||'Select an airport'));
-  pane.append(origin,note(doc,'Fictional sample connections and weekly timings. No real flights are scheduled or bookable here.'));
+  pane.append(origin,note(doc,'Fictional flight schedule for the next seven days; no real bookings or scheduled flights.'));
   const selector=el(doc,'div','airport-network-destination-control');
   const lab=el(doc,'label','','Destination');
   lab.htmlFor='airport-network-destination-select';
@@ -140,22 +182,11 @@ export function createAirportNetworkTabs({doc,host,flights=[]}={}){
   const places=sampleAirportDestinations(flights);
   if(!places.includes(destination))destination=places[0]||'';
   for(const place of places){
-   const opt=el(doc,'option','',place);opt.value=place;
-   opt.selected=place===destination;
-   select.append(opt);
+   const option=el(doc,'option','',place);option.value=place;
+   option.selected=place===destination;select.append(option);
   }
   selector.append(lab,select);pane.append(selector);
-  const base=airportLocalDate(detail?.timezone||'Europe/Berlin');
-  const dates=[];
-  for(let offset=0;offset<7;offset++){
-   const day=new Date(base.getTime()+offset*86400000),weekday=WEEKDAY[day.getUTCDay()];
-   const short=new Intl.DateTimeFormat('en-GB',{timeZone:'UTC',weekday:'short',day:'2-digit',month:'short'}).format(day);
-   const matching=flights.map((f,i)=>({...f,index:i})).filter((f)=>
-    f.route.split('·').slice(1).join('·').trim()===destination&&SCHEDULE_DAYS[f.index%SCHEDULE_DAYS.length].includes(weekday));
-   if(!matching.length)dates.push([short,'—','—','No sample flight']);
-   for(const f of matching)dates.push([short,f.time,f.flight,f.airline+' · '+f.route.split('·')[0].trim()]);
-  }
-  pane.append(labels(doc,['Next 7 days','Time','Flight','Preview service'],dates));
+  pane.append(renderDayGroups(destination));
  }
  function showCargo(){
   pane.append(note(doc,'Real annual outbound cargo is shown below. Cargo carried by each airline will appear after flight and handling statistics become available.'));
@@ -197,5 +228,10 @@ export function createAirportNetworkTabs({doc,host,flights=[]}={}){
   render();
  }
  render();
- return Object.freeze({setAirport});
+ function setOwnerLogo(airlineName,url){
+  ownAirlineName=typeof airlineName==='string'?airlineName:'';
+  ownLogoUrl=typeof url==='string'?url:null;
+  render();
+ }
+ return Object.freeze({setAirport,setOwnerLogo});
 }
