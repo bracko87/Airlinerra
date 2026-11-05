@@ -298,6 +298,15 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
  main?.addEventListener('click',async e=>{
   const target=e.target.closest('button');if(!target)return;
   if(target.dataset.opsPage){goTo?.(target.dataset.opsPage);return;}
+  if(target.dataset.opsRouteEdit!==undefined){
+   const i=Number(target.dataset.opsRouteEdit);
+   const candidates=Array.isArray(state.routes)&&state.routes.length?state.routes:
+    state.route?[state.route]:[];
+   if(!Number.isInteger(i)||i<0||i>=candidates.length)return;
+   goTo?.('routes');
+   doc.dispatchEvent(new CustomEvent('airlinerra:edit-route-draft',{detail:{index:i}}));
+   return;
+  }
   if(target.dataset.opsRouteRemove!==undefined){
    const i=Number(target.dataset.opsRouteRemove);
    const rows=Array.isArray(state.routes)&&state.routes.length?state.routes:state.route?[state.route]:[];
