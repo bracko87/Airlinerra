@@ -14,7 +14,8 @@ const picker=(side,title)=>'<fieldset class="route-planner-airport"><legend>'+ti
  '<select class="route-native-country" id="route-'+side+'-country" tabindex="-1" aria-hidden="true">'+
  '<option value="">All countries</option></select>'+
  '<button type="button" id="route-'+side+'-country-trigger" class="route-country-trigger" '+
- 'aria-haspopup="listbox" aria-expanded="false" aria-controls="route-'+side+'-country-list">'+
+ 'aria-haspopup="listbox" aria-expanded="false" aria-controls="route-'+side+'-country-list" '+
+ 'data-route-country-trigger="'+side+'">'+
  '<img id="route-'+side+'-country-flag" class="route-country-flag" alt="" hidden>'+
  '<span id="route-'+side+'-country-text">All countries — search anywhere</span>'+
  '<span aria-hidden="true" class="route-chevron">⌄</span></button>'+
@@ -113,11 +114,72 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
  const countryFlag=side=>{
   const iso=$('route-'+side+'-country')?.value||'';
   const img=$('route-'+side+'-country-flag');
+  const label=$('route-'+side+'-country-text');
+  if(label)label.textContent=/^[A-Z]{2}$/.test(iso)?
+   airportCountryName(iso):'All countries — search anywhere';
   if(!img)return;
   if(/^[A-Z]{2}$/.test(iso)){
    img.src='https://flagcdn.com/w40/'+iso.toLowerCase()+'.png';
    img.alt=airportCountryName(iso)+' flag';img.hidden=false;
   }else{img.removeAttribute('src');img.hidden=true;}
+ };
+ const hideCountryMenus=()=>{
+  for(const side of ['from','to']){
+   const list=$('route-'+side+'-country-list');
+   const trigger=$('route-'+side+'-country-trigger');
+   if(list)list.hidden=true;
+   if(trigger)trigger.setAttribute('aria-expanded','false');
+  }
+ };
+ const renderCountryMenus=countries=>{
+  const countriesSorted=[...(countries||[])].filter(c=>/^[A-Z]{2}$/.test(c.countryIso||''))
+   .sort((a,b)=>airportCountryName(a.countryIso).localeCompare(airportCountryName(b.countryIso),'en'));
+  for(const side of ['from','to']){
+   const root=$('route-'+side+'-country-list');
+   if(!root)continue;
+   root.replaceChildren();
+   for(const c of [{countryIso:'',airportCount:null},...countriesSorted]){
+    const button=doc.createElement('button');
+    button.type='button';button.className='route-country-option';
+    button.setAttribute('role','option');
+    button.dataset.routeCountryChoice=side;button.dataset.countryIso=c.countryIso;
+    button.setAttribute('aria-selected',String($('route-'+side+'-country')?.value===c.countryIso));
+    if(c.countryIso){
+     const img=doc.createElement('img');img.src='https://flagcdn.com/w40/'+c.countryIso.toLowerCase()+'.png';
+     img.alt='';img.width=20;img.height=13;img.loading='lazy';img.className='route-summary-flag';
+     button.append(img);
+    }
+    const label=doc.createElement('span');
+    label.textContent=c.countryIso?airportCountryName(c.countryIso)+
+     ' ('+Number(c.airportCount||0)+' airports)':'All countries — search anywhere';
+    button.append(label);root.append(button);
+   }
+  }
+ };
+ const hideSuggestions=side=>{
+  const list=$('route-'+side+'-suggestions'),input=$('route-'+side+'-search');
+  if(list)list.hidden=true;
+  if(input)input.setAttribute('aria-expanded','false');
+ };
+ const renderSuggestions=(side,results,ready=true)=>{
+  const list=$('route-'+side+'-suggestions'),input=$('route-'+side+'-search');
+  if(!list||!input)return;
+  list.replaceChildren();
+  if(!ready||!Array.isArray(results)||!results.length){hideSuggestions(side);return;}
+  for(const a of results.slice(0,30)){
+   const button=doc.createElement('button');
+   button.type='button';button.className='route-airport-option';
+   button.setAttribute('role','option');button.dataset.routeAirportKey=a.key;
+   button.dataset.routeAirportSide=side;
+   const flag=doc.createElement('img');
+   flag.src='https://flagcdn.com/w40/'+a.countryIso.toLowerCase()+'.png';
+   flag.alt='';flag.width=20;flag.height=13;flag.className='route-summary-flag';
+   button.append(flag);
+   const name=doc.createElement('span');
+   name.textContent=a.name+(a.code?' ('+a.code+')':'')+(a.municipality?' · '+a.municipality:'');
+   button.append(name);list.append(button);
+  }
+  list.hidden=false;input.setAttribute('aria-expanded','true');
  };
  const availableSchedule=()=>{
   const result=[];
