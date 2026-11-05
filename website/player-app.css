@@ -1091,3 +1091,9 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
  #workspace-routes .route-step2-top,#workspace-routes .route-pricing-grid,
  #workspace-routes .route-service-grid,#workspace-routes .route-flight-calculations{grid-template-columns:1fr}
 }
+
+
+/* "More information" stays at the far right, with no button chrome. */
+#player-main .operations-route-directory-row .operations-route-open-text{
+ justify-self:end;text-align:right;font-weight:400
+}
