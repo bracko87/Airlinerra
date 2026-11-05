@@ -316,3 +316,18 @@ test('verified headquarters is pinned as main hub and main station without a pai
  assert.match(css,/\.airport-profile-identity \.airport-profile-office-actions\{display:grid/);
  assert.match(css,/#player-main \.airport-profile-identity \.airport-profile-office-buttons \.secondary\{appearance:none;border:0/);
 });
+
+
+test('hub and station airport profile controls render as right-aligned text links',async()=>{
+ const [office,css]=await Promise.all([
+  read('../website/airline-airports-office.mjs'),
+  read('../website/player-app.css')
+ ]);
+ assert.match(office,/profileLink\.classList\.add\('airport-office-profile-text-link'\)/);
+ assert.match(office,/button\(doc,'Airport profile','view',office\.key\)/);
+ assert.match(css,/#player-main \.airport-office-row-actions \.airport-office-profile-text-link\{/);
+ assert.match(css,/background:transparent!important;/);
+ assert.match(css,/border:0!important;/);
+ assert.match(css,/text-decoration:underline;/);
+ assert.match(css,/\.airport-office-row-actions\{display:flex;align-items:center;justify-content:flex-end;/);
+});
