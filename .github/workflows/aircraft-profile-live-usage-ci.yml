@@ -1,0 +1,31 @@
+name: Aircraft profile live usage (isolated)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "server/aircraft-library-query.mjs"
+      - "website/aircraft-library.mjs"
+      - "website/aircraft-library.css"
+      - "tests/test_aircraft_live_usage.mjs"
+      - ".github/workflows/aircraft-profile-live-usage-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  aircraft-profile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax-check the aircraft catalog and profile
+        run: |
+          node --check server/aircraft-library-query.mjs
+          node --check website/aircraft-library.mjs
+          node --check tests/test_aircraft_live_usage.mjs
+      - name: Test image framing, actual fleet usage and operator ranking
+        run: node --test tests/test_aircraft_live_usage.mjs
