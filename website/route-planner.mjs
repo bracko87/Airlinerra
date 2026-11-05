@@ -307,6 +307,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    airport:$('route-'+side+'-airport'),
    getReader:()=>getData()?.connected?getData()?.reader:null,
    onStatus:status=>message('route-'+side+'-count',status),
+   onResults:(results,ready)=>renderSuggestions(side,results,ready),
    onSelect:airport=>{
     const quick=$('route-'+side+'-hub');
     if(quick)quick.value=airport?.key===homeKey&&homeLocation?homeKey:'';
@@ -385,9 +386,66 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    el.value=el.value.replace(/\D/g,'').slice(0,4);
   }
  });
+ main?.addEventListener('focusin',event=>{
+  for(const side of ['from','to']){
+   if(event.target?.id==='route-'+side+'-search'){
+    hideCountryMenus();
+    renderSuggestions(side,pickers[side].getAirports(),true);
+   }
+  }
+ });
+ main?.addEventListener('keydown',event=>{
+  for(const side of ['from','to']){
+   if(event.target?.id==='route-'+side+'-search'){
+    if(event.key==='Escape'){hideSuggestions(side);return;}
+    if(event.key==='ArrowDown'){
+     const list=$('route-'+side+'-suggestions');
+     if(list?.hidden)renderSuggestions(side,pickers[side].getAirports(),true);
+     const first=list?.querySelector('button');
+     if(first){event.preventDefault();first.focus();}
+    }
+   }
+   if(event.target?.dataset?.routeAirportSide===side&&
+      ['ArrowUp','ArrowDown'].includes(event.key)){
+    const buttons=[...($('route-'+side+'-suggestions')?.querySelectorAll('button')||[])];
+    const index=buttons.indexOf(event.target);
+    const next=buttons[(index+(event.key==='ArrowDown'?1:-1)+buttons.length)%buttons.length];
+    if(next){event.preventDefault();next.focus();}
+   }
+  }
+ });
+ doc.addEventListener('click',event=>{
+  if(!event.target?.closest?.('.route-country-picker'))hideCountryMenus();
+  for(const side of ['from','to']){
+   if(!event.target?.closest?.('#route-'+side+'-suggestions')&&
+      event.target?.id!=='route-'+side+'-search')hideSuggestions(side);
+  }
+ });
  main?.addEventListener('click',async event=>{
   const target=event.target?.closest?.('button');
   if(!target)return;
+  if(target.dataset.routeCountryTrigger){
+   const side=target.dataset.routeCountryTrigger;
+   const list=$('route-'+side+'-country-list'),open=Boolean(list?.hidden);
+   hideCountryMenus();
+   if(list&&open){list.hidden=false;target.setAttribute('aria-expanded','true');}
+   return;
+  }
+  if(target.dataset.routeCountryChoice){
+   const side=target.dataset.routeCountryChoice;
+   const select=$('route-'+side+'-country');
+   if(select){
+    select.value=target.dataset.countryIso||'';
+    select.dispatchEvent(new Event('change',{bubbles:true}));
+    countryFlag(side);
+   }
+   hideCountryMenus();return;
+  }
+  if(target.dataset.routeAirportSide&&target.dataset.routeAirportKey){
+   const side=target.dataset.routeAirportSide;
+   pickers[side].choose(target.dataset.routeAirportKey);
+   hideSuggestions(side);return;
+  }
   if(target.id==='route-plan-swap'){
    const from=selected('from'),to=selected('to');
    if(!from||!to){message('route-feedback','Select two airports before swapping.');return;}
@@ -451,6 +509,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
  function updateData(data){
   for(const side of ['from','to'])
    populateAirportCountries($('route-'+side+'-country'),data?.countries||[],doc);
+  renderCountryMenus(data?.countries||[]);
   updatePrefix(data?.airline);
   const id=data?.connected?data?.airline?.id||null:null;
   if(id!==currentAirlineId){
