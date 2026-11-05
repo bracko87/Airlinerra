@@ -56,6 +56,8 @@ export const AIRPORT_PROFILE_SQL=`
         wx.wind_speed_kmh AS weather_wind_kmh,
         wx.next_24h_local_3hourly AS weather_next_24h,
         wx.required_attribution AS weather_attribution,
+        traffic.daily_outbound_passengers,traffic.daily_outbound_cargo_tonnes,
+        traffic.passenger_demand_percentile,traffic.cargo_demand_percentile,
         fw.longest_paved_runway_m AS full_weight_longest_paved_runway_m,
         fw.airport_elevation_ft AS full_weight_airport_elevation_ft,
         fw.total_configurations_screened AS full_weight_aircraft_screened,
@@ -96,6 +98,20 @@ export const AIRPORT_PROFILE_SQL=`
     ON fw.world_id=a.world_id AND fw.airport_key=a.airport_key
  LEFT JOIN airlinerra_game.section5_airport_weather_profile_v1 wx
     ON wx.world_id=a.world_id AND wx.airport_key=a.airport_key
+ LEFT JOIN (
+    SELECT world_id,airport_key,
+      COALESCE(gameplay_avg_daily_outbound_passengers,avg_daily_outbound_passengers)
+        AS daily_outbound_passengers,
+      avg_daily_outbound_cargo_tonnes AS daily_outbound_cargo_tonnes,
+      ROUND(100 * PERCENT_RANK() OVER (
+        ORDER BY COALESCE(gameplay_avg_daily_outbound_passengers,avg_daily_outbound_passengers)
+      ))::integer AS passenger_demand_percentile,
+      ROUND(100 * PERCENT_RANK() OVER (
+        ORDER BY COALESCE(avg_daily_outbound_cargo_tonnes,0)
+      ))::integer AS cargo_demand_percentile
+    FROM airlinerra_game.airport_daily_traffic_pool_baselines
+    WHERE world_id=1
+ ) traffic ON traffic.world_id=a.world_id AND traffic.airport_key=a.airport_key
  WHERE a.world_id=1 AND a.airport_key=$1::text
  LIMIT 1`;
 const nullableString=x=>typeof x==='string'&&x.trim()?x.trim():null;
@@ -108,6 +124,10 @@ const isoDateOrNull=x=>x instanceof Date&&!Number.isNaN(x.getTime())?
 const countOrNull=x=>{
  const n=numberOrNull(x);
  return n!==null&&Number.isInteger(n)&&n>=0?n:null;
+};
+const percentageOrNull=x=>{
+ const n=numberOrNull(x);
+ return n!==null&&Number.isInteger(n)&&n>=0&&n<=100?n:null;
 };
 export function serializeAirportProfile(row){
  if(!row||!validAirportKey(row.airport_key))throw Error('Invalid airport profile');
@@ -206,6 +226,16 @@ export function serializeAirportProfile(row){
    highElevationSiteStudyRecommended:row.full_weight_high_elevation_review===true,
    dataKind:nullableString(row.full_weight_game_calculation_basis),
    realWorldDispatchApproved:false
+  },
+  demand:{
+   passengerPercent:percentageOrNull(row.passenger_demand_percentile),
+   cargoPercent:percentageOrNull(row.cargo_demand_percentile),
+   annualDepartingPassengers:countOrNull(row.daily_outbound_passengers)===null?
+     null:countOrNull(row.daily_outbound_passengers)*365,
+   annualOutboundCargoTonnes:numberOrNull(row.daily_outbound_cargo_tonnes)===null?
+     null:numberOrNull(row.daily_outbound_cargo_tonnes)*365,
+   indexBasis:'relative_world1_airport_percentile',
+   annualBasis:'game_outbound_daily_baseline_365_days'
   },
   weather:{
    status:nullableString(row.forecast_status)||'AWAITING_FIRST_FORECAST',
