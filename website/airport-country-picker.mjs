@@ -75,6 +75,9 @@ export function createAirportCountryPicker({country,search,airport,getReader,onS
      if(!validAirportLocation(a)||(!global&&a.countryIso!==iso)||seen.has(a.key))continue;
      seen.add(a.key);all.push(a);
     }
+    // Autocomplete needs suggestions, not thousands of pages on each keystroke.
+    // Country-specific browsing still loads all approved airports.
+    if(global&&pageIndex>=1)break;
     if(page.nextOffset===null||page.nextOffset===undefined)break;
     if(!Number.isSafeInteger(page.nextOffset)||page.nextOffset<=offset||page.nextOffset>3100)
      throw Error('Invalid catalog pagination');
@@ -89,7 +92,7 @@ export function createAirportCountryPicker({country,search,airport,getReader,onS
    if(ticket!==generation)return;
    entries=[];known=new Map();loading=false;
    reset('Airport directory unavailable');
-   onStatus('Airport directory could not be loaded. Retry the country selection.');
+   onStatus('Airport search temporarily unavailable. Try again, or select a country to browse.');
   }
  };
  const onCountry=()=>{
