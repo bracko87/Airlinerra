@@ -8,6 +8,7 @@ select c.id::int as id,m.name as manufacturer,f.family_name as family,
  v.model_name as model,c.configuration_code as configuration,c.use_type as use_type,
  c.typical_passenger_seats as seats,c.maximum_passenger_seats as max_seats,
  c.maximum_cargo_payload_kg as cargo_kg,
+ media.storage_object_path as image_storage_object_path,
  v.production_start_year as production_start,v.production_end_year as factual_production_end,
  coverage.game_planning_end_year as planning_production_end,
  coverage.game_planning_newbuild_status as game_production_status,
@@ -51,6 +52,7 @@ join airlinerra.aircraft_families f on f.id=v.family_id
 join airlinerra.aircraft_manufacturers m on m.id=f.manufacturer_id
 join airlinerra.aircraft_game_data_coverage_v1 coverage on coverage.configuration_id=c.id
 join airlinerra.aircraft_configuration_game_readiness_v1 ready on ready.configuration_id=c.id
+left join airlinerra.aircraft_configuration_media media on media.configuration_id=c.id and media.is_approved
 left join airlinerra_game.section5_icao_aircraft_certification_v2 cert on cert.configuration_id=c.id
 left join airlinerra_game.section5_aircraft_representative_engine_v1 representative on representative.configuration_id=c.id
 left join airlinerra_game.section5_aircraft_representative_noise_baseline_v1 noisegame on noisegame.configuration_id=c.id
@@ -92,6 +94,9 @@ export function serializeAircraftLibrary(rows){
   return {
    id,manufacturer:r.manufacturer,family:r.family,model:r.model,
    configuration:r.configuration,useType:r.use_type,
+   imagePath:typeof r.image_storage_object_path==='string' &&
+    /^Airplanes\/[^/\\\r\n]{1,180}\.(?:png|jpg|jpeg|webp)$/iu.test(r.image_storage_object_path)
+     ?r.image_storage_object_path:null,
    seats:num(r.seats,0,1000),maxSeats:num(r.max_seats,0,1000),
    cargoKg:num(r.cargo_kg,0),productionStart:num(r.production_start,1900,2100),
    productionEnd:num(r.planning_production_end,1900,2100),
