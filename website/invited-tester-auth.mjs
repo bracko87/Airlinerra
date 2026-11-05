@@ -71,7 +71,7 @@ export async function createInvitedTesterAuth({
       const cleanPlace=(value,label)=>{
         if(typeof value!=='string')throw Error('Invalid '+label+'.');
         const result=value.trim().normalize('NFKC');
-        if(result.length>80||/[<>\\x00-\\x1f\\x7f]/.test(result))
+        if(result.length>80||/[<>]/.test(result)||Array.from(result).some(c=>c.charCodeAt(0)<32||c.charCodeAt(0)===127))
           throw Error(label+' must contain no more than 80 valid characters.');
         return result;
       };
