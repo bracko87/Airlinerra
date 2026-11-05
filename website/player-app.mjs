@@ -512,6 +512,39 @@ async function prepareLogo(file){
   return blob;
  }finally{URL.revokeObjectURL(source);}
 }
+doc.getElementById('manager-profile-form').addEventListener('submit',async event=>{
+ event.preventDefault();
+ const status=doc.getElementById('manager-profile-status'),button=doc.getElementById('manager-save');
+ if(!auth?.updateManagerProfile){status.textContent='Sign in to update account details.';return;}
+ button.disabled=true;status.textContent='Saving account details...';
+ try{
+  const user=await auth.updateManagerProfile({
+   displayName:doc.getElementById('manager-name').value,
+   hometown:doc.getElementById('manager-hometown').value,
+   country:doc.getElementById('manager-country').value
+  });
+  setManager(user);
+  status.textContent='Account details saved.';
+ }catch(error){
+  const message=String(error?.message||'');
+  status.textContent=/Display name|Hometown|Country/.test(message)?
+   message:'Unable to save account details. Please retry.';
+ }finally{button.disabled=false;}
+});
+doc.getElementById('manager-change-password').addEventListener('click',async()=>{
+ const button=doc.getElementById('manager-change-password');
+ const status=doc.getElementById('manager-password-status');
+ if(!auth?.requestPasswordReset){status.textContent='Sign in to change your password.';return;}
+ button.disabled=true;
+ try{
+  const user=await auth.getUser();
+  if(!user?.email||!user.email_confirmed_at)throw Error('Verified account required.');
+  await auth.requestPasswordReset(user.email);
+  status.textContent='If your account is eligible, a password-change email will be sent. Check your inbox.';
+ }catch{
+  status.textContent='Unable to request a password change. Use the account recovery page.';
+ }finally{button.disabled=false;}
+});
 doc.getElementById('setup-airline-logo').addEventListener('change',async(event)=>{
  const input=event.currentTarget,status=doc.getElementById('setup-logo-feedback');
  logoBlob=null;
