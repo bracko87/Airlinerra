@@ -5,23 +5,30 @@ import {AIRLINE_UI_DEFAULTS,AIRLINE_UI_VIEWS,cleanUiPreferences,financialScenari
 import {PLAYER_VIEWS} from '../website/player-app-model.mjs';
 const read=path=>readFile(new URL(path,import.meta.url),'utf8');
 
-test('23 safe management pages and operations/settings navigation stay linked',async()=>{
+test('expanded management pages and operations/settings navigation stay linked',async()=>{
  const html=await read('../website/private-player-app.html');
- assert.equal(PLAYER_VIEWS.length,23);
- assert.equal(new Set(PLAYER_VIEWS).size,23);
+ assert.equal(PLAYER_VIEWS.length,43);
+ assert.equal(new Set(PLAYER_VIEWS).size,PLAYER_VIEWS.length);
  for(const page of PLAYER_VIEWS)
   assert.match(html,new RegExp('data-player-view="'+page+'"'));
- assert.equal([...html.matchAll(/data-view-link="([^"]+)"/g)].length,23);
+ // Holding is locked and aircraft-profile is opened from a chosen aircraft, not a menu item.
+ assert.equal([...html.matchAll(/data-view-link="([^"]+)"/g)].length,PLAYER_VIEWS.length-2);
  assert.ok(html.indexOf('>Dashboard</a>')<html.indexOf('data-nav-group="operations"'));
+ assert.match(html,/aria-disabled="true"[^>]*>Holding/);
  assert.doesNotMatch(html,/data-nav-group="manager"/);
  const operations=html.slice(html.indexOf('data-nav-group="operations"'),html.indexOf('data-nav-group="fleet"'));
- for(const name of ['routes','route-list','hubs','schedule','service','tickets','staff'])
+ for(const name of ['routes','route-list','hubs','schedule','service','tickets'])
   assert.match(operations,new RegExp('data-view-link="'+name+'"'));
- assert.doesNotMatch(operations,/data-view-link="worlds"|data-view-link="airports"/);
+ assert.doesNotMatch(operations,/data-view-link="staff"|data-view-link="worlds"|data-view-link="airports"/);
+ const employees=html.slice(html.indexOf('data-nav-group="employees"'),html.indexOf('data-nav-group="marketing"'));
+ assert.match(employees,/data-view-link="staff"/);
+ const statistics=html.slice(html.indexOf('data-nav-group="statistics"'),html.indexOf('data-nav-group="account"'));
+ assert.match(statistics,/data-view-link="rankings"/);
  const settings=html.slice(html.indexOf('data-nav-group="settings"'),html.indexOf('</nav>'));
- for(const name of ['airline','profile','rankings','worlds','airports','settings','interface','notifications','help'])
+ for(const name of ['airline','profile','worlds','airports','settings','interface','notifications','help'])
   assert.match(settings,new RegExp('data-view-link="'+name+'"'));
- assert.equal(new Set(AIRLINE_UI_VIEWS).size,17);
+ assert.doesNotMatch(settings,/data-view-link="rankings"/);
+ assert.equal(new Set(AIRLINE_UI_VIEWS).size,AIRLINE_UI_VIEWS.length);
 });
 
 test('real connected views remain while 16 richer section mounts render',async()=>{
