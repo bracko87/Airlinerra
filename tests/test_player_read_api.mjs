@@ -157,3 +157,26 @@ test('authenticated airport search allows a country-free city query but rejects 
  }
  assert.equal(bad.counts().connected,0);
 });
+
+
+test('owner-only aircraft test fixtures are returned as explicitly nonoperational Panonian previews',async()=>{
+ const record={id:'ddf97a11-9f22-40d4-aa75-02f3e61cb312',
+   model:'A319-100',registration:'TEST-PA-A319-01',
+   configurationId:16,testOnly:true,operationallyAllowed:false};
+ const rows={...baseRows,airlines:[{
+  id:UUID,world_id:1,name:'Panonian',home_airport_key:'OURAIRPORTS:4610',
+  cash_usd:'5000000.00',test_aircraft:[
+   record,{...record,id:'bad-id',testOnly:false},
+   {...record,id:'bad-id-2',operationallyAllowed:true}
+  ]
+ }]};
+ const response=await make({rows}).handler(request('/api/v1/player/overview'));
+ assert.equal(response.status,200);
+ const data=await response.json();
+ assert.equal(data.airlines[0].testAircraft.length,1);
+ assert.deepEqual(data.airlines[0].testAircraft[0],record);
+ assert.match(PLAYER_READ_SQL.airlines,/airline_aircraft_test_fixtures/);
+ assert.match(PLAYER_READ_SQL.airlines,/t\.airline_id=a\.id/);
+ assert.match(PLAYER_READ_SQL.airlines,/a\.owner_player_id=\$1::uuid/);
+ assert.match(PLAYER_READ_SQL.airlines,/t\.operationally_allowed=false/);
+});
