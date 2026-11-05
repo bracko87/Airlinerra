@@ -25,7 +25,7 @@ test('Holding navigation opens a planning page but not company creation',async()
  assert.match(holding,/One-time establishment fee/);
  assert.match(holding,/To be announced/);
  assert.match(holding,/Safety and operations/);
- assert.match(holding,/Licenses/);
+ assert.match(holding,/licenses/i);
  assert.match(holding,/registration is not yet available/i);
  assert.doesNotMatch(holding,/<button|<input|<form/);
 });
@@ -60,7 +60,7 @@ test('infrastructure, employees, marketing, statistics have informative non-oper
  assert.match(html,/Total flight hours|total flight hours/i);
 });
 
-test('aircraft illustration is lowered and internal release warning removed',async()=>{
+test('aircraft image is fully contained and internal release warning removed',async()=>{
  const [css,js]=await Promise.all([read('../website/aircraft-library.css'),read('../website/aircraft-library.mjs')]);
  assert.match(css,/object-fit:contain;object-position:center center;transform:none/);
  assert.match(css,/\.library-profile-image\{height:380px;min-height:380px/);
