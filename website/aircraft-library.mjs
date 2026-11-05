@@ -136,10 +136,9 @@ export function createAircraftLibrary({doc,getReader}={}){
   const sheet=element('div','library-profile-content');
   const header=element('div','library-profile-header');
   const heading=element('div','');
-  heading.append(element('p','library-profile-kicker','AIRLINERRA · AIRCRAFT PROFILE'));
   const title=element('h2','',a.manufacturer+' '+a.model);
   title.id='aircraft-library-profile-title';
-  heading.append(title,element('p','library-profile-subtitle',a.family+' · '+a.configuration.replaceAll('-',' ')+' · '+a.useType));
+  heading.append(title);
   header.append(heading);
   const hero=element('div','library-profile-hero');
   const image=element('div','library-profile-image');
@@ -179,13 +178,7 @@ export function createAircraftLibrary({doc,getReader}={}){
   if(a.readinessGate!=='PROVISIONAL_DATA_ONLY')
    sheet.append(element('p','library-disclaimer',
     'Operating restriction: '+(a.holdReason||a.readinessGate)+'. This catalog entry does not grant flight clearance.'));
-  if(a.gameEstimate||a.productionEndEstimated)
-   sheet.append(element('p','library-evidence',
-    'Some figures are fictional game-planning estimates, not independently verified manufacturer specifications.'));
-  else sheet.append(element('p','library-evidence',
-    a.technicalReview==='verified'
-     ?'Technical record marked verified; other data may still be provisional.'
-     :'Technical data marked RESEARCH; treat specifications as provisional.'));
+  // Evidence and qualification details remain available in the specification panels below.
   const groups=element('div','library-profile-groups');
   groups.append(
    specificationGroup('Identity & production',[
@@ -196,8 +189,9 @@ export function createAircraftLibrary({doc,getReader}={}){
     ['End production year'+(a.productionEndEstimated?' (estimated)':''),a.productionEnd,'year']
    ]),
    specificationGroup('Passenger, cargo & fuel',[
-    ['Typical seats',a.seats],['Maximum seats',a.maxSeats],
-    ['Maximum cargo payload',a.cargoKg,'kg'],
+    ['Typical seats',a.useType==='cargo'?'—':a.seats],
+    ['Maximum seats',a.useType==='cargo'?'—':a.maxSeats],
+    ['Maximum cargo payload',a.cargoKg===null?'—':a.cargoKg,'kg'],
     ['Fuel tank capacity',a.fuelKg,'kg']
    ]),
    specificationGroup('Flight performance & weights',[
@@ -236,7 +230,7 @@ export function createAircraftLibrary({doc,getReader}={}){
   if(a.useType==='combi')sheet.append(element('p','library-disclaimer',
    'Combi aircraft cannot necessarily carry maximum passenger seats and maximum cargo payload at the same time.'));
   sheet.append(element('p','library-profile-footer',
-   'Read-only reference. Buying, assigning or dispatching aircraft is not available from this library.'));
+   'Aircraft data is for planning and comparison. Operating clearance is handled separately.'));
   detail.append(sheet);
   detail.setAttribute('aria-labelledby','aircraft-library-profile-title');
   window.location.hash='aircraft-profile';
