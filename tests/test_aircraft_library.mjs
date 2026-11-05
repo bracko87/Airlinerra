@@ -11,6 +11,7 @@ import {createPlayerReadClient} from '../website/player-read-client.mjs';
 const sample={id:140,manufacturer:'De Havilland Canada',family:'DHC-6',
   model:'DHC-6-100',configuration:'PASSENGER-BASE',use_type:'passenger',
   seats:16,max_seats:19,cargo_kg:null,
+  passenger_popularity_score:3,passenger_demand_multiplier:'0.90',
   production_start:1966,factual_production_end:1968,planning_production_end:1968,
   game_production_status:'discontinued',service_status:'active',mtow_kg:'5262',
   mlw_kg:'5262',fuel_kg:'900',range_km:'1500',speed_kmh:'260',
@@ -28,6 +29,7 @@ test('catalog query is fixed read-only and includes manufacturer, modes and esti
  assert.match(AIRCRAFT_LIBRARY_SQL,/airlinerra\.aircraft_configuration_game_readiness_v1/);
  assert.match(AIRCRAFT_LIBRARY_SQL,/t\.maximum_fuel_capacity_kg/);
  assert.match(AIRCRAFT_LIBRARY_SQL,/other\.configuration_id=c\.id/);
+ assert.match(AIRCRAFT_LIBRARY_SQL,/airlinerra_game\.aircraft_passenger_popularity_v1 popularity/);
  assert.equal(AIRCRAFT_LIBRARY_PATH,'/api/v1/player/aircraft-library');
  assert.ok(CANONICAL_GAME_API_PATHS.includes(AIRCRAFT_LIBRARY_PATH));
  assert.equal(safePlayerView('#aircraft-library'),'aircraft-library');
@@ -47,6 +49,8 @@ test('conditional Twin Otter values never replace original paved runway fields',
  assert.equal(a.fuelKg,900);
  assert.equal(a.technicalReview,'research');
  assert.equal(a.gameEstimate,true);
+ assert.equal(a.passengerPopularityScore,3);
+ assert.equal(a.passengerDemandMultiplier,0.9);
 });
 test('catalog serializer rejects duplicate IDs, malformed types or excessive records',()=>{
  assert.throws(()=>serializeAircraftLibrary([]),/Invalid aircraft catalog size/);
@@ -153,6 +157,21 @@ test('aircraft directory uses sortable columns and a full-width profile page',as
  assert.match(styles,/\.library-profile-image/);
 });
 
+
+test('passenger popularity is displayed after noise with six accessible blue and gray bars',async()=>{
+ const client=await readFile(new URL('../website/aircraft-library.mjs',import.meta.url),'utf8');
+ const styles=await readFile(new URL('../website/aircraft-library.css',import.meta.url),'utf8');
+ assert.match(client,/\['Noise chapter'/);
+ assert.match(client,/\['Passenger popularity',a\.passengerPopularityScore\]/);
+ assert.match(client,/function popularityBars\(score\)/);
+ assert.match(client,/level<=6/);
+ assert.match(client,/aria-label','Passenger popularity '/);
+ assert.match(styles,/\.library-popularity-on\{background:#247fd1/);
+ assert.match(styles,/background:#d4dfeb/);
+ const cargo=serializeAircraftLibrary([{...sample,use_type:'cargo',passenger_popularity_score:null,passenger_demand_multiplier:null}]);
+ assert.equal(cargo.aircraft[0].passengerPopularityScore,null);
+ assert.equal(cargo.aircraft[0].passengerDemandMultiplier,null);
+});
 
 test('full-page aircraft profile is a supported player view',async()=>{
  const model=await import('../website/player-app-model.mjs');
