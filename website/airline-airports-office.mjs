@@ -3,6 +3,7 @@
  * No simulation of fees, salaries, slots, demand, routes or flights.
  */
 import {createAirportCountryPicker,populateAirportCountries} from './airport-country-picker.mjs';
+import {renderAirportLocationMap} from './route-map.mjs';
 const AIRPORT_KEY=/^(?:OURAIRPORTS:[1-9]\d{0,18}|FICTIONAL:fictional:[A-Z]{2}:[A-Z0-9]{2,8})$/;
 const currency=v=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(v);
 const safeLocalValue=(v)=>typeof v==='string'?v.trim():'';
@@ -10,7 +11,7 @@ const textValue=(v)=>typeof v==='string'&&v.trim()?v.trim():'Data pending';
 export const compactAnnual=value=>{
  if(typeof value!=='number'||!Number.isFinite(value)||value<0)return 'Data pending';
  return new Intl.NumberFormat('en-US',{notation:'compact',compactDisplay:'short',
-  maximumFractionDigits:value<1000||(value>=10000&&value<1000000)?0:1}).format(value);
+  maximumFractionDigits:value<1000000?0:1}).format(value);
 };
 export const simpleAirportHours=value=>{
  const raw=typeof value==='string'?value.trim():'';
@@ -179,9 +180,12 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
    '<span class="airport-weather-summary-label">AIRPORT WEATHER · FORECAST</span>'+
    '<div class="airport-weather-summary-main"><span id="airport-weather-summary-icon"></span>'+
     '<strong id="airport-weather-summary-temperature">—</strong></div>'+
+   '<div class="airport-weather-summary-details">'+
    '<span id="airport-weather-summary-conditions">Loading airport weather...</span>'+
-   '<span id="airport-weather-summary-wind"></span></div></div>'+
-   '<div id="airport-profile-facts" class="airport-profile-facts"></div>')+
+   '<span id="airport-weather-summary-wind"></span></div></div></div>'+
+   '<div class="airport-profile-main"><div id="airport-profile-facts" class="airport-profile-facts"></div>'+
+   '<div class="airport-location-map-pane"><div class="airport-location-map-heading">AIRPORT LOCATION</div>'+
+   '<div id="airport-profile-map" class="airport-location-map-canvas"></div></div></div>')+
    panel('AIRPORT INFRASTRUCTURE','Runways, terminals and slots',
     '<div id="airport-profile-infrastructure" class="airport-profile-facts"></div>')+
    panel('AIRPORT WEATHER','Current conditions and forecast',
@@ -279,13 +283,17 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
   const tz=p?.timezone||fallback;
   const elevation=p&&knownNumber(p.elevationFt)?num(p.elevationFt)+' ft':fallback;
   profileField('airport-profile-facts',[
-   ['Airport name',name],['Airport code',airport.code||p?.code||fallback],
-   ['ICAO code',icao],['IATA code',iata],
+   ['Airport name',name],
+   ['ICAO code',icao],
+   ['IATA code',iata],
    ['Country',iso?countryLabel(iso):fallback],
    ['Municipality',textOrPending(municipality)||fallback],
-   ['Airport category',category],['Time zone',tz],
-   ['Latitude / longitude',coordinates],['Elevation',elevation]
+   ['Airport category',category],
+   ['Time zone',tz],
+   ['Latitude / longitude',coordinates],
+   ['Elevation',elevation]
   ]);
+  renderAirportLocationMap($('airport-profile-map'),p?{...p,name}:{name},{doc});
   const runways=p?.runways;
   const hasRunways=Array.isArray(runways)&&runways.length>0;
   const knownRunways=hasRunways?runways.filter(r=>knownNumber(r.lengthM)):[];
