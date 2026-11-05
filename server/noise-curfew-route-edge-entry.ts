@@ -86,7 +86,7 @@ Deno.serve(async(request:Request)=>{
   const gate=r.consolidated_gate||{};
   const status=String(gate.decision||'BLOCKED_UNRESOLVED_SCHEDULE_GATE');
   const blocked=status.startsWith('BLOCKED_');
-  const needsReview=status==='SPECIAL_PERMISSION_OR_SLOT_REVIEW_REQUIRED';
+  const needsReview=status.startsWith('SPECIAL_');
   return respond(200,{
     modelVersion:'AIRLINERRA_SECTION5_COMBINED_SCHEDULE_GATE_V1',
     worldId:1,
@@ -109,6 +109,7 @@ Deno.serve(async(request:Request)=>{
     runwayGameResult:gate.runwayGameResult??null,
     airportResearchPending:gate.airportResearchPending===true,
     aircraftChapterSourceEstimated:gate.aircraftChapterSourceEstimated===true,
+    writtenAirportPermissionReviewRequired:gate.requiresSpecialWrittenAirportPermissionReview===true,
     canActivateNormalFlight:false,
     preliminarilyAllowed:!blocked&&!needsReview,
     legalRealWorldClearance:false,
