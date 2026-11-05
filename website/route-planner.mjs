@@ -161,7 +161,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
  const $=id=>doc.getElementById(id);
  const days=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
  let homeKey=null,homeLocation=null,currentAirlineId=null,homeTicket=0,detailTicket=0;
- let lastKeys='',airportProfiles={},editingFlightNumber=null,editSerial=0;
+ let lastKeys='',airportProfiles={},editingFlightNumber=null,editingLegacyIndex=null,editSerial=0;
  const pickers={},selected=side=>pickers[side]?.selected()||null;
  const message=(id,value)=>{if($(id))$(id).textContent=value;};
  const countryFlag=side=>{
@@ -437,7 +437,8 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
  };
  const resetRouteForm=async()=>{
   const serial=++editSerial;
-  editingFlightNumber=null;++detailTicket;lastKeys='';airportProfiles={};
+  editingFlightNumber=null;editingLegacyIndex=null;++detailTicket;lastKeys='';airportProfiles={};
+  showDetails();
   if($('route-plan-number'))$('route-plan-number').value='';
   if($('route-aircraft'))$('route-aircraft').value='';
   for(const id of ['route-departure-stand','route-arrival-stand'])
@@ -486,8 +487,9 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   const routes=Array.isArray(stored.routes)&&stored.routes.length?stored.routes:
    stored.route?[stored.route]:[];
   const route=routes[index];
-  if(!route?.from||!route?.to||!route.flightNumber)return;
-  const serial=++editSerial;editingFlightNumber=route.flightNumber;
+  if(!route?.from||!route?.to)return;
+  const serial=++editSerial;editingFlightNumber=route.flightNumber||null;
+  editingLegacyIndex=route.flightNumber?null:index;
   message('route-plan-status','Loading saved route draft for editing...');
   for(const [side,airport] of [['from',route.from],['to',route.to]]){
    if(!await selectStoredAirport(side,airport,serial)){
@@ -527,7 +529,9 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    $(id).value=values.includes(value)?value:def;
   }
   show();
-  message('route-plan-status','Editing '+route.flightNumber+' · changes will update this local draft only.');
+  message('route-plan-status',route.flightNumber?
+   'Editing '+route.flightNumber+' · changes will update this local draft only.':
+   'Previous route idea loaded. Enter a flight number and choose days to save it as a draft.');
  };
  doc.addEventListener('airlinerra:edit-route-draft',event=>{
   const index=event.detail?.index;
@@ -687,7 +691,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    message('route-plan-status','Flight number already exists. Open that draft from My routes to edit it.');
    return;
   }
-  const filtered=routes.filter(x=>x?.flightNumber!==editingFlightNumber&&x?.flightNumber!==flightNumber);
+  const filtered=routes.filter((x,i)=>i!==editingLegacyIndex&&x?.flightNumber!==editingFlightNumber&&x?.flightNumber!==flightNumber);
   if(filtered.length>=25){
    message('route-plan-status','Maximum 25 route drafts. Remove another draft in My routes.');
    return;
