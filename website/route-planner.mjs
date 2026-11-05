@@ -259,6 +259,23 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   if(ticket!==detailTicket)return;
   airportProfiles={from:result[0],to:result[1]};
   showDetails();
+  drawMap();
+ };
+ const drawMap=()=>{
+  const verified=(side,a)=>{
+   if(!a)return null;
+   const p=airportProfiles[side];
+   return p?.key===a.key&&typeof p.latitude==='number'&&typeof p.longitude==='number'?
+    {...a,latitude:p.latitude,longitude:p.longitude}:a;
+  };
+  const from=verified('from',selected('from'));
+  const to=verified('to',selected('to'));
+  const map=renderRouteMap($('route-map-canvas'),from,to,{doc});
+  message('route-map-feedback',map?
+   'Orange line: geographic distance between verified airports (not an approved flight path).':
+   'Checking airport coordinates from the approved directory and airport profiles...');
+  message('route-distance',map?
+   Math.round(map.distanceKm).toLocaleString('en-US')+' km':'Data pending');
  };
  const show=()=>{
   const from=selected('from'),to=selected('to');
@@ -267,12 +284,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   const title=$('route-map-heading');
   if(title)title.textContent=from&&to?
    (from.code||from.name)+' – '+(to.code||to.name):'Select two airports';
-  const map=renderRouteMap($('route-map-canvas'),from,to,{doc});
-  message('route-map-feedback',map?
-   'Great-circle planning line from approved airport coordinates. Not a commercial flight path.':
-   'Select two airports with verified coordinates to display the route.');
-  message('route-distance',map?
-   Math.round(map.distanceKm).toLocaleString('en-US')+' km':'Data pending');
+  drawMap();
   message('route-block-time','Aircraft required');
   message('route-market',from&&to?
    (from.countryIso===to.countryIso?'Domestic route':'International route'):'Select airports');
