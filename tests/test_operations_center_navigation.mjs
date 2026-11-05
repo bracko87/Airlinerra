@@ -9,16 +9,18 @@ test('all requested airline operation views navigate without a Manager dropdown'
  const [html,model,app,overlay]=await Promise.all([
   read('../website/private-player-app.html'),read('../website/player-app-model.mjs'),
   read('../website/player-app.mjs'),read('../website/dev-scripts/invited-overlay.mjs')]);
- assert.equal(PLAYER_VIEWS.length,25);
+ assert.equal(PLAYER_VIEWS.length,43);
  const ops=html.slice(html.indexOf('data-nav-group="operations"'),html.indexOf('data-nav-group="fleet"'));
- for(const view of ['routes','route-list','hubs','schedule','service','tickets','staff']){
+ for(const view of ['routes','route-list','hubs','schedule','service','tickets']){
   assert.match(ops,new RegExp('data-view-link="'+view+'"'));
   assert.match(html,new RegExp('data-player-view="'+view+'"'));
  }
- const expectedOrder=['hubs','route-list','routes','schedule','service','tickets','staff'];
+ const expectedOrder=['hubs','route-list','routes','schedule','service','tickets'];
  const actualOrder=[...ops.matchAll(/data-view-link="([^"]+)"/g)].map(match=>match[1]);
  assert.deepEqual(actualOrder,expectedOrder);
- assert.doesNotMatch(ops,/data-view-link="worlds"|data-view-link="airports"/);
+ assert.doesNotMatch(ops,/data-view-link="staff"|data-view-link="worlds"|data-view-link="airports"/);
+ const people=html.slice(html.indexOf('data-nav-group="employees"'),html.indexOf('data-nav-group="marketing"'));
+ assert.match(people,/data-view-link="staff"/);
  assert.doesNotMatch(html,/data-nav-group="manager"/);
  const settings=html.slice(html.indexOf('data-nav-group="settings"'),html.indexOf('</nav>'));
  for(const view of ['worlds','airports','airport-profile','airline','profile'])assert.match(settings,new RegExp('data-view-link="'+view+'"'));
