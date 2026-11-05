@@ -264,6 +264,48 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    'Target '+target+' min · slots and aircraft rotations not verified':
    'Choose a turnaround between 45 and 360 minutes');
  };
+ const selectedAircraftTimeline=()=>{
+  const aircraftId=$('route-aircraft')?.value||null,from=selected('from'),to=selected('to');
+  const saved=loadDraft?.()||{};
+  const rows=Array.isArray(saved.routes)?saved.routes:[];
+  const flightNumber=flightNumberFor(flightPrefixFor(getData()?.airline).prefix,
+   $('route-plan-number')?.value)||'Preview';
+  const schedule=availableSchedule();
+  const proposal=aircraftId&&from&&to&&from.key!==to.key&&schedule.length?
+   {flightNumber,aircraftId,from,to,schedule,
+    operation:{arrivalStand:$('route-arrival-stand')?.value}}:null;
+  return buildAircraftWeeklyTimeline({
+   aircraftId,routes:rows,proposal,excludeFlightNumber:editingFlightNumber,
+   homeAirportKey:getData()?.airline?.homeAirportKey||null
+  });
+ };
+ const refreshAircraftTimeline=()=>{
+  const timeline=selectedAircraftTimeline();
+  renderAircraftWeeklyTimeline(doc,$('route-aircraft-timeline-content'),timeline);
+  const chosen=timeline.events.filter(x=>x.proposed);
+  const stands=[...new Set(chosen.map(x=>x.departureStand||'unknown'))];
+  const label=stands.length===1?
+   (stands[0]==='terminal'?'Terminal (previous arrival)':
+    stands[0]==='remote'?'Remote stand (previous arrival)':'Unverified — no confirmed previous stand'):
+   stands.length>1?'Different or unverified by weekday':'No flight days selected';
+  message('route-departure-stand-derived',label);
+  for(let day=0;day<7;day++){
+   const e=chosen.find(x=>x.day===day);
+   message('route-stand-'+day,!e?'—':
+    e.departureStand==='terminal'?'Terminal':
+    e.departureStand==='remote'?'Remote':'Unverified');
+  }
+  const last=timeline.events.at(-1);
+  const hint=timeline.errors.length?timeline.errors[0].text:
+   !timeline.aircraftId?'Choose an aircraft to check its weekly location.':
+   last?'Last planned location: '+last.to+' after '+last.flightNumber+
+    '. Actual current position and flight timing are not connected.':
+    'No previous flight drafts for this aircraft. Starting airport and stand are not verified.';
+  message('route-aircraft-position-status',hint);
+  const feedback=$('route-aircraft-position-status');
+  if(feedback)feedback.classList.toggle('has-conflict',timeline.errors.length>0);
+  return timeline;
+ };
  const flagNode=iso=>{
   if(!/^[A-Z]{2}$/.test(iso||''))return null;
   const img=doc.createElement('img');
@@ -370,6 +412,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   const keys=[from?.key||'',to?.key||''].join('|');
   if(keys!==lastKeys){lastKeys=keys;void loadAirportDetails(from,to);}
   updateWeek();
+  refreshAircraftTimeline();
  };
  for(const side of ['from','to']){
   pickers[side]=createAirportCountryPicker({
@@ -545,6 +588,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    updateWeek();show();return;
   }
   if(el?.id==='route-aircraft'){show();return;}
+  if(el?.id==='route-arrival-stand'){refreshAircraftTimeline();return;}
   if(el?.id==='route-turnaround'){updateWeek();return;}
   if(el?.id==='route-from-hub'||el?.id==='route-to-hub'){
    const side=el.id==='route-from-hub'?'from':'to';
@@ -676,10 +720,21 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    data.airline.testAircraft:[]).find(a=>a.id===flightAircraft&&
     a.testOnly===true&&a.operationallyAllowed===false);
   const available=Array.isArray(data?.airline?.testAircraft)?data.airline.testAircraft:[];
+  if(!flightAircraft){
+   message('route-plan-status','Select an aircraft first. Its weekly position must be checked before assigning departures.');
+   return;
+  }
   if(flightAircraft&&!available.some(a=>a.id===flightAircraft)){
    message('route-plan-status','Selected aircraft is not available in this airline. Choose another.');
    return;
   }
+  const timeline=selectedAircraftTimeline();
+  if(timeline.errors.length){
+   message('route-plan-status','Aircraft schedule conflict: '+timeline.errors[0].text);
+   const details=$('route-aircraft-timeline');if(details)details.open=true;
+   return;
+  }
+  // Other flight durations, time zones and slots are still not verified.
   // No live financial, schedule or aircraft mutations: local browser-session draft only.
   const draft={from,to,flightNumber,flights:schedule.length,schedule,
    aircraftId:flightAircraft,
