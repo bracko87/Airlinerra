@@ -32,7 +32,7 @@
     <nav class="app-navigation" aria-label="Player application">
       <div class="app-navigation-inner">
         <a class="nav-direct" href="#overview" data-view-link="overview">Dashboard</a>
-        <span class="nav-direct nav-disabled" aria-disabled="true" title="Holding will require at least 60 in-game days, capital and certificates">Holding <span class="nav-locked-label">Locked</span></span>
+        <a class="nav-direct" href="#holding" data-view-link="holding">Holding</a>
         <details class="nav-group" data-nav-group="operations" aria-label="Operations">
           <summary class="nav-label">Operations<span class="chevron" aria-hidden="true"></span></summary>
           <div class="nav-links" role="group" aria-label="Operations pages">
@@ -422,7 +422,53 @@
         <section data-player-view="interface" hidden><div class="page-head"><div><p class="eyebrow">SETTINGS</p><h1>Interface</h1><p>Layout, motion and your preferred starting page.</p></div></div><div id="workspace-interface"></div></section>
         <section data-player-view="notifications" hidden><div class="page-head"><div><p class="eyebrow">SETTINGS</p><h1>Notifications</h1><p>Control local display options and review notification delivery availability.</p></div></div><div id="workspace-notifications"></div></section>
         <section data-player-view="help" hidden><div class="page-head"><div><p class="eyebrow">SUPPORT</p><h1>Help and guide</h1><p>Learn how to grow your airline step by step.</p></div></div><div id="workspace-help"></div></section>
-        <section data-player-view="holding" hidden><div class="page-head"><div><p class="eyebrow">PLANNED FEATURE</p><h1>Holding companies</h1><p>A future group-management system for multiple airline and aviation-service companies.</p></div></div><div class="planning-page-grid"><article class="panel planning-panel"><h2>Eligibility</h2><p>Proposed requirements before a holding can be founded.</p><div class="workspace-task-list"><div><strong>Minimum age</strong><span>At least 60 in-game days since the original airline was founded</span></div><div><strong>Capital</strong><span>Significant founding cost and cash reserve; exact amounts not decided</span></div><div><strong>Licenses</strong><span>Business, country, safety and operational certificates required</span></div></div></article><article class="panel planning-panel"><h2>Company types</h2><p>Possible future daughter companies.</p><div class="workspace-task-list"><div><strong>Airlines</strong><span>Full-service, low-cost, regional, cargo and private/VIP companies</span></div><div><strong>Maintenance company</strong><span>Repair and maintenance for own and other airlines</span></div><div><strong>Independent management</strong><span>Each company will have its own finances, fleet, brand, employees and reputation</span></div></div></article></div><p class="planning-state">Holding is locked and no company can be created or charged from this page.</p></section>
+        <section data-player-view="holding" hidden>
+          <div class="page-head"><div>
+            <p class="eyebrow">HOLDING COMPANY · PLANNING</p>
+            <h1>Holding companies</h1>
+            <p>Learn when you may establish a group and what the company will require. The holding service is not open for registration yet.</p>
+          </div></div>
+          <div class="planning-page-grid">
+            <article class="panel planning-panel">
+              <h2>When can I start?</h2>
+              <p>The proposed minimum is at least 60 completed in-game days since your original airline started operations. This is only the earliest eligibility threshold, not automatic approval.</p>
+              <div class="workspace-task-list">
+                <div><strong>Earliest eligibility</strong><span>After 60 completed in-game operating days</span></div>
+                <div><strong>Release date</strong><span>Not announced — holding creation is not enabled</span></div>
+                <div><strong>Personal eligibility</strong><span>Will be checked using the server's game clock and your original airline's operating start date once this feature launches</span></div>
+              </div>
+            </article>
+            <article class="panel planning-panel">
+              <h2>How much will it cost?</h2>
+              <p>The game prices have not been finalized. No price shown here is a charge or an offer.</p>
+              <div class="workspace-task-list">
+                <div><strong>One-time establishment fee</strong><span>To be announced</span></div>
+                <div><strong>Required cash reserves</strong><span>To be announced</span></div>
+                <div><strong>Ongoing administration</strong><span>To be announced</span></div>
+              </div>
+            </article>
+            <article class="panel planning-panel">
+              <h2>Requirements</h2>
+              <p>In addition to the 60-day minimum, the planned eligibility checks will include:</p>
+              <div class="workspace-task-list">
+                <div><strong>Safety and operations</strong><span>Acceptable incident and compliance record, reliable operations and sufficient experience</span></div>
+                <div><strong>Registration and licenses</strong><span>Required business registration, country permissions and aviation certificates</span></div>
+                <div><strong>Financial position</strong><span>Formation capital and reserves; no disqualifying insolvency or compliance restrictions</span></div>
+                <div><strong>Authorized owner</strong><span>Server-verified ownership and management permission</span></div>
+              </div>
+            </article>
+            <article class="panel planning-panel">
+              <h2>What can a holding manage?</h2>
+              <p>Future subsidiaries could operate independently under your holding company.</p>
+              <div class="workspace-task-list">
+                <div><strong>Airlines</strong><span>Full-service, low-cost, regional, cargo and executive/VIP carriers</span></div>
+                <div><strong>Maintenance services</strong><span>Aircraft maintenance, repair and overhaul (MRO), including external work when licensed</span></div>
+                <div><strong>Separate businesses</strong><span>Each subsidiary needs its own operating rights, fleet, employees, finances and reputation</span></div>
+              </div>
+            </article>
+          </div>
+          <p class="planning-state">This page is open for information only. Holding registration is not yet available; viewing this page does not create a company or charge your airline.</p>
+        </section>
 <section data-player-view="infrastructure" hidden><div class="page-head"><div><p class="eyebrow">AIRLINE INFRASTRUCTURE</p><h1>Infrastructure overview</h1><p>The corporate buildings and airport assets supporting your airline.</p></div></div><div class="planning-page-grid"><article class="panel planning-panel"><h2>Headquarters and offices</h2><p>Administration and airline coordination.</p><div class="workspace-task-list"><div><strong>Head office</strong><span>Executive and finance offices</span></div><div><strong>Operations center</strong><span>Dispatch, control and flight operations</span></div><div><strong>Training</strong><span>Crew and technical training facilities</span></div></div></article><article class="panel planning-panel"><h2>Airport facilities</h2><p>Buildings and equipment at hubs and stations.</p><div class="workspace-task-list"><div><strong>Maintenance</strong><span>Hangars, workshops and spare parts</span></div><div><strong>Passengers</strong><span>Lounges and service desks</span></div><div><strong>Handling</strong><span>Cargo, ground equipment and station offices</span></div></div></article></div><p class="planning-state">Infrastructure is a planning section. No construction or expense is active yet.</p></section>
 <section data-player-view="infrastructure-hq" hidden><div class="page-head"><div><p class="eyebrow">AIRLINE INFRASTRUCTURE</p><h1>Headquarters</h1><p>Plan the airline's head office and administrative capacity.</p></div></div><div class="planning-page-grid"><article class="panel planning-panel"><h2>Head office</h2><p>Core leadership and operations departments.</p><div class="workspace-task-list"><div><strong>Executive offices</strong><span>Board and corporate administration</span></div><div><strong>Flight operations</strong><span>Operations control and dispatch</span></div><div><strong>Administration</strong><span>Finance, staffing and customer support</span></div></div></article><article class="panel planning-panel"><h2>Growth and upgrades</h2><p>Long-term infrastructure decisions.</p><div class="workspace-task-list"><div><strong>Capacity</strong><span>Office and department growth</span></div><div><strong>Regional offices</strong><span>Representation at new hubs</span></div><div><strong>Training space</strong><span>Crew development facilities</span></div></div></article></div><p class="planning-state">Headquarters construction, levels and costs are not active yet.</p></section>
 <section data-player-view="infrastructure-maintenance" hidden><div class="page-head"><div><p class="eyebrow">AIRLINE INFRASTRUCTURE</p><h1>Maintenance facilities</h1><p>Future maintenance infrastructure at your airline hubs.</p></div></div><div class="planning-page-grid"><article class="panel planning-panel"><h2>Workshop types</h2><p>Facilities matched to maintenance work.</p><div class="workspace-task-list"><div><strong>Line maintenance</strong><span>Routine aircraft servicing</span></div><div><strong>Hangars</strong><span>Major checks and aircraft repairs</span></div><div><strong>Stores</strong><span>Parts, tools and equipment</span></div></div></article><article class="panel planning-panel"><h2>Maintenance services</h2><p>Potential future in-house and external maintenance.</p><div class="workspace-task-list"><div><strong>Certifications</strong><span>Aircraft types and approved work</span></div><div><strong>Capacity</strong><span>Hangar bays, engineers and available shifts</span></div><div><strong>External customers</strong><span>Maintenance contracts for other players through an MRO company</span></div></div></article></div><p class="planning-state">Building facilities and third-party maintenance are not enabled yet.</p></section>
