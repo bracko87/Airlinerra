@@ -109,7 +109,9 @@ test('manager route page is coded and bundled, with valid map and no invented op
   'route-plan-save','route-plan-number','route-from-summary','route-to-summary'])assert.ok(view.includes(id),id);
  assert.match(operations,/createRoutePlanner/);
  assert.match(operations,/routePlannerMarkup\(\)/);
- assert.match(office,/createAirportCountryPicker/);
+ // The hub/station picker was intentionally removed; airport profiles now own requests.
+ assert.doesNotMatch(office,/createAirportCountryPicker/);
+ assert.match(office,/airport-profile-office-buttons/);
  assert.doesNotMatch(office,/id="office-find"/);
  assert.match(builder,/'route-planner.mjs'/);
  assert.match(builder,/'world-outlines.mjs'/);
