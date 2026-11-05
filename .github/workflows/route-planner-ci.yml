@@ -45,3 +45,7 @@ jobs:
       - name: Build complete private website with new route modules
         working-directory: website
         run: npm run build
+      - name: Verify aircraft timeline is served in distribution
+        run: |
+          test -s dist/aircraft-weekly-timeline.mjs
+          grep -q 'buildAircraftWeeklyTimeline' dist/aircraft-weekly-timeline.mjs
