@@ -54,7 +54,7 @@ export function renderRouteMap(container,from,to,{doc=globalThis.document}={}){
   'aria-label':'Geographic planning map from '+from.name+' to '+to.name,
   preserveAspectRatio:'xMidYMid meet'
  });
- svg.append(makeSvg(doc,'rect',{width:760,height:350,fill:'#e5f0f8'}));
+ svg.append(makeSvg(doc,'rect',{width:760,height:350,fill:'#e1e5e9'}));
  const geography=makeSvg(doc,'g',{class:'route-map-land'});
  for(const ring of WORLD_OUTLINES){
   // Skip rings that lie entirely far beyond the active map, cheaply.
@@ -67,16 +67,24 @@ export function renderRouteMap(container,from,to,{doc=globalThis.document}={}){
   // avoid drawing a misleading continent-spanning diagonal seam.
   if(pts.some((p,i)=>i>0&&Math.abs(p[0]-pts[i-1][0])>380))continue;
   const d=pts.map(([x,y],i)=>(i?'L':'M')+x.toFixed(1)+' '+y.toFixed(1)).join(' ')+'Z';
-  geography.append(makeSvg(doc,'path',{d,fill:'#f7fbff',stroke:'#bfd2e2','stroke-width':.8}));
+  geography.append(makeSvg(doc,'path',{d,fill:'#f1f2f3',stroke:'#345f88','stroke-width':.9}));
  }
  svg.append(geography);
- const guide=makeSvg(doc,'g',{'stroke':'#cadeec','stroke-width':.6,'stroke-dasharray':'3 5'});
- const step=Math.max(1,Math.round(spanX/6));
- for(let lon=Math.ceil(minX/step)*step;lon<=maxX;lon+=step){
-  const x=760*(lon-minX)/(maxX-minX);
-  guide.append(makeSvg(doc,'line',{x1:x,y1:0,x2:x,y2:350}));
+ // Detailed international borders (Natural Earth 1:50m), using real geography.
+ const borders=makeSvg(doc,'g',{fill:'none',stroke:'#315c85','stroke-width':1.15,
+  'stroke-linecap':'round','stroke-linejoin':'round','shape-rendering':'geometricPrecision'});
+ for(const border of WORLD_BORDER_LINES_50M){
+  if(!Array.isArray(border)||border.length<2)continue;
+  const pts=border.map(([lon,lat])=>xy(lon,lat));
+  if(pts.some((p,i)=>i>0&&Math.abs(p[0]-pts[i-1][0])>400))continue;
+  const xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]);
+  if(Math.max(...xs)<-30||Math.min(...xs)>790||
+   Math.max(...ys)<-30||Math.min(...ys)>380)continue;
+  borders.append(makeSvg(doc,'path',{
+   d:pts.map(([x,y],i)=>(i?'L':'M')+x.toFixed(2)+' '+y.toFixed(2)).join(' ')
+  }));
  }
- svg.append(guide);
+ svg.append(borders);
  const start=xy(first.lon,first.lat),end=xy(last.lon,last.lat);
  const line=makeSvg(doc,'line',{x1:start[0],y1:start[1],x2:end[0],y2:end[1],
   stroke:'#ff6917','stroke-width':3.5,'stroke-linecap':'round'});
