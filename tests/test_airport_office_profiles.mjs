@@ -52,7 +52,7 @@ test('headquarters, hubs, stations are distinct - with honest missing operationa
   assert.ok(office.includes(heading),heading);
  }
  for(const feature of ['runway','slots','Passenger demand (0-100%)','Cargo demand (0-100%)',
-  'Time zone','Current commercial movements','Operating airlines','Station desk fee'])
+  'Time zone','Flights per day','Operating airlines','Station desk fee'])
   assert.ok(office.toLowerCase().includes(feature.toLowerCase()),feature);
  assert.match(office,/No fees or salaries were charged/);
  assert.match(office,/Not connected/);
