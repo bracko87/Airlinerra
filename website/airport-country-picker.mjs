@@ -89,11 +89,17 @@ export function createAirportCountryPicker({country,search,airport,getReader,onS
  const onCountry=()=>{search.value='';void load()};
  const onSearch=()=>{if(!loading)filter()};
  const onAirport=()=>{selected=airport.value;onSelect(current())};
+ const choose=key=>{
+  if(!known.has(key))return false;
+  selected=key;search.value='';filter();
+  airport.value=key;onSelect(current());
+  return true;
+ };
  country.addEventListener('change',onCountry);
  search.addEventListener('input',onSearch);
  airport.addEventListener('change',onAirport);
  reset('Choose country first');
- return Object.freeze({load,refresh:load,selected:current,
+ return Object.freeze({load,refresh:load,selected:current,choose,
   invalidate:()=>{generation++;loading=false;entries=[];known=new Map();reset('Choose country first');},
   getAirports:()=>entries.slice()});
 }
