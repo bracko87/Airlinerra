@@ -224,3 +224,23 @@ test('airports now use one visible autocomplete, actual-image country flags and 
  assert.match(map,/stroke:'#315c85'/);
  assert.match(map,/stroke:'#ff6917'/);
 });
+
+
+test('Panonian A319 fixture appears only as nonoperational simulation choice and weekly layout has visible spacing',async()=>{
+ const [route,office,styles]=await Promise.all([
+  read('../website/route-planner.mjs'),
+  read('../website/airline-workspace.mjs'),
+  read('../website/player-app.css')
+ ]);
+ assert.match(route,/data\.airline\.testAircraft\.filter/);
+ assert.match(route,/simulation only/);
+ assert.match(route,/aircraftId:flightAircraft,testAircraft:simulationAircraft\?true:false/);
+ assert.match(route,/status:'draft',operationallyVerified:false/);
+ assert.match(route,/cannot operate|not approved for operation/);
+ assert.match(office,/id="fleet-test-count"/);
+ assert.match(office,/id="fleet-test-aircraft"/);
+ assert.match(office,/testOnly===true&&a\.operationallyAllowed===false/);
+ assert.match(styles,/#workspace-routes>\.route-planner-first-step\+\.route-planner-panel\{/);
+ assert.match(styles,/margin-top:28px/);
+ assert.match(styles,/\.fleet-test-aircraft-row\{display:flex/);
+});
