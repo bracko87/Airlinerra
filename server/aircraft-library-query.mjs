@@ -8,6 +8,8 @@ select c.id::int as id,m.name as manufacturer,f.family_name as family,
  v.model_name as model,c.configuration_code as configuration,c.use_type as use_type,
  c.typical_passenger_seats as seats,c.maximum_passenger_seats as max_seats,
  c.maximum_cargo_payload_kg as cargo_kg,
+ popularity.popularity_score as passenger_popularity_score,
+ popularity.passenger_demand_multiplier as passenger_demand_multiplier,
  media.storage_object_path as image_storage_object_path,
  coalesce(fleet_usage.total_in_use,0)::integer as fleet_in_use,
  coalesce(fleet_usage.top_airlines,'[]'::jsonb) as top_airlines,
@@ -55,6 +57,7 @@ join airlinerra.aircraft_manufacturers m on m.id=f.manufacturer_id
 join airlinerra.aircraft_game_data_coverage_v1 coverage on coverage.configuration_id=c.id
 join airlinerra.aircraft_configuration_game_readiness_v1 ready on ready.configuration_id=c.id
 left join airlinerra.aircraft_configuration_media media on media.configuration_id=c.id and media.is_approved
+left join airlinerra_game.aircraft_passenger_popularity_v1 popularity on popularity.configuration_id=c.id
 left join lateral (
  select
   (select count(*)::integer
@@ -124,7 +127,10 @@ export function serializeAircraftLibrary(rows){
       Number.isSafeInteger(Number(item.quantity))&&Number(item.quantity)>0)
     .map(item=>({airlineName:item.airlineName,quantity:Number(item.quantity)})):[],
    seats:num(r.seats,0,1000),maxSeats:num(r.max_seats,0,1000),
-   cargoKg:num(r.cargo_kg,0),productionStart:num(r.production_start,1900,2100),
+   cargoKg:num(r.cargo_kg,0),
+   passengerPopularityScore:r.use_type==='cargo'?null:num(r.passenger_popularity_score,1,6),
+   passengerDemandMultiplier:r.use_type==='cargo'?null:num(r.passenger_demand_multiplier,0.6,1.3),
+   productionStart:num(r.production_start,1900,2100),
    productionEnd:num(r.planning_production_end,1900,2100),
    productionEndEstimated:r.factual_production_end===null&&r.planning_production_end!==null,
    productionStatus:safeText(r.game_production_status,40),
