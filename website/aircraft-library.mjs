@@ -160,13 +160,25 @@ export function createAircraftLibrary({doc,getReader}={}){
   }
   image.append(placeholder);
   const highlights=element('div','library-profile-highlights');
+  const noiseChapter=a.icaoNoiseChapter??a.gameNoiseChapter;
+  const noiseStatus=a.icaoNoiseStatus;
+  const certificateMatched=noiseStatus==='CERTIFICATE_CONFIGURATION_MATCHED';
+  const noiseEvidence=a.icaoNoiseChapter===null||a.icaoNoiseChapter===undefined
+   ?'Game estimate — not certified'
+   :certificateMatched?'Configuration certificate matched'
+    :noiseStatus==='AVIATION_AUTHORITY_MODEL_REPORTED'?'Aviation authority model record'
+    :noiseStatus==='MANUFACTURER_MODEL_REPORTED'?'Manufacturer model record'
+    :'Certificate not verified';
   const summary=[
-   ['Role',a.useType],['Passenger seats',a.seats??a.maxSeats],
-   ['Cargo payload',a.cargoKg===null?'Not recorded':format(a.cargoKg)+' kg'],
+   ['Role',a.useType],
+   ['Passenger seats',a.useType==='cargo'?'—':(a.seats??a.maxSeats??'Not recorded')],
+   ['Cargo payload',a.cargoKg===null?'—':format(a.cargoKg)+' kg'],
    ['Range',a.rangeKm===null?'Not recorded':format(a.rangeKm)+' km'],
    ['Fuel tank',a.fuelKg===null?'Not recorded':format(a.fuelKg)+' kg'],
    ['Production',a.productionStatus?.replaceAll('_',' ')||'Unconfirmed'],
-   ['Noise class',a.gameNoiseClass?String(a.gameNoiseClass)+'/5 (game estimate)':'Not rated']
+   ['Noise chapter',noiseChapter===null||noiseChapter===undefined?'—':
+     'Chapter '+noiseChapter+(certificateMatched?' (certificate)':
+     a.icaoNoiseChapter!==null&&a.icaoNoiseChapter!==undefined?' (reported)':' (game)')]
   ];
   for(const [name,value] of summary){
    const item=element('div','library-profile-highlight');
@@ -206,9 +218,10 @@ export function createAircraftLibrary({doc,getReader}={}){
     ['Aircraft height',a.heightM,'m']
    ]),
    specificationGroup('Noise & airport eligibility',[
-     ['Relative aircraft noise class (1 very quiet to 5 very loud)',a.gameNoiseClass],
-     ['Noise rating basis','Estimated gameplay class, not ICAO-certified data'],
-     ['Airport access','Subject to airport day/night class and curfew rules']
+     ['ICAO noise chapter',noiseChapter===null||noiseChapter===undefined?'—':'Chapter '+noiseChapter],
+     ['Classification evidence',noiseEvidence],
+     ['Representative engine',a.representativeEngine],
+     ['Airport access','Subject to applicable airport noise rules and curfews']
     ]),
     specificationGroup('Source & operational qualifications',[
     ['Technical review',a.technicalReview],
