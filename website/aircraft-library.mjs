@@ -179,9 +179,7 @@ export function createAircraftLibrary({doc,getReader}={}){
    ['Range',a.rangeKm===null?'Not recorded':format(a.rangeKm)+' km'],
    ['Fuel tank',a.fuelKg===null?'Not recorded':format(a.fuelKg)+' kg'],
    ['Production',a.productionStatus?.replaceAll('_',' ')||'Unconfirmed'],
-   ['Noise chapter',noiseChapter===null||noiseChapter===undefined?'—':
-     'Chapter '+noiseChapter+(certificateMatched?' (certificate)':
-     a.icaoNoiseChapter!==null&&a.icaoNoiseChapter!==undefined?' (reported)':' (game)')]
+   ['Noise chapter',noiseChapter===null||noiseChapter===undefined?'—':'Chapter '+noiseChapter]
   ];
   for(const [name,value] of summary){
    const item=element('div','library-profile-highlight');
