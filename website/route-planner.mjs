@@ -292,7 +292,12 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    (from.countryIso===to.countryIso?'Domestic route':'International route'):'Select airports');
   const validPair=Boolean(from&&to&&from.key!==to.key);
   const validOrigin=Boolean(from&&from.key===homeKey);
-  message('route-aircraft-check','No owned aircraft assigned; suitability not verified');
+  const demoAircraft=(Array.isArray(getData()?.airline?.testAircraft)?
+   getData().airline.testAircraft:[]).find(a=>a.id===$('route-aircraft')?.value&&
+    a.testOnly===true&&a.operationallyAllowed===false);
+  message('route-aircraft-check',demoAircraft?
+   'Airbus '+demoAircraft.model+' (test only) — not approved for operation':
+   'No owned operational aircraft assigned; suitability not verified');
   message('route-slot-check','Not connected — cannot reserve or verify slots');
   message('route-traffic-rights','Not connected — rights not verified');
   message('route-status','Draft only');
@@ -377,6 +382,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   if(el?.matches?.('[data-route-day]')||el?.matches?.('[data-route-time]')){
    updateWeek();show();return;
   }
+  if(el?.id==='route-aircraft'){show();return;}
   if(el?.id==='route-from-hub'||el?.id==='route-to-hub'){
    const side=el.id==='route-from-hub'?'from':'to';
    if(el.value===homeKey&&homeLocation)await selectHome(side);
@@ -485,9 +491,13 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    message('route-plan-status','Select at least one weekday and a valid local departure time.');return;
   }
   const flightAircraft=$('route-aircraft')?.value||null;
+  const simulationAircraft=(Array.isArray(data?.airline?.testAircraft)?
+   data.airline.testAircraft:[]).find(a=>a.id===flightAircraft&&
+    a.testOnly===true&&a.operationallyAllowed===false);
   // Aircraft and slots are NOT silently accepted: this creates a local browser draft.
   const draft={from,to,flightNumber,flights:schedule.length,schedule,
-   aircraftId:flightAircraft,status:'draft',operationallyVerified:false};
+   aircraftId:flightAircraft,testAircraft:simulationAircraft?true:false,
+   status:'draft',operationallyVerified:false};
   const latest=loadDraft?.()||{},routes=Array.isArray(latest.routes)?latest.routes:[];
   const filtered=routes.filter(x=>x?.flightNumber!==flightNumber);
   if(filtered.length>=25){
@@ -512,6 +522,24 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   for(const side of ['from','to'])
    populateAirportCountries($('route-'+side+'-country'),data?.countries||[],doc);
   renderCountryMenus(data?.countries||[]);
+  const aircraftSelect=$('route-aircraft');
+  const savedAircraft=aircraftSelect?.value||'';
+  const samples=Array.isArray(data?.airline?.testAircraft)?
+   data.airline.testAircraft.filter(a=>a?.testOnly===true&&a.operationallyAllowed===false):[];
+  if(aircraftSelect){
+   aircraftSelect.replaceChildren(new Option('Choose an aircraft for draft preview',''));
+   for(const plane of samples){
+    if(typeof plane.id!=='string'||typeof plane.model!=='string')continue;
+    aircraftSelect.add(new Option('Airbus '+plane.model+' · '+String(plane.registration||'TEST')+
+     ' (simulation only)',plane.id));
+   }
+   if([...aircraftSelect.options].some(o=>o.value===savedAircraft))
+    aircraftSelect.value=savedAircraft;
+   aircraftSelect.disabled=samples.length===0;
+  }
+  message('route-aircraft-feedback',samples.length?
+   'Test aircraft are for route-design previews only. They cannot operate, reserve slots or generate revenue.':
+   'No operational fleet is connected. You may save a draft without selecting an aircraft.');
   updatePrefix(data?.airline);
   const id=data?.connected?data?.airline?.id||null:null;
   if(id!==currentAirlineId){
