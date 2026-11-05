@@ -751,7 +751,7 @@ function showPreview(){
   doc.getElementById('local-preview-note').textContent='LOCAL DEMO ONLY - no real identity, database connection or airline activation.';
   const localTest=getLocalTestProfile(window.sessionStorage,window.location);
   const profile=localTest||LOCAL_DEMO_MANAGER;
-  doc.getElementById('manager-name').textContent=profile.name;
+  doc.getElementById('manager-name').value=profile.name;
   for(const id of ['manager-email','setup-email'])doc.getElementById(id).textContent=profile.email;
   doc.getElementById('top-email').textContent=localTest?'LOCAL TEST ACCOUNT · Not Supabase':'LOCAL DEMO · Not signed in';
   doc.getElementById('manager-joined').textContent='Demo session';
