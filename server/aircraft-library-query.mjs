@@ -72,7 +72,7 @@ left join lateral (
  t.id asc limit 1
 ) t on true
 order by m.name,f.family_name,v.model_name,c.configuration_code,c.id
-limit 201`;
+limit 1001`;
 export const AIRCRAFT_LIBRARY_PATH='/api/v1/player/aircraft-library';
 const safeText=(s,max=160)=>typeof s==='string'&&s.length>0&&s.length<=max?s:null;
 const num=(n,lo=0,hi=1000000000)=>{
@@ -81,7 +81,7 @@ const num=(n,lo=0,hi=1000000000)=>{
  return Number.isFinite(value)&&value>=lo&&value<=hi?value:null;
 };
 export function serializeAircraftLibrary(rows){
- if(!Array.isArray(rows)||rows.length===0||rows.length>200)throw Error('Invalid aircraft catalog size');
+ if(!Array.isArray(rows)||rows.length===0||rows.length>1000)throw Error('Invalid aircraft catalog size');
  const ids=new Set();
  const aircraft=rows.map(r=>{
   const id=num(r.id,1,1000000);
