@@ -47,6 +47,7 @@ function navigateTo(view){
   // Close dropdowns when changing pages, preserving keyboard navigation.
   for(const group of doc.querySelectorAll('.nav-group[open]'))group.open=false;
   if(name==='aircraft-library'&&aircraftLibraryController)void aircraftLibraryController.load();
+  if(name==='airline'&&currentAirline?.id)void loadManageAirlineLogo();
 }
 function drawWorldDirectory(){
   const root=doc.getElementById('world-directory');
@@ -65,7 +66,9 @@ function drawWorldDirectory(){
 function setManager(user){
   const manager=verifiedManagerIdentity(user);
   if(!manager)throw new PrivateTesterAccessDenied();
-  doc.getElementById('manager-name').textContent=manager.name;
+  doc.getElementById('manager-name').value=manager.name;
+  doc.getElementById('manager-hometown').value=typeof user.user_metadata?.hometown==='string'?user.user_metadata.hometown:'';
+  doc.getElementById('manager-country').value=typeof user.user_metadata?.country==='string'?user.user_metadata.country:'';
   doc.getElementById('manager-email').textContent=manager.email;
   doc.getElementById('manager-joined').textContent=manager.joined||'Not provided';
   doc.getElementById('setup-email').textContent=manager.email;
@@ -106,6 +109,7 @@ let onboardingContext=null;
 let hasRealAirline=false;
 let workspaceController=null;
 let operationsController=null;
+let currentAirline=null,manageLogoBlob=null,manageLogoPreviewUrl=null,manageLogoRequest=0;
 // Initial verified login is redirected; explicit later navigation is respected.
 let initialManagerLanding=false;
 let nextAirportOffset=null;
@@ -284,6 +288,7 @@ async function loadPlayerReadData({local=false}={}){
   if(!Array.isArray(data.worlds)||!Array.isArray(data.countries)||!Array.isArray(data.airlines))
    throw Error('Invalid game directory');
   const first=data.airlines[0];
+  currentAirline=first||null;
   hasRealAirline=Boolean(first?.name);
   renderOverviewState(hasRealAirline);
   // Airline identity and cash must not disappear if an unrelated airport
@@ -330,6 +335,7 @@ async function loadPlayerReadData({local=false}={}){
   hasRealAirline=false; // Unknown because the protected read failed - NOT proof no airline exists.
   workspaceController?.updateData({connected:false,airline:null,reader:null});
   operationsController?.updateData({connected:false,airline:null,reader:null});
+  currentAirline=null;
   renderAirlineDashboard(doc,{airline:null,ledgerEntries:null});
   doc.getElementById('top-airline-state').textContent='Airline data unavailable';
   doc.getElementById('player-airline-name').textContent='Unable to load';
