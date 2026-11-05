@@ -545,6 +545,61 @@ doc.getElementById('manager-change-password').addEventListener('click',async()=>
   status.textContent='Unable to request a password change. Use the account recovery page.';
  }finally{button.disabled=false;}
 });
+// Manage airline is inserted after Auth; delegated controls remain bound across renders.
+doc.getElementById('player-main').addEventListener('change',async event=>{
+ if(event.target?.id!=='manage-airline-logo-file')return;
+ const selected=event.target.files?.[0];
+ const status=doc.getElementById('manage-airline-logo-status');
+ clearManageLogoSelection();
+ if(!selected){status.textContent='';return;}
+ try{
+  if(!currentAirline?.id||!auth?.uploadAirlineLogo)
+   throw Error('A verified airline is required to change its logo.');
+  const logo=await prepareLogo(selected);
+  manageLogoBlob=logo;
+  manageLogoPreviewUrl=URL.createObjectURL(logo);
+  const image=doc.getElementById('manage-airline-logo-preview');
+  image.src=manageLogoPreviewUrl;image.hidden=false;
+  doc.getElementById('manage-airline-logo-placeholder').hidden=true;
+  doc.getElementById('manage-airline-logo-save').disabled=false;
+  status.textContent='Preview ready. Click Save new logo to replace the previous logo.';
+ }catch(error){status.textContent=error?.message||'Unable to read logo file.';}
+});
+doc.getElementById('player-main').addEventListener('click',async event=>{
+ if(event.target?.id!=='manage-airline-logo-save')return;
+ const button=doc.getElementById('manage-airline-logo-save');
+ const status=doc.getElementById('manage-airline-logo-status');
+ if(!auth?.uploadAirlineLogo||!currentAirline?.id||!manageLogoBlob){
+  status.textContent='Choose a valid logo for your registered airline.';return;
+ }
+ const id=currentAirline.id;
+ button.disabled=true;status.textContent='Replacing airline logo...';
+ let completed=false;
+ try{
+  await auth.uploadAirlineLogo({airlineId:id,blob:manageLogoBlob});
+  completed=true;
+  clearManageLogoSelection();
+  if(currentAirline?.id!==id)throw Error('The selected airline changed.');
+  ++manageLogoRequest;
+  const signed=await auth.getAirlineLogoUrl(id).catch(()=>null);
+  if(signed){
+   const fresh=signed+(signed.includes('?')?'&':'?')+'image_version='+Date.now();
+   const image=doc.getElementById('manage-airline-logo-preview');
+   image.src=fresh;image.hidden=false;
+   doc.getElementById('manage-airline-logo-placeholder').hidden=true;
+   const overview=doc.getElementById('player-existing-logo');
+   if(overview){overview.src=fresh;overview.hidden=false;}
+  }else{
+   void loadManageAirlineLogo();
+  }
+  operationsController?.refreshAirlineLogo?.();
+  status.textContent='New logo saved. The previous logo was replaced at the same storage path.';
+ }catch{
+  status.textContent=completed?'Logo saved, but preview refresh failed. Reopen Manage airline to check.':
+   'Logo upload failed. The previous logo remains unchanged.';
+  button.disabled=!manageLogoBlob;
+ }
+});
 doc.getElementById('setup-airline-logo').addEventListener('change',async(event)=>{
  const input=event.currentTarget,status=doc.getElementById('setup-logo-feedback');
  logoBlob=null;
