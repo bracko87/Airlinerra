@@ -254,7 +254,9 @@ export function createAirportOffice({doc,session,identity,goTo,getAirlineLogoUrl
     createText(doc,'span',office.home?(type==='hub'?'Main hub · headquarters':'Main station · headquarters'):
      type==='hub'?'Hub request · draft':'Station request · draft','airport-office-list-status'));
    const actions=doc.createElement('div');actions.className='airport-office-row-actions';
-   actions.append(button(doc,'Airport profile','view',office.key));
+   const profileLink=button(doc,'Airport profile','view',office.key);
+   profileLink.classList.add('airport-office-profile-text-link');
+   actions.append(profileLink);
    if(!office.home)actions.append(button(doc,'Remove draft','remove',office.key));
    line.append(actions);target.append(line);remember(office);
   }
