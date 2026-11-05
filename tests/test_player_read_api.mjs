@@ -130,3 +130,30 @@ test('approved fictional game airport is not dropped from Serbia airport search'
  assert.equal(data.airports[0].code,'LYAL');
  assert.equal(data.airports[0].name,'Aleksandrovo Airport');
 });
+
+
+test('authenticated airport search allows a country-free city query but rejects short or unbounded global searches',async()=>{
+ const rows={...baseRows,airports:[
+  {airport_key:'OURAIRPORTS:2155',airport_name:'Brussels Airport',airport_code:'EBBR',
+   country_iso:'BE',municipality:'Zaventem',latitude_deg:'50.901402',longitude_deg:'4.48444'},
+  {airport_key:'OURAIRPORTS:4610',airport_name:'Belgrade Nikola Tesla Airport',airport_code:'LYBE',
+   country_iso:'RS',municipality:'Belgrade',latitude_deg:'44.818401',longitude_deg:'20.309099'}
+ ]};
+ const a=make({rows});
+ const response=await a.handler(request('/api/v1/player/airports',
+  {countryIso:'',search:'brus',offset:0}));
+ assert.equal(response.status,200);
+ const data=await response.json();
+ assert.equal(data.countryIso,'');
+ assert.equal(data.airports.length,2);
+ assert.deepEqual(data.airports.map(x=>x.countryIso),['BE','RS']);
+ assert.equal(data.airports[0].latitude,50.901402);
+ assert.deepEqual(a.counts().queries[0].params,['','brus',0]);
+ assert.match(PLAYER_READ_SQL.airports,/\(\$1::text='' or /);
+ const bad=make();
+ for(const search of ['','b','%%','a'.repeat(41)]){
+  const resp=await bad.handler(request('/api/v1/player/airports',{countryIso:'',search}));
+  assert.equal(resp.status,400,'Invalid global search '+search);
+ }
+ assert.equal(bad.counts().connected,0);
+});
