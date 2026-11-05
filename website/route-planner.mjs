@@ -8,15 +8,28 @@ const section=(eyebrow,title,body)=>
 const field=(id,label,el)=>'<label class="workspace-label" for="'+id+'">'+label+'</label>'+el;
 const picker=(side,title)=>'<fieldset class="route-planner-airport"><legend>'+title+'</legend>'+
  field('route-'+side+'-hub','Quick airport (your active hubs first)',
-  '<select id="route-'+side+'-hub"><option value="">Choose airport or country below</option></select>')+
- field('route-'+side+'-country','Country',
-  '<div class="route-country-select"><img id="route-'+side+'-country-flag" class="route-country-flag" alt="" hidden>'+
-  '<select id="route-'+side+'-country"><option value="">Choose country</option></select></div>')+
- field('route-'+side+'-search','Search airport (optional)',
-  '<input type="search" id="route-'+side+'-search" maxlength="40" placeholder="Type airport name, city or code">')+
- field('route-'+side+'-airport','Airport',
-  '<select id="route-'+side+'-airport" disabled><option value="">Choose country first</option></select>')+
- '<p id="route-'+side+'-count" class="hint" role="status">Choose a country to view all its approved airports, or type to filter.</p>'+
+  '<select id="route-'+side+'-hub"><option value="">Choose airport or search below</option></select>')+
+ '<label class="workspace-label" id="route-'+side+'-country-label" for="route-'+side+'-country-trigger">Country (optional)</label>'+
+ '<div class="route-country-picker">'+
+ '<select class="route-native-country" id="route-'+side+'-country" tabindex="-1" aria-hidden="true">'+
+ '<option value="">All countries</option></select>'+
+ '<button type="button" id="route-'+side+'-country-trigger" class="route-country-trigger" '+
+ 'aria-haspopup="listbox" aria-expanded="false" aria-controls="route-'+side+'-country-list">'+
+ '<img id="route-'+side+'-country-flag" class="route-country-flag" alt="" hidden>'+
+ '<span id="route-'+side+'-country-text">All countries — search anywhere</span>'+
+ '<span aria-hidden="true" class="route-chevron">⌄</span></button>'+
+ '<div id="route-'+side+'-country-list" class="route-country-list" role="listbox" '+
+ 'aria-label="'+title+' country" hidden></div></div>'+
+ field('route-'+side+'-search','Airport or city',
+  '<div class="route-airport-combobox">'+
+  '<input type="search" id="route-'+side+'-search" maxlength="40" '+
+  'placeholder="Type a city or airport name, or browse results" role="combobox" '+
+  'aria-autocomplete="list" aria-expanded="false" aria-controls="route-'+side+'-suggestions">'+
+  '<div id="route-'+side+'-suggestions" class="route-airport-suggestions" '+
+  'role="listbox" aria-label="'+title+' airports" hidden></div></div>')+
+ '<select id="route-'+side+'-airport" class="route-native-airport" '+
+ 'aria-hidden="true" tabindex="-1" disabled><option value="">Select approved airport</option></select>'+
+ '<p id="route-'+side+'-count" class="hint" role="status">Choose a country or search all approved airports.</p>'+
  '<div id="route-'+side+'-summary" class="route-selection-summary">Select an airport.</div></fieldset>';
 const dayNames=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 const dayControl=(label,i)=>
@@ -24,6 +37,22 @@ const dayControl=(label,i)=>
  '<label class="route-week-check"><input type="checkbox" data-route-day="'+i+'" id="route-day-'+i+'">'+
  '<span>Fly</span></label><input type="time" data-route-time="'+i+'" aria-label="'+label+
  ' departure time" value="09:00" disabled></div>';
+const routeCheckDetails =
+  '<p class="hint">This is a factual preview, not a departure authorization. Unknown or unconnected checks never count as passed.</p>'+
+  '<div class="route-check-grid">'+
+   '<div class="route-check-item"><span>Distance</span><strong id="route-distance">Select airports</strong></div>'+
+   '<div class="route-check-item"><span>Estimated flight duration</span><strong id="route-block-time">Aircraft required</strong></div>'+
+   '<div class="route-check-item"><span>Market</span><strong id="route-market">Select airports</strong></div>'+
+   '<div class="route-check-item"><span>Route status</span><strong id="route-status">Draft only</strong></div>'+
+   '<div class="route-check-item"><span>Origin runway / noise / curfew</span><strong id="route-origin-restrictions">Data pending</strong></div>'+
+   '<div class="route-check-item"><span>Destination runway / noise / curfew</span><strong id="route-destination-restrictions">Data pending</strong></div>'+
+   '<div class="route-check-item"><span>Origin passenger / cargo demand</span><strong id="route-origin-demand">Data pending</strong></div>'+
+   '<div class="route-check-item"><span>Destination passenger / cargo demand</span><strong id="route-destination-demand">Data pending</strong></div>'+
+   '<div class="route-check-item"><span>Departure / arrival slots</span><strong id="route-slot-check">Not yet connected</strong></div>'+
+   '<div class="route-check-item"><span>Aircraft / runway suitability</span><strong id="route-aircraft-check">No aircraft assigned</strong></div>'+
+   '<div class="route-check-item"><span>Passenger / cargo traffic rights</span><strong id="route-traffic-rights">Not yet connected</strong></div>'+
+  '</div>'+
+  '<p id="route-check-message" class="route-check-message" role="status">Select a route and aircraft to begin checking feasibility.</p>';
 export function routePlannerMarkup(){
  return '<div class="route-planner-grid route-planner-first-step">'+
   section('STEP 1','Define your flight',
@@ -40,7 +69,8 @@ export function routePlannerMarkup(){
   section('ROUTE MAP','Geographic route preview',
    '<h3 id="route-map-heading" class="route-map-heading">Select two airports</h3>'+
    '<div id="route-map-canvas" class="route-map-canvas"></div>'+
-   '<p id="route-map-feedback" class="hint">The map uses verified airport coordinates where available.</p>')+
+   '<p id="route-map-feedback" class="hint">The map uses verified airport coordinates where available.</p>'+
+   '<div class="route-map-facts"><h3>Route information and limitations</h3>'+routeCheckDetails+'</div>')+
  '</div>'+
  section('STEP 2','Aircraft and weekly departures',
   '<p class="hint">Choose an aircraft and the weekday and local departure time for each flight. A schedule saved here is only a browser draft, never a reserved slot.</p>'+
@@ -55,22 +85,7 @@ export function routePlannerMarkup(){
   '<button type="button" class="secondary" data-workspace-go="route-list">My routes</button></div>'+
   '<p id="route-plan-status" class="hint" role="status"></p>'+
   '<div id="route-plan-review" class="workspace-detail"></div>')+
- section('ROUTE CHECK','Distance, demand and operational checks',
-  '<p class="hint">This is a factual preview, not a departure authorization. Unknown or unconnected checks never count as passed.</p>'+
-  '<div class="route-check-grid">'+
-   '<div class="route-check-item"><span>Distance</span><strong id="route-distance">Select airports</strong></div>'+
-   '<div class="route-check-item"><span>Estimated flight duration</span><strong id="route-block-time">Aircraft required</strong></div>'+
-   '<div class="route-check-item"><span>Market</span><strong id="route-market">Select airports</strong></div>'+
-   '<div class="route-check-item"><span>Route status</span><strong id="route-status">Draft only</strong></div>'+
-   '<div class="route-check-item"><span>Origin runway / noise / curfew</span><strong id="route-origin-restrictions">Data pending</strong></div>'+
-   '<div class="route-check-item"><span>Destination runway / noise / curfew</span><strong id="route-destination-restrictions">Data pending</strong></div>'+
-   '<div class="route-check-item"><span>Origin passenger / cargo demand</span><strong id="route-origin-demand">Data pending</strong></div>'+
-   '<div class="route-check-item"><span>Destination passenger / cargo demand</span><strong id="route-destination-demand">Data pending</strong></div>'+
-   '<div class="route-check-item"><span>Departure / arrival slots</span><strong id="route-slot-check">Not yet connected</strong></div>'+
-   '<div class="route-check-item"><span>Aircraft / runway suitability</span><strong id="route-aircraft-check">No aircraft assigned</strong></div>'+
-   '<div class="route-check-item"><span>Passenger / cargo traffic rights</span><strong id="route-traffic-rights">Not yet connected</strong></div>'+
-  '</div>'+
-  '<p id="route-check-message" class="route-check-message" role="status">Select a route and aircraft to begin checking feasibility.</p>');
+ '';
 }
 export const flightPrefixFor=airline=>{
  const code=String(airline?.iataCode||'').trim().toUpperCase();
