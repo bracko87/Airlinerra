@@ -2,7 +2,7 @@
  * Never presents demo airlines, mock movement counts, or sample timetables as real operations.
  */
 const NS='http://www.w3.org/2000/svg';
-const VIEWS=Object.freeze(['airlines','statistics','destinations','cargo']);
+const VIEWS=Object.freeze(['airlines','destinations','cargo']);
 const WEEKDAY=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const SCHEDULE_DAYS=[
  ['Mon','Wed','Fri'],['Tue','Thu','Sat'],['Mon','Thu'],['Tue','Fri'],
@@ -45,17 +45,34 @@ export function createAirportAirlineLogo(doc,name,verifiedLogoUrl=null){
   'Blue Meridian','Cloudpath Aviation','Alpine Star','Eastline Air'].indexOf(name));
  const [base,accent]=swatches[idx%swatches.length];
  const mark=svgEl(doc,'svg',{viewBox:'0 0 180 64','aria-hidden':'true',focusable:'false'});
- mark.append(svgEl(doc,'rect',{width:180,height:64,fill:base,rx:7}));
+ mark.append(svgEl(doc,'rect',{width:180,height:64,fill:'#fff',rx:7}));
  mark.append(svgEl(doc,'path',{d:'M-15 52 Q36 8 97 48 T208 15',fill:'none',
   stroke:accent,'stroke-width':13,'stroke-linecap':'round'}));
  mark.append(svgEl(doc,'path',{d:'M-10 60 Q35 29 89 52 T208 25',fill:'none',
-  stroke:'#fff','stroke-opacity':'.75','stroke-width':3}));
- const t=svgEl(doc,'text',{x:34,y:42,fill:'#fff','font-size':27,'font-weight':850,
+  stroke:base,'stroke-opacity':'.85','stroke-width':3}));
+ const t=svgEl(doc,'text',{x:34,y:42,fill:base,'font-size':27,'font-weight':850,
   'font-family':'Arial, sans-serif','letter-spacing':'-1'});
  t.textContent=name.split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase();
  mark.append(t);
  logo.append(mark);
  return logo;
+}
+/** Preview movement shares, not passenger/cargo market share.
+ * Each sample service occurs on its assigned days of a seven-day week.
+ * Production airline counts will be supplied by the future daily airport snapshot.
+ */
+export function summarizePreviewAirlineOperations(flights){
+ const data=new Map();
+ for(const [index,flight] of (Array.isArray(flights)?flights:[]).entries()){
+  if(typeof flight?.airline!=='string'||!flight.airline.trim())continue;
+  const weekly=SCHEDULE_DAYS[index%SCHEDULE_DAYS.length].length;
+  data.set(flight.airline,(data.get(flight.airline)||0)+weekly);
+ }
+ const total=[...data.values()].reduce((sum,n)=>sum+n,0);
+ return [...data].map(([name,weeklyFlights])=>({
+  name,weeklyFlights,dailyAverage:weeklyFlights/7,
+  movementSharePercent:total?Math.round(weeklyFlights/total*100):0
+ }));
 }
 export function sampleAirportDestinations(flights){
  return [...new Set(flights.map(f=>String(f.route||'').split('·').slice(1).join('·').trim())
@@ -105,7 +122,7 @@ export function createAirportNetworkTabs({doc,host,flights=[]}={}){
  const tabs=el(doc,'div','airport-network-tabs');
  tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label','Airport network information');
  const buttons=new Map();
- for(const [value,label] of [['airlines','Airlines'],['statistics','Statistics'],
+ for(const [value,label] of [['airlines','Airlines'],
   ['destinations','Destinations'],['cargo','Cargo']]){
   const button=el(doc,'button','airport-network-tab',label);
   button.type='button';button.dataset.airportNetworkTab=value;
@@ -115,9 +132,7 @@ export function createAirportNetworkTabs({doc,host,flights=[]}={}){
  const pane=el(doc,'section','airport-network-content');
  pane.id='airport-network-content';pane.setAttribute('role','tabpanel');
  host.replaceChildren(tabs,pane);
- const carrierRows=()=>[...new Set(flights.map(f=>f.airline))].map(name=>({
-  name,examples:flights.filter(f=>f.airline===name).length
- }));
+ const carrierRows=()=>summarizePreviewAirlineOperations(flights);
  function renderDayGroups(destinationFilter=null){
   const base=airportLocalDate(detail?.timezone||'Europe/Berlin');
   const root=el(doc,'div','airport-network-week-list');
@@ -147,33 +162,27 @@ export function createAirportNetworkTabs({doc,host,flights=[]}={}){
   return root;
  }
  function showAirlines(){
-  pane.append(note(doc,'Fictional airlines and example flight counts. Actual airline operations will be listed when schedules are available.'));
+  pane.append(note(doc,'Fictional preview — sample flight movements only, not passenger market share. Real airline operations and daily snapshots will appear after scheduling is connected.'));
   const list=el(doc,'div','airport-network-airline-list');
+  const header=el(doc,'div','airport-network-airline-head');
+  for(const label of ['Airline','Logo','Flights / day','Flights / week','Share of flights'])
+   header.append(el(doc,'span','',label));
+  list.append(header);
   for(const airline of carrierRows()){
    const line=el(doc,'div','airport-network-airline-row');
    line.append(el(doc,'span','airport-network-airline-name',airline.name),
     createAirportAirlineLogo(doc,airline.name,logoFor(airline.name)),
-    el(doc,'span','airport-network-airline-operations',
-     airline.examples+' example '+(airline.examples===1?'flight':'flights')+' on preview board'));
+    el(doc,'span','airport-network-airline-stat',airline.dailyAverage.toFixed(1)),
+    el(doc,'span','airport-network-airline-stat',String(airline.weeklyFlights)),
+    el(doc,'span','airport-network-airline-stat airport-network-airline-share',
+     airline.movementSharePercent+'%'));
    list.append(line);
   }
   pane.append(list);
- }
- function showStatistics(){
-  pane.append(note(doc,'Daily flight activity below is fictional until real airline schedules and completed-flight statistics are connected.'));
-  pane.append(renderDayGroups());
-  const metrics=el(doc,'div','airport-network-metrics airport-network-bottom-metrics');
-  metrics.append(item(doc,'Annual departing passengers',formatAmount(detail?.demand?.annualDepartingPassengers)),
-   item(doc,'Registered airline headquarters',
-    Number.isInteger(detail?.airportActivity?.registeredHeadquarters)?
-     String(detail.airportActivity.registeredHeadquarters):'—'),
-   item(doc,'Real daily airline data','Awaiting operations'));
-  pane.append(metrics);
- }
- function showDestinations(){
+ } function showDestinations(){
   const origin=el(doc,'div','airport-network-origin');
   origin.append(el(doc,'span','','Origin airport'),
-   el(doc,'strong','',airport?.name||'Select an airport'));
+   el(doc,'span','airport-network-origin-name',airport?.name||'Select an airport'));
   pane.append(origin,note(doc,'Fictional flight schedule for the next seven days; no real bookings or scheduled flights.'));
   const selector=el(doc,'div','airport-network-destination-control');
   const lab=el(doc,'label','','Destination');
@@ -207,7 +216,6 @@ export function createAirportNetworkTabs({doc,host,flights=[]}={}){
   }
   pane.replaceChildren();
   if(active==='airlines')showAirlines();
-  if(active==='statistics')showStatistics();
   if(active==='destinations')showDestinations();
   if(active==='cargo')showCargo();
  }
