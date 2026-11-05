@@ -62,24 +62,35 @@ const navigation=()=>[
  ,'</div>'].join('');
 const pages=Object.freeze({
  'airline':()=>card('Company identity',
-  '<div class="detail-row"><span>Airline</span><strong id="office-airline">Not created</strong></div>'+
-  '<div class="detail-row"><span>ICAO airline code</span><strong id="office-icao">-</strong></div>'+
-  '<div class="detail-row"><span>IATA airline code</span><strong id="office-iata">-</strong></div>'+
-  '<div class="detail-row"><span>World</span><strong id="office-world">-</strong></div>'+
-  '<div class="detail-row"><span>Home airport</span><strong id="office-home">-</strong></div>'+
-  '<div class="detail-row"><span>Available cash</span><strong id="office-cash">-</strong></div>'+
-  '<div class="detail-row"><span>Membership</span><strong id="office-premium">-</strong></div>'+
-  small('Company identity is read from the verified World 1 database; names, airports and finances are not editable here.')+
-  button('profile','Open manager profile'),'YOUR AIRLINE')+
-  card('Build your company',
-  '<div class="workspace-task-list">'+
-  '<div><strong>Network</strong><span>Pick a destination and estimate a draft route</span></div>'+
-  '<div><strong>Fleet</strong><span>Review acquisition options and aircraft requirements</span></div>'+
-  '<div><strong>Customer product</strong><span>Plan cabin mix and service levels</span></div>'+
-  '<div><strong>Operations</strong><span>Build a 7-day planning timetable</span></div></div>'+
-  button('routes','Plan a route')+button('service','Cabin and cargo'),
-  'STRATEGY'),
- 'fleet':()=>card('Fleet inventory',
+   '<div class="detail-row"><span>Airline</span><strong id="office-airline">Not created</strong></div>'+
+   '<div class="detail-row"><span>ICAO airline code</span><strong id="office-icao">-</strong></div>'+
+   '<div class="detail-row"><span>IATA airline code</span><strong id="office-iata">-</strong></div>'+
+   '<div class="detail-row"><span>World</span><strong id="office-world">-</strong></div>'+
+   '<div class="detail-row"><span>Home airport</span><strong id="office-home">-</strong></div>'+
+   '<div class="detail-row"><span>Available cash</span><strong id="office-cash">-</strong></div>'+
+   small('Airline name, ICAO/IATA codes and home airport remain fixed to protect company identity and existing game operations.'),
+   'AIRLINE IDENTITY')+
+   card('Airline logo',
+    '<div class="manage-airline-logo-layout">'+
+    '<div class="manage-airline-logo-frame"><img id="manage-airline-logo-preview" alt="Current airline logo" hidden>'+
+    '<span id="manage-airline-logo-placeholder">No logo uploaded</span></div>'+
+    '<div class="manage-airline-logo-control">'+
+    '<label for="manage-airline-logo-file">Replace company logo</label>'+
+    '<input id="manage-airline-logo-file" type="file" accept="image/png,image/jpeg,image/webp">'+
+    '<p class="hint">PNG, JPG or WebP up to 6 MB. Converted to WebP (max 1 MB). The new logo replaces the old file.</p>'+
+    '<button class="primary" type="button" id="manage-airline-logo-save" disabled>Save new logo</button>'+
+    '<p id="manage-airline-logo-status" class="hint" role="status" aria-live="polite"></p>'+
+    '</div></div>',
+    'COMPANY BRANDING')+
+   card('Public airline presentation',
+    '<p>A future airline homepage will be visible to other players. This editor is not active yet.</p>'+
+    '<div class="workspace-task-list">'+
+    '<div><strong>Company profile</strong><span>Name, logo, headquarters, country and short description</span></div>'+
+    '<div><strong>Operational overview</strong><span>Verified fleet, passenger totals, destinations and newest routes</span></div>'+
+    '<div><strong>Optional gallery</strong><span>Aircraft photos managed by the airline owner</span></div></div>'+
+    '<p class="hint">The public page will use actual game data. Manager hometown, email and other personal account information remain private.</p>',
+    'FUTURE FEATURE'),
+  'fleet':()=>card('Fleet inventory',
    '<div class="workspace-kpis"><div><span>Owned aircraft</span><strong>Not connected</strong></div>'+
    '<div><span>Leased aircraft</span><strong>Not connected</strong></div>'+
    '<div><span>Available seats</span><strong>Not connected</strong></div></div>'+
@@ -223,7 +234,7 @@ const pages=Object.freeze({
    field('pref-density','Information density',optionSelect('pref-density',[['comfortable','Comfortable'],['compact','Compact']]))+
    field('pref-motion','Animations',optionSelect('pref-motion',[['normal','Standard'],['reduced','Reduced motion']]))+
    field('pref-landing','Starting page',optionSelect('pref-landing',[
-    ['overview','Dashboard'],['airline','My airline'],['fleet','Fleet'],['routes','Routes'],
+    ['overview','Dashboard'],['airline','Manage airline'],['fleet','Fleet'],['routes','Routes'],
     ['schedule','Flight schedule'],['finances','Finances']]))+
    '<div class="workspace-actions"><button class="primary" id="interface-save" type="button">Save interface</button>'+
    '<button class="secondary" type="button" id="interface-reset">Restore defaults</button></div>'+
@@ -259,7 +270,7 @@ const pages=Object.freeze({
    '<div><strong>4. Build your network</strong><span>Find approved destinations and assess passenger/cargo demand</span></div>'+
    '<div><strong>5. Create a weekly timetable</strong><span>Plan routes, turnarounds and operating windows</span></div>'+
    '<div><strong>6. Operate and compete</strong><span>Monitor bookings, costs, quality and rankings as live systems launch</span></div></div>'+
-   button('airline','My airline')+button('routes','Route workshop')+button('finances','Finance planning'),
+   button('airline','Manage airline')+button('routes','Route workshop')+button('finances','Finance planning'),
    'GETTING STARTED')+
   card('Frequently asked questions',
    '<details class="workspace-faq"><summary>How does time work?</summary><p>One real day equals one in-game day. Each world has an independent economy.</p></details>'+
