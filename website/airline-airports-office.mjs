@@ -96,9 +96,13 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
  }
  if(profileHost){
   profileHost.innerHTML=panel('AIRPORT DIRECTORY','Airport profile',
-   '<div class="airport-profile-head"><div><p class="hint">World 1 approved airport</p>'+
+   '<div class="airport-profile-head"><div class="airport-profile-identity">'+
    '<h3 id="airport-profile-name">Select an airport</h3><p id="airport-profile-location" class="hint"></p></div>'+
-   '<button type="button" class="secondary" data-office-action="back">Back to hubs and stations</button></div>'+
+   '<div class="airport-profile-weather-summary" role="status" aria-live="polite">'+
+   '<span class="airport-weather-summary-label">AIRPORT WEATHER · FORECAST</span>'+
+   '<strong id="airport-weather-summary-temperature">—</strong>'+
+   '<span id="airport-weather-summary-conditions">Loading airport weather...</span>'+
+   '<span id="airport-weather-summary-wind"></span></div></div>'+
    '<div id="airport-profile-facts" class="airport-profile-facts"></div>')+
    panel('AIRPORT INFRASTRUCTURE','Runways, terminals and slots',
     '<div id="airport-profile-infrastructure" class="airport-profile-facts"></div>')+
@@ -174,30 +178,33 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
   if($('airport-profile-name'))$('airport-profile-name').textContent=name;
   const iso=p?.countryIso||airport.countryIso;
   const municipality=p?.municipality||airport.municipality;
-  if($('airport-profile-location'))$('airport-profile-location').textContent=
-   [municipality,iso?countryLabel(iso):''].filter(Boolean).join(', ')||
+  const location=$('airport-profile-location');
+  if(location){
+   const locationText=[municipality,iso?countryLabel(iso):''].filter(Boolean).join(', ')||
     (loading?'Loading airport location...':'Location not reported');
+   location.replaceChildren(doc.createTextNode(locationText));
+   if(/^[A-Z]{2}$/.test(iso||'')){
+    const flag=doc.createElement('img');
+    flag.className='country-flag airport-profile-country-flag';
+    flag.src='https://flagcdn.com/w40/'+iso.toLowerCase()+'.png';
+    flag.alt=countryLabel(iso)+' flag';
+    flag.width=21;flag.height=14;flag.loading='lazy';
+    location.append(flag);
+   }
+  }
   const fallback=loading?'Loading airport data...':'Data pending';
-  const origin=p?.elevationStatus?.replaceAll('_',' ')||null;
   const coordinates=p&&knownNumber(p.latitude)&&knownNumber(p.longitude)
-   ?p.latitude.toFixed(6)+', '+p.longitude.toFixed(6)+
-    (p.coordinatesStatus==='verified'?' (site checked)':' (source-reported; unverified)'):fallback;
+   ?p.latitude.toFixed(6)+', '+p.longitude.toFixed(6):fallback;
   const icao=p?(p.icao||'Not reported'):fallback;
   const iata=p?(p.iata||'Not reported'):fallback;
-  const namesChecked=p?.nameChecked===true?'Source checked':'Source reported; not independently checked';
-  const category=p?.category?
-   p.category+(p.categoryStatus==='approved'?' (approved)':' (provisional)'):fallback;
-  const tz=p?.timezone?p.timezone+(p.timezoneStatus==='checked'?' (checked)':' (candidate)'):fallback;
-  const elevation=p&&knownNumber(p.elevationFt)?
-   num(p.elevationFt)+' ft ('+(origin||'source status unknown')+')':fallback;
+  const category=p?.category||fallback;
+  const tz=p?.timezone||fallback;
+  const elevation=p&&knownNumber(p.elevationFt)?num(p.elevationFt)+' ft':fallback;
   profileField('airport-profile-facts',[
-   ['Airport name',name],['Name verification',p?namesChecked:fallback],
-   ['Airport code',airport.code||p?.code||fallback],
+   ['Airport name',name],['Airport code',airport.code||p?.code||fallback],
    ['ICAO code',icao],['IATA code',iata],
    ['Country',iso?countryLabel(iso):fallback],
    ['Municipality',textOrPending(municipality)||fallback],
-   ['Region',p?textOrPending(p.region):fallback],
-   ['Game world','Horizon (World 1)'],['Catalog key',airport.key],
    ['Airport category',category],['Time zone',tz],
    ['Latitude / longitude',coordinates],['Elevation',elevation]
   ]);
@@ -205,14 +212,13 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
   const hasRunways=Array.isArray(runways)&&runways.length>0;
   const knownRunways=hasRunways?runways.filter(r=>knownNumber(r.lengthM)):[];
   const longest=knownRunways.length?Math.max(...knownRunways.map(r=>r.lengthM)):null;
-  const allOperational=hasRunways&&runways.every(r=>r.operationalStatus==='operational');
-  const lengthStatus=allOperational?'operational':'operational status unverified';
+
   const runwayInfo=hasRunways
    ?runways.map(r=>(r.name||'?')+': '+(knownNumber(r.lengthM)?num(r.lengthM)+'m':'length unknown')+
       (r.surface?' / '+r.surface:'')).join('; '):fallback;
   profileField('airport-profile-infrastructure',[
-   ['Runway records',hasRunways?String(runways.length)+' ('+lengthStatus+')':fallback],
-   ['Longest recorded runway',longest!==null?num(longest)+' m ('+lengthStatus+')':fallback],
+   ['Runway records',hasRunways?String(runways.length):fallback],
+   ['Longest recorded runway',longest!==null?num(longest)+' m':fallback],
    ['Runway designators / surfaces',runwayInfo],
    ['Passenger terminals',p?count(p.facilities?.terminals):fallback],
    ['Passenger gates',p?count(p.facilities?.gates):fallback],
@@ -230,6 +236,15 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
   const weatherName=code=>typeof code==='string'&&code?
     code.replace(/_day|_night|_polartwilight/g,'').replace(/_/g,' ').
       replace(/(rain|snow|cloudy|thunder|fog)/gi,' $1').replace(/ +/g,' ').trim():'Unavailable';
+  const headerTemperature=$('airport-weather-summary-temperature');
+  if(headerTemperature)headerTemperature.textContent=weatherReady?num(wx.temperatureC)+' °C':'—';
+  const headerConditions=$('airport-weather-summary-conditions');
+  if(headerConditions)headerConditions.textContent=weatherReady?
+   weatherName(wx.symbol).replace(/^./,c=>c.toUpperCase()):
+   loading?'Loading airport weather...':'Forecast unavailable';
+  const headerWind=$('airport-weather-summary-wind');
+  if(headerWind)headerWind.textContent=weatherReady&&knownNumber(wx.windKmh)?
+   'Wind '+num(wx.windKmh)+' km/h':'';
   const weatherHour=iso=>{
     const ms=Date.parse(iso||'');if(!Number.isFinite(ms))return 'Time unknown';
     try{return new Intl.DateTimeFormat('en-GB',{timeZone:p?.timezone||'UTC',
@@ -240,14 +255,11 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
    weatherHour(point.time)+' — '+(knownNumber(point.temperatureC)?num(point.temperatureC)+' °C':'-')+
    (point.symbol?' · '+weatherName(point.symbol):'')).join('; '):'';
   profileField('airport-profile-weather',[
-   ['Forecast status',weatherReady?'Current':'No current forecast available'],
-   ['Current forecast temperature',weatherReady?num(wx.temperatureC)+' °C':fallback],
+   ['Temperature',weatherReady?num(wx.temperatureC)+' °C':fallback],
    ['Conditions',weatherReady?weatherName(wx.symbol):fallback],
-   ['Wind',weatherReady?num(wx.windKmh)+' km/h':fallback],
-   ['Precipitation (forecast)',weatherReady?num(wx.precipitationMm)+' mm':fallback],
-   ['Daily temperature updates','Eight 3-hour periods from one daily forecast'],
-   ['Next 24-hour periods',weatherReady?(timeline||'Pending'):'Pending'],
-   ['Weather-related flight delays','Not enabled yet']
+   ['Wind',weatherReady&&knownNumber(wx.windKmh)?num(wx.windKmh)+' km/h':fallback],
+   ['Precipitation (forecast)',weatherReady&&knownNumber(wx.precipitationMm)?num(wx.precipitationMm)+' mm':fallback],
+   ['Next 24 hours',weatherReady?(timeline||'Pending'):'Forecast unavailable']
   ]);
   const credit=$('airport-profile-weather-credit');
   if(credit){
