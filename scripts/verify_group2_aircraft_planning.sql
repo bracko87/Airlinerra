@@ -82,6 +82,45 @@ BEGIN
   WHERE g.entry_no=37 AND x.planning_screen_pass;
   IF n<>0 THEN RAISE EXCEPTION 'Unverified Y-12F 3t cargo flight was accepted'; END IF;
 
+
+  SELECT count(*) INTO n
+  FROM airlinerra.aircraft_expansion_group2_unified_game_data_v1
+  WHERE has_full_modelled_game_section_data IS TRUE;
+  IF n<>47 THEN RAISE EXCEPTION 'All-sections Group 2 data must cover 47 aircraft; found %',n; END IF;
+
+  SELECT count(*) INTO n
+  FROM airlinerra.aircraft_expansion_group2_unified_game_data_v1
+  WHERE effective_game_icao_noise_chapter IS NULL
+     OR claimed_or_published_max_range_km IS NULL
+     OR game_reference_payload_range_km IS NULL
+     OR selected_engine IS NULL
+     OR game_usable_fuel_kg IS NULL
+     OR game_cruise_burn_kg_per_hour IS NULL
+     OR game_full_weight_takeoff_distance_m IS NULL
+     OR game_full_weight_landing_distance_m IS NULL;
+  IF n<>0 THEN RAISE EXCEPTION 'Missing effective provisional per-aircraft game data on % models',n; END IF;
+
+  SELECT count(*) INTO n
+  FROM airlinerra.aircraft_expansion_group2_unified_game_data_v1
+  WHERE claimed_max_range_is_game_fallback
+    AND (range_source_class IS DISTINCT FROM 'estimate' OR
+       claimed_or_published_max_range_km IS DISTINCT FROM original_catalog_planning_range_km);
+  IF n<>0 THEN RAISE EXCEPTION 'Unlabeled/mismatched published-range fallback on % models',n; END IF;
+
+  SELECT count(*) INTO n
+  FROM airlinerra.aircraft_expansion_group2_unified_game_data_v1
+  WHERE entry_no=35 AND game_usable_fuel_kg=1230 AND game_reference_payload_range_km=382;
+  IF n<>1 THEN RAISE EXCEPTION 'Y-12E manufacturer fuel-mass/full-load range correction missing'; END IF;
+
+  SELECT count(*) INTO n
+  FROM airlinerra.aircraft_expansion_group2_unified_game_data_v1
+  WHERE entry_no=9 AND game_usable_fuel_liters=63216 AND game_usable_fuel_kg=50573;
+  IF n<>1 THEN RAISE EXCEPTION '767-200 ABX operator fuel-capacity correction missing'; END IF;
+
+  SELECT count(*) INTO n FROM airlinerra.aircraft_expansion_group2_unified_game_data_v1
+  WHERE entry_no=18 AND max_landing_mass_kg=6600 AND max_zero_fuel_mass_kg=6000;
+  IF n<>1 THEN RAISE EXCEPTION 'Jetstream 31 UK CAA Series 3100 basic weight correction missing'; END IF;
+
   IF has_function_privilege('anon','airlinerra.aircraft_expansion_group2_plan_mission_v1(bigint,numeric,numeric)','EXECUTE')
    OR has_function_privilege('authenticated','airlinerra.aircraft_expansion_group2_plan_mission_v1(bigint,numeric,numeric)','EXECUTE')
   THEN RAISE EXCEPTION 'Research mission planner is exposed to client roles'; END IF;
