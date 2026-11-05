@@ -215,7 +215,7 @@ test('only a signed authenticated company-logo URL replaces the illustrative moc
   read('../website/player-app.mjs')
  ]);
  assert.match(tabs,/verifiedLogoUrl\.startsWith\(signedPrefix\)/);
- assert.match(tabs,/class.*airport-airline-logo-actual/);
+ assert.match(tabs,/el\(doc,'img','airport-airline-logo-actual'\)/);
  assert.match(office,/getAirlineLogoUrl\(airline.id\)/);
  assert.match(office,/networkTabs\.setOwnerLogo\(name,ownLogoUrl\)/);
  assert.match(operations,/createAirportOffice\(\{doc,identity,session,goTo,getAirlineLogoUrl\}\)/);
