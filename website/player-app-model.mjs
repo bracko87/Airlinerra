@@ -7,7 +7,11 @@ export const PLAYER_LOGIN_PATH='/account.html?screen=sign-in';
 export const PLAYER_VIEWS=Object.freeze([
   'overview','onboarding','profile','worlds','airports','aircraft-library','aircraft-profile','airport-profile','fleet',
   'routes','route-list','hubs','tickets','schedule','finances','settings','airline','staff','rankings',
-  'service','aircraft-market','maintenance','interface','notifications','help'
+  'service','aircraft-market','maintenance','interface','notifications','help',
+  'holding','infrastructure','infrastructure-hq','infrastructure-maintenance','infrastructure-facilities',
+  'employees-pilots','employees-cabin','employees-ground','employees-technical','employees-board','employees-payroll',
+  'marketing-reputation','marketing-campaigns','marketing-research',
+  'statistics','statistics-airlines','statistics-airports','statistics-aircraft'
 ]);
 const VIEW_SET=new Set(PLAYER_VIEWS);
 export const WORLD_LABELS=Object.freeze([
