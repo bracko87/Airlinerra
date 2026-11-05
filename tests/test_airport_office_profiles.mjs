@@ -48,7 +48,7 @@ test('headquarters, hubs, stations are distinct - with honest missing operationa
  ]);
  for(const heading of ['Registered headquarters','My hubs','My stations','Airport profile',
   'Runways, terminals and slots','Passenger and cargo demand','Airlines and airport presence',
-  'Current departures and arrivals','Destinations and frequencies']){
+  'Departures and arrivals','Destinations and frequencies']){
   assert.ok(office.includes(heading),heading);
  }
  for(const feature of ['runway','slots','Passenger demand (0-100%)','Cargo demand (0-100%)',
@@ -117,4 +117,27 @@ test('airport profile uses a left-side detail list and a right-side country-outl
  assert.match(map,/export function renderAirportLocationMap\(/);
  assert.match(map,/WORLD_OUTLINES/);
  assert.match(map,/fill:'#ff6917'/);
+});
+
+test('airport profile is a shared airport view with ten explicitly fictional flights',async()=>{
+ const [source,styles,builder,routeMap,borders]=await Promise.all([
+  read('../website/airline-airports-office.mjs'),
+  read('../website/player-app.css'),
+  read('../website/dev-scripts/invited-overlay.mjs'),
+  read('../website/route-map.mjs'),
+  read('../website/world-borders-50m.mjs')
+ ]);
+ const {DEMO_AIRPORT_FLIGHTS}=await import('../website/airline-airports-office.mjs');
+ assert.equal(DEMO_AIRPORT_FLIGHTS.length,10);
+ assert.ok(DEMO_AIRPORT_FLIGHTS.some(f=>f.airline==='Panonian'));
+ assert.match(source,/Fictional preview/);
+ assert.match(source,/renderDemoFlightBoard\(\)/);
+ assert.match(source,/airportActivity/);
+ assert.doesNotMatch(source,/Your verified airline headquarters/);
+ assert.doesNotMatch(source,/Your planned office/);
+ assert.match(styles,/\.airport-flight-sample-row/);
+ assert.match(builder,/'world-borders-50m.mjs'/);
+ assert.match(routeMap,/WORLD_BORDER_LINES_50M/);
+ assert.match(routeMap,/C-3-5-9-11-9-17/);
+ assert.match(borders,/Natural Earth 1:50m/);
 });
