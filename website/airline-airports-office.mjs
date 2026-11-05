@@ -85,6 +85,20 @@ function makeAirportWeatherIcon(doc,symbol){
  return svg;
 }
 
+// UI-only sample data: all ten flights are fictional, never actual bookings.
+export const DEMO_AIRPORT_FLIGHTS=Object.freeze([
+ {time:'06:35',airline:'Panonian',flight:'PN 104',route:'Departure · Vienna',status:'Boarding'},
+ {time:'07:10',airline:'Aurora Connect',flight:'AC 218',route:'Arrival · Frankfurt',status:'Landed'},
+ {time:'08:25',airline:'Silver Atlas Air',flight:'SA 462',route:'Departure · Paris',status:'On time'},
+ {time:'09:40',airline:'Danube Sky',flight:'DS 307',route:'Arrival · Athens',status:'Approaching'},
+ {time:'10:55',airline:'Northwind Air',flight:'NW 511',route:'Departure · Copenhagen',status:'On time'},
+ {time:'12:20',airline:'Blue Meridian',flight:'BM 082',route:'Arrival · Zurich',status:'On time'},
+ {time:'13:45',airline:'Panonian',flight:'PN 205',route:'Departure · Rome',status:'Scheduled'},
+ {time:'15:15',airline:'Cloudpath Aviation',flight:'CP 166',route:'Arrival · Madrid',status:'Scheduled'},
+ {time:'17:05',airline:'Alpine Star',flight:'AS 730',route:'Departure · Munich',status:'Scheduled'},
+ {time:'19:30',airline:'Eastline Air',flight:'EL 428',route:'Arrival · Istanbul',status:'Scheduled'}
+]);
+
 export function normalizeApprovedAirport(a){
  if(!a||!AIRPORT_KEY.test(a.key||'')||typeof a.name!=='string'||!a.name.trim())return null;
  return Object.freeze({key:a.key,name:a.name.trim(),code:safeLocalValue(a.code),
@@ -195,11 +209,11 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
     '<p class="hint">Demand percentages rank airports within World 1; annual outbound traffic is rounded from game baselines.</p>'+
     '<div id="airport-profile-demand" class="airport-profile-facts"></div>')+
    panel('AIRLINE ACTIVITY','Airlines and airport presence',
-    '<div id="airport-profile-airlines" class="airport-profile-facts"></div>'+
-    '<p class="hint">Airlines with headquarters, hubs, stations and operations will be listed when a verified multi-airline operations read model exists.</p>')+
-   panel('FLIGHT BOARD','Current departures and arrivals',
+    '<div id="airport-profile-airlines" class="airport-profile-facts"></div>')+
+   panel('FLIGHT BOARD','Departures and arrivals',
+    '<p class="airport-flight-preview-notice">Fictional preview — 10 example flights. No real flight schedule or booking.</p>'+
     '<div class="airport-flight-board"><div class="airport-flight-columns"><span>Time</span><span>Airline</span><span>Flight</span><span>Origin / destination</span><span>Status</span></div>'+
-    '<p>Live airport flight movements are not connected yet.</p></div>')+
+    '<div id="airport-flight-preview-rows"></div></div>')+
    panel('AIRPORT ROUTE NETWORK','Destinations and frequencies',
     '<p class="hint">Connections, operating airlines, flight frequency and passenger load statistics will appear when verified flight scheduling is connected.</p>');
  }
@@ -361,23 +375,35 @@ export function createAirportOffice({doc,session,identity,goTo}={}){
    ['Annual outbound cargo',typeof demand?.annualOutboundCargoTonnes==='number'?
     compactAnnual(demand.annualOutboundCargoTonnes)+' tonnes':fallback]
   ]);
+  const activity=p?.airportActivity;
+  const shownCount=v=>Number.isInteger(v)&&v>=0?String(v):'—';
+  profileField('airport-profile-airlines',[
+   ['Airline headquarters',shownCount(activity?.registeredHeadquarters)],
+   ['Active hubs',shownCount(activity?.activeHubs)],
+   ['Active stations',shownCount(activity?.activeStations)],
+   ['Operating airlines',shownCount(activity?.operatingAirlines)],
+   ['Flights per day',shownCount(activity?.dailyFlights)]
+  ]);
+ }
+ function renderDemoFlightBoard(){
+  const root=$('airport-flight-preview-rows');if(!root)return;
+  root.replaceChildren();
+  for(const flight of DEMO_AIRPORT_FLIGHTS){
+   const line=doc.createElement('div');line.className='airport-flight-sample-row';
+   for(const field of ['time','airline','flight','route','status']){
+    const cell=doc.createElement('span');cell.textContent=flight[field];
+    if(field==='status')cell.className='airport-flight-sample-status';
+    line.append(cell);
+   }
+   root.append(line);
+  }
  }
  function showProfile(a){
   const airport=remember(a);if(!airport)return;
   activeAirport=airport;
   const serial=++profileLoadSerial;
   renderAirportProfile(airport,null,live.connected&&typeof live.reader?.airportProfile==='function');
-  const isOwnHeadquarters=live.connected&&live.airline?.homeAirportKey===airport.key;
-  const ownDraft=entries().find(x=>x.key===airport.key);
-  profileField('airport-profile-airlines',[
-   ['Your verified airline headquarters',isOwnHeadquarters?
-    (live.airline.name||'Your airline')+' (registered HQ)':'Not your headquarters'],
-   ['Your planned office',ownDraft?(ownDraft.type==='hub'?'Hub':'Station')+' - proposal only':
-    isOwnHeadquarters?'Main home base':'No proposal'],
-   ['Other airlines with headquarters','Not connected'],
-   ['Airlines with active hubs','Not connected'],
-   ['Airlines with active stations','Not connected'],['Operating airlines','Not connected'],
-   ['Current commercial movements','Not connected']]);
+  renderDemoFlightBoard();
   goTo?.('airport-profile');
   if(!live.connected||typeof live.reader?.airportProfile!=='function')return;
   // Per-airport authenticated lookup. Never infer missing values from a different airport.
