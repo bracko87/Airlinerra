@@ -218,7 +218,11 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    airport:$('route-'+side+'-airport'),
    getReader:()=>getData()?.connected?getData()?.reader:null,
    onStatus:status=>message('route-'+side+'-count',status),
-   onSelect:show
+   onSelect:airport=>{
+    const quick=$('route-'+side+'-hub');
+    if(quick)quick.value=airport?.key===homeKey&&homeLocation?homeKey:'';
+    show();
+   }
   });
   $('route-'+side+'-country')?.addEventListener('change',()=>countryFlag(side));
  }
