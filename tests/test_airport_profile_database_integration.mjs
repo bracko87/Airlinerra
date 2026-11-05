@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {AIRPORT_PROFILE_SQL,AIRPORT_PROFILE_PATH,serializeAirportProfile,validAirportKey} from '../server/airport-profile-service.mjs';
+import {AIRPORT_PROFILE_SQL,AIRPORT_PROFILE_PATH,serializeAirportProfile,validAirportKey,passengerTrafficGroup,cargoTrafficGroup} from '../server/airport-profile-service.mjs';
 import {createPlayerReadHandler,PLAYER_READ_PATHS} from '../server/player-read-service.mjs';
 const source=path=>readFile(new URL(path,import.meta.url),'utf8');
 const belgrade={
@@ -104,4 +104,35 @@ test('airport-wide metrics show sourced HQ and active offices without inventing 
   registeredHeadquarters:1,activeHubs:0,activeStations:0,
   dailyFlights:null,operatingAirlines:null
  });
+});
+
+test('five bands depend on daily traffic rather than percent rank or airport maximum',()=>{
+ assert.deepEqual([0,999,1000,4999,5000,14999,15000,49999,50000].map(passengerTrafficGroup),
+  [1,1,2,2,3,3,4,4,5]);
+ assert.deepEqual([0,0.99,1,9.99,10,99.99,100,999.99,1000].map(cargoTrafficGroup),
+  [1,1,2,2,3,3,4,4,5]);
+ assert.equal(passengerTrafficGroup(null),null);
+ assert.equal(cargoTrafficGroup(null),null);
+ const p=serializeAirportProfile({...belgrade,
+  daily_outbound_passengers:12205,daily_outbound_cargo_tonnes:'22.50',
+  passenger_demand_percentile:92,cargo_demand_percentile:88});
+ assert.equal(p.demand.passengerGroup,3);
+ assert.equal(p.demand.cargoGroup,3);
+ assert.equal(p.demand.passengerPercent,92);
+ assert.equal(p.demand.cargoPercent,88);
+});
+test('nearby-airport read is bounded to approved nearby locations and excludes the current airport',()=>{
+ assert.match(AIRPORT_PROFILE_SQL,/AS nearby_airports/);
+ assert.match(AIRPORT_PROFILE_SQL,/FROM airlinerra_game\.approved_game_airports a2/);
+ assert.match(AIRPORT_PROFILE_SQL,/a2.airport_key<>a.airport_key/);
+ assert.match(AIRPORT_PROFILE_SQL,/distance_km <=100/);
+ assert.match(AIRPORT_PROFILE_SQL,/LIMIT 12/);
+ const p=serializeAirportProfile({...belgrade,nearby_airports:[
+  {key:'FICTIONAL:fictional:RS:LYAL',name:'Aleksandrovo Airport',distanceKm:94.3,iata:null},
+  {key:'OURAIRPORTS:42',name:'Too distant',distanceKm:155}
+ ]});
+ assert.deepEqual(p.nearbyAirports,[{
+  key:'FICTIONAL:fictional:RS:LYAL',name:'Aleksandrovo Airport',
+  distanceKm:94.3,iata:null,fictional:true
+ }]);
 });
