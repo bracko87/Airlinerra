@@ -9,6 +9,7 @@
  */
 import {createAuthService} from './auth-service.mjs';
 import {parseAuthCallback} from './auth-service.mjs';
+import {validatedDisplayName} from './auth-rules.mjs';
 
 const PROJECT='hwllkabgzaynalahvkpz';
 const AUTH_ORIGIN='https://airlinerra.com';
@@ -62,6 +63,27 @@ export async function createInvitedTesterAuth({
         throw new Error('Verified session unavailable.');
       return data.session.access_token;
     },
+    async updateManagerProfile({displayName,hometown='',country=''}={}){
+      const user=await service.getUser();
+      if(!user?.id||!user.email_confirmed_at||user.is_anonymous===true)
+        throw Error('Verified account required.');
+      const cleanName=validatedDisplayName(displayName);
+      const cleanPlace=(value,label)=>{
+        if(typeof value!=='string')throw Error('Invalid '+label+'.');
+        const result=value.trim().normalize('NFKC');
+        if(result.length>80||/[<>\\x00-\\x1f\\x7f]/.test(result))
+          throw Error(label+' must contain no more than 80 valid characters.');
+        return result;
+      };
+      const {data,error}=await client.auth.updateUser({data:{
+        display_name:cleanName,
+        hometown:cleanPlace(hometown,'Hometown'),
+        country:cleanPlace(country,'Country')
+      }});
+      if(error||data?.user?.id!==user.id)
+        throw Error('Unable to save account details.');
+      return data.user;
+    },
     async uploadAirlineLogo({airlineId,blob}={}){
       if(!/^[0-9a-f-]{36}$/i.test(airlineId||'')||
          !(blob instanceof Blob)||blob.type!=='image/webp'||blob.size>1048576)
@@ -71,7 +93,7 @@ export async function createInvitedTesterAuth({
         throw Error('Verified account required.');
       const objectPath=user.id+'/'+airlineId+'/logo.webp';
       const {error}=await client.storage.from('airlinerra-airline-logos')
-        .upload(objectPath,blob,{contentType:'image/webp',upsert:true,cacheControl:'3600'});
+        .upload(objectPath,blob,{contentType:'image/webp',upsert:true,cacheControl:'60'});
       if(error)throw Error('Unable to store airline logo.');
       return objectPath;
     },
