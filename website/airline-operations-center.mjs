@@ -325,5 +325,5 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
  }
  initStaff();renderRoutes();renderHubs();
  const airportOfficeController=createAirportOffice({doc,identity,session,goTo,getAirlineLogoUrl});
- return Object.freeze({updateData,openAirport:airport=>airportOfficeController.openAirport(airport)});
+ return Object.freeze({updateData,openAirport:airport=>airportOfficeController.openAirport(airport),refreshAirlineLogo:()=>airportOfficeController.refreshAirlineLogo()});
 }
