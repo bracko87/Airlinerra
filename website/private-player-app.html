@@ -32,6 +32,7 @@
     <nav class="app-navigation" aria-label="Player application">
       <div class="app-navigation-inner">
         <a class="nav-direct" href="#overview" data-view-link="overview">Dashboard</a>
+        <span class="nav-direct nav-disabled" aria-disabled="true" title="Holding will require at least 60 in-game days, capital and certificates">Holding <span class="nav-locked-label">Locked</span></span>
         <details class="nav-group" data-nav-group="operations" aria-label="Operations">
           <summary class="nav-label">Operations<span class="chevron" aria-hidden="true"></span></summary>
           <div class="nav-links" role="group" aria-label="Operations pages">
@@ -41,7 +42,6 @@
             <a href="#schedule" data-view-link="schedule">Flight schedule</a>
             <a href="#service" data-view-link="service">Cabin services</a>
             <a href="#tickets" data-view-link="tickets">Ticket prices and analysis</a>
-            <a href="#staff" data-view-link="staff">Personnel and staff</a>
           </div>
         </details>
         <details class="nav-group" data-nav-group="fleet" aria-label="Fleet">
@@ -49,13 +49,52 @@
           <div class="nav-links" role="group" aria-label="Fleet pages">
             <a href="#fleet" data-view-link="fleet">My fleet</a>
             <a href="#aircraft-market" data-view-link="aircraft-market">Aircraft marketplace</a>
-            <a href="#maintenance" data-view-link="maintenance">Maintenance</a>
+            <a href="#maintenance" data-view-link="maintenance">Aircraft maintenance</a>
+          </div>
+        </details>
+        <details class="nav-group" data-nav-group="infrastructure" aria-label="Infrastructure">
+          <summary class="nav-label">Infrastructure<span class="chevron" aria-hidden="true"></span></summary>
+          <div class="nav-links" role="group" aria-label="Infrastructure pages">
+            <a href="#infrastructure" data-view-link="infrastructure">Infrastructure overview</a>
+            <a href="#infrastructure-hq" data-view-link="infrastructure-hq">Headquarters</a>
+            <a href="#infrastructure-maintenance" data-view-link="infrastructure-maintenance">Maintenance facilities</a>
+            <a href="#infrastructure-facilities" data-view-link="infrastructure-facilities">Lounges and airport facilities</a>
+          </div>
+        </details>
+        <details class="nav-group" data-nav-group="employees" aria-label="Employees">
+          <summary class="nav-label">Employees<span class="chevron" aria-hidden="true"></span></summary>
+          <div class="nav-links" role="group" aria-label="Employees pages">
+            <a href="#staff" data-view-link="staff">Employee overview</a>
+            <a href="#employees-pilots" data-view-link="employees-pilots">Pilots</a>
+            <a href="#employees-cabin" data-view-link="employees-cabin">Cabin crew</a>
+            <a href="#employees-ground" data-view-link="employees-ground">Ground crew</a>
+            <a href="#employees-technical" data-view-link="employees-technical">Technical staff</a>
+            <a href="#employees-board" data-view-link="employees-board">Board and management</a>
+            <a href="#employees-payroll" data-view-link="employees-payroll">Wages and salaries</a>
+          </div>
+        </details>
+        <details class="nav-group" data-nav-group="marketing" aria-label="Marketing">
+          <summary class="nav-label">Marketing<span class="chevron" aria-hidden="true"></span></summary>
+          <div class="nav-links" role="group" aria-label="Marketing pages">
+            <a href="#marketing-reputation" data-view-link="marketing-reputation">Brand and reputation</a>
+            <a href="#marketing-campaigns" data-view-link="marketing-campaigns">Advertising and campaigns</a>
+            <a href="#marketing-research" data-view-link="marketing-research">Route market research</a>
           </div>
         </details>
         <details class="nav-group" data-nav-group="finance" aria-label="Finance">
           <summary class="nav-label">Finance<span class="chevron" aria-hidden="true"></span></summary>
           <div class="nav-links" role="group" aria-label="Finance pages">
             <a href="#finances" data-view-link="finances">Finances and planning</a>
+          </div>
+        </details>
+        <details class="nav-group" data-nav-group="statistics" aria-label="Statistics">
+          <summary class="nav-label">Statistics<span class="chevron" aria-hidden="true"></span></summary>
+          <div class="nav-links" role="group" aria-label="Statistics pages">
+            <a href="#statistics" data-view-link="statistics">Statistics overview</a>
+            <a href="#statistics-airlines" data-view-link="statistics-airlines">Airline statistics</a>
+            <a href="#statistics-airports" data-view-link="statistics-airports">Airport statistics</a>
+            <a href="#statistics-aircraft" data-view-link="statistics-aircraft">Aircraft statistics</a>
+            <a href="#rankings" data-view-link="rankings">World rankings</a>
           </div>
         </details>
         <details class="nav-group" data-nav-group="account" aria-label="Account">
@@ -72,7 +111,6 @@
             <a href="#airline" data-view-link="airline">Manage airline</a>
             <a href="#onboarding" data-view-link="onboarding" data-setup-only hidden>Airline setup</a>
             <a href="#profile" data-view-link="profile">Manage account</a>
-            <a href="#rankings" data-view-link="rankings">World rankings</a>
             <a href="#worlds" data-view-link="worlds">Game worlds</a>
             <a href="#airports" data-view-link="airports">Airports</a>
             <a href="#aircraft-library" data-view-link="aircraft-library">Aircraft Library</a>
