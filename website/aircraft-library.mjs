@@ -133,6 +133,28 @@ export function createAircraftLibrary({doc,getReader}={}){
   for(const [title,value,unit] of fields)specs.append(label(title,value,unit||''));
   group.append(specs);return group;
  }
+ function liveFleetGroup(a){
+  const group=element('section','library-profile-group library-profile-live-fleet');
+  group.append(element('h3','','Aircraft in game'));
+  const usage=element('div','library-fleet-total');
+  const count=Number.isSafeInteger(a.fleetInUse)&&a.fleetInUse>=0?a.fleetInUse:null;
+  usage.append(element('span','','Currently in use'),element('strong','',count===null?'—':format(count)));
+  group.append(usage,element('h4','library-fleet-title','Top 3 airlines by quantity'));
+  if(!Array.isArray(a.topAirlines)||a.topAirlines.length===0){
+   group.append(element('p','library-fleet-empty',
+    count===null?'Live fleet data is temporarily unavailable.':'No airlines currently use this aircraft configuration.'));
+  }else{
+   const operators=element('ol','library-fleet-operators');
+   for(const operator of a.topAirlines.slice(0,3)){
+    const row=element('li','library-fleet-operator');
+    row.append(element('span','',operator.airlineName),
+     element('strong','',format(operator.quantity)));
+    operators.append(row);
+   }
+   group.append(operators);
+  }
+  return group;
+ }
  function showDetail(a){
   if(!a)return;
   detail.replaceChildren();
@@ -164,14 +186,6 @@ export function createAircraftLibrary({doc,getReader}={}){
   image.append(placeholder);
   const highlights=element('div','library-profile-highlights');
   const noiseChapter=a.icaoNoiseChapter??a.gameNoiseChapter;
-  const noiseStatus=a.icaoNoiseStatus;
-  const certificateMatched=noiseStatus==='CERTIFICATE_CONFIGURATION_MATCHED';
-  const noiseEvidence=a.icaoNoiseChapter===null||a.icaoNoiseChapter===undefined
-   ?'Game estimate — not certified'
-   :certificateMatched?'Configuration certificate matched'
-    :noiseStatus==='AVIATION_AUTHORITY_MODEL_REPORTED'?'Aviation authority model record'
-    :noiseStatus==='MANUFACTURER_MODEL_REPORTED'?'Manufacturer model record'
-    :'Certificate not verified';
   const summary=[
    ['Role',a.useType],
    ['Passenger seats',a.useType==='cargo'?'—':(a.seats??a.maxSeats??'Not recorded')],
@@ -220,17 +234,10 @@ export function createAircraftLibrary({doc,getReader}={}){
    ]),
    specificationGroup('Noise & airport eligibility',[
      ['ICAO noise chapter',noiseChapter===null||noiseChapter===undefined?'—':'Chapter '+noiseChapter],
-     ['Classification evidence',noiseEvidence],
      ['Representative engine',a.representativeEngine],
      ['Airport access','Subject to applicable airport noise rules and curfews']
     ]),
-    specificationGroup('Source & operational qualifications',[
-    ['Technical review',a.technicalReview],
-    ['Fictional game estimate',a.gameEstimate?'Yes':'No'],
-    ['Operational readiness gate',a.readinessGate],
-    ['Restriction reason',a.holdReason],
-    ['Required equipment',a.requiredEquipment]
-   ])
+    liveFleetGroup(a)
   );
   if(a.requiredEquipment==='AMPHIBIOUS_FLOATS_WITH_WHEELS'){
    groups.append(specificationGroup('Conditional amphibious-wheel reference',[
