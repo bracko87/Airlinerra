@@ -312,7 +312,7 @@ test('verified headquarters is pinned as main hub and main station without a pai
  assert.match(office,/Main station · headquarters/);
  assert.match(office,/if\(!office\.home\)actions\.append\(button\(doc,'Remove draft'/);
  assert.match(office,/items\.slice\(first,first\+OFFICE_PAGE_SIZE\)/);
- assert.match(office,/office\.key!==live\.airline\?\.homeAirportKey/);
+ assert.match(office,/e\.key!==live\.airline\?\.homeAirportKey/);
  assert.match(css,/\.airport-profile-identity \.airport-profile-office-actions\{display:grid/);
  assert.match(css,/#player-main \.airport-profile-identity \.airport-profile-office-buttons \.secondary\{appearance:none;border:0/);
 });
