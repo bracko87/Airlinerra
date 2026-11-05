@@ -3,6 +3,7 @@
  */
 import {createAirportCountryPicker,populateAirportCountries,airportFlag,airportCountryName} from './airport-country-picker.mjs';
 import {renderRouteMap} from './route-map.mjs';
+import {buildAircraftWeeklyTimeline,renderAircraftWeeklyTimeline} from './aircraft-weekly-timeline.mjs';
 const section=(eyebrow,title,body)=>
  '<article class="panel route-planner-panel"><span class="panel-kicker">'+eyebrow+'</span><h2>'+title+'</h2>'+body+'</article>';
 const field=(id,label,el)=>'<label class="workspace-label" for="'+id+'">'+label+'</label>'+el;
@@ -40,6 +41,7 @@ const weekTable=()=>'<div class="route-week-scroll"><div class="route-week-grid"
  weekRow('Day',day=>'<span class="route-week-heading">'+day+'</span>')+
  weekRow('Fly',(_,i)=>'<input type="checkbox" data-route-day="'+i+'" id="route-day-'+i+'" aria-label="Fly on '+dayNames[i]+'">')+
  weekRow('Departure',(_,i)=>'<input type="time" data-route-time="'+i+'" value="09:00" disabled aria-label="'+dayNames[i]+' departure time">')+
+ weekRow('Departure stand',(_,i)=>'<output id="route-stand-'+i+'" class="route-week-estimate">Unverified</output>')+
  weekRow('Estimated arrival',(_,i)=>'<output id="route-arrival-'+i+'" class="route-week-estimate">Pending</output>')+
  weekRow('Slot availability',()=>'<span class="route-week-pending">Unverified</span>')+
  '</div></div>';
@@ -84,12 +86,14 @@ export function routePlannerMarkup(){
  section('STEP 2','Aircraft and weekly departures',
   '<div class="route-step2-top">'+
    routeSetupField('route-aircraft','Aircraft','<select id="route-aircraft"><option value="">Choose aircraft</option></select>')+
-   routeSetupField('route-departure-stand','Departure boarding','<select id="route-departure-stand"><option value="terminal">Terminal</option><option value="remote">Remote stand</option></select>')+
-   routeSetupField('route-arrival-stand','Arrival boarding','<select id="route-arrival-stand"><option value="terminal">Terminal</option><option value="remote">Remote stand</option></select>')+
+   routeSetupField('route-arrival-stand','Arrival stand at destination','<select id="route-arrival-stand"><option value="terminal">Terminal</option><option value="remote">Remote stand</option></select>')+
    routeSetupField('route-turnaround','Target turnaround (minutes)','<input id="route-turnaround" type="number" min="45" max="360" step="15" value="45">')+
   '</div>'+
   '<p class="route-subtle-note" id="route-aircraft-feedback">Aircraft availability is not connected.</p>'+
+  '<div class="route-position-bar"><span>Departure stand (automatic)</span><strong id="route-departure-stand-derived">Not verified</strong></div>'+
+  '<p id="route-aircraft-position-status" class="route-position-status" role="status"></p>'+
   weekTable()+
+  '<details class="route-aircraft-timeline-panel" id="route-aircraft-timeline"><summary>Aircraft weekly timeline and locations</summary><div id="route-aircraft-timeline-content"></div></details>'+
   '<div class="route-week-footer"><span id="route-flights" class="route-week-count">0 departures/week</span>'+
   '<span>Origin local time · times and stands require verification</span></div>'+
   '<div class="route-flight-calculations">'+
@@ -134,8 +138,8 @@ export const flightNumberFor=(prefix,number)=>{
 };
 export const validLocalDeparture=time=>/^([01]\d|2[0-3]):[0-5]\d$/.test(String(time||''));
 // Draft-only service settings: no pricing, aircraft performance or slot claims.
-export const validateFlightDraftOptions=({departureStand,arrivalStand,turnaroundMinutes,fares,onboard,baggage,cargo}={})=>{
- if(!['terminal','remote'].includes(departureStand)||!['terminal','remote'].includes(arrivalStand)||
+export const validateFlightDraftOptions=({arrivalStand,turnaroundMinutes,fares,onboard,baggage,cargo}={})=>{
+ if(!['terminal','remote'].includes(arrivalStand)||
   !Number.isInteger(turnaroundMinutes)||turnaroundMinutes<45||turnaroundMinutes>360||
   !['standard','basic','enhanced'].includes(onboard)||
   !['standard','hand-only','checked'].includes(baggage)||
@@ -148,7 +152,7 @@ export const validateFlightDraftOptions=({departureStand,arrivalStand,turnaround
   if(!Number.isSafeInteger(amount)||amount<0||amount>100000)return null;
   prices[key]=amount;
  }
- return {departureStand,arrivalStand,turnaroundMinutes,fares:prices,
+ return {arrivalStand,turnaroundMinutes,fares:prices,
   service:{onboard,baggage,cargo},operationallyVerified:false};
 };
 export const routeWeekdays=schedule=>{
@@ -441,8 +445,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   showDetails();
   if($('route-plan-number'))$('route-plan-number').value='';
   if($('route-aircraft'))$('route-aircraft').value='';
-  for(const id of ['route-departure-stand','route-arrival-stand'])
-   if($(id))$(id).value='terminal';
+  if($('route-arrival-stand'))$('route-arrival-stand').value='terminal';
   if($('route-turnaround'))$('route-turnaround').value='45';
   for(const label of ['economy','premium','business','first'])
    if($('route-fare-'+label))$('route-fare-'+label).value='';
@@ -505,10 +508,8 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    if(/^[0-9]{1,4}$/.test(number))$('route-plan-number').value=number;
   }
   $('route-aircraft').value=route.aircraftId||'';
-  for(const id of ['departure','arrival']){
-   const field=$('route-'+id+'-stand'),value=route.operation?.[id+'Stand'];
-   if(field)field.value=['remote','terminal'].includes(value)?value:'terminal';
-  }
+  const arrivalStand=route.operation?.arrivalStand;
+  if($('route-arrival-stand'))$('route-arrival-stand').value=['remote','terminal'].includes(arrivalStand)?arrivalStand:'terminal';
   $('route-turnaround').value=String(route.operation?.turnaroundMinutes||45);
   for(let day=0;day<7;day++){
    const row=(Array.isArray(route.schedule)?route.schedule:[]).find(x=>x.day===day);
@@ -658,7 +659,6 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    message('route-plan-status','Select at least one weekday and a valid local departure time.');return;
   }
   const operation=validateFlightDraftOptions({
-   departureStand:$('route-departure-stand')?.value,
    arrivalStand:$('route-arrival-stand')?.value,
    turnaroundMinutes:Number($('route-turnaround')?.value),
    fares:Object.fromEntries(['economy','premium','business','first'].map(label=>
