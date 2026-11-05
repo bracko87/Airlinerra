@@ -157,12 +157,14 @@ test('route planning has two steps, stacked airport lookup, real flag indicators
  assert.ok(view.indexOf('route-to-hub')<view.indexOf('route-map-canvas'));
  assert.ok(view.indexOf('route-map-canvas')<view.indexOf('route-aircraft'));
  assert.doesNotMatch(view,/AIRPORT OVERVIEW|ROUTE METRICS|PREPARE YOUR ROUTE/);
- assert.match(css,/\.route-week-grid\{display:grid;grid-template-columns:repeat\(7/);
+ assert.match(css,/#workspace-routes \.route-week-grid\{/);
+ assert.match(css,/repeat\(7,minmax\(110px,1fr\)\)/);
  assert.match(css,/\.route-country-flag/);
  assert.match(picker,/const choose=key=>/);
  assert.match(ui,/reader\.airportProfile\(homeKey\)/);
  assert.match(ui,/pickers\[side\]\.choose\(home\.key\)/);
- assert.match(ui,/aircraftId:flightAircraft,testAircraft:simulationAircraft\?true:false/);
+ assert.match(ui,/aircraftId:flightAircraft,/);
+ assert.match(ui,/testAircraft:Boolean\(simulationAircraft\)/);
  assert.match(ui,/status:'draft',operationallyVerified:false/);
  assert.match(ui,/Aircraft, crew, airport slots and traffic rights require verification/);
  assert.match(work,/createRoutePlanner/);
@@ -235,7 +237,8 @@ test('Panonian A319 fixture appears only as nonoperational simulation choice and
  ]);
  assert.match(route,/data\.airline\.testAircraft\.filter/);
  assert.match(route,/simulation only/);
- assert.match(route,/aircraftId:flightAircraft,testAircraft:simulationAircraft\?true:false/);
+ assert.match(route,/aircraftId:flightAircraft,/);
+ assert.match(route,/testAircraft:Boolean\(simulationAircraft\)/);
  assert.match(route,/status:'draft',operationallyVerified:false/);
  assert.match(route,/cannot operate|not approved for operation/);
  assert.match(office,/id="fleet-test-count"/);
@@ -244,4 +247,64 @@ test('Panonian A319 fixture appears only as nonoperational simulation choice and
  assert.match(styles,/#workspace-routes>\.route-planner-first-step\+\.route-planner-panel\{/);
  assert.match(styles,/margin-top:28px/);
  assert.match(styles,/\.fleet-test-aircraft-row\{display:flex/);
+});
+
+
+test('three-step flight draft screen includes daily aircraft assignments and prices without fabricated flight calculations',async()=>{
+ const ui=routePlannerMarkup(),source=await read('../website/route-planner.mjs');
+ for(const id of ['route-departure-stand','route-arrival-stand','route-turnaround',
+  'route-cruise-speed','route-airborne-time','route-min-turnaround','route-rotation-check',
+  'route-fare-economy','route-fare-premium','route-fare-business','route-fare-first',
+  'route-onboard-service','route-baggage-service','route-cargo-service',
+  'route-plan-save','route-plan-new']){
+  assert.ok(ui.includes('id="'+id+'"'),id);
+ }
+ assert.ok(ui.indexOf('STEP 2')<ui.indexOf('STEP 3'));
+ assert.ok(ui.indexOf('route-turnaround')<ui.indexOf('route-week-grid'));
+ for(let day=0;day<7;day++){
+  assert.ok(ui.includes('data-route-day="'+day+'"'));
+  assert.ok(ui.includes('data-route-time="'+day+'"'));
+  assert.ok(ui.includes('id="route-arrival-'+day+'"'));
+ }
+ assert.match(source,/status:'draft',operationallyVerified:false/);
+ assert.match(source,/await resetRouteForm\(\)/);
+ assert.match(source,/airlinerra:edit-route-draft/);
+ assert.match(ui,/Pending verified performance/);
+ assert.doesNotMatch(ui,/Apply schedule settings|Reserve flights/);
+});
+test('route fare and service draft validation limits values without implying live bookings',async()=>{
+ const {validateFlightDraftOptions,routeWeekdays}=await import('../website/route-planner.mjs');
+ const good={
+  departureStand:'remote',arrivalStand:'terminal',turnaroundMinutes:60,
+  fares:{economy:'100',premium:'',business:'200',first:null},
+  onboard:'standard',baggage:'checked',cargo:'requested'
+ };
+ const result=validateFlightDraftOptions(good);
+ assert.equal(result.operationallyVerified,false);
+ assert.deepEqual(result.fares,{economy:100,premium:null,business:200,first:null});
+ assert.equal(result.departureStand,'remote');
+ assert.equal(result.turnaroundMinutes,60);
+ for(const bad of [
+  {...good,turnaroundMinutes:30},{...good,turnaroundMinutes:361},
+  {...good,departureStand:'cargo'},{...good,onboard:'unsafe'},
+  {...good,fares:{...good.fares,economy:'101.5'}},
+  {...good,fares:{...good.fares,first:'-1'}},
+  {...good,fares:{...good.fares,business:'100001'}}
+ ])assert.equal(validateFlightDraftOptions(bad),null);
+ assert.deepEqual(routeWeekdays([{day:0,time:'09:00'},{day:2,time:'11:20'}]).filter(x=>x.active).map(x=>x.label),
+  ['Mo','We']);
+});
+test('My Routes is a plain one-line table with weekday indicators and a text edit link',async()=>{
+ const [operations,styles]=await Promise.all([
+  read('../website/airline-operations-center.mjs'),
+  read('../website/player-app.css')
+ ]);
+ assert.match(operations,/operations-route-directory-row/);
+ assert.match(operations,/const headings=\['Flight','City to city','Departure','Arrival','Aircraft','Weekly days','More'\]/);
+ assert.match(operations,/className='operations-route-open-text'/);
+ assert.match(operations,/data[s]et\.opsRouteEdit/);
+ assert.match(operations,/goTo\?\.\('routes'\)/);
+ assert.match(operations,/airlinerra:edit-route-draft/);
+ assert.match(styles,/\.operations-route-directory-row\{/);
+ assert.match(styles,/#player-main \.route-text-action,#player-main \.operations-route-open-text/);
 });
