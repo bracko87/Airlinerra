@@ -15,14 +15,18 @@ test('all 43 player routes map to exactly one real section',async()=>{
  for(const route of PLAYER_VIEWS)assert.equal(safePlayerView('#'+route),route);
 });
 
-test('Holding is visible but locked and does not link to company creation',async()=>{
+test('Holding navigation opens a planning page but not company creation',async()=>{
  const html=await read('../website/private-player-app.html');
  const nav=html.split('</nav>')[0];
- assert.match(nav,/class="nav-direct nav-disabled" aria-disabled="true"[^>]*>Holding/);
- assert.doesNotMatch(nav,/href="#holding"/);
- assert.match(html,/at least 60 in-game days/i);
+ assert.match(nav,/<a class="nav-direct" href="#holding" data-view-link="holding">Holding<\/a>/);
+ assert.doesNotMatch(nav,/nav-direct nav-disabled|nav-locked-label/);
  const holding=html.split('data-player-view="holding"')[1].split('</section>')[0];
- assert.match(holding,/No company can be created or charged|no company can be created or charged/i);
+ assert.match(holding,/60 completed in-game days/i);
+ assert.match(holding,/One-time establishment fee/);
+ assert.match(holding,/To be announced/);
+ assert.match(holding,/Safety and operations/);
+ assert.match(holding,/Licenses/);
+ assert.match(holding,/registration is not yet available/i);
  assert.doesNotMatch(holding,/<button|<input|<form/);
 });
 
@@ -58,7 +62,9 @@ test('infrastructure, employees, marketing, statistics have informative non-oper
 
 test('aircraft illustration is lowered and internal release warning removed',async()=>{
  const [css,js]=await Promise.all([read('../website/aircraft-library.css'),read('../website/aircraft-library.mjs')]);
- assert.match(css,/translateY\(44px\) scale\(\.90\)/);
+ assert.match(css,/object-fit:contain;object-position:center center;transform:none/);
+ assert.match(css,/\.library-profile-image\{height:380px;min-height:380px/);
+ assert.doesNotMatch(css,/object-fit:cover|translateY\(44px\) scale\(\.90\)/);
  assert.match(css,/library-fleet-count\{font-size:12px;font-weight:400/);
  assert.doesNotMatch(js,/Operating restriction: /);
  assert.match(js,/library-fleet-count/);
@@ -70,6 +76,9 @@ test('new menu remains accessible and responsive',async()=>{
  assert.match(html,/<nav class="app-navigation" aria-label="Player application">/);
  assert.match(css,/\.planning-page-grid/);
  assert.match(css,/@media\(max-width:850px\)/);
- assert.match(css,/\.nav-locked-label/);
+ assert.match(css,/justify-content:space-between;gap:clamp/);
+ assert.match(css,/flex-wrap:nowrap/);
+ assert.match(css,/@media\(max-width:1150px\)/);
+ assert.doesNotMatch(html,/nav-locked-label|aria-disabled="true"[^>]*>Holding/);
  assert.doesNotMatch(html,/data-nav-group="manager"/);
 });
