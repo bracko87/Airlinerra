@@ -87,8 +87,34 @@ test('airport profile hides internal labels and places weather and country flag 
  assert.match(styles,/\.airport-profile-weather-summary/);
 });
 
-test('header weather icon is bounded to a compact 40px vector',async()=>{
+test('header weather icon is bounded to a compact 30px vector',async()=>{
  const styles=await read('../website/player-app.css');
- assert.match(styles,/\.airport-weather-icon\{[^}]*width:40px;height:40px/);
+ assert.match(styles,/\.airport-weather-icon\{[^}]*width:30px;height:30px/);
  assert.match(styles,/\.airport-weather-summary-main\{[^}]*display:flex/);
+});
+
+test('airport profile uses a left-side detail list and a right-side country-outline map',async()=>{
+ const [office,css,map]=await Promise.all([
+  read('../website/airline-airports-office.mjs'),
+  read('../website/player-app.css'),
+  read('../website/route-map.mjs')
+ ]);
+ const start=office.indexOf("profileField('airport-profile-facts',[");
+ const end=office.indexOf("]);",start);
+ assert.ok(start>0 && end>start);
+ const fields=office.slice(start,end);
+ assert.deepEqual([...fields.matchAll(/\['([^']+)',/g)].map(m=>m[1]),[
+  'Airport name','ICAO code','IATA code','Country','Municipality',
+  'Airport category','Time zone','Latitude / longitude','Elevation'
+ ]);
+ assert.doesNotMatch(fields,/Airport code/);
+ assert.match(office,/id="airport-profile-map"/);
+ assert.match(office,/renderAirportLocationMap\(/);
+ assert.match(office,/class="airport-weather-summary-details"/);
+ assert.match(css,/\.airport-profile-main\{display:grid;grid-template-columns/);
+ assert.match(css,/\.airport-office-panel \.airport-profile-head\{background:transparent/);
+ assert.match(css,/\.airport-weather-summary-details\{display:flex/);
+ assert.match(map,/export function renderAirportLocationMap\(/);
+ assert.match(map,/WORLD_OUTLINES/);
+ assert.match(map,/fill:'#ff6917'/);
 });
