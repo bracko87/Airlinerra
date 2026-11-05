@@ -121,17 +121,52 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
  function renderRoutes(){
   const root=$('operations-route-list');if(!root)return;
   root.replaceChildren();
-  const candidates=Array.isArray(state.routes)&&state.routes.length?state.routes:state.route?[state.route]:[];
-  if(!candidates.length){const p=doc.createElement('p');p.className='hint';p.textContent='No route drafts saved yet. Use Create a route to plan your first destination.';root.append(p);return;}
+  const candidates=Array.isArray(state.routes)&&state.routes.length?state.routes:
+   state.route?[state.route]:[];
+  if(!candidates.length){
+   const p=doc.createElement('p');p.className='hint';
+   p.textContent='No saved route drafts. Use Create a route to prepare your first flight.';
+   root.append(p);return;
+  }
+  const grid=doc.createElement('div');grid.className='operations-route-directory';
+  const headings=['Flight','City to city','Departure','Arrival','Aircraft','Weekly days','More'];
+  const head=doc.createElement('div');head.className='operations-route-directory-row is-heading';
+  for(const label of headings){
+   const col=doc.createElement('span');col.textContent=label;head.append(col);
+  }
+  grid.append(head);
+  const days=['Mo','Tu','We','Th','Fr','Sa','Su'];
   for(const [index,route] of candidates.entries()){
    if(!route?.from||!route?.to)continue;
-   const row=doc.createElement('div');row.className='operations-saved-row';
-   const title=doc.createElement('strong');
-   title.textContent=escText(route.from.code||route.from.name)+' - '+escText(route.to.code||route.to.name);
-   const note=doc.createElement('span');note.textContent=String(route.flights||0)+' proposed departures/week - LOCAL DRAFT';
-   const del=doc.createElement('button');del.type='button';del.className='secondary';del.dataset.opsRouteRemove=String(index);del.textContent='Remove draft';
-   row.append(title,note,del);root.append(row);
+   const row=doc.createElement('div');row.className='operations-route-directory-row';
+   const add=text=>{
+    const cell=doc.createElement('span');
+    cell.textContent=String(text??'—');row.append(cell);return cell;
+   };
+   add(route.flightNumber||'—');
+   add((route.from.municipality||route.from.name||'—')+' → '+
+    (route.to.municipality||route.to.name||'—'));
+   const schedule=Array.isArray(route.schedule)?route.schedule.filter(x=>
+    Number.isInteger(x?.day)&&x.day>=0&&x.day<=6&&/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(x.time)):[];
+   const times=[...new Set(schedule.map(x=>x.time))];
+   add(times.length===1?times[0]:times.length>1?'Varies':'—');
+   add('Pending');
+   add(route.aircraftLabel||'Not assigned');
+   const weekdays=doc.createElement('span');weekdays.className='operations-route-weekdays';
+   weekdays.setAttribute('aria-label','Days: '+(schedule.length?schedule.map(x=>days[x.day]).join(', '):'None selected'));
+   for(let day=0;day<7;day++){
+    const cell=doc.createElement('span');
+    const active=schedule.some(f=>f.day===day);
+    cell.className='operations-route-day'+(active?' is-active':'');
+    cell.textContent=days[day];weekdays.append(cell);
+   }
+   row.append(weekdays);
+   const link=doc.createElement('button');link.type='button';
+   link.className='operations-route-open-text';
+   link.dataset.opsRouteEdit=String(index);link.textContent='More information';
+   row.append(link);grid.append(row);
   }
+  root.append(grid);
  }
  function renderHubs(){
   const list=$('operations-hubs-list');if(!list)return;
