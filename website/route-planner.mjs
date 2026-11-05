@@ -117,6 +117,8 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   const label=$('route-'+side+'-country-text');
   if(label)label.textContent=/^[A-Z]{2}$/.test(iso)?
    airportCountryName(iso):'All countries — search anywhere';
+  for(const option of $('route-'+side+'-country-list')?.querySelectorAll('[data-route-country-choice]')||[])
+   option.setAttribute('aria-selected',String(option.dataset.countryIso===iso));
   if(!img)return;
   if(/^[A-Z]{2}$/.test(iso)){
    img.src='https://flagcdn.com/w40/'+iso.toLowerCase()+'.png';
