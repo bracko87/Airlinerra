@@ -40,7 +40,10 @@ SELECT dep.airport_code origin_code,arr.airport_code destination_code,
  arr.requires_special_noise_or_slot_review arr_review,
  dep.local_airport_time::text dep_local,arr.local_airport_time::text arr_local,
  dep.airport_chapter_evidence_status dep_airport_evidence,
- arr.airport_chapter_evidence_status arr_airport_evidence
+ arr.airport_chapter_evidence_status arr_airport_evidence,
+ airlinerra_game.section5_timed_route_schedule_gate_v1(
+  1::smallint,$1::text,$2::text,$3::bigint,$4::timestamptz,$5::timestamptz)
+  AS consolidated_gate
 FROM dep CROSS JOIN arr`;
 Deno.serve(async(request:Request)=>{
  if(request.method!=='POST')return respond(405,{error:'Method not allowed'});
@@ -80,13 +83,12 @@ Deno.serve(async(request:Request)=>{
   ])).rows;
   if(rows.length!==1)return respond(404,{error:'Airport or aircraft game configuration not found'});
   const r=rows[0];
-  const blocked=Boolean(r.dep_curfew||r.arr_curfew||r.dep_game_chapter||r.arr_game_chapter);
-  const needsReview=!blocked&&Boolean(r.dep_review||r.arr_review);
-  const status=blocked?'BLOCKED_BY_RECORDED_AIRPORT_GAME_RULE':
-    needsReview?'REQUIRES_NOISE_CERTIFICATE_SLOT_OR_QUOTA_REVIEW':
-    'PRELIMINARY_GAME_ALLOW';
+  const gate=r.consolidated_gate||{};
+  const status=String(gate.decision||'BLOCKED_UNRESOLVED_SCHEDULE_GATE');
+  const blocked=status.startsWith('BLOCKED_');
+  const needsReview=status==='SPECIAL_PERMISSION_OR_SLOT_REVIEW_REQUIRED';
   return respond(200,{
-    modelVersion:'AIRLINERRA_SECTION5_GAME_NOISE_CURFEW_V3',
+    modelVersion:'AIRLINERRA_SECTION5_COMBINED_SCHEDULE_GATE_V1',
     worldId:1,
     aircraft:{configurationId:body.configurationId,model:r.aircraft_model,
       selectedEngine:r.selected_engine,gameIcaoNoiseChapter:r.game_icao_chapter,
@@ -103,10 +105,16 @@ Deno.serve(async(request:Request)=>{
       specialNoiseSlotReviewRequired:r.arr_review,
       airportNoiseResearchStatus:r.arr_airport_evidence},
     gameScheduleOutcome:status,
+    runwayFullWeightScreenPass:gate.runwayFullWeightScreenPass===true,
+    runwayGameResult:gate.runwayGameResult??null,
+    airportResearchPending:gate.airportResearchPending===true,
+    aircraftChapterSourceEstimated:gate.aircraftChapterSourceEstimated===true,
+    canActivateNormalFlight:false,
     preliminarilyAllowed:!blocked&&!needsReview,
     legalRealWorldClearance:false,
     exceptionsWeatherRunwayPerformanceAndActualQuotaLedgerNotChecked:true,
-    note:'Based on source-backed or clearly estimated game noise Chapter and documented local operating limits. PRELIMINARY does not imply official airport or flight approval.'
+    actualRunwayNotamsOwnershipCrewWeatherAndQuotaLedgerNotChecked:true,
+    note:'Based on source-backed or clearly estimated game noise Chapter and documented local operating limits. Runway-length screen and aircraft-noise game Chapter checks are not full dispatch clearance. Unknown airport curfews remain UNVERIFIED.'
   });
  }catch(error){
   const sqlError=error as {code?:unknown}|null;
