@@ -25,12 +25,13 @@ export function validAirportLocation(a){
  return !!(a&&typeof a.key==='string'&&/^(OURAIRPORTS:[1-9]\d{0,18}|FICTIONAL:fictional:[A-Z]{2}:[A-Z0-9]{2,8})$/.test(a.key)&&
   typeof a.name==='string'&&a.name.trim()&&/^[A-Z]{2}$/.test(a.countryIso||''));
 }
-export function createAirportCountryPicker({country,search,airport,getReader,onStatus=()=>{},onSelect=()=>{}}={}){
+export function createAirportCountryPicker({country,search,airport,getReader,onStatus=()=>{},onSelect=()=>{},onResults=()=>{}}={}){
  if(!country||!search||!airport||typeof getReader!=='function')throw Error('Country airport inputs are required');
- let generation=0,loading=false,entries=[],known=new Map(),selected='';
+ let generation=0,loading=false,entries=[],known=new Map(),selected='',searchTimer=null;
  const reset=label=>{
   airport.replaceChildren(new Option(label,''));airport.disabled=true;selected='';
   onSelect(null);
+  onResults([],false);
  };
  const current=()=>known.get(airport.value)||null;
  const filter=()=>{
@@ -48,25 +49,30 @@ export function createAirportCountryPicker({country,search,airport,getReader,onS
   if(selected&&filtered.some(a=>a.key===selected))airport.value=selected;
   else{selected='';airport.value='';}
   onSelect(current());
+  onResults(filtered.slice(0,30),!loading);
   if(!loading)onStatus(filtered.length+' of '+entries.length+' approved airports shown'+
     (words?' - filtered by search.':'.'));
  };
  const load=async()=>{
   const ticket=++generation,iso=country.value,reader=getReader();
   entries=[];known=new Map();selected='';loading=false;
-  reset('Choose country first');
-  if(!/^[A-Z]{2}$/.test(iso))return;
+  reset('Choose country or type an airport name');
+  const global=iso===''&&search.value.trim().length>=2;
+  if(!/^[A-Z]{2}$/.test(iso)&&!global){
+   onStatus('Type at least 2 characters to search all approved airports, or choose a country.');
+   return;
+  }
   if(!reader?.airports){reset('Approved airport directory unavailable');onStatus('Airport directory unavailable.');return;}
   loading=true;reset('Loading approved airports...');
-  onStatus('Loading all approved airports in '+airportCountryName(iso)+'...');
+  onStatus(global?'Searching all approved airports...':'Loading approved airports in '+airportCountryName(iso)+'...');
   try{
    const all=[],seen=new Set();let offset=0;
    for(let pageIndex=0;pageIndex<65;pageIndex++){
-    const page=await reader.airports({countryIso:iso,search:'',offset});
+    const page=await reader.airports({countryIso:iso,search:global?search.value.trim():'',offset});
     if(ticket!==generation)return;
-    if(page.countryIso!==iso||!Array.isArray(page.airports))throw Error('Unexpected country catalog');
+    if(page.countryIso!==iso||!Array.isArray(page.airports))throw Error('Unexpected airport catalog');
     for(const a of page.airports){
-     if(!validAirportLocation(a)||a.countryIso!==iso||seen.has(a.key))continue;
+     if(!validAirportLocation(a)||(!global&&a.countryIso!==iso)||seen.has(a.key))continue;
      seen.add(a.key);all.push(a);
     }
     if(page.nextOffset===null||page.nextOffset===undefined)break;
@@ -86,13 +92,35 @@ export function createAirportCountryPicker({country,search,airport,getReader,onS
    onStatus('Airport directory could not be loaded. Retry the country selection.');
   }
  };
- const onCountry=()=>{search.value='';void load()};
- const onSearch=()=>{if(!loading)filter()};
+ const onCountry=()=>{
+  if(searchTimer!==null){clearTimeout(searchTimer);searchTimer=null;}
+  search.value='';void load();
+ };
+ const onSearch=()=>{
+  if(country.value){
+   if(!loading)filter();
+   return;
+  }
+  if(searchTimer!==null)clearTimeout(searchTimer);
+  const query=search.value.trim();
+  if(query.length<2){
+   ++generation;entries=[];known=new Map();selected='';
+   reset('Type an airport or city');
+   onStatus('Type 2 or more characters to search airports in all countries.');
+   return;
+  }
+  searchTimer=setTimeout(()=>{searchTimer=null;void load();},250);
+ };
  const onAirport=()=>{selected=airport.value;onSelect(current())};
  const choose=key=>{
-  if(!known.has(key))return false;
-  selected=key;search.value='';filter();
+  const choice=known.get(key);
+  if(!choice)return false;
+  selected=key;
+  // Keep the search text as the selected airport; one combined airport field.
+  search.value=choice.name;
+  filter();
   airport.value=key;onSelect(current());
+  onResults([],false);
   return true;
  };
  country.addEventListener('change',onCountry);
@@ -100,6 +128,9 @@ export function createAirportCountryPicker({country,search,airport,getReader,onS
  airport.addEventListener('change',onAirport);
  reset('Choose country first');
  return Object.freeze({load,refresh:load,selected:current,choose,
-  invalidate:()=>{generation++;loading=false;entries=[];known=new Map();reset('Choose country first');},
+  invalidate:()=>{
+   generation++;if(searchTimer!==null){clearTimeout(searchTimer);searchTimer=null;}
+   loading=false;entries=[];known=new Map();reset('Choose country first');
+  },
   getAirports:()=>entries.slice()});
 }
