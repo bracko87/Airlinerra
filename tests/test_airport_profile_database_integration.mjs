@@ -92,3 +92,16 @@ test('localhost and hosted bridges route profile reads to the isolated Edge func
  assert.match(edge,/validAirportKey\(body.airportKey\)/);
  assert.doesNotMatch(edge,/UPDATE |INSERT |DELETE |TRUNCATE /i);
 });
+
+test('airport-wide metrics show sourced HQ and active offices without inventing flights',()=>{
+ assert.match(AIRPORT_PROFILE_SQL,/registered_airline_headquarters_count/);
+ assert.match(AIRPORT_PROFILE_SQL,/active_airline_hubs_count/);
+ assert.match(AIRPORT_PROFILE_SQL,/active_airline_stations_count/);
+ const profile=serializeAirportProfile({...belgrade,
+  registered_airline_headquarters_count:1,
+  active_airline_hubs_count:0,active_airline_stations_count:0});
+ assert.deepEqual(profile.airportActivity,{
+  registeredHeadquarters:1,activeHubs:0,activeStations:0,
+  dailyFlights:null,operatingAirlines:null
+ });
+});
