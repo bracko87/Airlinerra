@@ -98,7 +98,10 @@ const aircraftImages=new Map([
  ["Boeing|737-900ER|passenger","Boeing 737-900ER passenge.png"],
 ]);
 export function aircraftImagePath(a){
- const filename=aircraftImages.get([a.manufacturer,a.model,a.useType].join('|'));
+ const configured=typeof a.imagePath==='string'&&
+  /^Airplanes\/[^/\\\r\n]{1,180}\.(?:png|jpe?g|webp)$/iu.test(a.imagePath)
+   ?a.imagePath.slice('Airplanes/'.length):null;
+ const filename=configured||aircraftImages.get([a.manufacturer,a.model,a.useType].join('|'));
  return filename?'https://hwllkabgzaynalahvkpz.supabase.co/storage/v1/object/public/Admin/Airplanes/'+encodeURIComponent(filename):null;
 }
 export function createAircraftLibrary({doc,getReader}={}){
