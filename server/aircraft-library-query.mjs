@@ -30,6 +30,14 @@ select c.id::int as id,m.name as manufacturer,f.family_name as family,
  cert.noise_certificate_status AS icao_noise_status,
  cert.certification_match_basis AS icao_noise_match_basis,
  cert.evidence_url AS icao_noise_source,
+ representative.representative_engine_model AS representative_engine_model,
+ representative.representative_engine_count AS representative_engine_count,
+ representative.engine_choice_method AS representative_engine_choice_method,
+ representative.evidence_strength AS representative_engine_evidence_strength,
+ representative.source_url AS representative_engine_source,
+ noisegame.game_chapter_assumption AS game_icao_noise_chapter,
+ noisegame.chapter_evidence_level AS game_icao_noise_evidence,
+ noisegame.chapter_engine_match_status AS game_icao_noise_engine_match,
  fullref.mtow_kg AS full_weight_reference_mtow_kg,
  fullref.mlw_kg AS full_weight_reference_mlw_kg,
  fullref.game_full_weight_takeoff_reference_m AS full_weight_takeoff_reference_m,
@@ -44,6 +52,8 @@ join airlinerra.aircraft_manufacturers m on m.id=f.manufacturer_id
 join airlinerra.aircraft_game_data_coverage_v1 coverage on coverage.configuration_id=c.id
 join airlinerra.aircraft_configuration_game_readiness_v1 ready on ready.configuration_id=c.id
 left join airlinerra_game.section5_icao_aircraft_certification_v2 cert on cert.configuration_id=c.id
+left join airlinerra_game.section5_aircraft_representative_engine_v1 representative on representative.configuration_id=c.id
+left join airlinerra_game.section5_aircraft_representative_noise_baseline_v1 noisegame on noisegame.configuration_id=c.id
 left join airlinerra_game.section5_full_weight_aircraft_reference_v2 fullref on fullref.configuration_id=c.id
 left join lateral (
  select t.* from airlinerra.aircraft_technical_specs t
@@ -110,6 +120,14 @@ export function serializeAircraftLibrary(rows){
    holdReason:safeText(r.hold_reason,100),
    gameNoiseClass:null,
    noiseClassificationConfidence:'LEGACY_FIVE_CLASS_SCALE_RETIRED',
+   representativeEngine:safeText(r.representative_engine_model,80),
+   representativeEngineCount:num(r.representative_engine_count,1,8),
+   representativeEngineSelectionMethod:safeText(r.representative_engine_choice_method,50),
+   representativeEngineEvidence:safeText(r.representative_engine_evidence_strength,64),
+   representativeEngineSource:safeText(r.representative_engine_source,512),
+   gameNoiseChapter:num(r.game_icao_noise_chapter,2,14),
+   gameNoiseChapterEvidence:safeText(r.game_icao_noise_evidence,80),
+   gameNoiseEngineMatch:safeText(r.game_icao_noise_engine_match,80),
    icaoNoiseChapter:num(r.official_icao_chapter,2,14),
    icaoNoiseStatus:safeText(r.icao_noise_status,64)||'CERTIFICATE_NOT_VERIFIED',
    icaoNoiseMatchBasis:safeText(r.icao_noise_match_basis,128),
