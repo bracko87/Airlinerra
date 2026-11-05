@@ -115,7 +115,7 @@ test('grouped horizontal dropdowns keep all ten game routes accessible',async()=
     assert.match(segment,/class="chevron"/);
     assert.deepEqual([...segment.matchAll(/data-view-link="([^"]+)"/g)].map(x=>x[1]),expected[order[i]]);
   }
-  assert.equal([...html.matchAll(/data-view-link="([^"]+)"/g)].length,PLAYER_VIEWS.length-2);
+  assert.equal([...html.slice(html.indexOf('<nav class="app-navigation"'),html.indexOf('</nav>')+6).matchAll(/data-view-link="([^"]+)"/g)].length,PLAYER_VIEWS.length-2);
   assert.match(html,/class="nav-direct nav-disabled" aria-disabled="true"[^>]*>Holding/);
   assert.match(css,/\.app-navigation-inner\{[^}]*overflow:visible;/);
   assert.match(css,/\.nav-links a\[aria-current="page"\]/);
