@@ -22,9 +22,26 @@ let pool:any=null;
 const SQL=`SELECT airlinerra_game.section5_universal_route_restriction_gate_v1(
  1::smallint,$1::text,$2::text,$3::bigint,$4::timestamptz,$5::timestamptz,$6::text,$7::text
 ) AS gate`;
+const WEEKLY_SQL=`SELECT airlinerra_game.section5_weekly_route_restriction_gate_v1(
+ 1::smallint,$1::text,$2::text,$3::bigint,$4::timestamptz,$5::timestamptz,$6::jsonb
+) AS gate`;
 const ALLOWED_FIELDS=new Set(['arrivalUtc','configurationId','departureUtc',
- 'destinationAirportKey','originAirportKey','originRunwaySourceId','destinationRunwaySourceId']);
+ 'destinationAirportKey','originAirportKey','originRunwaySourceId','destinationRunwaySourceId',
+ 'weeklySchedule']);
 const RUNWAY_ID=/^[A-Za-z0-9:_-]{1,64}$/u;
+const HHMM=/^([01][0-9]|2[0-3]):[0-5][0-9]$/u;
+const validWeekly=(v:unknown):v is Array<{day:number,time:string}>=>{
+ if(!Array.isArray(v)||v.length<1||v.length>7)return false;
+ const days=new Set<number>();
+ for(const row of v){
+  if(!row||typeof row!=='object'||Array.isArray(row)||
+     Object.keys(row).some(x=>!['day','time'].includes(x))||
+     !Number.isInteger(row.day)||row.day<0||row.day>6||
+     typeof row.time!=='string'||!HHMM.test(row.time)||days.has(row.day))return false;
+  days.add(row.day);
+ }
+ return true;
+};
 Deno.serve(async(request:Request)=>{
  if(request.method!=='POST')return respond(405,{error:'Method not allowed'});
  if(request.headers.get('origin')!==ORIGIN||
@@ -51,6 +68,9 @@ Deno.serve(async(request:Request)=>{
   typeof body.originAirportKey!=='string'||!AIRPORT.test(body.originAirportKey)||
   typeof body.destinationAirportKey!=='string'||!AIRPORT.test(body.destinationAirportKey)||
   body.originAirportKey===body.destinationAirportKey||
+  (body.weeklySchedule!==undefined&&!validWeekly(body.weeklySchedule))||
+  (body.weeklySchedule!==undefined&&
+     (body.originRunwaySourceId!==undefined||body.destinationRunwaySourceId!==undefined))||
   !isUtc(body.departureUtc)||!isUtc(body.arrivalUtc)||
   Date.parse(body.arrivalUtc)<=Date.parse(body.departureUtc)||
   Date.parse(body.arrivalUtc)-Date.parse(body.departureUtc)>72*3600*1000)
@@ -63,15 +83,23 @@ Deno.serve(async(request:Request)=>{
   if(!pool)pool=new Pool({connectionString:DB_URL,ssl:{rejectUnauthorized:true},
     max:2,idleTimeoutMillis:10000,connectionTimeoutMillis:5000});
   client=await pool.connect();
-  const rows=(await client.query(SQL,[
+  const weekly=Array.isArray(body.weeklySchedule);
+  const params=weekly?[
+    body.originAirportKey,body.destinationAirportKey,body.configurationId,
+    body.departureUtc,body.arrivalUtc,JSON.stringify(body.weeklySchedule)
+   ]:[
     body.originAirportKey,body.destinationAirportKey,body.configurationId,
     body.departureUtc,body.arrivalUtc,
     body.originRunwaySourceId??null,body.destinationRunwaySourceId??null
-  ])).rows;
+   ];
+  const rows=(await client.query(weekly?WEEKLY_SQL:SQL,params)).rows;
   const gate=rows[0]?.gate;
   if(rows.length!==1||!gate||typeof gate!=='object')
    return respond(404,{error:'Airport or aircraft restriction screen not found'});
-  const dep=gate.origin||{},arr=gate.destination||{};
+  const screened=Array.isArray(gate.occurrences)?gate.occurrences:[];
+  const blocked=screened.filter((x:any)=>x.gameHardBlocked===true);
+  const relevant=blocked[0]||screened[0]||{};
+  const dep=gate.origin||relevant.origin||{},arr=gate.destination||relevant.destination||{};
   const runwayPass=(leg:any)=>leg.runwayLengthEvidence==='FULL_WEIGHT_GAME_REFERENCE'&&
     leg.runwayLengthM!==null&&leg.runwayLengthM!==undefined&&
     leg.requiredGameRunwayLengthM!==null&&leg.requiredGameRunwayLengthM!==undefined&&
@@ -108,6 +136,14 @@ Deno.serve(async(request:Request)=>{
       verifiedNoiseBlocked:arr.blockedByVerifiedNoiseRule===true,
       noiseOrSlotReviewRequired:arr.noiseReview===true||arr.quotaOrSlotReview===true},
     gameScheduleOutcome:gate.decision,
+    weeklyScheduleChecked:gate.weeklyTimetableChecked===true,
+    weeklyWeeksChecked:gate.weeksChecked??null,
+    weeklyOccurrencesChecked:gate.occurrenceCount??null,
+    weeklyOriginTimezone:gate.originTimezone??null,
+    blockedWeeklyOccurrences:blocked.slice(0,8).map((item:any)=>({
+      departureUtc:item.departureUtc??null,arrivalUtc:item.arrivalUtc??null,
+      originOutcome:item.origin?.decision??null,destinationOutcome:item.destination?.decision??null
+    })),
     gameHardBlocked:gate.gameHardBlocked===true,
     needsReview:gate.needsReview===true,
     runwayFullWeightScreenPass:runwayPass(dep)&&runwayPass(arr),
@@ -115,7 +151,7 @@ Deno.serve(async(request:Request)=>{
     preliminarilyAllowed:gate.gamePreliminaryAllow===true,
     legalRealWorldClearance:false,
     universalGate:gate,
-    note:'Game preflight restriction check only. Unverified aircraft noise certificates trigger no additional game Chapter ban; they are not certified as noise compliant. Confirmed airport time and runway bans still apply. No live flight or slot activation.'
+    note:'Game preflight check only. Weekly departures are screened across four weeks using the airport local timezone; arrival times use the entered example duration. Unverified certificates add no extra game Chapter ban. No live flight or slot activation.'
   });
  }catch(error){
   const sqlError=error as {code?:unknown}|null;
