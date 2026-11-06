@@ -208,8 +208,9 @@ BEGIN
  LIMIT 1;
 
  has_runway := chosen.source_runway_id IS NOT NULL;
- runway_block := has_runway AND NOT estimated_reference AND
-                 (NOT coalesce(chosen.long_enough,false) OR coalesce(chosen.rule_blocked,false));
+ runway_block := has_runway AND
+                 (coalesce(chosen.rule_blocked,false) OR
+                  (NOT estimated_reference AND NOT coalesce(chosen.long_enough,false)));
  runway_review := NOT has_runway OR estimated_reference OR required_m IS NULL
    OR chosen.operational_status IS DISTINCT FROM 'operational'
    OR coalesce(chosen.runway_rule_review,false);
