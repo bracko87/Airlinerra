@@ -898,6 +898,25 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
  main?.addEventListener('click',async event=>{
   const target=event.target?.closest?.('button');
   if(!target)return;
+  if(target.dataset.routeActivationReadinessId){
+   const id=target.dataset.routeActivationReadinessId;
+   const airlineId=getData()?.airline?.id,scheduler=getData()?.scheduler;
+   if(!airlineId||typeof scheduler?.activationCheck!=='function'){
+    message('route-server-draft-status','Flight activation service is unavailable.');
+    return;
+   }
+   message('route-server-draft-status','Checking restrictions and operational readiness...');
+   try{
+    const result=await scheduler.activationCheck({airlineId,scheduleId:id});
+    const missing=Array.isArray(result.reasons)?result.reasons.slice(0,6)
+      .map(x=>String(x).replace(/_/g,' ').toLowerCase()).join('; '):'';
+    message('route-server-draft-status',String(result.status||'Activation unavailable').replace(/_/g,' ')+
+     (missing?' · '+missing:'')+'. No flight activated.');
+   }catch{
+    message('route-server-draft-status','Activation readiness check failed. No flight activated.');
+   }
+   return;
+  }
   if(target.dataset.routeCountryTrigger){
    const side=target.dataset.routeCountryTrigger;
    const list=$('route-'+side+'-country-list'),open=Boolean(list?.hidden);
@@ -975,6 +994,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    return;
   }
   const flightAircraft=$('route-aircraft')?.value||null;
+  const ownedChoice=ownedFleet.find(a=>'owned:'+a.id===flightAircraft)||null;
   const selectedCatalog=catalogChoice(),selectedRunway=selectedCatalog?runwayAssessment(selectedCatalog):null;
   if(selectedRunway?.status==='BLOCKED'){
    message('route-plan-status','BLOCKED — This aircraft cannot use the route. '+selectedRunway.blockingReasons.join(' '));
@@ -1003,7 +1023,8 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    message('route-plan-status','Select an aircraft first. Its weekly position must be checked before assigning departures.');
    return;
   }
-  if(flightAircraft&&!available.some(a=>a.id===flightAircraft)&&!flightAircraft.startsWith('catalog:')){
+  if(flightAircraft&&!available.some(a=>a.id===flightAircraft)&&
+     !flightAircraft.startsWith('catalog:')&&!ownedChoice){
    message('route-plan-status','Selected aircraft is not available in this airline. Choose another.');
    return;
   }
@@ -1016,10 +1037,11 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   // Other flight durations, time zones and slots are still not verified.
   // No live financial, schedule or aircraft mutations: local browser-session draft only.
   const draft={from,to,flightNumber,flights:schedule.length,schedule,
-   aircraftId:simulationAircraft?flightAircraft:null,
+   aircraftId:ownedChoice||simulationAircraft?flightAircraft:null,
    aircraftConfigurationId:selectedCatalog.id,
    aircraftLabel:[selectedCatalog.manufacturer,selectedCatalog.model,selectedCatalog.configuration].filter(Boolean).join(' '),
-   catalogPreviewOnly:!simulationAircraft,testAircraft:Boolean(simulationAircraft),
+   catalogPreviewOnly:!ownedChoice&&!simulationAircraft,testAircraft:Boolean(simulationAircraft),
+   serverScheduleId:null,
    referenceDepartureUtc:utcFromInput($('route-preflight-departure-utc')?.value),
    referenceArrivalUtc:utcFromInput($('route-preflight-arrival-utc')?.value),
    airportRuleScreen:{gameHardBlocked:false,needsReview:preflight.needsReview===true,
@@ -1035,13 +1057,52 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    message('route-plan-status','Maximum 25 route drafts. Remove another draft in My routes.');
    return;
   }
+  if(ownedChoice){
+   const scheduler=data?.scheduler;
+   if(typeof scheduler?.save!=='function'){
+    message('route-plan-status','Secure schedule service not connected. Cannot save an operational-fleet schedule.');
+    return;
+   }
+   const previous=routes.find(x=>x?.flightNumber===editingFlightNumber);
+   if(previous?.serverScheduleId&&!ownedChoice){
+    message('route-plan-status','A server-owned schedule must remain linked to an airline aircraft.');
+    return;
+   }
+   message('route-plan-status','Saving checked owned-aircraft schedule to your airline server...');
+   try{
+    const result=await scheduler.save({
+     airlineId:data.airline.id,aircraftInventoryId:ownedChoice.id,
+     flightNumber,originAirportKey:from.key,destinationAirportKey:to.key,
+     referenceDepartureUtc:draft.referenceDepartureUtc,
+     referenceArrivalUtc:draft.referenceArrivalUtc,
+     weeklySchedule:schedule,
+     ...(previous?.serverScheduleId?{existingId:previous.serverScheduleId}:{})
+    });
+    if(result?.status!=='draft'||typeof result.scheduleId!=='string'||
+       result.canActivateNormalFlight!==false)
+     throw Error('Invalid schedule draft confirmation');
+    draft.serverScheduleId=result.scheduleId;
+    draft.operationallyVerified=false;
+    // Refresh list without altering the already checked form.
+    serverDrafts=[{id:result.scheduleId,flightNumber,originAirportKey:from.key,
+      destinationAirportKey:to.key,weeklySchedule:schedule},
+     ...serverDrafts.filter(x=>x.id!==result.scheduleId&&x.flightNumber!==flightNumber)];
+    renderServerScheduleList();
+   }catch{
+    message('route-plan-status','Server rejected or could not save this aircraft schedule. No active flight created.');
+    return;
+   }
+  }
   if(!draftWrite('routes',[...filtered,draft])||!draftWrite('route',draft)){
    message('route-plan-status','Browser storage unavailable. Route draft was not saved.');
    return;
   }
   doc.dispatchEvent(new CustomEvent('airlinerra:route-draft-saved'));
   await resetRouteForm();
-  message('route-plan-status',flightNumber+' saved as a local route draft. Ready for another route. Use My routes to edit it. No flight or slot was activated.');
+  message('route-plan-status',flightNumber+
+   (draft.serverScheduleId?' saved to your airline server as a protected schedule draft.':
+     ' saved as a local catalog route preview.')+
+    ' No flight or airport slot was activated.');
 
  });
  function updateData(data){
@@ -1057,6 +1118,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   }
   if(id!==currentAirlineId){
    currentAirlineId=id;homeKey=null;homeLocation=null;
+   void loadOwnedScheduleData(id);
    for(const side of ['from','to'])pickers[side].invalidate();
    void activateHome(data);
   }
