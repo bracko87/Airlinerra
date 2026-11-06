@@ -103,18 +103,15 @@ export function routePlannerMarkup(){
    '<div><span>Required minimum turnaround</span><strong id="route-min-turnaround">Unverified · 45 min planning floor</strong></div>'+
    '<div><span>Arrival / rotation checks</span><strong id="route-rotation-check">Pending aircraft and slot rules</strong></div>'+
   '</div>')+
- section('AIRPORT RULE CHECK','Check aircraft and flight times',
-  '<p class="hint">Read-only check against current airport rules. Enter departure and arrival in UTC. No flight or airport slot is activated.</p>'+
+ section('AIRPORT RESTRICTIONS','Automatic runway, curfew and noise checks',
+  '<p class="hint">Runway compatibility is checked when you select an aircraft. Enter a UTC departure and arrival example; airport restrictions are checked automatically. These drafts do not activate flights.</p>'+
   '<div class="route-step2-top">'+
-   routeSetupField('route-preflight-aircraft','Aircraft model (game catalog)',
-    '<select id="route-preflight-aircraft"><option value="">Load catalog</option></select>')+
-   routeSetupField('route-preflight-departure-utc','Departure UTC',
+   routeSetupField('route-preflight-departure-utc','Example departure (UTC)',
     '<input id="route-preflight-departure-utc" type="datetime-local" step="60">')+
-   routeSetupField('route-preflight-arrival-utc','Arrival UTC',
+   routeSetupField('route-preflight-arrival-utc','Example arrival (UTC)',
     '<input id="route-preflight-arrival-utc" type="datetime-local" step="60">')+
   '</div>'+
-  '<button type="button" id="route-preflight-check" class="secondary">Check airport rules</button>'+
-  '<p id="route-preflight-status" class="hint" role="status" aria-live="polite">Select airports, aircraft and exact UTC times to check curfew, noise and runway rules.</p>')+
+  '<p id="route-preflight-status" class="hint" role="status" aria-live="polite">Choose your aircraft and exact UTC times. Airport runway and time restrictions are checked automatically before a route draft can be saved.</p>')+
  section('STEP 3','Ticket prices and onboard services',
   '<div class="route-pricing-grid">'+
    optionalFare('route-fare-economy','Economy fare')+
@@ -563,6 +560,8 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   showDetails();
   if($('route-plan-number'))$('route-plan-number').value='';
   if($('route-aircraft'))$('route-aircraft').value='';
+  for(const id of ['route-preflight-departure-utc','route-preflight-arrival-utc'])
+   if($(id))$(id).value='';
   clearPreflight();
   if($('route-arrival-stand'))$('route-arrival-stand').value='terminal';
   if($('route-turnaround'))$('route-turnaround').value='45';
@@ -628,6 +627,8 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   }
   $('route-aircraft').value=route.aircraftId||
    (Number.isSafeInteger(route.aircraftConfigurationId)?'catalog:'+route.aircraftConfigurationId:'');
+  if($('route-preflight-departure-utc'))$('route-preflight-departure-utc').value=route.referenceDepartureUtc?.slice(0,16)||'';
+  if($('route-preflight-arrival-utc'))$('route-preflight-arrival-utc').value=route.referenceArrivalUtc?.slice(0,16)||'';
   const arrivalStand=route.operation?.arrivalStand;
   if($('route-arrival-stand'))$('route-arrival-stand').value=['remote','terminal'].includes(arrivalStand)?arrivalStand:'terminal';
   $('route-turnaround').value=String(route.operation?.turnaroundMinutes||45);
@@ -664,7 +665,10 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   if(el?.matches?.('[data-route-day]')||el?.matches?.('[data-route-time]')){
    updateWeek();show();return;
   }
-  if(el?.id==='route-aircraft'){show();return;}
+  if(['route-preflight-departure-utc','route-preflight-arrival-utc'].includes(el?.id)){
+   clearPreflight();void automaticPreflight();return;
+  }
+  if(el?.id==='route-aircraft'){clearPreflight();show();return;}
   if(el?.id==='route-arrival-stand'){refreshAircraftTimeline();return;}
   if(el?.id==='route-turnaround'){updateWeek();return;}
   if(el?.id==='route-from-hub'||el?.id==='route-to-hub'){
@@ -720,35 +724,99 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    date.toISOString().slice(0,19)+'Z':null;
  };
  const loadPreflightCatalog=async()=>{
-  const reader=getData()?.reader,select=$('route-preflight-aircraft');
-  if(!select)return;
-  const ticket=++preflightLoadToken,saved=select.value;
-  select.replaceChildren(new Option('Checking aircraft library...',''));
+  const reader=getData()?.reader,ticket=++preflightLoadToken;
+  catalogAircraft=[];refreshCatalogOptions();
   if(!getData()?.connected||typeof reader?.aircraftLibrary!=='function'){
-   select.replaceChildren(new Option('Aircraft catalog unavailable',''));
-   message('route-preflight-status','Connect to the real game catalog to check aircraft restrictions.');
+   message('route-preflight-status','Aircraft catalog not connected. No flight can be activated.');
    return;
   }
   try{
    const data=await reader.aircraftLibrary();
    if(ticket!==preflightLoadToken)return;
-   const aircraft=Array.isArray(data?.aircraft)?data.aircraft:[];
-   select.replaceChildren(new Option('Choose a catalog aircraft',''));
-   for(const a of aircraft){
-    if(!Number.isSafeInteger(a.id)||a.id<=0||!a.model)continue;
-    select.add(new Option(String(a.manufacturer||'')+' '+a.model+' · '+String(a.configuration||''),
-     String(a.id)));
-   }
-   if([...select.options].some(o=>o.value===saved))select.value=saved;
-   message('route-preflight-status',aircraft.length?
-    'Choose an aircraft and enter exact UTC departure/arrival times. Only source-backed rules can create hard bans.':
-    'No aircraft found in the game catalog.');
+   catalogAircraft=Array.isArray(data?.aircraft)?data.aircraft.filter(a=>
+    Number.isSafeInteger(a?.id)&&a.id>0):[];
+   refreshCatalogOptions();
+   void automaticPreflight();
   }catch{
    if(ticket===preflightLoadToken){
-    select.replaceChildren(new Option('Aircraft catalog unavailable',''));
-    message('route-preflight-status','Unable to load aircraft. No flight was activated.');
+    catalogAircraft=[];refreshCatalogOptions();
+    message('route-preflight-status','Unable to load aircraft catalog. Cannot verify aircraft for this route.');
    }
   }
+ };
+ const automaticPreflight=async({force=false}={})=>{
+  const reader=getData()?.reader,from=selected('from'),to=selected('to');
+  const configurationId=selectedConfigurationId(),aircraft=catalogChoice();
+  const assessment=aircraft?runwayAssessment(aircraft):null;
+  const departureUtc=utcFromInput($('route-preflight-departure-utc')?.value);
+  const arrivalUtc=utcFromInput($('route-preflight-arrival-utc')?.value);
+  if(assessment?.status==='BLOCKED'){
+   message('route-preflight-status','BLOCKED — '+assessment.blockingReasons.join(' '));
+   return {gameHardBlocked:true,reason:'runway'};
+  }
+  if(!from||!to||from.key===to.key||!configurationId){
+   message('route-preflight-status','Select two different airports and an aircraft. Runway length is checked immediately.');
+   return null;
+  }
+  if(!departureUtc||!arrivalUtc){
+   message('route-preflight-status','Enter a departure and arrival UTC example. The game automatically checks airport curfews and documented noise rules.');
+   return null;
+  }
+  if(Date.parse(arrivalUtc)<=Date.parse(departureUtc)||
+   Date.parse(arrivalUtc)-Date.parse(departureUtc)>72*3600*1000){
+   message('route-preflight-status','Arrival must be after departure and not more than 72 hours later.');
+   return null;
+  }
+  if(!getData()?.connected||typeof reader?.noiseCurfewCheck!=='function'){
+   message('route-preflight-status','Airport restriction service unavailable — cannot verify this route.');
+   return null;
+  }
+  const signature=[from.key,to.key,configurationId,departureUtc,arrivalUtc].join('|');
+  if(!force&&preflightCache?.signature===signature)return preflightCache.result;
+  if(!force&&preflightPromise?.signature===signature)return preflightPromise.promise;
+  const ticket=++preflightRequest;
+  message('route-preflight-status','Checking curfews, runway suitability and documented noise restrictions...');
+  const promise=(async()=>{
+   try{
+    const result=await reader.noiseCurfewCheck({
+     originAirportKey:from.key,destinationAirportKey:to.key,configurationId,
+     departureUtc,arrivalUtc
+    });
+    if(ticket!==preflightRequest)return null;
+    if(!result||typeof result.gameHardBlocked!=='boolean')throw Error('Invalid restriction result');
+    preflightCache={signature,result};
+    const failures=[];
+    for(const [place,leg] of [['Origin',result.origin],['Destination',result.destination]]){
+     if(!leg)continue;
+     if(leg.runwayBlocked){
+      const available=typeof leg.availableRunwayM==='number'?Math.floor(leg.availableRunwayM):null;
+      const required=typeof leg.requiredRunwayM==='number'?Math.ceil(leg.requiredRunwayM):null;
+      failures.push(place+': runway not suitable'+(available!==null&&required!==null?
+       ' ('+available.toLocaleString('en-US')+' m available; '+required.toLocaleString('en-US')+' m needed)':''));
+     }
+     if(leg.curfewBlocked)failures.push(place+': departure or arrival prohibited by airport hours');
+     if(leg.verifiedNoiseBlocked)failures.push(place+': confirmed aircraft noise restriction');
+    }
+    const status=result.gameHardBlocked?'BLOCKED — This aircraft cannot be used at these times. '+
+      (failures.join(' ')||String(result.gameScheduleOutcome||'Restriction applies')):
+     result.needsReview?'No confirmed game restriction detected for this example; some conditions remain unverified. Draft only.':
+      'Airport and aircraft game restrictions passed for this example. Draft only — not an activated flight.';
+    message('route-preflight-status',status);
+    const save=$('route-plan-save');
+    if(save)save.disabled=result.gameHardBlocked||runwayAssessment(aircraft).status==='BLOCKED';
+    return result;
+   }catch{
+    if(ticket===preflightRequest){
+     preflightCache=null;
+     message('route-preflight-status','Airport restriction check unavailable — no verified flight permission.');
+    }
+    return null;
+   }finally{
+    if(preflightPromise?.signature===signature)preflightPromise=null;
+   }
+  })();
+  preflightPromise={signature,promise};
+  return promise;
  };
  main?.addEventListener('click',async event=>{
   const target=event.target?.closest?.('button');
@@ -794,42 +862,6 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    message('route-feedback','Route preview ready. Select an aircraft and weekday departures below.');
    return;
   }
-  if(target.id==='route-preflight-check'){
-   const reader=getData()?.reader,from=selected('from'),to=selected('to');
-   const configurationId=Number($('route-preflight-aircraft')?.value);
-   const departureUtc=utcFromInput($('route-preflight-departure-utc')?.value);
-   const arrivalUtc=utcFromInput($('route-preflight-arrival-utc')?.value);
-   if(!getData()?.connected||typeof reader?.noiseCurfewCheck!=='function'){
-    message('route-preflight-status','Authenticated rule checks are not connected. No flight is approved.');
-    return;
-   }
-   if(!from||!to||from.key===to.key||!Number.isSafeInteger(configurationId)||configurationId<1
-     ||!departureUtc||!arrivalUtc||Date.parse(arrivalUtc)<=Date.parse(departureUtc)
-     ||Date.parse(arrivalUtc)-Date.parse(departureUtc)>72*3600*1000){
-    message('route-preflight-status','Choose two different airports, an aircraft and valid UTC times (maximum 72 hours).');
-    return;
-   }
-   const ticket=++preflightRequest;
-   message('route-preflight-status','Checking airport curfews, noise and runway rules...');
-   try{
-    const result=await reader.noiseCurfewCheck({
-      originAirportKey:from.key,destinationAirportKey:to.key,configurationId,
-      departureUtc,arrivalUtc
-    });
-    if(ticket!==preflightRequest)return;
-    const clean=code=>String(code||'Unknown').replace(/_/g,' ').toLowerCase();
-    const status=result.gameHardBlocked===true?'BLOCKED BY GAME RULE':
-      result.needsReview===true?'FURTHER VERIFICATION REQUIRED':'PRELIMINARY GAME SCREEN PASSED';
-    message('route-preflight-status',status+
-      ' · Departure: '+clean(result.origin?.outcome)+
-      ' · Arrival: '+clean(result.destination?.outcome)+
-      '. No slots reserved. No flight activated.');
-   }catch{
-    if(ticket===preflightRequest)message('route-preflight-status',
-     'Rule check unavailable. This is not permission to operate or schedule a flight.');
-   }
-   return;
-  }
   if(target.id==='route-plan-new'){
    await resetRouteForm();
    message('route-plan-status','Ready to create another route draft.');
@@ -866,6 +898,26 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    return;
   }
   const flightAircraft=$('route-aircraft')?.value||null;
+  const selectedCatalog=catalogChoice(),selectedRunway=selectedCatalog?runwayAssessment(selectedCatalog):null;
+  if(selectedRunway?.status==='BLOCKED'){
+   message('route-plan-status','BLOCKED — This aircraft cannot use the route. '+selectedRunway.blockingReasons.join(' '));
+   return;
+  }
+  if(!selectedCatalog){
+   message('route-plan-status','A valid aircraft model from the game catalog is required to check this route.');
+   return;
+  }
+  if(!airportProfiles.from||!airportProfiles.to){
+   message('route-plan-status','Airport runway data unavailable. Cannot verify aircraft compatibility.');
+   return;
+  }
+  const preflight=await automaticPreflight({force:true});
+  if(!preflight||preflight.gameHardBlocked===true){
+   message('route-plan-status',preflight?.gameHardBlocked===true?
+    'BLOCKED — The selected aircraft or times violate an airport rule. See details above.':
+    'Enter exact UTC times and complete automatic restrictions checking before saving this aircraft route.');
+   return;
+  }
   const simulationAircraft=(Array.isArray(data?.airline?.testAircraft)?
    data.airline.testAircraft:[]).find(a=>a.id===flightAircraft&&
     a.testOnly===true&&a.operationallyAllowed===false);
@@ -874,7 +926,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    message('route-plan-status','Select an aircraft first. Its weekly position must be checked before assigning departures.');
    return;
   }
-  if(flightAircraft&&!available.some(a=>a.id===flightAircraft)){
+  if(flightAircraft&&!available.some(a=>a.id===flightAircraft)&&!flightAircraft.startsWith('catalog:')){
    message('route-plan-status','Selected aircraft is not available in this airline. Choose another.');
    return;
   }
@@ -887,10 +939,15 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   // Other flight durations, time zones and slots are still not verified.
   // No live financial, schedule or aircraft mutations: local browser-session draft only.
   const draft={from,to,flightNumber,flights:schedule.length,schedule,
-   aircraftId:flightAircraft,
-   aircraftLabel:simulationAircraft?'Airbus '+simulationAircraft.model+' · '+simulationAircraft.registration:null,
-   testAircraft:Boolean(simulationAircraft),operation,
-   status:'draft',operationallyVerified:false};
+   aircraftId:simulationAircraft?flightAircraft:null,
+   aircraftConfigurationId:selectedCatalog.id,
+   aircraftLabel:[selectedCatalog.manufacturer,selectedCatalog.model,selectedCatalog.configuration].filter(Boolean).join(' '),
+   catalogPreviewOnly:!simulationAircraft,testAircraft:Boolean(simulationAircraft),
+   referenceDepartureUtc:utcFromInput($('route-preflight-departure-utc')?.value),
+   referenceArrivalUtc:utcFromInput($('route-preflight-arrival-utc')?.value),
+   airportRuleScreen:{gameHardBlocked:false,needsReview:preflight.needsReview===true,
+    checkedAt:new Date().toISOString(),notFlightActivation:true},
+   operation,status:'draft',operationallyVerified:false};
   const latest=loadDraft?.()||{},routes=Array.isArray(latest.routes)?latest.routes:[];
   if(routes.some(x=>x?.flightNumber===flightNumber&&x?.flightNumber!==editingFlightNumber)){
    message('route-plan-status','Flight number already exists. Open that draft from My routes to edit it.');
