@@ -142,9 +142,10 @@ export function aircraftImagePath(a){
  return filename?'https://hwllkabgzaynalahvkpz.supabase.co/storage/v1/object/public/Admin/Airplanes/'+encodeURIComponent(filename):null;
 }
 /** Expand a truncated table only if the selected aircraft is outside the rendered rows. */
-export function libraryReturnVisibleCount(records,selectedId,visibleCount=40){
+export const AIRCRAFT_LIBRARY_PAGE_SIZE=20;
+export function libraryPageForSelection(records,selectedId,currentPage=0){
  const index=Array.isArray(records)?records.findIndex(a=>a?.id===selectedId):-1;
- return index<0?visibleCount:Math.max(visibleCount,Math.ceil((index+1)/40)*40);
+ return index<0?currentPage:Math.floor(index/AIRCRAFT_LIBRARY_PAGE_SIZE);
 }
 
 export function createAircraftLibrary({doc,getReader}={}){
@@ -152,11 +153,12 @@ export function createAircraftLibrary({doc,getReader}={}){
  const $=id=>doc.getElementById(id);
  const status=$('aircraft-library-status'),list=$('aircraft-library-results');
  const detail=$('aircraft-library-detail'),more=$('aircraft-library-more');
+ const previous=$('aircraft-library-previous'),pageInfo=$('aircraft-library-page');
  const search=$('aircraft-library-search'),maker=$('aircraft-library-manufacturer');
  const type=$('aircraft-library-type'),production=$('aircraft-library-production');
- if(![status,list,detail,more,search,maker,type,production].every(Boolean))
+ if(![status,list,detail,more,previous,pageInfo,search,maker,type,production].every(Boolean))
   throw Error('Aircraft library page markup missing');
- let aircraft=null,pending=null,visibleCount=40,sortKey='manufacturer',sortDirection='asc';
+ let aircraft=null,pending=null,currentPage=0,sortKey='manufacturer',sortDirection='asc';
  let lastSelectedAircraftId=null;
  const warmPictures=new Map();
  function warmAircraftPhoto(a){
@@ -334,6 +336,8 @@ export function createAircraftLibrary({doc,getReader}={}){
  function draw(){
   const data=sortRecords(filtered());
   $('aircraft-library-count').textContent=String(data.length)+' of '+String(aircraft?.length||0)+' configurations';
+  const totalPages=Math.max(1,Math.ceil(data.length/AIRCRAFT_LIBRARY_PAGE_SIZE));
+  currentPage=Math.max(0,Math.min(currentPage,totalPages-1));
   list.replaceChildren();
   const table=element('table','library-table');
   const thead=element('thead','');
@@ -354,7 +358,7 @@ export function createAircraftLibrary({doc,getReader}={}){
   }
   thead.append(header);table.append(thead);
   const body=element('tbody','');
-  for(const a of data.slice(0,visibleCount)){
+  for(const a of data.slice(currentPage*AIRCRAFT_LIBRARY_PAGE_SIZE,(currentPage+1)*AIRCRAFT_LIBRARY_PAGE_SIZE)){
    const row=element('tr','library-table-row');
    row.dataset.aircraftId=String(a.id);
    const values=[
@@ -378,8 +382,12 @@ export function createAircraftLibrary({doc,getReader}={}){
   }
   table.append(body);list.append(table);
   if(!data.length)list.append(element('p','library-no-results','No aircraft match these filters.'));
-  more.hidden=data.length<=visibleCount;
-  more.disabled=data.length<=visibleCount;
+  const hasMultiplePages=totalPages>1;
+  more.hidden=!hasMultiplePages;
+  previous.hidden=!hasMultiplePages;
+  more.disabled=currentPage>=totalPages-1;
+  previous.disabled=currentPage<=0;
+  pageInfo.textContent='Page '+(currentPage+1)+' of '+totalPages+' · 20 aircraft per page';
   statusMessage(aircraft?.length
    ?'Live read-only aircraft catalog loaded. '+aircraft.length+' configurations. Research and game estimates are provisional.'
    :'Aircraft library not connected.');
@@ -388,8 +396,8 @@ export function createAircraftLibrary({doc,getReader}={}){
   if(!aircraft||lastSelectedAircraftId===null)return false;
   const ordered=sortRecords(filtered());
   if(!ordered.some(a=>a.id===lastSelectedAircraftId))return false;
-  const expanded=libraryReturnVisibleCount(ordered,lastSelectedAircraftId,visibleCount);
-  if(expanded!==visibleCount){visibleCount=expanded;draw();}
+  const selectedPage=libraryPageForSelection(ordered,lastSelectedAircraftId,currentPage);
+  if(selectedPage!==currentPage){currentPage=selectedPage;draw();}
   const row=[...list.querySelectorAll('[data-aircraft-id]')]
    .find(node=>Number(node.dataset.aircraftId)===lastSelectedAircraftId);
   if(!row)return false;
@@ -433,7 +441,7 @@ export function createAircraftLibrary({doc,getReader}={}){
   return pending;
  }
  for(const field of [search,maker,type,production])field.addEventListener('input',()=>{
-  visibleCount=40;if(aircraft)draw();
+  currentPage=0;if(aircraft)draw();
  });
  // Start fetching when a user hovers or tabs toward an aircraft, before opening it.
  function warmRow(e){
@@ -449,14 +457,24 @@ export function createAircraftLibrary({doc,getReader}={}){
   if(sort){
    const key=sort.dataset.sortKey;
    sortDirection=sortKey===key&&sortDirection==='asc'?'desc':'asc';
-   sortKey=key;if(aircraft)draw();return;
+   sortKey=key;currentPage=0;if(aircraft)draw();return;
   }
   const row=e.target.closest('[data-aircraft-id]');
   if(!row||!aircraft)return;
   const match=aircraft.find(a=>a.id===Number(row.dataset.aircraftId));
   if(match)showDetail(match);
  });
- more.addEventListener('click',()=>{visibleCount+=40;if(aircraft)draw()});
+ function changePage(delta){
+  if(!aircraft)return;
+  const totalPages=Math.max(1,Math.ceil(filtered().length/AIRCRAFT_LIBRARY_PAGE_SIZE));
+  const next=Math.max(0,Math.min(totalPages-1,currentPage+delta));
+  if(next===currentPage)return;
+  currentPage=next;
+  draw();
+  list.scrollIntoView({block:'start',inline:'nearest',behavior:'instant'});
+ }
+ previous.addEventListener('click',()=>changePage(-1));
+ more.addEventListener('click',()=>changePage(1));
  $('aircraft-library-retry').addEventListener('click',()=>{ $('aircraft-library-retry').hidden=true;void load() });
  return Object.freeze({load,restoreLastSelection});
 }
