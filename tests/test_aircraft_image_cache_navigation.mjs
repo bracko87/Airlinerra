@@ -75,7 +75,7 @@ test('active repeated model/role pairs keep distinct display names',()=>{
   names.add(secondName+'|'+useType);
  }
  assert.equal(names.size,8,'Eight entries in four remaining repeated groups must have unique names');
- assert.equal(aircraftCatalogModel({manufacturer:'Saab',model:'Saab 340B(F)',useType:'cargo',configuration:'CARGO-BASE'}),'Saab 340B(F)');
+ assert.equal(aircraftCatalogModel({manufacturer:'Saab',model:'Saab 340B(F)',useType:'cargo',configuration:'CARGO-BASE'}),'340B(F)');
  assert.equal(aircraftCatalogModel({manufacturer:'Boeing',model:'Boeing 737-500',useType:'passenger',configuration:'PASSENGER-BASE'}),'737-500');
  assert.equal(aircraftCatalogModel({manufacturer:'De Havilland Canada',model:'Dash 8-300',useType:'combi',configuration:'AIR-INUIT-PASSENGER'}),'Dash 8-300');
  assert.equal(aircraftCatalogModel({manufacturer:'De Havilland Canada',model:'DHC-6-300',useType:'passenger',configuration:'PASSENGER-BASE'}),'DHC-6-300');
