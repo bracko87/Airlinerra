@@ -238,7 +238,7 @@ BEGIN
    'canActivateNormalFlight',false,'realWorldDispatchApproved',false
  );
 END;
-$function$
+$function$;
 
 REVOKE EXECUTE ON FUNCTION airlinerra_game.section5_universal_airport_leg_restriction_v1(smallint,text,bigint,text,timestamptz,text) FROM PUBLIC,anon,authenticated;
 CREATE OR REPLACE VIEW airlinerra_game.section5_airport_restriction_normalization_queue_v1
