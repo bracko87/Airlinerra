@@ -23,6 +23,53 @@ export function aircraftDisplayName(manufacturer,model){
  const maker=typeof manufacturer==='string'?manufacturer.trim():'';
  return [maker,aircraftDisplayModel(maker,model)].filter(Boolean).join(' ');
 }
+
+/* Friendly names for distinct, source-backed configurations of the same model and role.
+ * Do not alter model IDs, actual certification labels, or original database names.
+ * F is used only where the documented configuration is explicitly a freighter.
+ */
+const catalogConfigurationLabels=new Map([
+ ['Boeing|737-800|cargo|AIR-INUIT-CARGO','737-800 Cargo (Air Inuit)'],
+ ['Boeing|737-800|cargo|MYINDO-737-800F','737-800F Cargo (My Indo)'],
+ ['Boeing|Boeing 737-400|cargo|AEROSUCRE-CARGO-UNSPECIFIED','737-400 Cargo (Aerosucre)'],
+ ['Boeing|Boeing 737-400|cargo|MYINDO-737-400F','737-400F Cargo (My Indo)'],
+ ['British Aerospace|BAe 146-200|passenger|PASSENGER-BASE','BAe 146-200 (Standard)'],
+ ['British Aerospace|BAe 146-200|passenger|DAP-ANTARCTIC-70','BAe 146-200 (DAP Antarctic 70 seats)'],
+ ['De Havilland Canada|Dash 8-300|cargo|AIR-INUIT-CARGO','Dash 8-300 Cargo (Air Inuit)'],
+ ['De Havilland Canada|Dash 8-300|cargo|AIR-INUIT-LARGE-DOOR-CARGO','Dash 8-300 Cargo (Large Freight Door)'],
+ ['De Havilland Canada|Dash 8-300|combi|COMBI-BASE','Dash 8-300 Combi (Standard)'],
+ ['De Havilland Canada|Dash 8-300|combi|AIR-INUIT-PASSENGER','Dash 8-300 Combi (Air Inuit)'],
+ ['De Havilland Canada|DHC-6-300|passenger|PASSENGER-BASE','DHC-6-300 (Standard)'],
+ ['De Havilland Canada|DHC-6-300|passenger|AIR-KIRIBATI-300HG','DHC-6-300HG (Air Kiribati)'],
+ ['Saab|Saab 340B|cargo|AMERIFLIGHT-CARGO','340B Cargo (Ameriflight)'],
+ ['Saab|Saab 340B|cargo|RYAN-AIR-CARGO','340B Cargo (Ryan Air)']
+]);
+export function aircraftCatalogModel(a){
+ if(!a)return '';
+ const key=[a.manufacturer,a.model,a.useType,a.configuration].join('|');
+ return catalogConfigurationLabels.get(key)||aircraftDisplayModel(a.manufacturer,a.model);
+}
+export function aircraftCatalogName(a){
+ return [a.manufacturer,aircraftCatalogModel(a)].filter(Boolean).join(' ');
+}
+const aircraftNaturalCollator=new Intl.Collator('en',{numeric:true,sensitivity:'base'});
+const compareText=(a,b)=>aircraftNaturalCollator.compare(String(a??''),String(b??''));
+/** Default and manufacturer/model sorting always group models by maker and family. */
+export function compareAircraftCatalog(a,b,sortKey='manufacturer',direction='asc'){
+ const dir=direction==='desc'?-1:1;
+ const group=()=>compareText(a.manufacturer,b.manufacturer)||
+  compareText(a.family,b.family)||
+  compareText(aircraftDisplayModel(a.manufacturer,a.model),aircraftDisplayModel(b.manufacturer,b.model))||
+  compareText(a.useType,b.useType)||
+  compareText(a.configuration,b.configuration)||
+  Number(a.id??0)-Number(b.id??0);
+ if(sortKey==='manufacturer'||sortKey==='model')return dir*group();
+ const av=a[sortKey],bv=b[sortKey];
+ if(av==null&&bv!=null)return 1;
+ if(bv==null&&av!=null)return -1;
+ const result=typeof av==='number'&&typeof bv==='number'?av-bv:compareText(av,bv);
+ return result?dir*result:group();
+}
 const label=(name,value,unit='')=>{
  const row=document.createElement('div');
  row.className='library-spec';
@@ -191,7 +238,7 @@ export function createAircraftLibrary({doc,getReader}={}){
    if(maker.value && a.manufacturer!==maker.value)return false;
    if(type.value && a.useType!==type.value)return false;
    if(production.value && a.productionStatus!==production.value)return false;
-   return !q || [a.manufacturer,a.family,a.model,a.configuration].some(t=>
+   return !q || [a.manufacturer,a.family,a.model,a.configuration,aircraftCatalogModel(a)].some(t=>
      String(t||'').toLocaleLowerCase('en').includes(q));
   });
  }
@@ -231,7 +278,7 @@ export function createAircraftLibrary({doc,getReader}={}){
   const sheet=element('div','library-profile-content');
   const header=element('div','library-profile-header');
   const heading=element('div','');
-  const title=element('h2','',aircraftDisplayName(a.manufacturer,a.model));
+  const title=element('h2','',aircraftCatalogName(a));
   title.id='aircraft-library-profile-title';
   heading.append(title);
   header.append(heading);
@@ -243,7 +290,7 @@ export function createAircraftLibrary({doc,getReader}={}){
    const picture=warmPictures.get(path)||element('img','library-profile-aircraft-photo');
    warmPictures.delete(path);
    picture.className='library-profile-aircraft-photo';
-   picture.alt=aircraftDisplayName(a.manufacturer,a.model)+' '+a.useType+' aircraft, unbranded side profile';
+   picture.alt=aircraftCatalogName(a)+' '+a.useType+' aircraft, unbranded side profile';
    picture.loading='eager';
    picture.decoding='async';
    picture.fetchPriority='high';
@@ -282,7 +329,7 @@ export function createAircraftLibrary({doc,getReader}={}){
   const groups=element('div','library-profile-groups');
   groups.append(
    specificationGroup('Identity & production',[
-    ['Manufacturer',a.manufacturer],['Aircraft family',a.family],['Model',a.model],
+    ['Manufacturer',a.manufacturer],['Aircraft family',a.family],['Model',aircraftCatalogModel(a)],
     ['Configuration',a.configuration],['Role',a.useType],
     ['Civilian service status',a.serviceStatus],['New-aircraft production',a.productionStatus],
     ['First production year',a.productionStart,'year'],
@@ -331,16 +378,7 @@ export function createAircraftLibrary({doc,getReader}={}){
   window.scrollTo(0,0);
  }
  function sortRecords(records){
-  const key=sortKey,dir=sortDirection==='asc'?1:-1;
-  return [...records].sort((a,b)=>{
-   const av=a[key],bv=b[key];
-   if(av===null||av===undefined)return bv===null||bv===undefined?0:1;
-   if(bv===null||bv===undefined)return -1;
-   const result=typeof av==='number'&&typeof bv==='number'?av-bv:
-    String(av).localeCompare(String(bv),'en',{numeric:true,sensitivity:'base'});
-   return result?result*dir:a.manufacturer.localeCompare(b.manufacturer,'en')||
-     a.model.localeCompare(b.model,'en',{numeric:true});
-  });
+  return [...records].sort((a,b)=>compareAircraftCatalog(a,b,sortKey,sortDirection));
  }
  function draw(){
   const data=sortRecords(filtered());
@@ -378,8 +416,8 @@ export function createAircraftLibrary({doc,getReader}={}){
    for(let i=0;i<values.length;i++){
     const td=element('td',i>=3&&i<=7?'library-numeric':'');
     if(i===1){
-     const open=element('button','library-model-link',aircraftDisplayModel(a.manufacturer,a.model));
-     open.type='button';open.setAttribute('aria-label','Open profile for '+aircraftDisplayName(a.manufacturer,a.model));
+     const open=element('button','library-model-link',aircraftCatalogModel(a));
+     open.type='button';open.setAttribute('aria-label','Open profile for '+aircraftCatalogName(a));
      td.append(open,element('span','library-table-family',a.family+' · '+a.configuration.replaceAll('-',' ')));
     }else if(i===8){
      td.append(element('span','library-production-status',values[i]));
