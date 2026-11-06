@@ -9,7 +9,7 @@ Date: 2026-11-06.
 - `airlinerra_game.section5_universal_airport_leg_restriction_v1` applies each end's airport rules using the relevant local timezone.
 - `airlinerra_game.section5_local_restriction_window_match_v1` matches crossing-midnight weekdays and optional seasonal date windows.
 - `airlinerra_game.section5_runway_specific_restrictions_v1` supports sourced runway-level departure/arrival windows, and Chapter bans ONLY with a configuration-matched certificate. Default `enforce_in_game=false`. Research-only runway data must not be automatically enforced as a blanket airport ban.
-- `server/noise-curfew-route-edge-entry.ts` source uses the new gate. This does NOT mean the server source was deployed as an active endpoint.
+- `server/noise-curfew-route-edge-entry.ts` uses the new gate. Existing authenticated **read-only** Supabase Edge Function `airlinerra-noise-curfew-check` was updated to **active version 5** on 2026-11-06, preserving fresh Auth verification and `canActivateNormalFlight=false`. This is NOT a live scheduling/activation write endpoint.
 - Versioned migration: `supabase/migrations/20261106144500_section5_universal_airport_restriction_gate.sql`.
 - Regression suite: `tests/sql/section5_universal_restriction_gate_regressions.sql` (temporary test rules are rolled back).
 
