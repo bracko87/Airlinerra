@@ -35,6 +35,27 @@ test('catalog query is fixed read-only and includes manufacturer, modes and esti
  assert.equal(safePlayerView('#aircraft-library'),'aircraft-library');
 });
 
+test('catalog API includes a separate game payload profile without overwriting technical aircraft limits',()=>{
+ assert.match(AIRCRAFT_LIBRARY_SQL,/airlinerra\.aircraft_service_payload_game_v1 payload/);
+ for(const field of ['game_service_seats','game_service_freight_kg','belly_hold_reference_kg','belly_hold_reference_type','seat_basis','capacity_note','capacity_source_url']){
+  assert.match(AIRCRAFT_LIBRARY_SQL,new RegExp('\\b'+field+'\\b'));
+ }
+ const passenger=serializeAircraftLibrary([{...sample,game_service_seats:34,
+  belly_hold_reference_kg:950,belly_hold_reference_type:'structural_hold_includes_baggage',
+  seat_basis:'catalog_passenger',capacity_note:'Shared with baggage'}]).aircraft[0];
+ assert.equal(passenger.seats,16,'Factual/old seat data unchanged');
+ assert.equal(passenger.serviceSeats,34,'Game service value is separate');
+ assert.equal(passenger.bellyHoldReferenceKg,950);
+ assert.equal(passenger.bellyHoldReferenceType,'structural_hold_includes_baggage');
+ assert.equal(passenger.capacityNote,'Shared with baggage');
+ const combi=serializeAircraftLibrary([{...sample,use_type:'combi',seats:34,max_seats:34,cargo_kg:950,
+  game_service_seats:24,game_service_freight_kg:null,seat_basis:'game_estimate'}]).aircraft[0];
+ assert.equal(combi.seats,34);
+ assert.equal(combi.serviceSeats,24);
+ assert.equal(combi.serviceFreightKg,null,'Unverified freight is not a free 950 kg');
+ assert.equal(combi.cargoKg,950,'Source ceiling is retained for research');
+});
+
 test('conditional Twin Otter values never replace original paved runway fields',()=>{
  const data=serializeAircraftLibrary([sample]);
  assert.equal(data.total,1);
