@@ -10,11 +10,12 @@ const ROUTE={
 };
 test('route planner has a real read-only aircraft and exact-time preflight interface',()=>{
  const html=routePlannerMarkup();
- for(const id of ['route-preflight-aircraft','route-preflight-departure-utc',
-  'route-preflight-arrival-utc','route-preflight-check','route-preflight-status'])
+ for(const id of ['route-aircraft','route-preflight-departure-utc',
+  'route-preflight-arrival-utc','route-preflight-status'])
   assert.ok(html.includes('id="'+id+'"'),id);
  assert.match(html,/UTC/);
- assert.match(html,/No flight or airport slot is activated/);
+ assert.match(html,/checked automatically/);
+ assert.doesNotMatch(html,/id="route-preflight-check"/);
 });
 test('browser restriction check uses only authenticated same-origin proxy',async()=>{
  const requests=[];
