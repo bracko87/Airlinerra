@@ -214,6 +214,11 @@ const aircraftImages=new Map([
  ["Boeing|787-8|passenger","Boeing 787-8 fix.png"],
  ["Boeing|787-10|passenger","Boeing 787-10 fix.png"],
  ["Boeing|Boeing 737-500|passenger","Boeing 737-500 fix.png"],
+ ["British Aerospace|BAe 146-200QT|cargo","British Aerospace BAe 146-200QT fix.png"],
+ ["COMAC|C919-100|passenger","COMAC C919-100 fix.png"],
+ ["Ilyushin|Il-96-400T|cargo","Ilyushin Il-96-400T fix.png"],
+ ["Tupolev|Tu-204-100C|cargo","Tupolev Tu-204-100C fix.png"],
+ ["Yakovlev|Yak-42D|passenger","Yakovlev Yak-42D fix.png"],
 ]);
 export function aircraftImagePath(a){
  const configured=typeof a.imagePath==='string'&&
