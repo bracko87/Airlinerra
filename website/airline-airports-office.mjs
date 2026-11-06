@@ -21,28 +21,27 @@ export const simpleAirportHours=value=>{
  return raw.replace(/\s*\([^)]*\)/g,'').trim()||'Not specified';
 };
 export const simpleAirportCurfew=profile=>{
- const raw=profile?.facilities?.curfew;
- if(typeof raw==='string'&&raw.trim())return raw.replace(/\s*\([^)]*\)/g,'').trim();
+ const r=profile?.operations?.restrictionResearch;
+ if(Number(r?.enforcedTimeRules||0)+Number(r?.enforcedRunwayRules||0)>0)
+  return 'Mandatory rules recorded — see operating restrictions';
+ if(r?.status==='RESEARCH_CONDITIONS_REQUIRE_SPECIFIC_RULE_REVIEW')
+  return 'Airport conditions identified — exact game rules under review';
+ if(['PROVISIONAL_GAME_DEFAULT_NO_EXTRA_BAN','SOURCE_SCREENED_GAME_DEFAULT_NO_EXTRA_BAN'].includes(r?.status))
+  return 'No additional enforced game curfew recorded';
  const windows=profile?.operations?.timeRestrictions;
- if(Array.isArray(windows)&&windows.length){
-  const times=windows.filter(x=>x?.localStart&&x?.localEnd)
-   .map(x=>x.localStart+'–'+x.localEnd).slice(0,3);
-  return times.length?times.join(', '):'Restrictions apply';
- }
- return profile?.operations?.hoursBasis==='GAME_DEFAULT_24_7_UNLESS_DOCUMENTED_EXCEPTION'?
-  'No game curfew':'Not specified';
+ if(Array.isArray(windows)&&windows.length)
+  return 'Time or permission conditions recorded — see operating restrictions';
+ return 'Curfew not fully verified';
 };
 export const simpleAirportNoise=profile=>{
+ const r=profile?.operations?.restrictionResearch;
+ if(r?.noiseScreen==='YES')return 'Local aircraft noise conditions — see operating restrictions';
  const policy=profile?.operations?.icaoNoiseRules;
- const minimum=policy?.nationalCivilJetMinimumChapter;
- if(Number.isInteger(minimum)&&minimum>=2&&minimum<=14)return 'Chapter '+minimum+' or higher';
  const prohibited=Array.isArray(policy?.prohibitedChapters)?
-  policy.prohibitedChapters.filter(x=>Number.isInteger(x)&&x>=2&&x<=14):[];
- if(prohibited.length)return 'Chapter '+[...new Set(prohibited)].sort((a,b)=>a-b).join(', ')+' restricted';
- const documented=Array.isArray(policy?.rules)?policy.rules.filter(r=>
-  Number.isInteger(r?.chapter)&&r.chapter>=2&&r.chapter<=14):[];
- if(documented.length)return 'Chapter '+[...new Set(documented.map(r=>r.chapter))].sort((a,b)=>a-b).join(', ')+' restriction';
- return 'Not specified';
+   policy.prohibitedChapters.filter(x=>Number.isInteger(x)&&x>=2&&x<=14):[];
+ if(prohibited.length)return 'Chapter '+[...new Set(prohibited)].sort((a,b)=>a-b).join(', ')+' restricted when certificate matched';
+ if(r?.noiseScreen==='NO')return 'No additional local noise ban recorded in game';
+ return 'Not fully verified';
 };
 export const airportWeatherType=symbol=>{
  const s=String(symbol||'').toLowerCase();
