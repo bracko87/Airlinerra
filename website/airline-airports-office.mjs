@@ -4,6 +4,7 @@
  */
 import {renderAirportLocationMap} from './route-map.mjs';
 import {createAirportAirlineLogo,createAirportNetworkTabs} from './airport-network-tabs.mjs';
+import {summarizeAirportRestrictions,safeEvidenceUrl} from './airport-restriction-display.mjs';
 const AIRPORT_KEY=/^(?:OURAIRPORTS:[1-9]\d{0,18}|FICTIONAL:fictional:[A-Z]{2}:[A-Z0-9]{2,8})$/;
 const currency=v=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(v);
 const safeLocalValue=(v)=>typeof v==='string'?v.trim():'';
@@ -196,6 +197,10 @@ export function createAirportOffice({doc,session,identity,goTo,getAirlineLogoUrl
    '<div id="airport-profile-map" class="airport-location-map-canvas"></div></div></div>')+
    panel('AIRPORT INFRASTRUCTURE','Runways, terminals and slots',
     '<div id="airport-profile-infrastructure" class="airport-profile-facts"></div>')+
+   panel('AIRPORT OPERATING RULES','Curfews, runway access and noise',
+    '<p class="hint">All times are local to this airport. Research findings are not always complete airport closures; game rules are not real-world flight clearance.</p>'+
+    '<div id="airport-profile-operating-rules" class="airport-profile-facts"></div>'+
+    '<div id="airport-profile-restriction-sources" class="airport-profile-evidence-links"></div>')+
    panel('LAND CONNECTIONS','Nearby airports within 100 km',
     '<p class="hint">Straight-line distance, not driving distance. Only approved game airports are listed.</p>'+
     '<div id="airport-nearby-airports" class="airport-nearby-list"></div>')+
@@ -363,6 +368,35 @@ export function createAirportOffice({doc,session,identity,goTo,getAirlineLogoUrl
    ['Noise restrictions',p?simpleAirportNoise(p):fallback],
    ['Airport operational status','Not independently confirmed']
   ]);
+  const restrictionView=p?summarizeAirportRestrictions(p):null;
+  const restrictionRows=[
+    ['Game operating rules',restrictionView?.status||fallback],
+    ['Airport local time zone',restrictionView?.timezone||fallback],
+    ['Mandatory time / runway rules',restrictionView?String(restrictionView.hardCount):fallback],
+    ['Permission and review rules',restrictionView?String(restrictionView.reviewCount):fallback],
+    ['Operating restrictions research',restrictionView?.researchOperating||fallback],
+    ['Noise restrictions research',restrictionView?.researchNoise||fallback]
+  ];
+  if(restrictionView?.researchPending)restrictionRows.push([
+    'Further rule verification',
+    'Research exists but exact machine-readable restrictions are not yet complete.'
+  ]);
+  if(restrictionView)for(const rule of restrictionView.rules)
+   restrictionRows.push([rule.title,rule.detail+(rule.note?' — '+rule.note:'')]);
+  profileField('airport-profile-operating-rules',restrictionRows);
+  const restrictionSources=$('airport-profile-restriction-sources');
+  if(restrictionSources){
+   restrictionSources.replaceChildren();
+   if(restrictionView)for(const evidence of restrictionView.sources){
+    const href=safeEvidenceUrl(evidence.url);
+    if(!href)continue;
+    const link=doc.createElement('a');
+    link.href=href;link.target='_blank';link.rel='noopener noreferrer';
+    link.textContent=evidence.label;
+    link.className='airport-profile-evidence-link';
+    restrictionSources.append(link);
+   }
+  }
   const nearRoot=$('airport-nearby-airports');
   if(nearRoot){
    nearRoot.replaceChildren();
