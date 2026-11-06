@@ -11,6 +11,8 @@ export const AIRPORT_PROFILE_EDGE_URL='https://hwllkabgzaynalahvkpz.supabase.co/
 export const AIRCRAFT_LIBRARY_EDGE_URL='https://hwllkabgzaynalahvkpz.supabase.co/functions/v1/airlinerra-aircraft-library';
 export const NOISE_CURFEW_EDGE_URL='https://hwllkabgzaynalahvkpz.supabase.co/functions/v1/airlinerra-noise-curfew-check';
 export const RESTRICTION_ROUTE='/api/v1/player/noise-curfew-check';
+export const SCHEDULE_ROUTE='/api/v1/player/flight-schedule-drafts';
+export const SCHEDULE_EDGE_URL='https://hwllkabgzaynalahvkpz.supabase.co/functions/v1/airlinerra-flight-schedule-drafts';
 const TOKEN=/^Bearer [A-Za-z0-9._~-]{16,8192}$/u;
 const HEADERS={'content-type':'application/json; charset=utf-8','cache-control':'no-store',
  'x-content-type-options':'nosniff','referrer-policy':'no-referrer'};
@@ -22,7 +24,8 @@ export function createProductionGameApi({origin=PRODUCTION_ORIGIN,fetchImpl=glob
   if(!(request instanceof Request))return fail(400,'Invalid request');
   const url=new URL(request.url);
   if(url.origin!==PRODUCTION_ORIGIN||url.search||url.hash)return fail(403,'Forbidden');
-  if(!CANONICAL_GAME_API_PATHS.includes(url.pathname)&&url.pathname!==RESTRICTION_ROUTE)return fail(404,'Not found');
+  if(!CANONICAL_GAME_API_PATHS.includes(url.pathname)&&
+       ![RESTRICTION_ROUTE,SCHEDULE_ROUTE].includes(url.pathname))return fail(404,'Not found');
   const isReadiness=url.pathname==='/api/v1/registration/readiness';
   if(request.method!==(isReadiness?'GET':'POST'))return fail(405,'Method not allowed');
   const userBearer=request.headers.get('authorization')||'';
@@ -46,7 +49,8 @@ export function createProductionGameApi({origin=PRODUCTION_ORIGIN,fetchImpl=glob
    };
    const upstream=await fetchImpl(url.pathname==='/api/v1/player/airport-profile'?AIRPORT_PROFILE_EDGE_URL:
      url.pathname==='/api/v1/player/aircraft-library'?AIRCRAFT_LIBRARY_EDGE_URL:
-     url.pathname===RESTRICTION_ROUTE?NOISE_CURFEW_EDGE_URL:EDGE_FUNCTION_URL,{
+     url.pathname===RESTRICTION_ROUTE?NOISE_CURFEW_EDGE_URL:
+      url.pathname===SCHEDULE_ROUTE?SCHEDULE_EDGE_URL:EDGE_FUNCTION_URL,{
     method:request.method,headers,body,cache:'no-store',redirect:'error',
     signal:AbortSignal.timeout(20000)
    });
