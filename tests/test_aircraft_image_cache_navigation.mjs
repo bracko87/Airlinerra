@@ -63,8 +63,7 @@ test('active repeated model/role pairs keep distinct display names',()=>{
   ['Boeing','737-800','cargo','AIR-INUIT-CARGO','MYINDO-737-800F','737-800F'],
   ['Boeing','Boeing 737-400','cargo','AEROSUCRE-CARGO-UNSPECIFIED','MYINDO-737-400F','737-400F'],
   ['British Aerospace','BAe 146-200','passenger','PASSENGER-BASE','DAP-ANTARCTIC-70','DAP Antarctic'],
-  ['De Havilland Canada','Dash 8-300','cargo','AIR-INUIT-CARGO','AIR-INUIT-LARGE-DOOR-CARGO','Large Freight Door'],
-  ['Saab','Saab 340B','cargo','AMERIFLIGHT-CARGO','RYAN-AIR-CARGO','Ryan Air']
+  ['De Havilland Canada','Dash 8-300','cargo','AIR-INUIT-CARGO','AIR-INUIT-LARGE-DOOR-CARGO','Large Freight Door']
  ];
  const names=new Set();
  for(const [manufacturer,model,useType,first,second,expected] of pairs){
@@ -75,7 +74,8 @@ test('active repeated model/role pairs keep distinct display names',()=>{
   names.add(firstName+'|'+useType);
   names.add(secondName+'|'+useType);
  }
- assert.equal(names.size,10,'10 remaining repeated entries must have unique names');
+ assert.equal(names.size,8,'Eight entries in four remaining repeated groups must have unique names');
+ assert.equal(aircraftCatalogModel({manufacturer:'Saab',model:'Saab 340B(F)',useType:'cargo',configuration:'CARGO-BASE'}),'Saab 340B(F)');
  assert.equal(aircraftCatalogModel({manufacturer:'Boeing',model:'Boeing 737-500',useType:'passenger',configuration:'PASSENGER-BASE'}),'737-500');
  assert.equal(aircraftCatalogModel({manufacturer:'De Havilland Canada',model:'Dash 8-300',useType:'combi',configuration:'AIR-INUIT-PASSENGER'}),'Dash 8-300');
  assert.equal(aircraftCatalogModel({manufacturer:'De Havilland Canada',model:'DHC-6-300',useType:'passenger',configuration:'PASSENGER-BASE'}),'DHC-6-300');
