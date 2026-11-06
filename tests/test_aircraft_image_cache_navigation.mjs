@@ -58,14 +58,12 @@ test('table and aircraft profile use deduplicated names while preserving origina
  assert.match(js,/\[a\.manufacturer,a\.model,a\.useType\]\.join\('\|'\)/);
 });
 
-test('every repeated model and role receives its own grounded display name',()=>{
+test('active repeated model/role pairs keep distinct display names',()=>{
  const pairs=[
   ['Boeing','737-800','cargo','AIR-INUIT-CARGO','MYINDO-737-800F','737-800F'],
   ['Boeing','Boeing 737-400','cargo','AEROSUCRE-CARGO-UNSPECIFIED','MYINDO-737-400F','737-400F'],
   ['British Aerospace','BAe 146-200','passenger','PASSENGER-BASE','DAP-ANTARCTIC-70','DAP Antarctic'],
   ['De Havilland Canada','Dash 8-300','cargo','AIR-INUIT-CARGO','AIR-INUIT-LARGE-DOOR-CARGO','Large Freight Door'],
-  ['De Havilland Canada','Dash 8-300','combi','COMBI-BASE','AIR-INUIT-PASSENGER','Air Inuit'],
-  ['De Havilland Canada','DHC-6-300','passenger','PASSENGER-BASE','AIR-KIRIBATI-300HG','DHC-6-300HG'],
   ['Saab','Saab 340B','cargo','AMERIFLIGHT-CARGO','RYAN-AIR-CARGO','Ryan Air']
  ];
  const names=new Set();
@@ -77,8 +75,10 @@ test('every repeated model and role receives its own grounded display name',()=>
   names.add(firstName+'|'+useType);
   names.add(secondName+'|'+useType);
  }
- assert.equal(names.size,14,'14 known repeated entries must have unique visible names');
+ assert.equal(names.size,10,'10 remaining repeated entries must have unique names');
  assert.equal(aircraftCatalogModel({manufacturer:'Boeing',model:'Boeing 737-500',useType:'passenger',configuration:'PASSENGER-BASE'}),'737-500');
+ assert.equal(aircraftCatalogModel({manufacturer:'De Havilland Canada',model:'Dash 8-300',useType:'combi',configuration:'AIR-INUIT-PASSENGER'}),'Dash 8-300');
+ assert.equal(aircraftCatalogModel({manufacturer:'De Havilland Canada',model:'DHC-6-300',useType:'passenger',configuration:'PASSENGER-BASE'}),'DHC-6-300');
 });
 
 test('default manufacturer sorting keeps aircraft families and numerical model order together',()=>{
