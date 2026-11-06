@@ -4,6 +4,9 @@ on:
     branches: [main]
     paths:
       - 'website/airport-country-picker.mjs'
+      - 'website/airport-restriction-display.mjs'
+      - 'server/airport-profile-service.mjs'
+      - 'tests/test_airport_operating_restrictions_ui.mjs'
       - 'website/airline-airports-office.mjs'
       - 'website/airline-workspace.mjs'
       - 'website/route-planner.mjs'
@@ -32,6 +35,8 @@ jobs:
       - name: Check browser and server module syntax
         run: |
           node --check website/airport-country-picker.mjs
+          node --check website/airport-restriction-display.mjs
+          node --check server/airport-profile-service.mjs
           node --check website/route-planner.mjs
           node --check website/aircraft-weekly-timeline.mjs
           node --check website/route-map.mjs
@@ -41,7 +46,7 @@ jobs:
           node --check server/player-read-service.mjs
       - name: Run focused airport and route planning tests
         run: |
-          node --test tests/test_route_planner_ui.mjs tests/test_aircraft_weekly_timeline.mjs tests/test_airport_office_profiles.mjs tests/test_operations_center_navigation.mjs
+          node --test tests/test_route_planner_ui.mjs tests/test_aircraft_weekly_timeline.mjs tests/test_airport_office_profiles.mjs tests/test_operations_center_navigation.mjs tests/test_airport_operating_restrictions_ui.mjs
       - name: Build complete private website with new route modules
         working-directory: website
         run: npm run build
