@@ -37,10 +37,6 @@ const catalogConfigurationLabels=new Map([
  ['British Aerospace|BAe 146-200|passenger|DAP-ANTARCTIC-70','BAe 146-200 (DAP Antarctic 70 seats)'],
  ['De Havilland Canada|Dash 8-300|cargo|AIR-INUIT-CARGO','Dash 8-300 Cargo (Air Inuit)'],
  ['De Havilland Canada|Dash 8-300|cargo|AIR-INUIT-LARGE-DOOR-CARGO','Dash 8-300 Cargo (Large Freight Door)'],
- ['De Havilland Canada|Dash 8-300|combi|COMBI-BASE','Dash 8-300 Combi (Standard)'],
- ['De Havilland Canada|Dash 8-300|combi|AIR-INUIT-PASSENGER','Dash 8-300 Combi (Air Inuit)'],
- ['De Havilland Canada|DHC-6-300|passenger|PASSENGER-BASE','DHC-6-300 (Standard)'],
- ['De Havilland Canada|DHC-6-300|passenger|AIR-KIRIBATI-300HG','DHC-6-300HG (Air Kiribati)'],
  ['Saab|Saab 340B|cargo|AMERIFLIGHT-CARGO','340B Cargo (Ameriflight)'],
  ['Saab|Saab 340B|cargo|RYAN-AIR-CARGO','340B Cargo (Ryan Air)']
 ]);
@@ -51,6 +47,11 @@ export function aircraftCatalogModel(a){
 }
 export function aircraftCatalogName(a){
  return [a.manufacturer,aircraftCatalogModel(a)].filter(Boolean).join(' ');
+}
+export function aircraftCatalogConfigurationLabel(a){
+ if(a?.manufacturer==='De Havilland Canada'&&a.model==='Dash 8-300'&&
+   a.useType==='combi'&&a.configuration==='AIR-INUIT-PASSENGER')return 'AIR INUIT COMBI';
+ return String(a?.configuration??'').replaceAll('-',' ');
 }
 const aircraftNaturalCollator=new Intl.Collator('en',{numeric:true,sensitivity:'base'});
 const compareText=(a,b)=>aircraftNaturalCollator.compare(String(a??''),String(b??''));
@@ -418,7 +419,7 @@ export function createAircraftLibrary({doc,getReader}={}){
     if(i===1){
      const open=element('button','library-model-link',aircraftCatalogModel(a));
      open.type='button';open.setAttribute('aria-label','Open profile for '+aircraftCatalogName(a));
-     td.append(open,element('span','library-table-family',a.family+' · '+a.configuration.replaceAll('-',' ')));
+     td.append(open,element('span','library-table-family',a.family+' · '+aircraftCatalogConfigurationLabel(a)));
     }else if(i===8){
      td.append(element('span','library-production-status',values[i]));
     }else td.textContent=(values[i]===null||values[i]===undefined)?'—':
