@@ -31,11 +31,25 @@ BEGIN
  JOIN airlinerra_game.section5_icao_aircraft_certification_v2 ic ON ic.configuration_id=g.configuration_id
  WHERE c.simultaneous_maxima_verified=false
  AND no.real_world_noise_operational_permission=false
- AND no.official_icao_chapter IS NULL
  AND no.game_chapter_assumption IS NOT NULL
- AND ic.official_icao_chapter IS NULL
- AND ic.noise_certificate_status='CERTIFICATE_NOT_VERIFIED';
- IF n<>39 THEN RAISE EXCEPTION '39 research-only engine/noise/loading records expected, found %',n; END IF;
+ AND (
+     (no.official_icao_chapter IS NULL
+      AND ic.official_icao_chapter IS NULL
+      AND ic.noise_certificate_status='CERTIFICATE_NOT_VERIFIED')
+     OR
+     (g.entry_no=1 AND no.official_icao_chapter=14
+      AND ic.official_icao_chapter=14
+      AND ic.noise_certificate_status='CERTIFICATE_CONFIGURATION_MATCHED'
+      AND no.real_world_noise_operational_permission=false
+      AND ic.airframe_registration_specific=false)
+ );
+ IF n<>39 THEN RAISE EXCEPTION '39 research-only engine/noise/loading records including 1 type-certificate match expected, found %',n; END IF;
+
+ SELECT COUNT(*) INTO n FROM airlinerra.aircraft_expansion_group3 g
+ JOIN airlinerra_game.section5_icao_aircraft_certification_v2 ic
+ ON ic.configuration_id=g.configuration_id
+ WHERE ic.official_icao_chapter IS NOT NULL;
+ IF n<>1 THEN RAISE EXCEPTION 'Expected 1 matched A340-541 type noise certificate, found %',n; END IF;
 
  SELECT count(*) INTO n FROM airlinerra.aircraft_expansion_group3
  WHERE availability_intent='visible_not_orderable' AND entry_no IN(2,20,25);
