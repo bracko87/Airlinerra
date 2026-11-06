@@ -5,6 +5,7 @@ import {inspectInvitedTesterProvider,TESTER_ORIGIN} from './invited-tester-entry
 import {createInvitedTesterAuth,LOCAL_REAL_AUTH_ORIGIN} from './invited-tester-auth.mjs';
 import {openPrivateTesterDashboard,PrivateTesterAccessDenied} from './tester-dashboard-state.mjs';
 import {createPlayerReadClient,PLAYER_READ_API_ENABLED} from './player-read-client.mjs';
+import {createFlightScheduleClient} from './flight-schedule-client.mjs';
 import {createAircraftLibrary} from './aircraft-library.mjs';
 import {createRealOnboardingClient} from './real-onboarding-client.mjs';
 import {createDownwardMenu} from './setup-choice-menu.mjs';
@@ -297,6 +298,8 @@ async function loadPlayerReadData({local=false}={}){
  // like "no airline" and concealed their actual cause.
  try{
   playerData=createPlayerReadClient({auth,origin:window.location.origin,enabled:true,local});
+  const scheduler=!local&&window.location.origin==='https://airlinerra.com'?
+   createFlightScheduleClient({auth,origin:window.location.origin}):null;
   const data=await playerData.overview();
   readStage='display';
   if(!Array.isArray(data.worlds)||!Array.isArray(data.countries)||!Array.isArray(data.airlines))
@@ -311,7 +314,8 @@ async function loadPlayerReadData({local=false}={}){
   try{drawRealWorlds(data.worlds);fillCountries(data.countries);}
   catch{console.warn('Airlinerra secondary directory failed to display');}
   try{
-    workspaceController?.updateData({connected:true,airline:first||null,worlds:data.worlds,countries:data.countries,reader:playerData});
+    workspaceController?.updateData({connected:true,airline:first||null,worlds:data.worlds,
+     countries:data.countries,reader:playerData,scheduler});
     operationsController?.updateData({connected:true,airline:first||null,worlds:data.worlds,countries:data.countries,reader:playerData});
   }
   catch{console.warn('Airlinerra secondary workspace failed to display');}
@@ -348,7 +352,7 @@ async function loadPlayerReadData({local=false}={}){
   console.warn('Airlinerra player overview',readStage,code);
   playerData=null;
   hasRealAirline=false; // Unknown because the protected read failed - NOT proof no airline exists.
-  workspaceController?.updateData({connected:false,airline:null,reader:null});
+  workspaceController?.updateData({connected:false,airline:null,reader:null,scheduler:null});
   operationsController?.updateData({connected:false,airline:null,reader:null});
   currentAirline=null;
   renderAirlineDashboard(doc,{airline:null,ledgerEntries:null});
