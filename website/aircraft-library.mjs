@@ -46,6 +46,28 @@ export function aircraftCatalogModel(a){
 export function aircraftCatalogName(a){
  return [a.manufacturer,aircraftCatalogModel(a)].filter(Boolean).join(' ');
 }
+/** A freight reference is not guaranteed free cargo capacity on a real flight. */
+export function aircraftServiceSeats(a){
+ return a.useType==='cargo'?null:(a.serviceSeats??a.seats??a.maxSeats);
+}
+export function aircraftServiceCargoLabel(a){
+ if(a.useType==='cargo')return typeof a.cargoKg==='number'?format(a.cargoKg):'Unverified';
+ if(a.useType==='combi')return typeof a.serviceFreightKg==='number'
+  ?format(a.serviceFreightKg)+'*':'Layout-dependent';
+ return typeof a.bellyHoldReferenceKg==='number'
+  ?format(a.bellyHoldReferenceKg)+'*':'Hold unverified';
+}
+export function aircraftServiceCargoDetail(a){
+ if(a.useType==='cargo')return 'Freighter — cargo capacity subject to load and route limits';
+ if(a.useType==='combi')return a.serviceFreightKg!==null&&a.serviceFreightKg!==undefined
+  ?'Mixed-use freight reference; weight and baggage limits still apply'
+  :'Mixed layout cargo needs separate certification/loading verification';
+ return a.bellyHoldReferenceType==='operator_full_passenger_freight'
+  ?'Passenger belly freight — operator reference with full passenger load'
+  :a.bellyHoldReferenceType==='structural_hold_includes_baggage'
+   ?'Rear hold structural limit includes all passenger baggage'
+   :'Lower-hold freight eligibility and spare capacity are not yet verified';
+}
 export function aircraftCatalogConfigurationLabel(a){
  if(a?.manufacturer==='De Havilland Canada'&&a.model==='Dash 8-300'&&
    a.useType==='combi'&&a.configuration==='AIR-INUIT-PASSENGER')return 'AIR INUIT COMBI';
@@ -63,7 +85,11 @@ export function compareAircraftCatalog(a,b,sortKey='manufacturer',direction='asc
   compareText(a.configuration,b.configuration)||
   Number(a.id??0)-Number(b.id??0);
  if(sortKey==='manufacturer'||sortKey==='model')return dir*group();
- const av=a[sortKey],bv=b[sortKey];
+ const sortValue=item=>sortKey==='seats'?aircraftServiceSeats(item):
+  sortKey==='cargoKg'?(item.useType==='cargo'?item.cargoKg:
+    item.useType==='combi'?item.serviceFreightKg:item.bellyHoldReferenceKg):
+  item[sortKey];
+ const av=sortValue(a),bv=sortValue(b);
  if(av==null&&bv!=null)return 1;
  if(bv==null&&av!=null)return -1;
  const result=typeof av==='number'&&typeof bv==='number'?av-bv:compareText(av,bv);
@@ -306,8 +332,8 @@ export function createAircraftLibrary({doc,getReader}={}){
   const noiseChapter=a.icaoNoiseChapter??a.gameNoiseChapter;
   const summary=[
    ['Role',a.useType],
-   ['Passenger seats',a.useType==='cargo'?'—':(a.seats??a.maxSeats??'Not recorded')],
-   ['Cargo payload',a.cargoKg===null?'—':format(a.cargoKg)+' kg'],
+   ['Seats · current layout',a.useType==='cargo'?'—':(aircraftServiceSeats(a)??'Not recorded')],
+   ['Cargo · kg (reference)',aircraftServiceCargoLabel(a)],
    ['Range',a.rangeKm===null?'Not recorded':format(a.rangeKm)+' km'],
    ['Fuel tank',a.fuelKg===null?'Not recorded':format(a.fuelKg)+' kg'],
    ['Production',a.productionStatus?.replaceAll('_',' ')||'Unconfirmed'],
@@ -335,9 +361,16 @@ export function createAircraftLibrary({doc,getReader}={}){
     ['End production year'+(a.productionEndEstimated?' (estimated)':''),a.productionEnd,'year']
    ]),
    specificationGroup('Passenger, cargo & fuel',[
-    ['Typical seats',a.useType==='cargo'?'—':a.seats],
-    ['Maximum seats',a.useType==='cargo'?'—':a.maxSeats],
-    ['Maximum cargo payload',a.cargoKg===null?'—':a.cargoKg,'kg'],
+    ['Seats · current service layout',a.useType==='cargo'?'—':aircraftServiceSeats(a)],
+    ['Passenger-only seating reference',a.useType==='combi'?(a.maxSeats??a.seats):'—'],
+    ['Mixed-layout freight (kg)',a.useType==='combi'?(a.serviceFreightKg??'Not verified'):'—'],
+    ['Passenger belly-hold reference (kg)',a.useType==='passenger'?(a.bellyHoldReferenceKg??'Not verified'):'—'],
+    ['Cargo basis',aircraftServiceCargoDetail(a)],
+    ['Advertised cargo-only ceiling (kg)',a.useType==='combi'?(a.cargoKg??'Not recorded'):'—'],
+    ['Full freighter cargo (kg)',a.useType==='cargo'?(a.cargoKg??'Not recorded'):'—'],
+    ['Service seat evidence',a.useType==='combi'?
+      (a.serviceSeatBasis==='game_estimate'?'Game estimate':a.serviceSeatBasis==='operator_combi'?'Operator published':'Research'):
+      'Not applicable'],
     ['Fuel tank capacity',a.fuelKg,'kg']
    ]),
    specificationGroup('Flight performance & weights',[
@@ -368,7 +401,9 @@ export function createAircraftLibrary({doc,getReader}={}){
   }
   sheet.append(groups);
   if(a.useType==='combi')sheet.append(element('p','library-disclaimer',
-   'Combi aircraft cannot necessarily carry maximum passenger seats and maximum cargo payload at the same time.'));
+   'A combi uses one passenger-and-freight layout. Full-passenger seats and advertised cargo-only payload cannot be combined; a mixed-seat figure labeled game estimate is provisional.'));
+  if(a.useType==='passenger')sheet.append(element('p','library-disclaimer',
+   'Passenger aircraft may carry lower-hold freight alongside luggage. Freight marked with * is a reference, not guaranteed bookable capacity; baggage, fuel, gross weight and available airport handling must be checked.'));
   sheet.append(element('p','library-profile-footer',
    'Aircraft data is for planning and comparison. Operating clearance is handled separately.'));
   detail.append(sheet);
@@ -409,7 +444,7 @@ export function createAircraftLibrary({doc,getReader}={}){
    row.dataset.aircraftId=String(a.id);
    const values=[
     a.manufacturer,null,a.useType,
-    a.seats??a.maxSeats,a.cargoKg,a.rangeKm,a.speedKmh,a.fuelKg,
+    aircraftServiceSeats(a),aircraftServiceCargoLabel(a),a.rangeKm,a.speedKmh,a.fuelKg,
     a.productionStatus?.replaceAll('_',' ')||'Unconfirmed'
    ];
    for(let i=0;i<values.length;i++){
