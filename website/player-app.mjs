@@ -27,12 +27,20 @@ const signOut=doc.getElementById('player-sign-out');
 let auth=null;
 let preview=false;
 let aircraftLibraryController=null;
+function enablePublicAircraftImageCache(){
+ // Cache only public aircraft artwork; never Auth, game data, private pages or API responses.
+ if(!window.isSecureContext||!('serviceWorker' in navigator))return;
+ void navigator.serviceWorker.register('/aircraft-image-cache-sw.js',{
+  scope:'/player.html',updateViaCache:'none'
+ }).catch(()=>{/* Browsers may disable persistent storage; normal image loading still works. */});
+}
 function visible(view){
   loading.hidden=view!=='loading';
   denied.hidden=view!=='denied';
   app.hidden=view!=='app';
 }
 function navigateTo(view){
+  const returningFromAircraftProfile=doc.querySelector('[data-player-view="aircraft-profile"]')?.hidden===false;
   const selected=safePlayerView('#'+view);
   const name=selected==='onboarding'&&hasRealAirline?'overview':selected;
   if(name!==selected)window.history.replaceState({},'',playerViewUrl(name));
@@ -46,7 +54,13 @@ function navigateTo(view){
   doc.title='Airlinerra - '+name[0].toUpperCase()+name.slice(1);
   // Close dropdowns when changing pages, preserving keyboard navigation.
   for(const group of doc.querySelectorAll('.nav-group[open]'))group.open=false;
-  if(name==='aircraft-library'&&aircraftLibraryController)void aircraftLibraryController.load();
+  if(name==='aircraft-library'&&aircraftLibraryController){
+    void aircraftLibraryController.load().then(()=>{
+      // Wait for the library section to become visible before centering the chosen row.
+      if(returningFromAircraftProfile)window.requestAnimationFrame(
+       ()=>aircraftLibraryController.restoreLastSelection());
+    }).catch(()=>{});
+  }
   if(name==='airline'&&currentAirline?.id)void loadManageAirlineLogo();
 }
 function drawWorldDirectory(){
@@ -788,6 +802,7 @@ async function initialize(){
         publishableKey:conf.publishableKey
       });
       setManager(await auth.getUser());
+      enablePublicAircraftImageCache();
       if(['overview','onboarding'].includes(selected)){
         initialManagerLanding=true;
         window.history.replaceState({},'',playerViewUrl('onboarding'));
@@ -812,6 +827,7 @@ async function initialize(){
     });
     auth=session.auth;
     setManager(session.user);
+    enablePublicAircraftImageCache();
     if(['overview','onboarding'].includes(selected)){
       initialManagerLanding=true;
       window.history.replaceState({},'',playerViewUrl('onboarding'));
