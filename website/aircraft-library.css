@@ -120,3 +120,6 @@
  background:#e8f4ff!important;
 }
 .library-return-selected .library-model-link{color:#092e57}
+
+/* Explain the difference between aircraft reference limits and bookable freight. */
+.library-capacity-note{font-size:11px;color:#647e97;margin:9px 0 -4px;line-height:1.5}
