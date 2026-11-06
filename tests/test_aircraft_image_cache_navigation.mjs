@@ -2,9 +2,37 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
-import {libraryReturnVisibleCount,aircraftImagePath} from '../website/aircraft-library.mjs';
+import {libraryReturnVisibleCount,aircraftImagePath,aircraftDisplayModel,aircraftDisplayName} from '../website/aircraft-library.mjs';
 
 const read=path=>readFile(new URL(path,import.meta.url),'utf8');
+
+test('aircraft model column shows model only when manufacturer repeats at the beginning',()=>{
+ const examples=[
+  ['Boeing','Boeing 727-200 Freighter','727-200 Freighter'],
+  ['Boeing','Boeing 737-300SF','737-300SF'],
+  ['Boeing','Boeing 737-400','737-400'],
+  ['Boeing','Boeing 737-500','737-500'],
+  ['Boeing','737-400','737-400'],
+  ['Boeing','Boeing Boeing 737-400','737-400'],
+  ['Airbus','A330-300','A330-300'],
+  ['Airbus','Airbus A350-900','A350-900'],
+  ['De Havilland Canada','De Havilland Canada Dash 8-100','Dash 8-100']
+ ];
+ for(const [maker,raw,expected] of examples){
+  assert.equal(aircraftDisplayModel(maker,raw),expected);
+  assert.equal(aircraftDisplayName(maker,raw),maker+' '+expected);
+ }
+ assert.equal(aircraftDisplayModel('Boeing','Boeing'),'Boeing');
+ assert.equal(aircraftDisplayModel('Boeing','Boeingfield 737'),'Boeingfield 737');
+});
+
+test('table and aircraft profile use deduplicated names while preserving original model identifiers',async()=>{
+ const js=await read('../website/aircraft-library.mjs');
+ assert.match(js,/library-model-link',aircraftDisplayModel\(a\.manufacturer,a\.model\)/);
+ assert.match(js,/const title=element\('h2','',aircraftDisplayName\(a\.manufacturer,a\.model\)\)/);
+ assert.match(js,/Open profile for '\+aircraftDisplayName\(a\.manufacturer,a\.model\)/);
+ assert.match(js,/\[a\.manufacturer,a\.model,a\.useType\]\.join\('\|'\)/);
+});
 
 test('the selected aircraft remains reachable after sorting or paging',()=>{
  const records=Array.from({length:235},(_,i)=>({id:i+1}));
