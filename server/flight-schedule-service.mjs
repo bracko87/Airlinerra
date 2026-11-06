@@ -19,7 +19,7 @@ const RHEADERS={'cache-control':'no-store','content-type':'application/json; cha
  'x-content-type-options':'nosniff','referrer-policy':'no-referrer'};
 const respond=(status,payload)=>Response.json(payload,{status,headers:RHEADERS});
 const utc=value=>typeof value==='string'&&UTC.test(value)&&
- Number.isFinite(Date.parse(value))&&new Date(value).toISOString()===value;
+ Number.isFinite(Date.parse(value))&&new Date(value).toISOString().slice(0,19)+'Z'===value;
 const uuid=value=>typeof value==='string'&&UUID.test(value);
 const withinFields=(body,set)=>Object.keys(body).every(k=>set.has(k));
 export function validWeeklyFlightSchedule(value){
