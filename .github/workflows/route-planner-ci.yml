@@ -11,6 +11,7 @@ on:
       - 'website/player-read-client.mjs'
       - 'website/netlify/functions/airlinerra-game.mjs'
       - 'tests/test_production_game_api.mjs'
+      - 'tests/test_route_restriction_preflight_api.mjs'
       - 'website/airline-airports-office.mjs'
       - 'website/airline-workspace.mjs'
       - 'website/route-planner.mjs'
@@ -53,7 +54,7 @@ jobs:
           node --check server/player-read-service.mjs
       - name: Run focused airport and route planning tests
         run: |
-          node --test tests/test_route_planner_ui.mjs tests/test_aircraft_weekly_timeline.mjs tests/test_airport_office_profiles.mjs tests/test_operations_center_navigation.mjs tests/test_airport_operating_restrictions_ui.mjs tests/test_production_game_api.mjs
+          node --test tests/test_route_planner_ui.mjs tests/test_aircraft_weekly_timeline.mjs tests/test_airport_office_profiles.mjs tests/test_operations_center_navigation.mjs tests/test_airport_operating_restrictions_ui.mjs tests/test_production_game_api.mjs tests/test_route_restriction_preflight_api.mjs
       - name: Build complete private website with new route modules
         working-directory: website
         run: npm run build
