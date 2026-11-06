@@ -40,7 +40,7 @@ test('all private routes forward only real bearer tokens and bounded JSON to pin
   }));
   assert.equal(res.status,200,path);
  }
- assert.equal(seen.length,6);
+ assert.equal(seen.length,CANONICAL_GAME_API_PATHS.filter(x=>!x.endsWith('/readiness')).length);
  assert.ok(seen.every(x=>
    x.url===(x.options.headers['x-airlinerra-route']==='/api/v1/player/airport-profile'
       ?AIRPORT_PROFILE_EDGE_URL:
