@@ -120,6 +120,12 @@ export function aircraftImagePath(a){
  const filename=configured||aircraftImages.get([a.manufacturer,a.model,a.useType].join('|'));
  return filename?'https://hwllkabgzaynalahvkpz.supabase.co/storage/v1/object/public/Admin/Airplanes/'+encodeURIComponent(filename):null;
 }
+/** Expand a truncated table only if the selected aircraft is outside the rendered rows. */
+export function libraryReturnVisibleCount(records,selectedId,visibleCount=40){
+ const index=Array.isArray(records)?records.findIndex(a=>a?.id===selectedId):-1;
+ return index<0?visibleCount:Math.max(visibleCount,Math.ceil((index+1)/40)*40);
+}
+
 export function createAircraftLibrary({doc,getReader}={}){
  if(!doc||typeof getReader!=='function')throw Error('Aircraft library document and authenticated reader required');
  const $=id=>doc.getElementById(id);
@@ -130,6 +136,19 @@ export function createAircraftLibrary({doc,getReader}={}){
  if(![status,list,detail,more,search,maker,type,production].every(Boolean))
   throw Error('Aircraft library page markup missing');
  let aircraft=null,pending=null,visibleCount=40,sortKey='manufacturer',sortDirection='asc';
+ let lastSelectedAircraftId=null;
+ const warmPictures=new Map();
+ function warmAircraftPhoto(a){
+  const url=aircraftImagePath(a);
+  if(!url||warmPictures.has(url))return;
+  // Only warm pictures that a player approaches; never download the entire catalog.
+  const img=doc.createElement('img');
+  img.decoding='async';
+  img.loading='eager';
+  img.src=url;
+  warmPictures.set(url,img);
+  if(warmPictures.size>10)warmPictures.delete(warmPictures.keys().next().value);
+ }
  function statusMessage(message){status.textContent=message}
  function filtered(){
   if(!aircraft)return [];
@@ -173,6 +192,7 @@ export function createAircraftLibrary({doc,getReader}={}){
  }
  function showDetail(a){
   if(!a)return;
+  lastSelectedAircraftId=a.id;
   detail.replaceChildren();
   const sheet=element('div','library-profile-content');
   const header=element('div','library-profile-header');
@@ -183,23 +203,25 @@ export function createAircraftLibrary({doc,getReader}={}){
   header.append(heading);
   const hero=element('div','library-profile-hero');
   const image=element('div','library-profile-image');
-  image.setAttribute('role','img');
-  image.setAttribute('aria-label','Space reserved for a photograph of '+a.model);
-  const icon=element('span','library-profile-plane','✈');
-  icon.setAttribute('aria-hidden','true');
-  const placeholder=element('div','library-profile-image-placeholder');
-  placeholder.append(icon,element('strong','','Aircraft photo'),element('span','','Image not yet available'));
   const path=aircraftImagePath(a);
   if(path){
-   const picture=element('img','library-profile-aircraft-photo');
+   // Reuse an image warmed by hover/focus, or request it immediately at high priority.
+   const picture=warmPictures.get(path)||element('img','library-profile-aircraft-photo');
+   warmPictures.delete(path);
+   picture.className='library-profile-aircraft-photo';
    picture.alt=a.manufacturer+' '+a.model+' '+a.useType+' aircraft, unbranded side profile';
-   picture.loading='lazy';picture.decoding='async';
-   picture.addEventListener('load',()=>{placeholder.hidden=true});
-   picture.addEventListener('error',()=>{picture.remove();placeholder.hidden=false});
+   picture.loading='eager';
+   picture.decoding='async';
+   picture.fetchPriority='high';
+   picture.addEventListener('error',()=>{
+    picture.remove();
+    image.append(element('span','library-profile-image-unavailable','Aircraft image unavailable'));
+   },{once:true});
    image.append(picture);
-   picture.src=path;
+   if(picture.src!==path)picture.src=path;
+  }else{
+   image.append(element('span','library-profile-image-unavailable','Aircraft image unavailable'));
   }
-  image.append(placeholder);
   const highlights=element('div','library-profile-highlights');
   const noiseChapter=a.icaoNoiseChapter??a.gameNoiseChapter;
   const summary=[
@@ -339,6 +361,22 @@ export function createAircraftLibrary({doc,getReader}={}){
    ?'Live read-only aircraft catalog loaded. '+aircraft.length+' configurations. Research and game estimates are provisional.'
    :'Aircraft library not connected.');
  }
+ function restoreLastSelection(){
+  if(!aircraft||lastSelectedAircraftId===null)return false;
+  const ordered=sortRecords(filtered());
+  if(!ordered.some(a=>a.id===lastSelectedAircraftId))return false;
+  const expanded=libraryReturnVisibleCount(ordered,lastSelectedAircraftId,visibleCount);
+  if(expanded!==visibleCount){visibleCount=expanded;draw();}
+  const row=[...list.querySelectorAll('[data-aircraft-id]')]
+   .find(node=>Number(node.dataset.aircraftId)===lastSelectedAircraftId);
+  if(!row)return false;
+  list.querySelectorAll('.library-return-selected').forEach(node=>
+   node.classList.remove('library-return-selected'));
+  row.classList.add('library-return-selected');
+  row.querySelector('.library-model-link')?.focus({preventScroll:true});
+  row.scrollIntoView({block:'center',inline:'nearest',behavior:'instant'});
+  return true;
+ }
  function setupManufacturers(){
   const names=[...new Set(aircraft.map(a=>a.manufacturer))].sort((a,b)=>a.localeCompare(b,'en'));
   const chosen=maker.value;
@@ -374,6 +412,15 @@ export function createAircraftLibrary({doc,getReader}={}){
  for(const field of [search,maker,type,production])field.addEventListener('input',()=>{
   visibleCount=40;if(aircraft)draw();
  });
+ // Start fetching when a user hovers or tabs toward an aircraft, before opening it.
+ function warmRow(e){
+  const row=e.target.closest?.('[data-aircraft-id]');
+  if(!row||!aircraft)return;
+  const selected=aircraft.find(a=>a.id===Number(row.dataset.aircraftId));
+  if(selected)warmAircraftPhoto(selected);
+ }
+ list.addEventListener('pointerover',warmRow);
+ list.addEventListener('focusin',warmRow);
  list.addEventListener('click',e=>{
   const sort=e.target.closest('[data-sort-key]');
   if(sort){
@@ -388,5 +435,5 @@ export function createAircraftLibrary({doc,getReader}={}){
  });
  more.addEventListener('click',()=>{visibleCount+=40;if(aircraft)draw()});
  $('aircraft-library-retry').addEventListener('click',()=>{ $('aircraft-library-retry').hidden=true;void load() });
- return Object.freeze({load});
+ return Object.freeze({load,restoreLastSelection});
 }
