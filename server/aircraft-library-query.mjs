@@ -186,6 +186,9 @@ export function serializeAircraftLibrary(rows){
    gameNoiseEngineMatch:safeText(r.game_icao_noise_engine_match,80),
    icaoNoiseChapter:num(r.official_icao_chapter,2,14),
    icaoNoiseStatus:safeText(r.icao_noise_status,64)||'CERTIFICATE_NOT_VERIFIED',
+   gameNoiseRestrictionDefault:r.icao_noise_status==='CERTIFICATE_CONFIGURATION_MATCHED'?
+    'USE_ONLY_VERIFIED_CONFIGURATION_NOISE_RESTRICTIONS':'NO_ADDITIONAL_GAME_NOISE_BAN',
+   noiseCertificateUnverified:r.icao_noise_status!=='CERTIFICATE_CONFIGURATION_MATCHED',
    icaoNoiseMatchBasis:safeText(r.icao_noise_match_basis,128),
    icaoNoiseSource:safeText(r.icao_noise_source,512)
   };
