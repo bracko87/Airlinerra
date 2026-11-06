@@ -16,7 +16,9 @@ insert into airlinerra.aircraft_catalog_configuration_exclusions
  (configuration_id,retained_configuration_id,reason)
 values
  (60,89,'Duplicate Dash 8-300 combi display entry: retain verified Air Inuit combi; preserve baseline research and airport screens.'),
- (150,58,'Duplicate DHC-6-300 passenger display entry: retain canonical passenger baseline; preserve Air Kiribati 300HG research and airport screens.')
+ (150,58,'Duplicate DHC-6-300 passenger display entry: retain canonical passenger baseline; preserve Air Kiribati 300HG research and airport screens.'),
+ (134,146,'User-approved Saab 340 cargo consolidation: display only dedicated Saab 340B(F) freighter #146; retain source-specific airline cargo research and airport eligibility records.'),
+ (151,146,'User-approved Saab 340 cargo consolidation: display only dedicated Saab 340B(F) freighter #146; retain source-specific airline cargo research and airport eligibility records.')
 on conflict (configuration_id) do update set
  retained_configuration_id=excluded.retained_configuration_id,
  reason=excluded.reason;
@@ -31,6 +33,11 @@ on conflict (configuration_id) do update set
 --    -> kept AIR-INUIT-PASSENGER combi (#89, verified).
 -- Excluded: DHC-6-300 AIR-KIRIBATI-300HG (#150)
 --    -> kept PASSENGER-BASE (#58).
+-- Excluded: Saab 340B AMERIFLIGHT-CARGO (#134) and RYAN-AIR-CARGO (#151)
+--    -> kept Saab 340B(F) CARGO-BASE (#146), a distinct P2F freighter with
+--       4,264 kg documented cargo-payload field, a dedicated image and no in-service
+--       player airframes at the time of consolidation.
+-- Original source research and airport compatibility records remain intact.
 -- Each excluded record has 3,141 airport compatibility rows plus other
 -- research dependencies, so permanent deletion without comprehensive
 -- migration would destroy independent technical evidence.
