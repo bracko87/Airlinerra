@@ -37,6 +37,29 @@ test('browser restriction check uses only authenticated same-origin proxy',async
  assert.equal(requests[0].opts.credentials,'omit');
  assert.deepEqual(JSON.parse(requests[0].opts.body),ROUTE);
 });
+test('weekly timetable preflight forwards all selected weekdays, without activating any flight',async()=>{
+ const seen=[];
+ const auth={getAccessToken:async()=>('verified'.repeat(8))};
+ const client=createPlayerReadClient({
+  auth,origin:'https://airlinerra.com',enabled:true,
+  fetchImpl:async(url,opts)=>{
+   seen.push({url,opts});
+   return Response.json({gameHardBlocked:true,weeklyScheduleChecked:true,
+    weeklyOccurrencesChecked:12,blockedWeeklyOccurrences:[
+     {departureUtc:'2026-11-06T14:30:00Z',originOutcome:'BLOCKED_AIRPORT_TIME_CURFEW'}
+    ],canActivateNormalFlight:false});
+  }
+ });
+ const weeklySchedule=[{day:0,time:'09:00'},{day:2,time:'12:30'},{day:4,time:'23:30'}];
+ const result=await client.noiseCurfewCheck({...ROUTE,weeklySchedule});
+ assert.equal(result.weeklyOccurrencesChecked,12);
+ assert.equal(result.gameHardBlocked,true);
+ assert.equal(result.canActivateNormalFlight,false);
+ assert.equal(seen.length,1);
+ assert.equal(seen[0].url,'https://airlinerra.com'+RESTRICTION_ROUTE);
+ assert.deepEqual(JSON.parse(seen[0].opts.body).weeklySchedule,weeklySchedule);
+ assert.equal(seen[0].opts.headers.authorization,'Bearer '+('verified'.repeat(8)));
+});
 test('backend forwards only to the pinned dedicated Edge restriction checker',async()=>{
  const calls=[],token='Bearer '+('a'.repeat(40));
  const service=createProductionGameApi({fetchImpl:async(url,opts)=>{
