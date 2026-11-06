@@ -4,6 +4,7 @@
 import {createAirportCountryPicker,populateAirportCountries,airportFlag,airportCountryName} from './airport-country-picker.mjs';
 import {renderRouteMap} from './route-map.mjs';
 import {buildAircraftWeeklyTimeline,renderAircraftWeeklyTimeline} from './aircraft-weekly-timeline.mjs';
+import {assessAircraftRouteRunways} from './route-aircraft-runway-screen.mjs';
 const section=(eyebrow,title,body)=>
  '<article class="panel route-planner-panel"><span class="panel-kicker">'+eyebrow+'</span><h2>'+title+'</h2>'+body+'</article>';
 const field=(id,label,el)=>'<label class="workspace-label" for="'+id+'">'+label+'</label>'+el;
@@ -179,8 +180,22 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
  let homeKey=null,homeLocation=null,currentAirlineId=null,homeTicket=0,detailTicket=0;
  let lastKeys='',airportProfiles={},editingFlightNumber=null,editingLegacyIndex=null,editSerial=0;
  let preflightCatalogFor=null,preflightLoadToken=0,preflightRequest=0;
+ let catalogAircraft=[],preflightCache=null,preflightPromise=null;
  const pickers={},selected=side=>pickers[side]?.selected()||null;
  const message=(id,value)=>{if($(id))$(id).textContent=value;};
+ const selectedConfigurationId=()=>{
+  const key=$('route-aircraft')?.value||'';
+  if(/^catalog:[1-9][0-9]*$/.test(key))return Number(key.slice(8));
+  const sample=(getData()?.airline?.testAircraft||[]).find(a=>a?.id===key);
+  return Number.isSafeInteger(sample?.configurationId)&&sample.configurationId>0?sample.configurationId:null;
+ };
+ const catalogChoice=()=>catalogAircraft.find(a=>a.id===selectedConfigurationId())||null;
+ const runwayAssessment=aircraft=>assessAircraftRouteRunways({
+  aircraft,
+  origin:airportProfiles.from?.key===selected('from')?.key?airportProfiles.from:null,
+  destination:airportProfiles.to?.key===selected('to')?.key?airportProfiles.to:null
+ });
+ const clearPreflight=()=>{++preflightRequest;preflightCache=null;preflightPromise=null;};
  const countryFlag=side=>{
   const iso=$('route-'+side+'-country')?.value||'';
   const img=$('route-'+side+'-country-flag');
@@ -278,7 +293,9 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    'Choose a turnaround between 45 and 360 minutes');
  };
  const selectedAircraftTimeline=()=>{
-  const aircraftId=$('route-aircraft')?.value||null,from=selected('from'),to=selected('to');
+  const selectedId=$('route-aircraft')?.value||null;
+  const aircraftId=selectedId?.startsWith('catalog:')?null:selectedId;
+  const from=selected('from'),to=selected('to');
   const saved=loadDraft?.()||{};
   const rows=Array.isArray(saved.routes)?saved.routes:[];
   const flightNumber=flightNumberFor(flightPrefixFor(getData()?.airline).prefix,
@@ -313,7 +330,8 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    !timeline.aircraftId?'Choose an aircraft to check its weekly location.':
    last?'Last planned location: '+last.to+' after '+last.flightNumber+
     '. Actual current position and flight timing are not connected.':
-    'No previous flight drafts for this aircraft. Starting airport and stand are not verified.';
+    selectedConfigurationId()?'Catalog preview only — no owned aircraft or position assigned.':
+   'No previous flight drafts for this aircraft. Starting airport and stand are not verified.';
   message('route-aircraft-position-status',hint);
   const feedback=$('route-aircraft-position-status');
   if(feedback)feedback.classList.toggle('has-conflict',timeline.errors.length>0);
@@ -368,6 +386,45 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   message('route-origin-demand',shortDemand(airportProfiles.from));
   message('route-destination-demand',shortDemand(airportProfiles.to));
  };
+ const syncAircraftCompatibility=()=>{
+  const aircraft=catalogChoice(),assessment=aircraft?runwayAssessment(aircraft):null;
+  const selection=$('route-aircraft')?.value||'';
+  const button=$('route-plan-save');
+  if(button)button.disabled=assessment?.status==='BLOCKED';
+  const reason=assessment?.status==='BLOCKED'?
+   'BLOCKED — This aircraft cannot be used on this route. '+assessment.blockingReasons.join(' '):
+   assessment?.status==='REVIEW'?'Runway review: '+assessment.reviewReasons.join(' '):
+   assessment?.status==='PASS'?'Runway length suitable for takeoff and landing (game screening only).':
+   selection?'Aircraft configuration loading — not approved for flight.':
+   'Choose an aircraft to check departure and arrival runway lengths.';
+  message('route-aircraft-check',reason);
+  message('route-aircraft-feedback',reason);
+  const el=$('route-aircraft-feedback');
+  if(el){el.dataset.runwayStatus=assessment?.status||'PENDING';el.setAttribute('role','status');}
+  return assessment;
+ };
+ const refreshCatalogOptions=()=>{
+  const select=$('route-aircraft');if(!select)return;
+  const saved=select.value;
+  const samples=Array.isArray(getData()?.airline?.testAircraft)?
+   getData().airline.testAircraft.filter(a=>a?.testOnly===true&&a.operationallyAllowed===false):[];
+  select.replaceChildren(new Option('Choose an aircraft model',''));
+  for(const a of samples){
+   if(typeof a.id==='string'&&typeof a.model==='string')
+    select.add(new Option('TEST ONLY · '+a.model+' · '+String(a.registration||'TEST'),a.id));
+  }
+  for(const a of catalogAircraft){
+   if(!Number.isSafeInteger(a?.id)||a.id<1||!a.model)continue;
+   const assess=runwayAssessment(a);
+   const suffix=assess.status==='BLOCKED'?' — RUNWAY TOO SHORT':
+    assess.status==='REVIEW'?' — runway unverified':'';
+   select.add(new Option(String(a.manufacturer||'')+' '+a.model+' · '+
+    String(a.configuration||'')+' (catalog preview)'+suffix,'catalog:'+a.id));
+  }
+  if([...select.options].some(o=>o.value===saved))select.value=saved;
+  select.disabled=!samples.length&&!catalogAircraft.length;
+  syncAircraftCompatibility();
+ };
  const loadAirportDetails=async(from,to)=>{
   const ticket=++detailTicket,reader=getData()?.reader;
   airportProfiles={};showDetails();
@@ -384,6 +441,8 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   airportProfiles={from:result[0],to:result[1]};
   showDetails();
   drawMap();
+  refreshCatalogOptions();
+  void automaticPreflight();
  };
  const drawMap=()=>{
   const verified=(side,a)=>{
@@ -417,9 +476,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   const demoAircraft=(Array.isArray(getData()?.airline?.testAircraft)?
    getData().airline.testAircraft:[]).find(a=>a.id===$('route-aircraft')?.value&&
     a.testOnly===true&&a.operationallyAllowed===false);
-  message('route-aircraft-check',demoAircraft?
-   'Airbus '+demoAircraft.model+' (test only) — not approved for operation':
-   'No owned operational aircraft assigned; suitability not verified');
+  syncAircraftCompatibility();
   message('route-slot-check','Not connected — cannot reserve or verify slots');
   message('route-traffic-rights','Not connected — rights not verified');
   message('route-status','Draft only');
@@ -427,9 +484,10 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    !validOrigin?'Draft only: origin is not a confirmed active hub. Only your main hub is currently verified.':
    'Route geography available. Aircraft, crew, airport slots and traffic rights require verification before activation.');
   const keys=[from?.key||'',to?.key||''].join('|');
-  if(keys!==lastKeys){lastKeys=keys;void loadAirportDetails(from,to);}
+  if(keys!==lastKeys){lastKeys=keys;clearPreflight();void loadAirportDetails(from,to);}
   updateWeek();
   refreshAircraftTimeline();
+  void automaticPreflight();
  };
  for(const side of ['from','to']){
   pickers[side]=createAirportCountryPicker({
@@ -505,6 +563,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   showDetails();
   if($('route-plan-number'))$('route-plan-number').value='';
   if($('route-aircraft'))$('route-aircraft').value='';
+  clearPreflight();
   if($('route-arrival-stand'))$('route-arrival-stand').value='terminal';
   if($('route-turnaround'))$('route-turnaround').value='45';
   for(const label of ['economy','premium','business','first'])
@@ -567,7 +626,8 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    const number=flight.slice(prefix.length);
    if(/^[0-9]{1,4}$/.test(number))$('route-plan-number').value=number;
   }
-  $('route-aircraft').value=route.aircraftId||'';
+  $('route-aircraft').value=route.aircraftId||
+   (Number.isSafeInteger(route.aircraftConfigurationId)?'catalog:'+route.aircraftConfigurationId:'');
   const arrivalStand=route.operation?.arrivalStand;
   if($('route-arrival-stand'))$('route-arrival-stand').value=['remote','terminal'].includes(arrivalStand)?arrivalStand:'terminal';
   $('route-turnaround').value=String(route.operation?.turnaroundMinutes||45);
@@ -854,24 +914,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   for(const side of ['from','to'])
    populateAirportCountries($('route-'+side+'-country'),data?.countries||[],doc);
   renderCountryMenus(data?.countries||[]);
-  const aircraftSelect=$('route-aircraft');
-  const savedAircraft=aircraftSelect?.value||'';
-  const samples=Array.isArray(data?.airline?.testAircraft)?
-   data.airline.testAircraft.filter(a=>a?.testOnly===true&&a.operationallyAllowed===false):[];
-  if(aircraftSelect){
-   aircraftSelect.replaceChildren(new Option('Choose an aircraft for draft preview',''));
-   for(const plane of samples){
-    if(typeof plane.id!=='string'||typeof plane.model!=='string')continue;
-    aircraftSelect.add(new Option('Airbus '+plane.model+' · '+String(plane.registration||'TEST')+
-     ' (simulation only)',plane.id));
-   }
-   if([...aircraftSelect.options].some(o=>o.value===savedAircraft))
-    aircraftSelect.value=savedAircraft;
-   aircraftSelect.disabled=samples.length===0;
-  }
-  message('route-aircraft-feedback',samples.length?
-   'Test aircraft are for route-design previews only. They cannot operate, reserve slots or generate revenue.':
-   'No operational fleet is connected. You may save a draft without selecting an aircraft.');
+  refreshCatalogOptions();
   updatePrefix(data?.airline);
   const id=data?.connected?data?.airline?.id||null:null;
   if(id!==preflightCatalogFor){
