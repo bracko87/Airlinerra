@@ -425,7 +425,7 @@ export function createAircraftLibrary({doc,getReader}={}){
   const header=element('tr','');
   const columns=[
    ['manufacturer','Manufacturer'],['model','Model / family'],['useType','Role'],
-   ['seats','Seats'],['cargoKg','Cargo (kg)'],['rangeKm','Range (km)'],
+   ['seats','Seats · layout'],['cargoKg','Cargo ref. (kg)'],['rangeKm','Range (km)'],
    ['speedKmh','Cruise (km/h)'],['fuelKg','Fuel (kg)'],
    ['productionStatus','Production']
   ];
