@@ -35,6 +35,23 @@ export const AIRPORT_PROFILE_SQL=`
         national.legal_source_url AS national_jet_rule_source,
         national.permit_exception_note AS national_jet_rule_exceptions,
         curfew.evidence_status AS curfew_research_status,
+         restriction.game_restriction_status AS game_restriction_status,
+         restriction.operating_condition_screen AS operating_condition_screen,
+         restriction.operating_research_note AS operating_research_note,
+         restriction.operating_research_source AS operating_research_source,
+         restriction.operating_research_checked AS operating_research_checked,
+         restriction.noise_condition_screen AS noise_condition_screen,
+         restriction.noise_research_note AS noise_research_note,
+         restriction.noise_research_source AS noise_research_source,
+         restriction.noise_research_checked AS noise_research_checked,
+         restriction.total_time_rules AS structured_time_rule_count,
+         restriction.enforced_time_rules AS enforced_time_rule_count,
+         restriction.review_only_time_rules AS review_time_rule_count,
+         restriction.time_rule_details AS precise_time_rule_details,
+         restriction.total_runway_rules AS structured_runway_rule_count,
+         restriction.enforced_runway_rules AS enforced_runway_rule_count,
+         restriction.runway_rule_details AS precise_runway_rule_details,
+         restriction.time_research_still_unstructured AS research_still_unstructured,
         (
           SELECT coalesce(jsonb_agg(jsonb_build_object(
             'code',nr.rule_code,'kind',nr.rule_kind,
@@ -131,6 +148,8 @@ export const AIRPORT_PROFILE_SQL=`
       OR (p.latitude_deg BETWEEN 41 AND 52 AND p.longitude_deg BETWEEN -6 AND 10))
  LEFT JOIN airlinerra_game.section5_airport_curfew_research_audit_v2 curfew
     ON curfew.world_id=a.world_id AND curfew.airport_key=a.airport_key
+ LEFT JOIN airlinerra_game.section5_airport_game_restriction_catalog_v1 restriction
+    ON restriction.world_id=a.world_id AND restriction.airport_key=a.airport_key
  LEFT JOIN airlinerra_game.section5_full_weight_airport_summary_v2 fw
     ON fw.world_id=a.world_id AND fw.airport_key=a.airport_key
  LEFT JOIN airlinerra_game.section5_airport_weather_profile_v1 wx
@@ -230,6 +249,24 @@ export function serializeAirportProfile(row){
    nightMaxNoiseClass:null,
    legacyFiveClassNoiseScaleRetired:true,
    curfewResearchStatus:nullableString(row.curfew_research_status)||'NOT_INDIVIDUALLY_VERIFIED',
+    restrictionResearch:{
+      status:nullableString(row.game_restriction_status)||'DATA_PENDING',
+      operatingScreen:nullableString(row.operating_condition_screen),
+      operatingNote:nullableString(row.operating_research_note),
+      operatingSource:nullableString(row.operating_research_source),
+      operatingChecked:nullableString(row.operating_research_checked),
+      noiseScreen:nullableString(row.noise_condition_screen),
+      noiseNote:nullableString(row.noise_research_note),
+      noiseSource:nullableString(row.noise_research_source),
+      noiseChecked:nullableString(row.noise_research_checked),
+      timeRulesCount:countOrNull(row.structured_time_rule_count),
+      enforcedTimeRules:countOrNull(row.enforced_time_rule_count),
+      reviewTimeRules:countOrNull(row.review_time_rule_count),
+      runwayRulesCount:countOrNull(row.structured_runway_rule_count),
+      enforcedRunwayRules:countOrNull(row.enforced_runway_rule_count),
+      timeResearchUnstructured:row.research_still_unstructured===true,
+      realWorldDispatchApproved:false
+    },
    icaoNoiseRules:{
      researchStatus:nullableString(row.icao_noise_research_status)||'NOT_INDIVIDUALLY_VERIFIED',
      prohibitedChapters:Array.isArray(row.icao_prohibited_chapters)?
@@ -251,14 +288,36 @@ export function serializeAirportProfile(row){
          source:nullableString(r.source),notes:nullableString(r.notes)
        })):[]
    },
-   timeRestrictions:Array.isArray(row.game_time_restrictions)?
+   runwayRestrictions:Array.isArray(row.precise_runway_rule_details)?
+     row.precise_runway_rule_details.slice(0,30).map(item=>({
+       code:nullableString(item.code),kind:nullableString(item.kind),
+       operation:nullableString(item.operation),
+       runwaySourceId:nullableString(item.runwaySourceId),
+       runwayDesignator:nullableString(item.runwayDesignator),
+       localStart:nullableString(item.startLocal),localEnd:nullableString(item.endLocal),
+       weekdays:Array.isArray(item.weekdays)?item.weekdays.filter(n=>Number.isInteger(n)&&n>=1&&n<=7):null,
+       activeFrom:nullableString(item.activeFrom),activeUntil:nullableString(item.activeUntil),
+       prohibitedChapters:Array.isArray(item.prohibitedChapters)?item.prohibitedChapters.filter(Number.isInteger):[],
+       gameEnforcement:item.hardBlock===true,details:nullableString(item.notes),
+       source:nullableString(item.source)
+     })) : [],
+   timeRestrictions:Array.isArray(row.precise_time_rule_details)?
+     row.precise_time_rule_details.slice(0,30).map(item=>({
+       code:nullableString(item.code),kind:nullableString(item.kind),
+       operation:nullableString(item.operation),
+       localStart:nullableString(item.startLocal),localEnd:nullableString(item.endLocal),
+       weekdays:Array.isArray(item.weekdays)?item.weekdays.filter(n=>Number.isInteger(n)&&n>=1&&n<=7):null,
+       aircraftUseTypes:Array.isArray(item.aircraftUseTypes)?
+         item.aircraftUseTypes.filter(s=>['passenger','cargo','combi'].includes(s)):null,
+       activeFrom:nullableString(item.activeFrom),activeUntil:nullableString(item.activeUntil),
+       source:nullableString(item.source),details:nullableString(item.notes),
+       gameEnforcement:item.hardBlock===true,exceptionsExpected:item.exceptionsExpected===true
+     })) : Array.isArray(row.game_time_restrictions)?
      row.game_time_restrictions.slice(0,20).map(item=>({
        code:nullableString(item.code),kind:nullableString(item.kind),
        operation:nullableString(item.operation),
-       localStart:nullableString(item.localStart),
-       localEnd:nullableString(item.localEnd),
-       source:nullableString(item.source),
-       details:nullableString(item.details),
+       localStart:nullableString(item.localStart),localEnd:nullableString(item.localEnd),
+       source:nullableString(item.source),details:nullableString(item.details),
        gameEnforcement:item.gameEnforcement===true,
        exceptionsExpected:item.exceptionsExpected===true
      })):[]
