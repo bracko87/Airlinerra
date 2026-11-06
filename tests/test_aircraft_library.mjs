@@ -180,7 +180,7 @@ test('full-page aircraft profile is a supported player view',async()=>{
 });
 
 
-test('all 76 verified public Supabase aircraft images have exact model-and-role mapping',async()=>{
+test('verified public image fallbacks keep the correct model, role and unique keys',async()=>{
  const {aircraftImagePath}=await import('../website/aircraft-library.mjs');
  const base='https://hwllkabgzaynalahvkpz.supabase.co/storage/v1/object/public/Admin/Airplanes/';
  const cases=[
@@ -199,5 +199,7 @@ test('all 76 verified public Supabase aircraft images have exact model-and-role 
  assert.equal(aircraftImagePath({manufacturer:'Airbus',model:'A321-200',useType:'combi'}),null);
  const source=await readFile(new URL('../website/aircraft-library.mjs',import.meta.url),'utf8');
  const mappingSection=source.split('const aircraftImages=new Map([')[1].split(']);')[0];
- assert.equal((mappingSection.match(/^ \[/gm)||[]).length,76);
+ const entries=[...mappingSection.matchAll(/^ \["([^"]+)","([^"]+)"\],?$/gm)];
+ assert.ok(entries.length>=76,'Original fallback mappings must remain available');
+ assert.equal(entries.length,new Set(entries.map(entry=>entry[1])).size,'Fallback keys must be unique');
 });
