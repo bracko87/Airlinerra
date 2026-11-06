@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
-import {libraryPageForSelection,AIRCRAFT_LIBRARY_PAGE_SIZE,aircraftImagePath,aircraftDisplayModel,aircraftDisplayName,aircraftCatalogModel,aircraftCatalogName,compareAircraftCatalog} from '../website/aircraft-library.mjs';
+import {libraryPageForSelection,AIRCRAFT_LIBRARY_PAGE_SIZE,aircraftImagePath,aircraftDisplayModel,aircraftDisplayName,aircraftCatalogModel,aircraftCatalogName,compareAircraftCatalog,aircraftServiceSeats,aircraftServiceCargoLabel,aircraftServiceCargoDetail} from '../website/aircraft-library.mjs';
 
 const read=path=>readFile(new URL(path,import.meta.url),'utf8');
 
@@ -28,6 +28,26 @@ test('all 13 corrected aircraft images are used by website fallback without affe
  }
  const er=aircraftImagePath({manufacturer:'Boeing',model:'737-900ER',useType:'passenger'});
  assert.equal(er?.split('/').pop(),'Boeing%20737-900ER%20passenge.png');
+});
+
+test('combi mixed service seats are smaller than passenger-only layout and cargo is conditional',()=>{
+ const passenger={useType:'passenger',seats:34,maxSeats:37,serviceSeats:34,bellyHoldReferenceKg:950,bellyHoldReferenceType:'structural_hold_includes_baggage'};
+ const combi={useType:'combi',seats:34,maxSeats:34,serviceSeats:24,serviceFreightKg:null,serviceSeatBasis:'game_estimate'};
+ assert.equal(aircraftServiceSeats(passenger),34);
+ assert.equal(aircraftServiceSeats(combi),24);
+ assert.ok(aircraftServiceSeats(combi)<aircraftServiceSeats(passenger));
+ assert.equal(aircraftServiceCargoLabel(passenger),'950*');
+ assert.match(aircraftServiceCargoDetail(passenger),/includes all passenger baggage/);
+ assert.equal(aircraftServiceCargoLabel(combi),'Layout-dependent');
+ assert.match(aircraftServiceCargoDetail(combi),/verification/);
+});
+
+test('passenger belly freight is reference data, unknown is not zero, and freighters have no passenger seats',()=>{
+ assert.equal(aircraftServiceCargoLabel({useType:'passenger',bellyHoldReferenceKg:1000}),'1,000*');
+ assert.equal(aircraftServiceCargoLabel({useType:'passenger',bellyHoldReferenceKg:null}),'Hold unverified');
+ assert.equal(aircraftServiceSeats({useType:'cargo',serviceSeats:0} ),null);
+ assert.equal(aircraftServiceCargoLabel({useType:'cargo',cargoKg:5000}),'5,000');
+ assert.equal(aircraftServiceCargoLabel({useType:'combi',serviceFreightKg:1814}),'1,814*');
 });
 
 test('aircraft model column shows model only when manufacturer repeats at the beginning',()=>{
