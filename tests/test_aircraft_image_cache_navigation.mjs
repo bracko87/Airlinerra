@@ -30,6 +30,26 @@ test('all 13 corrected aircraft images are used by website fallback without affe
  assert.equal(er?.split('/').pop(),'Boeing%20737-900ER%20passenge.png');
 });
 
+test('five November 6 replacement images are exact for British Aerospace, COMAC, Ilyushin, Tupolev and Yakovlev',()=>{
+ const replacements=[
+  ['British Aerospace','BAe 146-200QT','cargo','British Aerospace BAe 146-200QT fix.png'],
+  ['COMAC','C919-100','passenger','COMAC C919-100 fix.png'],
+  ['Ilyushin','Il-96-400T','cargo','Ilyushin Il-96-400T fix.png'],
+  ['Tupolev','Tu-204-100C','cargo','Tupolev Tu-204-100C fix.png'],
+  ['Yakovlev','Yak-42D','passenger','Yakovlev Yak-42D fix.png']
+ ];
+ for(const [manufacturer,model,useType,filename] of replacements){
+  const a={manufacturer,model,useType};
+  assert.equal(aircraftImagePath(a).split('/').pop(),encodeURIComponent(filename));
+  assert.equal(
+   aircraftImagePath({...a,imagePath:'Airplanes/'+filename}).split('/').pop(),
+   encodeURIComponent(filename),'approved configuration path remains first');
+ }
+ assert.equal(aircraftImagePath({manufacturer:'British Aerospace',model:'BAe 146-300QT',useType:'cargo'}),null);
+ assert.equal(aircraftImagePath({manufacturer:'COMAC',model:'C919-100',useType:'cargo'}),null);
+ assert.equal(aircraftImagePath({manufacturer:'Ilyushin',model:'Il-96-300',useType:'passenger'}),null);
+});
+
 test('combi mixed service seats are smaller than passenger-only layout and cargo is conditional',()=>{
  const passenger={useType:'passenger',seats:34,maxSeats:37,serviceSeats:34,bellyHoldReferenceKg:950,bellyHoldReferenceType:'structural_hold_includes_baggage'};
  const combi={useType:'combi',seats:34,maxSeats:34,serviceSeats:24,serviceFreightKg:null,serviceSeatBasis:'game_estimate'};
