@@ -145,8 +145,10 @@ export function createAircraftLibrary({doc,getReader}={}){
   const img=doc.createElement('img');
   img.decoding='async';
   img.loading='eager';
-  img.src=url;
+  // A failed warm request must not be reused later as a permanently broken image.
+  img.addEventListener('error',()=>warmPictures.delete(url),{once:true});
   warmPictures.set(url,img);
+  img.src=url;
   if(warmPictures.size>10)warmPictures.delete(warmPictures.keys().next().value);
  }
  function statusMessage(message){status.textContent=message}
