@@ -36,9 +36,7 @@ const catalogConfigurationLabels=new Map([
  ['British Aerospace|BAe 146-200|passenger|PASSENGER-BASE','BAe 146-200 (Standard)'],
  ['British Aerospace|BAe 146-200|passenger|DAP-ANTARCTIC-70','BAe 146-200 (DAP Antarctic 70 seats)'],
  ['De Havilland Canada|Dash 8-300|cargo|AIR-INUIT-CARGO','Dash 8-300 Cargo (Air Inuit)'],
- ['De Havilland Canada|Dash 8-300|cargo|AIR-INUIT-LARGE-DOOR-CARGO','Dash 8-300 Cargo (Large Freight Door)'],
- ['Saab|Saab 340B|cargo|AMERIFLIGHT-CARGO','340B Cargo (Ameriflight)'],
- ['Saab|Saab 340B|cargo|RYAN-AIR-CARGO','340B Cargo (Ryan Air)']
+ ['De Havilland Canada|Dash 8-300|cargo|AIR-INUIT-LARGE-DOOR-CARGO','Dash 8-300 Cargo (Large Freight Door)']
 ]);
 export function aircraftCatalogModel(a){
  if(!a)return '';
