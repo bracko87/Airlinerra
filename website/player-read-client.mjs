@@ -6,7 +6,8 @@ export function createPlayerReadClient({auth,origin,enabled=PLAYER_READ_API_ENAB
    typeof fetchImpl!=='function')throw Error('Private player read client requires verified hosted Auth');
  async function post(path,payload){
    if(!enabled)throw Error('Player database API is not deployed.');
-   if(!['/api/v1/player/overview','/api/v1/player/airports','/api/v1/player/airport-profile','/api/v1/player/aircraft-library'].includes(path))
+   if(!['/api/v1/player/overview','/api/v1/player/airports','/api/v1/player/airport-profile','/api/v1/player/aircraft-library',
+     '/api/v1/player/noise-curfew-check'].includes(path))
      throw Error('Invalid player data route');
    const token=await auth.getAccessToken();
    if(typeof token!=='string'||token.length<16)throw Error('Verified session required');
@@ -27,6 +28,7 @@ export function createPlayerReadClient({auth,origin,enabled=PLAYER_READ_API_ENAB
    overview:()=>post('/api/v1/player/overview',{}),
    airports:({countryIso,search='',offset=0})=>post('/api/v1/player/airports',{countryIso,search,offset}),
    airportProfile:airportKey=>post('/api/v1/player/airport-profile',{airportKey}),
-   aircraftLibrary:()=>post('/api/v1/player/aircraft-library',{})
+   aircraftLibrary:()=>post('/api/v1/player/aircraft-library',{}),
+   noiseCurfewCheck:payload=>post('/api/v1/player/noise-curfew-check',payload)
  });
 }
