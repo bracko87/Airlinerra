@@ -1144,3 +1144,8 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
  .app-navigation-inner .nav-direct{padding:0 9px}
 }
 :root[data-ui-theme="dark"] #player-main .planning-panel{background:#192e46}
+
+/* Evidence links for sourced operating restrictions (read-only player profiles). */
+.airport-profile-evidence-links{display:flex;flex-wrap:wrap;align-items:center;gap:8px 15px;margin-top:14px}
+.airport-profile-evidence-link{display:inline-flex;color:#1267ad;font-size:12px;line-height:1.5;text-decoration:underline;text-underline-offset:2px}
+.airport-profile-evidence-link:hover,.airport-profile-evidence-link:focus-visible{color:#064a83}
