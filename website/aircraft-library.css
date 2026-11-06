@@ -106,3 +106,12 @@
 .library-popularity-bars .library-popularity-on{background:#247fd1;border-color:#247fd1}
 .library-popularity-value{font-size:12px;color:#173d60;font-weight:650;font-variant-numeric:tabular-nums}
 .library-popularity-na{font-size:12px;color:#73869b}
+
+/* No temporary airplane symbol: keep the image window quiet until artwork loads.
+   Only display a textual message if the exact image is missing or fails to load. */
+.library-profile-image-unavailable{display:flex;align-items:center;justify-content:center;min-height:100%;font-size:12px;color:#6b8097;text-align:center}
+.library-table tbody tr.library-return-selected,
+.library-table tbody tr.library-return-selected:nth-child(even){
+ background:#e8f4ff!important;
+}
+.library-return-selected .library-model-link{color:#092e57}
