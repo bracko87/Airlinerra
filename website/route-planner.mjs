@@ -131,6 +131,10 @@ export function routePlannerMarkup(){
    '<button type="button" class="route-text-action" data-workspace-go="route-list">My routes</button></div>'+
   '<p id="route-plan-status" class="hint" role="status" aria-live="polite"></p>'+
   '<div id="route-plan-review" class="workspace-detail"></div>')+
+ section('SERVER-OWNED SCHEDULE DRAFTS','Schedules saved to your airline',
+  '<p class="hint">Only aircraft actually owned or leased by your airline can be saved on the protected server. These schedules are drafts, not active flights.</p>'+
+  '<div id="route-server-draft-list" class="workspace-detail"></div>'+
+  '<p id="route-server-draft-status" class="hint" role="status" aria-live="polite"></p>')+
  '';
 }
 export const flightPrefixFor=airline=>{
@@ -178,11 +182,17 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
  let lastKeys='',airportProfiles={},editingFlightNumber=null,editingLegacyIndex=null,editSerial=0;
  let preflightCatalogFor=null,preflightLoadToken=0,preflightRequest=0;
  let catalogAircraft=[],preflightCache=null,preflightPromise=null;
+ let ownedFleet=[],serverDrafts=[],fleetTicket=0;
  const pickers={},selected=side=>pickers[side]?.selected()||null;
  const message=(id,value)=>{if($(id))$(id).textContent=value;};
  const selectedConfigurationId=()=>{
   const key=$('route-aircraft')?.value||'';
   if(/^catalog:[1-9][0-9]*$/.test(key))return Number(key.slice(8));
+  if(key.startsWith('owned:')){
+   const owned=ownedFleet.find(a=>'owned:'+a.id===key);
+   return Number.isSafeInteger(owned?.configurationId)&&owned.configurationId>0?
+    owned.configurationId:null;
+  }
   const sample=(getData()?.airline?.testAircraft||[]).find(a=>a?.id===key);
   return Number.isSafeInteger(sample?.configurationId)&&sample.configurationId>0?sample.configurationId:null;
  };
@@ -406,6 +416,14 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   const samples=Array.isArray(getData()?.airline?.testAircraft)?
    getData().airline.testAircraft.filter(a=>a?.testOnly===true&&a.operationallyAllowed===false):[];
   select.replaceChildren(new Option('Choose an aircraft model',''));
+  for(const f of ownedFleet){
+   if(typeof f.id!=='string'||!Number.isSafeInteger(f.configurationId))continue;
+   const model=catalogAircraft.find(a=>a.id===f.configurationId);
+   const assessment=model?runwayAssessment(model):null;
+   const suffix=assessment?.status==='BLOCKED'?' — RUNWAY TOO SHORT':'';
+   select.add(new Option('MY FLEET · '+String(f.registration||'Aircraft')+
+    ' · '+String(model?.model||'Model '+f.configurationId)+suffix,'owned:'+f.id));
+  }
   for(const a of samples){
    if(typeof a.id==='string'&&typeof a.model==='string')
     select.add(new Option('TEST ONLY · '+a.model+' · '+String(a.registration||'TEST'),a.id));
@@ -419,8 +437,56 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
     String(a.configuration||'')+' (catalog preview)'+suffix,'catalog:'+a.id));
   }
   if([...select.options].some(o=>o.value===saved))select.value=saved;
-  select.disabled=!samples.length&&!catalogAircraft.length;
+  select.disabled=!samples.length&&!catalogAircraft.length&&!ownedFleet.length;
   syncAircraftCompatibility();
+ };
+ const renderServerScheduleList=()=>{
+  const holder=$('route-server-draft-list');if(!holder)return;
+  holder.replaceChildren();
+  if(!getData()?.scheduler){
+   holder.textContent='Protected airline schedule service is not connected in this preview.';
+   return;
+  }
+  if(!serverDrafts.length){
+   holder.textContent='No saved server-owned flight schedule drafts yet.';
+   return;
+  }
+  for(const draft of serverDrafts.slice(0,50)){
+   if(typeof draft?.id!=='string')continue;
+   const row=doc.createElement('div');row.className='fleet-test-aircraft-row';
+   const title=doc.createElement('strong');
+   title.textContent=String(draft.flightNumber||'Draft')+' · '+String(draft.originAirportKey||'')+
+    ' to '+String(draft.destinationAirportKey||'');
+   const subtitle=doc.createElement('small');
+   subtitle.textContent='Server draft · not active · '+String(draft.weeklySchedule?.length||0)+' departures per week';
+   const inspect=doc.createElement('button');
+   inspect.type='button';inspect.className='secondary';
+   inspect.textContent='Check activation readiness';
+   inspect.dataset.routeActivationReadinessId=draft.id;
+   row.append(title,subtitle,inspect);holder.append(row);
+  }
+ };
+ const loadOwnedScheduleData=async airlineId=>{
+  const ticket=++fleetTicket,scheduler=getData()?.scheduler;
+  ownedFleet=[];serverDrafts=[];refreshCatalogOptions();renderServerScheduleList();
+  if(!airlineId||typeof scheduler?.list!=='function')return;
+  message('route-server-draft-status','Loading your registered operational aircraft and server drafts...');
+  try{
+   const response=await scheduler.list(airlineId);
+   if(ticket!==fleetTicket)return;
+   ownedFleet=Array.isArray(response?.fleet)?response.fleet.filter(a=>
+    typeof a?.id==='string'&&Number.isSafeInteger(a.configurationId)&&a.configurationId>0):[];
+   serverDrafts=Array.isArray(response?.drafts)?response.drafts:[];
+   refreshCatalogOptions();renderServerScheduleList();
+   message('route-server-draft-status',ownedFleet.length?
+    ownedFleet.length+' operational aircraft connected. Server schedule drafts are separate from live flight activation.':
+    'No operational airline aircraft are assigned. Catalog aircraft can be used for local route previews only.');
+  }catch{
+   if(ticket===fleetTicket){
+    ownedFleet=[];serverDrafts=[];refreshCatalogOptions();renderServerScheduleList();
+    message('route-server-draft-status','Server fleet/schedule service unavailable. No flight was activated.');
+   }
+  }
  };
  const loadAirportDetails=async(from,to)=>{
   const ticket=++detailTicket,reader=getData()?.reader;
