@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {createProductionGameApi,EDGE_FUNCTION_URL,AIRPORT_PROFILE_EDGE_URL,PRODUCTION_ORIGIN} from '../server/production-game-api.mjs';
+import {createProductionGameApi,EDGE_FUNCTION_URL,AIRPORT_PROFILE_EDGE_URL,AIRCRAFT_LIBRARY_EDGE_URL,NOISE_CURFEW_EDGE_URL,RESTRICTION_ROUTE,PRODUCTION_ORIGIN} from '../server/production-game-api.mjs';
 import {CANONICAL_GAME_API_PATHS} from '../server/canonical-game-api.mjs';
 import {AIRLINERRA_INVITED_TESTER_PUBLIC_SETTINGS as settings} from '../website/invited-tester-public-settings.mjs';
 
@@ -43,7 +43,9 @@ test('all private routes forward only real bearer tokens and bounded JSON to pin
  assert.equal(seen.length,6);
  assert.ok(seen.every(x=>
    x.url===(x.options.headers['x-airlinerra-route']==='/api/v1/player/airport-profile'
-      ?AIRPORT_PROFILE_EDGE_URL:EDGE_FUNCTION_URL) &&
+      ?AIRPORT_PROFILE_EDGE_URL:
+     x.options.headers['x-airlinerra-route']==='/api/v1/player/aircraft-library'
+      ?AIRCRAFT_LIBRARY_EDGE_URL:EDGE_FUNCTION_URL) &&
    x.options.headers.authorization===token &&
    x.options.headers.apikey===settings.publishableKey));
  assert.equal((await app(new Request(origin+'/api/v1/airlines',{
@@ -52,6 +54,27 @@ test('all private routes forward only real bearer tokens and bounded JSON to pin
  assert.equal((await app(new Request(origin+'/api/v1/airlines',{
   method:'POST',headers:{authorization:token,origin},body:'a'.repeat(2049)
  }))).status,413);
+});
+test('preflight restrictions route is authenticated, read-only, and uses the dedicated Supabase Edge function',async()=>{
+ const requests=[];
+ const app=createProductionGameApi({fetchImpl:async(url,opts)=>{
+   requests.push({url,opts});
+   return Response.json({decision:'REVIEW_REQUIRED_GAME_RESTRICTION_SCREEN',canActivateNormalFlight:false});
+ }});
+ const request=(auth=token)=>new Request(origin+RESTRICTION_ROUTE,{
+   method:'POST',headers:{authorization:auth,origin,'content-type':'application/json'},
+   body:JSON.stringify({configurationId:3,originAirportKey:'OURAIRPORTS:2220',
+     destinationAirportKey:'OURAIRPORTS:2218',
+     departureUtc:'2026-11-06T15:00:00Z',arrivalUtc:'2026-11-06T17:00:00Z'})
+ });
+ assert.equal((await app(request('Bearer invalid'))).status,401);
+ assert.equal(requests.length,0);
+ const result=await app(request());
+ assert.equal(result.status,200);
+ assert.equal((await result.json()).canActivateNormalFlight,false);
+ assert.equal(requests.length,1);
+ assert.equal(requests[0].url,NOISE_CURFEW_EDGE_URL);
+ assert.equal(requests[0].opts.headers['x-airlinerra-route'],RESTRICTION_ROUTE);
 });
 test('network and unexpected upstream errors fail closed and never expose credentials',async()=>{
  const fail=createProductionGameApi({fetchImpl:async()=>{throw Error('secret connection failed')}});
