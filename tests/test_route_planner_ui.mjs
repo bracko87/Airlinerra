@@ -163,7 +163,7 @@ test('route planning has two steps, stacked airport lookup, real flag indicators
  assert.match(picker,/const choose=key=>/);
  assert.match(ui,/reader\.airportProfile\(homeKey\)/);
  assert.match(ui,/pickers\[side\]\.choose\(home\.key\)/);
- assert.match(ui,/aircraftId:flightAircraft,/);
+ assert.match(ui,/aircraftId:simulationAircraft\?flightAircraft:null,/);
  assert.match(ui,/testAircraft:Boolean\(simulationAircraft\)/);
  assert.match(ui,/status:'draft',operationallyVerified:false/);
  assert.match(ui,/Aircraft, crew, airport slots and traffic rights require verification/);
@@ -235,12 +235,12 @@ test('Panonian A319 fixture appears only as nonoperational simulation choice and
   read('../website/airline-workspace.mjs'),
   read('../website/player-app.css')
  ]);
- assert.match(route,/data\.airline\.testAircraft\.filter/);
- assert.match(route,/simulation only/);
- assert.match(route,/aircraftId:flightAircraft,/);
+ assert.match(route,/getData\(\)\.airline\.testAircraft\.filter/);
+ assert.match(route,/TEST ONLY/);
+ assert.match(route,/aircraftId:simulationAircraft\?flightAircraft:null,/);
  assert.match(route,/testAircraft:Boolean\(simulationAircraft\)/);
  assert.match(route,/status:'draft',operationallyVerified:false/);
- assert.match(route,/cannot operate|not approved for operation/);
+ assert.match(route,/cannot use the route|cannot be used on this route/);
  assert.match(office,/id="fleet-test-count"/);
  assert.match(office,/id="fleet-test-aircraft"/);
  assert.match(office,/testOnly===true&&a\.operationallyAllowed===false/);
