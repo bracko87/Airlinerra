@@ -97,6 +97,10 @@ left join lateral (
   (coalesce(t.maximum_fuel_capacity_kg,t.manufacturer_usable_fuel_mass_kg,t.gameplay_placeholder_fuel_capacity_kg) is not null)::int) desc,
  t.id asc limit 1
 ) t on true
+where not exists (
+ select 1 from airlinerra.aircraft_catalog_configuration_exclusions exclusion
+ where exclusion.configuration_id=c.id
+)
 order by m.name,f.family_name,v.model_name,c.configuration_code,c.id
 limit 1001`;
 export const AIRCRAFT_LIBRARY_PATH='/api/v1/player/aircraft-library';
