@@ -352,7 +352,11 @@
             <p id="aircraft-library-status" class="muted" role="status" aria-live="polite">Open this page to load the secure aircraft database.</p>
             <button type="button" class="secondary" id="aircraft-library-retry" hidden>Retry library connection</button>
             <div id="aircraft-library-results" class="library-results" role="region" tabindex="0" aria-label="Sortable aircraft directory; scroll horizontally to see all columns"></div>
-            <button type="button" class="secondary library-more" id="aircraft-library-more" hidden>Load more aircraft</button>
+            <div class="library-pagination" aria-label="Aircraft list pages">
+              <button type="button" class="secondary library-page-button" id="aircraft-library-previous" hidden disabled>← Previous</button>
+              <span id="aircraft-library-page" class="library-page-info" role="status" aria-live="polite">Page 1 of 1 · 20 aircraft per page</span>
+              <button type="button" class="secondary library-page-button" id="aircraft-library-more" hidden disabled>Next →</button>
+            </div>
           </article>
           <p class="muted">Library information is read-only. Aircraft purchasing, assignment, maintenance clearance and commercial flights are not enabled here. Published specifications and fictional game estimates are kept distinct.</p>
         </section>
