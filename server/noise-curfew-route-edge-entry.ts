@@ -83,7 +83,10 @@ Deno.serve(async(request:Request)=>{
     worldId:1,
     aircraft:{configurationId:body.configurationId,model:dep.aircraftModel??null,
       sourceSupportedIcaoChapter:dep.sourceMatchedIcaoChapter??null,
-      chapterConfigurationNotMatched:dep.aircraftChapterNotConfigurationMatched===true},
+      chapterConfigurationNotMatched:dep.aircraftChapterNotConfigurationMatched===true,
+      gameNoiseFallback:dep.sourceMatchedIcaoChapter==null?
+       'NO_ADDITIONAL_GAME_CHAPTER_BAN_UNVERIFIED_CERTIFICATE':
+       'ENFORCE_ONLY_CERTIFIED_CHAPTER_RULES'},
     origin:{code:dep.airportCode??null,localTime:dep.localAirportTime??null,
       selectedRunwaySourceId:dep.selectedRunwaySourceId??null,
       selectedRunwayDesignator:dep.selectedRunwayDesignator??null,
@@ -112,7 +115,7 @@ Deno.serve(async(request:Request)=>{
     preliminarilyAllowed:gate.gamePreliminaryAllow===true,
     legalRealWorldClearance:false,
     universalGate:gate,
-    note:'Game preflight restriction check only. No live flight or slot activation. Unknown runway operating status, noise certificates, traffic rights, NOTAM and real-world dispatch conditions require separate checks.'
+    note:'Game preflight restriction check only. Unverified aircraft noise certificates trigger no additional game Chapter ban; they are not certified as noise compliant. Confirmed airport time and runway bans still apply. No live flight or slot activation.'
   });
  }catch(error){
   const sqlError=error as {code?:unknown}|null;
