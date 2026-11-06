@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
-import {libraryReturnVisibleCount,aircraftImagePath,aircraftDisplayModel,aircraftDisplayName} from '../website/aircraft-library.mjs';
+import {libraryPageForSelection,AIRCRAFT_LIBRARY_PAGE_SIZE,aircraftImagePath,aircraftDisplayModel,aircraftDisplayName} from '../website/aircraft-library.mjs';
 
 const read=path=>readFile(new URL(path,import.meta.url),'utf8');
 
@@ -34,13 +34,31 @@ test('table and aircraft profile use deduplicated names while preserving origina
  assert.match(js,/\[a\.manufacturer,a\.model,a\.useType\]\.join\('\|'\)/);
 });
 
-test('the selected aircraft remains reachable after sorting or paging',()=>{
+test('20 airplanes per page and last selected aircraft returns to its own page',()=>{
  const records=Array.from({length:235},(_,i)=>({id:i+1}));
- assert.equal(libraryReturnVisibleCount(records,1,40),40);
- assert.equal(libraryReturnVisibleCount(records,81,40),120);
- assert.equal(libraryReturnVisibleCount(records,210,80),240);
- assert.equal(libraryReturnVisibleCount(records,999,40),40);
- assert.equal(libraryReturnVisibleCount([],5,40),40);
+ assert.equal(AIRCRAFT_LIBRARY_PAGE_SIZE,20);
+ assert.equal(libraryPageForSelection(records,1,0),0);
+ assert.equal(libraryPageForSelection(records,20,0),0);
+ assert.equal(libraryPageForSelection(records,21,0),1);
+ assert.equal(libraryPageForSelection(records,81,0),4);
+ assert.equal(libraryPageForSelection(records,210,0),10);
+ assert.equal(libraryPageForSelection(records,235,0),11);
+ assert.equal(libraryPageForSelection(records,999,4),4);
+ assert.equal(libraryPageForSelection([],5,0),0);
+});
+test('pagination controls render 20 rows, show page status and reset after filters or sorting',async()=>{
+ const [js,html]=await Promise.all([
+  read('../website/aircraft-library.mjs'),read('../website/private-player-app.html')
+ ]);
+ assert.match(js,/data\.slice\(currentPage\*AIRCRAFT_LIBRARY_PAGE_SIZE,\(currentPage\+1\)\*AIRCRAFT_LIBRARY_PAGE_SIZE\)/);
+ assert.match(js,/currentPage=0;if\(aircraft\)draw\(\)/);
+ assert.match(js,/previous\.addEventListener\('click',\(\)=>changePage\(-1\)\)/);
+ assert.match(js,/more\.addEventListener\('click',\(\)=>changePage\(1\)\)/);
+ assert.match(js,/const selectedPage=libraryPageForSelection\(ordered,lastSelectedAircraftId,currentPage\)/);
+ assert.match(html,/id="aircraft-library-previous"/);
+ assert.match(html,/id="aircraft-library-more"/);
+ assert.match(html,/id="aircraft-library-page"/);
+ assert.match(html,/20 aircraft per page/);
 });
 
 test('profile immediately requests the real image without drawing a temporary aircraft icon',async()=>{
