@@ -9,7 +9,7 @@ const read=path=>readFile(new URL(path,import.meta.url),'utf8');
 test('all 13 corrected aircraft images are used by website fallback without affecting nearby models',()=>{
  const replacements=[
   ['Airbus Canada','A220-100','passenger','Airbus Canada A220-100 passanger fix.png'],
-  ['Airbus','A340-200','passenger','Airbus A340-200 passenger fix.png'],
+  ['Airbus','A340-200','passenger','Airbus A340-200 Passenger fix 2.png'],
   ['Boeing','737-200C','combi','Boeing 737-200C fix.png'],
   ['Boeing','737-900','passenger','Boeing 737-900 fix.png'],
   ['Boeing','747-200F','cargo','Boeing 747-200F fix.png'],
@@ -48,6 +48,21 @@ test('five November 6 replacement images are exact for British Aerospace, COMAC,
  assert.equal(aircraftImagePath({manufacturer:'British Aerospace',model:'BAe 146-300QT',useType:'cargo'}),null);
  assert.equal(aircraftImagePath({manufacturer:'COMAC',model:'C919-100',useType:'cargo'}),null);
  assert.equal(aircraftImagePath({manufacturer:'Ilyushin',model:'Il-96-300',useType:'passenger'}),null);
+});
+
+test('the three A340 passenger models use the exact new fix 2 images without cross-model substitution',()=>{
+ const replacements=[
+  ['A340-200','Airbus A340-200 Passenger fix 2.png'],
+  ['A340-300','Airbus A340-300 Passenger fix 2.png'],
+  ['A340-600','Airbus A340-600 Passenger fix 2.png']
+ ];
+ for(const [model,filename] of replacements){
+  const a={manufacturer:'Airbus',model,useType:'passenger'};
+  assert.equal(aircraftImagePath(a)?.split('/').pop(),encodeURIComponent(filename));
+  assert.equal(aircraftImagePath({...a,imagePath:'Airplanes/'+filename})?.split('/').pop(),encodeURIComponent(filename));
+ }
+ assert.equal(aircraftImagePath({manufacturer:'Airbus',model:'A340-500',useType:'passenger'}),null,
+  'A340-500 must never receive another A340 model image');
 });
 
 test('combi mixed service seats are smaller than passenger-only layout and cargo is conditional',()=>{
