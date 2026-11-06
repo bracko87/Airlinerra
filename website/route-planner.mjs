@@ -663,7 +663,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
  main?.addEventListener('change',async event=>{
   const el=event.target;
   if(el?.matches?.('[data-route-day]')||el?.matches?.('[data-route-time]')){
-   updateWeek();show();return;
+   updateWeek();clearPreflight();show();return;
   }
   if(['route-preflight-departure-utc','route-preflight-arrival-utc'].includes(el?.id)){
    clearPreflight();void automaticPreflight();return;
@@ -750,6 +750,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   const assessment=aircraft?runwayAssessment(aircraft):null;
   const departureUtc=utcFromInput($('route-preflight-departure-utc')?.value);
   const arrivalUtc=utcFromInput($('route-preflight-arrival-utc')?.value);
+  const weeklySchedule=availableSchedule().map(row=>({day:row.day,time:row.time}));
   if(assessment?.status==='BLOCKED'){
    message('route-preflight-status','BLOCKED — '+assessment.blockingReasons.join(' '));
    return {gameHardBlocked:true,reason:'runway'};
@@ -759,7 +760,11 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    return null;
   }
   if(!departureUtc||!arrivalUtc){
-   message('route-preflight-status','Enter a departure and arrival UTC example. The game automatically checks airport curfews and documented noise rules.');
+   message('route-preflight-status','Enter a departure and arrival UTC example. The game checks every selected weekday over four weeks automatically.');
+   return null;
+  }
+  if(!weeklySchedule.length||weeklySchedule.some(x=>!validLocalDeparture(x.time))){
+   message('route-preflight-status','Select weekdays and valid local departure times to check each flight in the weekly timetable.');
    return null;
   }
   if(Date.parse(arrivalUtc)<=Date.parse(departureUtc)||
@@ -771,16 +776,17 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    message('route-preflight-status','Airport restriction service unavailable — cannot verify this route.');
    return null;
   }
-  const signature=[from.key,to.key,configurationId,departureUtc,arrivalUtc].join('|');
+  const signature=[from.key,to.key,configurationId,departureUtc,arrivalUtc,
+   JSON.stringify(weeklySchedule)].join('|');
   if(!force&&preflightCache?.signature===signature)return preflightCache.result;
   if(!force&&preflightPromise?.signature===signature)return preflightPromise.promise;
   const ticket=++preflightRequest;
-  message('route-preflight-status','Checking curfews, runway suitability and documented noise restrictions...');
+  message('route-preflight-status','Checking each selected weekday across four weeks for runway, curfew and confirmed noise restrictions...');
   const promise=(async()=>{
    try{
     const result=await reader.noiseCurfewCheck({
      originAirportKey:from.key,destinationAirportKey:to.key,configurationId,
-     departureUtc,arrivalUtc
+     departureUtc,arrivalUtc,weeklySchedule
     });
     if(ticket!==preflightRequest)return null;
     if(!result||typeof result.gameHardBlocked!=='boolean')throw Error('Invalid restriction result');
@@ -797,10 +803,15 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
      if(leg.curfewBlocked)failures.push(place+': departure or arrival prohibited by airport hours');
      if(leg.verifiedNoiseBlocked)failures.push(place+': confirmed aircraft noise restriction');
     }
-    const status=result.gameHardBlocked?'BLOCKED — This aircraft cannot be used at these times. '+
-      (failures.join(' ')||String(result.gameScheduleOutcome||'Restriction applies')):
-     result.needsReview?'No confirmed game restriction detected for this example; some conditions remain unverified. Draft only.':
-      'Airport and aircraft game restrictions passed for this example. Draft only — not an activated flight.';
+    const weeklyBlocks=Array.isArray(result.blockedWeeklyOccurrences)?result.blockedWeeklyOccurrences:[];
+    const blockedDetail=weeklyBlocks.slice(0,3).map(x=>
+     String(x.departureUtc||'Unknown time')+' UTC ('+
+      [x.originOutcome,x.destinationOutcome].filter(Boolean).join(' / ').replace(/_/g,' ')+')').join('; ');
+    const checked=result.weeklyOccurrencesChecked||weeklySchedule.length;
+    const status=result.gameHardBlocked?'BLOCKED — One or more weekly flights cannot operate. '+
+      (blockedDetail||failures.join(' ')||String(result.gameScheduleOutcome||'Restriction applies')):
+     result.needsReview?checked+' scheduled departures screened over four weeks. No confirmed game ban, but other conditions remain unverified. Draft only.':
+      checked+' scheduled departures screened over four weeks: no confirmed game runway, curfew or aircraft noise ban. Draft only — no flight activated.';
     message('route-preflight-status',status);
     const save=$('route-plan-save');
     if(save)save.disabled=result.gameHardBlocked||runwayAssessment(aircraft).status==='BLOCKED';
