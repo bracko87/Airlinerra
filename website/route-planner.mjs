@@ -1037,7 +1037,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   // Other flight durations, time zones and slots are still not verified.
   // No live financial, schedule or aircraft mutations: local browser-session draft only.
   const draft={from,to,flightNumber,flights:schedule.length,schedule,
-   aircraftId:ownedChoice||simulationAircraft?flightAircraft:null,
+   aircraftId:(ownedChoice||simulationAircraft)?flightAircraft:null,
    aircraftConfigurationId:selectedCatalog.id,
    aircraftLabel:[selectedCatalog.manufacturer,selectedCatalog.model,selectedCatalog.configuration].filter(Boolean).join(' '),
    catalogPreviewOnly:!ownedChoice&&!simulationAircraft,testAircraft:Boolean(simulationAircraft),
@@ -1057,15 +1057,15 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    message('route-plan-status','Maximum 25 route drafts. Remove another draft in My routes.');
    return;
   }
+  const previousServerDraft=routes.find(x=>x?.flightNumber===editingFlightNumber);
+  if(previousServerDraft?.serverScheduleId&&!ownedChoice){
+   message('route-plan-status','This server schedule must stay linked to your registered fleet aircraft. Choose an owned/leased aircraft.');
+   return;
+  }
   if(ownedChoice){
    const scheduler=data?.scheduler;
    if(typeof scheduler?.save!=='function'){
     message('route-plan-status','Secure schedule service not connected. Cannot save an operational-fleet schedule.');
-    return;
-   }
-   const previous=routes.find(x=>x?.flightNumber===editingFlightNumber);
-   if(previous?.serverScheduleId&&!ownedChoice){
-    message('route-plan-status','A server-owned schedule must remain linked to an airline aircraft.');
     return;
    }
    message('route-plan-status','Saving checked owned-aircraft schedule to your airline server...');
@@ -1076,7 +1076,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
      referenceDepartureUtc:draft.referenceDepartureUtc,
      referenceArrivalUtc:draft.referenceArrivalUtc,
      weeklySchedule:schedule,
-     ...(previous?.serverScheduleId?{existingId:previous.serverScheduleId}:{})
+     ...(previousServerDraft?.serverScheduleId?{existingId:previousServerDraft.serverScheduleId}:{})
     });
     if(result?.status!=='draft'||typeof result.scheduleId!=='string'||
        result.canActivateNormalFlight!==false)
@@ -1094,7 +1094,9 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    }
   }
   if(!draftWrite('routes',[...filtered,draft])||!draftWrite('route',draft)){
-   message('route-plan-status','Browser storage unavailable. Route draft was not saved.');
+   message('route-plan-status',draft.serverScheduleId?
+    'Schedule saved to your airline server, but this browser could not cache the draft. See the server schedule list.':
+    'Browser storage unavailable. Local route draft was not saved.');
    return;
   }
   doc.dispatchEvent(new CustomEvent('airlinerra:route-draft-saved'));
