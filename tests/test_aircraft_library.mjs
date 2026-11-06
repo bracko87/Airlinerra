@@ -173,6 +173,13 @@ test('passenger popularity is displayed after noise with six accessible blue and
  assert.equal(cargo.aircraft[0].passengerDemandMultiplier,null);
 });
 
+test('playable aircraft library excludes catalog-retired duplicates without deleting certified records',()=>{
+ assert.match(AIRCRAFT_LIBRARY_SQL,/airlinerra\.aircraft_catalog_configuration_exclusions/);
+ assert.match(AIRCRAFT_LIBRARY_SQL,/exclusion\.configuration_id=c\.id/);
+ assert.match(AIRCRAFT_LIBRARY_SQL,/where not exists\s*\(/);
+ assert.doesNotMatch(AIRCRAFT_LIBRARY_SQL,/\b(?:delete|truncate)\s+from\s+airlinerra\.aircraft_configurations\b/i);
+});
+
 test('full-page aircraft profile is a supported player view',async()=>{
  const model=await import('../website/player-app-model.mjs');
  assert.equal(model.safePlayerView('#aircraft-profile'),'aircraft-profile');
