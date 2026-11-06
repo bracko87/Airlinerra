@@ -8,6 +8,13 @@ select c.id::int as id,m.name as manufacturer,f.family_name as family,
  v.model_name as model,c.configuration_code as configuration,c.use_type as use_type,
  c.typical_passenger_seats as seats,c.maximum_passenger_seats as max_seats,
  c.maximum_cargo_payload_kg as cargo_kg,
+ payload.simultaneous_passenger_seats as game_service_seats,
+ payload.simultaneous_freight_kg as game_service_freight_kg,
+ payload.belly_hold_reference_kg as belly_hold_reference_kg,
+ payload.belly_hold_reference_type as belly_hold_reference_type,
+ payload.seat_basis as seat_basis,
+ payload.capacity_note as capacity_note,
+ payload.evidence_url as capacity_source_url,
  popularity.popularity_score as passenger_popularity_score,
  popularity.passenger_demand_multiplier as passenger_demand_multiplier,
  media.storage_object_path as image_storage_object_path,
@@ -57,6 +64,7 @@ join airlinerra.aircraft_manufacturers m on m.id=f.manufacturer_id
 join airlinerra.aircraft_game_data_coverage_v1 coverage on coverage.configuration_id=c.id
 join airlinerra.aircraft_configuration_game_readiness_v1 ready on ready.configuration_id=c.id
 left join airlinerra.aircraft_configuration_media media on media.configuration_id=c.id and media.is_approved
+left join airlinerra.aircraft_service_payload_game_v1 payload on payload.configuration_id=c.id
 left join airlinerra_game.aircraft_passenger_popularity_v1 popularity on popularity.configuration_id=c.id
 left join lateral (
  select
@@ -132,6 +140,13 @@ export function serializeAircraftLibrary(rows){
     .map(item=>({airlineName:item.airlineName,quantity:Number(item.quantity)})):[],
    seats:num(r.seats,0,1000),maxSeats:num(r.max_seats,0,1000),
    cargoKg:num(r.cargo_kg,0),
+   serviceSeats:num(r.game_service_seats,0,1000),
+   serviceFreightKg:num(r.game_service_freight_kg,0),
+   bellyHoldReferenceKg:num(r.belly_hold_reference_kg,0),
+   bellyHoldReferenceType:safeText(r.belly_hold_reference_type,70)||'not_verified',
+   serviceSeatBasis:safeText(r.seat_basis,60),
+   capacityNote:safeText(r.capacity_note,1200),
+   capacitySourceUrl:safeText(r.capacity_source_url,512),
    passengerPopularityScore:r.use_type==='cargo'?null:num(r.passenger_popularity_score,1,6),
    passengerDemandMultiplier:r.use_type==='cargo'?null:num(r.passenger_demand_multiplier,0.6,1.3),
    productionStart:num(r.production_start,1900,2100),
