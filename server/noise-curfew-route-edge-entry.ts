@@ -43,8 +43,10 @@ Deno.serve(async(request:Request)=>{
   Object.keys(body).some(field=>!ALLOWED_FIELDS.has(field))||
   !['arrivalUtc','configurationId','departureUtc','destinationAirportKey','originAirportKey']
     .every(field=>Object.prototype.hasOwnProperty.call(body,field))||
-  (body.originRunwaySourceId!==undefined&&!RUNWAY_ID.test(body.originRunwaySourceId))||
-  (body.destinationRunwaySourceId!==undefined&&!RUNWAY_ID.test(body.destinationRunwaySourceId))||
+  (body.originRunwaySourceId!==undefined&&
+    (typeof body.originRunwaySourceId!=='string'||!RUNWAY_ID.test(body.originRunwaySourceId)))||
+  (body.destinationRunwaySourceId!==undefined&&
+    (typeof body.destinationRunwaySourceId!=='string'||!RUNWAY_ID.test(body.destinationRunwaySourceId)))||
   !Number.isInteger(body.configurationId)||body.configurationId<1||body.configurationId>1000000||
   typeof body.originAirportKey!=='string'||!AIRPORT.test(body.originAirportKey)||
   typeof body.destinationAirportKey!=='string'||!AIRPORT.test(body.destinationAirportKey)||
@@ -71,6 +73,8 @@ Deno.serve(async(request:Request)=>{
    return respond(404,{error:'Airport or aircraft restriction screen not found'});
   const dep=gate.origin||{},arr=gate.destination||{};
   const runwayPass=(leg:any)=>leg.runwayLengthEvidence==='FULL_WEIGHT_GAME_REFERENCE'&&
+    leg.runwayLengthM!==null&&leg.runwayLengthM!==undefined&&
+    leg.requiredGameRunwayLengthM!==null&&leg.requiredGameRunwayLengthM!==undefined&&
     Number.isFinite(Number(leg.runwayLengthM))&&
     Number.isFinite(Number(leg.requiredGameRunwayLengthM))&&
     Number(leg.runwayLengthM)>=Number(leg.requiredGameRunwayLengthM);
