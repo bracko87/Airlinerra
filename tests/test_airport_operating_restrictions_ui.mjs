@@ -7,8 +7,8 @@ const read=path=>readFile(new URL(path,import.meta.url),'utf8');
 
 test('all-airport restriction read only joins approved catalog and keeps operational approval false',()=>{
  assert.match(AIRPORT_PROFILE_SQL,/section5_airport_game_restriction_catalog_v1 restriction/);
- assert.match(AIRPORT_PROFILE_SQL,/restriction\.precise_time_rule_details/);
- assert.match(AIRPORT_PROFILE_SQL,/restriction\.precise_runway_rule_details/);
+ assert.match(AIRPORT_PROFILE_SQL,/restriction\.time_rule_details AS precise_time_rule_details/);
+ assert.match(AIRPORT_PROFILE_SQL,/restriction\.runway_rule_details AS precise_runway_rule_details/);
  const profile=serializeAirportProfile({
   airport_key:'OURAIRPORTS:2220',airport_name:'Leipzig/Halle',airport_code:'EDDP',
   game_restriction_status:'MANDATORY_GAME_RULES_PRESENT',
