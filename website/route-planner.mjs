@@ -330,11 +330,15 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    .filter(r=>typeof r.lengthM==='number'&&Number.isFinite(r.lengthM))
    .map(r=>r.lengthM):[];
   const longest=runway.length?Math.max(...runway).toLocaleString('en-US')+' m runway':'Runway unverified';
-  const raw=String(profile.facilities?.curfew||'').replace(/\s*\([^)]*\)/g,'').trim();
-  const restrictions=Array.isArray(profile.operations?.timeRestrictions)&&
-   profile.operations.timeRestrictions.length?'Curfew restrictions apply':
-   raw|| (profile.operations?.hoursBasis==='GAME_DEFAULT_24_7_UNLESS_DOCUMENTED_EXCEPTION'?
-    'No game curfew reported':'Curfew unverified');
+  const research=profile.operations?.restrictionResearch;
+  const hard=Number(research?.enforcedTimeRules||0)+Number(research?.enforcedRunwayRules||0);
+  const restrictions=hard>0?'Mandatory airport game restrictions recorded':
+   research?.status==='RESEARCH_CONDITIONS_REQUIRE_SPECIFIC_RULE_REVIEW'?
+     'Operating conditions need rule verification':
+   research?.status==='SOURCE_SCREENED_GAME_DEFAULT_NO_EXTRA_BAN'?
+     'No additional game restriction in screened sources':
+   research?.status==='PROVISIONAL_GAME_DEFAULT_NO_EXTRA_BAN'?
+     'Provisional game 24/7 default':'Airport hours not verified';
   const chapter=profile.operations?.icaoNoiseRules?.nationalCivilJetMinimumChapter;
   const noise=Number.isInteger(chapter)?'Noise Chapter '+chapter+'+':'Noise rules not verified';
   return longest+' · '+restrictions+' · '+noise;
