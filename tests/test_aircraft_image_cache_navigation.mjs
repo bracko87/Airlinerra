@@ -6,6 +6,30 @@ import {libraryPageForSelection,AIRCRAFT_LIBRARY_PAGE_SIZE,aircraftImagePath,air
 
 const read=path=>readFile(new URL(path,import.meta.url),'utf8');
 
+test('all 13 corrected aircraft images are used by website fallback without affecting nearby models',()=>{
+ const replacements=[
+  ['Airbus Canada','A220-100','passenger','Airbus Canada A220-100 passanger fix.png'],
+  ['Airbus','A340-200','passenger','Airbus A340-200 passenger fix.png'],
+  ['Boeing','737-200C','combi','Boeing 737-200C fix.png'],
+  ['Boeing','737-900','passenger','Boeing 737-900 fix.png'],
+  ['Boeing','747-200F','cargo','Boeing 747-200F fix.png'],
+  ['Boeing','767-400ER','passenger','Boeing 767-400ER fix.png'],
+  ['Boeing','777-200LR','passenger','Boeing 777-200LR Fix.png'],
+  ['Boeing','777-300','passenger','Boeing 777-300 fix.png'],
+  ['Boeing','777F','cargo','Boeing 777F fix.png'],
+  ['Boeing','787-8','passenger','Boeing 787-8 fix.png'],
+  ['Boeing','787-10','passenger','Boeing 787-10 fix.png'],
+  ['Boeing','Boeing 727-200 Freighter','cargo','Boeing 727-200 Freighter fix.png'],
+  ['Boeing','Boeing 737-500','passenger','Boeing 737-500 fix.png']
+ ];
+ for(const [manufacturer,model,useType,filename] of replacements){
+  const url=aircraftImagePath({manufacturer,model,useType});
+  assert.equal(url?.split('/').pop(),encodeURIComponent(filename),manufacturer+' '+model);
+ }
+ const er=aircraftImagePath({manufacturer:'Boeing',model:'737-900ER',useType:'passenger'});
+ assert.equal(er?.split('/').pop(),'Boeing%20737-900ER%20passenge.png');
+});
+
 test('aircraft model column shows model only when manufacturer repeats at the beginning',()=>{
  const examples=[
   ['Boeing','Boeing 727-200 Freighter','727-200 Freighter'],
