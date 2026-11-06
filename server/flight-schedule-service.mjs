@@ -1,0 +1,162 @@
+/**
+ * Protected Airlinerra server-owned flight schedule DRAFT API.
+ * The owner/aircraft/curfew gate is executed atomically INSIDE PostgreSQL.
+ * There is intentionally no flight activation write. Never trust browser owner IDs.
+ */
+export const FLIGHT_SCHEDULE_API_ROUTE='/api/v1/player/flight-schedule-drafts';
+const ORIGIN='https://airlinerra.com';
+const TOKEN=/^Bearer ([A-Za-z0-9._~-]{16,8192})$/u;
+const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
+const AIRPORT=/^(?:OURAIRPORTS:[1-9][0-9]{0,18}|FICTIONAL:fictional:[A-Z]{2}:[A-Z0-9]{2,8})$/u;
+const UTC=/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/u;
+const HHMM=/^([01]\d|2[0-3]):[0-5]\d$/u;
+const BASE_FIELDS=new Set(['action','airlineId']);
+const SAVE_FIELDS=new Set([...BASE_FIELDS,'aircraftInventoryId','flightNumber',
+ 'originAirportKey','destinationAirportKey','referenceDepartureUtc','referenceArrivalUtc',
+ 'weeklySchedule','existingId']);
+const CHECK_FIELDS=new Set([...BASE_FIELDS,'scheduleId']);
+const RHEADERS={'cache-control':'no-store','content-type':'application/json; charset=utf-8',
+ 'x-content-type-options':'nosniff','referrer-policy':'no-referrer'};
+const respond=(status,payload)=>Response.json(payload,{status,headers:RHEADERS});
+const utc=value=>typeof value==='string'&&UTC.test(value)&&
+ Number.isFinite(Date.parse(value))&&new Date(value).toISOString()===value;
+const uuid=value=>typeof value==='string'&&UUID.test(value);
+const withinFields=(body,set)=>Object.keys(body).every(k=>set.has(k));
+export function validWeeklyFlightSchedule(value){
+ if(!Array.isArray(value)||value.length<1||value.length>7)return false;
+ const dates=new Set();
+ for(const row of value){
+  if(!row||typeof row!=='object'||Array.isArray(row)||
+     Object.keys(row).some(k=>!['day','time'].includes(k))||
+     !Number.isInteger(row.day)||row.day<0||row.day>6||
+     typeof row.time!=='string'||!HHMM.test(row.time)||dates.has(row.day))
+   return false;
+  dates.add(row.day);
+ }
+ return true;
+}
+export function validateFlightSchedulePayload(body){
+ if(!body||typeof body!=='object'||Array.isArray(body)||
+    !uuid(body.airlineId)||typeof body.action!=='string')return false;
+ if(body.action==='list')return withinFields(body,BASE_FIELDS);
+ if(body.action==='delete'||body.action==='activation-check')
+  return withinFields(body,CHECK_FIELDS)&&uuid(body.scheduleId);
+ if(body.action!=='save'||!withinFields(body,SAVE_FIELDS))return false;
+ if(!uuid(body.aircraftInventoryId)||
+   (body.existingId!==undefined&&!uuid(body.existingId))||
+   !/^[A-Z0-9]{2}[0-9]{1,4}$/.test(body.flightNumber||'')||
+   typeof body.originAirportKey!=='string'||!AIRPORT.test(body.originAirportKey)||
+   typeof body.destinationAirportKey!=='string'||!AIRPORT.test(body.destinationAirportKey)||
+   body.originAirportKey===body.destinationAirportKey||
+   !utc(body.referenceDepartureUtc)||!utc(body.referenceArrivalUtc)||
+   !validWeeklyFlightSchedule(body.weeklySchedule))return false;
+ const delta=Date.parse(body.referenceArrivalUtc)-Date.parse(body.referenceDepartureUtc);
+ return Number.isFinite(delta)&&delta>0&&delta<=72*3600*1000;
+}
+export const SCHEDULE_SQL=Object.freeze({
+ owner:'SELECT id FROM airlinerra_game.airlines WHERE id=$1::uuid AND owner_player_id=$2::uuid AND world_id=1',
+ fleet:`SELECT i.id::text AS id,i.configuration_id::int AS "configurationId",i.registration,
+     i.ownership_type AS "ownershipType",i.fleet_status AS "fleetStatus"
+   FROM airlinerra_game.airline_aircraft_inventory i
+   WHERE i.airline_id=$1::uuid AND i.fleet_status='in_service'
+   ORDER BY i.registration LIMIT 100`,
+ drafts:`SELECT s.id::text AS id,s.flight_number AS "flightNumber",
+   s.aircraft_inventory_id::text AS "aircraftInventoryId",
+   s.configuration_id::int AS "configurationId",
+   s.origin_airport_key AS "originAirportKey",
+   s.destination_airport_key AS "destinationAirportKey",
+   s.reference_departure_utc AS "referenceDepartureUtc",
+   s.reference_arrival_utc AS "referenceArrivalUtc",
+   s.weekly_schedule AS "weeklySchedule",s.status,
+   s.version,s.updated_at AS "updatedAt"
+   FROM airlinerra_game.airline_flight_schedule_drafts_v1 s
+   WHERE s.airline_id=$1::uuid ORDER BY s.updated_at DESC,s.id LIMIT 50`,
+ save:`SELECT airlinerra_game.section5_save_owned_aircraft_schedule_draft_v1(
+   $1::uuid,$2::uuid,$3::uuid,$4::text,$5::text,$6::text,
+   $7::timestamptz,$8::timestamptz,$9::jsonb,$10::uuid) AS result`,
+ check:`SELECT airlinerra_game.section5_schedule_activation_readiness_v1($1::uuid,$2::uuid) AS result`,
+ delete:`DELETE FROM airlinerra_game.airline_flight_schedule_drafts_v1 s
+   USING airlinerra_game.airlines a
+   WHERE s.id=$1::uuid AND a.id=s.airline_id AND a.id=$2::uuid
+    AND a.owner_player_id=$3::uuid AND s.status='draft'
+   RETURNING s.id::text AS id`
+});
+export function createFlightScheduleHandler({verifyUserToken,database}={}){
+ if(typeof verifyUserToken!=='function'||typeof database?.connect!=='function')
+  throw Error('Verified private flight schedule dependencies required');
+ return async function handleFlightSchedule(request){
+  if(!(request instanceof Request))return respond(400,{error:'Invalid request'});
+  if(request.method!=='POST')return respond(405,{error:'POST required'});
+  if(request.headers.get('origin')!==ORIGIN||
+    request.headers.get('x-airlinerra-route')!==FLIGHT_SCHEDULE_API_ROUTE)
+   return respond(403,{error:'Forbidden'});
+  if(request.headers.get('content-type')!=='application/json')
+   return respond(415,{error:'JSON required'});
+  const token=TOKEN.exec(request.headers.get('authorization')||'')?.[1];
+  if(!token)return respond(401,{error:'Verified session required'});
+  let body;
+  try{
+   const raw=await request.arrayBuffer();
+   if(raw.byteLength>2048)return respond(413,{error:'Request too large'});
+   body=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(raw));
+  }catch{return respond(400,{error:'Invalid JSON body'});}
+  if(!validateFlightSchedulePayload(body))return respond(400,{error:'Invalid schedule request'});
+  const auth=await verifyUserToken(token);
+  const userId=auth?.user?.id;
+  if(auth?.error||!uuid(userId))return respond(401,{error:'Verified session required'});
+  let client;
+  try{
+   client=await database.connect();
+   if(body.action==='list'){
+    const owner=await client.query(SCHEDULE_SQL.owner,[body.airlineId,userId]);
+    if(owner.rowCount!==1)return respond(403,{error:'Airline not owned by this account'});
+    const [fleet,drafts]=await Promise.all([
+      client.query(SCHEDULE_SQL.fleet,[body.airlineId]),
+      client.query(SCHEDULE_SQL.drafts,[body.airlineId])
+    ]);
+    return respond(200,{readOnly:false,activationAvailable:false,
+      fleet:fleet.rows,drafts:drafts.rows});
+   }
+   if(body.action==='save'){
+    const response=await client.query(SCHEDULE_SQL.save,[
+      userId,body.airlineId,body.aircraftInventoryId,body.flightNumber,
+      body.originAirportKey,body.destinationAirportKey,
+      body.referenceDepartureUtc,body.referenceArrivalUtc,
+      JSON.stringify(body.weeklySchedule),body.existingId??null
+    ]);
+    if(response.rowCount!==1||!response.rows[0]?.result)
+     return respond(503,{error:'Schedule draft was not confirmed'});
+    return respond(200,response.rows[0].result);
+   }
+   if(body.action==='activation-check'){
+    const response=await client.query(SCHEDULE_SQL.check,[userId,body.scheduleId]);
+    if(response.rowCount!==1||!response.rows[0]?.result)
+     return respond(503,{error:'Flight activation check failed'});
+    return respond(200,response.rows[0].result);
+   }
+   if(body.action==='delete'){
+    const owner=await client.query(SCHEDULE_SQL.delete,[
+     body.scheduleId,body.airlineId,userId
+    ]);
+    if(owner.rowCount!==1)return respond(404,{error:'Editable schedule draft not found'});
+    return respond(200,{deleted:true,scheduleId:owner.rows[0].id,
+      canActivateNormalFlight:false});
+   }
+   return respond(400,{error:'Unsupported action'});
+  }catch(error){
+   const code=typeof error?.code==='string'?error.code:'';
+   if(code==='42501')return respond(403,{error:'Airline or schedule not owned by verified player'});
+   if(code==='23505')return respond(409,{error:'Flight number already used by this airline'});
+   if(code==='22023')return respond(400,{error:'Invalid flight schedule or airline code'});
+   if(code==='P0001')return respond(409,{
+    error:'Aircraft, airline or airport restrictions prevent saving this flight schedule',
+    reason:['SCHEDULE_BLOCKED_BY_AIRPORT_OR_AIRCRAFT_RULE',
+      'AIRCRAFT_NOT_OWNED_LEASED_OR_IN_SERVICE',
+      'AIRLINE_WORLD_NOT_ACTIVE_FOR_SCHEDULING'].includes(error.message)
+      ?error.message:'SCHEDULE_REQUIRES_REVIEW'
+   });
+   // Do not print the database error, queries, secrets or submitted personal data.
+   return respond(503,{error:'Protected scheduling service unavailable'});
+  }finally{try{client?.release()}catch{/* ignore */}}
+ };
+}
