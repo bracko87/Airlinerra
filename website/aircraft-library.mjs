@@ -2,6 +2,27 @@
  * No fabricated aircraft list, no HTML interpolation of database values.
  */
 const format=n=>typeof n==='number'&&Number.isFinite(n)?new Intl.NumberFormat('en-US',{maximumFractionDigits:2}).format(n):'Not recorded';
+/**
+ * The table already displays manufacturer in its own column. Remove a matching
+ * manufacturer prefix from the visible model name only; keep original records
+ * untouched for searches, sorting, images, and aircraft identity.
+ */
+export function aircraftDisplayModel(manufacturer,model){
+ const raw=typeof model==='string'?model.trim():'';
+ const maker=typeof manufacturer==='string'?manufacturer.trim():'';
+ if(!maker||!raw)return raw;
+ let display=raw;
+ while(display.length>maker.length&&
+  display.slice(0,maker.length).toLocaleLowerCase('en')===maker.toLocaleLowerCase('en')&&
+  /^\s/.test(display.slice(maker.length))){
+  display=display.slice(maker.length).trimStart();
+ }
+ return display||raw;
+}
+export function aircraftDisplayName(manufacturer,model){
+ const maker=typeof manufacturer==='string'?manufacturer.trim():'';
+ return [maker,aircraftDisplayModel(maker,model)].filter(Boolean).join(' ');
+}
 const label=(name,value,unit='')=>{
  const row=document.createElement('div');
  row.className='library-spec';
@@ -199,7 +220,7 @@ export function createAircraftLibrary({doc,getReader}={}){
   const sheet=element('div','library-profile-content');
   const header=element('div','library-profile-header');
   const heading=element('div','');
-  const title=element('h2','',a.manufacturer+' '+a.model);
+  const title=element('h2','',aircraftDisplayName(a.manufacturer,a.model));
   title.id='aircraft-library-profile-title';
   heading.append(title);
   header.append(heading);
@@ -211,7 +232,7 @@ export function createAircraftLibrary({doc,getReader}={}){
    const picture=warmPictures.get(path)||element('img','library-profile-aircraft-photo');
    warmPictures.delete(path);
    picture.className='library-profile-aircraft-photo';
-   picture.alt=a.manufacturer+' '+a.model+' '+a.useType+' aircraft, unbranded side profile';
+   picture.alt=aircraftDisplayName(a.manufacturer,a.model)+' '+a.useType+' aircraft, unbranded side profile';
    picture.loading='eager';
    picture.decoding='async';
    picture.fetchPriority='high';
@@ -344,8 +365,8 @@ export function createAircraftLibrary({doc,getReader}={}){
    for(let i=0;i<values.length;i++){
     const td=element('td',i>=3&&i<=7?'library-numeric':'');
     if(i===1){
-     const open=element('button','library-model-link',a.model);
-     open.type='button';open.setAttribute('aria-label','Open profile for '+a.manufacturer+' '+a.model);
+     const open=element('button','library-model-link',aircraftDisplayModel(a.manufacturer,a.model));
+     open.type='button';open.setAttribute('aria-label','Open profile for '+aircraftDisplayName(a.manufacturer,a.model));
      td.append(open,element('span','library-table-family',a.family+' · '+a.configuration.replaceAll('-',' ')));
     }else if(i===8){
      td.append(element('span','library-production-status',values[i]));
