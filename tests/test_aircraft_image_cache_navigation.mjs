@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
-import {libraryPageForSelection,AIRCRAFT_LIBRARY_PAGE_SIZE,aircraftImagePath,aircraftDisplayModel,aircraftDisplayName} from '../website/aircraft-library.mjs';
+import {libraryPageForSelection,AIRCRAFT_LIBRARY_PAGE_SIZE,aircraftImagePath,aircraftDisplayModel,aircraftDisplayName,aircraftCatalogModel,aircraftCatalogName,compareAircraftCatalog} from '../website/aircraft-library.mjs';
 
 const read=path=>readFile(new URL(path,import.meta.url),'utf8');
 
@@ -52,10 +52,55 @@ test('aircraft model column shows model only when manufacturer repeats at the be
 
 test('table and aircraft profile use deduplicated names while preserving original model identifiers',async()=>{
  const js=await read('../website/aircraft-library.mjs');
- assert.match(js,/library-model-link',aircraftDisplayModel\(a\.manufacturer,a\.model\)/);
- assert.match(js,/const title=element\('h2','',aircraftDisplayName\(a\.manufacturer,a\.model\)\)/);
- assert.match(js,/Open profile for '\+aircraftDisplayName\(a\.manufacturer,a\.model\)/);
+ assert.match(js,/library-model-link',aircraftCatalogModel\(a\)/);
+ assert.match(js,/const title=element\('h2','',aircraftCatalogName\(a\)\)/);
+ assert.match(js,/Open profile for '\+aircraftCatalogName\(a\)/);
  assert.match(js,/\[a\.manufacturer,a\.model,a\.useType\]\.join\('\|'\)/);
+});
+
+test('every repeated model and role receives its own grounded display name',()=>{
+ const pairs=[
+  ['Boeing','737-800','cargo','AIR-INUIT-CARGO','MYINDO-737-800F','737-800F'],
+  ['Boeing','Boeing 737-400','cargo','AEROSUCRE-CARGO-UNSPECIFIED','MYINDO-737-400F','737-400F'],
+  ['British Aerospace','BAe 146-200','passenger','PASSENGER-BASE','DAP-ANTARCTIC-70','DAP Antarctic'],
+  ['De Havilland Canada','Dash 8-300','cargo','AIR-INUIT-CARGO','AIR-INUIT-LARGE-DOOR-CARGO','Large Freight Door'],
+  ['De Havilland Canada','Dash 8-300','combi','COMBI-BASE','AIR-INUIT-PASSENGER','Air Inuit'],
+  ['De Havilland Canada','DHC-6-300','passenger','PASSENGER-BASE','AIR-KIRIBATI-300HG','DHC-6-300HG'],
+  ['Saab','Saab 340B','cargo','AMERIFLIGHT-CARGO','RYAN-AIR-CARGO','Ryan Air']
+ ];
+ const names=new Set();
+ for(const [manufacturer,model,useType,first,second,expected] of pairs){
+  const a={manufacturer,model,useType,configuration:first},b={manufacturer,model,useType,configuration:second};
+  const firstName=aircraftCatalogName(a),secondName=aircraftCatalogName(b);
+  assert.notEqual(firstName,secondName,model+' '+useType);
+  assert.ok(secondName.includes(expected),secondName);
+  names.add(firstName+'|'+useType);
+  names.add(secondName+'|'+useType);
+ }
+ assert.equal(names.size,14,'14 known repeated entries must have unique visible names');
+ assert.equal(aircraftCatalogModel({manufacturer:'Boeing',model:'Boeing 737-500',useType:'passenger',configuration:'PASSENGER-BASE'}),'737-500');
+});
+
+test('default manufacturer sorting keeps aircraft families and numerical model order together',()=>{
+ const sample=[
+  ['777-300ER','777',0],['Boeing 727-200 Freighter','727',1],
+  ['787-10','787',2],['737-800','737',3],
+  ['Boeing 737-500','737',4],['Boeing 737-300SF','737',5],
+  ['737-300','737',6],['Boeing 737-400','737',7],
+  ['737-800BCF','737',8],['777-200LR','777',9],['787-8','787',10]
+ ].map(([model,family,id])=>({manufacturer:'Boeing',model,family,id,useType:'cargo',configuration:'CARGO-BASE'}));
+ const names=[...sample].sort((a,b)=>compareAircraftCatalog(a,b,'manufacturer','asc'))
+  .map(a=>aircraftDisplayModel(a.manufacturer,a.model));
+ assert.deepEqual(names,[
+  '727-200 Freighter','737-300','737-300SF','737-400','737-500','737-800',
+  '737-800BCF','777-200LR','777-300ER','787-8','787-10'
+ ]);
+ const byModel=[...sample].sort((a,b)=>compareAircraftCatalog(a,b,'model','asc'));
+ assert.deepEqual(byModel.map(a=>aircraftDisplayModel(a.manufacturer,a.model)),names);
+ // Returning from a profile still selects the correct page after the new ordering.
+ assert.equal(libraryPageForSelection(byModel,4,0),0);
+ assert.equal(compareAircraftCatalog({manufacturer:'Airbus',family:'A320',model:'A320',id:1},
+  {manufacturer:'Boeing',family:'737',model:'737-500',id:2}),-1);
 });
 
 test('20 airplanes per page and last selected aircraft returns to its own page',()=>{
