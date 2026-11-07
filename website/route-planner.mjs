@@ -745,7 +745,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
  main?.addEventListener('change',async event=>{
   const el=event.target;
   if(el?.matches?.('[data-route-day]')||el?.matches?.('[data-route-time]')){
-   updateWeek();clearPreflight();show();return;
+   updateWeek();clearPreflight();show();void automaticPreflight();return;
   }
   if(['route-preflight-departure-utc','route-preflight-arrival-utc'].includes(el?.id)){
    clearPreflight();void automaticPreflight();return;
@@ -759,7 +759,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
     for(const id of ['route-departure-stand','route-arrival-stand'])
      if($(id)?.value==='cargo')$(id).value='terminal';
    }
-   clearPreflight();show();return;
+   clearPreflight();show();void automaticPreflight();return;
   }
   if(['route-arrival-stand','route-departure-stand'].includes(el?.id)){
    clearPreflight();refreshAircraftTimeline();void automaticPreflight();return;
@@ -874,7 +874,8 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   const departureStand=$('route-departure-stand')?.value||'terminal';
   const arrivalStand=$('route-arrival-stand')?.value||'terminal';
   const signature=[from.key,to.key,configurationId,departureUtc,arrivalUtc,
-   JSON.stringify(weeklySchedule),departureStand,arrivalStand,ownedChoice?.id||''].join('|');
+   JSON.stringify(weeklySchedule),departureStand,arrivalStand,ownedChoice?.id||'',
+   editingFlightNumber||''].join('|');
   if(!force&&preflightCache?.signature===signature)return preflightCache.result;
   if(!force&&preflightPromise?.signature===signature)return preflightPromise.promise;
   const ticket=++preflightRequest;
