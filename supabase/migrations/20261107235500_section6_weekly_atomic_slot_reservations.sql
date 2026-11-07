@@ -55,8 +55,8 @@ BEGIN
  flight_duration:=p_reference_arrival_utc-p_reference_departure_utc;
  RETURN QUERY
  WITH selected AS (
-   SELECT ((monday + (w.n*7) + (j.day)::int)::timestamp + (j.departure)::time) AS local_origin
-   FROM jsonb_to_recordset(p_weekly_schedule) AS j(day integer,departure text)
+   SELECT ((monday + (w.n*7) + (j.day)::int)::timestamp + (j."time")::time) AS local_origin
+   FROM jsonb_to_recordset(p_weekly_schedule) AS j(day integer,"time" text)
    CROSS JOIN generate_series(0,53) AS w(n)
  ), local_times AS (
    SELECT s.local_origin,
