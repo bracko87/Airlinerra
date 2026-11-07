@@ -469,12 +469,16 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    title.textContent=String(draft.flightNumber||'Draft')+' · '+String(draft.originAirportKey||'')+
     ' to '+String(draft.destinationAirportKey||'');
    const subtitle=doc.createElement('small');
-   subtitle.textContent='Server draft · not active · '+String(draft.weeklySchedule?.length||0)+' departures per week';
+   subtitle.textContent='Server draft · weekly airport slots held · not active · '+String(draft.weeklySchedule?.length||0)+' departures per week';
    const inspect=doc.createElement('button');
    inspect.type='button';inspect.className='secondary';
    inspect.textContent='Check activation readiness';
    inspect.dataset.routeActivationReadinessId=draft.id;
-   row.append(title,subtitle,inspect);holder.append(row);
+   const remove=doc.createElement('button');
+   remove.type='button';remove.className='secondary';
+   remove.textContent='Delete and release slots';
+   remove.dataset.routeServerDeleteId=draft.id;
+   row.append(title,subtitle,inspect,remove);holder.append(row);
   }
  };
  const loadOwnedScheduleData=async airlineId=>{
@@ -964,6 +968,33 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
  main?.addEventListener('click',async event=>{
   const target=event.target?.closest?.('button');
   if(!target)return;
+  if(target.dataset.routeServerDeleteId){
+   const id=target.dataset.routeServerDeleteId;
+   const airlineId=getData()?.airline?.id,scheduler=getData()?.scheduler;
+   if(!airlineId||typeof scheduler?.delete!=='function'){
+    message('route-server-draft-status','Schedule deletion service unavailable. Slots remain reserved.');
+    return;
+   }
+   target.disabled=true;
+   try{
+    const result=await scheduler.delete({airlineId,scheduleId:id});
+    if(result.deleted!==true)throw Error('Deletion not confirmed');
+    serverDrafts=serverDrafts.filter(d=>d.id!==id);
+    renderServerScheduleList();
+    const current=loadDraft?.()||{};
+    const cleaned=r=>r?.serverScheduleId===id?
+      {...r,serverScheduleId:null,slotsReserved:false}:r;
+    if(Array.isArray(current.routes))draftWrite('routes',current.routes.map(cleaned));
+    if(current.route?.serverScheduleId===id)draftWrite('route',cleaned(current.route));
+    doc.dispatchEvent(new CustomEvent('airlinerra:route-draft-saved'));
+    message('route-server-draft-status','Schedule deleted. Reserved airport slots released.');
+    clearPreflight();
+   }catch{
+    target.disabled=false;
+    message('route-server-draft-status','Deletion not confirmed. Slot reservations have not been released.');
+   }
+   return;
+  }
   if(target.dataset.routeActivationReadinessId){
    const id=target.dataset.routeActivationReadinessId;
    const airlineId=getData()?.airline?.id,scheduler=getData()?.scheduler;
