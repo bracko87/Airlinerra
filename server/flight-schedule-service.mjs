@@ -13,7 +13,10 @@ const HHMM=/^([01]\d|2[0-3]):[0-5]\d$/u;
 const BASE_FIELDS=new Set(['action','airlineId']);
 const SAVE_FIELDS=new Set([...BASE_FIELDS,'aircraftInventoryId','flightNumber',
  'originAirportKey','destinationAirportKey','referenceDepartureUtc','referenceArrivalUtc',
- 'weeklySchedule','existingId']);
+ 'weeklySchedule','existingId','departureStand','arrivalStand']);
+const SLOT_FIELDS=new Set([...BASE_FIELDS,'aircraftInventoryId','originAirportKey',
+ 'destinationAirportKey','referenceDepartureUtc','referenceArrivalUtc','weeklySchedule',
+ 'existingId','departureStand','arrivalStand']);
 const CHECK_FIELDS=new Set([...BASE_FIELDS,'scheduleId']);
 const RHEADERS={'cache-control':'no-store','content-type':'application/json; charset=utf-8',
  'x-content-type-options':'nosniff','referrer-policy':'no-referrer'};
@@ -41,10 +44,13 @@ export function validateFlightSchedulePayload(body){
  if(body.action==='list')return withinFields(body,BASE_FIELDS);
  if(body.action==='delete'||body.action==='activation-check')
   return withinFields(body,CHECK_FIELDS)&&uuid(body.scheduleId);
- if(body.action!=='save'||!withinFields(body,SAVE_FIELDS))return false;
+ if(body.action!=='save'&&body.action!=='slot-check')return false;
+ if(!withinFields(body,body.action==='save'?SAVE_FIELDS:SLOT_FIELDS))return false;
+ if(!['terminal','remote','cargo'].includes(body.departureStand??'terminal')||
+    !['terminal','remote','cargo'].includes(body.arrivalStand??'terminal'))return false;
  if(!uuid(body.aircraftInventoryId)||
    (body.existingId!==undefined&&!uuid(body.existingId))||
-   !/^[A-Z0-9]{2}[0-9]{1,4}$/.test(body.flightNumber||'')||
+   (body.action==='save'&&!/^[A-Z0-9]{2}[0-9]{1,4}$/.test(body.flightNumber||''))||
    typeof body.originAirportKey!=='string'||!AIRPORT.test(body.originAirportKey)||
    typeof body.destinationAirportKey!=='string'||!AIRPORT.test(body.destinationAirportKey)||
    body.originAirportKey===body.destinationAirportKey||
@@ -67,13 +73,22 @@ export const SCHEDULE_SQL=Object.freeze({
    s.destination_airport_key AS "destinationAirportKey",
    s.reference_departure_utc AS "referenceDepartureUtc",
    s.reference_arrival_utc AS "referenceArrivalUtc",
-   s.weekly_schedule AS "weeklySchedule",s.status,
+   s.weekly_schedule AS "weeklySchedule",
+   s.departure_stand_type AS "departureStand",s.arrival_stand_type AS "arrivalStand",s.status,
    s.version,s.updated_at AS "updatedAt"
    FROM airlinerra_game.airline_flight_schedule_drafts_v1 s
    WHERE s.airline_id=$1::uuid ORDER BY s.updated_at DESC,s.id LIMIT 50`,
- save:`SELECT airlinerra_game.section5_save_owned_aircraft_schedule_draft_v1(
+ save:`SELECT airlinerra_game.section6_save_owned_aircraft_schedule_with_slots_v1(
    $1::uuid,$2::uuid,$3::uuid,$4::text,$5::text,$6::text,
-   $7::timestamptz,$8::timestamptz,$9::jsonb,$10::uuid) AS result`,
+   $7::timestamptz,$8::timestamptz,$9::jsonb,$10::uuid,$11::text,$12::text) AS result`,
+ existingDraftOwner:`SELECT 1 FROM airlinerra_game.airline_flight_schedule_drafts_v1
+ WHERE id=$1::uuid AND airline_id=$2::uuid AND status='draft'`,
+ fleetUse:`SELECT c.use_type AS "useType" FROM airlinerra_game.airline_aircraft_inventory i
+  JOIN airlinerra.aircraft_configurations c ON c.id=i.configuration_id
+  WHERE i.id=$1::uuid AND i.airline_id=$2::uuid AND i.fleet_status='in_service'`,
+ slotCheck:`SELECT airlinerra_game.section6_weekly_slot_preflight_v1(
+  1::smallint,$1::text,$2::text,$3::timestamptz,$4::timestamptz,
+  $5::jsonb,$6::text,$7::text,$8::uuid) AS result`,
  check:`SELECT airlinerra_game.section5_schedule_activation_readiness_v1($1::uuid,$2::uuid) AS result`,
  delete:`DELETE FROM airlinerra_game.airline_flight_schedule_drafts_v1 s
    USING airlinerra_game.airlines a
@@ -122,11 +137,40 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
       userId,body.airlineId,body.aircraftInventoryId,body.flightNumber,
       body.originAirportKey,body.destinationAirportKey,
       body.referenceDepartureUtc,body.referenceArrivalUtc,
-      JSON.stringify(body.weeklySchedule),body.existingId??null
+      JSON.stringify(body.weeklySchedule),body.existingId??null,
+      body.departureStand??'terminal',body.arrivalStand??'terminal'
     ]);
     if(response.rowCount!==1||!response.rows[0]?.result)
      return respond(503,{error:'Schedule draft was not confirmed'});
     return respond(200,response.rows[0].result);
+   }
+   if(body.action==='slot-check'){
+    const owner=await client.query(SCHEDULE_SQL.owner,[body.airlineId,userId]);
+    if(owner.rowCount!==1)return respond(403,{error:'Airline not owned by this account'});
+    if(body.existingId){
+     const draft=await client.query(SCHEDULE_SQL.existingDraftOwner,
+      [body.existingId,body.airlineId]);
+     if(draft.rowCount!==1)return respond(403,{error:'Schedule not owned by this airline'});
+    }
+    const fleet=await client.query(SCHEDULE_SQL.fleetUse,[body.aircraftInventoryId,body.airlineId]);
+    if(fleet.rowCount!==1)return respond(403,{error:'Aircraft not in owned service fleet'});
+    const useType=fleet.rows[0].useType;
+    if((useType==='cargo'&&(body.departureStand!=='cargo'||body.arrivalStand!=='cargo'))||
+       (useType==='passenger'&&(body.departureStand==='cargo'||body.arrivalStand==='cargo')))
+      return respond(200,{available:false,departureAvailable:false,arrivalAvailable:false,
+        reason:'STAND_INCOMPATIBLE_WITH_AIRCRAFT'});
+    const response=await client.query(SCHEDULE_SQL.slotCheck,[
+      body.originAirportKey,body.destinationAirportKey,
+      body.referenceDepartureUtc,body.referenceArrivalUtc,
+      JSON.stringify(body.weeklySchedule),body.departureStand??'terminal',
+      body.arrivalStand??'terminal',body.existingId??null
+    ]);
+    if(response.rowCount!==1||!response.rows[0]?.result)
+     return respond(503,{error:'Slot check unavailable'});
+    const v=response.rows[0].result;
+    return respond(200,{available:v.available===true,
+     departureAvailable:v.departureAvailable===true,arrivalAvailable:v.arrivalAvailable===true,
+     slotModel:'weekly_stand_capacity_v1'});
    }
    if(body.action==='activation-check'){
     const response=await client.query(SCHEDULE_SQL.check,[userId,body.scheduleId]);
@@ -152,7 +196,8 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
     error:'Aircraft, airline or airport restrictions prevent saving this flight schedule',
     reason:['SCHEDULE_BLOCKED_BY_AIRPORT_OR_AIRCRAFT_RULE',
       'AIRCRAFT_NOT_OWNED_LEASED_OR_IN_SERVICE',
-      'AIRLINE_WORLD_NOT_ACTIVE_FOR_SCHEDULING'].includes(error.message)
+      'AIRLINE_WORLD_NOT_ACTIVE_FOR_SCHEDULING','SECTION6_SLOT_UNAVAILABLE',
+      'SECTION6_INCOMPATIBLE_AIRCRAFT_STAND','SECTION6_AIRPORT_CAPACITY_NOT_CONFIGURED'].includes(error.message)
       ?error.message:'SCHEDULE_REQUIRES_REVIEW'
    });
    // Do not print the database error, queries, secrets or submitted personal data.

@@ -22,6 +22,12 @@ export const AIRPORT_PROFILE_SQL=`
         f.terminal_count,f.passenger_gate_count,f.aircraft_stand_count,
         f.operating_hours_local,f.curfew_details,f.noise_restrictions,
         f.facility_status,
+        cap.terminal_stands AS slot_terminal_stands,
+        cap.remote_stands AS slot_remote_stands,
+        cap.cargo_stands AS slot_cargo_stands,
+        cap.terminal_per_direction_10m AS slot_terminal_per_direction_10m,
+        cap.remote_per_direction_10m AS slot_remote_per_direction_10m,
+        cap.cargo_per_direction_10m AS slot_cargo_per_direction_10m,
         ops.game_operating_hours_summary,ops.operating_hours_basis AS game_operating_hours_basis,
         ops.max_day_game_noise_class,ops.max_night_game_noise_class,
         ops.noise_limit_basis,ops.time_restrictions AS game_time_restrictions,
@@ -144,6 +150,8 @@ export const AIRPORT_PROFILE_SQL=`
     ON p.world_id=a.world_id AND p.airport_key=a.airport_key
  LEFT JOIN airlinerra_game.airport_facilities f
     ON f.world_id=a.world_id AND f.airport_key=a.airport_key
+ LEFT JOIN airlinerra_game.section6_airport_slot_capacity_v1 cap
+    ON cap.world_id=a.world_id AND cap.airport_key=a.airport_key
  LEFT JOIN airlinerra_game.section5_airport_operating_summary_v1 ops
     ON ops.world_id=a.world_id AND ops.airport_key=a.airport_key
  LEFT JOIN airlinerra_game.section5_airport_icao_chapter_policy_v2 chapter
@@ -249,6 +257,26 @@ export function serializeAirportProfile(row){
      '. See operations.icaoNoiseRules for sourced restrictions. Prior five-class noise scale retired.',
    historicalNoiseNotes:nullableString(row.noise_restrictions),
    status:nullableString(row.facility_status)
+  },
+  slotCapacity:{
+   model:'stand_hourly_v1',
+   windowMinutes:10,
+   // Hourly arrivals and departures have identical independent stand limits.
+   terminal:{stands:countOrNull(row.slot_terminal_stands),
+    arrivalsPerHour:countOrNull(row.slot_terminal_stands),
+    departuresPerHour:countOrNull(row.slot_terminal_stands),
+    arrivalsPer10Minutes:countOrNull(row.slot_terminal_per_direction_10m),
+    departuresPer10Minutes:countOrNull(row.slot_terminal_per_direction_10m)},
+   remote:{stands:countOrNull(row.slot_remote_stands),
+    arrivalsPerHour:countOrNull(row.slot_remote_stands),
+    departuresPerHour:countOrNull(row.slot_remote_stands),
+    arrivalsPer10Minutes:countOrNull(row.slot_remote_per_direction_10m),
+    departuresPer10Minutes:countOrNull(row.slot_remote_per_direction_10m)},
+   cargo:{stands:countOrNull(row.slot_cargo_stands),
+    arrivalsPerHour:countOrNull(row.slot_cargo_stands),
+    departuresPerHour:countOrNull(row.slot_cargo_stands),
+    arrivalsPer10Minutes:countOrNull(row.slot_cargo_per_direction_10m),
+    departuresPer10Minutes:countOrNull(row.slot_cargo_per_direction_10m)}
   },
   operations:{
    // Simplified player-facing game classification. Never grants real-world clearance or

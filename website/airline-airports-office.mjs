@@ -372,7 +372,22 @@ export function createAirportOffice({doc,session,identity,goTo,getAirlineLogoUrl
    ['Passenger terminals',p?count(p.facilities?.terminals):fallback],
    ['Passenger gates',p?count(p.facilities?.gates):fallback],
    ['Aircraft stands',p?count(p.facilities?.stands):fallback],
-   ['Available operating slots','Data pending'],
+   ['Terminal slots (arrival / departure)',p?.slotCapacity?.terminal?.arrivalsPer10Minutes!==null &&
+    p?.slotCapacity?.terminal?.arrivalsPer10Minutes!==undefined?
+    num(p.slotCapacity.terminal.arrivalsPer10Minutes)+' each / 10 min · '+
+    num(p.slotCapacity.terminal.arrivalsPerHour)+' each / hour':fallback],
+   ['Remote slots (arrival / departure)',p?.slotCapacity?.remote?.arrivalsPer10Minutes!==null &&
+    p?.slotCapacity?.remote?.arrivalsPer10Minutes!==undefined?
+    num(p.slotCapacity.remote.arrivalsPer10Minutes)+' each / 10 min · '+
+    num(p.slotCapacity.remote.arrivalsPerHour)+' each / hour':fallback],
+   ['Cargo slots (arrival / departure)',p?.slotCapacity?.cargo?.arrivalsPer10Minutes!==null &&
+    p?.slotCapacity?.cargo?.arrivalsPer10Minutes!==undefined?
+    num(p.slotCapacity.cargo.arrivalsPer10Minutes)+' each / 10 min · '+
+    num(p.slotCapacity.cargo.arrivalsPerHour)+' each / hour':fallback],
+   ['Airport movements / 10 min (both directions)',p?.slotCapacity?.terminal?.arrivalsPer10Minutes!==null &&
+    p?.slotCapacity?.terminal?.arrivalsPer10Minutes!==undefined?
+    num(2*(['terminal','remote','cargo'].reduce((sum,k)=>
+      sum+(p.slotCapacity[k]?.arrivalsPer10Minutes||0),0)))+' (subject to hourly limits)':fallback],
    ['Aerodrome operating hours',p?simpleAirportHours(p.facilities?.operatingHours):fallback],
    ['Nighttime ban (game)',p?simpleAirportCurfew(p):fallback],
    ['Noise restrictions (game)',p?simpleAirportNoise(p):fallback],

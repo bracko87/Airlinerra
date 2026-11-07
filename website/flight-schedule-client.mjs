@@ -31,10 +31,17 @@ export function createFlightScheduleClient({auth,origin,fetchImpl=(...args)=>fet
  return Object.freeze({
   list:airlineId=>post({action:'list',airlineId}),
   save:({airlineId,aircraftInventoryId,flightNumber,originAirportKey,destinationAirportKey,
-   referenceDepartureUtc,referenceArrivalUtc,weeklySchedule,existingId})=>
+   referenceDepartureUtc,referenceArrivalUtc,weeklySchedule,existingId,
+   departureStand='terminal',arrivalStand='terminal'})=>
     post({action:'save',airlineId,aircraftInventoryId,flightNumber,originAirportKey,
-     destinationAirportKey,referenceDepartureUtc,referenceArrivalUtc,
-     weeklySchedule,...(existingId?{existingId}:{})}),
+     destinationAirportKey,referenceDepartureUtc,referenceArrivalUtc,weeklySchedule,
+     departureStand,arrivalStand,...(existingId?{existingId}:{})}),
+  slotCheck:({airlineId,aircraftInventoryId,originAirportKey,destinationAirportKey,
+   referenceDepartureUtc,referenceArrivalUtc,weeklySchedule,existingId,
+   departureStand='terminal',arrivalStand='terminal'})=>
+    post({action:'slot-check',airlineId,aircraftInventoryId,originAirportKey,
+     destinationAirportKey,referenceDepartureUtc,referenceArrivalUtc,weeklySchedule,
+     departureStand,arrivalStand,...(existingId?{existingId}:{})}),
   activationCheck:({airlineId,scheduleId})=>post({action:'activation-check',airlineId,scheduleId}),
   delete:({airlineId,scheduleId})=>post({action:'delete',airlineId,scheduleId})
  });

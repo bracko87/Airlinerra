@@ -5,7 +5,7 @@
  */
 export const WEEKDAYS=Object.freeze(['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']);
 const validTime=value=>/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(String(value||''));
-const validStand=value=>value==='terminal'||value==='remote';
+const validStand=value=>['terminal','remote','cargo'].includes(value);
 const name=airport=>String(airport?.municipality||airport?.name||airport?.code||'Unknown airport');
 const signature=event=>event.flightNumber+' '+WEEKDAYS[event.day]+' '+event.time;
 
@@ -28,7 +28,9 @@ export function buildAircraftWeeklyTimeline({
     fromKey:String(route.from.key),toKey:String(route.to.key),
     from:name(route.from),to:name(route.to),
     arrivalStand:validStand(route.operation?.arrivalStand)?route.operation.arrivalStand:null,
-    proposed:route===proposal,departureStand:null,priorLocation:null,
+    proposed:route===proposal,
+    departureStand:validStand(route.operation?.departureStand)?route.operation.departureStand:null,
+    priorLocation:null,
     timingVerified:false
    });
   }
@@ -40,7 +42,7 @@ export function buildAircraftWeeklyTimeline({
  for(const event of events){
   if(previous){
    event.priorLocation=previous.to;
-   if(previous.toKey===event.fromKey)event.departureStand=previous.arrivalStand;
+   if(previous.toKey===event.fromKey && !event.departureStand)event.departureStand=previous.arrivalStand;
    else{
     errors.push({
      code:'AIRCRAFT_WRONG_AIRPORT',day:event.day,flightNumber:event.flightNumber,
@@ -58,7 +60,7 @@ export function buildAircraftWeeklyTimeline({
    }
   }else{
    // Home airport is the company's headquarters, not necessarily this tail's parking position.
-   event.priorLocation=null;event.departureStand=null;
+   event.priorLocation=null;
   }
   dayPositions[event.day]={airport:event.to,airportKey:event.toKey,
    stand:event.arrivalStand,flightNumber:event.flightNumber};
@@ -104,8 +106,8 @@ export function renderAircraftWeeklyTimeline(doc,host,timeline,{compact=false}={
   const line=doc.createElement('div');line.className='aircraft-weekly-timeline-row';
   for(const value of [
    WEEKDAYS[e.day],e.time,e.flightNumber,e.from,e.to,
-   e.departureStand==='remote'?'Remote stand':e.departureStand==='terminal'?'Terminal':'Unverified',
-   e.arrivalStand==='remote'?'Remote stand':e.arrivalStand==='terminal'?'Terminal':'Unverified'
+   e.departureStand==='remote'?'Remote stand':e.departureStand==='terminal'?'Terminal':e.departureStand==='cargo'?'Cargo stand':'Unverified',
+   e.arrivalStand==='remote'?'Remote stand':e.arrivalStand==='terminal'?'Terminal':e.arrivalStand==='cargo'?'Cargo stand':'Unverified'
   ]){
    const cell=doc.createElement('span');cell.textContent=value;line.append(cell);
   }
