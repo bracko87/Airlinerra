@@ -283,12 +283,12 @@ test('route fare and service draft validation limits values without implying liv
  const result=validateFlightDraftOptions(good);
  assert.equal(result.operationallyVerified,false);
  assert.deepEqual(result.fares,{economy:100,premium:null,business:200,first:null});
- assert.equal('departureStand' in result,false);
+ assert.equal(result.departureStand,'terminal');
  assert.equal(result.arrivalStand,'terminal');
  assert.equal(result.turnaroundMinutes,60);
  for(const bad of [
   {...good,turnaroundMinutes:30},{...good,turnaroundMinutes:361},
-  {...good,arrivalStand:'cargo'},{...good,onboard:'unsafe'},
+  {...good,departureStand:'invalid'},{...good,arrivalStand:'invalid'},{...good,onboard:'unsafe'},
   {...good,fares:{...good.fares,economy:'101.5'}},
   {...good,fares:{...good.fares,first:'-1'}},
   {...good,fares:{...good.fares,business:'100001'}}
@@ -326,16 +326,18 @@ test('saved legacy route ideas remain editable while applied drafts reset the fo
 });
 
 
-test('Step 2 can only choose destination arrival stand and derives departure stand from previous flight',async()=>{
+test('Step 2 allows explicit departure and destination stand choices, including remote stands',async()=>{
  const source=await read('../website/route-planner.mjs');
  const markup=routePlannerMarkup();
- assert.ok(!markup.includes('id="route-departure-stand"'));
+ assert.ok(markup.includes('id="route-departure-stand"'));
+ assert.match(markup,/Remote stand \(lower fees\)/);
  assert.ok(markup.includes('id="route-departure-stand-derived"'));
  assert.ok(markup.includes('id="route-aircraft-position-status"'));
  assert.ok(markup.includes('id="route-aircraft-timeline-content"'));
  assert.match(source,/const timeline=selectedAircraftTimeline\(\)/);
  assert.match(source,/if\(timeline\.errors\.length\)/);
  assert.match(source,/Aircraft schedule conflict:/);
+ assert.match(source,/departureStand:\$\('route-departure-stand'\)\?\.value/);
  assert.match(source,/arrivalStand:\$\('route-arrival-stand'\)\?\.value/);
  assert.match(source,/renderAircraftWeeklyTimeline\(doc,\$\('route-aircraft-timeline-content'\),timeline\)/);
  const office=await read('../website/airline-workspace.mjs');
