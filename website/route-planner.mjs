@@ -87,11 +87,12 @@ export function routePlannerMarkup(){
  section('STEP 2','Aircraft and weekly departures',
   '<div class="route-step2-top">'+
    routeSetupField('route-aircraft','Aircraft','<select id="route-aircraft"><option value="">Choose aircraft</option></select>')+
-   routeSetupField('route-arrival-stand','Arrival stand at destination','<select id="route-arrival-stand"><option value="terminal">Terminal</option><option value="remote">Remote stand</option></select>')+
+   routeSetupField('route-departure-stand','Departure stand at origin','<select id="route-departure-stand"><option value="terminal">Terminal</option><option value="remote">Remote stand (lower fees)</option><option value="cargo">Cargo stand</option></select>')+
+   routeSetupField('route-arrival-stand','Arrival stand at destination','<select id="route-arrival-stand"><option value="terminal">Terminal</option><option value="remote">Remote stand (lower fees)</option><option value="cargo">Cargo stand</option></select>')+
    routeSetupField('route-turnaround','Target turnaround (minutes)','<input id="route-turnaround" type="number" min="45" max="360" step="15" value="45">')+
   '</div>'+
   '<p class="route-subtle-note" id="route-aircraft-feedback">Aircraft availability is not connected.</p>'+
-  '<div class="route-position-bar"><span>Departure stand (automatic)</span><strong id="route-departure-stand-derived">Not verified</strong></div>'+
+  '<div class="route-position-bar"><span>Selected departure stand</span><strong id="route-departure-stand-derived">Not verified</strong></div>'+
   '<p id="route-aircraft-position-status" class="route-position-status" role="status"></p>'+
   weekTable()+
   '<details class="route-aircraft-timeline-panel" id="route-aircraft-timeline"><summary>Aircraft weekly timeline and locations</summary><div id="route-aircraft-timeline-content"></div></details>'+
@@ -151,9 +152,10 @@ export const flightNumberFor=(prefix,number)=>{
   prefix+digits:null;
 };
 export const validLocalDeparture=time=>/^([01]\d|2[0-3]):[0-5]\d$/.test(String(time||''));
-// Draft-only service settings: no pricing, aircraft performance or slot claims.
-export const validateFlightDraftOptions=({arrivalStand,turnaroundMinutes,fares,onboard,baggage,cargo}={})=>{
- if(!['terminal','remote'].includes(arrivalStand)||
+// Player-selected stands are authoritative for game slot checks; fares remain draft estimates.
+export const validateFlightDraftOptions=({departureStand='terminal',arrivalStand,turnaroundMinutes,fares,onboard,baggage,cargo}={})=>{
+ if(!['terminal','remote','cargo'].includes(departureStand)||
+    !['terminal','remote','cargo'].includes(arrivalStand)||
   !Number.isInteger(turnaroundMinutes)||turnaroundMinutes<45||turnaroundMinutes>360||
   !['standard','basic','enhanced'].includes(onboard)||
   !['standard','hand-only','checked'].includes(baggage)||
@@ -166,7 +168,7 @@ export const validateFlightDraftOptions=({arrivalStand,turnaroundMinutes,fares,o
   if(!Number.isSafeInteger(amount)||amount<0||amount>100000)return null;
   prices[key]=amount;
  }
- return {arrivalStand,turnaroundMinutes,fares:prices,
+ return {departureStand,arrivalStand,turnaroundMinutes,fares:prices,
   service:{onboard,baggage,cargo},operationallyVerified:false};
 };
 export const routeWeekdays=schedule=>{
@@ -313,7 +315,8 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   const schedule=availableSchedule();
   const proposal=aircraftId&&from&&to&&from.key!==to.key&&schedule.length?
    {flightNumber,aircraftId,from,to,schedule,
-    operation:{arrivalStand:$('route-arrival-stand')?.value}}:null;
+    operation:{departureStand:$('route-departure-stand')?.value,
+      arrivalStand:$('route-arrival-stand')?.value}}:null;
   return buildAircraftWeeklyTimeline({
    aircraftId,routes:rows,proposal,excludeFlightNumber:editingFlightNumber,
    homeAirportKey:getData()?.airline?.homeAirportKey||null
@@ -325,15 +328,16 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   const chosen=timeline.events.filter(x=>x.proposed);
   const stands=[...new Set(chosen.map(x=>x.departureStand||'unknown'))];
   const label=stands.length===1?
-   (stands[0]==='terminal'?'Terminal (previous planned arrival)':
-    stands[0]==='remote'?'Remote stand (previous planned arrival)':'Unverified — no confirmed previous stand'):
-   stands.length>1?'Different or unverified by weekday':'No flight days selected';
+   (stands[0]==='terminal'?'Terminal stand selected':
+    stands[0]==='remote'?'Remote stand selected':
+    stands[0]==='cargo'?'Cargo stand selected':'Unverified'):
+   stands.length>1?'Different stands by weekday':'No flight days selected';
   message('route-departure-stand-derived',label);
   for(let day=0;day<7;day++){
    const e=chosen.find(x=>x.day===day);
    message('route-stand-'+day,!e?'—':
     e.departureStand==='terminal'?'Terminal':
-    e.departureStand==='remote'?'Remote':'Unverified');
+    e.departureStand==='remote'?'Remote':e.departureStand==='cargo'?'Cargo':'Unverified');
   }
   const last=timeline.events.at(-1);
   const hint=timeline.errors.length?timeline.errors[0].text:
@@ -543,7 +547,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    getData().airline.testAircraft:[]).find(a=>a.id===$('route-aircraft')?.value&&
     a.testOnly===true&&a.operationallyAllowed===false);
   syncAircraftCompatibility();
-  message('route-slot-check','Not connected — cannot reserve or verify slots');
+  message('route-slot-check','Select aircraft and flight times to check slots');
   message('route-traffic-rights','Not connected — rights not verified');
   message('route-status','Draft only');
   message('route-check-message',!validPair?'Choose two different approved airports.':
@@ -632,6 +636,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   for(const id of ['route-preflight-departure-utc','route-preflight-arrival-utc'])
    if($(id))$(id).value='';
   clearPreflight();
+  if($('route-departure-stand'))$('route-departure-stand').value='terminal';
   if($('route-arrival-stand'))$('route-arrival-stand').value='terminal';
   if($('route-turnaround'))$('route-turnaround').value='45';
   for(const label of ['economy','premium','business','first'])
@@ -698,8 +703,12 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    (Number.isSafeInteger(route.aircraftConfigurationId)?'catalog:'+route.aircraftConfigurationId:'');
   if($('route-preflight-departure-utc'))$('route-preflight-departure-utc').value=route.referenceDepartureUtc?.slice(0,16)||'';
   if($('route-preflight-arrival-utc'))$('route-preflight-arrival-utc').value=route.referenceArrivalUtc?.slice(0,16)||'';
+  const departureStand=route.operation?.departureStand;
   const arrivalStand=route.operation?.arrivalStand;
-  if($('route-arrival-stand'))$('route-arrival-stand').value=['remote','terminal'].includes(arrivalStand)?arrivalStand:'terminal';
+  if($('route-departure-stand'))$('route-departure-stand').value=
+   ['remote','terminal','cargo'].includes(departureStand)?departureStand:'terminal';
+  if($('route-arrival-stand'))$('route-arrival-stand').value=
+   ['remote','terminal','cargo'].includes(arrivalStand)?arrivalStand:'terminal';
   $('route-turnaround').value=String(route.operation?.turnaroundMinutes||45);
   for(let day=0;day<7;day++){
    const row=(Array.isArray(route.schedule)?route.schedule:[]).find(x=>x.day===day);
@@ -737,8 +746,20 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   if(['route-preflight-departure-utc','route-preflight-arrival-utc'].includes(el?.id)){
    clearPreflight();void automaticPreflight();return;
   }
-  if(el?.id==='route-aircraft'){clearPreflight();show();return;}
-  if(el?.id==='route-arrival-stand'){refreshAircraftTimeline();return;}
+  if(el?.id==='route-aircraft'){
+   const type=catalogChoice()?.useType;
+   if(type==='cargo'){
+    if($('route-departure-stand'))$('route-departure-stand').value='cargo';
+    if($('route-arrival-stand'))$('route-arrival-stand').value='cargo';
+   }else if(type==='passenger'){
+    for(const id of ['route-departure-stand','route-arrival-stand'])
+     if($(id)?.value==='cargo')$(id).value='terminal';
+   }
+   clearPreflight();show();return;
+  }
+  if(['route-arrival-stand','route-departure-stand'].includes(el?.id)){
+   clearPreflight();refreshAircraftTimeline();void automaticPreflight();return;
+  }
   if(el?.id==='route-turnaround'){updateWeek();return;}
   if(el?.id==='route-from-hub'||el?.id==='route-to-hub'){
    const side=el.id==='route-from-hub'?'from':'to';
@@ -845,8 +866,11 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    message('route-preflight-status','Airport restriction service unavailable — cannot verify this route.');
    return null;
   }
+  const ownedChoice=ownedFleet.find(a=>'owned:'+a.id===$('route-aircraft')?.value)||null;
+  const departureStand=$('route-departure-stand')?.value||'terminal';
+  const arrivalStand=$('route-arrival-stand')?.value||'terminal';
   const signature=[from.key,to.key,configurationId,departureUtc,arrivalUtc,
-   JSON.stringify(weeklySchedule)].join('|');
+   JSON.stringify(weeklySchedule),departureStand,arrivalStand,ownedChoice?.id||''].join('|');
   if(!force&&preflightCache?.signature===signature)return preflightCache.result;
   if(!force&&preflightPromise?.signature===signature)return preflightPromise.promise;
   const ticket=++preflightRequest;
@@ -859,7 +883,38 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
     });
     if(ticket!==preflightRequest)return null;
     if(!result||typeof result.gameHardBlocked!=='boolean')throw Error('Invalid restriction result');
-    preflightCache={signature,result};
+    let slotAvailability=null;
+    const scheduler=getData()?.scheduler;
+    if(!result.gameHardBlocked&&ownedChoice&&typeof scheduler?.slotCheck==='function'){
+     try{
+      slotAvailability=await scheduler.slotCheck({
+       airlineId:getData().airline.id,aircraftInventoryId:ownedChoice.id,
+       originAirportKey:from.key,destinationAirportKey:to.key,
+       referenceDepartureUtc:departureUtc,referenceArrivalUtc:arrivalUtc,
+       weeklySchedule,departureStand,arrivalStand,
+       ...(serverDrafts.find(d=>d.flightNumber===flightNumberFor(
+        flightPrefixFor(getData().airline).prefix,$('route-plan-number')?.value))?.id?
+        {existingId:serverDrafts.find(d=>d.flightNumber===flightNumberFor(
+         flightPrefixFor(getData().airline).prefix,$('route-plan-number')?.value)).id}:{})
+      });
+     }catch{slotAvailability=null;}
+    }
+    if(ticket!==preflightRequest)return null;
+    const checkedResult={...result,slotAvailability};
+    preflightCache={signature,result:checkedResult};
+    if(ownedChoice){
+     const available=slotAvailability?.available===true;
+     const originOk=slotAvailability?.departureAvailable===true;
+     const destinationOk=slotAvailability?.arrivalAvailable===true;
+     message('route-slot-check',
+      (originOk?'✓ Departure available':'✕ Departure unavailable')+' · '+
+      (destinationOk?'✓ Arrival available':'✕ Arrival unavailable'));
+     const display=$('route-slot-check');
+     if(display){display.classList.toggle('has-conflict',!available);
+      display.classList.toggle('has-available',available);}
+    }else{
+     message('route-slot-check','Owned aircraft required to check or reserve game slots');
+    }
     const failures=[];
     for(const [place,leg] of [['Origin',result.origin],['Destination',result.destination]]){
      if(!leg)continue;
@@ -883,8 +938,9 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
       checked+' scheduled departures screened over four weeks: no confirmed game runway, curfew or aircraft noise ban. Draft only — no flight activated.';
     message('route-preflight-status',status);
     const save=$('route-plan-save');
-    if(save)save.disabled=result.gameHardBlocked||runwayAssessment(aircraft).status==='BLOCKED';
-    return result;
+    if(save)save.disabled=result.gameHardBlocked||runwayAssessment(aircraft).status==='BLOCKED'||
+      (Boolean(ownedChoice)&&slotAvailability?.available!==true);
+    return checkedResult;
    }catch{
     if(ticket===preflightRequest){
      preflightCache=null;
@@ -984,6 +1040,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    message('route-plan-status','Select at least one weekday and a valid local departure time.');return;
   }
   const operation=validateFlightDraftOptions({
+   departureStand:$('route-departure-stand')?.value,
    arrivalStand:$('route-arrival-stand')?.value,
    turnaroundMinutes:Number($('route-turnaround')?.value),
    fares:Object.fromEntries(['economy','premium','business','first'].map(label=>
@@ -1066,6 +1123,10 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    return;
   }
   if(ownedChoice){
+   if(preflight.slotAvailability?.available!==true){
+    message('route-plan-status','Departure or arrival slot is unavailable. Choose another time or stand type.');
+    return;
+   }
    const scheduler=data?.scheduler;
    if(typeof scheduler?.save!=='function'){
     message('route-plan-status','Secure schedule service not connected. Cannot save an operational-fleet schedule.');
@@ -1079,12 +1140,14 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
      referenceDepartureUtc:draft.referenceDepartureUtc,
      referenceArrivalUtc:draft.referenceArrivalUtc,
      weeklySchedule:schedule,
+     departureStand:operation.departureStand,arrivalStand:operation.arrivalStand,
      ...(previousServerDraft?.serverScheduleId?{existingId:previousServerDraft.serverScheduleId}:{})
     });
     if(result?.status!=='draft'||typeof result.scheduleId!=='string'||
-       result.canActivateNormalFlight!==false)
+       result.canActivateNormalFlight!==false||result.slotsReserved!==true)
      throw Error('Invalid schedule draft confirmation');
     draft.serverScheduleId=result.scheduleId;
+    draft.slotsReserved=true;
     draft.operationallyVerified=false;
     // Refresh list without altering the already checked form.
     serverDrafts=[{id:result.scheduleId,flightNumber,originAirportKey:from.key,
@@ -1105,9 +1168,9 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   doc.dispatchEvent(new CustomEvent('airlinerra:route-draft-saved'));
   await resetRouteForm();
   message('route-plan-status',flightNumber+
-   (draft.serverScheduleId?' saved to your airline server as a protected schedule draft.':
-     ' saved as a local catalog route preview.')+
-    ' No flight or airport slot was activated.');
+   (draft.serverScheduleId?' saved with protected weekly airport slot reservations.':
+     ' saved as a local catalog route preview without airport slot reservations.')+
+    ' No commercial flight was activated.');
 
  });
  function updateData(data){
