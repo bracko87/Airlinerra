@@ -1158,3 +1158,7 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
 #route-aircraft-feedback[data-runway-status="REVIEW"]{color:#925b11;}
 #route-plan-save:disabled{opacity:.58;cursor:not-allowed;}
 #route-preflight-status{min-height:2.2em;line-height:1.5;}
+
+/* Section 6 — only show a clear availability result, not slot counts. */
+#workspace-routes #route-slot-check.has-available{color:#16794b;font-weight:700}
+#workspace-routes #route-slot-check.has-conflict{color:#b42318;font-weight:700}
