@@ -52,6 +52,12 @@ export const AIRPORT_PROFILE_SQL=`
          restriction.enforced_runway_rules AS enforced_runway_rule_count,
          restriction.runway_rule_details AS precise_runway_rule_details,
          restriction.time_research_still_unstructured AS research_still_unstructured,
+         simple.nighttime_ban AS simple_game_nighttime_ban,
+         simple.noise_restrictions AS simple_game_noise_restrictions,
+         simple.permitted_noise_chapters AS simple_game_permitted_chapters,
+         simple.simplified_nighttime_window AS simple_game_nighttime_window,
+         simple.source_status AS simple_game_source_status,
+         simple.source_url AS simple_game_source_url,
         (
           SELECT coalesce(jsonb_agg(jsonb_build_object(
             'code',nr.rule_code,'kind',nr.rule_kind,
@@ -150,7 +156,9 @@ export const AIRPORT_PROFILE_SQL=`
     ON curfew.world_id=a.world_id AND curfew.airport_key=a.airport_key
  LEFT JOIN airlinerra_game.section5_airport_game_restriction_catalog_v1 restriction
     ON restriction.world_id=a.world_id AND restriction.airport_key=a.airport_key
- LEFT JOIN airlinerra_game.section5_full_weight_airport_summary_v2 fw
+ LEFT JOIN airlinerra_game.section5_airport_simplified_game_rules_v1 simple
+     ON simple.world_id=a.world_id AND simple.airport_key=a.airport_key
+  LEFT JOIN airlinerra_game.section5_full_weight_airport_summary_v2 fw
     ON fw.world_id=a.world_id AND fw.airport_key=a.airport_key
  LEFT JOIN airlinerra_game.section5_airport_weather_profile_v1 wx
     ON wx.world_id=a.world_id AND wx.airport_key=a.airport_key
@@ -243,6 +251,18 @@ export function serializeAirportProfile(row){
    status:nullableString(row.facility_status)
   },
   operations:{
+   // Simplified player-facing game classification. Never grants real-world clearance or
+   // changes source-backed airport hard rules used by transactional preflight checks.
+   simpleNightNoise:{
+    nighttimeBan:row.simple_game_nighttime_ban===true,
+    noiseRestrictions:row.simple_game_noise_restrictions===true,
+    permittedChapters:Array.isArray(row.simple_game_permitted_chapters)?
+     row.simple_game_permitted_chapters.filter(n=>Number.isInteger(n)&&[2,3,4,5,14].includes(n)):[],
+    nighttimeWindow:nullableString(row.simple_game_nighttime_window),
+    sourceStatus:nullableString(row.simple_game_source_status)||'GAME_DEFAULT_NOT_CHECKED',
+    source:nullableString(row.simple_game_source_url),
+    dispatchApproval:false
+   },
    hoursBasis:nullableString(row.game_operating_hours_basis),
    noiseBasis:nullableString(row.noise_limit_basis),
    dayMaxNoiseClass:null,
