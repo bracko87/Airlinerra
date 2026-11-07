@@ -207,7 +207,11 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   origin:airportProfiles.from?.key===selected('from')?.key?airportProfiles.from:null,
   destination:airportProfiles.to?.key===selected('to')?.key?airportProfiles.to:null
  });
- const clearPreflight=()=>{++preflightRequest;preflightCache=null;preflightPromise=null;};
+ const clearPreflight=()=>{
+  ++preflightRequest;preflightCache=null;preflightPromise=null;
+  message('route-slot-check','Select times to check arrival and departure availability');
+  $('route-slot-check')?.classList?.remove('has-conflict','has-available');
+ };
  const countryFlag=side=>{
   const iso=$('route-'+side+'-country')?.value||'';
   const img=$('route-'+side+'-country-flag');
@@ -892,10 +896,12 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
        originAirportKey:from.key,destinationAirportKey:to.key,
        referenceDepartureUtc:departureUtc,referenceArrivalUtc:arrivalUtc,
        weeklySchedule,departureStand,arrivalStand,
-       ...(serverDrafts.find(d=>d.flightNumber===flightNumberFor(
-        flightPrefixFor(getData().airline).prefix,$('route-plan-number')?.value))?.id?
-        {existingId:serverDrafts.find(d=>d.flightNumber===flightNumberFor(
-         flightPrefixFor(getData().airline).prefix,$('route-plan-number')?.value)).id}:{})
+       ...(loadDraft?.()?.routes?.find(d=>d?.flightNumber===editingFlightNumber)?.serverScheduleId?
+        {existingId:loadDraft().routes.find(d=>d?.flightNumber===editingFlightNumber).serverScheduleId}:
+        serverDrafts.find(d=>d.flightNumber===flightNumberFor(
+         flightPrefixFor(getData().airline).prefix,$('route-plan-number')?.value))?.id?
+         {existingId:serverDrafts.find(d=>d.flightNumber===flightNumberFor(
+          flightPrefixFor(getData().airline).prefix,$('route-plan-number')?.value)).id}:{})
       });
      }catch{slotAvailability=null;}
     }
