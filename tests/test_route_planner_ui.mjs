@@ -343,3 +343,44 @@ test('Step 2 can only choose destination arrival stand and derives departure sta
  assert.match(office,/data-fleet-aircraft-timeline/);
  assert.match(office,/buildAircraftWeeklyTimeline\(\{aircraftId,routes,/);
 });
+
+
+test('route planner initializes both airport pickers without an early preflight crash',async()=>{
+ const {createRoutePlanner}=await import('../website/route-planner.mjs');
+ const originalOption=globalThis.Option;
+ globalThis.Option=FakeOption;
+ try{
+  const nodes=new Map();
+  class StubNode extends FakeControl{
+   constructor(){
+    super();
+    this.dataset={};this.hidden=false;this.checked=false;
+    this.classList={toggle(){},add(){},remove(){}};
+   }
+   append(...items){this.children.push(...items)}
+   setAttribute(){}
+   removeAttribute(){}
+   querySelectorAll(){return []}
+   querySelector(){return null}
+  }
+  const node=id=>{
+   if(!nodes.has(id))nodes.set(id,new StubNode());
+   return nodes.get(id);
+  };
+  const doc={
+   getElementById:node,
+   createElement:()=>new StubNode(),
+   querySelector:()=>null,
+   addEventListener(){}
+  };
+  const planner=createRoutePlanner({
+   doc,getData:()=>({connected:false,airline:null}),
+   loadDraft:()=>({}),draftWrite:()=>true
+  });
+  assert.equal(typeof planner.updateData,'function');
+  assert.equal(planner.selected('from'),null);
+  assert.equal(planner.selected('to'),null);
+  assert.match(node('route-preflight-status').textContent,
+   /Select two different airports and an aircraft/);
+ }finally{globalThis.Option=originalOption}
+});
