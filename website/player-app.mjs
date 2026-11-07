@@ -815,8 +815,12 @@ async function initialize(){
       doc.getElementById('local-preview-note').hidden=true;
       visible('app');
       await loadPlayerReadData({local:true});
-    }catch{
-      window.location.replace(LOCAL_DEMO_LOGIN_PATH);
+    }catch(error){
+      // Do not send a signed-in manager back to the account page on every
+      // startup failure: account.html immediately redirects verified users here.
+      // Keep the failure visible and log the cause for local troubleshooting.
+      console.error('Airlinerra local startup failed:',error);
+      visible('denied');
     }
     return;
   }
