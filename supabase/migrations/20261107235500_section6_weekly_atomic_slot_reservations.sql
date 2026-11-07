@@ -195,7 +195,7 @@ BEGIN
  DELETE FROM airlinerra_game.section6_weekly_airport_slot_reservations_v1
  WHERE schedule_id=saved_schedule_id;
  slot_preview:=airlinerra_game.section6_weekly_slot_preflight_v1(
-  1,p_origin_key,p_destination_key,p_reference_departure_utc,p_reference_arrival_utc,
+  1::smallint,p_origin_key,p_destination_key,p_reference_departure_utc,p_reference_arrival_utc,
   p_weekly_schedule,p_departure_stand,p_arrival_stand,NULL);
  IF (slot_preview->>'available')::boolean IS DISTINCT FROM true THEN
   RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='SECTION6_SLOT_UNAVAILABLE'; END IF;
@@ -203,7 +203,7 @@ BEGIN
   schedule_id,world_id,airport_key,stand_type,direction,weekday,minute_of_day)
  SELECT saved_schedule_id,1,p.airport_key,p.stand_type,p.direction,p.weekday,p.minute_of_day
  FROM airlinerra_game.section6_weekly_slot_proposals_v1(
-  1,p_origin_key,p_destination_key,p_reference_departure_utc,p_reference_arrival_utc,
+  1::smallint,p_origin_key,p_destination_key,p_reference_departure_utc,p_reference_arrival_utc,
   p_weekly_schedule,p_departure_stand,p_arrival_stand) p;
  UPDATE airlinerra_game.airline_flight_schedule_drafts_v1 SET
   departure_stand_type=p_departure_stand,arrival_stand_type=p_arrival_stand
