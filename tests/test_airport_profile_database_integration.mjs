@@ -86,7 +86,8 @@ test('localhost and hosted bridges route profile reads to the isolated Edge func
  assert.match(local,/airlinerra-airport-profile/);
  assert.match(hosted,/AIRPORT_PROFILE_EDGE_URL/);
  assert.match(office,/live.reader.airportProfile\(airport.key\)/);
- assert.match(office,/operational status unverified/);
+ assert.match(office,/Airport operational status/);
+ assert.match(office,/Not independently confirmed/);
  assert.match(bridge,/airportProfile:airportKey/);
  assert.match(edge,/createHostedAuthVerifier/);
  assert.match(edge,/validAirportKey\(body.airportKey\)/);
