@@ -21,6 +21,8 @@ export const simpleAirportHours=value=>{
  return raw.replace(/\s*\([^)]*\)/g,'').trim()||'Not specified';
 };
 export const simpleAirportCurfew=profile=>{
+ const simple=profile?.operations?.simpleNightNoise;
+ if(simple&&typeof simple.nighttimeBan==='boolean')return simple.nighttimeBan?'Yes':'No';
  const r=profile?.operations?.restrictionResearch;
  if(Number(r?.enforcedTimeRules||0)+Number(r?.enforcedRunwayRules||0)>0)
   return 'Mandatory rules recorded — see operating restrictions';
@@ -34,6 +36,15 @@ export const simpleAirportCurfew=profile=>{
  return 'Curfew not fully verified';
 };
 export const simpleAirportNoise=profile=>{
+ const simple=profile?.operations?.simpleNightNoise;
+ if(simple&&typeof simple.noiseRestrictions==='boolean'){
+  if(!simple.noiseRestrictions)return 'No';
+  const chapters=Array.isArray(simple.permittedChapters)?
+   simple.permittedChapters.filter(n=>Number.isInteger(n)&&[2,3,4,14].includes(n)):[];
+  const roman={2:'II',3:'III',4:'IV',14:'14'};
+  return 'Yes'+(chapters.length?' — Restricted to Chapter '+
+   chapters.map(n=>roman[n]).join(' and ')+' aircraft':'');
+ }
  const r=profile?.operations?.restrictionResearch;
  if(r?.noiseScreen==='YES')return 'Local aircraft noise conditions — see operating restrictions';
  const policy=profile?.operations?.icaoNoiseRules;
@@ -363,13 +374,21 @@ export function createAirportOffice({doc,session,identity,goTo,getAirlineLogoUrl
    ['Aircraft stands',p?count(p.facilities?.stands):fallback],
    ['Available operating slots','Data pending'],
    ['Aerodrome operating hours',p?simpleAirportHours(p.facilities?.operatingHours):fallback],
-   ['Curfew restrictions',p?simpleAirportCurfew(p):fallback],
-   ['Noise restrictions',p?simpleAirportNoise(p):fallback],
+   ['Nighttime ban (game)',p?simpleAirportCurfew(p):fallback],
+   ['Noise restrictions (game)',p?simpleAirportNoise(p):fallback],
    ['Airport operational status','Not independently confirmed']
   ]);
   const restrictionView=p?summarizeAirportRestrictions(p):null;
+  const sourceKind=p?.operations?.simpleNightNoise?.sourceStatus;
+  const simplifiedSource=sourceKind==='AIRLINESIM_PAGE_OBSERVED'?
+   'AirlineSim airport page checked':
+   sourceKind==='USER_AIRLINESIM_SCREENSHOT'?
+    'AirlineSim screenshot checked':'Airlinerra game default — not independently checked';
   const restrictionRows=[
-    ['Game operating rules',restrictionView?.status||fallback],
+    ['Simplified nighttime ban',p?simpleAirportCurfew(p):fallback],
+    ['Simplified noise restrictions',p?simpleAirportNoise(p):fallback],
+    ['Simplified game data source',p?simplifiedSource:fallback],
+    ['Detailed operating rules',restrictionView?.status||fallback],
     ['Airport local time zone',restrictionView?.timezone||fallback],
     ['Mandatory time / runway rules',restrictionView?String(restrictionView.hardCount):fallback],
     ['Permission and review rules',restrictionView?String(restrictionView.reviewCount):fallback],
