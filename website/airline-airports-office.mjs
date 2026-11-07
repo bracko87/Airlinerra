@@ -383,7 +383,10 @@ export function createAirportOffice({doc,session,identity,goTo,getAirlineLogoUrl
   const simplifiedSource=sourceKind==='AIRLINESIM_PAGE_OBSERVED'?
    'AirlineSim airport page checked':
    sourceKind==='USER_AIRLINESIM_SCREENSHOT'?
-    'AirlineSim screenshot checked':'Airlinerra game default — not independently checked';
+    'AirlineSim screenshot checked':
+   sourceKind==='AIRLINESIM_NOT_FOUND'?
+    'Not listed on AirlineSim — neutral game default':
+    'Airlinerra game default — not independently checked';
   const restrictionRows=[
     ['Simplified nighttime ban',p?simpleAirportCurfew(p):fallback],
     ['Simplified noise restrictions',p?simpleAirportNoise(p):fallback],
