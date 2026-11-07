@@ -47,6 +47,7 @@ export function summarizeAirportRestrictions(profile){
  const sources=[
    {label:'Operating-hours / curfew research',url:text(r.operatingSource)},
    {label:'Noise research',url:text(r.noiseSource)},
+   {label:'Simplified game source (AirlineSim only)',url:text(operation.simpleNightNoise?.source)},
    ...time.map((x,i)=>({label:'Time rule '+(i+1),url:x.source})),
    ...runway.map((x,i)=>({label:'Runway rule '+(i+1),url:x.source}))
  ].filter(x=>x.url);
