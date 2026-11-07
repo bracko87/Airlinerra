@@ -1,3 +1,5 @@
+> **Historical pre-completion snapshot:** This audit describes missing data before the approved November 7 game-default completion. Section 4 is now **GAME-DATA COMPLETE (ESTIMATED)** for all 3,141 airports. See [the verified Section 4 completion report](SECTION4_FACILITIES_GAME_COMPLETION_2026-11-07.md). Physical source verification still remains separate.
+
 # Section 4 — Terminals & Facilities: World 1 closure audit
 **Checked:** 7 November 2026. **Scope:** all 3,141 approved Airlinerra airports. **Data:** live Supabase private airport facilities and profiles.
 
