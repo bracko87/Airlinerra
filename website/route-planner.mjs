@@ -184,6 +184,9 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
  let catalogAircraft=[],preflightCache=null,preflightPromise=null;
  let ownedFleet=[],serverDrafts=[],fleetTicket=0;
  const pickers={},selected=side=>pickers[side]?.selected()||null;
+ // The country-picker constructor calls onSelect synchronously. Defer route
+ // rendering until all planner callbacks, including preflight, are initialized.
+ let plannerInitialized=false;
  const message=(id,value)=>{if($(id))$(id).textContent=value;};
  const selectedConfigurationId=()=>{
   const key=$('route-aircraft')?.value||'';
@@ -562,7 +565,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    onSelect:airport=>{
     const quick=$('route-'+side+'-hub');
     if(quick)quick.value=airport?.key===homeKey&&homeLocation?homeKey:'';
-    show();
+    if(plannerInitialized)show();
    }
   });
   $('route-'+side+'-country')?.addEventListener('change',()=>countryFlag(side));
@@ -1126,6 +1129,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   }
   show();
  }
+ plannerInitialized=true;
  updateWeek();show();
  return Object.freeze({updateData,preview:show,selected});
 }
