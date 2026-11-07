@@ -81,6 +81,8 @@ export const SCHEDULE_SQL=Object.freeze({
  save:`SELECT airlinerra_game.section6_save_owned_aircraft_schedule_with_slots_v1(
    $1::uuid,$2::uuid,$3::uuid,$4::text,$5::text,$6::text,
    $7::timestamptz,$8::timestamptz,$9::jsonb,$10::uuid,$11::text,$12::text) AS result`,
+ existingDraftOwner:`SELECT 1 FROM airlinerra_game.airline_flight_schedule_drafts_v1
+ WHERE id=$1::uuid AND airline_id=$2::uuid AND status='draft'`,
  fleetUse:`SELECT c.use_type AS "useType" FROM airlinerra_game.airline_aircraft_inventory i
   JOIN airlinerra.aircraft_configurations c ON c.id=i.configuration_id
   WHERE i.id=$1::uuid AND i.airline_id=$2::uuid AND i.fleet_status='in_service'`,
@@ -145,6 +147,11 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
    if(body.action==='slot-check'){
     const owner=await client.query(SCHEDULE_SQL.owner,[body.airlineId,userId]);
     if(owner.rowCount!==1)return respond(403,{error:'Airline not owned by this account'});
+    if(body.existingId){
+     const draft=await client.query(SCHEDULE_SQL.existingDraftOwner,
+      [body.existingId,body.airlineId]);
+     if(draft.rowCount!==1)return respond(403,{error:'Schedule not owned by this airline'});
+    }
     const fleet=await client.query(SCHEDULE_SQL.fleetUse,[body.aircraftInventoryId,body.airlineId]);
     if(fleet.rowCount!==1)return respond(403,{error:'Aircraft not in owned service fleet'});
     const useType=fleet.rows[0].useType;
