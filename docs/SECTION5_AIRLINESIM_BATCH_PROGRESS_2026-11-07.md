@@ -1,58 +1,54 @@
-# Airlinerra Section 5 — AirlineSim simplified game-rule batch progress
-**Updated:** 7 November 2026 · **World:** 1 · **Original simplified review backlog:** 1,216 airports (from the original 1,246 researched cases, 30 initially checked).
+# Airlinerra Section 5 — AirlineSim simplified airport rules: batch progress
+**Latest database verification:** 7 November 2026 · **World:** 1 · **Airport game database:** 3,141
 
-## Current confirmed progress
-- **Batches 1–8 complete:** 400/1,216 airport cases processed.
-- **AirlineSim airport pages individually checked:** 382 across those eight batches.
-- **Not found on AirlineSim:** 18 cases with user-approved neutral No/None *game* defaults, explicitly tagged `AIRLINESIM_NOT_FOUND`. Not-found is not a claim of no real restriction.
-- **Still pending individual comparison:** 816 cases, queued as Batches 9–25 (16×50 + last batch 16).
-- **Across all 3,141 airports:** 410 AirlineSim public airport pages checked (including 28 initial checks); 2 original user-screenshot cases; 18 recorded not-found directory lookups; **2,711 general game defaults not individually source checked**.
-- Section 5 database master remains `partially_populated`. Existing **91** precise official-source time rules and the original **1,246** detailed research-normalization items are retained without modification.
+## Current progress
+- Original researched backlog: **1,246** airports. Of these, 30 had initial AirlineSim observations, leaving **1,216** for the tracked batch project.
+- **450 / 1,216 cases processed** across Batches 1–9 (9 fully completed batches of 50).
+- **431 directly observed AirlineSim airport pages** in batches, matching each airport to its AirlineSim IATA/ICAO detail.
+- **19 airports not found** in the relevant complete country/region directory; each has the user-approved **No nighttime ban / No noise restrictions** *GAME fallback* and explicit `AIRLINESIM_NOT_FOUND` provenance.
+- **766 remaining cases** in Batches 10–25 (Batches 10–24 each contain 50 airports, Batch 25 contains 16).
+- In the full database: 459 AirlineSim detail pages checked (including 28 pre-batch checks), 2 user screenshots, 19 explicitly not found, and **2,661 other airports with unchecked neutral game defaults**.
+- The Section 5 master status is **`partially_populated`**, not yet closed. Existing 91 individually sourced time rules and 1,246 original detailed research-normalization entries remain untouched.
 
-## Batch-by-batch status
-| Batch | AirlineSim pages | Not found, neutral game default | Pending | Country groups |
+## Batch status
+| Batch | Confirmed AirlineSim source pages | Not listed — neutral game fallback | Pending | Notes |
 |---|---:|---:|---:|---|
 | 1 | 50 | 0 | 0 | Spain, Norway, Denmark, Italy |
-| 2 | 50 | 0 | 0 | Italy, UK, Germany |
+| 2 | 50 | 0 | 0 | Italy, United Kingdom, Germany |
 | 3 | 50 | 0 | 0 | Brazil |
-| 4 | 40 | 10 | 0 | France, Brazil |
+| 4 | 40 | 10 | 0 | Brazil, France |
 | 5 | 47 | 3 | 0 | Afghanistan, Anguilla, Armenia, Argentina, American Samoa, Austria, Australia, Azerbaijan, Bosnia, Bangladesh, Belgium, UAE |
 | 6 | 47 | 3 | 0 | Belgium, Bulgaria, Burundi, Brunei, Bolivia, Caribbean Netherlands, Brazil, Bahamas, Bhutan, Botswana, Belarus, Canada |
-| 7 | 49 | 1 | 0 | Canada, Cocos Islands, DR Congo, Switzerland, Cook Islands, Chile, China |
+| 7 | 49 | 1 | 0 | Canada, Cocos, DR Congo, Switzerland, Cook Islands, Chile, China |
 | 8 | 49 | 1 | 0 | China, Colombia, Costa Rica, Cuba, Cape Verde, Curaçao, Christmas Island, Cyprus, Czech Republic, Germany |
-| 9–24 | 0 | 0 | **800** | Queued, 50 per batch |
-| 25 | 0 | 0 | **16** | Queued |
-| **Total** | **382** | **18** | **816** | **400 completed** |
+| **9** | **49** | **1** | **0** | **Germany, Dominica, Dominican Republic, Algeria, Ecuador, Estonia, Egypt, Spain, Ethiopia, Finland** |
+| 10–24 | 0 | 0 | 750 | Queued, 50 airports per batch |
+| 25 | 0 | 0 | 16 | Queued |
+| **Totals** | **431** | **19** | **766** | **450 completed of 1,216** |
 
-## User-approved simplified output contract
-For each airport:
-- Nighttime ban: **Yes** or **No**. Store the AirlineSim displayed time range when Yes.
-- Noise restrictions: **None** or **Yes, Chapters III/IV permitted** (according to the wording of the specific AirlineSim page). No Chapter ban is inferred from a permitted-Chapter entry.
-- If **not listed after checking the applicable country and regional directories**, save **No nighttime ban / No noise restrictions** as a neutral GAME fallback, explicitly tagged **`AIRLINESIM_NOT_FOUND`**.
-- If **not yet checked**, retain **`GAME_DEFAULT_NOT_CHECKED`** and never describe it as sourced.
-- Keep official documented airport rules in separate protected tables; do not permit a simplified No to override an existing hard rule.
+### Batch 9 detailed result
+- **50 processed; 49 direct source pages checked; 1 not found.**
+- **10** airports have a simplified AirlineSim nighttime ban (SCN, GJL, TEE, FUE, GMZ, SPC, TFN, VDE, ABK, JIJ).
+- **22** airports have noise restrictions, reported by AirlineSim as **“Restricted to Chapter III and IV aircraft”** (these are *permitted* Chapters III/IV, not banned chapters).
+- **IBB (Isabela, Ecuador)** is not listed in AirlineSim Ecuador's complete 18-airport country directory as of check date. It received a clearly source-labelled **No / None neutral game default**, not a claim of actual legal permission.
+- Estonia was checked through country `id=44` and identified by IATA and ICAO: KDL, TAY and URE. Country `id=42` was a different country and was **not** used for Estonia values.
+- Melilla MLN was checked from Spain's Melilla regional directory; Åland MHQ was checked from Finland's Åland regional directory.
+- Temporary source page timeouts for Ecuador CUE/SCY were retried and resolved before commit.
 
-## Examples and special cases
-- Batch 5: 47 source checks; 3 not-found entries **ZDY (UAE), EDP (Argentina), KQR (Australia)**. A Vienna airport listed internally as `LOWW` was correctly matched to AirlineSim IATA `VIE` using ICAO.
-- Batch 6: 47 source checks; 3 not-found entries **CCA (Bolivia), SWX (Botswana), UMU (Brazil)**. Canada was checked via 13 provincial and territorial directories. AirlineSim entries for BQT, YHU and YUL have a game nighttime ban.
-- Batch 7: 49 source checks; 1 not-found **LMF (Chile)**; checked China provinces and Canadian provinces. AirlineSim game nighttime bans include ACH, BRN, LUG, DLC and SHA.
-- Batch 8: 49 source checks; 1 not-found **JCL (Czech Republic)**; exact source airport codes were confirmed for China, Colombia, Costa Rica, Cuba, Cape Verde, Curaçao, Christmas Island, Cyprus, Czech Republic and Germany.
-- No unverified location or incomplete page fetch was marked source-observed. Temporary timeouts were retried and source-code identity verified before batch commit.
+## Game rules and safety boundaries
+- **Nighttime ban:** simple Yes or No. When the AirlineSim page shows a window (usually 00:01–05:59), keep it as the simplified window.
+- **Noise restrictions:** No, or Yes with AirlineSim-permitted Chapters (typically III/IV).
+- **Not found:** No nighttime ban / No noise restrictions **game** defaults. Status `AIRLINESIM_NOT_FOUND`.
+- **Not yet checked:** same neutral **game** defaults, but status `GAME_DEFAULT_NOT_CHECKED`. Never count these as researched or sourced.
+- This separate simplified game setting **does not remove or override primary-source hard curfews, aircraft restrictions, runway rules, NOTAMs or other official research**. A simplified “No” is not real-world legal approval.
 
-## Storage and acceptance
-- `airlinerra_game.section5_airlinesim_review_batch_queue_v1`: 1,216 rows, 25 planned batches, 400 rows completed.
-- `airlinerra_game.section5_airport_simplified_game_rules_v1`: game Yes/No values, permitted Chapters, original source URL, source-status provenance, capture date.
-- `airlinerra_game.section5_airport_simplified_game_progress_v1`: read-only global progress.
-- Migration files:
-  - `supabase/migrations/20261107172500_section5_airlinesim_batch01_50_airports.sql`
-  - `supabase/migrations/20261107175000_section5_airlinesim_batch02_50_airports.sql`
-  - `supabase/migrations/20261107184000_section5_airlinesim_batch03_50_brazil_airports.sql`
-  - `supabase/migrations/20261107190000_section5_airlinesim_batch04_france_brazil_50.sql`
-  - `supabase/migrations/20261107201000_section5_airlinesim_batch05_50_airports.sql`
-  - `supabase/migrations/20261107203000_section5_airlinesim_batch06_50_airports.sql`
-  - `supabase/migrations/20261107210500_section5_airlinesim_batch07_50_airports.sql`
-  - `supabase/migrations/20261107213000_section5_airlinesim_batch08_50_airports.sql`
-- SQL acceptance: `tests/sql/section5_airlinesim_batches01_to08_acceptance.sql` — **PASSED against the live Supabase project**: exact batch counts and source statuses, all 3,141 game records, 91 old precise rules and 1,246 historical research cases preserved.
-- GitHub issue [#9](https://github.com/bracko87/Airlinerra/issues/9) tracks airport research/normalization; [#10](https://github.com/bracko87/Airlinerra/issues/10) tracks actual operational fleet, aircraft scheduling, slots and flight execution.
+## Database and GitHub references
+- Private Supabase queue: `airlinerra_game.section5_airlinesim_review_batch_queue_v1`.
+- Private game data: `airlinerra_game.section5_airport_simplified_game_rules_v1`.
+- Progress: `airlinerra_game.section5_airport_simplified_game_progress_v1`.
+- Batch 9 migration: `supabase/migrations/20261107221500_section5_airlinesim_batch09_50_airports.sql`.
+- Batch 9 acceptance: `tests/sql/section5_airlinesim_batches01_to09_acceptance.sql` — **PASSED in live Supabase**. Assertions cover 450 decisions, 431 observed, 19 not found, 766 pending, 50/50 Batch 9, 10 night bans, 22 noise restrictions, all 3,141 game records, and preservation of all 91 historical source-backed time restrictions.
+- Previous batch migrations 1–8 and historical acceptance tests remain in `supabase/migrations/` and `tests/sql/`. Those tests describe progress snapshots at their respective completion dates; use **the latest acceptance file** for the present live counts.
+- Airport restrictions and normalization tracked in GitHub [issue #9](https://github.com/bracko87/Airlinerra/issues/9). True operational fleet, aircraft slots and flight activation separately tracked in [issue #10](https://github.com/bracko87/Airlinerra/issues/10).
 
-**Next:** Begin Batch **9**, not Batch 1 or 5. Complete the remaining 816 airport lookups or document not-found outcomes with neutral game defaults. Only after source coverage and other game-data checks pass should Section 5's game-data completion be considered; this is not legal or regulatory validation of airports.
+**Next batch: 10.** Section 5 must not be reported as finished while its simplified AirportSim/ AirlineSim source review still has 766 pending items.
