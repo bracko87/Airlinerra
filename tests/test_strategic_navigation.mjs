@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {PLAYER_VIEWS,safePlayerView} from '../website/player-app-model.mjs';
-import {dropdownViewportShift} from '../website/navigation-menu-geometry.mjs';
+import {runInNewContext} from 'node:vm';
 
 const read=path=>readFile(new URL(path,import.meta.url),'utf8');
 const segment=(html,id,next)=>html.slice(html.indexOf('data-nav-group="'+id+'"'),next?html.indexOf('data-nav-group="'+next+'"'):html.indexOf('</nav>'));
@@ -95,6 +95,12 @@ test('Settings dropdown opens leftward and remains inside laptop and mobile view
  assert.match(css,/\.nav-group\[data-nav-group="settings"\]\s*>\s*\.nav-links a\s*\{[^}]*white-space:normal;/);
  assert.match(js,/settingsNavLinks\.getBoundingClientRect\(\)/);
  assert.match(js,/window\.addEventListener\('resize',fitSettingsDropdown\)/);
+ assert.doesNotMatch(js,/from ['"]\.\/navigation-menu-geometry\.mjs['"]/,
+  'Player must start without a separately downloaded menu-geometry module');
+ const start=js.indexOf('function dropdownViewportShift(');
+ const end=js.indexOf('\nconst settingsNavGroup=',start);
+ assert.ok(start>=0&&end>start,'Missing in-file viewport geometry helper');
+ const dropdownViewportShift=runInNewContext('('+js.slice(start,end).trim()+')');
  // A right-anchored Settings menu fits a laptop without shifting.
  assert.equal(dropdownViewportShift({left:1000,right:1264},1280),0);
  // If the navigation wraps near the left, move the dropdown inward.
