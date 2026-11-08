@@ -27,6 +27,11 @@ on:
       - 'tests/test_section6_slots.mjs'
       - 'tests/test_section9_api_ui.mjs'
       - 'tests/test_section9_demand_allocation.mjs'
+      - 'tests/test_section9_network_engine.mjs'
+      - 'tests/test_section9_commercial_api.mjs'
+      - 'server/section9-network-demand-engine.mjs'
+      - 'website/section9-partner-console.mjs'
+      - 'website/section9-commercial-plan-editor.mjs'
       - 'server/section9-demand-allocation.mjs'
       - 'website/section9-route-details.mjs'
       - 'website/private-player-app.html'
@@ -79,6 +84,9 @@ jobs:
           node --check website/route-planner.mjs
           node --check website/section9-route-details.mjs
           node --check server/section9-demand-allocation.mjs
+          node --check server/section9-network-demand-engine.mjs
+          node --check website/section9-partner-console.mjs
+          node --check website/section9-commercial-plan-editor.mjs
           node --check website/aircraft-weekly-timeline.mjs
           node --check website/route-map.mjs
           node --check website/world-outlines.mjs
@@ -87,7 +95,7 @@ jobs:
           node --check server/player-read-service.mjs
       - name: Run focused airport and route planning tests
         run: |
-          node --test tests/test_section5_weather_preflight.mjs tests/test_route_planner_ui.mjs tests/test_aircraft_weekly_timeline.mjs tests/test_airport_office_profiles.mjs tests/test_operations_center_navigation.mjs tests/test_airport_operating_restrictions_ui.mjs tests/test_production_game_api.mjs tests/test_route_restriction_preflight_api.mjs tests/test_route_aircraft_runway_screen.mjs tests/test_server_flight_schedule_api.mjs tests/test_section6_slots.mjs tests/test_fleet_acquisition_api.mjs tests/test_section9_api_ui.mjs tests/test_section9_demand_allocation.mjs tests/test_airline_workspace.mjs
+          node --test tests/test_section5_weather_preflight.mjs tests/test_route_planner_ui.mjs tests/test_aircraft_weekly_timeline.mjs tests/test_airport_office_profiles.mjs tests/test_operations_center_navigation.mjs tests/test_airport_operating_restrictions_ui.mjs tests/test_production_game_api.mjs tests/test_route_restriction_preflight_api.mjs tests/test_route_aircraft_runway_screen.mjs tests/test_server_flight_schedule_api.mjs tests/test_section6_slots.mjs tests/test_fleet_acquisition_api.mjs tests/test_section9_api_ui.mjs tests/test_section9_demand_allocation.mjs tests/test_section9_network_engine.mjs tests/test_section9_commercial_api.mjs tests/test_airline_workspace.mjs
       - name: Build complete private website with new route modules
         working-directory: website
         run: npm run build
@@ -96,5 +104,7 @@ jobs:
           test -s dist/aircraft-weekly-timeline.mjs
           grep -q 'buildAircraftWeeklyTimeline' dist/aircraft-weekly-timeline.mjs
           test -s dist/section9-route-details.mjs
+          test -s dist/section9-partner-console.mjs
+          test -s dist/section9-commercial-plan-editor.mjs
           test -s dist/flight-schedule-client.mjs
           grep -q 'createFlightScheduleClient' dist/flight-schedule-client.mjs
