@@ -75,7 +75,7 @@ export function createSection9DurableHoldRunner({database,sharedRunner}={}){
  const source=sharedRunner||createSection9SharedWindowRunner({database});
  if(typeof source?.preview!=='function')
   throw Error('SECTION9_VERIFIED_SHARED_WINDOW_REQUIRED');
- return Object.freeze({
+ const api={
   async stage({startGameDate,marketDays=3,chunkSize=75}={}){
    if(!validDay(startGameDate)||!boundedInt(marketDays,2,7)||
       !boundedInt(chunkSize,1,100))
@@ -153,7 +153,7 @@ export function createSection9DurableHoldRunner({database,sharedRunner}={}){
     throw Error('SECTION9_INVALID_BATCH_BUDGET');
    let processed=0;
    for(let i=0;i<maxBatches;i++){
-    const step=await this.processNext({planId,batchSize});
+    const step=await api.processNext({planId,batchSize});
     processed+=step.processed||0;
     if(step.status!=='ready')return {
      ...step,processedThisRun:processed,batches:i+1
@@ -163,5 +163,6 @@ export function createSection9DurableHoldRunner({database,sharedRunner}={}){
     batches:maxBatches,preflightOnly:true,
     bookingsCreated:false,ledgerPosted:false};
   }
- });
+ };
+ return Object.freeze(api);
 }
