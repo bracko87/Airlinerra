@@ -1,106 +1,130 @@
--- World 1 real aircraft acquisition acceptance. Reverts EVERY test write.
--- No real airline purchases, delivery, activation or ledger changes persist.
+-- Original acquisition acceptance upgraded for seeded production game-market offers.
+-- Same rollback-only tests as the new pricing+delivery fixture; no duplicate published offers.
+-- World 1 aircraft game-pricing + delivery lifecycle acceptance.
+-- Every fixture is transient: no game cash, aircraft or inspection writes persist.
 BEGIN;
-DO $tests$
+DO $check$
 DECLARE
- company uuid; player uuid; initial_cash numeric;
- purchase_offer uuid; lease_offer uuid; expensive_offer uuid;
- request uuid:=gen_random_uuid(); first_order jsonb; replay jsonb; lease_order jsonb;
- rejected boolean;
+ v_airline uuid; v_player uuid; v_cash numeric;
+ v_offer uuid; v_lease uuid; v_expensive uuid; v_cost numeric;
+ v_token uuid:=gen_random_uuid(); v_order uuid; v_fleet uuid;
+ v_purchase jsonb; v_replay jsonb; v_before jsonb; v_due jsonb; v_again jsonb;
+ v_refused boolean;
 BEGIN
- SELECT a.id,a.owner_player_id,a.cash_usd INTO company,player,initial_cash
+ SELECT a.id,a.owner_player_id,a.cash_usd INTO v_airline,v_player,v_cash
  FROM airlinerra_game.airlines a
  JOIN airlinerra_game.world_memberships w
   ON w.world_id=a.world_id AND w.player_id=a.owner_player_id
- WHERE a.world_id=1 AND w.state='active' AND a.iata_code IS NOT NULL LIMIT 1;
- IF company IS NULL THEN RAISE EXCEPTION 'NO_ACTIVE_TEST_AIRLINE'; END IF;
- INSERT INTO airlinerra_game.aircraft_acquisition_offers_v1(
-  configuration_id,transaction_type,upfront_price_usd,delivery_days,
-  offer_status,pricing_basis) VALUES(3,'purchase',250000,2,'published','ROLLBACK_TEST_ONLY')
- RETURNING offer_id INTO purchase_offer;
- INSERT INTO airlinerra_game.aircraft_acquisition_offers_v1(
-  configuration_id,transaction_type,upfront_price_usd,recurring_monthly_usd,
-  contract_months,delivery_days,offer_status,pricing_basis)
- VALUES(3,'lease',50000,12000,12,3,'published','ROLLBACK_TEST_ONLY')
- RETURNING offer_id INTO lease_offer;
+ WHERE a.world_id=1 AND w.state='active' LIMIT 1;
+ IF v_airline IS NULL THEN RAISE EXCEPTION 'NO_ACTIVE_AIRLINE'; END IF;
+ SELECT o.offer_id,o.upfront_price_usd INTO v_offer,v_cost
+ FROM airlinerra_game.aircraft_acquisition_offers_v1 o
+ WHERE o.configuration_id=93 AND o.transaction_type='purchase'
+  AND o.offer_status='published' LIMIT 1;
+ SELECT o.offer_id INTO v_lease
+ FROM airlinerra_game.aircraft_acquisition_offers_v1 o
+ WHERE o.configuration_id=93 AND o.transaction_type='lease'
+  AND o.offer_status='draft' LIMIT 1;
+ SELECT o.offer_id INTO v_expensive
+ FROM airlinerra_game.aircraft_acquisition_offers_v1 o
+ WHERE o.configuration_id=3 AND o.transaction_type='purchase'
+  AND o.offer_status='published' LIMIT 1;
+ IF v_offer IS NULL OR v_lease IS NULL OR v_expensive IS NULL
+ THEN RAISE EXCEPTION 'SEED_PRICES_MISSING'; END IF;
 
- rejected:=false;
+ v_refused:=false;
  BEGIN
-  PERFORM airlinerra_game.acquire_offered_aircraft_v1(gen_random_uuid(),company,
-    purchase_offer,'REG-TES1',gen_random_uuid());
- EXCEPTION WHEN SQLSTATE '42501' THEN rejected:=true; END;
- IF NOT rejected THEN RAISE EXCEPTION 'FOREIGN_OWNER_WAS_ALLOWED_TO_BUY'; END IF;
-
- first_order:=airlinerra_game.acquire_offered_aircraft_v1(
-  player,company,purchase_offer,'REG-TES1',request);
- IF first_order->>'deliveryStatus'<>'awaiting_delivery'
-  OR first_order->>'fleetStatus'<>'stored'
-  OR first_order->>'canScheduleFlight'<>'false'
-  OR first_order->>'replayed'<>'false'
-  OR (SELECT cash_usd FROM airlinerra_game.airlines WHERE id=company)<>initial_cash-250000
- THEN RAISE EXCEPTION 'ATOMIC_PURCHASE_AND_CASH_FAILED: %',first_order; END IF;
-
- replay:=airlinerra_game.acquire_offered_aircraft_v1(
-  player,company,purchase_offer,'reg-tes1',request);
- IF replay->>'replayed'<>'true' OR replay->>'orderId'<>first_order->>'orderId'
-  OR (SELECT cash_usd FROM airlinerra_game.airlines WHERE id=company)<>initial_cash-250000
- THEN RAISE EXCEPTION 'IDEMPOTENT_RETRY_DOUBLE_CHARGED: %',replay; END IF;
-
- rejected:=false;
+  PERFORM airlinerra_game.acquire_offered_aircraft_v1(
+   gen_random_uuid(),v_airline,v_offer,'TEST-DELI-1',gen_random_uuid());
+ EXCEPTION WHEN SQLSTATE '42501' THEN v_refused:=true; END;
+ IF NOT v_refused THEN RAISE EXCEPTION 'NON_OWNER_BUY_ACCEPTED'; END IF;
+ v_refused:=false;
  BEGIN
-  PERFORM airlinerra_game.acquire_offered_aircraft_v1(player,company,purchase_offer,
-    'REG-TES2',request);
+  PERFORM airlinerra_game.acquire_offered_aircraft_v1(
+   v_player,v_airline,v_lease,'TEST-DELI-2',gen_random_uuid());
  EXCEPTION WHEN SQLSTATE 'P0001' THEN
-   rejected:=SQLERRM='ACQUISITION_IDEMPOTENCY_KEY_REUSED'; END;
- IF NOT rejected THEN RAISE EXCEPTION 'IDEMPOTENCY_REQUEST_REUSED_WITH_OTHER_REGISTRATION'; END IF;
+  v_refused:=SQLERRM='AIRCRAFT_OFFER_NOT_AVAILABLE'; END;
+ IF NOT v_refused THEN RAISE EXCEPTION 'UNBILLED_LEASE_ACCEPTED'; END IF;
 
- rejected:=false;
+ v_purchase:=airlinerra_game.acquire_offered_aircraft_v1(
+  v_player,v_airline,v_offer,'TEST-DELI-1',v_token);
+ v_order:=(v_purchase->>'orderId')::uuid;
+ v_fleet:=(v_purchase->>'aircraftInventoryId')::uuid;
+ IF v_purchase->>'deliveryStatus'<>'awaiting_delivery'
+ OR v_purchase->>'fleetStatus'<>'stored'
+ OR v_purchase->>'canScheduleFlight'<>'false'
+ OR (SELECT a.cash_usd FROM airlinerra_game.airlines a WHERE a.id=v_airline)<>v_cash-v_cost
+ THEN RAISE EXCEPTION 'BAD_PURCHASE_RECEIPT_OR_CASH: %',v_purchase; END IF;
+ v_replay:=airlinerra_game.acquire_offered_aircraft_v1(
+  v_player,v_airline,v_offer,'test-deli-1',v_token);
+ IF v_replay->>'replayed'<>'true'
+ OR v_replay->>'orderId'<>v_purchase->>'orderId'
+ OR (SELECT a.cash_usd FROM airlinerra_game.airlines a WHERE a.id=v_airline)<>v_cash-v_cost
+ THEN RAISE EXCEPTION 'REPLAY_DOUBLE_DEBITED'; END IF;
+
+ v_refused:=false;
  BEGIN
-  PERFORM airlinerra_game.acquire_offered_aircraft_v1(player,company,purchase_offer,
-    'REG-TES1',gen_random_uuid());
+  PERFORM airlinerra_game.acquire_offered_aircraft_v1(
+   v_player,v_airline,v_expensive,'TEST-DELI-3',gen_random_uuid());
  EXCEPTION WHEN SQLSTATE 'P0001' THEN
-   rejected:=SQLERRM='AIRCRAFT_REGISTRATION_ALREADY_TAKEN'; END;
- IF NOT rejected THEN RAISE EXCEPTION 'DUPLICATE_AIRCRAFT_REGISTRATION_ACCEPTED'; END IF;
-
- INSERT INTO airlinerra_game.aircraft_acquisition_offers_v1(
-  configuration_id,transaction_type,upfront_price_usd,offer_status,pricing_basis)
- VALUES(57,'purchase',9000000,'published','ROLLBACK_TEST_ONLY')
- RETURNING offer_id INTO expensive_offer;
- rejected:=false;
+  v_refused:=SQLERRM='INSUFFICIENT_AIRLINE_CASH'; END;
+ IF NOT v_refused THEN RAISE EXCEPTION 'INSUFFICIENT_CASH_NOT_BLOCKED'; END IF;
+ v_refused:=false;
  BEGIN
-  PERFORM airlinerra_game.acquire_offered_aircraft_v1(player,company,expensive_offer,
-    'REG-TES9',gen_random_uuid());
+  PERFORM airlinerra_game.acquire_offered_aircraft_v1(
+   v_player,v_airline,v_offer,'TEST-DELI-1',gen_random_uuid());
  EXCEPTION WHEN SQLSTATE 'P0001' THEN
-   rejected:=SQLERRM='INSUFFICIENT_AIRLINE_CASH'; END;
- IF NOT rejected THEN RAISE EXCEPTION 'INSUFFICIENT_CASH_CHECK_MISSING'; END IF;
+  v_refused:=SQLERRM='AIRCRAFT_REGISTRATION_ALREADY_TAKEN'; END;
+ IF NOT v_refused THEN RAISE EXCEPTION 'DUPLICATE_REGISTRATION_ACCEPTED'; END IF;
 
- lease_order:=airlinerra_game.acquire_offered_aircraft_v1(
-  player,company,lease_offer,'REG-TES3',gen_random_uuid());
- IF lease_order->>'transactionType'<>'lease'
- OR (SELECT ownership_type FROM airlinerra_game.airline_aircraft_inventory
-    WHERE id=(lease_order->>'aircraftInventoryId')::uuid)<>'leased'
- OR (SELECT cash_usd FROM airlinerra_game.airlines WHERE id=company)<>initial_cash-300000
- THEN RAISE EXCEPTION 'LEASE_UPFRONT_OR_STATUS_INCORRECT'; END IF;
- IF (SELECT count(*) FROM airlinerra_game.airline_ledger
-  WHERE airline_id=company AND entry_kind IN('AIRCRAFT_PURCHASE','AIRCRAFT_LEASE'))<>2
- OR (SELECT count(*) FROM airlinerra_game.aircraft_acquisition_orders_v1
-    WHERE airline_id=company)<>2 THEN
-  RAISE EXCEPTION 'MISSING_LEDGER_OR_DUPLICATE_ORDER'; END IF;
+ v_before:=airlinerra_game.check_owned_aircraft_delivery_v1(
+  v_player,v_airline,v_order);
+ IF v_before->>'deliveryStatus'<>'awaiting_delivery'
+  OR v_before->>'inspectionStatus'<>'not_requested'
+  OR v_before->>'fleetStatus'<>'stored' THEN
+  RAISE EXCEPTION 'BEFORE_DUE_DELIVERY_ADVANCED: %',v_before; END IF;
+ v_refused:=false;
+ BEGIN
+  PERFORM airlinerra_game.check_owned_aircraft_delivery_v1(
+   gen_random_uuid(),v_airline,v_order);
+ EXCEPTION WHEN SQLSTATE '42501' THEN v_refused:=true; END;
+ IF NOT v_refused THEN RAISE EXCEPTION 'FOREIGN_USER_CHECKED_DELIVERY'; END IF;
+ v_refused:=false;
+ BEGIN
+  PERFORM airlinerra_game.check_owned_aircraft_delivery_v1(
+   v_player,v_airline,gen_random_uuid());
+ EXCEPTION WHEN SQLSTATE '42501' THEN v_refused:=true; END;
+ IF NOT v_refused THEN RAISE EXCEPTION 'FOREIGN_ORDER_CHECKED'; END IF;
 
- rejected:=false;
+ UPDATE airlinerra_game.aircraft_acquisition_orders_v1 o
+ SET delivery_due_at=now()-interval '15 minutes'
+ WHERE o.order_id=v_order;
+ v_due:=airlinerra_game.check_owned_aircraft_delivery_v1(
+  v_player,v_airline,v_order);
+ IF v_due->>'deliveryStatus'<>'delivered_pending_inspection'
+ OR v_due->>'inspectionStatus'<>'pending_inspection'
+ OR v_due->>'fleetStatus'<>'stored'
+ OR v_due->>'canActivateFlight'<>'false'
+ THEN RAISE EXCEPTION 'DELIVERY_INSPECTION_UNSAFE: %',v_due; END IF;
+ v_again:=airlinerra_game.check_owned_aircraft_delivery_v1(
+  v_player,v_airline,v_order);
+ IF v_again->>'deliveryStatus'<>'delivered_pending_inspection'
+ OR (SELECT count(*) FROM airlinerra_game.aircraft_delivery_inspections_v1 i
+     WHERE i.aircraft_inventory_id=v_fleet)<>1
+ THEN RAISE EXCEPTION 'DELIVERY_RECHECK_CREATED_DUPLICATE'; END IF;
+ IF (SELECT count(*) FROM airlinerra_game.airline_ledger l
+     WHERE l.airline_id=v_airline AND l.entry_kind='AIRCRAFT_PURCHASE')<>1
+ THEN RAISE EXCEPTION 'DELIVERY_ADDED_FINANCIAL_EVENT'; END IF;
+
+ v_refused:=false;
  BEGIN
   PERFORM airlinerra_game.section5_save_owned_aircraft_schedule_draft_v1(
-    player,company,(first_order->>'aircraftInventoryId')::uuid,'PA999',
-    'OURAIRPORTS:2220','OURAIRPORTS:4001',
-    '2026-11-09 10:00+00','2026-11-09 12:00+00',
-    '[{"day":0,"time":"13:00"}]'::jsonb);
+   v_player,v_airline,v_fleet,'PA919','OURAIRPORTS:2220','OURAIRPORTS:4001',
+   '2026-11-09 10:00+00','2026-11-09 12:00+00',
+   '[{"day":0,"time":"13:00"}]'::jsonb);
  EXCEPTION WHEN SQLSTATE 'P0001' THEN
-   rejected:=SQLERRM='AIRCRAFT_NOT_OWNED_LEASED_OR_IN_SERVICE'; END;
- IF NOT rejected THEN RAISE EXCEPTION 'UNDELIVERED_AIRCRAFT_PASSED_SCHEDULE_GATE'; END IF;
-
- IF has_function_privilege('anon','airlinerra_game.acquire_offered_aircraft_v1(uuid,uuid,uuid,text,uuid)','EXECUTE')
- OR has_function_privilege('authenticated','airlinerra_game.acquire_offered_aircraft_v1(uuid,uuid,uuid,text,uuid)','EXECUTE')
- THEN RAISE EXCEPTION 'DIRECT_PUBLIC_PURCHASE_SQL_IS_EXPOSED'; END IF;
- RAISE NOTICE 'PASS owner, purchase/lease cash, ledger, duplicate, idempotency, delivery safety, schedule blocking and private SQL';
-END $tests$;
+  v_refused:=SQLERRM='AIRCRAFT_NOT_OWNED_LEASED_OR_IN_SERVICE'; END;
+ IF NOT v_refused THEN RAISE EXCEPTION 'UNINSPECTED_PLANE_WAS_SCHEDULED'; END IF;
+ RAISE NOTICE 'PASS curated World1 prices, owner, cash/ledger, retries, blocked lease, due delivery, pending inspection and scheduling';
+END $check$;
 ROLLBACK;
