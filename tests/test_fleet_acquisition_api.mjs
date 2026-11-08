@@ -157,3 +157,56 @@ test('market and owned fleet pages use authenticated data without fabricated pri
  assert.match(overlay,/'fleet-acquisition-client.mjs'/);
  assert.doesNotMatch(workspace,/sb_secret_|service_role/);
 });
+
+
+test('delivery requests require exact owner-scoped IDs and cannot claim inspection approvals',()=>{
+ assert.equal(validateFleetAcquisitionRequest({
+  action:'check-delivery',airlineId:airline,orderId:requestId}),true);
+ assert.equal(validateFleetAcquisitionRequest({
+  action:'check-delivery',airlineId:airline,orderId:requestId,approved:true}),false);
+ assert.equal(validateFleetAcquisitionRequest({
+  action:'check-delivery',airlineId:airline,orderId:'not-an-id'}),false);
+ assert.equal(validateFleetAcquisitionRequest({
+  action:'inspect',airlineId:airline,orderId:requestId}),false);
+});
+test('delivery uses database owner-verified transition, not browser-supplied state or time',async()=>{
+ const expected={orderId:requestId,aircraftInventoryId:aircraft,
+  deliveryStatus:'delivered_pending_inspection',
+  inspectionStatus:'pending_inspection',fleetStatus:'stored',
+  canScheduleFlight:false,canActivateFlight:false};
+ const {handler,statements,releases}=setup((sql,args)=>{
+  assert.equal(sql,FLEET_SQL.delivery);
+  assert.deepEqual(args,[user,airline,requestId]);
+  return {rowCount:1,rows:[{result:expected}]};
+ });
+ const res=await handler(request({
+  action:'check-delivery',airlineId:airline,orderId:requestId}));
+ assert.equal(res.status,200);
+ assert.deepEqual(await res.json(),expected);
+ assert.equal(statements.length,1);
+ assert.equal(releases(),1);
+});
+test('browser delivery lookup passes just order ID, never approval or game-time values',async()=>{
+ const calls=[];
+ const client=createFleetAcquisitionClient({
+  auth:{getAccessToken:async()=>TOKEN},
+  origin:'https://airlinerra.com',
+  fetchImpl:async(url,options)=>{
+   calls.push({url,options});
+   return Response.json({orderId:requestId,deliveryStatus:'awaiting_delivery',
+     fleetStatus:'stored',canActivateFlight:false});
+  }
+ });
+ const data=await client.checkDelivery({airlineId:airline,orderId:requestId});
+ assert.equal(data.canActivateFlight,false);
+ assert.equal(calls.length,1);
+ assert.deepEqual(JSON.parse(calls[0].options.body),
+  {action:'check-delivery',airlineId:airline,orderId:requestId});
+});
+test('fleet page exposes owner delivery check while leaving actual flight release locked',async()=>{
+ const workspace=await readFile(new URL('../website/airline-workspace.mjs',import.meta.url),'utf8');
+ assert.match(workspace,/data\.fleetClient\.checkDelivery\(/);
+ assert.match(workspace,/data-aircraft-delivery/);
+ assert.match(workspace,/inspection is required before it can be scheduled/);
+ assert.match(workspace,/fleet-delivery-feedback/);
+});
