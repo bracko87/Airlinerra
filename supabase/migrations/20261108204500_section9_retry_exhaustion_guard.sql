@@ -13,10 +13,10 @@ BEGIN
   WHERE status='running' AND attempt>=5 AND lease_until<clock_timestamp()
   ORDER BY game_date,id FOR UPDATE SKIP LOCKED LIMIT 100
  )
- UPDATE airlinerra_game.section9_demand_jobs_v1 j
+ UPDATE airlinerra_game.section9_demand_jobs_v1 job
  SET status='failed',lease_token=NULL,lease_until=NULL,
   failure_code='TIMEOUT',updated_at=clock_timestamp()
- FROM expired e WHERE j.id=e.id;
+ FROM expired e WHERE job.id=e.id;
 
  SELECT * INTO j FROM airlinerra_game.section9_demand_jobs_v1
  WHERE attempt<5 AND (status='queued'
