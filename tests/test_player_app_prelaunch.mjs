@@ -11,7 +11,7 @@ import {TESTER_ORIGIN,TESTER_AUTH_URL} from '../website/invited-tester-entry.mjs
 
 test('player application has complete distinct navigation and bounded hash routes',()=>{
   assert.equal(PLAYER_APP_PATH,'/player.html');
-  assert.equal(PLAYER_VIEWS.length,43);
+  assert.equal(PLAYER_VIEWS.length,44);
   assert.equal(new Set(PLAYER_VIEWS).size,PLAYER_VIEWS.length);
   for(const route of ['aircraft-library','aircraft-profile','airport-profile','holding','infrastructure','staff','employees-pilots','employees-board','employees-payroll','marketing-reputation','marketing-research','statistics','rankings'])
    assert.ok(PLAYER_VIEWS.includes(route),route);
@@ -115,7 +115,7 @@ test('grouped horizontal dropdowns keep all ten game routes accessible',async()=
     assert.match(segment,/class="chevron"/);
     assert.deepEqual([...segment.matchAll(/data-view-link="([^"]+)"/g)].map(x=>x[1]),expected[order[i]]);
   }
-  assert.equal([...html.slice(html.indexOf('<nav class="app-navigation"'),html.indexOf('</nav>')+6).matchAll(/data-view-link="([^"]+)"/g)].length,PLAYER_VIEWS.length-1);
+  assert.equal([...html.slice(html.indexOf('<nav class="app-navigation"'),html.indexOf('</nav>')+6).matchAll(/data-view-link="([^"]+)"/g)].length,PLAYER_VIEWS.length-2, 'Aircraft profile and route detail pages have no top-level menu item');
   assert.match(html,/href="#holding" data-view-link="holding">Holding/);
   assert.match(css,/\.app-navigation-inner\{[^}]*overflow:visible;/);
   assert.match(css,/\.nav-links a\[aria-current="page"\]/);
