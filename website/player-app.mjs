@@ -395,6 +395,9 @@ async function loadPlayerReadData({local=false}={}){
   initialManagerLanding=false;
  }
 }
+doc.addEventListener('airlinerra:fleet-updated',()=>{
+ if(auth&&currentAirline?.id)void loadPlayerReadData();
+});
 function renderSavedDraft(draft){
  const output=doc.getElementById('setup-draft-review');
  output.replaceChildren();
