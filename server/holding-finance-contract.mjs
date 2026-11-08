@@ -62,6 +62,8 @@ export function calculateHoldingTransferFee({amountUsd,fixedFeeUsd,basisPoints,c
  if(amount<=0n)throw Error('Transfer amount must be positive');
  if(!Number.isInteger(basisPoints)||basisPoints<0||basisPoints>500)
   throw Error('Unverified or invalid transfer fee rate');
+ if(cap===0n||(fixed===0n&&basisPoints===0))
+  throw Error('Every transfer requires a positive configured game banking fee');
  const percentage=(amount*BigInt(basisPoints)+9999n)/10000n;
  const total=fixed+percentage;
  return centsToUsd(total<cap?total:cap);
