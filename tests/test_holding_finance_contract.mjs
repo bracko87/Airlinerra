@@ -64,6 +64,8 @@ test('transfer fees have fixed and percent components, ceil to cent, and enforce
  assert.equal(calculateHoldingTransferFee({amountUsd:'1000.00',...policy}),'0.80');
  assert.equal(calculateHoldingTransferFee({amountUsd:'10000.00',...policy}),'2.00');
  assert.equal(calculateHoldingTransferFee({amountUsd:'0.01',...policy}),'0.31');
+ assert.throws(()=>calculateHoldingTransferFee({amountUsd:'100.00',fixedFeeUsd:'0.00',basisPoints:0,capFeeUsd:'1.00'}),/positive configured/);
+ assert.throws(()=>calculateHoldingTransferFee({amountUsd:'100.00',fixedFeeUsd:'0.30',basisPoints:5,capFeeUsd:'0.00'}),/positive configured/);
  assert.throws(()=>calculateHoldingTransferFee({amountUsd:'100.00',fixedFeeUsd:'0.30',basisPoints:5}),
   /Exact/,'Missing price must fail closed');
  assert.throws(()=>calculateHoldingTransferFee({amountUsd:'10.00',fixedFeeUsd:'0.30',basisPoints:-1,capFeeUsd:'2.00'}));
