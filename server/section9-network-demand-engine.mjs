@@ -33,13 +33,13 @@ const lowerBound=(xs,minimum)=>{
   if(xs[mid].depMs<minimum)lo=mid+1;else hi=mid;}
  return lo;
 };
-function partnershipAllowed(a,b,at,agreements,holdingGroups){
+function partnershipAllowed(a,b,journeyStart,journeyEnd,agreements,holdingGroups){
  if(a===b)return true;
  if(holdingGroups.get(a)&&holdingGroups.get(a)===holdingGroups.get(b))return true;
  const p=agreements.get(a<b?key(a,b):key(b,a));
  return !!(p&&p.agreementStatus==='active'&&p.leftApproved===true&&
-  p.rightApproved===true&&time(p.validFrom)<=at&&
-  (!p.validUntil||time(p.validUntil)>at));
+  p.rightApproved===true&&time(p.validFrom)<=journeyStart&&
+  (!p.validUntil||time(p.validUntil)>journeyEnd));
 }
 function cleanFlight(f){
  if(!id(f?.id)||!id(f.airlineId)||!id(f.origin)||!id(f.destination)||
@@ -153,7 +153,7 @@ export function section9SimulateDay({
     if(second.depMs>latest)break;
     candidateChecks++;
     if(!partnershipAllowed(first.airlineId,second.airlineId,
-       second.depMs,agreementMap,holdingMap))continue;
+       first.depMs,second.arrMs,agreementMap,holdingMap))continue;
     const wait=Math.round((second.depMs-first.arrMs)/MINUTE);
     if(wait<mct||wait>MAX_TRANSFER)continue;
     push([first,second],wait,mct,policy.background||'');
@@ -271,7 +271,7 @@ export function section9DiscoverReachableMarkets({
       (!first.cargoTonnes||!second.cargoTonnes||rule.cargoHandling!==true))
     continue;
    if(!partnershipAllowed(first.airlineId,second.airlineId,
-    second.depMs,allowed,groups))continue;
+    first.depMs,second.arrMs,allowed,groups))continue;
    add(first.origin,second.destination);
   }
  }
