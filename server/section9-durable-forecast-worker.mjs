@@ -73,7 +73,7 @@ function validateOutput(result){
  // identities BEFORE publishing, since a completed job cannot be retried via
  // the ordinary queued worker.
  const physicalId=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
- const date=/^\\d{4}-\\d{2}-\\d{2}$/;
+ const date=/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/;
  const amount=v=>typeof v==='number'&&Number.isFinite(v)&&v>=0&&
   v<=1000000000000&&Math.abs(Math.round(v*100)/100-v)<0.000001;
  for(const f of result.flights){
