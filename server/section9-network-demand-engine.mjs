@@ -88,7 +88,7 @@ export function section9SimulateDay({
  maxItinerariesPerMarket=1000
 }={}){
  if(!Array.isArray(flights)||!Array.isArray(markets)||
-   !Array.isArray(agreements)||flights.length>100000||markets.length>100000||
+   !Array.isArray(agreements)||flights.length>300000||markets.length>100000||
    !Number.isInteger(maxItinerariesPerMarket)||
    maxItinerariesPerMarket<1||maxItinerariesPerMarket>10000)
   throw Error('SECTION9_INVALID_BATCH');
@@ -152,8 +152,7 @@ export function section9SimulateDay({
     const second=secondLegs[i];
     if(second.depMs>latest)break;
     candidateChecks++;
-    if(second.marketDate<first.marketDate||
-      !partnershipAllowed(first.airlineId,second.airlineId,
+    if(!partnershipAllowed(first.airlineId,second.airlineId,
        second.depMs,agreementMap,holdingMap))continue;
     const wait=Math.round((second.depMs-first.arrMs)/MINUTE);
     if(wait<mct||wait>MAX_TRANSFER)continue;
@@ -228,7 +227,7 @@ export function section9DiscoverReachableMarkets({
  maxMarketPairs=100000
 }={}){
  if(!validDate(marketDate)||!Array.isArray(flights)||!Array.isArray(agreements)||
-  flights.length>100000||!Number.isInteger(maxMarketPairs)||
+  flights.length>300000||!Number.isInteger(maxMarketPairs)||
   maxMarketPairs<1||maxMarketPairs>100000)
   throw Error('SECTION9_INVALID_DISCOVERY_INPUT');
  const verified=flights.map(cleanFlight),byOrigin=new Map(),ids=new Set();
