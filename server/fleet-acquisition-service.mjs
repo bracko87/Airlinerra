@@ -16,6 +16,8 @@ export function validateFleetAcquisitionRequest(body){
     typeof body.action!=='string'||!uuid(body.airlineId))return false;
  if(body.action==='list')return Object.keys(body).length===2 &&
   Object.keys(body).every(k=>['action','airlineId'].includes(k));
+ if(body.action==='check-delivery')return Object.keys(body).length===3 &&
+  Object.keys(body).every(k=>['action','airlineId','orderId'].includes(k)) && uuid(body.orderId);
  if(body.action==='acquire')return Object.keys(body).length===5 &&
   Object.keys(body).every(k=>['action','airlineId','offerId','registration','requestId'].includes(k)) &&
   uuid(body.offerId)&&uuid(body.requestId)&&typeof body.registration==='string' &&
@@ -40,13 +42,14 @@ export const FLEET_SQL=Object.freeze({
  fleet:"SELECT i.id::text AS id,i.configuration_id::int AS \"configurationId\", "+
   "i.registration,i.ownership_type AS \"ownershipType\",i.fleet_status AS \"fleetStatus\", "+
   "c.manufacturer_name AS manufacturer,c.model_name AS model,c.use_type AS \"useType\", "+
-  "o.order_status AS \"deliveryStatus\",o.delivery_due_at AS \"deliveryDueAt\", "+
+  "o.order_id::text AS \"orderId\",o.order_status AS \"deliveryStatus\",o.delivery_due_at AS \"deliveryDueAt\", "+
   "o.delivery_home_airport_key AS \"deliveryAirportKey\",o.transaction_type AS \"acquisitionType\" "+
   "FROM airlinerra_game.airline_aircraft_inventory i "+
   "LEFT JOIN airlinerra_game.aircraft_acquisition_orders_v1 o "+
   "ON o.aircraft_inventory_id=i.id AND o.airline_id=i.airline_id "+
   "LEFT JOIN airlinerra.aircraft_catalog_configuration_inventory c ON c.configuration_id=i.configuration_id "+
   "WHERE i.airline_id=$1::uuid ORDER BY i.created_at DESC,i.id LIMIT 250",
+ delivery:"SELECT airlinerra_game.check_owned_aircraft_delivery_v1($1::uuid,$2::uuid,$3::uuid) AS result",
  acquire:"SELECT airlinerra_game.acquire_offered_aircraft_v1("+
   "$1::uuid,$2::uuid,$3::uuid,$4::text,$5::uuid) AS result"
 });
@@ -90,6 +93,12 @@ export function createFleetAcquisitionHandler({verifyUserToken,database}={}){
     return respond(200,{airlineId:body.airlineId,cashUsd:owner.rows[0].cashUsd,
      offers:offers.rows,fleet:fleet.rows,liveFlightActivation:false});
    }
+   if(body.action==='check-delivery'){
+    const result=await client.query(FLEET_SQL.delivery,[playerId,body.airlineId,body.orderId]);
+    if(result.rowCount!==1||!result.rows[0]?.result)
+      return respond(503,{error:'Delivery status could not be confirmed'});
+    return respond(200,result.rows[0].result);
+   }
    const registration=body.registration.trim().toUpperCase();
    const result=await client.query(FLEET_SQL.acquire,[
     playerId,body.airlineId,body.offerId,registration,body.requestId
@@ -108,7 +117,8 @@ export function createFleetAcquisitionHandler({verifyUserToken,database}={}){
      'ACQUISITION_IDEMPOTENCY_KEY_REUSED','AIRCRAFT_OFFER_NOT_AVAILABLE',
      'AIRCRAFT_CONFIGURATION_NOT_RELEASED_FOR_PLAYER_MARKET',
      'GROUP3_AIRCRAFT_NOT_RELEASED_FOR_FLEET',
-     'AIRCRAFT_REGISTRATION_ALREADY_TAKEN','INSUFFICIENT_AIRLINE_CASH'
+     'AIRCRAFT_REGISTRATION_ALREADY_TAKEN','INSUFFICIENT_AIRLINE_CASH',
+     'AIRLINE_WORLD_NOT_ACTIVE_FOR_DELIVERY'
     ]);
     return respond(409,{reason:allowed.has(err.message)?err.message:'AIRCRAFT_ACQUISITION_UNAVAILABLE'});
    }
