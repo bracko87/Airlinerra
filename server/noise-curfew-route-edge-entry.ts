@@ -3,6 +3,7 @@
  */
 import {Pool} from 'npm:pg@8.16.3';
 import {createHostedAuthVerifier} from './hosted-auth-verifier.mjs';
+import {WEATHER_ROUTE_REFERENCE_SQL,buildWeatherReferencePreview} from './flight-weather-reference.mjs';
 import {AIRLINERRA_INVITED_TESTER_PUBLIC_SETTINGS as settings} from '../website/invited-tester-public-settings.mjs';
 
 const ORIGIN='https://airlinerra.com';
@@ -96,6 +97,18 @@ Deno.serve(async(request:Request)=>{
   const gate=rows[0]?.gate;
   if(rows.length!==1||!gate||typeof gate!=='object')
    return respond(404,{error:'Airport or aircraft restriction screen not found'});
+  // Weather is read-only forecast context; failed weather reads never bypass
+  // restriction checks and never become a fabricated aviation weather clearance.
+  let weatherPreview;
+  try {
+   const forecast=await client.query(WEATHER_ROUTE_REFERENCE_SQL,[
+    body.originAirportKey,body.departureUtc,
+    body.destinationAirportKey,body.arrivalUtc
+   ]);
+   weatherPreview=buildWeatherReferencePreview(forecast.rows);
+  }catch{
+   weatherPreview=buildWeatherReferencePreview([]);
+  }
   const screened=Array.isArray(gate.occurrences)?gate.occurrences:[];
   const blocked=screened.filter((x:any)=>x.gameHardBlocked===true);
   const relevant=blocked[0]||screened[0]||{};
@@ -135,6 +148,7 @@ Deno.serve(async(request:Request)=>{
       runwayBlocked:arr.blockedByRunwayRule===true||arr.blockedByRunwayLength===true,
       verifiedNoiseBlocked:arr.blockedByVerifiedNoiseRule===true,
       noiseOrSlotReviewRequired:arr.noiseReview===true||arr.quotaOrSlotReview===true},
+    weatherPreview,
     gameScheduleOutcome:gate.decision,
     weeklyScheduleChecked:gate.weeklyTimetableChecked===true,
     weeklyWeeksChecked:gate.weeksChecked??null,
@@ -151,7 +165,7 @@ Deno.serve(async(request:Request)=>{
     preliminarilyAllowed:gate.gamePreliminaryAllow===true,
     legalRealWorldClearance:false,
     universalGate:gate,
-    note:'Game preflight check only. Weekly departures are screened across four weeks using the airport local timezone; arrival times use the entered example duration. Unverified certificates add no extra game Chapter ban. No live flight or slot activation.'
+    note:'Game preflight check only. Weekly departures are screened across four weeks using the airport local timezone; arrival times use the entered example duration. Weather is a forecast preview for the reference flight only; no aviation weather minima or live activation.'
   });
  }catch(error){
   const sqlError=error as {code?:unknown}|null;
