@@ -18,8 +18,8 @@ const preview=(n=1)=>{
  return {previewOnly:true,flightActivationAllowed:false,
   writesToAirlineLedger:false,authorizesFlightActivation:false,
   status:n?'forecast_only':'no_active_flights',flights,
-  passengers:{markets:n?[{marketId:'A-B',demand:100,allocated:50,unserved:50}]:[]},
-  cargo:{markets:n?[{marketId:'A-B',demand:4,allocated:1,unserved:3}]:[]}};
+  passengers:{markets:n?[{marketId:'A-B',demand:50*n,allocated:50*n,unserved:0}]:[]},
+  cargo:{markets:n?[{marketId:'A-B',demand:n,allocated:n,unserved:0}]:[]}};
 };
 function fakeDb({queued=true,failStage=false}={}){
  let acquired=0,released=0,claimUsed=false,completed=0,failed=0,heartbeats=0;
