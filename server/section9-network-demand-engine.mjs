@@ -197,7 +197,14 @@ export function section9SimulateDay({
  const flightResults=[...flightsById.values()].sort((a,b)=>a.id.localeCompare(b.id)).map(f=>{
   const totals=revenueByFlight.get(f.id), pax=passengers.flightUsed[f.id]||0,
    cargoUsed=cargo.flightUsed[f.id]||0;
-  return {flightId:f.id,airlineId:f.airlineId,marketDate:f.marketDate,
+  return {flightId:f.id,scheduleId:f.scheduleId||null,
+   weeklyEntry:f.weeklyEntry??null,
+   scheduleVersion:f.scheduleVersion??null,
+   commercialPlanVersion:f.commercialPlanVersion??null,
+   capacitySource:f.capacitySource||null,
+   verificationSource:f.verificationSource||null,
+   departureUtc:f.departureUtc,arrivalUtc:f.arrivalUtc,
+   airlineId:f.airlineId,marketDate:f.marketDate,
    origin:f.origin,destination:f.destination,
    passengerSeats:f.passengerSeats,passengers:pax,
    directPassengers:totals.directPassengers,connectingPassengers:totals.connectingPassengers,
