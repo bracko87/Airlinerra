@@ -69,6 +69,29 @@ function validateOutput(result){
    unserved:p.unserved,cargoDemandTonnes:c.demand,
    cargoAllocatedTonnes:c.allocated,cargoUnservedTonnes:c.unserved};
  });
+ // A completed job must contain materializable evidence. Reject bad source
+ // identities BEFORE publishing, since a completed job cannot be retried via
+ // the ordinary queued worker.
+ const physicalId=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+ const date=/^\\d{4}-\\d{2}-\\d{2}$/;
+ const amount=v=>typeof v==='number'&&Number.isFinite(v)&&v>=0&&
+  v<=1000000000000&&Math.abs(Math.round(v*100)/100-v)<0.000001;
+ for(const f of result.flights){
+  if(!physicalId.test(f.scheduleId||'')||
+     !physicalId.test(f.airlineId||'')||
+     !Number.isInteger(f.weeklyEntry)||f.weeklyEntry<1||f.weeklyEntry>10000||
+     !date.test(f.marketDate||'')||
+     f.flightId!==f.scheduleId+':'+f.marketDate+':'+f.weeklyEntry||
+     !Number.isSafeInteger(f.scheduleVersion)||f.scheduleVersion<1||
+     !Number.isSafeInteger(f.commercialPlanVersion)||f.commercialPlanVersion<1||
+     f.capacitySource!=='verified_activated_schedule'||
+     typeof f.verificationSource!=='string'||f.verificationSource.length<6||
+     !Number.isFinite(Date.parse(f.departureUtc||''))||
+     !Number.isFinite(Date.parse(f.arrivalUtc||''))||
+     Date.parse(f.arrivalUtc)<=Date.parse(f.departureUtc)||
+     !amount(f.ticketRevenueUsd)||!amount(f.cargoRevenueUsd))
+   throw Error('SECTION9_INVALID_VERIFIED_FLIGHT_EVIDENCE');
+ }
  // Positive, bounded demand and physical-leg capacities are engine invariants.
  let occupiedSeats=0,occupiedCargo=0;
  for(const f of result.flights){
