@@ -11,8 +11,8 @@ import {section9DiscoverReachableMarkets,section9SimulateDay}
  from './section9-network-demand-engine.mjs';
 
 export const SECTION9_DAY_SQL=Object.freeze({
- flights:`SELECT airlinerra_game.section9_verified_daily_flight_page_v1(
-  1::smallint,$1::date,$2::integer,$3::uuid) AS result`,
+ flights:`SELECT airlinerra_game.section9_verified_daily_flight_page_v2(
+  1::smallint,$1::date,$2::integer,$3::uuid,$4::integer) AS result`,
  airportPolicies:`SELECT p.airport_key AS "airportKey",
   p.minimum_transfer_minutes AS "minimumTransferMinutes",
   p.airport_background AS background,
@@ -69,13 +69,21 @@ export function createSection9DayPreviewRunner({database}={}){
     const flights=[],ids=new Set();
     // The 12-hour transfer can be across an airport's local midnight.
     for(const date of [dayOffset(gameDate,-1),gameDate,dayOffset(gameDate,1)]){
-     let after=null,loops=0;
+     let after=null,afterWeeklyEntry=null,loops=0;
      while(true){
       if(++loops>200)throw Error('SECTION9_FLIGHT_PAGE_LIMIT_REQUIRES_SHARDING');
-      const reply=await client.query(SECTION9_DAY_SQL.flights,[date,1000,after]);
+      const reply=await client.query(SECTION9_DAY_SQL.flights,
+       [date,1000,after,afterWeeklyEntry]);
       const raw=asList(reply.rows?.[0]?.result);
       if(onProgress)await onProgress({phase:'flight_pages',gameDate:date});
       for(const flight of raw){
+       if(flight.localTimeStatus!=='valid' ||
+         flight.marketDate!==date ||
+         !/^[0-9a-f-]{36}$/i.test(String(flight.scheduleId||'')) ||
+         !Number.isInteger(flight.weeklyEntry) ||
+         flight.weeklyEntry<1||flight.weeklyEntry>10000 ||
+         flight.id!==flight.scheduleId+':'+date+':'+flight.weeklyEntry)
+        throw Error('SECTION9_INVALID_OR_AMBIGUOUS_FLIGHT_OCCURRENCE');
        if(ids.has(flight.id))throw Error('SECTION9_DUPLICATE_AUTHENTICATED_FLIGHT');
        ids.add(flight.id);
        flights.push({
@@ -91,7 +99,10 @@ export function createSection9DayPreviewRunner({database}={}){
       }
       if(raw.length<1000)break;
       after=String(raw[raw.length-1]?.scheduleId||'');
-      if(!/^[0-9a-f-]{36}$/i.test(after))
+      afterWeeklyEntry=Number(raw[raw.length-1]?.weeklyEntry);
+      if(!/^[0-9a-f-]{36}$/i.test(after)||
+         !Number.isInteger(afterWeeklyEntry)||
+         afterWeeklyEntry<1||afterWeeklyEntry>10000)
        throw Error('SECTION9_INVALID_PAGING_CURSOR');
      }
     }
