@@ -42,6 +42,7 @@
             <a href="#schedule" data-view-link="schedule">Flight schedule</a>
             <a href="#service" data-view-link="service">Cabin services</a>
             <a href="#tickets" data-view-link="tickets">Ticket prices and analysis</a>
+            <a href="#licenses" data-view-link="licenses">Licences &amp; Permits</a>
           </div>
         </details>
         <details class="nav-group" data-nav-group="fleet" aria-label="Fleet">
@@ -428,6 +429,27 @@
         <section data-player-view="interface" hidden><div class="page-head"><div><p class="eyebrow">SETTINGS</p><h1>Interface</h1><p>Layout, motion and your preferred starting page.</p></div></div><div id="workspace-interface"></div></section>
         <section data-player-view="notifications" hidden><div class="page-head"><div><p class="eyebrow">SETTINGS</p><h1>Notifications</h1><p>Control local display options and review notification delivery availability.</p></div></div><div id="workspace-notifications"></div></section>
         <section data-player-view="help" hidden><div class="page-head"><div><p class="eyebrow">SUPPORT</p><h1>Help and guide</h1><p>Learn how to grow your airline step by step.</p></div></div><div id="workspace-help"></div></section>
+        <section data-player-view="licenses" hidden>
+          <div class="page-head">
+            <div>
+              <p class="eyebrow">OPERATIONS · COMPLIANCE</p>
+              <h1>Licences &amp; Permits</h1>
+              <p>Find what a parent holding, airline, maintenance company or international route may require and how to obtain it.</p>
+            </div>
+          </div>
+          <div class="license-page-notice" role="note">
+            <strong>Reference only — applications are not enabled.</strong>
+            <p>Licences belong to the operating company, not automatically to its holding. A licence catalogue entry does not mean your airline owns the approval or can fly a restricted route. Country-specific and bilateral rights require verification.</p>
+          </div>
+          <div class="license-page-facts">
+            <div><strong id="licenses-type-count">—</strong><span>Permission types in register</span></div>
+            <div><strong id="licenses-verified-count">—</strong><span>EU / official reference types</span></div>
+            <div><strong>Not available</strong><span>Applications, fees and automated approvals</span></div>
+          </div>
+          <p class="license-catalog-status" id="licenses-catalog-status" role="status" aria-live="polite">Licence reference catalogue not loaded yet.</p>
+          <div class="license-catalog-groups" id="licenses-catalog-groups" aria-label="Reference licence and permit categories"></div>
+          <p class="planning-state">No company, licence or international traffic right is created by viewing this page. The future application engine must check the exact operator, country, route, expiry and regulatory scope before allowing a service.</p>
+        </section>
         <section data-player-view="holding" hidden>
           <div class="page-head"><div>
             <p class="eyebrow">HOLDING COMPANY · PLANNING</p>
@@ -489,7 +511,7 @@
               </div>
             </article>
           </div>
-          <p class="planning-state">This page is open for information only. Holding registration is not yet available; viewing this page does not create a company or charge your airline.</p>
+          <p class="planning-state">This page is open for information only. Holding registration is not yet available; viewing this page does not create a company or charge your airline. <a href="#licenses" data-view-link="licenses">View the Licences &amp; Permits reference catalogue</a>.</p>
         </section>
 <section data-player-view="infrastructure" hidden><div class="page-head"><div><p class="eyebrow">AIRLINE INFRASTRUCTURE</p><h1>Infrastructure overview</h1><p>The corporate buildings and airport assets supporting your airline.</p></div></div><div class="planning-page-grid"><article class="panel planning-panel"><h2>Headquarters and offices</h2><p>Administration and airline coordination.</p><div class="workspace-task-list"><div><strong>Head office</strong><span>Executive and finance offices</span></div><div><strong>Operations center</strong><span>Dispatch, control and flight operations</span></div><div><strong>Training</strong><span>Crew and technical training facilities</span></div></div></article><article class="panel planning-panel"><h2>Airport facilities</h2><p>Buildings and equipment at hubs and stations.</p><div class="workspace-task-list"><div><strong>Maintenance</strong><span>Hangars, workshops and spare parts</span></div><div><strong>Passengers</strong><span>Lounges and service desks</span></div><div><strong>Handling</strong><span>Cargo, ground equipment and station offices</span></div></div></article></div><p class="planning-state">Infrastructure is a planning section. No construction or expense is active yet.</p></section>
 <section data-player-view="infrastructure-hq" hidden><div class="page-head"><div><p class="eyebrow">AIRLINE INFRASTRUCTURE</p><h1>Headquarters</h1><p>Plan the airline's head office and administrative capacity.</p></div></div><div class="planning-page-grid"><article class="panel planning-panel"><h2>Head office</h2><p>Core leadership and operations departments.</p><div class="workspace-task-list"><div><strong>Executive offices</strong><span>Board and corporate administration</span></div><div><strong>Flight operations</strong><span>Operations control and dispatch</span></div><div><strong>Administration</strong><span>Finance, staffing and customer support</span></div></div></article><article class="panel planning-panel"><h2>Growth and upgrades</h2><p>Long-term infrastructure decisions.</p><div class="workspace-task-list"><div><strong>Capacity</strong><span>Office and department growth</span></div><div><strong>Regional offices</strong><span>Representation at new hubs</span></div><div><strong>Training space</strong><span>Crew development facilities</span></div></div></article></div><p class="planning-state">Headquarters construction, levels and costs are not active yet.</p></section>
