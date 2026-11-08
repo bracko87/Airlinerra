@@ -174,7 +174,7 @@ test('Materialization can be safely retried by internal worker with a known job 
 test('Malformed flight evidence is rejected before completing immutable job',async()=>{
  const mock=fakeDb();
  const invalid=preview(1);
- invalid.flights[0].verificationSource='browser';
+ invalid.flights[0].verificationSource='bad';
  const worker=createSection9DurableWorker({database:mock.database,
   previewRunner:{preview:async()=>invalid}});
  const result=await worker.runOne();
