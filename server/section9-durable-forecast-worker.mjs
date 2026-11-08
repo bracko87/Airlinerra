@@ -1,0 +1,146 @@
+/**
+ * Server-only Section 9 forecast processor.
+ *
+ * No player/HTTP endpoint is exposed. The future game clock must enqueue
+ * authoritative in-game dates after flight activation. Processing is durable:
+ * SKIP LOCKED claim, fencing token, heartbeat, bounded immutable chunks,
+ * validated terminal publication. No commercial financial settlement.
+ */
+import {createSection9DayPreviewRunner}
+ from './section9-day-preview-runner.mjs';
+
+export const SECTION9_JOB_SQL=Object.freeze({
+ enqueue:`SELECT airlinerra_game.section9_enqueue_forecast_day_v1(
+  1::smallint,$1::date) AS result`,
+ claim:`SELECT airlinerra_game.section9_claim_forecast_v1() AS result`,
+ heartbeat:`SELECT airlinerra_game.section9_extend_forecast_lease_v1(
+  $1::uuid,$2::uuid) AS result`,
+ stage:`SELECT airlinerra_game.section9_stage_forecast_chunk_v1(
+  $1::uuid,$2::uuid,$3::text,$4::integer,$5::jsonb) AS result`,
+ complete:`SELECT airlinerra_game.section9_complete_forecast_v1(
+  $1::uuid,$2::uuid,$3::integer,$4::integer) AS result`,
+ fail:`SELECT airlinerra_game.section9_fail_forecast_v1(
+  $1::uuid,$2::uuid,$3::text) AS result`
+});
+const GAME_DAY=/^\d{4}-\d{2}-\d{2}$/;
+const isGameDay=s=>typeof s==='string'&&GAME_DAY.test(s)&&
+ Number.isFinite(Date.parse(s+'T00:00:00Z'))&&
+ new Date(s+'T00:00:00Z').toISOString().slice(0,10)===s;
+const uuid=s=>typeof s==='string'&&
+ /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s);
+function failureCode(error){
+ const message=String(error?.message||'');
+ if(/MARKET|BASELINE|SEASON/.test(message))return 'MARKET_DATA_UNAVAILABLE';
+ if(/CAPACITY|SEATS|TONNE|OVERBOOK/.test(message))return 'CAPACITY_INVALID';
+ if(/CONNECTION|PARTNER|AGREEMENT/.test(message))return 'CONNECTIONS_INVALID';
+ if(/TIMEOUT|EXPIRED|DEADLINE/.test(message))return 'TIMEOUT';
+ if(/SOURCE|INVALID_FLIGHT|UNVERIFIED|DUPLICATE_AUTHENTICATED/.test(message))
+  return 'INVALID_SOURCE';
+ if(/RESULT|CHUNK|INCOMPLETE/.test(message))return 'RESULT_INVALID';
+ return 'INTERNAL_ERROR';
+}
+function validateOutput(result){
+ if(!result||result.previewOnly!==true||
+    result.writesToAirlineLedger!==false||
+    result.authorizesFlightActivation!==false||
+    result.flightActivationAllowed!==false||
+    !['forecast_only','no_active_flights'].includes(result.status)||
+    !Array.isArray(result.flights)||!Array.isArray(result.passengers?.markets)||
+    !Array.isArray(result.cargo?.markets)||
+    result.flights.length>300000||result.passengers.markets.length>100000)
+  throw Error('SECTION9_RESULT_NOT_SAFE_TO_STAGE');
+ const cargo=new Map(result.cargo.markets.map(m=>[m.marketId,m]));
+ const pax=result.passengers.markets;
+ if(pax.length!==cargo.size)throw Error('SECTION9_RESULT_MARKET_MISMATCH');
+ const marketRows=pax.map(p=>{
+  const c=cargo.get(p.marketId);
+  if(!c)throw Error('SECTION9_RESULT_MARKET_MISMATCH');
+  return {marketId:p.marketId,demand:p.demand,allocated:p.allocated,
+   unserved:p.unserved,cargoDemandTonnes:c.demand,
+   cargoAllocatedTonnes:c.allocated,cargoUnservedTonnes:c.unserved};
+ });
+ // Positive, bounded demand and physical-leg capacities are engine invariants.
+ for(const f of result.flights){
+  if(typeof f.flightId!=='string'||typeof f.airlineId!=='string'||
+   !Number.isSafeInteger(f.passengers)||f.passengers<0||
+   !Number.isSafeInteger(f.passengerSeats)||f.passengerSeats<0||
+   f.passengers>f.passengerSeats||!Number.isFinite(f.cargoTonnes)||
+   f.cargoTonnes<0||f.cargoTonnes>f.cargoCapacityTonnes+0.001)
+   throw Error('SECTION9_RESULT_INVALID_FLIGHT_CAPACITY');
+ }
+ return {flights:result.flights,markets:marketRows};
+}
+export function createSection9DurableWorker({database,previewRunner}={}){
+ if(typeof database?.connect!=='function')
+  throw Error('SECTION9_PRIVATE_DATABASE_REQUIRED');
+ const runner=previewRunner||createSection9DayPreviewRunner({database});
+ if(typeof runner?.preview!=='function')
+  throw Error('SECTION9_PREVIEW_RUNNER_REQUIRED');
+ async function runSql(sql,args=[]){
+  const client=await database.connect();
+  try{
+   const r=await client.query(sql,args);
+   if(r.rowCount!==1||!r.rows?.[0]||!Object.hasOwn(r.rows[0],'result'))
+    throw Error('SECTION9_JOB_DB_RESULT_UNAVAILABLE');
+   return r.rows[0].result;
+  }finally{client.release();}
+ }
+ async function enqueue({gameDate}={}){
+  if(!isGameDay(gameDate))throw Error('SECTION9_INVALID_GAME_DATE');
+  const result=await runSql(SECTION9_JOB_SQL.enqueue,[gameDate]);
+  if(!uuid(result?.jobId))throw Error('SECTION9_ENQUEUE_UNCONFIRMED');
+  return result;
+ }
+ async function runOne(){
+  const job=await runSql(SECTION9_JOB_SQL.claim);
+  if(job===null)return {status:'idle',readOnly:true};
+  const {jobId,leaseToken,gameDate}=job;
+  if(!uuid(jobId)||!uuid(leaseToken)||!isGameDay(gameDate))
+   throw Error('SECTION9_INVALID_CLAIM');
+  let lastHeartbeat=Date.now();
+  const heartbeat=async(force=false)=>{
+   if(!force&&Date.now()-lastHeartbeat<30000)return;
+   const ok=await runSql(SECTION9_JOB_SQL.heartbeat,[jobId,leaseToken]);
+   if(ok!==true)throw Error('SECTION9_STALE_WORKER');
+   lastHeartbeat=Date.now();
+  };
+  try{
+   const output=await runner.preview({
+    gameDate,worldId:1,onProgress:()=>heartbeat()
+   });
+   await heartbeat(true);
+   const {flights,markets}=validateOutput(output);
+   async function stage(kind,rows){
+    let chunkNumber=0;
+    for(let offset=0;offset<rows.length;offset+=250){
+     const chunk=rows.slice(offset,offset+250);
+     await runSql(SECTION9_JOB_SQL.stage,[
+      jobId,leaseToken,kind,chunkNumber++,JSON.stringify(chunk)]);
+     await heartbeat();
+    }
+   }
+   await stage('flight',flights);
+   await stage('market',markets);
+   await heartbeat(true);
+   const published=await runSql(SECTION9_JOB_SQL.complete,[
+    jobId,leaseToken,flights.length,markets.length]);
+   if(published?.status!=='completed'||published.bookingsCreated!==false||
+    published.ledgerPosted!==false)
+    throw Error('SECTION9_JOB_COMPLETION_UNCONFIRMED');
+   return {status:'completed',jobId,gameDate,
+    flightRows:flights.length,marketRows:markets.length,readOnly:true};
+  }catch(error){
+   // Never report success if a worker's lease expired or the database lost
+   // the connection; a subsequent worker will retry after the lease.
+   let report=null;
+   try{
+    report=await runSql(SECTION9_JOB_SQL.fail,[
+     jobId,leaseToken,failureCode(error)]);
+   }catch{/* stale worker or database outage; recovery is lease-based */}
+   return {status:report?.status||'retry_after_lease',
+    jobId,gameDate,attempt:job.attempt,
+    code:failureCode(error),readOnly:true};
+  }
+ }
+ return Object.freeze({enqueue,runOne});
+}
