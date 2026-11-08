@@ -85,7 +85,7 @@ function fakeDb({failChunk=-1,overrides=[]}={}){
     }else throw Error('Unrecognized SQL operation');
     return {rowCount:1,rows:[{result}]};
    }
-  }};
+  }}
  };
  return {database,calls,items,released:()=>released};
 }
