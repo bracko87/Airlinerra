@@ -96,7 +96,8 @@ const pages=Object.freeze({
    '<div><span>Leased aircraft</span><strong id="fleet-leased-count">0</strong></div>'+
    '<div><span>Fleet status</span><strong id="fleet-real-status">Not loaded</strong></div>'+
    '<div><span>Simulation aircraft</span><strong id="fleet-test-count">0</strong></div></div>'+
-   '<div id="fleet-owned-aircraft" class="fleet-test-aircraft" aria-live="polite">Loading your actual aircraft fleet...</div>'+
+   '<div id="fleet-owned-aircraft" class="fleet-test-aircraft" aria-live="polite">Loading your actual aircraft fleet...</div>'+ 
+   '<p id="fleet-delivery-feedback" class="hint" role="status" aria-live="polite"></p>'+ 
    '<div id="fleet-test-aircraft" class="fleet-test-aircraft"></div>'+
    '<section id="fleet-aircraft-timeline" class="fleet-aircraft-timeline" hidden><h3 id="fleet-aircraft-timeline-heading">Aircraft weekly timeline</h3><p class="route-subtle-note">Local draft assignments are not live flights.</p><div id="fleet-aircraft-timeline-content"></div></section>'+
    status('Purchased and leased aircraft appear above once delivered by a server-verified acquisition. An aircraft awaiting delivery remains stored and cannot be scheduled.')+
@@ -465,7 +466,13 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
       :aircraft.fleetStatus==='in_service'
        ?'In-service aircraft; actual flight activation still disabled'
        :'Not available for operational flight activation';
-    row.append(title,registration,note);fleetList.append(row);
+    row.append(title,registration,note);
+    if(aircraft.orderId&&aircraft.deliveryStatus==='awaiting_delivery'){
+     const check=doc.createElement('button');check.type='button';
+     check.className='secondary';check.dataset.aircraftDelivery=aircraft.orderId;
+     check.textContent='Check delivery';row.append(check);
+    }
+    fleetList.append(row);
    }
   }
   const marketState=$('market-state'),offerList=$('market-offers'),select=$('market-offer-select');
@@ -577,6 +584,34 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    if(heading)heading.textContent='Airbus '+String(record.model)+' · '+String(record.registration)+' — weekly timeline';
    renderAircraftWeeklyTimeline(doc,$('fleet-aircraft-timeline-content'),timeline);
    holder.hidden=false;
+   return;
+  }
+  const deliveryButton=event.target.closest('[data-aircraft-delivery]');
+  if(deliveryButton){
+   const orderId=deliveryButton.dataset.aircraftDelivery;
+   const airlineId=data.airline?.id;
+   const notice=$('fleet-delivery-feedback');
+   if(!marketSnapshot?.fleet?.some(x=>x.orderId===orderId &&
+       x.deliveryStatus==='awaiting_delivery')||!data.fleetClient?.checkDelivery||!airlineId){
+    if(notice)notice.textContent='This order is not available for delivery checking.';
+    return;
+   }
+   deliveryButton.disabled=true;
+   if(notice)notice.textContent='Checking game delivery status...';
+   try{
+    const result=await data.fleetClient.checkDelivery({airlineId,orderId});
+    if(result?.deliveryStatus==='delivered_pending_inspection'){
+     if(notice)notice.textContent='Aircraft delivered. Inspection is required before it can be scheduled.';
+    }else if(result?.deliveryStatus==='awaiting_delivery'){
+     if(notice)notice.textContent='Aircraft is awaiting delivery. Expected date: '+
+       new Date(result.deliveryDueAt).toLocaleDateString('en-US')+'.';
+    }else{
+     if(notice)notice.textContent='Delivery status: '+String(result?.deliveryStatus||'unknown')+'.';
+    }
+    await loadRealFleetMarket();
+   }catch{
+    if(notice)notice.textContent='Could not confirm delivery status. Try again.';
+   }finally{deliveryButton.disabled=false;}
    return;
   }
   const nav=event.target.closest('[data-workspace-go]');
