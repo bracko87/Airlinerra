@@ -10,7 +10,7 @@ import {createFleetAcquisitionClient} from './fleet-acquisition-client.mjs';
 import {createAircraftLibrary} from './aircraft-library.mjs';
 import {createRealOnboardingClient} from './real-onboarding-client.mjs';
 import {createDownwardMenu} from './setup-choice-menu.mjs';
-import {dropdownViewportShift} from './navigation-menu-geometry.mjs';
+
 import {createAirlineWorkspace} from './airline-workspace.mjs';
 import {createOperationsCenter} from './airline-operations-center.mjs';
 import {renderAirlineDashboard,worldDisplayName} from './airline-dashboard.mjs';
@@ -859,6 +859,16 @@ async function initialize(){
 }
 // Align Settings to its right edge on laptops. If the navigation wraps on a
 // smaller screen, shift only that dropdown back inside the viewport.
+// Keep this small positioning helper in the existing player application file.
+// Loading an optional layout module must never prevent account initialization.
+function dropdownViewportShift(rect,viewportWidth,gutter=12){
+  const {left,right}=rect||{};
+  if(![left,right,viewportWidth,gutter].every(Number.isFinite)||viewportWidth<=0)return 0;
+  const safeGutter=Math.max(0,gutter);
+  if(left<safeGutter)return Math.ceil(safeGutter-left);
+  if(right>viewportWidth-safeGutter)return Math.floor(viewportWidth-safeGutter-right);
+  return 0;
+}
 const settingsNavGroup=doc.querySelector('.nav-group[data-nav-group="settings"]');
 const settingsNavLinks=settingsNavGroup?.querySelector('.nav-links');
 function fitSettingsDropdown(){
