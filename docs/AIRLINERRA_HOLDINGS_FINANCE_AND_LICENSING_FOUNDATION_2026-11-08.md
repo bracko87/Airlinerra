@@ -1,8 +1,10 @@
 # Airlinerra — Holding ownership, intercompany finance and licences
 
-Date: 2026-11-08. State: **design / planning only**. The new permissions register and
-read-only Operations → Licences & Permits page are built. Nothing in this document
-authorizes flight operations, creates a holding, charges accounts or grants approvals.
+Date: 2026-11-08. State: **production-installed reference and finance foundations,
+with every holding registration, subsidiary formation and treasury posting locked off**.
+The permissions catalogue and Operations → Licences & Permits page are implemented.
+The server-owned Holding page can now read an authenticated 60-day eligibility preview.
+No operating approval, actual holding, subsidiary, payment or money transfer is created.
 
 ## Confirmed product rules
 
@@ -100,14 +102,47 @@ Future operational records must be distinct:
    active grants and disabled applications. Original hub rules unchanged.
 2. **DONE:** Operations → Licences & Permits read-only page and server-authenticated
    catalogue endpoint; link from Holding.
-3. **NOT DONE:** Authoritative first operating game day / world calendar service;
-   eligibility date, real 60-day countdown and actual holding-company registry.
-4. **NOT DONE:** Atomic world-scoped company treasury, transfer fees and subsidiary
-   capital injections with idempotent double-entry postings.
+3. **PARTIAL:** World-specific, 60-day holding policies, protected first-operating-flight
+   evidence, authoritative world-clock placeholders, parent/subsidiary registry tables
+   and server-verified read-only eligibility endpoint are installed. The real world
+   clock and first completed-flight ingestion are **NOT connected yet**; no date
+   can be shown until those sources prove eligibility.
+4. **PARTIAL:** Separate zero-frozen treasury accounts, draft-only idempotent
+   transfer intent schema and exact-cent fee/capital preview contract exist.
+   Atomic world-scoped **posted** double-entry movements, actual operating-company
+   cash integration, fee schedules and subsidiary capital injection remain NOT DONE.
+   The existing `airlines` table enforces UNIQUE(world_id,owner_player_id);
+   multi-airline operators require a deliberate change to that ownership model
+   before any additional real airline is created.
 5. **NOT DONE:** Per-company licence grants, verification and application workflow,
    country/market data batches, expiry, renewals and enforcement in route planning.
 6. **NOT DONE:** Live financial/legal fees, activation and acceptance/regression
    testing. No pricing assumed until balancing is approved.
+
+## Current deployed foundations (no live financial effects)
+
+- `airlinerra_game.holding_world_policy_v1`: one hard-disabled, unpriced 60-day
+  policy for each of three worlds.
+- `airlinerra_game.holding_world_clock_v1`: NULL game date for every planned world;
+  authoritative-game-engine evidence required for later updates.
+- `airlinerra_game.airline_first_operating_day_v1`: first **settled commercial flight**
+  evidence only; currently empty.
+- `airlinerra_game.holding_groups_v1` and `holding_subsidiaries_v1`:
+  world-scoped, owner-safe, planning-only entities, both currently empty.
+- `airlinerra_game.holding_treasury_accounts_v1`: balance fields hard-locked at
+  `0.00`, independently of original airline cash.
+- `airlinerra_game.holding_transfer_intents_v1`: world/holding ownership FKs,
+  separate source/destination, unique idempotency keys and `draft`-only state;
+  cannot post actual transfers.
+- `airlinerra_game.holding_eligibility_preview_v1`: server-filtered game-date
+  view with no browser grants and no `created_at` fallback.
+- `server/holding-finance-contract.mjs`: pure, exact-integer-cents fee and funding
+  preview; rejects self transfers, subsidiary-to-subsidiary shortcuts, foreign
+  worlds/groups, reserved-cash violations, and absent/zero fee policy.
+- `/api/v1/player/holding-status`: authenticated, read-only; live Edge API v13
+  preserves the older airport-office bundle and exposes no holding write route.
+- SQL reconstruction: `docs/sql/AIRLINERRA_HOLDING_OWNERSHIP_FINANCE_V1_2026-11-08.sql`.
+- Existing registered airline and $5m seed ledger remain untouched.
 
 ## Reference framework
 
