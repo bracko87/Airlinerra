@@ -56,6 +56,7 @@ const routeCheckDetails =
    '<div class="route-check-item"><span>Estimated flight duration</span><strong id="route-block-time">Aircraft required</strong></div>'+
    '<div class="route-check-item"><span>Market</span><strong id="route-market">Select airports</strong></div>'+
    '<div class="route-check-item"><span>Route status</span><strong id="route-status">Draft only</strong></div>'+
+   '<div class="route-check-item"><span>Weather forecast (example times)</span><strong id="route-weather-check">Select times to check forecast</strong></div>'+
    '<div class="route-check-item"><span>Origin runway / noise / curfew</span><strong id="route-origin-restrictions">Data pending</strong></div>'+
    '<div class="route-check-item"><span>Destination runway / noise / curfew</span><strong id="route-destination-restrictions">Data pending</strong></div>'+
    '<div class="route-check-item"><span>Origin passenger / cargo demand</span><strong id="route-origin-demand">Data pending</strong></div>'+
@@ -203,6 +204,35 @@ export function airportRouteRestrictionSummary(profile){
   extra.push('Operating conditions need rule verification');
  return [longest,night,noise,...extra].join(' · ');
 }
+/** Display forecast information without converting it into dispatch clearance. */
+export function formatRouteWeatherPreview(preview){
+ if(!preview||typeof preview!=='object')
+  return 'Forecast unavailable — no weather authorization';
+ const describe=(name,leg)=>{
+  if(leg?.status!=='FORECAST_REFERENCE_AVAILABLE'){
+   const explanation={
+    OUTSIDE_FORECAST_HORIZON:'Outside forecast horizon',
+    FORECAST_SOURCE_STALE:'Forecast source stale',
+    FORECAST_MISSING:'No forecast',
+    NO_MATCHING_FORECAST_HOUR:'Hourly forecast unavailable'
+   }[leg?.status]||'Forecast unavailable';
+   return name+': '+explanation;
+  }
+  const details=[];
+  if(typeof leg.weatherSymbol==='string'&&leg.weatherSymbol)
+   details.push(leg.weatherSymbol.replace(/_/g,' '));
+  if(Number.isFinite(leg.temperatureC))
+   details.push(leg.temperatureC+'°C');
+  if(Number.isFinite(leg.windSpeedKmh))
+   details.push('wind '+leg.windSpeedKmh+' km/h');
+  if(Number.isFinite(leg.precipitationMm))
+   details.push('rain '+leg.precipitationMm+' mm');
+  return name+': '+(details.join(', ')||'Forecast available');
+ };
+ return describe('Departure',preview.origin)+' · '+
+  describe('Arrival',preview.destination)+
+  ' · Forecast only; aviation weather clearance not provided';
+}
 export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
  if(!doc||typeof getData!=='function'||typeof draftWrite!=='function')
   throw Error('Verified route planner data required');
@@ -238,6 +268,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
  const clearPreflight=()=>{
   ++preflightRequest;preflightCache=null;preflightPromise=null;
   message('route-slot-check','Select times to check arrival and departure availability');
+  message('route-weather-check','Select departure and arrival times to check forecast');
   $('route-slot-check')?.classList?.remove('has-conflict','has-available');
  };
  const countryFlag=side=>{
@@ -922,6 +953,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
     }
     if(ticket!==preflightRequest)return null;
     const checkedResult={...result,slotAvailability};
+    message('route-weather-check',formatRouteWeatherPreview(result.weatherPreview));
     preflightCache={signature,result:checkedResult};
     if(ownedChoice){
      const available=slotAvailability?.available===true;
@@ -966,6 +998,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
     if(ticket===preflightRequest){
      preflightCache=null;
      message('route-preflight-status','Airport restriction check unavailable — no verified flight permission.');
+     message('route-weather-check','Forecast unavailable — no weather authorization');
     }
     return null;
    }finally{
