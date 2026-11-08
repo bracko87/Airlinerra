@@ -90,7 +90,7 @@ function validateOutput(result){
      !Number.isFinite(Date.parse(f.arrivalUtc||''))||
      Date.parse(f.arrivalUtc)<=Date.parse(f.departureUtc)||
      !amount(f.ticketRevenueUsd)||!amount(f.cargoRevenueUsd))
-   throw Error('SECTION9_INVALID_VERIFIED_FLIGHT_EVIDENCE');
+   throw Error('SECTION9_INVALID_SOURCE_FLIGHT_EVIDENCE');
  }
  // Positive, bounded demand and physical-leg capacities are engine invariants.
  let occupiedSeats=0,occupiedCargo=0;
