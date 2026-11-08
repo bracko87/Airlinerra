@@ -10,13 +10,15 @@ import {countrySqlExpression,GAME_COUNTRY_CODES,GAME_COUNTRY_SET} from './countr
 const PARENT_ISO=countrySqlExpression('country_iso');
 const MEMBER_CODES=GAME_COUNTRY_CODES.map(code=>"'"+code+"'").join(',');
 export const LICENSES_LIBRARY_PATH='/api/v1/player/licenses';
+export const HOLDING_STATUS_PATH='/api/v1/player/holding-status';
 
 export const PLAYER_READ_PATHS=Object.freeze([
- '/api/v1/player/overview','/api/v1/player/airports',AIRPORT_PROFILE_PATH,AIRCRAFT_LIBRARY_PATH,LICENSES_LIBRARY_PATH
+ '/api/v1/player/overview','/api/v1/player/airports',AIRPORT_PROFILE_PATH,AIRCRAFT_LIBRARY_PATH,LICENSES_LIBRARY_PATH,HOLDING_STATUS_PATH
 ]);
 export const PLAYER_READ_SQL=Object.freeze({
  worlds:'select id,name,state from public.airlinerra_game_worlds order by id',
  licenses:'select permission_code,category,holder_scope,reference_basis,title,purpose,requirements,application_guidance,source_url,research_status,game_fee_usd::text as game_fee_usd,processing_game_days,enabled_in_game from airlinerra_game.business_permission_catalog_v1 order by case category when \'company\' then 1 when \'airline\' then 2 when \'maintenance\' then 3 else 4 end,title limit 60',
+ holdingStatus:'select airline_id::text as airline_id,world_id::int as world_id,world_state,minimum_operating_age_days,first_operating_game_date::text as first_operating_game_date,current_verified_game_date::text as current_verified_game_date,completed_world_days_since_first_operation,earliest_eligibility_game_date::text as earliest_eligibility_game_date,remaining_world_days,minimum_age_met,holding_registration_open,eligibility_status from airlinerra_game.holding_eligibility_preview_v1 where owner_player_id=$1::uuid order by world_id limit 3',
  countries:"select "+PARENT_ISO+" as country_iso,count(*)::integer as airport_count from airlinerra_game.approved_game_airports where world_id=1 and "+PARENT_ISO+" in ("+MEMBER_CODES+") group by "+PARENT_ISO+" order by "+PARENT_ISO,
  airlines:"select a.id,a.world_id,a.name,a.home_airport_key,a.cash_usd::text as cash_usd,a.created_at,a.icao_code,a.iata_code,h.airport_name as home_airport_name,h.airport_code as home_airport_code, COALESCE((select jsonb_agg(jsonb_build_object('id',t.id::text,'registration',t.display_registration,'configurationId',c.id,'model',v.model_name,'testOnly',t.test_only,'operationallyAllowed',t.operationally_allowed) order by t.display_registration) from airlinerra_game.airline_aircraft_test_fixtures t join airlinerra.aircraft_configurations c on c.id=t.configuration_id join airlinerra.aircraft_variants v on v.id=c.variant_id where t.airline_id=a.id and t.test_only=true and t.operationally_allowed=false),'[]'::jsonb) as test_aircraft, (e.membership_state='active' and exists(select 1 from airlinerra_game.owner_premium_email_reservations r join auth.users u on r.email=lower(btrim(u.email)) where u.id=a.owner_player_id and u.email_confirmed_at is not null)) as complimentary_premium from airlinerra_game.airlines a left join airlinerra_game.account_entitlements e on e.player_id=a.owner_player_id left join airlinerra_game.approved_game_airports h on h.world_id=a.world_id and h.airport_key=a.home_airport_key where a.owner_player_id=$1::uuid order by a.world_id limit 3",
  ledger:"select entry_kind,amount_usd::text as amount_usd,recorded_at from airlinerra_game.airline_ledger where airline_id=$1::uuid order by recorded_at desc,id desc limit 5",
@@ -85,7 +87,7 @@ export function createPlayerReadHandler({enabled=false,verifyUserToken,database,
    if(!token)return respond(401,{error:'Verified account required'});
    const data=await readBody(request);
    if(!data)return respond(400,{error:'Invalid request'});
-   if((url.pathname===PLAYER_READ_PATHS[0]||url.pathname===AIRCRAFT_LIBRARY_PATH||url.pathname===LICENSES_LIBRARY_PATH)&&Object.keys(data).length!==0)
+   if((url.pathname===PLAYER_READ_PATHS[0]||url.pathname===AIRCRAFT_LIBRARY_PATH||url.pathname===LICENSES_LIBRARY_PATH||url.pathname===HOLDING_STATUS_PATH)&&Object.keys(data).length!==0)
      return respond(400,{error:'Invalid request'});
    let country='',search='',offset=0;
    const profileKey=url.pathname===AIRPORT_PROFILE_PATH?data.airportKey:null;
@@ -158,6 +160,41 @@ export function createPlayerReadHandler({enabled=false,verifyUserToken,database,
        }
        return respond(200,{worlds,countries,airlines,ledgerEntries,
          airportsTotal:countries.reduce((n,c)=>n+c.airportCount,0),gameplayAvailable:false});
+     }
+     if(url.pathname===HOLDING_STATUS_PATH){
+       phase='holding-eligibility';
+       const rows=expectArray((await client.query(PLAYER_READ_SQL.holdingStatus,[playerId])).rows);
+       if(rows.length>3)throw Error('Invalid eligibility rows');
+       const statuses=new Set(['world_not_active','game_clock_unverified',
+        'first_operating_flight_unverified','clock_before_first_operation',
+        'waiting_for_60_game_days','holding_registration_not_released','eligible_for_application']);
+       const isoDate=value=>value===null?null:
+        typeof value==='string'&&/^(20|21|22)[0-9]{2}-[01][0-9]-[0-3][0-9]$/.test(value)&&
+        !Number.isNaN(Date.parse(value+'T00:00:00Z'))?value:null;
+       const worlds=rows.map(row=>{
+         const days=row.completed_world_days_since_first_operation;
+         const remaining=row.remaining_world_days;
+         if(typeof row.airline_id!=='string'||!Number.isInteger(row.world_id)||row.world_id<1||row.world_id>3||
+           row.minimum_operating_age_days!==60||row.holding_registration_open!==false||
+           !statuses.has(row.eligibility_status)||typeof row.minimum_age_met!=='boolean'||
+           (days!==null&&(!Number.isInteger(days)||days<0))||
+           (remaining!==null&&(!Number.isInteger(remaining)||remaining<0||remaining>60))||
+           (row.first_operating_game_date!==null&&!isoDate(row.first_operating_game_date))||
+           (row.current_verified_game_date!==null&&!isoDate(row.current_verified_game_date))||
+           (row.earliest_eligibility_game_date!==null&&!isoDate(row.earliest_eligibility_game_date)))
+          throw Error('Invalid holding eligibility evidence');
+         return {
+           airlineId:row.airline_id,worldId:row.world_id,
+           worldState:row.world_state,minimumDays:60,completedDays:days,
+           remainingDays:remaining,firstOperatingGameDate:row.first_operating_game_date,
+           verifiedGameDate:row.current_verified_game_date,earliestGameDate:row.earliest_eligibility_game_date,
+           ageThresholdMet:row.minimum_age_met,reason:row.eligibility_status,
+           registrationOpen:false
+         };
+       });
+       if(new Set(worlds.map(w=>w.worldId)).size!==worlds.length)throw Error('Repeated holding world');
+       return respond(200,{worlds,holdingFormationAvailable:false,
+         subsidiaryCreationAvailable:false,treasuryTransfersAvailable:false});
      }
      if(url.pathname===LICENSES_LIBRARY_PATH){
        phase='license-catalogue';
