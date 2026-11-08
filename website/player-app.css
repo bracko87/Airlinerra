@@ -1175,3 +1175,19 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
 #workspace-route-details .operations-route-detail-content select{max-width:260px}
 #workspace-route-details .section9-route-results ul{margin:5px 0 15px;padding-left:23px}
 #workspace-route-details .section9-route-results li{padding:4px 0}
+
+
+/* Settings is the last navigation item: open its dropdown inward, toward Account.
+   Unlike the other menus, left anchoring extends past the browser edge on laptops.
+   Constrain only Settings; allow wrapping instead of adding horizontal scroll. */
+.app-navigation-inner .nav-group[data-nav-group="settings"] > .nav-links{
+ left:auto;
+ right:0;
+ width:min(264px,calc(100vw - 24px));
+ min-width:0;
+ max-width:calc(100vw - 24px);
+}
+.app-navigation-inner .nav-group[data-nav-group="settings"] > .nav-links a{
+ white-space:normal;
+ overflow-wrap:anywhere;
+}
