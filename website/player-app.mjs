@@ -65,6 +65,81 @@ function navigateTo(view){
     }).catch(()=>{});
   }
   if(name==='airline'&&currentAirline?.id)void loadManageAirlineLogo();
+  if(name==='licenses')void loadLicenseReference();
+}
+// This is a read-only reference catalogue, not an authority/entitlement check.
+// Keep the renderer inside the player bundle: no additional module required at startup.
+let licenseDirectoryLoaded=false;
+let licenseDirectoryLoading=false;
+function createLicenseText(tag,text,cls=''){
+ const node=doc.createElement(tag);
+ if(cls)node.className=cls;
+ node.textContent=String(text);
+ return node;
+}
+async function loadLicenseReference(){
+ const status=doc.getElementById('licenses-catalog-status');
+ const list=doc.getElementById('licenses-catalog-groups');
+ if(!status||!list||licenseDirectoryLoaded||licenseDirectoryLoading)return;
+ if(!playerData?.licenses){
+  status.textContent='Waiting for a verified game connection. No licence or traffic right has been granted.';
+  return;
+ }
+ licenseDirectoryLoading=true;
+ status.textContent='Loading licence reference data…';
+ try{
+  const data=await playerData.licenses();
+  if(data?.referenceOnly!==true||data.applicationsAvailable!==false||
+   data.companyApprovalsAvailable!==false||data.trafficRightsVerified!==false||
+   !Array.isArray(data.licenses)||data.licenses.length<1||data.licenses.length>60||
+   data.licenses.some(x=>x?.enabledInGame!==false))throw Error('Unverified catalogue');
+  const wrapper=doc.createDocumentFragment();
+  for(const [code,heading] of [
+   ['company','Company registration and holdings'],
+   ['airline','Airline operating permissions'],
+   ['maintenance','Maintenance approvals'],
+   ['traffic_rights','Traffic rights and foreign bases']
+  ]){
+   const entries=data.licenses.filter(x=>x.category===code);
+   if(!entries.length)continue;
+   const group=createLicenseText('section','','license-catalog-group');
+   group.append(createLicenseText('h2',heading));
+   const grid=createLicenseText('div','','license-card-grid');
+   for(const item of entries){
+    const card=createLicenseText('article','','license-reference-card');
+    const type=item.referenceBasis==='eu_reference'?'EU regulatory reference':
+     item.referenceBasis==='game_proposal'?'Proposed game rule':'Jurisdiction / route verification required';
+    card.append(createLicenseText('h3',item.title),
+     createLicenseText('span',type,'license-reference-basis'),
+     createLicenseText('p',item.purpose));
+    for(const [heading,text] of [['Requirements',item.requirements],['How to obtain',item.howToObtain]]){
+     const field=createLicenseText('div','','license-reference-field');
+     field.append(createLicenseText('strong',heading),createLicenseText('p',text));
+     card.append(field);
+    }
+    if(typeof item.sourceUrl==='string'&&/^https:\/\//.test(item.sourceUrl)){
+     const link=createLicenseText('a','Official reference','license-reference-link');
+     link.href=item.sourceUrl;
+     link.target='_blank';
+     link.rel='noopener noreferrer';
+     card.append(link);
+    }
+    grid.append(card);
+   }
+   group.append(grid);
+   wrapper.append(group);
+  }
+  if(!wrapper.childNodes.length)throw Error('Empty categories');
+  list.replaceChildren(wrapper);
+  doc.getElementById('licenses-type-count').textContent=String(data.licenses.length);
+  doc.getElementById('licenses-verified-count').textContent=String(
+   data.licenses.filter(x=>x.referenceBasis==='eu_reference').length);
+  status.textContent='Reference only — no applications, licences or international route rights are active.';
+  licenseDirectoryLoaded=true;
+ }catch{
+  list.replaceChildren();
+  status.textContent='Licence reference register unavailable. No permissions can be assumed. Reload the page to retry.';
+ }finally{licenseDirectoryLoading=false;}
 }
 function drawWorldDirectory(){
   const root=doc.getElementById('world-directory');
@@ -347,6 +422,7 @@ async function loadPlayerReadData({local=false}={}){
    data.airportsTotal+' approved airports in the game.';
   readSucceeded=true;
   if(safePlayerView(window.location.hash)==='aircraft-library')void aircraftLibraryController.load();
+  if(safePlayerView(window.location.hash)==='licenses')void loadLicenseReference();
  }catch(error){
   // Only safe diagnostic labels are shown: never print bearer tokens,
   // request bodies or private database errors.

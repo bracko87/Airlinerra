@@ -7,11 +7,11 @@ import {runInNewContext} from 'node:vm';
 const read=path=>readFile(new URL(path,import.meta.url),'utf8');
 const segment=(html,id,next)=>html.slice(html.indexOf('data-nav-group="'+id+'"'),next?html.indexOf('data-nav-group="'+next+'"'):html.indexOf('</nav>'));
 
-test('all 44 player routes map to exactly one real section',async()=>{
+test('all 45 player routes map to exactly one real section',async()=>{
  const html=await read('../website/private-player-app.html');
  const views=[...html.matchAll(/data-player-view="([^"]+)"/g)].map(x=>x[1]);
- assert.equal(PLAYER_VIEWS.length,44);
- assert.equal(new Set(PLAYER_VIEWS).size,44);
+ assert.equal(PLAYER_VIEWS.length,45);
+ assert.equal(new Set(PLAYER_VIEWS).size,45);
  assert.deepEqual([...views].sort(),[...PLAYER_VIEWS].sort());
  for(const route of PLAYER_VIEWS)assert.equal(safePlayerView('#'+route),route);
 });
@@ -95,6 +95,26 @@ test('holding status and company tree are responsive, read-only previews',async(
  assert.match(css,/\.holding-tracker-details\{/);
  assert.match(css,/\.holding-tree-branches\{/);
  assert.match(css,/@media\(max-width:700px\)\{[\s\S]*?\.holding-tracker-details\{grid-template-columns:1fr\}/);
+});
+
+test('Licences & Permits page and operations menu remain read-only with no fake grants',async()=>{
+ const [html,css,js]=await Promise.all([
+  read('../website/private-player-app.html'),read('../website/player-app.css'),
+  read('../website/player-app.mjs')
+ ]);
+ const ops=segment(html,'operations','fleet');
+ assert.match(ops,/data-view-link="licenses"/);
+ assert.equal(ops.match(/data-view-link="licenses"/g)?.length,1);
+ assert.match(html,/data-player-view="licenses"/);
+ const section=html.split('data-player-view="licenses"')[1].split('</section>')[0];
+ assert.match(section,/Reference only/);
+ assert.match(section,/licenses-catalog-groups/);
+ assert.match(section,/applications are not enabled/);
+ assert.doesNotMatch(section,/<button|<input|<form|type="submit"/);
+ assert.match(css,/\.license-card-grid\{/);
+ assert.match(js,/await playerData\.licenses\(\)/);
+ assert.match(js,/No permissions can be assumed/);
+ assert.doesNotMatch(js,/from ['"]\.\/license-catalogue/);
 });
 
 test('new menu remains accessible and responsive',async()=>{

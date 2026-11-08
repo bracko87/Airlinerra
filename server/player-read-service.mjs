@@ -9,12 +9,14 @@ import {AIRPORT_PROFILE_PATH,AIRPORT_PROFILE_SQL,serializeAirportProfile,validAi
 import {countrySqlExpression,GAME_COUNTRY_CODES,GAME_COUNTRY_SET} from './country-policy.mjs';
 const PARENT_ISO=countrySqlExpression('country_iso');
 const MEMBER_CODES=GAME_COUNTRY_CODES.map(code=>"'"+code+"'").join(',');
+export const LICENSES_LIBRARY_PATH='/api/v1/player/licenses';
 
 export const PLAYER_READ_PATHS=Object.freeze([
- '/api/v1/player/overview','/api/v1/player/airports',AIRPORT_PROFILE_PATH,AIRCRAFT_LIBRARY_PATH
+ '/api/v1/player/overview','/api/v1/player/airports',AIRPORT_PROFILE_PATH,AIRCRAFT_LIBRARY_PATH,LICENSES_LIBRARY_PATH
 ]);
 export const PLAYER_READ_SQL=Object.freeze({
  worlds:'select id,name,state from public.airlinerra_game_worlds order by id',
+ licenses:'select permission_code,category,holder_scope,reference_basis,title,purpose,requirements,application_guidance,source_url,research_status,game_fee_usd::text as game_fee_usd,processing_game_days,enabled_in_game from airlinerra_game.business_permission_catalog_v1 order by case category when \'company\' then 1 when \'airline\' then 2 when \'maintenance\' then 3 else 4 end,title limit 60',
  countries:"select "+PARENT_ISO+" as country_iso,count(*)::integer as airport_count from airlinerra_game.approved_game_airports where world_id=1 and "+PARENT_ISO+" in ("+MEMBER_CODES+") group by "+PARENT_ISO+" order by "+PARENT_ISO,
  airlines:"select a.id,a.world_id,a.name,a.home_airport_key,a.cash_usd::text as cash_usd,a.created_at,a.icao_code,a.iata_code,h.airport_name as home_airport_name,h.airport_code as home_airport_code, COALESCE((select jsonb_agg(jsonb_build_object('id',t.id::text,'registration',t.display_registration,'configurationId',c.id,'model',v.model_name,'testOnly',t.test_only,'operationallyAllowed',t.operationally_allowed) order by t.display_registration) from airlinerra_game.airline_aircraft_test_fixtures t join airlinerra.aircraft_configurations c on c.id=t.configuration_id join airlinerra.aircraft_variants v on v.id=c.variant_id where t.airline_id=a.id and t.test_only=true and t.operationally_allowed=false),'[]'::jsonb) as test_aircraft, (e.membership_state='active' and exists(select 1 from airlinerra_game.owner_premium_email_reservations r join auth.users u on r.email=lower(btrim(u.email)) where u.id=a.owner_player_id and u.email_confirmed_at is not null)) as complimentary_premium from airlinerra_game.airlines a left join airlinerra_game.account_entitlements e on e.player_id=a.owner_player_id left join airlinerra_game.approved_game_airports h on h.world_id=a.world_id and h.airport_key=a.home_airport_key where a.owner_player_id=$1::uuid order by a.world_id limit 3",
  ledger:"select entry_kind,amount_usd::text as amount_usd,recorded_at from airlinerra_game.airline_ledger where airline_id=$1::uuid order by recorded_at desc,id desc limit 5",
@@ -83,7 +85,7 @@ export function createPlayerReadHandler({enabled=false,verifyUserToken,database,
    if(!token)return respond(401,{error:'Verified account required'});
    const data=await readBody(request);
    if(!data)return respond(400,{error:'Invalid request'});
-   if((url.pathname===PLAYER_READ_PATHS[0]||url.pathname===AIRCRAFT_LIBRARY_PATH)&&Object.keys(data).length!==0)
+   if((url.pathname===PLAYER_READ_PATHS[0]||url.pathname===AIRCRAFT_LIBRARY_PATH||url.pathname===LICENSES_LIBRARY_PATH)&&Object.keys(data).length!==0)
      return respond(400,{error:'Invalid request'});
    let country='',search='',offset=0;
    const profileKey=url.pathname===AIRPORT_PROFILE_PATH?data.airportKey:null;
@@ -156,6 +158,35 @@ export function createPlayerReadHandler({enabled=false,verifyUserToken,database,
        }
        return respond(200,{worlds,countries,airlines,ledgerEntries,
          airportsTotal:countries.reduce((n,c)=>n+c.airportCount,0),gameplayAvailable:false});
+     }
+     if(url.pathname===LICENSES_LIBRARY_PATH){
+       phase='license-catalogue';
+       const rows=expectArray((await client.query(PLAYER_READ_SQL.licenses)).rows);
+       if(rows.length<1||rows.length>60)throw Error('Unverified permission catalogue');
+       const categories=new Set(['company','airline','maintenance','traffic_rights']);
+       const scopes=new Set(['holding','operating_company','route']);
+       const bases=new Set(['game_proposal','eu_reference','jurisdiction_research']);
+       const licenses=rows.map(row=>{
+         if(typeof row.permission_code!=='string'||!/^[A-Z][A-Z0-9_]{2,79}$/.test(row.permission_code)||
+           !categories.has(row.category)||!scopes.has(row.holder_scope)||
+           !bases.has(row.reference_basis)||row.enabled_in_game!==false||
+           row.game_fee_usd!==null||row.processing_game_days!==null||
+           !['reference_only','needs_local_verification'].includes(row.research_status)||
+           [row.title,row.purpose,row.requirements,row.application_guidance].some(
+             value=>typeof value!=='string'||!value.trim()||value.length>1300)||
+           (row.source_url!==null&&(typeof row.source_url!=='string'||
+             !/^https:\/\/[A-Za-z0-9.-]+\//.test(row.source_url))))throw Error('Invalid permission catalogue row');
+         return {
+           code:row.permission_code,category:row.category,holderScope:row.holder_scope,
+           referenceBasis:row.reference_basis,title:row.title,purpose:row.purpose,
+           requirements:row.requirements,howToObtain:row.application_guidance,
+           sourceUrl:row.source_url,researchStatus:row.research_status,
+           gameFeeUsd:null,processingGameDays:null,enabledInGame:false
+         };
+       });
+       if(new Set(licenses.map(x=>x.code)).size!==licenses.length)throw Error('Repeated permission catalogue code');
+       return respond(200,{licenses,applicationsAvailable:false,companyApprovalsAvailable:false,
+         trafficRightsVerified:false,referenceOnly:true});
      }
      if(url.pathname===AIRCRAFT_LIBRARY_PATH){
        phase='aircraft-library';
