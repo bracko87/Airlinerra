@@ -51,6 +51,14 @@ function validateOutput(result){
   throw Error('SECTION9_RESULT_NOT_SAFE_TO_STAGE');
  const cargo=new Map(result.cargo.markets.map(m=>[m.marketId,m]));
  const pax=result.passengers.markets;
+ if(new Set(pax.map(m=>m.marketId)).size!==pax.length||
+    new Set(result.flights.map(f=>f.flightId)).size!==result.flights.length)
+  throw Error('SECTION9_RESULT_DUPLICATE_IDENTITIES');
+ const validTotals=x=>Number.isFinite(x.demand)&&Number.isFinite(x.allocated)&&
+  Number.isFinite(x.unserved)&&x.demand>=0&&x.allocated>=0&&x.unserved>=0&&
+  Math.abs(x.allocated+x.unserved-x.demand)<0.021;
+ if(!pax.every(validTotals)||!result.cargo.markets.every(validTotals))
+  throw Error('SECTION9_RESULT_MARKET_TOTALS_INVALID');
  if(pax.length!==cargo.size)throw Error('SECTION9_RESULT_MARKET_MISMATCH');
  const marketRows=pax.map(p=>{
   const c=cargo.get(p.marketId);
@@ -60,14 +68,28 @@ function validateOutput(result){
    cargoAllocatedTonnes:c.allocated,cargoUnservedTonnes:c.unserved};
  });
  // Positive, bounded demand and physical-leg capacities are engine invariants.
+ let occupiedSeats=0,occupiedCargo=0;
  for(const f of result.flights){
   if(typeof f.flightId!=='string'||typeof f.airlineId!=='string'||
    !Number.isSafeInteger(f.passengers)||f.passengers<0||
    !Number.isSafeInteger(f.passengerSeats)||f.passengerSeats<0||
    f.passengers>f.passengerSeats||!Number.isFinite(f.cargoTonnes)||
-   f.cargoTonnes<0||f.cargoTonnes>f.cargoCapacityTonnes+0.001)
+   f.cargoTonnes<0||!Number.isFinite(f.cargoCapacityTonnes)||
+   f.cargoCapacityTonnes<0||f.cargoTonnes>f.cargoCapacityTonnes+0.001||
+   !Number.isSafeInteger(f.directPassengers)||
+   !Number.isSafeInteger(f.connectingPassengers)||
+   f.directPassengers<0||f.connectingPassengers<0||
+   f.directPassengers+f.connectingPassengers!==f.passengers||
+   !Number.isFinite(f.ticketRevenueUsd)||f.ticketRevenueUsd<0||
+   !Number.isFinite(f.cargoRevenueUsd)||f.cargoRevenueUsd<0)
    throw Error('SECTION9_RESULT_INVALID_FLIGHT_CAPACITY');
+  occupiedSeats+=f.passengers;occupiedCargo+=f.cargoTonnes;
  }
+ const servedP=pax.reduce((sum,m)=>sum+m.allocated,0);
+ const servedC=result.cargo.markets.reduce((sum,m)=>sum+m.allocated,0);
+ if(occupiedSeats<servedP-0.021||occupiedSeats>2*servedP+0.021||
+  occupiedCargo<servedC-0.021||occupiedCargo>2*servedC+0.021)
+  throw Error('SECTION9_RESULT_CONSERVATION_FAILED');
  return {flights:result.flights,markets:marketRows};
 }
 export function createSection9DurableWorker({database,previewRunner}={}){
