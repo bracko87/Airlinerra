@@ -9,7 +9,7 @@ test('all requested airline operation views navigate without a Manager dropdown'
  const [html,model,app,overlay]=await Promise.all([
   read('../website/private-player-app.html'),read('../website/player-app-model.mjs'),
   read('../website/player-app.mjs'),read('../website/dev-scripts/invited-overlay.mjs')]);
- assert.equal(PLAYER_VIEWS.length,43);
+ assert.equal(PLAYER_VIEWS.length,44);
  const ops=html.slice(html.indexOf('data-nav-group="operations"'),html.indexOf('data-nav-group="fleet"'));
  for(const view of ['routes','route-list','hubs','schedule','service','tickets']){
   assert.match(ops,new RegExp('data-view-link="'+view+'"'));
@@ -27,7 +27,8 @@ test('all requested airline operation views navigate without a Manager dropdown'
  assert.match(app,/createOperationsCenter/);
  assert.match(app,/operationsController\?\.updateData/);
  assert.match(overlay,/'airline-operations-center.mjs'/);
- assert.match(model,/'route-list','hubs','tickets'/);
+ assert.match(model,/'route-list','route-details','hubs','tickets'/);
+ assert.match(html,/data-player-view="route-details"/);
 });
 test('current flights full width below authentic company news; cash uses game-colored donut',async()=>{
  const [html,css,finance,dashboard]=await Promise.all([
