@@ -175,6 +175,34 @@ export const routeWeekdays=schedule=>{
  const rows=Array.isArray(schedule)?schedule:[];
  return dayShort.map((label,day)=>({label,active:rows.some(row=>row?.day===day)}));
 };
+/** Brief game flags in the route planner; a simple 'No' never cancels precise rules. */
+export function airportRouteRestrictionSummary(profile){
+ if(!profile)return 'Data pending';
+ const runways=Array.isArray(profile.runways)?profile.runways.filter(
+  r=>Number.isFinite(r?.lengthM)&&r.lengthM>0).map(r=>r.lengthM):[];
+ const longest=runways.length?Math.max(...runways).toLocaleString('en-US')+' m runway':'Runway unverified';
+ const ops=profile.operations||{},simple=ops.simpleNightNoise||{};
+ const flag=value=>typeof value==='boolean'?(value?'Yes':'No'):'Not loaded';
+ const nightWindow=typeof simple.nighttimeWindow==='string'&&simple.nighttimeWindow.trim()?
+  ' ('+simple.nighttimeWindow.trim().replace(/-/g,'–')+' airport local time)':'';
+ const night='Nighttime ban: '+flag(simple.nighttimeBan)+
+  (simple.nighttimeBan===true?nightWindow:'');
+ const chapters=Array.isArray(simple.permittedChapters)?
+  simple.permittedChapters.filter(x=>Number.isInteger(x)&&x>0):[];
+ const noise='Noise restrictions: '+flag(simple.noiseRestrictions)+
+  (simple.noiseRestrictions===true?
+   (chapters.length?' (permitted Chapters '+chapters.join(', ')+')':
+    ' (Chapters not specified)'):'');
+ const extra=[];
+ if(['AIRLINESIM_NOT_FOUND','GAME_DEFAULT_NOT_CHECKED'].includes(simple.sourceStatus))
+  extra.push('Game default, not source-verified');
+ const research=ops.restrictionResearch||{};
+ if(Number(research.enforcedTimeRules||0)+Number(research.enforcedRunwayRules||0)>0)
+  extra.push('Other mandatory airport rules recorded');
+ else if(research.status==='RESEARCH_CONDITIONS_REQUIRE_SPECIFIC_RULE_REVIEW')
+  extra.push('Operating conditions need rule verification');
+ return [longest,night,noise,...extra].join(' · ');
+}
 export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
  if(!doc||typeof getData!=='function'||typeof draftWrite!=='function')
   throw Error('Verified route planner data required');
@@ -373,25 +401,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   title.textContent=airport.name+(airport.code?' ('+airport.code+')':'');
   node.append(title);
  };
- const shortRestrictions=profile=>{
-  if(!profile)return 'Data pending';
-  const runway=Array.isArray(profile.runways)?profile.runways
-   .filter(r=>typeof r.lengthM==='number'&&Number.isFinite(r.lengthM))
-   .map(r=>r.lengthM):[];
-  const longest=runway.length?Math.max(...runway).toLocaleString('en-US')+' m runway':'Runway unverified';
-  const research=profile.operations?.restrictionResearch;
-  const hard=Number(research?.enforcedTimeRules||0)+Number(research?.enforcedRunwayRules||0);
-  const restrictions=hard>0?'Mandatory airport game restrictions recorded':
-   research?.status==='RESEARCH_CONDITIONS_REQUIRE_SPECIFIC_RULE_REVIEW'?
-     'Operating conditions need rule verification':
-   research?.status==='SOURCE_SCREENED_GAME_DEFAULT_NO_EXTRA_BAN'?
-     'No additional game restriction in screened sources':
-   research?.status==='PROVISIONAL_GAME_DEFAULT_NO_EXTRA_BAN'?
-     'Provisional game 24/7 default':'Airport hours not verified';
-  const chapter=profile.operations?.icaoNoiseRules?.nationalCivilJetMinimumChapter;
-  const noise=Number.isInteger(chapter)?'Noise Chapter '+chapter+'+':'Noise rules not verified';
-  return longest+' · '+restrictions+' · '+noise;
- };
+ const shortRestrictions=airportRouteRestrictionSummary;
  const shortDemand=profile=>{
   if(!profile)return 'Data pending';
   const p=profile.demand?.passengerGroup,c=profile.demand?.cargoGroup;
