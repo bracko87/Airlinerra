@@ -5,13 +5,16 @@ import {createSection9DayPreviewRunner,SECTION9_DAY_SQL}
 import {section9DiscoverReachableMarkets} from '../server/section9-network-demand-engine.mjs';
 
 const date='2026-11-09';
-const flight=(id,airlineId,origin,destination,start,end)=>({
- id,scheduleId:'11111111-1111-4111-8111-11111111111'+id.slice(-1),
- airlineId,origin,destination,
- marketDate:date,departureUtc:start,arrivalUtc:end,
- passengerSeats:80,cargoTonnes:1,fareUsd:100,cargoRateUsd:60,
- weeklyDepartures:7,status:'operational_verified'
-});
+const flight=(id,airlineId,origin,destination,start,end)=>{
+ const scheduleId='11111111-1111-4111-8111-11111111111'+id.slice(-1);
+ return {
+  id:scheduleId+':'+date+':1',scheduleId,weeklyEntry:1,
+  localTimeStatus:'valid',airlineId,origin,destination,
+  marketDate:date,departureUtc:start,arrivalUtc:end,
+  passengerSeats:80,cargoTonnes:1,fareUsd:100,cargoRateUsd:60,
+  weeklyDepartures:7,status:'operational_verified'
+ };
+};
 const one=flight('f1','airlineA','A','B','2026-11-09T09:00:00Z','2026-11-09T10:00:00Z');
 const two=flight('f2','airlineB','B','C','2026-11-09T11:10:00Z','2026-11-09T12:10:00Z');
 
@@ -87,4 +90,59 @@ test('Runner batches true market demand, checks partnerships and avoids shared-l
  assert.ok(result.passengers.markets.some(x=>typeof x.marketId==='string'&&x.allocated>0));
  assert.equal(result.writesToAirlineLedger,false);
  assert.equal(result.flightActivationAllowed,false);
+});
+
+
+test('Verified occurrence pagination keeps two same-schedule departures across a page boundary',async()=>{
+ const base=flight('f3','airlineA','A','B',
+  '2026-11-09T09:00:00Z','2026-11-09T10:00:00Z');
+ // Synthetic high-volume schedule: 1001 entries under one schedule UUID.
+ const mk=index=>({...base,id:base.scheduleId+':'+date+':'+index,weeklyEntry:index});
+ const first=Array.from({length:1000},(_,i)=>mk(i+1));
+ const second=[mk(1001)];
+ const seen=[];
+ const runner=createSection9DayPreviewRunner({database:{connect:async()=>({
+  release(){},
+  async query(sql,args){
+   if(sql===SECTION9_DAY_SQL.flights){
+    seen.push(args);
+    if(args[0]!==date)return {rows:[{result:[]}]};
+    if(args[2]===null)return {rows:[{result:first}]};
+    assert.equal(args[2],base.scheduleId);
+    assert.equal(args[3],1000);
+    return {rows:[{result:second}]};
+   }
+   if(sql===SECTION9_DAY_SQL.airportPolicies){
+    return {rows:['A','B'].map(airportKey=>({
+     airportKey,minimumTransferMinutes:25,background:'major_city',cargoHandling:true
+    }))};
+   }
+   if(sql===SECTION9_DAY_SQL.agreements)return {rows:[]};
+   if(sql===SECTION9_DAY_SQL.markets)return {
+    rows:[{result:[{origin:'A',destination:'B',passengers:0,cargoTonnes:0}]}]
+   };
+   throw Error('Unexpected SQL');
+  }
+ })}});
+ const result=await runner.preview({gameDate:date});
+ assert.equal(result.flights.length,1001);
+ assert.equal(new Set(result.flights.map(x=>x.flightId)).size,1001);
+ assert.equal(seen.filter(x=>x[0]===date).length,2);
+});
+
+test('DST ambiguous local departure must fail before any market allocation',async()=>{
+ const bad={...one,localTimeStatus:'ambiguous'};
+ let marketsQueried=false;
+ const runner=createSection9DayPreviewRunner({database:{connect:async()=>({
+  release(){},
+  async query(sql,args){
+   if(sql===SECTION9_DAY_SQL.flights)
+    return {rows:[{result:args[0]===date?[bad]:[]}]};
+   marketsQueried=true;
+   throw Error('Market lookup must never run');
+  }
+ })}});
+ await assert.rejects(runner.preview({gameDate:date}),
+  /INVALID_OR_AMBIGUOUS_FLIGHT_OCCURRENCE/);
+ assert.equal(marketsQueried,false);
 });
