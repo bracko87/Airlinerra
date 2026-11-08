@@ -10,6 +10,7 @@ import {createFleetAcquisitionClient} from './fleet-acquisition-client.mjs';
 import {createAircraftLibrary} from './aircraft-library.mjs';
 import {createRealOnboardingClient} from './real-onboarding-client.mjs';
 import {createDownwardMenu} from './setup-choice-menu.mjs';
+import {dropdownViewportShift} from './navigation-menu-geometry.mjs';
 import {createAirlineWorkspace} from './airline-workspace.mjs';
 import {createOperationsCenter} from './airline-operations-center.mjs';
 import {renderAirlineDashboard,worldDisplayName} from './airline-dashboard.mjs';
@@ -856,10 +857,23 @@ async function initialize(){
     visible('denied');
   }
 }
+// Align Settings to its right edge on laptops. If the navigation wraps on a
+// smaller screen, shift only that dropdown back inside the viewport.
+const settingsNavGroup=doc.querySelector('.nav-group[data-nav-group="settings"]');
+const settingsNavLinks=settingsNavGroup?.querySelector('.nav-links');
+function fitSettingsDropdown(){
+  if(!settingsNavGroup?.open||!settingsNavLinks)return;
+  settingsNavLinks.style.transform='';
+  const shift=dropdownViewportShift(
+    settingsNavLinks.getBoundingClientRect(),doc.documentElement.clientWidth,12);
+  if(shift!==0)settingsNavLinks.style.transform=`translateX(${shift}px)`;
+}
 doc.querySelectorAll('.nav-group').forEach(group=>group.addEventListener('toggle',()=>{
   if(!group.open)return;
   for(const other of doc.querySelectorAll('.nav-group[open]'))if(other!==group)other.open=false;
+  if(group===settingsNavGroup)fitSettingsDropdown();
 }));
+window.addEventListener('resize',fitSettingsDropdown);
 doc.addEventListener('click',event=>{
   if(event.target.closest('.app-navigation'))return;
   for(const group of doc.querySelectorAll('.nav-group[open]'))group.open=false;
