@@ -22,7 +22,16 @@ test('Holding navigation opens a planning page but not company creation',async()
  assert.match(nav,/<a class="nav-direct" href="#holding" data-view-link="holding">Holding<\/a>/);
  assert.doesNotMatch(nav,/nav-direct nav-disabled|nav-locked-label/);
  const holding=html.split('data-player-view="holding"')[1].split('</section>')[0];
- assert.match(holding,/60 completed in-game days/i);
+ assert.match(holding,/60 completed operating game days/i);
+ assert.match(holding,/holding-tracker/);
+ assert.match(holding,/Not yet calculable/);
+ assert.match(holding,/Waiting for verified flight operations/);
+ assert.match(holding,/holding-tree/);
+ assert.match(holding,/Parent holding company/);
+ assert.match(holding,/Original airline/);
+ assert.match(holding,/Additional airline/);
+ assert.match(holding,/Maintenance business/);
+ assert.match(holding,/not its account creation date/i);
  assert.match(holding,/One-time establishment fee/);
  assert.match(holding,/To be announced/);
  assert.match(holding,/Safety and operations/);
@@ -70,6 +79,22 @@ test('aircraft image is fully contained and internal release warning removed',as
  assert.doesNotMatch(js,/Operating restriction: /);
  assert.match(js,/library-fleet-count/);
  assert.match(js,/noiseChapter/);
+});
+
+test('holding status and company tree are responsive, read-only previews',async()=>{
+ const [html,css]=await Promise.all([
+  read('../website/private-player-app.html'),read('../website/player-app.css')
+ ]);
+ const section=html.split('data-player-view="holding"')[1].split('</section>')[0];
+ assert.match(section,/Holding eligibility/);
+ assert.match(section,/60 operating game days/);
+ assert.match(section,/Not yet available/);
+ assert.match(section,/Feature release/);
+ assert.match(section,/not yet available/i);
+ assert.doesNotMatch(section,/id="create-holding"|<form|type="submit"/i);
+ assert.match(css,/\.holding-tracker-details\{/);
+ assert.match(css,/\.holding-tree-branches\{/);
+ assert.match(css,/@media\(max-width:700px\)\{[\s\S]*?\.holding-tracker-details\{grid-template-columns:1fr\}/);
 });
 
 test('new menu remains accessible and responsive',async()=>{
