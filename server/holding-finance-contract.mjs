@@ -77,7 +77,7 @@ export function previewHoldingTransfer({
   source.id===target.id||source.holdingId!==holdingId||target.holdingId!==holdingId||
   source.worldId!==worldId||target.worldId!==worldId)throw Error('Cross-holding, cross-world or self-transfer denied');
  if(!['holding','subsidiary'].includes(source.accountScope)||!['holding','subsidiary'].includes(target.accountScope)||
-  (source.accountScope==='subsidiary'&&target.accountScope==='subsidiary'))
+  source.accountScope===target.accountScope)
   throw Error('Transfers must pass through the parent holding');
  if(!KINDS.has(transferKind))throw Error('Unknown transfer purpose');
  if(transferKind==='equity_contribution'&&!(source.accountScope==='holding'&&target.accountScope==='subsidiary')||
