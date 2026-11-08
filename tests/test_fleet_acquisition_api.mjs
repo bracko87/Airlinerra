@@ -152,7 +152,7 @@ test('market and owned fleet pages use authenticated data without fabricated pri
   'market-offers','market-offer-select','market-aircraft-registration','market-acquire'])
   assert.match(workspace,new RegExp('id="'+id+'"'));
  assert.match(workspace,/data\.fleetClient\.acquire\(/);
- assert.match(workspace,/data\.fleetClient\.list\(/);
+ assert.match(workspace,/client\.list\(airlineId\)/);
  assert.match(app,/createFleetAcquisitionClient/);
  assert.match(overlay,/'fleet-acquisition-client.mjs'/);
  assert.doesNotMatch(workspace,/sb_secret_|service_role/);
