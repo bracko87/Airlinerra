@@ -44,6 +44,18 @@ export function createFlightScheduleClient({auth,origin,fetchImpl=(...args)=>fet
      departureStand,arrivalStand,...(existingId?{existingId}:{})}),
   demandPreview:({airlineId,scheduleId,month})=>
     post({action:'demand-preview',airlineId,scheduleId,month}),
+  commercialRead:({airlineId,scheduleId})=>
+    post({action:'commercial-read',airlineId,scheduleId}),
+  commercialSave:({airlineId,scheduleId,economyFareUsd,
+   cargoRateUsdPerTonne,marketingBudgetUsdPerDay})=>
+    post({action:'commercial-save',airlineId,scheduleId,
+     economyFareUsd,cargoRateUsdPerTonne,marketingBudgetUsdPerDay}),
+  partnerList:airlineId=>post({action:'partner-list',airlineId}),
+  partnerPropose:({airlineId,otherAirlineCode})=>
+    post({action:'partner-propose',airlineId,
+     otherAirlineCode:String(otherAirlineCode||'').toUpperCase().trim()}),
+  partnerDecision:({airlineId,agreementId,decision})=>
+    post({action:'partner-decision',airlineId,agreementId,decision}),
   activationCheck:({airlineId,scheduleId})=>post({action:'activation-check',airlineId,scheduleId}),
   delete:({airlineId,scheduleId})=>post({action:'delete',airlineId,scheduleId})
  });
