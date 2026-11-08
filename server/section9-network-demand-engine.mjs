@@ -216,3 +216,68 @@ export function section9SimulateDay({
    candidateChecks,connectionsFound},
   writesToAirlineLedger:false,authorizesFlightActivation:false};
 }
+
+/**
+ * Discover only markets reachable by actual verified services, including
+ * one-stop-only destinations. The market batch SQL then fetches the Section 7
+ * demand for these pairs in groups instead of querying every airport pair.
+ * Unapproved airline connections are excluded before market generation.
+ */
+export function section9DiscoverReachableMarkets({
+ flights=[],airports={},agreements=[],holdingGroups={},marketDate,
+ maxMarketPairs=100000
+}={}){
+ if(!validDate(marketDate)||!Array.isArray(flights)||!Array.isArray(agreements)||
+  flights.length>100000||!Number.isInteger(maxMarketPairs)||
+  maxMarketPairs<1||maxMarketPairs>100000)
+  throw Error('SECTION9_INVALID_DISCOVERY_INPUT');
+ const verified=flights.map(cleanFlight),byOrigin=new Map(),ids=new Set();
+ const allowed=new Map(),groups=new Map(Object.entries(holdingGroups||{}));
+ for(const x of verified){
+  if(ids.has(x.id))throw Error('SECTION9_DUPLICATE_FLIGHT_OCCURRENCE');
+  ids.add(x.id);
+  if(!byOrigin.has(x.origin))byOrigin.set(x.origin,[]);
+  byOrigin.get(x.origin).push(x);
+ }
+ for(const list of byOrigin.values())list.sort(sortByDeparture);
+ for(const a of agreements){
+  if(!id(a?.leftAirlineId)||!id(a?.rightAirlineId)||
+     a.leftAirlineId===a.rightAirlineId)
+   throw Error('SECTION9_INVALID_AGREEMENT');
+  const k=a.leftAirlineId<a.rightAirlineId?
+   key(a.leftAirlineId,a.rightAirlineId):key(a.rightAirlineId,a.leftAirlineId);
+  allowed.set(k,a);
+ }
+ const unique=new Map();let examined=0;
+ const add=(origin,destination)=>{
+  if(origin===destination)return;
+  const k=key(origin,destination);
+  if(!unique.has(k)){
+   unique.set(k,{origin,destination});
+   if(unique.size>maxMarketPairs)throw Error('SECTION9_TOO_MANY_REACHABLE_MARKETS_SHARD_REQUIRED');
+  }
+ };
+ for(const first of verified){
+  if(first.marketDate!==marketDate||(!first.passengerSeats&&!first.cargoTonnes))continue;
+  add(first.origin,first.destination);
+  const hub=first.destination,rule=airports[hub]||{},mct=rule.minimumTransferMinutes;
+  if(!Number.isInteger(mct)||mct<0||mct>MAX_TRANSFER)continue;
+  const onward=byOrigin.get(hub)||[];
+  for(let n=lowerBound(onward,first.arrMs+mct*MINUTE);n<onward.length;n++){
+   const second=onward[n];
+   if(second.depMs>first.arrMs+MAX_TRANSFER*MINUTE)break;
+   examined++;
+   if(second.destination===first.origin||
+      (!first.passengerSeats||!second.passengerSeats)&&
+      (!first.cargoTonnes||!second.cargoTonnes||rule.cargoHandling!==true))
+    continue;
+   if(!partnershipAllowed(first.airlineId,second.airlineId,
+    second.depMs,allowed,groups))continue;
+   add(first.origin,second.destination);
+  }
+ }
+ return {marketDate,pairs:[...unique.values()].sort((a,b)=>
+  key(a.origin,a.destination).localeCompare(key(b.origin,b.destination))),
+  diagnostics:{verifiedFlightOccurrences:verified.length,
+   discoveredMarketPairs:unique.size,candidateConnectionsExamined:examined}};
+}
