@@ -7,11 +7,11 @@ import {runInNewContext} from 'node:vm';
 const read=path=>readFile(new URL(path,import.meta.url),'utf8');
 const segment=(html,id,next)=>html.slice(html.indexOf('data-nav-group="'+id+'"'),next?html.indexOf('data-nav-group="'+next+'"'):html.indexOf('</nav>'));
 
-test('all 43 player routes map to exactly one real section',async()=>{
+test('all 44 player routes map to exactly one real section',async()=>{
  const html=await read('../website/private-player-app.html');
  const views=[...html.matchAll(/data-player-view="([^"]+)"/g)].map(x=>x[1]);
- assert.equal(PLAYER_VIEWS.length,43);
- assert.equal(new Set(PLAYER_VIEWS).size,43);
+ assert.equal(PLAYER_VIEWS.length,44);
+ assert.equal(new Set(PLAYER_VIEWS).size,44);
  assert.deepEqual([...views].sort(),[...PLAYER_VIEWS].sort());
  for(const route of PLAYER_VIEWS)assert.equal(safePlayerView('#'+route),route);
 });
