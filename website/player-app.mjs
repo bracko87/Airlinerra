@@ -6,6 +6,7 @@ import {createInvitedTesterAuth,LOCAL_REAL_AUTH_ORIGIN} from './invited-tester-a
 import {openPrivateTesterDashboard,PrivateTesterAccessDenied} from './tester-dashboard-state.mjs';
 import {createPlayerReadClient,PLAYER_READ_API_ENABLED} from './player-read-client.mjs';
 import {createFlightScheduleClient} from './flight-schedule-client.mjs';
+import {createFleetAcquisitionClient} from './fleet-acquisition-client.mjs';
 import {createAircraftLibrary} from './aircraft-library.mjs';
 import {createRealOnboardingClient} from './real-onboarding-client.mjs';
 import {createDownwardMenu} from './setup-choice-menu.mjs';
@@ -300,6 +301,8 @@ async function loadPlayerReadData({local=false}={}){
   playerData=createPlayerReadClient({auth,origin:window.location.origin,enabled:true,local});
   const scheduler=!local&&window.location.origin==='https://airlinerra.com'?
    createFlightScheduleClient({auth,origin:window.location.origin}):null;
+  const fleetClient=!local&&window.location.origin==='https://airlinerra.com'?
+   createFleetAcquisitionClient({auth,origin:window.location.origin}):null;
   const data=await playerData.overview();
   readStage='display';
   if(!Array.isArray(data.worlds)||!Array.isArray(data.countries)||!Array.isArray(data.airlines))
@@ -315,7 +318,7 @@ async function loadPlayerReadData({local=false}={}){
   catch{console.warn('Airlinerra secondary directory failed to display');}
   try{
     workspaceController?.updateData({connected:true,airline:first||null,worlds:data.worlds,
-     countries:data.countries,reader:playerData,scheduler});
+     countries:data.countries,reader:playerData,scheduler,fleetClient});
     operationsController?.updateData({connected:true,airline:first||null,worlds:data.worlds,countries:data.countries,reader:playerData});
   }
   catch{console.warn('Airlinerra secondary workspace failed to display');}
@@ -352,7 +355,7 @@ async function loadPlayerReadData({local=false}={}){
   console.warn('Airlinerra player overview',readStage,code);
   playerData=null;
   hasRealAirline=false; // Unknown because the protected read failed - NOT proof no airline exists.
-  workspaceController?.updateData({connected:false,airline:null,reader:null,scheduler:null});
+  workspaceController?.updateData({connected:false,airline:null,reader:null,scheduler:null,fleetClient:null});
   operationsController?.updateData({connected:false,airline:null,reader:null});
   currentAirline=null;
   renderAirlineDashboard(doc,{airline:null,ledgerEntries:null});
