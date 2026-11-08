@@ -1,4 +1,5 @@
 /** Section 9 read-only Route Details renderer; never activates flights or sells tickets. */
+import {createSection9CommercialPlanEditor} from './section9-commercial-plan-editor.mjs';
 const MONTHS=['January','February','March','April','May','June','July','August',
  'September','October','November','December'];
 const DAYS=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
@@ -53,6 +54,12 @@ export function createSection9RouteDetails({doc,host,getRoutes,getServer}={}){
   const results=doc.createElement('div');results.className='section9-route-results';
   host.append(results);
   const server=getServer?.()||{};
+  const planHost=doc.createElement('section');
+  planHost.className='section9-commercial-plan';
+  host.append(planHost);
+  void createSection9CommercialPlanEditor({
+   doc,host:planHost,getServer
+  }).open(route,server.airline?.id);
   if(server.connected&&typeof server.reader?.airportProfile==='function'){
    try{
     const [a,b]=await Promise.all([
