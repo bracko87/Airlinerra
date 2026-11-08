@@ -81,6 +81,23 @@ test('aircraft image is fully contained and internal release warning removed',as
  assert.match(js,/noiseChapter/);
 });
 
+test('Holding tracker only fills from authenticated server game dates',async()=>{
+ const [html,js,client]=await Promise.all([
+  read('../website/private-player-app.html'),read('../website/player-app.mjs'),
+  read('../website/player-read-client.mjs')
+ ]);
+ for(const id of ['holding-eligibility-status','holding-days-count','holding-earliest-date',
+  'holding-current-game-date','holding-progress-fill'])assert.match(html,new RegExp('id="'+id+'"'));
+ assert.match(js,/await playerData\.holdingStatus\(\)/);
+ assert.match(js,/currentAirline\?\.id!==airlineId/);
+ assert.match(js,/row\.registrationOpen!==false/);
+ assert.match(js,/Unknown — no countdown can be calculated/);
+ assert.doesNotMatch(js,/Date\.now\(\)[\s\S]{0,160}holding-earliest-date/);
+ assert.match(client,/holdingStatus:\(\)=>post\('\/api\/v1\/player\/holding-status',\{\}\)/);
+ const section=html.split('data-player-view="holding"')[1].split('</section>')[0];
+ assert.doesNotMatch(section,/<button|<input|<form/);
+});
+
 test('holding status and company tree are responsive, read-only previews',async()=>{
  const [html,css]=await Promise.all([
   read('../website/private-player-app.html'),read('../website/player-app.css')
