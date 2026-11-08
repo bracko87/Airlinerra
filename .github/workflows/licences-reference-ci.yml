@@ -1,0 +1,44 @@
+name: Licences and Permits reference (isolated)
+on:
+  push:
+    branches: [main]
+    paths:
+      - "server/player-read-service.mjs"
+      - "server/canonical-game-api.mjs"
+      - "website/player-read-client.mjs"
+      - "website/player-app.mjs"
+      - "website/player-app-model.mjs"
+      - "website/private-player-app.html"
+      - "website/player-app.css"
+      - "tests/test_player_read_api.mjs"
+      - "tests/test_strategic_navigation.mjs"
+      - "tests/test_operations_center_navigation.mjs"
+      - "docs/sql/AIRLINERRA_BUSINESS_PERMISSION_CATALOGUE_V1_2026-11-08.sql"
+      - ".github/workflows/licences-reference-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  reference:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate changed code syntax
+        run: |
+          node --check server/player-read-service.mjs
+          node --check server/canonical-game-api.mjs
+          node --check website/player-read-client.mjs
+          node --check website/player-app.mjs
+          node --check website/player-app-model.mjs
+      - name: Test authenticated read endpoint and navigation
+        run: |
+          node --test \
+            tests/test_player_read_api.mjs \
+            tests/test_strategic_navigation.mjs \
+            tests/test_operations_center_navigation.mjs
