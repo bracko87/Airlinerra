@@ -7,7 +7,7 @@ export function createPlayerReadClient({auth,origin,enabled=PLAYER_READ_API_ENAB
  async function post(path,payload){
    if(!enabled)throw Error('Player database API is not deployed.');
    if(!['/api/v1/player/overview','/api/v1/player/airports','/api/v1/player/airport-profile','/api/v1/player/aircraft-library',
-     '/api/v1/player/noise-curfew-check','/api/v1/player/licenses'].includes(path))
+     '/api/v1/player/noise-curfew-check','/api/v1/player/licenses','/api/v1/player/holding-status'].includes(path))
      throw Error('Invalid player data route');
    const token=await auth.getAccessToken();
    if(typeof token!=='string'||token.length<16)throw Error('Verified session required');
@@ -30,6 +30,7 @@ export function createPlayerReadClient({auth,origin,enabled=PLAYER_READ_API_ENAB
    airportProfile:airportKey=>post('/api/v1/player/airport-profile',{airportKey}),
    aircraftLibrary:()=>post('/api/v1/player/aircraft-library',{}),
    licenses:()=>post('/api/v1/player/licenses',{}),
+   holdingStatus:()=>post('/api/v1/player/holding-status',{}),
    noiseCurfewCheck:payload=>post('/api/v1/player/noise-curfew-check',payload)
  });
 }
