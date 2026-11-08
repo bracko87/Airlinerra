@@ -138,9 +138,9 @@ select
    then greatest(0,p.minimum_operating_age_days-
      (c.confirmed_game_date-f.first_operating_game_date)) else null end
    as remaining_world_days,
- (w.state='active' and c.clock_source='authoritative_game_engine'
+ coalesce((w.state='active' and c.clock_source='authoritative_game_engine'
   and f.evidence_status='settled_commercial_flight'
-  and c.confirmed_game_date>=f.first_operating_game_date+p.minimum_operating_age_days)
+  and c.confirmed_game_date>=f.first_operating_game_date+p.minimum_operating_age_days),false)
    as minimum_age_met,
  p.formation_enabled as holding_registration_open,
  case when w.state<>'active' then 'world_not_active'
