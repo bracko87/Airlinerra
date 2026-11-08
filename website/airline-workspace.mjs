@@ -1,5 +1,6 @@
 import {routePlannerMarkup,createRoutePlanner} from './route-planner.mjs';
 import {buildAircraftWeeklyTimeline,renderAircraftWeeklyTimeline} from './aircraft-weekly-timeline.mjs';
+import {aircraftDisplayName} from './aircraft-library.mjs';
 /** Airlinerra airline-management workspace.
  * Real server read models stay separate from local-only planning. All page
  * structure in this module is constant markup authored by the application.
@@ -454,7 +455,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    for(const aircraft of fleet){
     const row=doc.createElement('div');row.className='fleet-test-aircraft-row';
     const title=doc.createElement('strong');
-    title.textContent=[aircraft.manufacturer,aircraft.model].filter(Boolean).join(' ')||'Aircraft';
+    title.textContent=aircraftDisplayName(aircraft.manufacturer,aircraft.model)||'Aircraft';
     const registration=doc.createElement('span');
     registration.textContent=String(aircraft.registration||'—')+' · '+
       String(aircraft.ownershipType||'fleet')+' · '+String(aircraft.fleetStatus||'unknown');
@@ -481,7 +482,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    for(const offer of offers){
     const row=doc.createElement('div');row.className='fleet-test-aircraft-row';
     const name=doc.createElement('strong');
-    name.textContent=[offer.manufacturer,offer.model].filter(Boolean).join(' ')+' · '+
+    name.textContent=aircraftDisplayName(offer.manufacturer,offer.model)+' · '+
       String(offer.transactionType||'order');
     const price=doc.createElement('span');
     price.textContent='Upfront '+currency(offer.upfrontPriceUsd)+
@@ -495,7 +496,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    const prior=select.value;
    select.replaceChildren(new Option(offers.length?'Choose an aircraft offer':'No published offers',''));
    for(const offer of offers){
-    const label=[offer.manufacturer,offer.model].filter(Boolean).join(' ')+
+    const label=aircraftDisplayName(offer.manufacturer,offer.model)+
       ' · '+String(offer.transactionType)+' · '+currency(offer.upfrontPriceUsd)+' upfront';
     select.append(new Option(label,String(offer.offerId||'')));
    }
