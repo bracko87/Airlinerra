@@ -59,9 +59,11 @@ const batches=(array,n)=>{
 export function createSection9DayPreviewRunner({database}={}){
  if(typeof database?.connect!=='function')throw Error('Section9 private database required');
  return Object.freeze({
-  async preview({gameDate,worldId=1}={}){
+  async preview({gameDate,worldId=1,onProgress}={}){
    if(!dayValid(gameDate)||worldId!==1)
     throw Error('SECTION9_INVALID_GAME_DATE');
+   if(onProgress!==undefined&&typeof onProgress!=='function')
+    throw Error('SECTION9_INVALID_PROGRESS_CALLBACK');
    const client=await database.connect();
    try{
     const flights=[],ids=new Set();
@@ -72,6 +74,7 @@ export function createSection9DayPreviewRunner({database}={}){
       if(++loops>200)throw Error('SECTION9_FLIGHT_PAGE_LIMIT_REQUIRES_SHARDING');
       const reply=await client.query(SECTION9_DAY_SQL.flights,[date,1000,after]);
       const raw=asList(reply.rows?.[0]?.result);
+      if(onProgress)await onProgress({phase:'flight_pages',gameDate:date});
       for(const flight of raw){
        if(ids.has(flight.id))throw Error('SECTION9_DUPLICATE_AUTHENTICATED_FLIGHT');
        ids.add(flight.id);
@@ -102,6 +105,7 @@ export function createSection9DayPreviewRunner({database}={}){
     for(const group of batches(airportKeys,1000)){
      const reply=await client.query(SECTION9_DAY_SQL.airportPolicies,[group]);
      policyRows.push(...reply.rows);
+     if(onProgress)await onProgress({phase:'airport_policies'});
     }
     const airports=Object.fromEntries(policyRows.map(x=>[x.airportKey,{
      minimumTransferMinutes:Number(x.minimumTransferMinutes),
@@ -120,6 +124,7 @@ export function createSection9DayPreviewRunner({database}={}){
     for(const pairs of batches(discovery.pairs,500)){
      const reply=await client.query(SECTION9_DAY_SQL.markets,[month,JSON.stringify(pairs)]);
      const found=asList(reply.rows?.[0]?.result);
+     if(onProgress)await onProgress({phase:'market_batch'});
      if(found.length!==pairs.length)
       throw Error('SECTION9_MISSING_MARKET_BASELINE');
      for(const market of found){
@@ -129,6 +134,7 @@ export function createSection9DayPreviewRunner({database}={}){
        referenceFareUsd:100,referenceCargoRateUsd:100});
      }
     }
+    if(onProgress)await onProgress({phase:'before_allocation'});
     const result=section9SimulateDay({
      flights,markets:pools,airports,agreements,maxItinerariesPerMarket:10000
     });
