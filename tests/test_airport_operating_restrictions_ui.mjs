@@ -149,8 +149,8 @@ test('route preview displays nighttime Yes/No and permitted Chapters without hid
   enforced_time_rule_count:1
  });
  const summary=airportRouteRestrictionSummary(bud);
- assert.match(summary,/Nighttime ban: Yes \\(01:01–05:59 airport local time\\)/);
- assert.match(summary,/Noise restrictions: Yes \\(permitted Chapters 3, 4\\)/);
+ assert.match(summary,/Nighttime ban: Yes \(01:01–05:59 airport local time\)/);
+ assert.match(summary,/Noise restrictions: Yes \(permitted Chapters 3, 4\)/);
  assert.match(summary,/Other mandatory airport rules recorded/);
  assert.doesNotMatch(summary,/Game default/);
  const unknown=serializeAirportProfile({
