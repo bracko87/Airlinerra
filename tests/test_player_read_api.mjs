@@ -9,7 +9,13 @@ const baseRows={
  countries:[{country_iso:'DE',airport_count:2},{country_iso:'FR',airport_count:1}],
  airlines:[],
  ledger:[{entry_kind:'STARTING_CAPITAL',amount_usd:'5000000.00',recorded_at:'2026-10-29T08:12:26.559Z'}],
- airports:[{airport_key:'OURAIRPORTS:111',airport_name:'Berlin Airport',airport_code:'EDDB',country_iso:'DE',municipality:'Berlin'}]
+ airports:[{airport_key:'OURAIRPORTS:111',airport_name:'Berlin Airport',airport_code:'EDDB',country_iso:'DE',municipality:'Berlin'}],
+ licenses:[{permission_code:'EU_AIRLINE_OPERATING_LICENCE',category:'airline',holder_scope:'operating_company',
+   reference_basis:'eu_reference',title:'Airline operating licence',
+   purpose:'Commercial air services within approved scope',
+   requirements:'National authority and AOC checks',application_guidance:'Apply to competent regulator',
+   source_url:'https://eur-lex.europa.eu/eli/reg/2008/1008/oj/eng',
+   research_status:'reference_only',game_fee_usd:null,processing_game_days:null,enabled_in_game:false}]
 };
 function make({enabled=true,verified=true,rows=baseRows}={}){
  const queries=[];let connected=0,released=0,verifiedCalls=0;
@@ -19,6 +25,7 @@ function make({enabled=true,verified=true,rows=baseRows}={}){
      if(sql===PLAYER_READ_SQL.airlines)return {rows:rows.airlines};
      if(sql===PLAYER_READ_SQL.ledger)return {rows:rows.ledger};
      if(sql===PLAYER_READ_SQL.airports)return {rows:rows.airports};
+     if(sql===PLAYER_READ_SQL.licenses)return {rows:rows.licenses};
      throw Error('Unexpected query');},
    release:()=>{released++;}
  };}};
@@ -44,6 +51,28 @@ test('verified managers receive real world, airport count and only owned airline
  assert.equal(data.gameplayAvailable,false);
  assert.deepEqual(s.counts().queries[2].params,[UUID]);
  assert.equal(s.counts().released,1);
+});
+test('licence reference catalogue is authenticated, read-only, and grants no market or operating rights',async()=>{
+ const s=make();
+ const response=await s.handler(request('/api/v1/player/licenses'));
+ assert.equal(response.status,200);
+ const data=await response.json();
+ assert.equal(data.referenceOnly,true);
+ assert.equal(data.applicationsAvailable,false);
+ assert.equal(data.companyApprovalsAvailable,false);
+ assert.equal(data.trafficRightsVerified,false);
+ assert.equal(data.licenses.length,1);
+ assert.equal(data.licenses[0].code,'EU_AIRLINE_OPERATING_LICENCE');
+ assert.equal(data.licenses[0].enabledInGame,false);
+ assert.equal(data.licenses[0].gameFeeUsd,null);
+ assert.equal(s.counts().queries[0].sql,PLAYER_READ_SQL.licenses);
+ assert.equal(s.counts().released,1);
+ const invalid=make();
+ assert.equal((await invalid.handler(request('/api/v1/player/licenses',{worldId:1}))).status,400);
+ assert.equal(invalid.counts().connected,0);
+ assert.equal((await make({verified:false}).handler(request('/api/v1/player/licenses'))).status,401);
+ const tampered=make({rows:{...baseRows,licenses:[{...baseRows.licenses[0],enabled_in_game:true}]}});
+ assert.equal((await tampered.handler(request('/api/v1/player/licenses'))).status,503);
 });
 test('search is country-scoped, parameterized, bounded and never writes to database',async()=>{
  const s=make();
