@@ -92,15 +92,16 @@ const pages=Object.freeze({
     '<p class="hint">The public page will use actual game data. Manager hometown, email and other personal account information remain private.</p>',
     'FUTURE FEATURE'),
   'fleet':()=>card('Fleet inventory',
-   '<div class="workspace-kpis"><div><span>Owned aircraft</span><strong>Not connected</strong></div>'+
-   '<div><span>Leased aircraft</span><strong>Not connected</strong></div>'+
-   '<div><span>Available seats</span><strong>Not connected</strong></div>'+
-   '<div><span>Test aircraft</span><strong id="fleet-test-count">0</strong></div></div>'+
+   '<div class="workspace-kpis"><div><span>Owned aircraft</span><strong id="fleet-owned-count">0</strong></div>'+
+   '<div><span>Leased aircraft</span><strong id="fleet-leased-count">0</strong></div>'+
+   '<div><span>Fleet status</span><strong id="fleet-real-status">Not loaded</strong></div>'+
+   '<div><span>Simulation aircraft</span><strong id="fleet-test-count">0</strong></div></div>'+
+   '<div id="fleet-owned-aircraft" class="fleet-test-aircraft" aria-live="polite">Loading your actual aircraft fleet...</div>'+
    '<div id="fleet-test-aircraft" class="fleet-test-aircraft"></div>'+
-   '<section id="fleet-aircraft-timeline" class="fleet-aircraft-timeline" hidden><h3 id="fleet-aircraft-timeline-heading">Aircraft weekly timeline</h3><p class="route-subtle-note">Drafted flights only. This does not represent the aircraft’s confirmed live location or slots.</p><div id="fleet-aircraft-timeline-content"></div></section>'+
-   status('Only simulation aircraft are shown below. The live owned-aircraft inventory, acquisition and scheduling engines are not connected.')+
-   button('aircraft-market','Explore acquisition')+button('maintenance','Maintenance planning'),
-   'AIRCRAFT INVENTORY')+
+   '<section id="fleet-aircraft-timeline" class="fleet-aircraft-timeline" hidden><h3 id="fleet-aircraft-timeline-heading">Aircraft weekly timeline</h3><p class="route-subtle-note">Local draft assignments are not live flights.</p><div id="fleet-aircraft-timeline-content"></div></section>'+
+   status('Purchased and leased aircraft appear above once delivered by a server-verified acquisition. An aircraft awaiting delivery remains stored and cannot be scheduled.')+
+   button('aircraft-market','View market offers')+button('maintenance','Maintenance planning'),
+   'AIRCRAFT FLEET')+
   card('Fleet acquisition brief',
    '<p>Prepare aircraft requirements before the real marketplace is connected.</p>'+
    field('fleet-family','Aircraft type',optionSelect('fleet-family',[
@@ -115,14 +116,16 @@ const pages=Object.freeze({
    small('A fleet brief is personal planning only. It does not purchase, lease, reserve or price an aircraft.'),
    'YOUR PROCUREMENT PLAN'),
  'aircraft-market':()=>card('Aircraft marketplace',
-   '<p>Airlinerra will distinguish aircraft models and variants from individual new and used airframes, with real condition, price, range, seat and maintenance data.</p>'+
-   '<div class="workspace-task-list">'+
-   '<div><strong>Model and variants</strong><span>Manufacturer, range, cabin and airport suitability</span></div>'+
-   '<div><strong>New aircraft</strong><span>Production status, lead time and purchase options</span></div>'+
-   '<div><strong>Used aircraft</strong><span>Age, cycles, hours, condition and seller details</span></div>'+
-   '<div><strong>Lease proposals</strong><span>Monthly price, contract length and deposits</span></div></div>'+
-   status('Live aircraft offers, leasing contracts and checkout are not connected. No fictional market listings or prices are shown.')+
-   button('fleet','Open fleet requirements'),'BUY AND LEASE')+
+   '<p>Purchase or lease an individual aircraft from a published game-market offer. Only the airline owner can confirm an order.</p>'+
+   '<p id="market-state" class="workspace-state" role="status">Loading approved offers...</p>'+
+   '<div id="market-offers" class="fleet-test-aircraft"></div>'+
+   field('market-offer-select','Published offer','<select id="market-offer-select" disabled><option value="">No offers loaded</option></select>')+
+   field('market-aircraft-registration','Aircraft registration',
+    '<input id="market-aircraft-registration" maxlength="20" autocomplete="off" placeholder="e.g. D-ABCD" aria-describedby="market-feedback">')+
+   '<button type="button" class="primary" id="market-acquire" disabled>Confirm aircraft order</button>'+
+   '<p id="market-feedback" class="hint" role="status" aria-live="polite"></p>'+
+   small('The published upfront amount is deducted from your in-game airline cash when you confirm. Lease payments and delivery are tracked separately; aircraft cannot operate until delivery, inspection, and flight systems are ready. No transaction is possible without a published offer.')+
+   button('fleet','Open my fleet'),'BUY AND LEASE')+
   card('Purchase readiness',
    '<p>Before ordering, confirm runway compatibility, technical range, seat demand, cash reserve and crew coverage. No aircraft can be dispatched without a real acquired airframe.</p>'+
    button('routes','Evaluate destinations')+button('finances','Check financing scenarios'),
