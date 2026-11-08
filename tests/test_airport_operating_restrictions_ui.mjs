@@ -4,6 +4,7 @@ import {readFile} from 'node:fs/promises';
 import {serializeAirportProfile,AIRPORT_PROFILE_SQL} from '../server/airport-profile-service.mjs';
 import {summarizeAirportRestrictions,formatAirportRule,safeEvidenceUrl} from '../website/airport-restriction-display.mjs';
 import {simpleAirportCurfew,simpleAirportNoise} from '../website/airline-airports-office.mjs';
+import {airportRouteRestrictionSummary} from '../website/route-planner.mjs';
 const read=path=>readFile(new URL(path,import.meta.url),'utf8');
 
 test('all-airport restriction read only joins approved catalog and keeps operational approval false',()=>{
@@ -137,4 +138,31 @@ test('simple game binary classification reflects AirlineSim screenshots without 
  assert.equal(simpleAirportCurfew(defaultOnly),'No');
  assert.equal(simpleAirportNoise(defaultOnly),'No');
  assert.equal(defaultOnly.operations.simpleNightNoise.sourceStatus,'GAME_DEFAULT_NOT_CHECKED');
+});
+
+test('route preview displays nighttime Yes/No and permitted Chapters without hiding precise restrictions',()=>{
+ const bud=serializeAirportProfile({
+  airport_key:'OURAIRPORTS:4296',airport_name:'Budapest',airport_code:'BUD',
+  simple_game_nighttime_ban:true,simple_game_noise_restrictions:true,
+  simple_game_permitted_chapters:[3,4],simple_game_nighttime_window:'01:01-05:59',
+  simple_game_source_status:'USER_AIRLINESIM_SCREENSHOT',
+  enforced_time_rule_count:1
+ });
+ const summary=airportRouteRestrictionSummary(bud);
+ assert.match(summary,/Nighttime ban: Yes \(01:01–05:59 airport local time\)/);
+ assert.match(summary,/Noise restrictions: Yes \(permitted Chapters 3, 4\)/);
+ assert.match(summary,/Other mandatory airport rules recorded/);
+ assert.doesNotMatch(summary,/Game default/);
+ const unknown=serializeAirportProfile({
+  airport_key:'OURAIRPORTS:500',airport_name:'Unmatched',airport_code:'XXX',
+  simple_game_nighttime_ban:false,simple_game_noise_restrictions:false,
+  simple_game_source_status:'AIRLINESIM_NOT_FOUND'
+ });
+ const fallback=airportRouteRestrictionSummary(unknown);
+ assert.match(fallback,/Nighttime ban: No/);
+ assert.match(fallback,/Noise restrictions: No/);
+ assert.match(fallback,/Game default, not source-verified/);
+ const withoutSource=airportRouteRestrictionSummary({runways:[],operations:{}});
+ assert.match(withoutSource,/Nighttime ban: Not loaded/);
+ assert.match(withoutSource,/Noise restrictions: Not loaded/);
 });

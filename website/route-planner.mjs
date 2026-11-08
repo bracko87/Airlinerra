@@ -56,6 +56,7 @@ const routeCheckDetails =
    '<div class="route-check-item"><span>Estimated flight duration</span><strong id="route-block-time">Aircraft required</strong></div>'+
    '<div class="route-check-item"><span>Market</span><strong id="route-market">Select airports</strong></div>'+
    '<div class="route-check-item"><span>Route status</span><strong id="route-status">Draft only</strong></div>'+
+   '<div class="route-check-item"><span>Weather forecast (example times)</span><strong id="route-weather-check">Select times to check forecast</strong></div>'+
    '<div class="route-check-item"><span>Origin runway / noise / curfew</span><strong id="route-origin-restrictions">Data pending</strong></div>'+
    '<div class="route-check-item"><span>Destination runway / noise / curfew</span><strong id="route-destination-restrictions">Data pending</strong></div>'+
    '<div class="route-check-item"><span>Origin passenger / cargo demand</span><strong id="route-origin-demand">Data pending</strong></div>'+
@@ -175,6 +176,63 @@ export const routeWeekdays=schedule=>{
  const rows=Array.isArray(schedule)?schedule:[];
  return dayShort.map((label,day)=>({label,active:rows.some(row=>row?.day===day)}));
 };
+/** Brief game flags in the route planner; a simple 'No' never cancels precise rules. */
+export function airportRouteRestrictionSummary(profile){
+ if(!profile)return 'Data pending';
+ const runways=Array.isArray(profile.runways)?profile.runways.filter(
+  r=>Number.isFinite(r?.lengthM)&&r.lengthM>0).map(r=>r.lengthM):[];
+ const longest=runways.length?Math.max(...runways).toLocaleString('en-US')+' m runway':'Runway unverified';
+ const ops=profile.operations||{},simple=ops.simpleNightNoise||{};
+ const flag=value=>typeof value==='boolean'?(value?'Yes':'No'):'Not loaded';
+ const nightWindow=typeof simple.nighttimeWindow==='string'&&simple.nighttimeWindow.trim()?
+  ' ('+simple.nighttimeWindow.trim().replace(/-/g,'–')+' airport local time)':'';
+ const night='Nighttime ban: '+flag(simple.nighttimeBan)+
+  (simple.nighttimeBan===true?nightWindow:'');
+ const chapters=Array.isArray(simple.permittedChapters)?
+  simple.permittedChapters.filter(x=>Number.isInteger(x)&&x>0):[];
+ const noise='Noise restrictions: '+flag(simple.noiseRestrictions)+
+  (simple.noiseRestrictions===true?
+   (chapters.length?' (permitted Chapters '+chapters.join(', ')+')':
+    ' (Chapters not specified)'):'');
+ const extra=[];
+ if(['AIRLINESIM_NOT_FOUND','GAME_DEFAULT_NOT_CHECKED'].includes(simple.sourceStatus))
+  extra.push('Game default, not source-verified');
+ const research=ops.restrictionResearch||{};
+ if(Number(research.enforcedTimeRules||0)+Number(research.enforcedRunwayRules||0)>0)
+  extra.push('Other mandatory airport rules recorded');
+ else if(research.status==='RESEARCH_CONDITIONS_REQUIRE_SPECIFIC_RULE_REVIEW')
+  extra.push('Operating conditions need rule verification');
+ return [longest,night,noise,...extra].join(' · ');
+}
+/** Display forecast information without converting it into dispatch clearance. */
+export function formatRouteWeatherPreview(preview){
+ if(!preview||typeof preview!=='object')
+  return 'Forecast unavailable — no weather authorization';
+ const describe=(name,leg)=>{
+  if(leg?.status!=='FORECAST_REFERENCE_AVAILABLE'){
+   const explanation={
+    OUTSIDE_FORECAST_HORIZON:'Outside forecast horizon',
+    FORECAST_SOURCE_STALE:'Forecast source stale',
+    FORECAST_MISSING:'No forecast',
+    NO_MATCHING_FORECAST_HOUR:'Hourly forecast unavailable'
+   }[leg?.status]||'Forecast unavailable';
+   return name+': '+explanation;
+  }
+  const details=[];
+  if(typeof leg.weatherSymbol==='string'&&leg.weatherSymbol)
+   details.push(leg.weatherSymbol.replace(/_/g,' '));
+  if(Number.isFinite(leg.temperatureC))
+   details.push(leg.temperatureC+'°C');
+  if(Number.isFinite(leg.windSpeedKmh))
+   details.push('wind '+leg.windSpeedKmh+' km/h');
+  if(Number.isFinite(leg.precipitationMm))
+   details.push('rain '+leg.precipitationMm+' mm');
+  return name+': '+(details.join(', ')||'Forecast available');
+ };
+ return describe('Departure',preview.origin)+' · '+
+  describe('Arrival',preview.destination)+
+  ' · Forecast only; aviation weather clearance not provided';
+}
 export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
  if(!doc||typeof getData!=='function'||typeof draftWrite!=='function')
   throw Error('Verified route planner data required');
@@ -210,6 +268,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
  const clearPreflight=()=>{
   ++preflightRequest;preflightCache=null;preflightPromise=null;
   message('route-slot-check','Select times to check arrival and departure availability');
+  message('route-weather-check','Select departure and arrival times to check forecast');
   $('route-slot-check')?.classList?.remove('has-conflict','has-available');
  };
  const countryFlag=side=>{
@@ -373,25 +432,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   title.textContent=airport.name+(airport.code?' ('+airport.code+')':'');
   node.append(title);
  };
- const shortRestrictions=profile=>{
-  if(!profile)return 'Data pending';
-  const runway=Array.isArray(profile.runways)?profile.runways
-   .filter(r=>typeof r.lengthM==='number'&&Number.isFinite(r.lengthM))
-   .map(r=>r.lengthM):[];
-  const longest=runway.length?Math.max(...runway).toLocaleString('en-US')+' m runway':'Runway unverified';
-  const research=profile.operations?.restrictionResearch;
-  const hard=Number(research?.enforcedTimeRules||0)+Number(research?.enforcedRunwayRules||0);
-  const restrictions=hard>0?'Mandatory airport game restrictions recorded':
-   research?.status==='RESEARCH_CONDITIONS_REQUIRE_SPECIFIC_RULE_REVIEW'?
-     'Operating conditions need rule verification':
-   research?.status==='SOURCE_SCREENED_GAME_DEFAULT_NO_EXTRA_BAN'?
-     'No additional game restriction in screened sources':
-   research?.status==='PROVISIONAL_GAME_DEFAULT_NO_EXTRA_BAN'?
-     'Provisional game 24/7 default':'Airport hours not verified';
-  const chapter=profile.operations?.icaoNoiseRules?.nationalCivilJetMinimumChapter;
-  const noise=Number.isInteger(chapter)?'Noise Chapter '+chapter+'+':'Noise rules not verified';
-  return longest+' · '+restrictions+' · '+noise;
- };
+ const shortRestrictions=airportRouteRestrictionSummary;
  const shortDemand=profile=>{
   if(!profile)return 'Data pending';
   const p=profile.demand?.passengerGroup,c=profile.demand?.cargoGroup;
@@ -912,6 +953,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
     }
     if(ticket!==preflightRequest)return null;
     const checkedResult={...result,slotAvailability};
+    message('route-weather-check',formatRouteWeatherPreview(result.weatherPreview));
     preflightCache={signature,result:checkedResult};
     if(ownedChoice){
      const available=slotAvailability?.available===true;
@@ -956,6 +998,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
     if(ticket===preflightRequest){
      preflightCache=null;
      message('route-preflight-status','Airport restriction check unavailable — no verified flight permission.');
+     message('route-weather-check','Forecast unavailable — no weather authorization');
     }
     return null;
    }finally{
