@@ -66,6 +66,62 @@ function navigateTo(view){
   }
   if(name==='airline'&&currentAirline?.id)void loadManageAirlineLogo();
   if(name==='licenses')void loadLicenseReference();
+  if(name==='holding')void loadHoldingStatus();
+}
+// The holding page is read-only. The game clock and first settled flight must
+// come from the protected server; never infer them from the browser clock.
+let holdingStatusLoading=false;
+async function loadHoldingStatus(){
+ const status=doc.getElementById('holding-eligibility-status');
+ const days=doc.getElementById('holding-days-count');
+ const earliest=doc.getElementById('holding-earliest-date');
+ const today=doc.getElementById('holding-current-game-date');
+ const progress=doc.getElementById('holding-progress-fill');
+ if(!status||!days||!earliest||!today||!progress||holdingStatusLoading)return;
+ const airlineId=currentAirline?.id;
+ const worldId=currentAirline?.worldId;
+ progress.style.width='0%';
+ days.textContent='Waiting for verified flight operations';
+ earliest.textContent='Not yet calculable';
+ today.textContent='Not yet available';
+ if(!airlineId||!Number.isInteger(worldId)||!playerData?.holdingStatus){
+  status.textContent='Waiting for a registered airline and verified game data';
+  return;
+ }
+ holdingStatusLoading=true;
+ status.textContent='Checking your game-day eligibility…';
+ try{
+  const data=await playerData.holdingStatus();
+  if(data?.holdingFormationAvailable!==false||
+    data.subsidiaryCreationAvailable!==false||data.treasuryTransfersAvailable!==false||
+    !Array.isArray(data.worlds)||data.worlds.length>3)throw Error('Invalid holding status');
+  if(currentAirline?.id!==airlineId)return;
+  const row=data.worlds.find(x=>x.airlineId===airlineId&&x.worldId===worldId);
+  if(!row){status.textContent='No verified holding eligibility for this airline';return;}
+  if(row.registrationOpen!==false||row.minimumDays!==60)throw Error('Unverified eligibility');
+  const labels={
+   world_not_active:'Waiting for game world activation',
+   game_clock_unverified:'Waiting for the official game clock',
+   first_operating_flight_unverified:'Waiting for your first settled commercial flight',
+   clock_before_first_operation:'Game clock evidence needs verification',
+   waiting_for_60_game_days:'60-day requirement in progress',
+   holding_registration_not_released:'60 days completed · holding registration not yet released',
+   eligible_for_application:'Holding registration is not enabled'
+  };
+  status.textContent=labels[row.reason]||'Eligibility not yet verified';
+  if(Number.isInteger(row.completedDays)&&row.completedDays>=0&&
+   Number.isInteger(row.remainingDays)&&row.remainingDays>=0&&row.remainingDays<=60){
+   days.textContent=String(row.completedDays)+' completed · '+String(row.remainingDays)+' remaining';
+   progress.style.width=String(Math.min(100,Math.floor(row.completedDays/60*100)))+'%';
+  }
+  if(typeof row.earliestGameDate==='string')earliest.textContent=row.earliestGameDate;
+  if(typeof row.verifiedGameDate==='string')today.textContent=row.verifiedGameDate;
+ }catch{
+  status.textContent='Cannot verify game-day eligibility right now';
+  days.textContent='Unknown — no countdown can be calculated';
+  earliest.textContent='Not yet calculable';
+  today.textContent='Not yet available';
+ }finally{holdingStatusLoading=false;}
 }
 // This is a read-only reference catalogue, not an authority/entitlement check.
 // Keep the renderer inside the player bundle: no additional module required at startup.
@@ -423,6 +479,7 @@ async function loadPlayerReadData({local=false}={}){
   readSucceeded=true;
   if(safePlayerView(window.location.hash)==='aircraft-library')void aircraftLibraryController.load();
   if(safePlayerView(window.location.hash)==='licenses')void loadLicenseReference();
+  if(safePlayerView(window.location.hash)==='holding')void loadHoldingStatus();
  }catch(error){
   // Only safe diagnostic labels are shown: never print bearer tokens,
   // request bodies or private database errors.

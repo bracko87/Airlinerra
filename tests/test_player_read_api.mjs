@@ -15,7 +15,14 @@ const baseRows={
    purpose:'Commercial air services within approved scope',
    requirements:'National authority and AOC checks',application_guidance:'Apply to competent regulator',
    source_url:'https://eur-lex.europa.eu/eli/reg/2008/1008/oj/eng',
-   research_status:'reference_only',game_fee_usd:null,processing_game_days:null,enabled_in_game:false}]
+   research_status:'reference_only',game_fee_usd:null,processing_game_days:null,enabled_in_game:false}],
+ holdingStatus:[{
+   airline_id:UUID,world_id:1,world_state:'planned',minimum_operating_age_days:60,
+   first_operating_game_date:null,current_verified_game_date:null,
+   completed_world_days_since_first_operation:null,earliest_eligibility_game_date:null,
+   remaining_world_days:null,minimum_age_met:false,holding_registration_open:false,
+   eligibility_status:'world_not_active'
+ }]
 };
 function make({enabled=true,verified=true,rows=baseRows}={}){
  const queries=[];let connected=0,released=0,verifiedCalls=0;
@@ -26,6 +33,7 @@ function make({enabled=true,verified=true,rows=baseRows}={}){
      if(sql===PLAYER_READ_SQL.ledger)return {rows:rows.ledger};
      if(sql===PLAYER_READ_SQL.airports)return {rows:rows.airports};
      if(sql===PLAYER_READ_SQL.licenses)return {rows:rows.licenses};
+     if(sql===PLAYER_READ_SQL.holdingStatus)return {rows:rows.holdingStatus};
      throw Error('Unexpected query');},
    release:()=>{released++;}
  };}};
@@ -74,6 +82,33 @@ test('licence reference catalogue is authenticated, read-only, and grants no mar
  const tampered=make({rows:{...baseRows,licenses:[{...baseRows.licenses[0],enabled_in_game:true}]}});
  assert.equal((await tampered.handler(request('/api/v1/player/licenses'))).status,503);
 });
+test('holding eligibility status uses only authenticated owner and verified flight/clock evidence',async()=>{
+ const s=make();
+ const resp=await s.handler(request('/api/v1/player/holding-status'));
+ assert.equal(resp.status,200);
+ const data=await resp.json();
+ assert.equal(data.holdingFormationAvailable,false);
+ assert.equal(data.subsidiaryCreationAvailable,false);
+ assert.equal(data.treasuryTransfersAvailable,false);
+ assert.equal(data.worlds.length,1);
+ assert.equal(data.worlds[0].reason,'world_not_active');
+ assert.equal(data.worlds[0].completedDays,null);
+ assert.equal(data.worlds[0].remainingDays,null);
+ assert.equal(data.worlds[0].earliestGameDate,null);
+ assert.equal(data.worlds[0].registrationOpen,false);
+ assert.deepEqual(s.counts().queries[0].params,[UUID]);
+ assert.match(PLAYER_READ_SQL.holdingStatus,/owner_player_id=\$1::uuid/);
+ assert.doesNotMatch(PLAYER_READ_SQL.holdingStatus,/created_at|registered_at|now\(\)/);
+ const requestWithId=make();
+ assert.equal((await requestWithId.handler(request('/api/v1/player/holding-status',{airlineId:UUID}))).status,400);
+ assert.equal(requestWithId.counts().connected,0);
+ const tampered=make({rows:{...baseRows,holdingStatus:[{
+  ...baseRows.holdingStatus[0],holding_registration_open:true
+ }]}});
+ assert.equal((await tampered.handler(request('/api/v1/player/holding-status'))).status,503);
+ assert.equal((await make({verified:false}).handler(request('/api/v1/player/holding-status'))).status,401);
+});
+
 test('search is country-scoped, parameterized, bounded and never writes to database',async()=>{
  const s=make();
  const response=await s.handler(request('/api/v1/player/airports',{countryIso:'DE',search:'Berlin',offset:0}));
