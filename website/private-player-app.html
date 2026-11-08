@@ -461,15 +461,16 @@
               <h2>When can I start?</h2>
               <p>The minimum is <strong>60 completed operating game days</strong> for your original airline. Registration alone does not start this clock. Meeting the minimum is not automatic approval.</p>
               <div class="holding-tracker" role="status" aria-label="Holding eligibility status">
-                <div class="holding-tracker-heading"><strong>Holding eligibility</strong><span>Not yet available</span></div>
-                <div class="holding-tracker-progress" aria-hidden="true"><span></span></div>
+                <div class="holding-tracker-heading"><strong>Holding eligibility</strong><span id="holding-eligibility-status">Not yet available</span></div>
+                <div class="holding-tracker-progress" aria-hidden="true"><span id="holding-progress-fill"></span></div>
                 <div class="holding-tracker-details">
                   <div><strong>Required</strong><span>60 operating game days</span></div>
-                  <div><strong>Days completed / remaining</strong><span>Waiting for verified flight operations</span></div>
-                  <div><strong>Earliest eligible game date</strong><span>Not yet calculable</span></div>
+                  <div><strong>Days completed / remaining</strong><span id="holding-days-count">Waiting for verified flight operations</span></div>
+                  <div><strong>Earliest eligible game date</strong><span id="holding-earliest-date">Not yet calculable</span></div>
                 </div>
               </div>
               <div class="workspace-task-list">
+                <div><strong>Verified current game date</strong><span id="holding-current-game-date">Not yet available</span></div>
                 <div><strong>Feature release</strong><span>Not announced — holding creation is disabled</span></div>
                 <div><strong>How the date will be calculated</strong><span>From the server's game-day clock and the original airline's verified operating start, not its account creation date</span></div>
               </div>
