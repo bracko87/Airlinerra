@@ -40,7 +40,7 @@ test('weather reference treats valid forecast as contextual, not flight approval
  assert.match(display,/Arrival: Outside forecast horizon/);
  assert.match(display,/aviation weather clearance not provided/);
 });
-test('missing weather data cannot imply safe weather or change airport restrictions',()=>{
+test('missing weather data cannot imply safe weather or change airport restrictions',async()=>{
  const missing=buildWeatherReferencePreview([]);
  assert.equal(missing.origin.status,'FORECAST_QUERY_UNAVAILABLE');
  assert.equal(missing.destination.status,'FORECAST_QUERY_UNAVAILABLE');
