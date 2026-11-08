@@ -29,7 +29,7 @@ const signedProof=r=>r?.status==='read_only_global_capacity_preview'&&
  r?.ledgerPosted===false&&r?.previewOnly===true&&
  r?.window?.sharedPhysicalInventory===true;
 const near=(a,b)=>Math.abs(a-b)<0.000001;
-function verifySource(result){
+export function section9ValidateHoldPreview(result){
  if(!signedProof(result)||!Array.isArray(result.flights)||
   !Array.isArray(result.passengers?.allocations)||
   !Array.isArray(result.cargo?.allocations))
@@ -138,7 +138,7 @@ export function createSection9AtomicHoldRunner({database,sharedRunner}={}){
    if(result.status==='no_active_flights')return {
     status:'blocked_no_active_flights',readOnly:true,
     bookingsCreated:false,ledgerPosted:false,holds:0};
-   const {allocations,flights}=verifySource(result);
+   const {allocations,flights}=section9ValidateHoldPreview(result);
    if(allocations.length>maxAllocations)
     return {status:'requires_batched_durable_allocation_job',readOnly:true,
      allocations:allocations.length,holds:0,bookingsCreated:false,ledgerPosted:false};
