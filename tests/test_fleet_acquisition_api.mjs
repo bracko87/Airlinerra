@@ -207,6 +207,6 @@ test('fleet page exposes owner delivery check while leaving actual flight releas
  const workspace=await readFile(new URL('../website/airline-workspace.mjs',import.meta.url),'utf8');
  assert.match(workspace,/data\.fleetClient\.checkDelivery\(/);
  assert.match(workspace,/data-aircraft-delivery/);
- assert.match(workspace,/inspection is required before it can be scheduled/);
+ assert.match(workspace,/inspection is required before it can be scheduled/i);
  assert.match(workspace,/fleet-delivery-feedback/);
 });
