@@ -6,13 +6,23 @@ import {createSection9DurableWorker,SECTION9_JOB_SQL}
 const jobId='11111111-1111-4111-8111-111111111111';
 const token='22222222-2222-4222-8222-222222222222';
 const day='2090-03-12';
-const originalFlight=(id,i=0)=>({
- flightId:id,airlineId:'33333333-3333-4333-8333-333333333333',
- marketDate:day,origin:'A',destination:'B',passengerSeats:100,
- passengers:50,connectingPassengers:10,directPassengers:40,
- cargoTonnes:1,cargoCapacityTonnes:2,ticketRevenueUsd:5000,
- cargoRevenueUsd:60
-});
+const originalFlight=(id,i=0)=>{
+ const scheduleId='11111111-1111-4111-8111-111111111111';
+ const weeklyEntry=i+1;
+ return {
+  flightId:scheduleId+':'+day+':'+weeklyEntry,scheduleId,weeklyEntry,
+  airlineId:'33333333-3333-4333-8333-333333333333',
+  marketDate:day,origin:'A',destination:'B',
+  departureUtc:day+'T09:00:00Z',arrivalUtc:day+'T10:00:00Z',
+  scheduleVersion:1,commercialPlanVersion:1,
+  capacitySource:'verified_activated_schedule',
+  verificationSource:'rollback-only-fixture',
+  passengerSeats:100,passengers:50,
+  connectingPassengers:10,directPassengers:40,
+  cargoTonnes:1,cargoCapacityTonnes:2,ticketRevenueUsd:5000,
+  cargoRevenueUsd:60
+ };
+};
 const preview=(n=1)=>{
  const flights=Array.from({length:n},(_,i)=>originalFlight('f'+i,i));
  return {previewOnly:true,flightActivationAllowed:false,
@@ -21,7 +31,7 @@ const preview=(n=1)=>{
   passengers:{markets:n?[{marketId:'A-B',demand:50*n,allocated:50*n,unserved:0}]:[]},
   cargo:{markets:n?[{marketId:'A-B',demand:n,allocated:n,unserved:0}]:[]}};
 };
-function fakeDb({queued=true,failStage=false}={}){
+function fakeDb({queued=true,failStage=false,failMaterialize=false}={}){
  let acquired=0,released=0,claimUsed=false,completed=0,failed=0,heartbeats=0;
  const chunks=[],events=[];
  return {
@@ -55,6 +65,12 @@ function fakeDb({queued=true,failStage=false}={}){
       assert.equal(args[3],chunks.filter(x=>x.kind==='market')
        .reduce((n,x)=>n+x.rows.length,0));
       value={status:'completed',bookingsCreated:false,ledgerPosted:false};
+     }else if(sql===SECTION9_JOB_SQL.materialize){
+      if(failMaterialize)throw Error('SECTION9_MATERIALIZATION_UNAVAILABLE');
+      const number=chunks.filter(x=>x.kind==='flight')
+       .reduce((n,x)=>n+x.rows.length,0);
+      value={status:'materialized',forecastRows:number,storedRows:number,
+       insertedNow:number,bookingsCreated:false,ledgerPosted:false};
      }else if(sql===SECTION9_JOB_SQL.fail){
       failed++;assert.match(args[2],/^[A-Z_]+$/);
       value={status:'queued'};
@@ -131,4 +147,39 @@ test('Failed DB chunk insert queues automatic retry; no completion',async()=>{
  assert.equal(result.status,'queued');
  assert.equal(mock.stats().completed,0);
  assert.equal(mock.stats().failed,1);
+});
+
+test('Interrupted completed-job materialization cannot be mistaken for settled work',async()=>{
+ const mock=fakeDb({failMaterialize:true});
+ const worker=createSection9DurableWorker({database:mock.database,
+  previewRunner:{preview:async()=>preview(1)}});
+ const result=await worker.runOne();
+ assert.equal(result.status,'completed_materialization_pending');
+ assert.equal(result.ledgerPosted,false);
+ assert.equal(mock.stats().completed,1);
+ assert.equal(mock.stats().failed,0);
+ await assert.rejects(worker.materializeCompleted({jobId}),/MATERIALIZATION_UNAVAILABLE/);
+});
+test('Materialization can be safely retried by internal worker with a known job id',async()=>{
+ const mock=fakeDb();
+ const worker=createSection9DurableWorker({database:mock.database,
+  previewRunner:{preview:async()=>preview(1)}});
+ assert.equal((await worker.runOne()).status,'completed');
+ const reread=await worker.materializeCompleted({jobId});
+ assert.equal(reread.status,'materialized');
+ assert.equal(reread.ledgerPosted,false);
+ assert.equal(reread.flightRows,1);
+});
+
+test('Malformed flight evidence is rejected before completing immutable job',async()=>{
+ const mock=fakeDb();
+ const invalid=preview(1);
+ invalid.flights[0].verificationSource='bad';
+ const worker=createSection9DurableWorker({database:mock.database,
+  previewRunner:{preview:async()=>invalid}});
+ const result=await worker.runOne();
+ assert.equal(result.status,'queued');
+ assert.equal(mock.stats().completed,0);
+ assert.equal(mock.stats().failed,1);
+ assert.equal(result.code,'INVALID_SOURCE');
 });

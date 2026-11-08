@@ -19,6 +19,8 @@ export const SECTION9_JOB_SQL=Object.freeze({
   $1::uuid,$2::uuid,$3::text,$4::integer,$5::jsonb) AS result`,
  complete:`SELECT airlinerra_game.section9_complete_forecast_v1(
   $1::uuid,$2::uuid,$3::integer,$4::integer) AS result`,
+ materialize:`SELECT airlinerra_game.section9_materialize_completed_flights_v1(
+  $1::uuid) AS result`,
  fail:`SELECT airlinerra_game.section9_fail_forecast_v1(
   $1::uuid,$2::uuid,$3::text) AS result`
 });
@@ -67,6 +69,29 @@ function validateOutput(result){
    unserved:p.unserved,cargoDemandTonnes:c.demand,
    cargoAllocatedTonnes:c.allocated,cargoUnservedTonnes:c.unserved};
  });
+ // A completed job must contain materializable evidence. Reject bad source
+ // identities BEFORE publishing, since a completed job cannot be retried via
+ // the ordinary queued worker.
+ const physicalId=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+ const date=/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/;
+ const amount=v=>typeof v==='number'&&Number.isFinite(v)&&v>=0&&
+  v<=1000000000000&&Math.abs(Math.round(v*100)/100-v)<0.000001;
+ for(const f of result.flights){
+  if(!physicalId.test(f.scheduleId||'')||
+     !physicalId.test(f.airlineId||'')||
+     !Number.isInteger(f.weeklyEntry)||f.weeklyEntry<1||f.weeklyEntry>10000||
+     !date.test(f.marketDate||'')||
+     f.flightId!==f.scheduleId+':'+f.marketDate+':'+f.weeklyEntry||
+     !Number.isSafeInteger(f.scheduleVersion)||f.scheduleVersion<1||
+     !Number.isSafeInteger(f.commercialPlanVersion)||f.commercialPlanVersion<1||
+     f.capacitySource!=='verified_activated_schedule'||
+     typeof f.verificationSource!=='string'||f.verificationSource.length<6||
+     !Number.isFinite(Date.parse(f.departureUtc||''))||
+     !Number.isFinite(Date.parse(f.arrivalUtc||''))||
+     Date.parse(f.arrivalUtc)<=Date.parse(f.departureUtc)||
+     !amount(f.ticketRevenueUsd)||!amount(f.cargoRevenueUsd))
+   throw Error('SECTION9_INVALID_SOURCE_FLIGHT_EVIDENCE');
+ }
  // Positive, bounded demand and physical-leg capacities are engine invariants.
  let occupiedSeats=0,occupiedCargo=0;
  for(const f of result.flights){
@@ -113,6 +138,16 @@ export function createSection9DurableWorker({database,previewRunner}={}){
   if(!uuid(result?.jobId))throw Error('SECTION9_ENQUEUE_UNCONFIRMED');
   return result;
  }
+
+ async function materializeCompleted({jobId}={}){
+  if(!uuid(jobId))throw Error('SECTION9_INVALID_COMPLETED_JOB_ID');
+  const result=await runSql(SECTION9_JOB_SQL.materialize,[jobId]);
+  if(result?.status!=='materialized'||result.bookingsCreated!==false||
+   result.ledgerPosted!==false||result.storedRows!==result.forecastRows)
+   throw Error('SECTION9_COMPLETED_MATERIALIZATION_UNCONFIRMED');
+  return {jobId,status:'materialized',flightRows:result.storedRows,
+   readOnly:true,bookingsCreated:false,ledgerPosted:false};
+ }
  async function runOne(){
   const job=await runSql(SECTION9_JOB_SQL.claim);
   if(job===null)return {status:'idle',readOnly:true};
@@ -149,8 +184,21 @@ export function createSection9DurableWorker({database,previewRunner}={}){
    if(published?.status!=='completed'||published.bookingsCreated!==false||
     published.ledgerPosted!==false)
     throw Error('SECTION9_JOB_COMPLETION_UNCONFIRMED');
+   // Publication and normalization are independent. A crash here does not
+   // lose the completed job; an operator/worker can safely call
+   // materializeCompleted again, but we must NOT claim it is ready meanwhile.
+   try{
+    const materialized=await materializeCompleted({jobId});
+    if(materialized.flightRows!==flights.length)
+     throw Error('SECTION9_COMPLETED_MATERIALIZATION_ROW_MISMATCH');
+   }catch{
+    return {status:'completed_materialization_pending',jobId,gameDate,
+     flightRows:flights.length,marketRows:markets.length,
+     bookingsCreated:false,ledgerPosted:false,readOnly:true};
+   }
    return {status:'completed',jobId,gameDate,
-    flightRows:flights.length,marketRows:markets.length,readOnly:true};
+    flightRows:flights.length,marketRows:markets.length,
+    bookingsCreated:false,ledgerPosted:false,readOnly:true};
   }catch(error){
    // Never report success if a worker's lease expired or the database lost
    // the connection; a subsequent worker will retry after the lease.
@@ -164,5 +212,5 @@ export function createSection9DurableWorker({database,previewRunner}={}){
     code:failureCode(error),readOnly:true};
   }
  }
- return Object.freeze({enqueue,runOne});
+ return Object.freeze({enqueue,runOne,materializeCompleted});
 }
