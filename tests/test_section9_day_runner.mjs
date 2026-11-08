@@ -84,7 +84,7 @@ test('Runner batches true market demand, checks partnerships and avoids shared-l
  assert.equal(released,1);
  assert.ok(result.flights.every(x=>x.passengers<=x.passengerSeats));
  assert.ok(result.flights.every(x=>x.cargoTonnes<=x.cargoCapacityTonnes));
- assert.ok(result.passengers.markets.some(x=>x.marketId===undefined&&x.allocated>0));
+ assert.ok(result.passengers.markets.some(x=>typeof x.marketId==='string'&&x.allocated>0));
  assert.equal(result.writesToAirlineLedger,false);
  assert.equal(result.flightActivationAllowed,false);
 });
