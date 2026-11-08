@@ -302,6 +302,8 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
  let preferences=cleanUiPreferences(safelyLoad(storage,prefKey));
  let data={connected:false,airline:null,countries:[],worlds:[],reader:null},draft=safelyLoad(session,draftKey)||{};
  const $=id=>doc.getElementById(id);
+ let marketSnapshot=null;
+ let marketFetchVersion=0;
  for(const [name,render] of Object.entries(pages)){
   const el=$('workspace-'+name);if(el)el.innerHTML=render();
  }
@@ -430,6 +432,91 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   }
   showRoute();renderSchedule();
  }
+ function renderRealFleetMarket(snapshot){
+  marketSnapshot=snapshot;
+  const fleet=Array.isArray(snapshot?.fleet)?snapshot.fleet:[];
+  const offers=Array.isArray(snapshot?.offers)?snapshot.offers:[];
+  const owned=fleet.filter(x=>x?.ownershipType==='owned');
+  const leased=fleet.filter(x=>x?.ownershipType==='leased');
+  if($('fleet-owned-count'))$('fleet-owned-count').textContent=String(owned.length);
+  if($('fleet-leased-count'))$('fleet-leased-count').textContent=String(leased.length);
+  if($('fleet-real-status'))$('fleet-real-status').textContent=snapshot?
+   (fleet.length?String(fleet.length)+' registered':'No aircraft'):'Not connected';
+  const fleetList=$('fleet-owned-aircraft');
+  if(fleetList){
+   fleetList.replaceChildren();
+   if(!fleet.length){
+    const msg=doc.createElement('p');
+    msg.textContent=snapshot?'No purchased or leased aircraft in your airline fleet.':'Fleet data unavailable.';
+    fleetList.append(msg);
+   }
+   for(const aircraft of fleet){
+    const row=doc.createElement('div');row.className='fleet-test-aircraft-row';
+    const title=doc.createElement('strong');
+    title.textContent=[aircraft.manufacturer,aircraft.model].filter(Boolean).join(' ')||'Aircraft';
+    const registration=doc.createElement('span');
+    registration.textContent=String(aircraft.registration||'—')+' · '+
+      String(aircraft.ownershipType||'fleet')+' · '+String(aircraft.fleetStatus||'unknown');
+    const note=doc.createElement('small');
+    note.textContent=aircraft.deliveryStatus==='awaiting_delivery'
+     ?'Delivery pending · not available for flight scheduling'
+     :aircraft.deliveryStatus==='delivered_pending_inspection'
+      ?'Delivered · inspection required before service'
+      :aircraft.fleetStatus==='in_service'
+       ?'In-service aircraft; actual flight activation still disabled'
+       :'Not available for operational flight activation';
+    row.append(title,registration,note);fleetList.append(row);
+   }
+  }
+  const marketState=$('market-state'),offerList=$('market-offers'),select=$('market-offer-select');
+  if(offerList){
+   offerList.replaceChildren();
+   for(const offer of offers){
+    const row=doc.createElement('div');row.className='fleet-test-aircraft-row';
+    const name=doc.createElement('strong');
+    name.textContent=[offer.manufacturer,offer.model].filter(Boolean).join(' ')+' · '+
+      String(offer.transactionType||'order');
+    const price=doc.createElement('span');
+    price.textContent='Upfront '+currency(offer.upfrontPriceUsd)+
+      (offer.transactionType==='lease'
+       ?' · '+currency(offer.recurringMonthlyUsd)+'/month × '+String(offer.contractMonths)+' months'
+       :'')+' · delivery '+String(offer.deliveryDays||0)+' days';
+    row.append(name,price);offerList.append(row);
+   }
+  }
+  if(select){
+   const prior=select.value;
+   select.replaceChildren(new Option(offers.length?'Choose an aircraft offer':'No published offers',''));
+   for(const offer of offers){
+    const label=[offer.manufacturer,offer.model].filter(Boolean).join(' ')+
+      ' · '+String(offer.transactionType)+' · '+currency(offer.upfrontPriceUsd)+' upfront';
+    select.append(new Option(label,String(offer.offerId||'')));
+   }
+   if(offers.some(x=>x.offerId===prior))select.value=prior;
+   select.disabled=offers.length===0;
+  }
+  if($('market-acquire'))$('market-acquire').disabled=offers.length===0;
+  if(marketState)marketState.textContent=!snapshot?'Fleet market unavailable. Retry when connected.':
+    offers.length?String(offers.length)+' published offer(s) · in-game funds only':
+    'No aircraft offers are published yet. Game-market prices must be approved first.';
+ }
+ async function loadRealFleetMarket(){
+  const version=++marketFetchVersion;
+  const client=data.fleetClient,airlineId=data.airline?.id;
+  if(!data.connected||!airlineId||!client||typeof client.list!=='function'){
+   renderRealFleetMarket(null);return;
+  }
+  try{
+   const result=await client.list(airlineId);
+   if(version!==marketFetchVersion||data.airline?.id!==airlineId)return;
+   if(!result||!Array.isArray(result.fleet)||!Array.isArray(result.offers)||
+     result.airlineId!==airlineId)throw Error('Invalid fleet list');
+   renderRealFleetMarket(result);
+  }catch{
+   if(version!==marketFetchVersion)return;
+   renderRealFleetMarket(null);
+  }
+ }
  function updateData(next={}){
   data={...data,...next};
   const airline=data.airline;
@@ -472,6 +559,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    }
   }
   routePlannerController.updateData(data);
+  void loadRealFleetMarket();
  }
  doc.getElementById('player-main')?.addEventListener('click',async event=>{
   const timelineLink=event.target.closest('[data-fleet-aircraft-timeline]');
@@ -492,7 +580,8 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    return;
   }
   const nav=event.target.closest('[data-workspace-go]');
-  if(nav){const to=nav.dataset.workspaceGo;if(AIRLINE_UI_VIEWS.includes(to)&&typeof goTo==='function')goTo(to);return;}
+  if(nav){const to=nav.dataset.workspaceGo;if(AIRLINE_UI_VIEWS.includes(to)&&typeof goTo==='function')goTo(to);
+   if(to==='fleet'||to==='aircraft-market')void loadRealFleetMarket();return;}
   const id=event.target.closest('button')?.id;
   if(!id)return;
   const general={'settings-units':'units','settings-time':'time','settings-date':'date',
@@ -516,6 +605,43 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    showRoute();
    doc.dispatchEvent(new CustomEvent('airlinerra:route-draft-saved'));
    $('route-feedback').textContent='Route draft saved in this browser tab under My routes. No live route was created.';
+  }
+  if(id==='market-acquire'){
+   const select=$('market-offer-select'),entry=$('market-aircraft-registration');
+   const feedback=$('market-feedback'),button=$('market-acquire');
+   const offer=marketSnapshot?.offers?.find(item=>item.offerId===select?.value);
+   const registration=String(entry?.value||'').trim().toUpperCase();
+   if(!offer||!data.airline?.id||!data.fleetClient){
+    feedback.textContent='Choose a published aircraft offer first.';return;
+   }
+   if(!/^[A-Z0-9][A-Z0-9-]{2,18}[A-Z0-9]$/.test(registration)){
+    feedback.textContent='Use a 4–20 character registration with letters, digits or hyphens.';return;
+   }
+   button.disabled=true;feedback.textContent='Checking offer and confirming the order with the server...';
+   try{
+    const result=await data.fleetClient.acquire({
+      airlineId:data.airline.id,offerId:offer.offerId,registration
+    });
+    if(result?.deliveryStatus!=='awaiting_delivery'||!result.aircraftInventoryId)
+     throw Error('Invalid acquisition response');
+    feedback.textContent='Aircraft '+registration+
+      (result.replayed?' already ordered.':' ordered successfully.')+
+      ' Upfront cost '+currency(result.paidUpfrontUsd)+
+      '. Stored until delivery and inspection; no flight activated.';
+    if(entry)entry.value='';
+    await loadRealFleetMarket();
+    doc.dispatchEvent(new CustomEvent('airlinerra:fleet-updated'));
+   }catch(error){
+    const reason=String(error?.message||'');
+    feedback.textContent=reason.includes('INSUFFICIENT_AIRLINE_CASH')?
+      'Not enough airline cash to purchase or lease this aircraft.':
+      reason.includes('AIRCRAFT_REGISTRATION_ALREADY_TAKEN')?
+      'That aircraft registration is already in use.':
+      reason.includes('AIRCRAFT_OFFER_NOT_AVAILABLE')?
+      'This offer is no longer available. Refresh the market.':
+      'The order was not confirmed. Check the offer and try again.';
+   }finally{button.disabled=!(marketSnapshot?.offers?.length>0);}
+   return;
   }
   if(id==='fleet-plan-save'){
    const fleet={family:$('fleet-family').value,seats:Number($('fleet-seats').value),
