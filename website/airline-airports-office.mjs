@@ -372,6 +372,10 @@ export function createAirportOffice({doc,session,identity,goTo,getAirlineLogoUrl
    ['Passenger terminals',p?count(p.facilities?.terminals):fallback],
    ['Passenger gates',p?count(p.facilities?.gates):fallback],
    ['Aircraft stands',p?count(p.facilities?.stands):fallback],
+   ['Minimum connecting time (game)',Number.isInteger(p?.connectionPolicy?.minimumMinutes)?
+     p.connectionPolicy.minimumMinutes+' minutes':fallback],
+   ['Maximum allowed transfer (game)',Number.isInteger(p?.connectionPolicy?.maximumMinutes)?
+     p.connectionPolicy.maximumMinutes+' minutes':fallback],
    ['Terminal slots (arrival / departure)',p?.slotCapacity?.terminal?.arrivalsPer10Minutes!==null &&
     p?.slotCapacity?.terminal?.arrivalsPer10Minutes!==undefined?
     num(p.slotCapacity.terminal.arrivalsPer10Minutes)+' each / 10 min · '+

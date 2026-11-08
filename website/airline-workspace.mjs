@@ -12,7 +12,7 @@ export const AIRLINE_UI_DEFAULTS=Object.freeze({
  hints:true
 });
 export const AIRLINE_UI_VIEWS=Object.freeze([
- 'overview','airline','fleet','routes','schedule','finances','worlds',
+ 'overview','airline','fleet','routes','route-details','schedule','finances','worlds',
  'airports','staff','rankings','service','aircraft-market','maintenance',
  'settings','interface','notifications','help'
 ]);

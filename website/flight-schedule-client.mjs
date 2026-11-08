@@ -42,6 +42,8 @@ export function createFlightScheduleClient({auth,origin,fetchImpl=(...args)=>fet
     post({action:'slot-check',airlineId,aircraftInventoryId,originAirportKey,
      destinationAirportKey,referenceDepartureUtc,referenceArrivalUtc,weeklySchedule,
      departureStand,arrivalStand,...(existingId?{existingId}:{})}),
+  demandPreview:({airlineId,scheduleId,month})=>
+    post({action:'demand-preview',airlineId,scheduleId,month}),
   activationCheck:({airlineId,scheduleId})=>post({action:'activation-check',airlineId,scheduleId}),
   delete:({airlineId,scheduleId})=>post({action:'delete',airlineId,scheduleId})
  });

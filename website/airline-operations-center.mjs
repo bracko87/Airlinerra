@@ -3,6 +3,7 @@
  * World 1 reads for approved airport lookup; drafts live in sessionStorage.
  */
 import {createAirportOffice} from './airline-airports-office.mjs';
+import {createSection9RouteDetails} from './section9-route-details.mjs';
 export const STAFF_DEPARTMENTS=Object.freeze({
  'Board and Executive':[
   ['Chairperson','Oversight and governance'],['Chief Executive Officer','Overall airline leadership'],
@@ -70,9 +71,10 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
  if(!doc||!identity||typeof identity!=='string'||!/^[\w-]{3,128}$/.test(identity))throw Error('Verified account required');
  const key='airlinerra.local.workplan.v1.'+identity;
  const $=id=>doc.getElementById(id);
- let server={connected:false,reader:null,countries:[],airline:null};
+ let server={connected:false,reader:null,scheduler:null,countries:[],airline:null};
  const root={
   'route-list':$('workspace-route-list'),
+  'route-details':$('workspace-route-details'),
   'hubs':$('workspace-hubs'),
   'tickets':$('workspace-tickets'),
   'staff':$('workspace-staff')
@@ -83,6 +85,11 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
   '<div class="workspace-actions"><button type="button" class="secondary" data-ops-page="routes">Create a route</button></div>'+
   '<p id="operations-routes-feedback" class="hint" role="status"></p>',
   'ROUTE DIRECTORY');
+ if(root['route-details'])root['route-details'].innerHTML=card('Route Details',
+  '<div class="workspace-actions"><button type="button" class="secondary" data-ops-page="route-list">Back to My routes</button>'+
+  '<button type="button" class="secondary" id="operations-route-edit-from-details">Edit route</button></div>'+
+  '<div id="operations-route-detail" class="operations-route-detail-content"></div>',
+  'ROUTE INFORMATION');
  if(root.tickets)root.tickets.innerHTML=card('Ticket prices and fare analysis',
   '<p class="hint">Enter your own fare, seat capacity, expected load factor and per-flight costs. All output is a planning scenario, not a passenger-demand forecast or a live ticket price.</p>'+
   '<div class="workspace-money-grid">'+
@@ -118,6 +125,11 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
  let state=storageRead(session,key);
  const persist=()=>storageWrite(session,key,{...storageRead(session,key),...state});
  const message=(id,text)=>{if($(id))$(id).textContent=text};
+ const details=createSection9RouteDetails({
+  doc,host:$('operations-route-detail'),getServer:()=>server,
+  getRoutes:()=>Array.isArray(state.routes)&&state.routes.length?state.routes:
+   state.route?[state.route]:[]
+ });
  function renderRoutes(){
   const root=$('operations-route-list');if(!root)return;
   root.replaceChildren();
@@ -303,8 +315,16 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
    const candidates=Array.isArray(state.routes)&&state.routes.length?state.routes:
     state.route?[state.route]:[];
    if(!Number.isInteger(i)||i<0||i>=candidates.length)return;
-   goTo?.('routes');
-   doc.dispatchEvent(new CustomEvent('airlinerra:edit-route-draft',{detail:{index:i}}));
+   goTo?.('route-details');
+   void details.open(i);
+   return;
+  }
+  if(target.id==='operations-route-edit-from-details'){
+   const i=details.index();
+   if(Number.isInteger(i)){
+    goTo?.('routes');
+    doc.dispatchEvent(new CustomEvent('airlinerra:edit-route-draft',{detail:{index:i}}));
+   }
    return;
   }
   if(target.dataset.opsRouteRemove!==undefined){
@@ -357,7 +377,7 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
   }
  });
  doc.addEventListener('airlinerra:route-draft-saved',()=>{
-  state=storageRead(session,key);renderRoutes();
+  state=storageRead(session,key);renderRoutes();void details.refresh();
  });
  const prices=state.ticketPrice;
  if(prices&&typeof prices==='object'){

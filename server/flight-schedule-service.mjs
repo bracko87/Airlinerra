@@ -18,6 +18,7 @@ const SLOT_FIELDS=new Set([...BASE_FIELDS,'aircraftInventoryId','originAirportKe
  'destinationAirportKey','referenceDepartureUtc','referenceArrivalUtc','weeklySchedule',
  'existingId','departureStand','arrivalStand']);
 const CHECK_FIELDS=new Set([...BASE_FIELDS,'scheduleId']);
+const DEMAND_FIELDS=new Set([...CHECK_FIELDS,'month']);
 const RHEADERS={'cache-control':'no-store','content-type':'application/json; charset=utf-8',
  'x-content-type-options':'nosniff','referrer-policy':'no-referrer'};
 const respond=(status,payload)=>Response.json(payload,{status,headers:RHEADERS});
@@ -44,6 +45,9 @@ export function validateFlightSchedulePayload(body){
  if(body.action==='list')return withinFields(body,BASE_FIELDS);
  if(body.action==='delete'||body.action==='activation-check')
   return withinFields(body,CHECK_FIELDS)&&uuid(body.scheduleId);
+ if(body.action==='demand-preview')
+  return withinFields(body,DEMAND_FIELDS)&&uuid(body.scheduleId)&&
+   Number.isInteger(body.month)&&body.month>=1&&body.month<=12;
  if(body.action!=='save'&&body.action!=='slot-check')return false;
  if(!withinFields(body,body.action==='save'?SAVE_FIELDS:SLOT_FIELDS))return false;
  if(!['terminal','remote','cargo'].includes(body.departureStand??'terminal')||
@@ -89,6 +93,8 @@ export const SCHEDULE_SQL=Object.freeze({
  slotCheck:`SELECT airlinerra_game.section6_weekly_slot_preflight_v1(
   1::smallint,$1::text,$2::text,$3::timestamptz,$4::timestamptz,
   $5::jsonb,$6::text,$7::text,$8::uuid) AS result`,
+ demandPreview:`SELECT airlinerra_game.section9_owned_route_preview_v1(
+  $1::uuid,$2::uuid,$3::uuid,$4::smallint) AS result`,
  check:`SELECT airlinerra_game.section5_schedule_activation_readiness_v1($1::uuid,$2::uuid) AS result`,
  delete:`DELETE FROM airlinerra_game.airline_flight_schedule_drafts_v1 s
    USING airlinerra_game.airlines a
@@ -171,6 +177,14 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
     return respond(200,{available:v.available===true,
      departureAvailable:v.departureAvailable===true,arrivalAvailable:v.arrivalAvailable===true,
      slotModel:'weekly_stand_capacity_v1'});
+   }
+   if(body.action==='demand-preview'){
+    // Database function checks ownership again; only estimates are returned.
+    const response=await client.query(SCHEDULE_SQL.demandPreview,
+      [userId,body.airlineId,body.scheduleId,body.month]);
+    if(response.rowCount!==1||!response.rows[0]?.result)
+     return respond(503,{error:'Demand preview unavailable'});
+    return respond(200,response.rows[0].result);
    }
    if(body.action==='activation-check'){
     const response=await client.query(SCHEDULE_SQL.check,[userId,body.scheduleId]);

@@ -28,6 +28,10 @@ export const AIRPORT_PROFILE_SQL=`
         cap.terminal_per_direction_10m AS slot_terminal_per_direction_10m,
         cap.remote_per_direction_10m AS slot_remote_per_direction_10m,
         cap.cargo_per_direction_10m AS slot_cargo_per_direction_10m,
+        transfer.minimum_transfer_minutes AS game_minimum_transfer_minutes,
+        transfer.maximum_transfer_minutes AS game_maximum_transfer_minutes,
+        transfer.airport_background AS game_demand_background,
+        transfer.seasonal_profile AS game_seasonal_profile,
         ops.game_operating_hours_summary,ops.operating_hours_basis AS game_operating_hours_basis,
         ops.max_day_game_noise_class,ops.max_night_game_noise_class,
         ops.noise_limit_basis,ops.time_restrictions AS game_time_restrictions,
@@ -150,6 +154,8 @@ export const AIRPORT_PROFILE_SQL=`
     ON p.world_id=a.world_id AND p.airport_key=a.airport_key
  LEFT JOIN airlinerra_game.airport_facilities f
     ON f.world_id=a.world_id AND f.airport_key=a.airport_key
+ LEFT JOIN airlinerra_game.section9_airport_transfer_policy_v1 transfer
+    ON transfer.world_id=a.world_id AND transfer.airport_key=a.airport_key
  LEFT JOIN airlinerra_game.section6_airport_slot_capacity_v1 cap
     ON cap.world_id=a.world_id AND cap.airport_key=a.airport_key
  LEFT JOIN airlinerra_game.section5_airport_operating_summary_v1 ops
@@ -257,6 +263,14 @@ export function serializeAirportProfile(row){
      '. See operations.icaoNoiseRules for sourced restrictions. Prior five-class noise scale retired.',
    historicalNoiseNotes:nullableString(row.noise_restrictions),
    status:nullableString(row.facility_status)
+  },
+  connectionPolicy:{
+   minimumMinutes:countOrNull(row.game_minimum_transfer_minutes),
+   maximumMinutes:countOrNull(row.game_maximum_transfer_minutes),
+   model:'game_category_base_v1',
+   background:nullableString(row.game_demand_background),
+   seasonalProfile:nullableString(row.game_seasonal_profile),
+   officialAirportMct:false
   },
   slotCapacity:{
    model:'stand_hourly_v1',

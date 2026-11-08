@@ -319,7 +319,7 @@ async function loadPlayerReadData({local=false}={}){
   try{
     workspaceController?.updateData({connected:true,airline:first||null,worlds:data.worlds,
      countries:data.countries,reader:playerData,scheduler,fleetClient});
-    operationsController?.updateData({connected:true,airline:first||null,worlds:data.worlds,countries:data.countries,reader:playerData});
+    operationsController?.updateData({connected:true,airline:first||null,worlds:data.worlds,countries:data.countries,reader:playerData,scheduler});
   }
   catch{console.warn('Airlinerra secondary workspace failed to display');}
   if(first?.id)void loadManageAirlineLogo();
