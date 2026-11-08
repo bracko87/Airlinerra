@@ -4,6 +4,7 @@
  */
 import {createAirportOffice} from './airline-airports-office.mjs';
 import {createSection9RouteDetails} from './section9-route-details.mjs';
+import {createSection9PartnerConsole} from './section9-partner-console.mjs';
 export const STAFF_DEPARTMENTS=Object.freeze({
  'Board and Executive':[
   ['Chairperson','Oversight and governance'],['Chief Executive Officer','Overall airline leadership'],
@@ -83,7 +84,8 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
   '<p class="hint">Saved route ideas in this browser tab. Live network routes will appear only when the protected route engine is connected.</p>'+
   '<div id="operations-route-list" class="operations-route-table"></div>'+
   '<div class="workspace-actions"><button type="button" class="secondary" data-ops-page="routes">Create a route</button></div>'+
-  '<p id="operations-routes-feedback" class="hint" role="status"></p>',
+  '<p id="operations-routes-feedback" class="hint" role="status"></p>'+
+  '<div id="operations-partner-console" class="operations-partner-console"></div>',
   'ROUTE DIRECTORY');
  if(root['route-details'])root['route-details'].innerHTML=card('Route Details',
   '<div class="workspace-actions"><button type="button" class="secondary" data-ops-page="route-list">Back to My routes</button>'+
@@ -125,6 +127,9 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
  let state=storageRead(session,key);
  const persist=()=>storageWrite(session,key,{...storageRead(session,key),...state});
  const message=(id,text)=>{if($(id))$(id).textContent=text};
+ const partners=createSection9PartnerConsole({
+  doc,host:$('operations-partner-console'),getServer:()=>server
+ });
  const details=createSection9RouteDetails({
   doc,host:$('operations-route-detail'),getServer:()=>server,
   getRoutes:()=>Array.isArray(state.routes)&&state.routes.length?state.routes:
@@ -303,7 +308,7 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
   const home=server.airline?.homeAirportName?
    server.airline.homeAirportName+' ('+(server.airline.homeAirportCode||'-')+')':
    'Not available';message('operations-home-airport',server.connected?home:'Not connected');
-  renderRoutes();renderHubs();
+  renderRoutes();renderHubs();void partners.refresh();
   airportOfficeController?.updateData(value);
  }
  const main=$('player-main');

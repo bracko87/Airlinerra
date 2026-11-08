@@ -19,6 +19,10 @@ const SLOT_FIELDS=new Set([...BASE_FIELDS,'aircraftInventoryId','originAirportKe
  'existingId','departureStand','arrivalStand']);
 const CHECK_FIELDS=new Set([...BASE_FIELDS,'scheduleId']);
 const DEMAND_FIELDS=new Set([...CHECK_FIELDS,'month']);
+const FARE_SAVE_FIELDS=new Set([...CHECK_FIELDS,'economyFareUsd',
+ 'cargoRateUsdPerTonne','marketingBudgetUsdPerDay']);
+const PARTNER_PROPOSE_FIELDS=new Set([...BASE_FIELDS,'otherAirlineCode']);
+const PARTNER_DECIDE_FIELDS=new Set([...BASE_FIELDS,'agreementId','decision']);
 const RHEADERS={'cache-control':'no-store','content-type':'application/json; charset=utf-8',
  'x-content-type-options':'nosniff','referrer-policy':'no-referrer'};
 const respond=(status,payload)=>Response.json(payload,{status,headers:RHEADERS});
@@ -42,7 +46,23 @@ export function validWeeklyFlightSchedule(value){
 export function validateFlightSchedulePayload(body){
  if(!body||typeof body!=='object'||Array.isArray(body)||
     !uuid(body.airlineId)||typeof body.action!=='string')return false;
- if(body.action==='list')return withinFields(body,BASE_FIELDS);
+ if(body.action==='list'||body.action==='partner-list')
+  return withinFields(body,BASE_FIELDS);
+ if(body.action==='partner-propose')return withinFields(body,PARTNER_PROPOSE_FIELDS)&&
+   typeof body.otherAirlineCode==='string'&&
+   /^[A-Z0-9]{2,3}$/.test(body.otherAirlineCode);
+ if(body.action==='partner-decision')return withinFields(body,PARTNER_DECIDE_FIELDS)&&
+   Number.isSafeInteger(body.agreementId)&&body.agreementId>0&&
+   ['approve','terminate'].includes(body.decision);
+ if(body.action==='commercial-save'){
+  if(!withinFields(body,FARE_SAVE_FIELDS)||!uuid(body.scheduleId))return false;
+  return [[body.economyFareUsd,1,100000],[body.cargoRateUsdPerTonne,0,1000000],
+   [body.marketingBudgetUsdPerDay,0,100000]].every(([n,min,max])=>
+    typeof n==='number'&&Number.isFinite(n)&&n>=min&&n<=max&&
+    Math.round(n*100)/100===n);
+ }
+ if(body.action==='commercial-read')
+  return withinFields(body,CHECK_FIELDS)&&uuid(body.scheduleId);
  if(body.action==='delete'||body.action==='activation-check')
   return withinFields(body,CHECK_FIELDS)&&uuid(body.scheduleId);
  if(body.action==='demand-preview')
@@ -95,6 +115,16 @@ export const SCHEDULE_SQL=Object.freeze({
   $5::jsonb,$6::text,$7::text,$8::uuid) AS result`,
  demandPreview:`SELECT airlinerra_game.section9_owned_route_preview_v1(
   $1::uuid,$2::uuid,$3::uuid,$4::smallint) AS result`,
+ commercialSave:`SELECT airlinerra_game.section9_save_owned_commercial_plan_v1(
+  $1::uuid,$2::uuid,$3::uuid,$4::numeric,$5::numeric,$6::numeric) AS result`,
+ commercialRead:`SELECT airlinerra_game.section9_get_owned_commercial_plan_v1(
+  $1::uuid,$2::uuid,$3::uuid) AS result`,
+ partnershipList:`SELECT airlinerra_game.section9_list_owned_partnerships_v1(
+  $1::uuid,$2::uuid) AS result`,
+ partnershipPropose:`SELECT airlinerra_game.section9_manage_partnership_v1(
+  $1::uuid,$2::uuid,'propose'::text,$3::text,NULL::bigint) AS result`,
+ partnershipDecision:`SELECT airlinerra_game.section9_manage_partnership_v1(
+  $1::uuid,$2::uuid,$3::text,NULL::text,$4::bigint) AS result`,
  check:`SELECT airlinerra_game.section5_schedule_activation_readiness_v1($1::uuid,$2::uuid) AS result`,
  delete:`DELETE FROM airlinerra_game.airline_flight_schedule_drafts_v1 s
    USING airlinerra_game.airlines a
@@ -178,6 +208,39 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
      departureAvailable:v.departureAvailable===true,arrivalAvailable:v.arrivalAvailable===true,
      slotModel:'weekly_stand_capacity_v1'});
    }
+   if(body.action==='commercial-save'){
+    const response=await client.query(SCHEDULE_SQL.commercialSave,
+     [userId,body.airlineId,body.scheduleId,body.economyFareUsd,
+      body.cargoRateUsdPerTonne,body.marketingBudgetUsdPerDay]);
+    if(response.rowCount!==1||!response.rows[0]?.result)
+     return respond(503,{error:'Commercial plan was not saved'});
+    return respond(200,response.rows[0].result);
+   }
+   if(body.action==='commercial-read'){
+    const response=await client.query(SCHEDULE_SQL.commercialRead,
+     [userId,body.airlineId,body.scheduleId]);
+    if(response.rowCount!==1||!response.rows[0]?.result)
+     return respond(503,{error:'Commercial plan unavailable'});
+    return respond(200,response.rows[0].result);
+   }
+   if(body.action==='partner-list'){
+    const response=await client.query(SCHEDULE_SQL.partnershipList,
+     [userId,body.airlineId]);
+    if(response.rowCount!==1||!response.rows[0]?.result)
+     return respond(503,{error:'Partnership list unavailable'});
+    return respond(200,response.rows[0].result);
+   }
+   if(body.action==='partner-propose'||body.action==='partner-decision'){
+    const query=body.action==='partner-propose'?
+     SCHEDULE_SQL.partnershipPropose:SCHEDULE_SQL.partnershipDecision;
+    const args=body.action==='partner-propose'?
+     [userId,body.airlineId,body.otherAirlineCode]:
+     [userId,body.airlineId,body.decision,body.agreementId];
+    const response=await client.query(query,args);
+    if(response.rowCount!==1||!response.rows[0]?.result)
+     return respond(503,{error:'Partnership update unavailable'});
+    return respond(200,response.rows[0].result);
+   }
    if(body.action==='demand-preview'){
     // Database function checks ownership again; only estimates are returned.
     const response=await client.query(SCHEDULE_SQL.demandPreview,
@@ -211,7 +274,9 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
     reason:['SCHEDULE_BLOCKED_BY_AIRPORT_OR_AIRCRAFT_RULE',
       'AIRCRAFT_NOT_OWNED_LEASED_OR_IN_SERVICE',
       'AIRLINE_WORLD_NOT_ACTIVE_FOR_SCHEDULING','SECTION6_SLOT_UNAVAILABLE',
-      'SECTION6_INCOMPATIBLE_AIRCRAFT_STAND','SECTION6_AIRPORT_CAPACITY_NOT_CONFIGURED'].includes(error.message)
+      'SECTION6_INCOMPATIBLE_AIRCRAFT_STAND','SECTION6_AIRPORT_CAPACITY_NOT_CONFIGURED',
+      'SECTION9_PARTNER_NOT_FOUND_OR_AMBIGUOUS',
+      'SECTION9_TERMINATED_PROPOSAL_REQUIRES_RESTART'].includes(error.message)
       ?error.message:'SCHEDULE_REQUIRES_REVIEW'
    });
    // Do not print the database error, queries, secrets or submitted personal data.
