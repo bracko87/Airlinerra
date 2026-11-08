@@ -19,6 +19,7 @@ const SLOT_FIELDS=new Set([...BASE_FIELDS,'aircraftInventoryId','originAirportKe
  'existingId','departureStand','arrivalStand']);
 const CHECK_FIELDS=new Set([...BASE_FIELDS,'scheduleId']);
 const DEMAND_FIELDS=new Set([...CHECK_FIELDS,'month']);
+const ROTATION_FIELDS=new Set([...CHECK_FIELDS,'startDate','days']);
 const FARE_SAVE_FIELDS=new Set([...CHECK_FIELDS,'economyFareUsd',
  'cargoRateUsdPerTonne','marketingBudgetUsdPerDay']);
 const PARTNER_PROPOSE_FIELDS=new Set([...BASE_FIELDS,'otherAirlineCode']);
@@ -65,6 +66,15 @@ export function validateFlightSchedulePayload(body){
   return withinFields(body,CHECK_FIELDS)&&uuid(body.scheduleId);
  if(body.action==='delete'||body.action==='activation-check')
   return withinFields(body,CHECK_FIELDS)&&uuid(body.scheduleId);
+ if(body.action==='rotation-preview'){
+  if(!withinFields(body,ROTATION_FIELDS)||!uuid(body.scheduleId)||
+     !Number.isInteger(body.days)||body.days<7||body.days>42||
+     typeof body.startDate!=='string'||
+     !/^(20|21)[0-9]{2}-[0-9]{2}-[0-9]{2}$/.test(body.startDate))return false;
+  const parsed=Date.parse(body.startDate+'T00:00:00Z');
+  return Number.isFinite(parsed)&&
+   new Date(parsed).toISOString().slice(0,10)===body.startDate;
+ }
  if(body.action==='demand-preview')
   return withinFields(body,DEMAND_FIELDS)&&uuid(body.scheduleId)&&
    Number.isInteger(body.month)&&body.month>=1&&body.month<=12;
@@ -125,6 +135,8 @@ export const SCHEDULE_SQL=Object.freeze({
   $1::uuid,$2::uuid,'propose'::text,$3::text,NULL::bigint) AS result`,
  partnershipDecision:`SELECT airlinerra_game.section9_manage_partnership_v1(
   $1::uuid,$2::uuid,$3::text,NULL::text,$4::bigint) AS result`,
+ rotationPreview:`SELECT airlinerra_game.section9_owned_aircraft_rotation_preview_v1(
+  $1::uuid,$2::uuid,$3::uuid,$4::date,$5::integer) AS result`,
  check:`SELECT airlinerra_game.section5_schedule_activation_readiness_v1($1::uuid,$2::uuid) AS result`,
  delete:`DELETE FROM airlinerra_game.airline_flight_schedule_drafts_v1 s
    USING airlinerra_game.airlines a
@@ -247,6 +259,13 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
       [userId,body.airlineId,body.scheduleId,body.month]);
     if(response.rowCount!==1||!response.rows[0]?.result)
      return respond(503,{error:'Demand preview unavailable'});
+    return respond(200,response.rows[0].result);
+   }
+   if(body.action==='rotation-preview'){
+    const response=await client.query(SCHEDULE_SQL.rotationPreview,
+      [userId,body.airlineId,body.scheduleId,body.startDate,body.days]);
+    if(response.rowCount!==1||!response.rows[0]?.result)
+     return respond(503,{error:'Aircraft rotation preflight unavailable'});
     return respond(200,response.rows[0].result);
    }
    if(body.action==='activation-check'){
