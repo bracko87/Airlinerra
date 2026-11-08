@@ -28,6 +28,7 @@ export function createFleetAcquisitionClient({auth,origin,fetchImpl=(...a)=>fetc
  }
  return Object.freeze({
   list:airlineId=>post({action:'list',airlineId}),
+  checkDelivery:({airlineId,orderId})=>post({action:'check-delivery',airlineId,orderId}),
   acquire:async({airlineId,offerId,registration,requestId})=>{
    const normalized=String(registration||'').trim().toUpperCase();
    const key=String(airlineId)+'|'+String(offerId)+'|'+normalized;
