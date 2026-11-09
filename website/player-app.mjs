@@ -80,45 +80,47 @@ async function loadHoldingStatus(){
  const airlineId=currentAirline?.id;
  const worldId=currentAirline?.worldId;
  progress.style.width='0%';
- days.textContent='Not yet calculable';
- earliest.textContent='Not yet calculable';
+ days.textContent='Checking…';
+ earliest.textContent='Checking…';
  if(!airlineId||!Number.isInteger(worldId)||!playerData?.holdingStatus){
-  status.textContent='Waiting for a registered airline and verified game data';
+  status.textContent='Select your original airline to see its registration age';
+  days.textContent='Not available';
+  earliest.textContent='Not available';
   return;
  }
  holdingStatusLoading=true;
- status.textContent='Checking your game-day eligibility…';
+ status.textContent='Checking company registration date…';
  try{
   const data=await playerData.holdingStatus();
   if(data?.holdingFormationAvailable!==false||
     data.subsidiaryCreationAvailable!==false||data.treasuryTransfersAvailable!==false||
+    data.ageBasis!=='elapsed_calendar_days_since_airline_registration'||
     !Array.isArray(data.worlds)||data.worlds.length>3)throw Error('Invalid holding status');
   if(currentAirline?.id!==airlineId)return;
   const row=data.worlds.find(x=>x.airlineId===airlineId&&x.worldId===worldId);
-  if(!row){status.textContent='No verified holding eligibility for this airline';return;}
-  if(row.registrationOpen!==false||row.minimumDays!==60)throw Error('Unverified eligibility');
-  const labels={
-   world_not_active:'Waiting for game world activation',
-   game_clock_unverified:'Waiting for the official game clock',
-   first_operating_flight_unverified:'Waiting for your first settled commercial flight',
-   clock_before_first_operation:'Game clock evidence needs verification',
-   waiting_for_60_game_days:'60-day requirement in progress',
-   holding_registration_not_released:'60 days completed · holding registration not yet released',
-   eligible_for_application:'Holding registration is not enabled'
-  };
-  status.textContent=labels[row.reason]||'Eligibility not yet verified';
-  if(Number.isInteger(row.completedDays)&&row.completedDays>=0&&
-   Number.isInteger(row.remainingDays)&&row.remainingDays>=0&&row.remainingDays<=60){
-   days.textContent=String(row.remainingDays)+' game days remaining';
-   progress.style.width=String(Math.min(100,Math.floor(row.completedDays/60*100)))+'%';
-  }
-  if(typeof row.earliestGameDate==='string')earliest.textContent=row.earliestGameDate;
+  if(!row){status.textContent='No registration record found for this airline';return;}
+  if(row.registrationOpen!==false||row.minimumDays!==60||
+    !Number.isInteger(row.remainingDays)||row.remainingDays<0||row.remainingDays>60||
+    !Number.isInteger(row.completedDays)||row.completedDays<0||
+    typeof row.earliestDate!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(row.earliestDate))
+    throw Error('Unverified holding registration age');
+  const [year,month,day]=row.earliestDate.split('-');
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const monthLabel=months[Number(month)-1];
+  if(!monthLabel)throw Error('Invalid eligibility month');
+  earliest.textContent=day+' '+monthLabel+' '+year;
+  days.textContent=row.remainingDays===0?'0 days — age requirement met':String(row.remainingDays)+' days';
+  progress.style.width=String(Math.min(100,Math.floor(row.completedDays/60*100)))+'%';
+  status.textContent=row.remainingDays>0
+    ?'60-day waiting period in progress · Holding registration not yet released'
+    :'Age requirement met · Holding registration not yet released';
  }catch{
-  status.textContent='Eligibility data unavailable — please refresh';
-  days.textContent='Not yet calculable';
-  earliest.textContent='Not yet calculable';
-  }finally{holdingStatusLoading=false;}
+  status.textContent='Could not load the company registration date — please refresh';
+  days.textContent='Unavailable';
+  earliest.textContent='Unavailable';
+ }finally{holdingStatusLoading=false;}
 }
+
 // This is a read-only reference catalogue, not an authority/entitlement check.
 // Keep the renderer inside the player bundle: no additional module required at startup.
 let licenseDirectoryLoaded=false;
