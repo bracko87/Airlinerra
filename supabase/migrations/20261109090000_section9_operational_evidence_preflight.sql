@@ -81,12 +81,11 @@ BEGIN
  seats:=CASE WHEN service_role='cargo' THEN 0
    ELSE coalesce(t.simultaneous_passenger_seats,
      t.typical_passenger_seats,t.maximum_passenger_seats) END;
- IF seats IS NOT NULL THEN
-  SELECT p.min_ground_minutes,p.policy_basis INTO turn
-  FROM airlinerra_game.section9_game_turnaround_policy_v1 p
-  WHERE p.role=service_role AND p.max_seats>=seats
-  ORDER BY p.max_seats LIMIT 1;
- END IF;
+ SELECT p.min_ground_minutes,p.policy_basis INTO turn
+ FROM airlinerra_game.section9_game_turnaround_policy_v1 p
+ WHERE p.role=service_role AND seats IS NOT NULL
+   AND p.max_seats>=seats
+ ORDER BY p.max_seats LIMIT 1;
 
  -- Calculate aircraft-specific minimum ground gaps across ALL its saved
  -- weekly routes. Include a 7-day lead/tail to expose weekly transitions.
