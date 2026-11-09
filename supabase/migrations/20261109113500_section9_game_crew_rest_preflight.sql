@@ -106,7 +106,7 @@ BEGIN
   FROM intervals i
  ), filtered AS MATERIALIZED(
   SELECT *,
-    max_prior_duty_end>duty_start AS overlaps,
+    max_prior_duty_end>duty_start AS has_overlap,
     previous_duty_end IS NOT NULL AND
      duty_start>=previous_duty_end AND
      duty_start<previous_duty_end+
@@ -122,7 +122,7 @@ BEGIN
   'scheduleId',p_schedule,'previewDays',p_days,
   'assignedCrew', (SELECT count(*) FROM selected),
   'scheduledDutyOccurrences',count(*)::int,
-  'overlapConflicts',count(*) FILTER(WHERE overlaps)::int,
+  'overlapConflicts',count(*) FILTER(WHERE has_overlap)::int,
   'insufficientRest',count(*) FILTER(WHERE rest_short)::int,
   'crewWrongAirport',count(*) FILTER(WHERE teleport)::int,
   'overlongDuty',count(*) FILTER(WHERE excessive_duty)::int,
@@ -139,12 +139,12 @@ BEGIN
    'maxSingleDutyMinutes',policy.max_single_duty_minutes),
   'sampleConflicts',(SELECT coalesce(jsonb_agg(jsonb_build_object(
     'crewId',x.crew_id,'scheduleId',x.schedule_id,
-    'departureUtc',x.departure_utc,'overlap',x.overlaps,
+    'departureUtc',x.departure_utc,'overlap',x.has_overlap,
     'restTooShort',x.rest_short,'wrongAirport',x.teleport,
     'overlongDuty',x.excessive_duty,'invalidLocalTime',x.invalid_dst)
     ORDER BY x.duty_start),'[]'::jsonb)
    FROM (SELECT * FROM filtered
-    WHERE overlaps OR rest_short OR teleport OR excessive_duty OR invalid_dst
+    WHERE has_overlap OR rest_short OR teleport OR excessive_duty OR invalid_dst
     ORDER BY duty_start LIMIT 10) x),
   'actualLegalDutyAndRestCertified',false,
   'flightCrewAuthorized',false,
