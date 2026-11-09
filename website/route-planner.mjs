@@ -452,14 +452,17 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   for(const previous of scheduledRoutesForAircraft(aircraft)){
    if(!previous||previous.flightNumber===editingFlightNumber||
       previous.aircraftId!==aircraft||previous.to?.key!==from.key)continue;
+   const priorDeparture=Date.parse(previous.referenceDepartureUtc||'');
    const arrival=Date.parse(previous.referenceArrivalUtc||'');
-   if(!Number.isFinite(arrival)||arrival>planned||planned-arrival>24*3600000)continue;
-   // These UTC dates are user-entered route examples, not actual flight
-   // arrivals. Reject a known overlapping draft, never authorize a flight.
-   const minutes=(planned-arrival)/60000;
-   if(minutes<turnaround)return 'Previous '+String(previous.flightNumber||'flight')+
-    ' example arrives at '+new Date(arrival).toISOString().slice(11,16)+' UTC. The next example departure must be at least '+
-    turnaround+' minutes later; current gap is '+Math.floor(minutes)+' minutes.';
+   if(!Number.isFinite(priorDeparture)||!Number.isFinite(arrival)||
+      priorDeparture>planned||planned-priorDeparture>24*3600000)continue;
+   // Use only date-matched UTC examples. This catches departures even BEFORE
+   // the previous arrival; it never creates actual aircraft availability.
+   const earliest=arrival+turnaround*60000;
+   if(planned<earliest)return 'Previous '+String(previous.flightNumber||'flight')+
+    ' example arrives at '+new Date(arrival).toISOString().slice(11,16)+' UTC. '+ 
+    'With a '+turnaround+'-minute ground stop, the next departure cannot be before '+
+    new Date(earliest).toISOString().slice(11,16)+' UTC on the example date.';
   }
   return null;
  };
