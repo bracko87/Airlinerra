@@ -191,7 +191,9 @@ BEGIN
     p_destination_airport_key IS NULL OR
     p_origin_airport_key=p_destination_airport_key OR
     p_configuration_id IS NULL OR
+    p_departure_stand_type IS NULL OR
     p_departure_stand_type NOT IN ('terminal','remote','cargo') OR
+    p_arrival_stand_type IS NULL OR
     p_arrival_stand_type NOT IN ('terminal','remote','cargo') OR
     p_departing_passengers IS NULL OR p_departing_passengers<0 OR
     p_departing_passengers>1000 OR p_cargo_tonnes IS NULL OR
