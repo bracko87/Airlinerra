@@ -47,6 +47,13 @@ BEGIN
   AND o.aircraft_inventory_id=anchor.aircraft_inventory_id
  JOIN airlinerra_game.aircraft_delivery_inspections_v1 i
   ON i.inspection_id=anchor.inspection_id AND i.order_id=o.order_id
+ JOIN airlinerra_game.aircraft_acquisition_offers_v1 approved_offer
+  ON approved_offer.offer_id=o.offer_id
+   AND approved_offer.world_id=o.world_id
+   AND approved_offer.configuration_id=o.configuration_id
+   AND approved_offer.transaction_type=o.transaction_type
+   AND approved_offer.offer_status IN ('published','retired')
+   AND approved_offer.pricing_basis LIKE 'AIRLINERRA_GAME_BALANCE_V1:%'
  WHERE anchor.aircraft_inventory_id=target.aircraft_inventory_id
   AND anchor.airline_id=p_airline
   AND o.delivery_home_airport_key=anchor.airport_key
