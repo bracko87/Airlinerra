@@ -452,67 +452,80 @@
         </section>
         <section data-player-view="holding" hidden>
           <div class="page-head"><div>
-            <p class="eyebrow">HOLDING COMPANY · PLANNING</p>
+            <p class="eyebrow">HOLDING COMPANY · PREVIEW</p>
             <h1>Holding companies</h1>
-            <p>After your original airline has completed 60 operating game days, you may become eligible to apply for a parent holding company. The holding feature has not launched yet.</p>
+            <p>See when your airline may qualify for a holding and what businesses you could manage under it.</p>
           </div></div>
-          <div class="planning-page-grid">
-            <article class="panel planning-panel">
-              <h2>When can I start?</h2>
-              <p>The minimum is <strong>60 completed operating game days</strong> for your original airline. Registration alone does not start this clock. Meeting the minimum is not automatic approval.</p>
+          <div class="planning-page-grid holding-summary-grid">
+            <article class="panel planning-panel holding-summary-panel">
+              <h2>When can I open a holding?</h2>
+              <p>Your original airline needs <strong>60 completed operating game days</strong>. The holding feature is not open for registration yet.</p>
               <div class="holding-tracker" role="status" aria-label="Holding eligibility status">
-                <div class="holding-tracker-heading"><strong>Holding eligibility</strong><span id="holding-eligibility-status">Not yet available</span></div>
-                <div class="holding-tracker-progress" aria-hidden="true"><span id="holding-progress-fill"></span></div>
                 <div class="holding-tracker-details">
-                  <div><strong>Required</strong><span>60 operating game days</span></div>
-                  <div><strong>Days completed / remaining</strong><span id="holding-days-count">Waiting for verified flight operations</span></div>
-                  <div><strong>Earliest eligible game date</strong><span id="holding-earliest-date">Not yet calculable</span></div>
+                  <div>
+                    <strong>Earliest eligible game date</strong>
+                    <span id="holding-earliest-date">Not yet calculable</span>
+                  </div>
+                  <div>
+                    <strong>Game days remaining</strong>
+                    <span id="holding-days-count">Waiting for verified flight operations</span>
+                  </div>
                 </div>
+                <div class="holding-tracker-progress" aria-hidden="true"><span id="holding-progress-fill"></span></div>
+                <div class="holding-tracker-heading"><span id="holding-eligibility-status">Not yet available</span></div>
               </div>
-              <div class="workspace-task-list">
-                <div><strong>Verified current game date</strong><span id="holding-current-game-date">Not yet available</span></div>
-                <div><strong>Feature release</strong><span>Not announced — holding creation is disabled</span></div>
-                <div><strong>How the date will be calculated</strong><span>From the server's game-day clock and the original airline's verified operating start, not its account creation date</span></div>
-              </div>
+              <p class="holding-helper-note">Dates are based on the official game clock and your airline's first completed commercial flight, not its registration date. Reaching 60 days does not automatically open registration.</p>
             </article>
-            <article class="panel planning-panel">
-              <h2>How much will it cost?</h2>
-              <p>The game prices have not been finalized. No price shown here is a charge or an offer.</p>
-              <div class="workspace-task-list">
-                <div><strong>One-time establishment fee</strong><span>To be announced</span></div>
-                <div><strong>Required cash reserves</strong><span>To be announced</span></div>
-                <div><strong>Ongoing administration</strong><span>To be announced</span></div>
+            <article class="panel planning-panel holding-summary-panel">
+              <h2>What will it cost?</h2>
+              <p>These fees are planned, but the amounts have not been set.</p>
+              <div class="holding-cost-list">
+                <div><span>Holding registration fee</span><strong>To be announced</strong></div>
+                <div><span>Minimum capital / reserves</span><strong>To be announced</strong></div>
+                <div><span>Transfers between companies</span><strong>Small fee planned</strong></div>
               </div>
-            </article>
-            <article class="panel planning-panel">
-              <h2>Requirements</h2>
-              <p>In addition to the 60-day minimum, the planned eligibility checks will include:</p>
-              <div class="workspace-task-list">
-                <div><strong>Safety and operations</strong><span>Acceptable incident and compliance record, reliable operations and sufficient experience</span></div>
-                <div><strong>Registration and licenses</strong><span>Required business registration, country permissions and aviation certificates</span></div>
-                <div><strong>Financial position</strong><span>Formation capital and reserves; no disqualifying insolvency or compliance restrictions</span></div>
-                <div><strong>Authorized owner</strong><span>Server-verified ownership and management permission</span></div>
-              </div>
-            </article>
-            <article class="panel planning-panel">
-              <h2>What can a holding manage?</h2>
-              <p>Your existing airline would become the first subsidiary of your parent holding. Other businesses would be optional; these are examples, not companies you already own.</p>
-              <div class="holding-tree" aria-label="Example future holding company structure">
-                <div class="holding-tree-parent"><strong>Parent holding company</strong><span>Ownership · shared group oversight</span></div>
-                <div class="holding-tree-branches">
-                  <div><strong>Original airline</strong><span>Your existing airline · retained</span></div>
-                  <div><strong>Additional airline</strong><span>Optional · passenger or cargo</span></div>
-                  <div><strong>Maintenance business</strong><span>Optional · MRO</span></div>
-                </div>
-              </div>
-              <div class="workspace-task-list">
-                <div><strong>Basic holding registration</strong><span>Proposed small setup fee and administrative costs; no airline operating certificate needed solely for ownership</span></div>
-                <div><strong>Subsidiary approvals</strong><span>New airlines, maintenance and other regulated businesses need their own capital and applicable licences</span></div>
-                <div><strong>Independent businesses</strong><span>Each subsidiary keeps its own rights, employees, fleet, finances and reputation</span></div>
-              </div>
+              <p class="holding-helper-note">Each new subsidiary will also need its own starting capital and applicable registration or licensing costs.</p>
             </article>
           </div>
-          <p class="planning-state">This page is open for information only. Holding registration is not yet available; viewing this page does not create a company or charge your airline. <a href="#licenses" data-view-link="licenses">View the Licences &amp; Permits reference catalogue</a>.</p>
+          <article class="panel planning-panel holding-example-panel">
+            <h2>How your holding could look</h2>
+            <p>Your existing airline becomes the first subsidiary. You can later open other companies, each with separate finances and any required operating approvals.</p>
+            <div class="holding-tree" aria-label="Example only: parent holding company with existing airline and optional subsidiaries">
+              <div class="holding-tree-parent">
+                <strong>Parent holding company</strong>
+                <span>Owns and funds the companies below</span>
+              </div>
+              <div class="holding-tree-branches">
+                <div class="holding-tree-existing">
+                  <strong>Original airline</strong>
+                  <span>Already yours · moves under the holding</span>
+                  <small>Existing operator approvals continue within their valid scope</small>
+                </div>
+                <div>
+                  <strong>Regional airline</strong>
+                  <span>New subsidiary · optional</span>
+                  <small>Own airline operating licence and AOC required</small>
+                </div>
+                <div>
+                  <strong>Cargo airline</strong>
+                  <span>New subsidiary · optional</span>
+                  <small>Own AOC and cargo approvals where required</small>
+                </div>
+                <div>
+                  <strong>Maintenance company</strong>
+                  <span>New subsidiary · optional</span>
+                  <small>Maintenance approval, e.g. Part-145 where applicable</small>
+                </div>
+                <div>
+                  <strong>Charter / VIP airline</strong>
+                  <span>New subsidiary · optional</span>
+                  <small>Appropriate commercial operator approvals required</small>
+                </div>
+              </div>
+            </div>
+            <p class="holding-example-footnote">Illustrative structure only — no subsidiaries have been created. Check the <a href="#licenses" data-view-link="licenses">Licences &amp; Permits</a> page for requirements and how to obtain approvals.</p>
+          </article>
+          <p class="planning-state">Holding registration, subsidiary creation and money transfers are not available yet. Viewing this page does not create a company or charge your airline.</p>
         </section>
 <section data-player-view="infrastructure" hidden><div class="page-head"><div><p class="eyebrow">AIRLINE INFRASTRUCTURE</p><h1>Infrastructure overview</h1><p>The corporate buildings and airport assets supporting your airline.</p></div></div><div class="planning-page-grid"><article class="panel planning-panel"><h2>Headquarters and offices</h2><p>Administration and airline coordination.</p><div class="workspace-task-list"><div><strong>Head office</strong><span>Executive and finance offices</span></div><div><strong>Operations center</strong><span>Dispatch, control and flight operations</span></div><div><strong>Training</strong><span>Crew and technical training facilities</span></div></div></article><article class="panel planning-panel"><h2>Airport facilities</h2><p>Buildings and equipment at hubs and stations.</p><div class="workspace-task-list"><div><strong>Maintenance</strong><span>Hangars, workshops and spare parts</span></div><div><strong>Passengers</strong><span>Lounges and service desks</span></div><div><strong>Handling</strong><span>Cargo, ground equipment and station offices</span></div></div></article></div><p class="planning-state">Infrastructure is a planning section. No construction or expense is active yet.</p></section>
 <section data-player-view="infrastructure-hq" hidden><div class="page-head"><div><p class="eyebrow">AIRLINE INFRASTRUCTURE</p><h1>Headquarters</h1><p>Plan the airline's head office and administrative capacity.</p></div></div><div class="planning-page-grid"><article class="panel planning-panel"><h2>Head office</h2><p>Core leadership and operations departments.</p><div class="workspace-task-list"><div><strong>Executive offices</strong><span>Board and corporate administration</span></div><div><strong>Flight operations</strong><span>Operations control and dispatch</span></div><div><strong>Administration</strong><span>Finance, staffing and customer support</span></div></div></article><article class="panel planning-panel"><h2>Growth and upgrades</h2><p>Long-term infrastructure decisions.</p><div class="workspace-task-list"><div><strong>Capacity</strong><span>Office and department growth</span></div><div><strong>Regional offices</strong><span>Representation at new hubs</span></div><div><strong>Training space</strong><span>Crew development facilities</span></div></div></article></div><p class="planning-state">Headquarters construction, levels and costs are not active yet.</p></section>
