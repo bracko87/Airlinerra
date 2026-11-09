@@ -44,7 +44,7 @@ export function createSection9RotationReview({doc,host,getServer}={}){
    control.append(evidenceButton);host.append(evidenceState,evidenceHost);
    evidenceButton.addEventListener('click',async()=>{
     const date=input.value;
-    if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(date)){
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){
      evidenceState.textContent='Select a valid start date.';return;
     }
     evidenceButton.disabled=true;evidenceHost.replaceChildren();
