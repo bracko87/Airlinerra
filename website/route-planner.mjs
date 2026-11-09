@@ -42,9 +42,11 @@ const weekTable=()=>'<div class="route-week-scroll"><div class="route-week-grid"
  weekRow('Day',day=>'<span class="route-week-heading">'+day+'</span>')+
  weekRow('Fly',(_,i)=>'<input type="checkbox" data-route-day="'+i+'" id="route-day-'+i+'" aria-label="Fly on '+dayNames[i]+'">')+
  weekRow('Departure',(_,i)=>'<input type="time" data-route-time="'+i+'" value="09:00" disabled aria-label="'+dayNames[i]+' departure time">')+
- weekRow('Departure stand',(_,i)=>'<output id="route-stand-'+i+'" class="route-week-estimate">Unverified</output>')+
+ weekRow('Departure stand',(_,i)=>'<output id="route-stand-'+i+'" class="route-week-estimate">—</output>')+
+ weekRow('Arrival stand',(_,i)=>'<output id="route-arrival-stand-'+i+'" class="route-week-estimate">—</output>')+
  weekRow('Estimated arrival',(_,i)=>'<output id="route-arrival-'+i+'" class="route-week-estimate">Pending</output>')+
  weekRow('Slot availability',()=>'<span class="route-week-pending">Unverified</span>')+
+ weekRow('Next possible departure',(_,i)=>'<output id="route-next-departure-'+i+'" class="route-week-estimate">—</output>')+
  '</div></div>';
 const routeSetupField=(id,label,input)=>'<label class="route-setup-field" for="'+id+'"><span>'+label+'</span>'+input+'</label>';
 const optionalFare=(id,label)=>routeSetupField(id,label,
@@ -83,17 +85,23 @@ export function routePlannerMarkup(){
    '<h3 id="route-map-heading" class="route-map-heading">Select two airports</h3>'+
    '<div id="route-map-canvas" class="route-map-canvas"></div>'+
    '<p id="route-map-feedback" class="hint">The map uses verified airport coordinates where available.</p>'+
-   '<div class="route-map-facts"><h3>Route information and limitations</h3>'+routeCheckDetails+'</div>')+
+   '<div class="route-map-facts"><h3>Route information and limitations</h3>'+routeCheckDetails+
+   '<div class="route-inline-restrictions"><strong>Airport restrictions</strong><p id="route-preflight-status" class="hint" role="status" aria-live="polite">Not verified. Select an aircraft and planned times.</p>'+ 
+   '<details class="route-restriction-details"><summary>Exact UTC times for automatic airport checks</summary>'+ 
+   '<p class="hint">This example is needed for server runway, noise and curfew checks. Weekly airport-local times and flight duration still require validation.</p>'+ 
+   '<div class="route-step2-top">'+ 
+   routeSetupField('route-preflight-departure-utc','Example departure (UTC)', '<input id="route-preflight-departure-utc" type="datetime-local" step="60">')+ 
+   routeSetupField('route-preflight-arrival-utc','Example arrival (UTC)', '<input id="route-preflight-arrival-utc" type="datetime-local" step="60">')+ 
+   '</div></details></div></div>')+
  '</div>'+
  section('STEP 2','Aircraft and weekly departures',
   '<div class="route-step2-top">'+
    routeSetupField('route-aircraft','Aircraft','<select id="route-aircraft"><option value="">Choose aircraft</option></select>')+
-   routeSetupField('route-departure-stand','Departure stand at origin','<select id="route-departure-stand"><option value="terminal">Terminal</option><option value="remote">Remote stand (lower fees)</option><option value="cargo">Cargo stand</option></select>')+
    routeSetupField('route-arrival-stand','Arrival stand at destination','<select id="route-arrival-stand"><option value="terminal">Terminal</option><option value="remote">Remote stand (lower fees)</option><option value="cargo">Cargo stand</option></select>')+
    routeSetupField('route-turnaround','Target turnaround (minutes)','<input id="route-turnaround" type="number" min="45" max="360" step="15" value="45">')+
   '</div>'+
   '<p class="route-subtle-note" id="route-aircraft-feedback">Aircraft availability is not connected.</p>'+
-  '<div class="route-position-bar"><span>Selected departure stand</span><strong id="route-departure-stand-derived">Not verified</strong></div>'+
+  '<div class="route-position-bar"><span>Departure stand follows previous arrival</span><strong id="route-departure-stand-derived">Initial stand not verified</strong></div>'+
   '<p id="route-aircraft-position-status" class="route-position-status" role="status"></p>'+
   weekTable()+
   '<details class="route-aircraft-timeline-panel" id="route-aircraft-timeline"><summary>Aircraft weekly timeline and locations</summary><div id="route-aircraft-timeline-content"></div></details>'+
@@ -105,15 +113,6 @@ export function routePlannerMarkup(){
    '<div><span>Required minimum turnaround</span><strong id="route-min-turnaround">Unverified · 45 min planning floor</strong></div>'+
    '<div><span>Arrival / rotation checks</span><strong id="route-rotation-check">Pending aircraft and slot rules</strong></div>'+
   '</div>')+
- section('AIRPORT RESTRICTIONS','Automatic runway, curfew and noise checks',
-  '<p class="hint">Runway compatibility is checked when you select an aircraft. Enter a UTC departure and arrival example; airport restrictions are checked automatically. These drafts do not activate flights.</p>'+
-  '<div class="route-step2-top">'+
-   routeSetupField('route-preflight-departure-utc','Example departure (UTC)',
-    '<input id="route-preflight-departure-utc" type="datetime-local" step="60">')+
-   routeSetupField('route-preflight-arrival-utc','Example arrival (UTC)',
-    '<input id="route-preflight-arrival-utc" type="datetime-local" step="60">')+
-  '</div>'+
-  '<p id="route-preflight-status" class="hint" role="status" aria-live="polite">Choose your aircraft and exact UTC times. Airport runway and time restrictions are checked automatically before a route draft can be saved.</p>')+
  section('STEP 3','Ticket prices and onboard services',
   '<div class="route-pricing-grid">'+
    optionalFare('route-fare-economy','Economy fare')+
@@ -152,8 +151,23 @@ export const flightNumberFor=(prefix,number)=>{
  return /^[A-Z0-9]{2}$/.test(String(prefix||''))&&/^[0-9]{1,4}$/.test(digits)?
   prefix+digits:null;
 };
+/** An example only: no flight performance, destination time zone or dispatch approval is inferred. */
+export function exampleNextDepartureUtc(departureUtc,arrivalUtc,turnaroundMinutes){
+ if(!/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$/.test(String(departureUtc||''))||
+    !/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$/.test(String(arrivalUtc||''))||
+    !Number.isInteger(turnaroundMinutes)||turnaroundMinutes<45||turnaroundMinutes>360)
+  return null;
+ const departure=Date.parse(departureUtc),arrival=Date.parse(arrivalUtc);
+ if(!Number.isFinite(departure)||!Number.isFinite(arrival)||
+    arrival<=departure||arrival-departure>72*3600000)return null;
+ const release=new Date(arrival+turnaroundMinutes*60000);
+ if(!Number.isFinite(release.valueOf()))return null;
+ return Object.freeze({iso:release.toISOString(),clock:release.toISOString().slice(11,16)+' UTC',
+  arrivalClock:new Date(arrival).toISOString().slice(11,16)+' UTC'});
+}
 export const validLocalDeparture=time=>/^([01]\d|2[0-3]):[0-5]\d$/.test(String(time||''));
-// Player-selected stands are authoritative for game slot checks; fares remain draft estimates.
+// Arrival stands are player choices. Departure stands come from prior aircraft arrivals
+// where known; a first-flight terminal fallback remains provisional and server-gated.
 export const validateFlightDraftOptions=({departureStand='terminal',arrivalStand,turnaroundMinutes,fares,onboard,baggage,cargo}={})=>{
  if(!['terminal','remote','cargo'].includes(departureStand)||
     !['terminal','remote','cargo'].includes(arrivalStand)||
