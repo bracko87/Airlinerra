@@ -124,5 +124,5 @@ test('private SQL contains six gates and does not change flight status checks',a
  const src=await readFile(new URL(
   '../server/section9-activation-preparation-service.mjs',
   import.meta.url),'utf8');
- assert.doesNotMatch(src,/createServer\(|fetch\(|/);
+ assert.doesNotMatch(src,/createServer\(|fetch\(/);
 });
