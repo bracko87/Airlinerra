@@ -456,37 +456,25 @@
             <h1>Holding companies</h1>
             <p>See when your airline may qualify for a holding and what businesses you could manage under it.</p>
           </div></div>
-          <div class="planning-page-grid holding-summary-grid">
-            <article class="panel planning-panel holding-summary-panel">
-              <h2>When can I open a holding?</h2>
-              <p>Your original airline needs <strong>60 completed operating game days</strong>. The holding feature is not open for registration yet.</p>
-              <div class="holding-tracker" role="status" aria-label="Holding eligibility status">
-                <div class="holding-tracker-details">
-                  <div>
-                    <strong>Earliest eligible game date</strong>
-                    <span id="holding-earliest-date">Not yet calculable</span>
-                  </div>
-                  <div>
-                    <strong>Game days remaining</strong>
-                    <span id="holding-days-count">Waiting for verified flight operations</span>
-                  </div>
+          <article class="panel planning-panel holding-summary-panel holding-status-full">
+            <h2>When can I open a holding?</h2>
+            <p>Your original airline may qualify <strong>60 calendar days after registration</strong>. No flights or daily logins are required to complete the waiting period.</p>
+            <div class="holding-tracker" role="status" aria-label="Holding eligibility status">
+              <div class="holding-tracker-details">
+                <div>
+                  <strong>Earliest eligible date</strong>
+                  <span id="holding-earliest-date">Checking your airline's registration date…</span>
                 </div>
-                <div class="holding-tracker-progress" aria-hidden="true"><span id="holding-progress-fill"></span></div>
-                <div class="holding-tracker-heading"><span id="holding-eligibility-status">Not yet available</span></div>
+                <div>
+                  <strong>Days remaining</strong>
+                  <span id="holding-days-count">Checking…</span>
+                </div>
               </div>
-              <p class="holding-helper-note">Dates are based on the official game clock and your airline's first completed commercial flight, not its registration date. Reaching 60 days does not automatically open registration.</p>
-            </article>
-            <article class="panel planning-panel holding-summary-panel">
-              <h2>What will it cost?</h2>
-              <p>These fees are planned, but the amounts have not been set.</p>
-              <div class="holding-cost-list">
-                <div><span>Holding registration fee</span><strong>To be announced</strong></div>
-                <div><span>Minimum capital / reserves</span><strong>To be announced</strong></div>
-                <div><span>Transfers between companies</span><strong>Small fee planned</strong></div>
-              </div>
-              <p class="holding-helper-note">Each new subsidiary will also need its own starting capital and applicable registration or licensing costs.</p>
-            </article>
-          </div>
+              <div class="holding-tracker-progress" aria-hidden="true"><span id="holding-progress-fill"></span></div>
+              <div class="holding-tracker-heading"><span id="holding-eligibility-status">Checking registration age…</span></div>
+            </div>
+            <p class="holding-helper-note">The date comes from your airline's registration record and the server clock. Meeting the 60-day requirement does not automatically open holding creation; that feature is not released yet.</p>
+          </article>
           <article class="panel planning-panel holding-example-panel">
             <h2>How your holding could look</h2>
             <p>Your existing airline becomes the first subsidiary. You can later open other companies, each with separate finances and any required operating approvals.</p>
@@ -522,6 +510,10 @@
                   <small>Appropriate commercial operator approvals required</small>
                 </div>
               </div>
+            </div>
+            <div class="holding-academy-note">
+              <strong>Future flight academy — airline infrastructure</strong>
+              <span>Initially, your airline could train its own pilots using instructors, simulators and suitable training aircraft. It would not need to be a separate holding company. A future academy training external customers could become a separately approved business (for example, an ATO or DTO where applicable).</span>
             </div>
             <p class="holding-example-footnote">Illustrative structure only — no subsidiaries have been created. Check the <a href="#licenses" data-view-link="licenses">Licences &amp; Permits</a> page for requirements and how to obtain approvals.</p>
           </article>
