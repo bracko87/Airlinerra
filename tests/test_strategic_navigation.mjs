@@ -111,7 +111,7 @@ test('holding status and company tree are responsive, read-only previews',async(
  ]);
  const section=html.split('data-player-view="holding"')[1].split('</section>')[0];
  assert.match(section,/holding-eligibility-status/);
- assert.match(section,/60 operating game days/);
+ assert.match(section,/60 completed operating game days/);
  assert.match(section,/Not yet available/);
  assert.match(section,/holding-example-panel/);
  assert.match(section,/not yet available/i);
