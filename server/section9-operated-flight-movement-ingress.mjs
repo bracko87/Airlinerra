@@ -29,7 +29,10 @@ const validTime=s=>typeof s==='string'&&UTC.test(s)&&
 export const SECTION9_MOVEMENT_SQL=Object.freeze({
  ingest:`SELECT airlinerra_game.section9_record_signed_operated_flight_movement_v1(
  $1::uuid,$2::uuid,$3::integer,$4::date,$5::integer,
- $6::text,$7::timestamptz,$8::text,$9::text) AS result`
+ $6::text,$7::timestamptz,$8::text,$9::text) AS result`,
+ leased:`SELECT airlinerra_game.section9_record_leased_operated_flight_movement_v1(
+ $1::uuid,$2::uuid,$3::uuid,$4::uuid,$5::integer,$6::date,
+ $7::integer,$8::text,$9::timestamptz,$10::text,$11::text) AS result`
 });
 export const section9MovementSignaturePayload=event=>
  [
@@ -86,27 +89,44 @@ export function createSection9OperatedFlightMovementIngress({
   operatedFlightEngineSecret.length<32)
   throw Error('SECTION9_PRIVATE_FLIGHT_ENGINE_SECRET_REQUIRED');
  const secret=Buffer.from(operatedFlightEngineSecret,'utf8');
+ async function accept(event,lease){
+  if(!validEvent(event))
+   throw Error('SECTION9_INVALID_OPERATED_FLIGHT_EVENT');
+  if(lease && (!UUID.test(lease.jobId||'')||
+    !UUID.test(lease.leaseToken||'')))
+   throw Error('SECTION9_INVALID_MOVEMENT_WORK_LEASE');
+  const expected=createHmac('sha256',secret)
+   .update(section9MovementSignaturePayload(event),'utf8').digest();
+  const received=Buffer.from(event.signature,'hex');
+  if(received.length!==32||!timingSafeEqual(expected,received))
+   throw Error('SECTION9_UNTRUSTED_OPERATED_FLIGHT_SIGNATURE');
+  const client=await database.connect();
+  try{
+   const args=[
+    event.airlineId,event.scheduleId,event.scheduleVersion,
+    event.flightLocalDate,event.weeklyEntry,event.phase,
+    event.actualEventUtc,event.eventId,event.signature
+   ];
+   // Single fenced SQL transaction: the lease row is locked before the
+   // existing physical movement state machine runs. Never check the lease
+   // in a separate database call where it could expire before movement.
+   const result=await client.query(lease?
+    SECTION9_MOVEMENT_SQL.leased:SECTION9_MOVEMENT_SQL.ingest,
+    lease?[lease.jobId,lease.leaseToken,...args]:args);
+   const state=result.rows?.[0]?.result;
+   if(result.rowCount!==1||!safeResult(state,event))
+    throw Error('SECTION9_UNSAFE_FLIGHT_MOVEMENT_DB_RESPONSE');
+   return state;
+  }finally{client.release();}
+ }
  return Object.freeze({
-  async acceptSignedFlightEvent(event){
-   if(!validEvent(event))
-    throw Error('SECTION9_INVALID_OPERATED_FLIGHT_EVENT');
-   const expected=createHmac('sha256',secret)
-    .update(section9MovementSignaturePayload(event),'utf8').digest();
-   const received=Buffer.from(event.signature,'hex');
-   if(received.length!==32||!timingSafeEqual(expected,received))
-    throw Error('SECTION9_UNTRUSTED_OPERATED_FLIGHT_SIGNATURE');
-   const client=await database.connect();
-   try{
-    const result=await client.query(SECTION9_MOVEMENT_SQL.ingest,[
-     event.airlineId,event.scheduleId,event.scheduleVersion,
-     event.flightLocalDate,event.weeklyEntry,event.phase,
-     event.actualEventUtc,event.eventId,event.signature
-    ]);
-    const state=result.rows?.[0]?.result;
-    if(result.rowCount!==1||!safeResult(state,event))
-     throw Error('SECTION9_UNSAFE_FLIGHT_MOVEMENT_DB_RESPONSE');
-    return state;
-   }finally{client.release();}
+  acceptSignedFlightEvent(event){
+   return accept(event,null);
+  },
+  acceptSignedLeasedFlightEvent(event,lease){
+   if(!lease||typeof lease!=='object')
+    throw Error('SECTION9_OPERATIONS_LEASE_REQUIRED');
+   return accept(event,lease);
   }
  });
 }
