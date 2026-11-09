@@ -13,6 +13,7 @@ import {createGamePermissionApplicationsClient} from './game-permission-applicat
 import {createGamePermissionApplicationsView} from './game-permission-applications-view.mjs';
 import {createRealOnboardingClient} from './real-onboarding-client.mjs';
 import {createDownwardMenu} from './setup-choice-menu.mjs';
+import {installGameSelectMenus} from './game-select-menus.mjs';
 
 import {createAirlineWorkspace} from './airline-workspace.mjs';
 import {createOperationsCenter} from './airline-operations-center.mjs';
@@ -58,6 +59,8 @@ function navigateTo(view){
     else link.removeAttribute('aria-current');
   }
   doc.title='Airlinerra - '+name[0].toUpperCase()+name.slice(1);
+  // Newly displayed dynamic controls keep the same custom menu style.
+  gameSelectMenus?.refresh();
   // Close dropdowns when changing pages, preserving keyboard navigation.
   for(const group of doc.querySelectorAll('.nav-group[open]'))group.open=false;
   if(name==='aircraft-library'&&aircraftLibraryController){
@@ -301,6 +304,7 @@ const countryNameOf=code=>typeof Intl.DisplayNames==='function'
 const collator=new Intl.Collator('en',{sensitivity:'base'});
 const menus=Object.fromEntries([['setup-world',false],['setup-country',true],['setup-airport-results',false],['airports-country',true]]
  .map(([id,flags])=>[id,createDownwardMenu(doc.getElementById(id),{flags})]));
+const gameSelectMenus=installGameSelectMenus({doc,root:doc.getElementById('player-main')});
 function refreshMenu(id){menus[id]?.refresh();}
 const SIX_CATEGORIES=new Set(['Local','Regional','Medium','Large','Major Hub','Mega Hub']);
 function selectedAirport(){
