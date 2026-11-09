@@ -16,36 +16,31 @@ test('all 45 player routes map to exactly one real section',async()=>{
  for(const route of PLAYER_VIEWS)assert.equal(safePlayerView('#'+route),route);
 });
 
-test('Holding page uses two short summary cards and an illustrative licensed-subsidiary tree',async()=>{
+test('Holding page has one full-width registration counter, no costs, and future academy infrastructure',async()=>{
  const html=await read('../website/private-player-app.html');
  const nav=html.split('</nav>')[0];
  assert.match(nav,/<a class="nav-direct" href="#holding" data-view-link="holding">Holding<\/a>/);
- assert.doesNotMatch(nav,/nav-direct nav-disabled|nav-locked-label/);
  const holding=html.split('data-player-view="holding"')[1].split('</section>')[0];
- assert.match(holding,/60 completed operating game days/i);
- assert.match(holding,/holding-summary-grid/);
- assert.match(holding,/holding-summary-panel/);
- assert.match(holding,/holding-example-panel/);
- assert.match(holding,/Earliest eligible game date/);
- assert.match(holding,/Game days remaining/);
- assert.match(holding,/Not yet calculable/);
+ assert.match(holding,/60 calendar days after registration/);
+ assert.match(holding,/holding-status-full/);
+ assert.match(holding,/Earliest eligible date/);
+ assert.match(holding,/Days remaining/);
+ assert.match(holding,/No flights or daily logins are required/i);
  assert.match(holding,/holding-tracker/);
  assert.match(holding,/holding-tree/);
  assert.match(holding,/Parent holding company/);
  for(const company of ['Original airline','Regional airline','Cargo airline','Maintenance company','Charter / VIP airline'])
   assert.ok(holding.includes(company),'Missing example subsidiary: '+company);
- assert.match(holding,/not its registration date/);
- assert.match(holding,/Holding registration fee/);
- assert.match(holding,/To be announced/);
+ assert.match(holding,/flight academy — airline infrastructure/i);
+ assert.match(holding,/ATO or DTO where applicable/);
  assert.match(holding,/own airline operating licence and AOC required/i);
  assert.match(holding,/Part-145 where applicable/);
  assert.match(holding,/Licences &amp; Permits/);
  assert.match(holding,/registration, subsidiary creation and money transfers are not available yet/i);
+ assert.doesNotMatch(holding,/What will it cost\?|holding-cost-list|To be announced|holding-summary-grid|60 completed operating game days/i);
  assert.doesNotMatch(holding,/<button|<input|<form/);
- assert.equal((holding.match(/class="panel planning-panel holding-summary-panel"/g)||[]).length,2);
- assert.equal((holding.match(/class="holding-tree-(?:parent|branches)"/g)||[]).length,2);
+ assert.equal((holding.match(/class="panel planning-panel holding-summary-panel holding-status-full"/g)||[]).length,1);
 });
-
 
 test('staff leaves Operations and Rankings leaves Settings',async()=>{
  const html=await read('../website/private-player-app.html');
@@ -88,37 +83,25 @@ test('aircraft image is fully contained and internal release warning removed',as
  assert.match(js,/noiseChapter/);
 });
 
-test('Holding tracker only fills from authenticated server game dates',async()=>{
- const [html,js,client]=await Promise.all([
+test('Holding tracker is populated from authenticated server registration age',async()=>{
+ const [html,js,client,css]=await Promise.all([
   read('../website/private-player-app.html'),read('../website/player-app.mjs'),
-  read('../website/player-read-client.mjs')
+  read('../website/player-read-client.mjs'),read('../website/player-app.css')
  ]);
- for(const id of ['holding-eligibility-status','holding-days-count','holding-earliest-date',
-  'holding-progress-fill'])assert.match(html,new RegExp('id="'+id+'"'));
+ for(const id of ['holding-eligibility-status','holding-days-count','holding-earliest-date','holding-progress-fill'])
+  assert.match(html,new RegExp('id="'+id+'"'));
  assert.match(js,/await playerData\.holdingStatus\(\)/);
+ assert.match(js,/data\.ageBasis!=='elapsed_calendar_days_since_airline_registration'/);
  assert.match(js,/currentAirline\?\.id!==airlineId/);
  assert.match(js,/row\.registrationOpen!==false/);
- assert.match(js,/days\.textContent='Not yet calculable'/);
+ assert.match(js,/row\.earliestDate/);
+ assert.match(js,/row\.remainingDays/);
  assert.doesNotMatch(js,/Date\.now\(\)[\s\S]{0,160}holding-earliest-date/);
  assert.match(client,/holdingStatus:\(\)=>post\('\/api\/v1\/player\/holding-status',\{\}\)/);
- const section=html.split('data-player-view="holding"')[1].split('</section>')[0];
- assert.doesNotMatch(section,/<button|<input|<form/);
-});
-
-test('holding status and company tree are responsive, read-only previews',async()=>{
- const [html,css]=await Promise.all([
-  read('../website/private-player-app.html'),read('../website/player-app.css')
- ]);
- const section=html.split('data-player-view="holding"')[1].split('</section>')[0];
- assert.match(section,/holding-eligibility-status/);
- assert.match(section,/60 completed operating game days/);
- assert.match(section,/Not yet available/);
- assert.match(section,/holding-example-panel/);
- assert.match(section,/not yet available/i);
- assert.doesNotMatch(section,/id="create-holding"|<form|type="submit"/i);
- assert.match(css,/\.holding-tracker-details\{/);
- assert.match(css,/\.holding-tree-branches\{/);
+ assert.match(css,/\.holding-status-full\{/);
  assert.match(css,/@media\(max-width:480px\)\{[\s\S]*?\.holding-tracker-details,\.holding-tree-branches\{grid-template-columns:1fr\}/);
+ const section=html.split('data-player-view="holding"')[1].split('</section>')[0];
+ assert.doesNotMatch(section,/id="create-holding"|<form|type="submit"/i);
 });
 
 test('Licences & Permits page and operations menu remain read-only with no fake grants',async()=>{
