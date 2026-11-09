@@ -66,7 +66,7 @@ export function validateFlightSchedulePayload(body){
   return withinFields(body,CHECK_FIELDS)&&uuid(body.scheduleId);
  if(body.action==='delete'||body.action==='activation-check')
   return withinFields(body,CHECK_FIELDS)&&uuid(body.scheduleId);
- if(body.action==='rotation-preview'){
+ if(body.action==='rotation-preview'||body.action==='operations-preview'){
   if(!withinFields(body,ROTATION_FIELDS)||!uuid(body.scheduleId)||
      !Number.isInteger(body.days)||body.days<7||body.days>42||
      typeof body.startDate!=='string'||
@@ -136,6 +136,8 @@ export const SCHEDULE_SQL=Object.freeze({
  partnershipDecision:`SELECT airlinerra_game.section9_manage_partnership_v1(
   $1::uuid,$2::uuid,$3::text,NULL::text,$4::bigint) AS result`,
  rotationPreview:`SELECT airlinerra_game.section9_owned_aircraft_rotation_preview_v1(
+  $1::uuid,$2::uuid,$3::uuid,$4::date,$5::integer) AS result`,
+ operationsPreview:`SELECT airlinerra_game.section9_owned_operational_preflight_v1(
   $1::uuid,$2::uuid,$3::uuid,$4::date,$5::integer) AS result`,
  check:`SELECT airlinerra_game.section5_schedule_activation_readiness_v1($1::uuid,$2::uuid) AS result`,
  delete:`DELETE FROM airlinerra_game.airline_flight_schedule_drafts_v1 s
@@ -267,6 +269,16 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
     if(response.rowCount!==1||!response.rows[0]?.result)
      return respond(503,{error:'Aircraft rotation preflight unavailable'});
     return respond(200,response.rows[0].result);
+   }
+   if(body.action==='operations-preview'){
+    const response=await client.query(SCHEDULE_SQL.operationsPreview,
+      [userId,body.airlineId,body.scheduleId,body.startDate,body.days]);
+    if(response.rowCount!==1||!response.rows[0]?.result)
+     return respond(503,{error:'Operational evidence preflight unavailable'});
+    const evidence=response.rows[0].result;
+    if(evidence.canActivateNormalFlight!==false||evidence.readOnly!==true)
+     return respond(503,{error:'Operational activation not verified'});
+    return respond(200,evidence);
    }
    if(body.action==='activation-check'){
     const response=await client.query(SCHEDULE_SQL.check,[userId,body.scheduleId]);
