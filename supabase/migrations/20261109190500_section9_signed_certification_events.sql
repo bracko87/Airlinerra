@@ -85,6 +85,7 @@ DECLARE s record;old_event record;existing record;
 BEGIN
  IF p_airline IS NULL OR p_schedule IS NULL
  OR p_schedule_version IS NULL OR p_schedule_version<1
+ OR p_clearance_type IS NULL OR p_action IS NULL
  OR p_clearance_type NOT IN ('crew_duty','operator_licence',
   'route_traffic_rights','airport_slot_capacity',
   'trusted_flight_execution','commercial_finance')
@@ -255,7 +256,7 @@ BEGIN
    last_verified_event_id=EXCLUDED.last_verified_event_id;
  ELSE
   UPDATE airlinerra_game.section9_schedule_operational_certifications_v1
-  SET review_status='revoked',source_kind=source_kind,
+  SET review_status='revoked',
    source_reference=p_source_reference,
    reviewer_reference=p_reviewer_reference,
    reviewed_at=accepted_at,
