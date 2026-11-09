@@ -84,6 +84,23 @@ export function createSection9RotationReview({doc,host,getServer}={}){
        'No operated-flight evidence yet');
       addFact(doc,evidenceHost,'Current aircraft location verified','No');
      }
+     const movement=payload.aircraftMovement;
+     if(movement?.readOnly===true &&
+       movement.canActivateNormalFlight===false){
+      addFact(doc,evidenceHost,'Verified operated-flight events',
+       Number.isInteger(movement.verifiedOperatedMovementEvents)?
+        movement.verifiedOperatedMovementEvents:'Not checked');
+      addFact(doc,evidenceHost,'Last aircraft movement status',
+       movement.locationStatus==='grounded'?'Grounded after verified arrival':
+       movement.locationStatus==='in_flight'?'In flight':
+       movement.locationStatus==='delivery_only'?'Delivered; no operated flight yet':
+       'Not verified');
+      addFact(doc,evidenceHost,'Last verified ground airport',
+       movement.lastVerifiedGroundAirport||'None verified');
+      addFact(doc,evidenceHost,'Last operated movement time',
+       movement.lastMovementEventUtc||'No operated movement recorded');
+      addFact(doc,evidenceHost,'Current real-time location certified','No');
+     }
      addFact(doc,evidenceHost,'Crew requirement known',
       crew.catalogRequirementKnown===true?'Yes':'No');
      addFact(doc,evidenceHost,'Crew assignments verified','No');
