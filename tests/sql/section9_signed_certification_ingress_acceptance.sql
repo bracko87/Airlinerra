@@ -6,6 +6,7 @@ DO $test$
 DECLARE a uuid;owner_id uuid;code text;home text;plane uuid;draft uuid;
  event1 text:='synthetic-operation-certification-event-0001';
  event2 text:='synthetic-operation-certification-event-0002';
+ cert_row record;
  response jsonb;old_ledger bigint;old_movements bigint;old_positions bigint;
  old_drafts bigint;old_certs bigint;old_events bigint;old_preps bigint;
 BEGIN
@@ -130,6 +131,43 @@ BEGIN
   WHERE event_id=event1;
   RAISE EXCEPTION 'Audit event deletion succeeded';
  EXCEPTION WHEN insufficient_privilege THEN NULL;END;
+
+ -- Directly inserted six "certified" rows without matching signed
+ -- audit records MUST NOT count toward activation, even to a privileged
+ -- backend: only the latest logged independent event can clear the gate.
+ FOR cert_row IN
+  SELECT * FROM (VALUES
+   ('crew_duty','verified_crew_duty_engine'),
+   ('operator_licence','verified_game_licence_engine'),
+   ('route_traffic_rights','verified_game_traffic_rights_engine'),
+   ('airport_slot_capacity','verified_airport_slot_engine'),
+   ('trusted_flight_execution','trusted_flight_operations_engine'),
+   ('commercial_finance','verified_commercial_settlement_engine')
+  ) AS x(type_name,source_name)
+ LOOP
+  INSERT INTO airlinerra_game.section9_schedule_operational_certifications_v1(
+   schedule_id,airline_id,schedule_version,clearance_type,review_status,
+   source_kind,source_reference,reviewer_reference,reviewed_at,
+   valid_from_game_date,valid_to_game_date,last_verified_event_id)
+  VALUES(draft,a,1,cert_row.type_name,'certified',
+   cert_row.source_name,'unsigned-evidence-reference-0001',
+   'unsigned-reviewer-000001',clock_timestamp(),
+   DATE '2000-01-03',DATE '2000-02-05',NULL)
+  ON CONFLICT(schedule_id,schedule_version,clearance_type) DO UPDATE SET
+   review_status='certified',source_kind=EXCLUDED.source_kind,
+   source_reference=EXCLUDED.source_reference,
+   reviewer_reference=EXCLUDED.reviewer_reference,
+   reviewed_at=EXCLUDED.reviewed_at,
+   valid_from_game_date=EXCLUDED.valid_from_game_date,
+   valid_to_game_date=EXCLUDED.valid_to_game_date,
+   last_verified_event_id=NULL;
+ END LOOP;
+ response:=airlinerra_game.section9_prepare_certified_schedule_activation_v1(
+  owner_id,a,draft,1,DATE '2000-01-03',28);
+ IF response->>'status'<>'blocked_activation_preparation'
+ OR (response->>'acceptedCertifications')::int<>0
+ OR NOT response->'blockers' ? 'SIX_INDEPENDENT_OPERATIONAL_CERTIFICATIONS_MISSING'
+ THEN RAISE EXCEPTION 'Unlogged manual certificates counted as signed: %',response;END IF;
 
  IF (SELECT count(*) FROM airlinerra_game.airline_ledger)<>old_ledger
  OR (SELECT count(*) FROM airlinerra_game.section9_operated_flight_movements_v1)<>old_movements
