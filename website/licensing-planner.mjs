@@ -167,7 +167,7 @@ export const LICENCE_PLAN=Object.freeze([
   'EU Part-145 is not automatically transferable or valid worldwide',
   'Ongoing; country-specific renewal may shorten it',
   'Maintenance services needing this approval stop',
-  'Complete the country's required inspection or reapplication'),
+  'Complete the required national inspection or reapplication'),
  define('AIRPORT_SLOTS','airport','Airport take-off and landing slot allocation','Airport-specific allocation price','Seasonal / airport-specific',
   'No purchase required merely to request a slot',
   ['Valid airline and planned route','Airport is slot-controlled for the requested times','Proposed departure or arrival time and operating days'],
