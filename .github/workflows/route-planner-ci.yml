@@ -20,6 +20,8 @@ on:
       - 'website/fleet-acquisition-client.mjs'
       - 'tests/test_fleet_acquisition_api.mjs'
       - 'website/dev-scripts/invited-overlay.mjs'
+      - 'website/dev-scripts/verify-built-player-modules.mjs'
+      - 'tests/test_player_built_module_graph.mjs'
       - 'server/flight-schedule-edge-entry.ts'
       - 'website/flight-schedule-client.mjs'
       - 'website/player-app.mjs'
@@ -176,6 +178,11 @@ jobs:
       - name: Build complete private website with new route modules
         working-directory: website
         run: npm run build
+      - name: Verify complete player ES module dependency graph in built website
+        run: |
+          node --test tests/test_player_built_module_graph.mjs
+          test -s dist/game-permission-applications-client.mjs
+          test -s dist/game-permission-applications-view.mjs
       - name: Verify aircraft timeline is served in distribution
         run: |
           test -s dist/aircraft-weekly-timeline.mjs
