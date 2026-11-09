@@ -71,6 +71,15 @@ export function createSection9RotationReview({doc,host,getServer}={}){
      addFact(doc,evidenceHost,'Crew requirement known',
       crew.catalogRequirementKnown===true?'Yes':'No');
      addFact(doc,evidenceHost,'Crew assignments verified','No');
+     const rest=payload.crewRest||{};
+     addFact(doc,evidenceHost,'Game crew duty conflicts',
+      Number.isInteger(rest.overlapConflicts)?rest.overlapConflicts:'Not checked');
+     addFact(doc,evidenceHost,'Insufficient game crew rest',
+      Number.isInteger(rest.insufficientRest)?rest.insufficientRest:'Not checked');
+     addFact(doc,evidenceHost,'Crew at wrong airport',
+      Number.isInteger(rest.crewWrongAirport)?rest.crewWrongAirport:'Not checked');
+     addFact(doc,evidenceHost,'Crew duty rules',
+      'Provisional game policy · not aviation certification');
      addFact(doc,evidenceHost,'Crew staffing requirement',
       Number.isInteger(staffing.catalogCrewRequirement)?
        staffing.catalogCrewRequirement:'Not verified');
@@ -175,6 +184,177 @@ export function createSection9RotationReview({doc,host,getServer}={}){
      if(current===serial)crewMessage.textContent=
       'Crew roster unavailable. No crew was assigned and no flight activated.';
     }finally{crewButton.disabled=false;}
+   });
+  }
+  if(typeof rosterService?.crewOffers==='function' &&
+     typeof rosterService?.crewHire==='function'){
+   const hireButton=el(doc,'button','Hire game crew');
+   hireButton.type='button';hireButton.className='secondary';
+   const hireMessage=el(doc,'p',
+    'Game-generated crew have provisional monthly salary contracts. No salaries are charged until the authoritative game clock is connected.');
+   hireMessage.className='hint';
+   const offerHost=el(doc,'div');offerHost.className='section9-crew-hiring';
+   control.append(hireButton);host.append(hireMessage,offerHost);
+   let offersSerial=0;
+   hireButton.addEventListener('click',async()=>{
+    const requestId=++offersSerial;
+    hireButton.disabled=true;offerHost.replaceChildren();
+    hireMessage.textContent='Checking available game crew contracts...';
+    try{
+     const r=await getServer().scheduler.crewOffers({
+      airlineId,scheduleId:route.serverScheduleId
+     });
+     if(current!==serial||requestId!==offersSerial)return;
+     if(r?.status!=='game_npc_crew_market'||r.readOnly!==true||
+        r.canActivateNormalFlight!==false||!Array.isArray(r.offers))
+      throw Error('Untrusted NPC crew offers');
+     hireMessage.textContent=r.offers.length?
+      'Choose a game-generated crew contract. These are monthly salary commitments, not real-world aviation qualifications.':
+      'No unclaimed crew candidates are available for this aircraft.';
+     for(const offer of r.offers.slice(0,12)){
+      if(!Number.isInteger(offer.candidateSlot)||
+       offer.candidateSlot<1||offer.candidateSlot>2000||
+       !Number.isFinite(Number(offer.monthlySalaryUsd)))continue;
+      const item=el(doc,'div');item.className='detail-row';
+      const label=el(doc,'span',
+       offer.crewReference+' · 
+   const date=input.value;
+   if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){
+    state.textContent='Select a valid start date.';return;
+   }
+   check.disabled=true;result.replaceChildren();
+   state.textContent='Checking verified airline and aircraft schedule ownership...';
+   try{
+    const server=getServer?.()||{};
+    const response=await server.scheduler.rotationPreview({
+     airlineId,scheduleId:route.serverScheduleId,startDate:date,days:28
+    });
+    if(current!==serial)return;
+    if(response?.readOnly!==true||response?.canActivateNormalFlight!==false)
+     throw Error('Unexpected rotation result');
+    const count=v=>Number.isInteger(v)&&v>=0?v:'Unknown';
+    state.textContent=response.status==='ROTATION_PREVIEW_NO_CONFLICTS'?
+     'No overlaps or airport-position conflicts found in the 28-day window.' :
+     'Aircraft rotation requires attention. See the conflicts below.';
+    addFact(doc,result,'Scheduled flights checked',count(response.flightOccurrences));
+    addFact(doc,result,'Overlapping flights',count(response.overlappingFlights));
+    addFact(doc,result,'Wrong-airport departures',count(response.wrongAirportDepartures));
+    addFact(doc,result,'Daylight-saving issues',count(response.daylightSavingTimeIssues));
+    addFact(doc,result,'Invalid weekly entries',count(response.invalidWeeklyEntries));
+    addFact(doc,result,'Unknown origin time zones',count(response.unknownOriginTimezones));
+    const slots=response.slotsRecorded||{};
+    addFact(doc,result,'Departure / arrival slots recorded',
+     (slots.departure===true?'Yes':'No')+' / '+(slots.arrival===true?'Yes':'No'));
+    const errors=Array.isArray(response.sampleConflicts)?response.sampleConflicts:[];
+    if(errors.length){
+     result.append(el(doc,'h4','Examples requiring correction'));
+     const ul=el(doc,'ul');
+     for(const c of errors.slice(0,12)){
+      ul.append(el(doc,'li',String(c.flightNumber||'Flight')+' · '+
+       String(c.reason||'Conflict')+' · '+String(c.origin||'?')+' → '+
+       String(c.destination||'?')));
+     }
+     result.append(ul);
+    }
+    const pending=el(doc,'p',
+     'Activation remains blocked: initial fleet position, aircraft turnaround policy, crew, traffic rights and operational readiness have not been fully verified.');
+    pending.className='hint';result.append(pending);
+   }catch{
+    if(current===serial)
+     state.textContent='Rotation check unavailable. No flight has been activated.';
+   }finally{check.disabled=false;}
+  });
+ }
+ return Object.freeze({open});
+}
++Number(offer.monthlySalaryUsd)
+        .toLocaleString('en-US')+' / month (game salary)');
+      const hire=el(doc,'button','Hire');
+      hire.type='button';hire.className='secondary';
+      hire.addEventListener('click',async()=>{
+       hire.disabled=true;
+       try{
+        const signed=await getServer().scheduler.crewHire({
+         airlineId,scheduleId:route.serverScheduleId,
+         candidateSlot:offer.candidateSlot
+        });
+        if(signed?.status!=='game_crew_contract_signed'||
+           signed.canActivateNormalFlight!==false||
+           signed.ledgerPosted!==false)throw Error('Unsafe crew contract');
+        hireMessage.textContent=signed.newContract?
+         'Game crew contract signed. No salary charged yet. Use Plan weekly crew to assign them.':
+         'Crew contract already exists. No duplicate was created.';
+        item.replaceChildren(label,el(doc,'span','Hired'));
+        if(typeof getServer().scheduler.crewSalary==='function'){
+         const payroll=await getServer().scheduler.crewSalary({airlineId});
+         if(payroll?.status==='game_crew_salary_forecast'&&
+            payroll.readOnly===true){
+          hireMessage.textContent+=' Current monthly game salary commitment: 
+   const date=input.value;
+   if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){
+    state.textContent='Select a valid start date.';return;
+   }
+   check.disabled=true;result.replaceChildren();
+   state.textContent='Checking verified airline and aircraft schedule ownership...';
+   try{
+    const server=getServer?.()||{};
+    const response=await server.scheduler.rotationPreview({
+     airlineId,scheduleId:route.serverScheduleId,startDate:date,days:28
+    });
+    if(current!==serial)return;
+    if(response?.readOnly!==true||response?.canActivateNormalFlight!==false)
+     throw Error('Unexpected rotation result');
+    const count=v=>Number.isInteger(v)&&v>=0?v:'Unknown';
+    state.textContent=response.status==='ROTATION_PREVIEW_NO_CONFLICTS'?
+     'No overlaps or airport-position conflicts found in the 28-day window.' :
+     'Aircraft rotation requires attention. See the conflicts below.';
+    addFact(doc,result,'Scheduled flights checked',count(response.flightOccurrences));
+    addFact(doc,result,'Overlapping flights',count(response.overlappingFlights));
+    addFact(doc,result,'Wrong-airport departures',count(response.wrongAirportDepartures));
+    addFact(doc,result,'Daylight-saving issues',count(response.daylightSavingTimeIssues));
+    addFact(doc,result,'Invalid weekly entries',count(response.invalidWeeklyEntries));
+    addFact(doc,result,'Unknown origin time zones',count(response.unknownOriginTimezones));
+    const slots=response.slotsRecorded||{};
+    addFact(doc,result,'Departure / arrival slots recorded',
+     (slots.departure===true?'Yes':'No')+' / '+(slots.arrival===true?'Yes':'No'));
+    const errors=Array.isArray(response.sampleConflicts)?response.sampleConflicts:[];
+    if(errors.length){
+     result.append(el(doc,'h4','Examples requiring correction'));
+     const ul=el(doc,'ul');
+     for(const c of errors.slice(0,12)){
+      ul.append(el(doc,'li',String(c.flightNumber||'Flight')+' · '+
+       String(c.reason||'Conflict')+' · '+String(c.origin||'?')+' → '+
+       String(c.destination||'?')));
+     }
+     result.append(ul);
+    }
+    const pending=el(doc,'p',
+     'Activation remains blocked: initial fleet position, aircraft turnaround policy, crew, traffic rights and operational readiness have not been fully verified.');
+    pending.className='hint';result.append(pending);
+   }catch{
+    if(current===serial)
+     state.textContent='Rotation check unavailable. No flight has been activated.';
+   }finally{check.disabled=false;}
+  });
+ }
+ return Object.freeze({open});
+}
++
+           Number(payroll.monthlySalaryCommitmentUsd).toLocaleString('en-US')+
+           '. Payroll posting remains disabled until the game clock is verified.';
+         }
+        }
+       }catch{
+        hireMessage.textContent='Crew could not be hired. No flight was activated.';
+        hire.disabled=false;
+       }
+      });
+      item.append(label,hire);offerHost.append(item);
+     }
+    }catch{
+     if(current===serial)hireMessage.textContent=
+      'Game crew hiring unavailable. No contract or flight was created.';
+    }finally{hireButton.disabled=false;}
    });
   }
   check.addEventListener('click',async()=>{
