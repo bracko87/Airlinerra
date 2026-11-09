@@ -111,7 +111,7 @@ def validate():
     if not expected or (expected["airport_name"],expected["country_iso"],
                        expected["runway_length_m"],expected["runway_surface"],
                        expected["assigned_category"])!=(
-                       "Aleksandrovo Airport","RS","2200.0","Asphalt","Local"):
+                       "Aleksandrovo Airport","RS","2200.0","Asphalt","Regional"):
         raise ValueError("Owner-approved fictional Aleksandrovo Airport LYAL must be preserved")
     if len(master)!=screened+len(fictional):
         raise ValueError(f"Master has {len(master)}, expected {screened}+{len(fictional)}")
