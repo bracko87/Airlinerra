@@ -9,6 +9,8 @@ import {createFlightScheduleClient} from './flight-schedule-client.mjs';
 import {createFleetAcquisitionClient} from './fleet-acquisition-client.mjs';
 import {createAircraftLibrary} from './aircraft-library.mjs';
 import {createLicensingPlanner} from './licensing-planner.mjs';
+import {createGamePermissionApplicationsClient} from './game-permission-applications-client.mjs';
+import {createGamePermissionApplicationsView} from './game-permission-applications-view.mjs';
 import {createRealOnboardingClient} from './real-onboarding-client.mjs';
 import {createDownwardMenu} from './setup-choice-menu.mjs';
 
@@ -66,7 +68,10 @@ function navigateTo(view){
     }).catch(()=>{});
   }
   if(name==='airline'&&currentAirline?.id)void loadManageAirlineLogo();
-  if(name==='licenses')void loadLicenseReference();
+  if(name==='licenses'){
+    void loadLicenseReference();
+    void loadGamePermissionApplications();
+  }
   if(name==='holding')void loadHoldingStatus();
 }
 // The holding page is read-only. The game clock and first settled flight must
@@ -125,6 +130,29 @@ async function loadHoldingStatus(){
 // Separate visible design planning from real server reference data.
 // Neither this preview nor the reference catalogue grants any permission.
 let licencePlanner=null;
+let permissionApplicationsController=null;
+let permissionApplicationsClient=null;
+function getPermissionApplicationsClient(){
+ if(!auth||window.location.origin!=='https://airlinerra.com'||preview)
+  return null;
+ if(!permissionApplicationsClient){
+  permissionApplicationsClient=createGamePermissionApplicationsClient({
+   auth,origin:window.location.origin
+  });
+ }
+ return permissionApplicationsClient;
+}
+function loadGamePermissionApplications(){
+ if(!permissionApplicationsController){
+  const root=doc.getElementById('game-permission-applications-root');
+  if(!root)return;
+  permissionApplicationsController=createGamePermissionApplicationsView({
+   doc,root,getAirline:()=>currentAirline,
+   getClient:()=>getPermissionApplicationsClient()
+  });
+ }
+ return permissionApplicationsController.load();
+}
 let licenseDirectoryLoaded=false;
 let licenseDirectoryLoading=false;
 function createLicenseText(tag,text,cls=''){
@@ -196,7 +224,7 @@ async function loadLicenseReference(){
   doc.getElementById('licenses-type-count').textContent=String(data.licenses.length);
   doc.getElementById('licenses-verified-count').textContent=String(
    data.licenses.filter(x=>x.referenceBasis==='eu_reference').length);
-  status.textContent='Reference only — no applications, licences or international route rights are active.';
+  status.textContent='Reference only — this list is not a game permission. Check the separate application status panel above for live issuance information.';
   licenseDirectoryLoaded=true;
  }catch{
   list.replaceChildren();
@@ -448,6 +476,8 @@ async function loadPlayerReadData({local=false}={}){
   const first=data.airlines[0];
   currentAirline=first||null;
   hasRealAirline=Boolean(first?.name);
+  if(safePlayerView(window.location.hash)==='licenses')
+    void loadGamePermissionApplications();
   renderOverviewState(hasRealAirline);
   // Airline identity and cash must not disappear if an unrelated airport
   // directory widget or planning panel fails to render.
