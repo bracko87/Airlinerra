@@ -106,8 +106,8 @@ export function createDownwardMenu(select,{flags=false,placeholder='Select an op
   });
  }
  select.addEventListener('change',refresh);
- document.addEventListener('click',event=>{if(!shell.contains(event.target))close();});
- document.addEventListener('keydown',event=>{
+ const outsideClick=event=>{if(!shell.contains(event.target))close();};
+ const keyboard=event=>{
   if(panel.hidden)return;
   if(event.key==='Escape'){close();trigger.focus();return;}
   if(event.key==='ArrowDown'||event.key==='ArrowUp'){
@@ -117,7 +117,16 @@ export function createDownwardMenu(select,{flags=false,placeholder='Select an op
    const active=visible.indexOf(document.activeElement);
    visible[(active+(event.key==='ArrowDown'?1:-1)+visible.length)%visible.length].focus();
   }
- });
+ };
+ document.addEventListener('click',outsideClick);
+ document.addEventListener('keydown',keyboard);
  refresh();
- return Object.freeze({refresh,close});
+ return Object.freeze({refresh,close,destroy(){
+  document.removeEventListener('click',outsideClick);
+  document.removeEventListener('keydown',keyboard);
+  select.removeEventListener('change',refresh);
+  shell.remove();
+  select.hidden=false;
+ }});
+
 }
