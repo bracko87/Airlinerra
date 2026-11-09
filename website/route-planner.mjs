@@ -391,12 +391,38 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
     'Target '+target+' min · flight duration and slots unverified'):
    'Choose a turnaround between 45 and 360 minutes');
  };
+ const scheduledRoutesForAircraft=aircraftId=>{
+  const saved=loadDraft?.()||{};
+  const local=Array.isArray(saved.routes)?saved.routes:[];
+  if(!aircraftId?.startsWith('owned:'))return local;
+  const inventoryId=aircraftId.slice('owned:'.length);
+  const seen=new Set(local.filter(x=>x?.aircraftId===aircraftId).map(x=>x.flightNumber));
+  const resolveAirport=key=>{
+   for(const side of ['from','to']){
+    const airport=selected(side);
+    if(airport?.key===key)return airport;
+   }
+   return {key,name:key};
+  };
+  const server=[];
+  for(const d of serverDrafts){
+   if(d?.status!=='draft'||d.aircraftInventoryId!==inventoryId||
+      !d.originAirportKey||!d.destinationAirportKey||
+      typeof d.flightNumber!=='string'||seen.has(d.flightNumber))continue;
+   seen.add(d.flightNumber);
+   server.push({flightNumber:d.flightNumber,aircraftId,
+    from:resolveAirport(d.originAirportKey),to:resolveAirport(d.destinationAirportKey),
+    schedule:Array.isArray(d.weeklySchedule)?d.weeklySchedule:[],
+    operation:{departureStand:d.departureStand,arrivalStand:d.arrivalStand},
+    referenceDepartureUtc:d.referenceDepartureUtc,referenceArrivalUtc:d.referenceArrivalUtc});
+  }
+  return [...local,...server];
+ };
  const selectedAircraftTimeline=()=>{
   const selectedId=$('route-aircraft')?.value||null;
   const aircraftId=selectedId?.startsWith('catalog:')?null:selectedId;
   const from=selected('from'),to=selected('to');
-  const saved=loadDraft?.()||{};
-  const rows=Array.isArray(saved.routes)?saved.routes:[];
+  const rows=scheduledRoutesForAircraft(aircraftId);
   const flightNumber=flightNumberFor(flightPrefixFor(getData()?.airline).prefix,
    $('route-plan-number')?.value)||'Preview';
   const schedule=availableSchedule();
@@ -423,8 +449,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   const turnaround=Number($('route-turnaround')?.value);
   if(!aircraft||!from||!nextDeparture||!Number.isInteger(turnaround))return null;
   const planned=Date.parse(nextDeparture);
-  const saved=loadDraft?.()||{};
-  for(const previous of Array.isArray(saved.routes)?saved.routes:[]){
+  for(const previous of scheduledRoutesForAircraft(aircraft)){
    if(!previous||previous.flightNumber===editingFlightNumber||
       previous.aircraftId!==aircraft||previous.to?.key!==from.key)continue;
    const arrival=Date.parse(previous.referenceArrivalUtc||'');
@@ -578,7 +603,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    ownedFleet=Array.isArray(response?.fleet)?response.fleet.filter(a=>
     typeof a?.id==='string'&&Number.isSafeInteger(a.configurationId)&&a.configurationId>0):[];
    serverDrafts=Array.isArray(response?.drafts)?response.drafts:[];
-   refreshCatalogOptions();renderServerScheduleList();
+   refreshCatalogOptions();renderServerScheduleList();refreshAircraftTimeline();
    message('route-server-draft-status',ownedFleet.length?
     ownedFleet.length+' operational aircraft connected. Server schedule drafts are separate from live flight activation.':
     'No company aircraft are in service. Purchase or lease one, complete delivery and inspection, then create a route.');
@@ -1273,8 +1298,12 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
     draft.slotsReserved=true;
     draft.operationallyVerified=false;
     // Refresh list without altering the already checked form.
-    serverDrafts=[{id:result.scheduleId,flightNumber,originAirportKey:from.key,
-      destinationAirportKey:to.key,weeklySchedule:schedule},
+    serverDrafts=[{id:result.scheduleId,status:'draft',flightNumber,
+      aircraftInventoryId:ownedChoice.id,originAirportKey:from.key,
+      destinationAirportKey:to.key,weeklySchedule:schedule,
+      referenceDepartureUtc:draft.referenceDepartureUtc,
+      referenceArrivalUtc:draft.referenceArrivalUtc,
+      departureStand:operation.departureStand,arrivalStand:operation.arrivalStand},
      ...serverDrafts.filter(x=>x.id!==result.scheduleId&&x.flightNumber!==flightNumber)];
     renderServerScheduleList();
    }catch{
