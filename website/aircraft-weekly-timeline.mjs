@@ -6,7 +6,7 @@
 export const WEEKDAYS=Object.freeze(['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']);
 const validTime=value=>/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(String(value||''));
 const validStand=value=>['terminal','remote','cargo'].includes(value);
-const name=airport=>String(airport?.municipality||airport?.name||airport?.code||'Unknown airport');
+const name=airport=>String(airport?.code==='LYAL'||airport?.icao==='LYAL'?'Aleksandrovo':airport?.name||airport?.municipality||airport?.code||'Unknown airport');
 const signature=event=>event.flightNumber+' '+WEEKDAYS[event.day]+' '+event.time;
 
 /** Do not derive live location or arrival time from a local-only flight draft. */
@@ -42,14 +42,22 @@ export function buildAircraftWeeklyTimeline({
  for(const event of events){
   if(previous){
    event.priorLocation=previous.to;
-   if(previous.toKey===event.fromKey && !event.departureStand)event.departureStand=previous.arrivalStand;
-   else{
+   // A recurring draft describes one flight number, not a full rotation.
+   // Do not accuse the FIRST flight of being misplaced merely because
+   // its next weekday occurrence is shown before a return leg is added.
+   const sameRecurringRoute=previous.flightNumber===event.flightNumber&&
+    previous.fromKey===event.fromKey&&previous.toKey===event.toKey;
+   if(!sameRecurringRoute&&previous.toKey!==event.fromKey){
     errors.push({
      code:'AIRCRAFT_WRONG_AIRPORT',day:event.day,flightNumber:event.flightNumber,
      text:'Aircraft is in '+previous.to+' after '+signature(previous)+
       '; it cannot depart from '+event.from+' on '+signature(event)+
       '. Schedule a return/repositioning flight or select a different aircraft.'
     });
+   }else if(!sameRecurringRoute&&previous.arrivalStand){
+    // Stand follows the last arrival at the same airport, never the next
+    // route's independently selected/guessed departure stand.
+    event.departureStand=previous.arrivalStand;
    }
    if(previous.day===event.day&&previous.time===event.time){
     errors.push({
@@ -59,7 +67,7 @@ export function buildAircraftWeeklyTimeline({
     });
    }
   }else{
-   // Home airport is the company's headquarters, not necessarily this tail's parking position.
+   // Headquarters is not proof of this exact aircraft's initial stand.
    event.priorLocation=null;
   }
   dayPositions[event.day]={airport:event.to,airportKey:event.toKey,
@@ -68,7 +76,7 @@ export function buildAircraftWeeklyTimeline({
  }
  if(events.length){
   const first=events[0],last=events.at(-1);
-  if(last.toKey!==first.fromKey){
+  if(new Set(events.map(e=>e.flightNumber)).size>1&&last.toKey!==first.fromKey){
    warnings.push('Weekly cycle is incomplete: after '+signature(last)+
     ' the aircraft is in '+last.to+
     ', but the recurring schedule next begins in '+first.from+
