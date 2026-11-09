@@ -1,4 +1,5 @@
 import {addInviteOnlyAccount} from './invited-overlay.mjs';
+import {verifyBuiltPlayerModules} from './verify-built-player-modules.mjs';
 import { cp, mkdir, readdir, rm, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -17,4 +18,5 @@ for (const asset of ['airlinerra-logo.png', 'airlinerra-aircraft.webp', 'airline
   if (!assets.includes(asset)) throw new Error(`Required artwork not found: ${asset}`);
 }
 await addInviteOnlyAccount({siteDir,distDir});
+await verifyBuiltPlayerModules({distDir});
 console.log(`Airlinerra static build created (invitation-only account; no public signup): ${distDir}`);
