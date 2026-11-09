@@ -122,5 +122,6 @@ test('player UI wires preview without altering real permission gates or public s
  assert.match(app,/licencePlanner\.show\(\)/);
  assert.match(app,/data\.applicationsAvailable!==false/);
  assert.match(bundle,/'licensing-planner\.mjs'/);
- assert.doesNotMatch(source,/fetch\(|innerHTML|localStorage|sessionStorage|\\.from\\(/);
+ for(const forbidden of ['fetch(', 'innerHTML', 'localStorage', 'sessionStorage', '.from('])
+  assert.equal(source.includes(forbidden),false,forbidden);
 });
