@@ -8,6 +8,7 @@ import {createPlayerReadClient,PLAYER_READ_API_ENABLED} from './player-read-clie
 import {createFlightScheduleClient} from './flight-schedule-client.mjs';
 import {createFleetAcquisitionClient} from './fleet-acquisition-client.mjs';
 import {createAircraftLibrary} from './aircraft-library.mjs';
+import {createLicensingPlanner} from './licensing-planner.mjs';
 import {createRealOnboardingClient} from './real-onboarding-client.mjs';
 import {createDownwardMenu} from './setup-choice-menu.mjs';
 
@@ -121,8 +122,9 @@ async function loadHoldingStatus(){
  }finally{holdingStatusLoading=false;}
 }
 
-// This is a read-only reference catalogue, not an authority/entitlement check.
-// Keep the renderer inside the player bundle: no additional module required at startup.
+// Separate visible design planning from real server reference data.
+// Neither this preview nor the reference catalogue grants any permission.
+let licencePlanner=null;
 let licenseDirectoryLoaded=false;
 let licenseDirectoryLoading=false;
 function createLicenseText(tag,text,cls=''){
@@ -132,6 +134,12 @@ function createLicenseText(tag,text,cls=''){
  return node;
 }
 async function loadLicenseReference(){
+ if(!licencePlanner){
+  licencePlanner=createLicensingPlanner({
+   doc,root:doc.getElementById('licences-planner-root'),getAirline:()=>currentAirline
+  });
+ }
+ licencePlanner.show();
  const status=doc.getElementById('licenses-catalog-status');
  const list=doc.getElementById('licenses-catalog-groups');
  if(!status||!list||licenseDirectoryLoaded||licenseDirectoryLoading)return;
