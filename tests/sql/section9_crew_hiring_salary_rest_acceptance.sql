@@ -5,6 +5,8 @@ DO $test$
 DECLARE a uuid;u uuid;code text;plane uuid;s1 uuid;s2 uuid;
  offer jsonb;hire jsonb;repeat_hire jsonb;wage jsonb;pay jsonb;
  duty jsonb;ops jsonb;nonowner_denied boolean:=false;
+ salary_first jsonb;salary_repeat jsonb;salary_next jsonb;
+ cost_first numeric; cost_next numeric;
  prior_cash numeric; prior_ledger bigint; prior_count int;
 BEGIN
  SELECT id,owner_player_id,iata_code,cash_usd
@@ -92,6 +94,47 @@ BEGIN
  OR has_table_privilege('authenticated',
   'airlinerra_game.section9_game_crew_payroll_days_v1','INSERT')
  THEN RAISE EXCEPTION 'Payroll/crew direct SQL access leaked';END IF;
- RAISE NOTICE 'PASS: game crew offer, hire replay, ownership, duties/rest, salary and no clock means no payroll';
+
+ -- Verify future payroll path ONLY in a rollback test with a temporary
+ -- clock fixture. Production game clock remains NOT_CONNECTED.
+ UPDATE airlinerra_game.holding_world_clock_v1
+ SET confirmed_game_date=DATE '2000-01-01',
+  clock_source='authoritative_game_engine',
+  engine_proof_ref='ROLLBACK_ONLY_TEST_GAME_ENGINE_CLOCK',
+  last_verified_at=clock_timestamp()
+ WHERE world_id=1;
+ salary_first:=airlinerra_game.section9_post_verified_game_crew_payroll_v1(
+  a,'2000-01-01');
+ cost_first:=(salary_first->>'amountUsd')::numeric;
+ IF salary_first->>'status'<>'game_crew_payroll_accounted' OR
+  salary_first->>'ledgerPosted'<>'true' OR cost_first<=0
+ THEN RAISE EXCEPTION 'Verified clock payroll failed: %',salary_first;END IF;
+ salary_repeat:=airlinerra_game.section9_post_verified_game_crew_payroll_v1(
+  a,'2000-01-01');
+ IF salary_repeat->>'status'<>'already_posted' OR
+  salary_repeat->>'replayed'<>'true' OR
+  (SELECT count(*) FROM airlinerra_game.section9_game_crew_payroll_days_v1
+   WHERE airline_id=a)<>1
+ THEN RAISE EXCEPTION 'Duplicate salary charged: %',salary_repeat;END IF;
+ IF (SELECT cash_usd FROM airlinerra_game.airlines WHERE id=a)<>prior_cash-cost_first
+ OR (SELECT count(*) FROM airlinerra_game.airline_ledger)<>prior_ledger+1
+ THEN RAISE EXCEPTION 'Payroll not backed by exact cash and ledger movement';END IF;
+ salary_next:=airlinerra_game.section9_post_verified_game_crew_payroll_v1(
+  a,'2000-01-02');
+ IF salary_next->>'status'<>'blocked_future_game_date'
+ THEN RAISE EXCEPTION 'Future date bypassed clock: %',salary_next;END IF;
+ UPDATE airlinerra_game.holding_world_clock_v1
+ SET confirmed_game_date=DATE '2000-01-02',last_verified_at=clock_timestamp()
+ WHERE world_id=1;
+ salary_next:=airlinerra_game.section9_post_verified_game_crew_payroll_v1(
+  a,'2000-01-02');
+ cost_next:=(salary_next->>'amountUsd')::numeric;
+ IF salary_next->>'status'<>'game_crew_payroll_accounted' OR
+  (SELECT count(*) FROM airlinerra_game.section9_game_crew_payroll_days_v1
+   WHERE airline_id=a)<>2 OR
+  (SELECT cash_usd FROM airlinerra_game.airlines WHERE id=a)<>
+     prior_cash-cost_first-cost_next
+ THEN RAISE EXCEPTION 'Second game day payroll failed: %',salary_next;END IF;
+ RAISE NOTICE 'PASS NPC contract and rest; unverified-clock block; exactly-once cash+ledger under rollback-only verified clock';
 END $test$;
 ROLLBACK;
