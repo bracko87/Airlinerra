@@ -106,7 +106,7 @@ export function routePlannerMarkup(){
   weekTable()+
   '<details class="route-aircraft-timeline-panel" id="route-aircraft-timeline"><summary>Aircraft weekly timeline and locations</summary><div id="route-aircraft-timeline-content"></div></details>'+
   '<div class="route-week-footer"><span id="route-flights" class="route-week-count">0 departures/week</span>'+
-  '<span>Origin local time · times and stands require verification</span></div>'+
+  '<span>Example next departures use entered UTC times; actual local arrival, slots and aircraft position are not yet verified.</span></div>'+
   '<div class="route-flight-calculations">'+
    '<div><span>Aircraft cruise speed</span><strong id="route-cruise-speed">Pending verified data</strong></div>'+
    '<div><span>Estimated airborne time</span><strong id="route-airborne-time">Pending verified performance</strong></div>'+
@@ -367,18 +367,28 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   return result;
  };
  const updateWeek=()=>{
-  const schedule=availableSchedule();
+  const schedule=availableSchedule(),chosenDays=new Set(schedule.map(x=>x.day));
   for(let day=0;day<7;day++){
    const check=doc.querySelector('[data-route-day="'+day+'"]');
    const time=doc.querySelector('[data-route-time="'+day+'"]');
    if(time)time.disabled=!check?.checked;
   }
   message('route-flights',schedule.length+' '+(schedule.length===1?'departure':'departures')+'/week');
-  for(let day=0;day<7;day++)
-   message('route-arrival-'+day,schedule.some(x=>x.day===day)?'Pending':'—');
   const target=Number($('route-turnaround')?.value);
+  // Only calculate from user-entered UTC reference times. No aircraft
+  // speed, local time zone, actual arrival or future slot is invented.
+  const estimate=exampleNextDepartureUtc(
+   utcFromInput($('route-preflight-departure-utc')?.value),
+   utcFromInput($('route-preflight-arrival-utc')?.value),target);
+  for(let day=0;day<7;day++){
+   message('route-arrival-'+day,chosenDays.has(day)?
+    (estimate?'Example '+estimate.arrivalClock:'Pending verified duration'):'—');
+   message('route-next-departure-'+day,chosenDays.has(day)?
+    (estimate?'Example '+estimate.clock:'Pending arrival time'):'—');
+  }
   message('route-rotation-check',Number.isInteger(target)&&target>=45&&target<=360?
-   'Target '+target+' min · slots and aircraft rotations not verified':
+   (estimate?'Example next ground departure '+estimate.clock+' · not an approved slot':
+    'Target '+target+' min · flight duration and slots unverified'):
    'Choose a turnaround between 45 and 360 minutes');
  };
  const selectedAircraftTimeline=()=>{
@@ -697,7 +707,6 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   for(const id of ['route-preflight-departure-utc','route-preflight-arrival-utc'])
    if($(id))$(id).value='';
   clearPreflight();
-  if($('route-departure-stand'))$('route-departure-stand').value='terminal';
   if($('route-arrival-stand'))$('route-arrival-stand').value='terminal';
   if($('route-turnaround'))$('route-turnaround').value='45';
   for(const label of ['economy','premium','business','first'])
@@ -764,10 +773,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    (Number.isSafeInteger(route.aircraftConfigurationId)?'catalog:'+route.aircraftConfigurationId:'');
   if($('route-preflight-departure-utc'))$('route-preflight-departure-utc').value=route.referenceDepartureUtc?.slice(0,16)||'';
   if($('route-preflight-arrival-utc'))$('route-preflight-arrival-utc').value=route.referenceArrivalUtc?.slice(0,16)||'';
-  const departureStand=route.operation?.departureStand;
   const arrivalStand=route.operation?.arrivalStand;
-  if($('route-departure-stand'))$('route-departure-stand').value=
-   ['remote','terminal','cargo'].includes(departureStand)?departureStand:'terminal';
   if($('route-arrival-stand'))$('route-arrival-stand').value=
    ['remote','terminal','cargo'].includes(arrivalStand)?arrivalStand:'terminal';
   $('route-turnaround').value=String(route.operation?.turnaroundMinutes||45);
@@ -805,21 +811,17 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    updateWeek();clearPreflight();show();void automaticPreflight();return;
   }
   if(['route-preflight-departure-utc','route-preflight-arrival-utc'].includes(el?.id)){
-   clearPreflight();void automaticPreflight();return;
+   clearPreflight();updateWeek();void automaticPreflight();return;
   }
   if(el?.id==='route-aircraft'){
    const type=catalogChoice()?.useType;
-   if(type==='cargo'){
-    if($('route-departure-stand'))$('route-departure-stand').value='cargo';
-    if($('route-arrival-stand'))$('route-arrival-stand').value='cargo';
-   }else if(type==='passenger'){
-    for(const id of ['route-departure-stand','route-arrival-stand'])
-     if($(id)?.value==='cargo')$(id).value='terminal';
-   }
+   if(type==='cargo')$('route-arrival-stand').value='cargo';
+   else if(type==='passenger'&&$('route-arrival-stand')?.value==='cargo')
+    $('route-arrival-stand').value='terminal';
    clearPreflight();show();void automaticPreflight();return;
   }
-  if(['route-arrival-stand','route-departure-stand'].includes(el?.id)){
-   clearPreflight();refreshAircraftTimeline();void automaticPreflight();return;
+  if(el?.id==='route-arrival-stand'){
+   clearPreflight();refreshAircraftTimeline();updateWeek();void automaticPreflight();return;
   }
   if(el?.id==='route-turnaround'){updateWeek();return;}
   if(el?.id==='route-from-hub'||el?.id==='route-to-hub'){
@@ -928,7 +930,11 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    return null;
   }
   const ownedChoice=ownedFleet.find(a=>'owned:'+a.id===$('route-aircraft')?.value)||null;
-  const departureStand=$('route-departure-stand')?.value||'terminal';
+  const departureStand=departureStandFromTimeline(selectedAircraftTimeline());
+  if(!departureStand){
+   message('route-preflight-status','Different departure stands across weekdays; split this schedule into separate route drafts.');
+   return null;
+  }
   const arrivalStand=$('route-arrival-stand')?.value||'terminal';
   const signature=[from.key,to.key,configurationId,departureUtc,arrivalUtc,
    JSON.stringify(weeklySchedule),departureStand,arrivalStand,ownedChoice?.id||'',
@@ -1133,7 +1139,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    message('route-plan-status','Select at least one weekday and a valid local departure time.');return;
   }
   const operation=validateFlightDraftOptions({
-   departureStand:$('route-departure-stand')?.value,
+   departureStand:departureStandFromTimeline(selectedAircraftTimeline()),
    arrivalStand:$('route-arrival-stand')?.value,
    turnaroundMinutes:Number($('route-turnaround')?.value),
    fares:Object.fromEntries(['economy','premium','business','first'].map(label=>
@@ -1168,17 +1174,8 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
     'Enter exact UTC times and complete automatic restrictions checking before saving this aircraft route.');
    return;
   }
-  const simulationAircraft=(Array.isArray(data?.airline?.testAircraft)?
-   data.airline.testAircraft:[]).find(a=>a.id===flightAircraft&&
-    a.testOnly===true&&a.operationallyAllowed===false);
-  const available=Array.isArray(data?.airline?.testAircraft)?data.airline.testAircraft:[];
-  if(!flightAircraft){
-   message('route-plan-status','Select an aircraft first. Its weekly position must be checked before assigning departures.');
-   return;
-  }
-  if(flightAircraft&&!available.some(a=>a.id===flightAircraft)&&
-     !flightAircraft.startsWith('catalog:')&&!ownedChoice){
-   message('route-plan-status','Selected aircraft is not available in this airline. Choose another.');
+  if(!ownedChoice){
+   message('route-plan-status','Select an in-service aircraft owned or leased by this company. Test and catalogue aircraft cannot be scheduled.');
    return;
   }
   const timeline=selectedAircraftTimeline();
@@ -1187,13 +1184,17 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    const details=$('route-aircraft-timeline');if(details)details.open=true;
    return;
   }
+  if(!departureStandFromTimeline(timeline)){
+   message('route-plan-status','This route needs different departure stands on different weekdays. Split the draft into separate routes.');
+   return;
+  }
   // Other flight durations, time zones and slots are still not verified.
   // No live financial, schedule or aircraft mutations: local browser-session draft only.
   const draft={from,to,flightNumber,flights:schedule.length,schedule,
-   aircraftId:(ownedChoice||simulationAircraft)?flightAircraft:null,
+   aircraftId:flightAircraft,
    aircraftConfigurationId:selectedCatalog.id,
    aircraftLabel:[selectedCatalog.manufacturer,selectedCatalog.model,selectedCatalog.configuration].filter(Boolean).join(' '),
-   catalogPreviewOnly:!ownedChoice&&!simulationAircraft,testAircraft:Boolean(simulationAircraft),
+   catalogPreviewOnly:false,testAircraft:false,
    serverScheduleId:null,
    referenceDepartureUtc:utcFromInput($('route-preflight-departure-utc')?.value),
    referenceArrivalUtc:utcFromInput($('route-preflight-arrival-utc')?.value),
