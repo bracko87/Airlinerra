@@ -117,7 +117,7 @@ test('Licences & Permits page and operations menu remain read-only with no fake 
  assert.match(section,/class="panel workspace-panel lp-reference"/);
  assert.match(section,/licences-planner-root/);
  assert.match(section,/licenses-catalog-groups/);
- assert.match(section,/Applications, payments and automatic grants/);
+ assert.match(section,/Not released/);
  assert.doesNotMatch(section,/<button|<input|<form|type="submit"/);
  assert.match(css,/\.license-card-grid\{/);
  assert.match(js,/await playerData\.licenses\(\)/);
