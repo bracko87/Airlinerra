@@ -120,9 +120,9 @@ BEGIN
  PERFORM 1 FROM airlinerra_game.airlines WHERE id=p_airline FOR UPDATE;
  salary:=airlinerra_game.section9_crew_game_salary_v1(conf,p_candidate_slot);
  ref:='NPC-FD-'||conf||'-'||p_candidate_slot;
- SELECT confirmed_game_date,clock_source
- INTO game_date,clock_source FROM airlinerra_game.holding_world_clock_v1
- WHERE world_id=1;
+ SELECT clock.confirmed_game_date,clock.clock_source
+ INTO game_date,clock_source FROM airlinerra_game.holding_world_clock_v1 clock
+ WHERE clock.world_id=1;
  IF clock_source IS DISTINCT FROM 'authoritative_game_engine' THEN
   game_date:=NULL;END IF;
  proof:='game-npc-contract-v1:'||p_airline||':'||conf||':'||p_candidate_slot;
