@@ -6,12 +6,41 @@ The permissions catalogue and Operations → Licences & Permits page are impleme
 The server-owned Holding page can now read an authenticated 60-day eligibility preview.
 No operating approval, actual holding, subsidiary, payment or money transfer is created.
 
+## Updated eligibility decision — 9 November 2026
+
+The original airline qualifies by **age since registration**, not by completed
+flights or an in-game simulation clock. The authoritative registration timestamp
+is `airlinerra_game.airlines.created_at`. Count **60 elapsed 24-hour calendar
+days**, using the PostgreSQL server clock. No daily login or completed flight
+is required. The original airline becomes *age-eligible* at `created_at + 60 days`.
+Holding registration remains independently disabled until the feature is released
+and relevant world/ownership, finance and legal checks pass.
+
+This supersedes the earlier first-flight/game-day requirement **for holding
+eligibility only**. The in-game world clock remains essential for flight
+schedules and economic simulation, but no longer blocks the holding date.
+Source of truth: `airlinerra_game.holding_registration_eligibility_v2`.
+The older `holding_eligibility_preview_v1` is legacy and must not be used
+to determine holding availability.
+
+For the initially registered airline (29 October 2026 at 08:12:26 UTC),
+the 60-day threshold is 28 December 2026 at 08:12:26 UTC.
+No actual holding, payment or licence has been created.
+
+**Flight academy:** The initial flight academy belongs under the original
+airline as future training infrastructure (instructors, simulators and
+training aircraft). It is not an automatic additional holding subsidiary.
+A separately trading academy for outside customers could become a
+licensed training subsidiary later; the jurisdiction and programme may
+require ATO/DTO or equivalent approvals. The feature and training fleet
+are not yet implemented.
+
 ## Confirmed product rules
 
 1. A holding is a **parent ownership and treasury entity**, not an air operator.
 2. At most one parent holding per player per world initially. The player must have an
-   existing original airline that has completed **60 true operating game days**.
-   Airline registration timestamp is not a substitute for verified first operation.
+   existing original airline that was **registered at least 60 calendar days ago**.
+   This is measured from the server-stored airline registration timestamp.
 3. On formation, the original airline becomes a subsidiary without replacing its
    legal identity, aircraft, routes, employees or financial history.
 4. The holding can incorporate additional separately funded subsidiaries:
@@ -35,10 +64,10 @@ No operating approval, actual holding, subsidiary, payment or money transfer is 
 
 ### Form the parent holding
 - Server validates player and original airline ownership and world membership.
-- Server derives first **operational game date** from authoritative published
-  commercial flight activity, not from `airlines.created_at`.
-- Require 60 completed in-game operating days; the game clock and legal eligibility
-  must be in a single authoritative world-level service.
+- Server reads the original airline's registration time from `airlines.created_at`,
+  adds 60 full calendar days, and compares it with the server clock.
+- No completed flight or game-world clock is needed for this waiting-period
+  calculation. World launch and legal/finance eligibility still apply separately.
 - Validate sufficient funds for a modest game formation fee, minimum safe reserves,
   and appropriate incorporation requirements. **No amounts are final yet.**
 - Create parent holding and ownership link for the original airline atomically.
@@ -102,11 +131,12 @@ Future operational records must be distinct:
    active grants and disabled applications. Original hub rules unchanged.
 2. **DONE:** Operations → Licences & Permits read-only page and server-authenticated
    catalogue endpoint; link from Holding.
-3. **PARTIAL:** World-specific, 60-day holding policies, protected first-operating-flight
-   evidence, authoritative world-clock placeholders, parent/subsidiary registry tables
-   and server-verified read-only eligibility endpoint are installed. The real world
-   clock and first completed-flight ingestion are **NOT connected yet**; no date
-   can be shown until those sources prove eligibility.
+3. **DONE for age calculation:** The read-only server-owned holding API now
+   reports the exact registration-age eligibility date and remaining days based on
+   `airlines.created_at`. It works even when the game worlds are planned and no
+   flights have completed. The previously created first-flight/game-clock reference
+   tables remain for other game engine work, but no longer gate the holding counter.
+   Actual holding registration is still **NOT DONE**.
 4. **PARTIAL:** Separate zero-frozen treasury accounts, draft-only idempotent
    transfer intent schema and exact-cent fee/capital preview contract exist.
    Atomic world-scoped **posted** double-entry movements, actual operating-company
@@ -134,14 +164,16 @@ Future operational records must be distinct:
 - `airlinerra_game.holding_transfer_intents_v1`: world/holding ownership FKs,
   separate source/destination, unique idempotency keys and `draft`-only state;
   cannot post actual transfers.
-- `airlinerra_game.holding_eligibility_preview_v1`: server-filtered game-date
-  view with no browser grants and no `created_at` fallback.
+- `airlinerra_game.holding_registration_eligibility_v2`: authoritative
+  server-filtered 60-calendar-day age view using `created_at`. This supersedes
+  the old operating-flight/game-clock view for holding eligibility.
 - `server/holding-finance-contract.mjs`: pure, exact-integer-cents fee and funding
   preview; rejects self transfers, subsidiary-to-subsidiary shortcuts, foreign
   worlds/groups, reserved-cash violations, and absent/zero fee policy.
-- `/api/v1/player/holding-status`: authenticated, read-only; live Edge API v13
-  preserves the older airport-office bundle and exposes no holding write route.
-- SQL reconstruction: `docs/sql/AIRLINERRA_HOLDING_OWNERSHIP_FINANCE_V1_2026-11-08.sql`.
+- `/api/v1/player/holding-status`: authenticated, read-only; live Edge API v14
+  uses the registration-age view, preserves all unrelated deployed functions,
+  and exposes no holding write route.
+- SQL reconstruction: `docs/sql/AIRLINERRA_HOLDING_OWNERSHIP_FINANCE_V1_2026-11-08.sql` plus the 2026-11-09 registration-age v2 SQL file.
 - Existing registered airline and $5m seed ledger remain untouched.
 
 ## Reference framework
