@@ -21,6 +21,7 @@ const CHECK_FIELDS=new Set([...BASE_FIELDS,'scheduleId']);
 const DEMAND_FIELDS=new Set([...CHECK_FIELDS,'month']);
 const ROTATION_FIELDS=new Set([...CHECK_FIELDS,'startDate','days']);
 const CREW_PLAN_FIELDS=new Set([...CHECK_FIELDS,'crewId','weeklyEntry','decision']);
+const CREW_HIRE_FIELDS=new Set([...CHECK_FIELDS,'candidateSlot']);
 const FARE_SAVE_FIELDS=new Set([...CHECK_FIELDS,'economyFareUsd',
  'cargoRateUsdPerTonne','marketingBudgetUsdPerDay']);
 const PARTNER_PROPOSE_FIELDS=new Set([...BASE_FIELDS,'otherAirlineCode']);
@@ -63,6 +64,14 @@ export function validateFlightSchedulePayload(body){
     typeof n==='number'&&Number.isFinite(n)&&n>=min&&n<=max&&
     Math.round(n*100)/100===n);
  }
+ if(body.action==='crew-offers')
+  return withinFields(body,CHECK_FIELDS)&&uuid(body.scheduleId);
+ if(body.action==='crew-salary')
+  return withinFields(body,BASE_FIELDS);
+ if(body.action==='crew-hire')
+  return withinFields(body,CREW_HIRE_FIELDS)&&uuid(body.scheduleId)&&
+   Number.isInteger(body.candidateSlot)&&body.candidateSlot>=1&&
+   body.candidateSlot<=2000;
  if(body.action==='crew-roster')
   return withinFields(body,CHECK_FIELDS)&&uuid(body.scheduleId);
  if(body.action==='crew-plan')
@@ -149,6 +158,12 @@ export const SCHEDULE_SQL=Object.freeze({
   $1::uuid,$2::uuid,$3::uuid,$4::date,$5::integer) AS result`,
  crewRoster:`SELECT airlinerra_game.section9_owned_crew_roster_preview_v1(
   $1::uuid,$2::uuid,$3::uuid) AS result`,
+ crewOffers:`SELECT airlinerra_game.section9_owned_crew_offers_v1(
+  $1::uuid,$2::uuid,$3::uuid) AS result`,
+ crewHire:`SELECT airlinerra_game.section9_hire_owned_game_crew_v1(
+  $1::uuid,$2::uuid,$3::uuid,$4::integer) AS result`,
+ crewSalary:`SELECT airlinerra_game.section9_owned_game_crew_salary_preview_v1(
+  $1::uuid,$2::uuid) AS result`,
  crewPlan:`SELECT airlinerra_game.section9_plan_owned_crew_duty_v1(
   $1::uuid,$2::uuid,$3::uuid,$4::uuid,$5::integer,$6::text) AS result`,
  check:`SELECT airlinerra_game.section5_schedule_activation_readiness_v1($1::uuid,$2::uuid) AS result`,
@@ -281,6 +296,39 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
     if(response.rowCount!==1||!response.rows[0]?.result)
      return respond(503,{error:'Aircraft rotation preflight unavailable'});
     return respond(200,response.rows[0].result);
+   }
+   if(body.action==='crew-offers'){
+    const response=await client.query(SCHEDULE_SQL.crewOffers,
+     [userId,body.airlineId,body.scheduleId]);
+    if(response.rowCount!==1||!response.rows[0]?.result)
+     return respond(503,{error:'Crew market unavailable'});
+    const data=response.rows[0].result;
+    if(data.readOnly!==true||data.canActivateNormalFlight!==false||
+       !Array.isArray(data.offers))
+     return respond(503,{error:'Unverified crew market'});
+    return respond(200,data);
+   }
+   if(body.action==='crew-hire'){
+    const response=await client.query(SCHEDULE_SQL.crewHire,
+     [userId,body.airlineId,body.scheduleId,body.candidateSlot]);
+    if(response.rowCount!==1||!response.rows[0]?.result)
+     return respond(503,{error:'Crew contract could not be signed'});
+    const data=response.rows[0].result;
+    if(data.status!=='game_crew_contract_signed'||
+       data.canActivateNormalFlight!==false||data.ledgerPosted!==false)
+     return respond(503,{error:'Crew contract safety check failed'});
+    return respond(200,data);
+   }
+   if(body.action==='crew-salary'){
+    const response=await client.query(SCHEDULE_SQL.crewSalary,
+     [userId,body.airlineId]);
+    if(response.rowCount!==1||!response.rows[0]?.result)
+     return respond(503,{error:'Crew salary forecast unavailable'});
+    const data=response.rows[0].result;
+    if(data.status!=='game_crew_salary_forecast'||
+       data.readOnly!==true||data.automaticPayrollEnabled!==false)
+     return respond(503,{error:'Crew payroll is not operationally released'});
+    return respond(200,data);
    }
    if(body.action==='crew-roster'){
     const response=await client.query(SCHEDULE_SQL.crewRoster,
