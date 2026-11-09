@@ -20,6 +20,7 @@ const SLOT_FIELDS=new Set([...BASE_FIELDS,'aircraftInventoryId','originAirportKe
 const CHECK_FIELDS=new Set([...BASE_FIELDS,'scheduleId']);
 const DEMAND_FIELDS=new Set([...CHECK_FIELDS,'month']);
 const ROTATION_FIELDS=new Set([...CHECK_FIELDS,'startDate','days']);
+const CREW_PLAN_FIELDS=new Set([...CHECK_FIELDS,'crewId','weeklyEntry','decision']);
 const FARE_SAVE_FIELDS=new Set([...CHECK_FIELDS,'economyFareUsd',
  'cargoRateUsdPerTonne','marketingBudgetUsdPerDay']);
 const PARTNER_PROPOSE_FIELDS=new Set([...BASE_FIELDS,'otherAirlineCode']);
@@ -62,6 +63,13 @@ export function validateFlightSchedulePayload(body){
     typeof n==='number'&&Number.isFinite(n)&&n>=min&&n<=max&&
     Math.round(n*100)/100===n);
  }
+ if(body.action==='crew-roster')
+  return withinFields(body,CHECK_FIELDS)&&uuid(body.scheduleId);
+ if(body.action==='crew-plan')
+  return withinFields(body,CREW_PLAN_FIELDS)&&uuid(body.scheduleId)&&
+   uuid(body.crewId)&&Number.isInteger(body.weeklyEntry)&&
+   body.weeklyEntry>=1&&body.weeklyEntry<=7&&
+   ['plan','remove'].includes(body.decision);
  if(body.action==='commercial-read')
   return withinFields(body,CHECK_FIELDS)&&uuid(body.scheduleId);
  if(body.action==='delete'||body.action==='activation-check')
@@ -137,8 +145,12 @@ export const SCHEDULE_SQL=Object.freeze({
   $1::uuid,$2::uuid,$3::text,NULL::text,$4::bigint) AS result`,
  rotationPreview:`SELECT airlinerra_game.section9_owned_aircraft_rotation_preview_v1(
   $1::uuid,$2::uuid,$3::uuid,$4::date,$5::integer) AS result`,
- operationsPreview:`SELECT airlinerra_game.section9_owned_operational_preflight_v1(
+ operationsPreview:`SELECT airlinerra_game.section9_owned_operations_with_crew_rights_v1(
   $1::uuid,$2::uuid,$3::uuid,$4::date,$5::integer) AS result`,
+ crewRoster:`SELECT airlinerra_game.section9_owned_crew_roster_preview_v1(
+  $1::uuid,$2::uuid,$3::uuid) AS result`,
+ crewPlan:`SELECT airlinerra_game.section9_plan_owned_crew_duty_v1(
+  $1::uuid,$2::uuid,$3::uuid,$4::uuid,$5::integer,$6::text) AS result`,
  check:`SELECT airlinerra_game.section5_schedule_activation_readiness_v1($1::uuid,$2::uuid) AS result`,
  delete:`DELETE FROM airlinerra_game.airline_flight_schedule_drafts_v1 s
    USING airlinerra_game.airlines a
@@ -269,6 +281,27 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
     if(response.rowCount!==1||!response.rows[0]?.result)
      return respond(503,{error:'Aircraft rotation preflight unavailable'});
     return respond(200,response.rows[0].result);
+   }
+   if(body.action==='crew-roster'){
+    const response=await client.query(SCHEDULE_SQL.crewRoster,
+     [userId,body.airlineId,body.scheduleId]);
+    if(response.rowCount!==1||!response.rows[0]?.result)
+     return respond(503,{error:'Crew roster preview unavailable'});
+    const result=response.rows[0].result;
+    if(result.readOnly!==true||result.canActivateNormalFlight!==false)
+     return respond(503,{error:'Crew roster evidence is not verified'});
+    return respond(200,result);
+   }
+   if(body.action==='crew-plan'){
+    const response=await client.query(SCHEDULE_SQL.crewPlan,
+     [userId,body.airlineId,body.scheduleId,
+      body.crewId,body.weeklyEntry,body.decision]);
+    if(response.rowCount!==1||!response.rows[0]?.result)
+     return respond(503,{error:'Crew duty proposal was not saved'});
+    const result=response.rows[0].result;
+    if(result.status!=='planned_not_verified'||result.canActivateNormalFlight!==false)
+     return respond(503,{error:'Crew proposal safety check failed'});
+    return respond(200,result);
    }
    if(body.action==='operations-preview'){
     const response=await client.query(SCHEDULE_SQL.operationsPreview,

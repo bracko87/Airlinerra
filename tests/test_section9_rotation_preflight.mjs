@@ -202,3 +202,108 @@ test('Route details shows ground, crew and legal evidence without an activation 
  assert.match(output,/activation remains blocked/i);
  assert.doesNotMatch(output,/Activate now/);
 });
+
+test('Crew roster and duty proposal API restrict fields and verified identity',async()=>{
+ const rosterRequest={action:'crew-roster',airlineId:AIRLINE,scheduleId:SCHEDULE};
+ const dutyRequest={action:'crew-plan',airlineId:AIRLINE,scheduleId:SCHEDULE,
+  crewId:USER,weeklyEntry:1,decision:'plan'};
+ assert.equal(validateFlightSchedulePayload(rosterRequest),true);
+ assert.equal(validateFlightSchedulePayload(dutyRequest),true);
+ for(const bad of [
+  {...dutyRequest,playerId:USER},{...dutyRequest,employmentStatus:'verified_employed'},
+  {...dutyRequest,weeklyEntry:8},{...dutyRequest,decision:'approve'},
+  {...dutyRequest,crewId:'wrong'},{...rosterRequest,airlineOwnerId:USER}
+ ])assert.equal(validateFlightSchedulePayload(bad),false);
+ const roster={status:'crew_roster_planning_only',readOnly:true,
+  canActivateNormalFlight:false,crewAvailableForPlanning:[],proposals:[]};
+ const h=handler(async(sql,args)=>{
+  assert.equal(sql,SCHEDULE_SQL.crewRoster);
+  assert.deepEqual(args,[USER,AIRLINE,SCHEDULE]);
+  return {rowCount:1,rows:[{result:roster}]};
+ });
+ const response=await h(request(rosterRequest));
+ assert.equal(response.status,200);
+ assert.deepEqual(await response.json(),roster);
+ const planned={status:'planned_not_verified',
+  canActivateNormalFlight:false,changed:true};
+ const h2=handler(async(sql,args)=>{
+  assert.equal(sql,SCHEDULE_SQL.crewPlan);
+  assert.deepEqual(args,[USER,AIRLINE,SCHEDULE,USER,1,'plan']);
+  return {rowCount:1,rows:[{result:planned}]};
+ });
+ const p=await h2(request(dutyRequest));
+ assert.equal(p.status,200);
+ assert.deepEqual(await p.json(),planned);
+});
+test('Crew assignment cannot claim confirmed employment or activated flight',async()=>{
+ const h=handler(async()=>({rowCount:1,rows:[{result:{
+  status:'approved',canActivateNormalFlight:true
+ }}]}));
+ const result=await h(request({action:'crew-plan',airlineId:AIRLINE,
+  scheduleId:SCHEDULE,crewId:USER,weeklyEntry:1,decision:'plan'}));
+ assert.equal(result.status,503);
+});
+test('Crew roster client sends only owner-scoped schedule and crew IDs',async()=>{
+ const posts=[];
+ const client=createFlightScheduleClient({auth:{getAccessToken:async()=>TOKEN},
+  origin:'https://airlinerra.com',
+  fetchImpl:async(_url,opts)=>{
+   posts.push(JSON.parse(opts.body));
+   return Response.json({status:posts.length===1?'crew_roster_planning_only':'planned_not_verified',
+    readOnly:true,canActivateNormalFlight:false});
+  }});
+ await client.crewRoster({airlineId:AIRLINE,scheduleId:SCHEDULE});
+ await client.crewPlan({airlineId:AIRLINE,scheduleId:SCHEDULE,
+  crewId:USER,weeklyEntry:1,decision:'plan'});
+ assert.deepEqual(posts[0],{action:'crew-roster',airlineId:AIRLINE,
+  scheduleId:SCHEDULE});
+ assert.deepEqual(posts[1],{action:'crew-plan',airlineId:AIRLINE,
+  scheduleId:SCHEDULE,crewId:USER,weeklyEntry:1,decision:'plan'});
+});
+test('Crew planner displays empty registered roster without creating fictional crew',async()=>{
+ const doc={createElement:element},host=element('section');
+ let saved=false;
+ const ui=createSection9RotationReview({doc,host,getServer:()=>({
+  scheduler:{
+   rotationPreview:async()=>({readOnly:true,canActivateNormalFlight:false}),
+   crewRoster:async()=>({status:'crew_roster_planning_only',
+    readOnly:true,canActivateNormalFlight:false,crewAvailableForPlanning:[],
+    proposals:[]}),
+   crewPlan:async()=>{saved=true}
+  }
+ })});
+ await ui.open({serverScheduleId:SCHEDULE,schedule:[{day:0,time:'10:00'}]},AIRLINE);
+ const buttons=descendants(host).filter(x=>x.tag==='button');
+ const manage=buttons.find(x=>x.textContent==='Plan weekly crew');
+ assert.ok(manage);
+ await manage.listeners.click();
+ const displayed=descendants(host).map(x=>x.textContent).join(' ');
+ assert.match(displayed,/No crew members qualified/i);
+ assert.equal(saved,false);
+ assert.doesNotMatch(displayed,/Activated flight|Ticket issued/);
+});
+test('Crew proposal UI submits registered employee and schedule weekly entry only',async()=>{
+ const doc={createElement:element},host=element('section');
+ let received=null;
+ const ui=createSection9RotationReview({doc,host,getServer:()=>({
+  scheduler:{
+   rotationPreview:async()=>({readOnly:true,canActivateNormalFlight:false}),
+   crewRoster:async()=>({readOnly:true,canActivateNormalFlight:false,
+    crewAvailableForPlanning:[{crewId:USER,crewReference:'Test crew',
+     employmentStatus:'pending_verification',aircraftQualificationMatches:true}],
+    proposals:[]}),
+   crewPlan:async args=>{received=args;return {
+    status:'planned_not_verified',canActivateNormalFlight:false}}
+  }
+ })});
+ await ui.open({serverScheduleId:SCHEDULE,
+  schedule:[{day:0,time:'10:00'}]},AIRLINE);
+ await descendants(host).find(x=>x.textContent==='Plan weekly crew').listeners.click();
+ const plan=descendants(host).find(x=>x.textContent==='Propose assignment');
+ assert.ok(plan);
+ await plan.listeners.click();
+ assert.deepEqual(received,{airlineId:AIRLINE,
+  scheduleId:SCHEDULE,crewId:USER,weeklyEntry:1,decision:'plan'});
+ assert.match(descendants(host).map(x=>x.textContent).join(' '),
+  /Flights remain inactive/);
+});
