@@ -27,7 +27,9 @@ export function createLiveReadOnlyPreviewHandler({fetchImpl=globalThis.fetch}={}
   '/api/v1/player/airports',
   '/api/v1/player/airport-profile',
   '/api/v1/player/aircraft-library',
-   '/api/v1/player/noise-curfew-check',
+  '/api/v1/player/noise-curfew-check',
+  '/api/v1/player/licenses',
+  '/api/v1/player/holding-status',
   '/api/v1/onboarding/context'
  ]);
  const error=(status,why)=>{
