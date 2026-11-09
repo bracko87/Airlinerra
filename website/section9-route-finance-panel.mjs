@@ -144,7 +144,7 @@ export function createSection9RouteFinancePanel({doc,host,getServer}={}){
  ]);
  loadInput.value='100';parkInput.value='180';
  const status=add(doc,'p','Choose a saved route to view financial figures.','hint route-finance-status');
- status.setAttribute('role','status');
+ if(typeof status.setAttribute==='function')status.setAttribute('role','status');
  const estimate=add(doc,'section','','route-finance-estimate');
  const historical=add(doc,'section','','route-finance-history');
  panel.append(controls,status,estimate,historical);host.replaceChildren(panel);
