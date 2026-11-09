@@ -66,26 +66,28 @@ function fakeElement(tag){
 const flatText=root=>String(root.textContent||'')+' '+(root.children||[]).map(flatText).join(' ');
 const first=(root,tag,predicate)=>root.querySelectorAll(tag).find(predicate);
 
-test('the game planner is interactive but read-only and never invents certification status',()=>{
+test('ticket-style licence planner uses selects, preserves checks, and remains read-only',()=>{
  const doc={createElement:fakeElement},root=fakeElement('main');
  let airlineName='Test Airline';
  const planner=createLicensingPlanner({doc,root,getAirline:()=>({name:airlineName})});
  planner.show();
  let text=flatText(root);
- assert.match(text,/LICENSING DESIGN PREVIEW/);
+ assert.match(text,/LICENSING PLANNING/);
  assert.match(text,/Signed-in airline: Test Airline · requirements not evaluated/);
  assert.match(text,/For final approval/);
  assert.match(text,/1 suitable delivered and inspected aircraft/);
  assert.match(text,/Applications not yet available/);
  assert.match(text,/Included in original airline activation/);
- assert.ok(root.querySelectorAll('button').some(x=>x.disabled),'no enabled application button');
+ assert.equal(root.children.length,2,'ticket-price-style two-panel layout');
+ assert.ok(root.children.every(x=>x.className.includes('panel workspace-panel')));
+ assert.ok(root.querySelectorAll('button').every(x=>x.disabled),'only disabled application button');
 
- const scenario=first(root,'select',x=>x.attrs['aria-label']==='Planning cost scenario');
+ const scenario=first(root,'select',x=>x.attrs['aria-label']==='Cost scenario');
  scenario.value='subsidiary';scenario.listeners.change();
  assert.match(flatText(root),/\$150,000 for new airline subsidiary/);
 
- const cargo=first(root,'button',x=>x.dataset.code==='CARGO_OPERATIONS_SCOPE');
- cargo.listeners.click();
+ const licence=first(root,'select',x=>x.attrs['aria-label']==='Licence or permit');
+ licence.value='CARGO_OPERATIONS_SCOPE';licence.listeners.change();
  text=flatText(root);
  assert.match(text,/Cargo operations approval/);
  assert.match(text,/At least 1 cargo-handling arrangement/);
@@ -94,14 +96,17 @@ test('the game planner is interactive but read-only and never invents certificat
  assert.match(text,/How to restore/);
  assert.match(text,/3 game days/);
 
- const market=first(root,'button',x=>x.dataset.group==='market');
- market.listeners.click();
- assert.equal(first(root,'button',x=>x.dataset.code==='CARGO_OPERATIONS_SCOPE'),undefined);
- assert.ok(first(root,'button',x=>x.dataset.code==='FIFTH_FREEDOM'));
+ const category=first(root,'select',x=>x.attrs['aria-label']==='Permission category');
+ category.value='market';category.listeners.change();
+ assert.equal(licence.children.some(x=>x.value==='CARGO_OPERATIONS_SCOPE'),false);
+ assert.ok(licence.children.some(x=>x.value==='FIFTH_FREEDOM'));
  const search=first(root,'input',x=>x.attrs['aria-label']==='Search licences and requirements');
  search.value='cabotage';search.listeners.input();
- assert.ok(first(root,'button',x=>x.dataset.code==='CABOTAGE'));
- assert.equal(first(root,'button',x=>x.dataset.code==='FIFTH_FREEDOM'),undefined);
+ assert.ok(licence.children.some(x=>x.value==='CABOTAGE'));
+ assert.equal(licence.children.some(x=>x.value==='FIFTH_FREEDOM'),false);
+ search.value='not-existing';search.listeners.input();
+ assert.match(flatText(root),/No permission matches these filters/);
+ search.value='';search.listeners.input();
  airlineName='New name';
  planner.show();
  assert.match(flatText(root),/New name/);
@@ -109,19 +114,23 @@ test('the game planner is interactive but read-only and never invents certificat
 
 test('player UI wires preview without altering real permission gates or public site auth',async()=>{
  const read=path=>readFile(new URL(path,import.meta.url),'utf8');
- const [html,app,bundle,source]=await Promise.all([
+ const [html,app,bundle,source,css]=await Promise.all([
   read('../website/private-player-app.html'),
   read('../website/player-app.mjs'),
   read('../website/dev-scripts/invited-overlay.mjs'),
-  read('../website/licensing-planner.mjs')
+  read('../website/licensing-planner.mjs'),
+  read('../website/player-app.css')
  ]);
  assert.match(html,/id="licences-planner-root"/);
  assert.match(html,/id="licenses-catalog-groups"/);
- assert.match(html,/applications or licence grants are active/);
+ assert.match(html,/class="panel workspace-panel lp-reference"/);
+ assert.doesNotMatch(html,/license-page-notice" role="note"/);
  assert.match(app,/createLicensingPlanner/);
  assert.match(app,/licencePlanner\.show\(\)/);
  assert.match(app,/data\.applicationsAvailable!==false/);
  assert.match(bundle,/'licensing-planner\.mjs'/);
+ assert.match(css,/\.lp-controls\{/);
+ assert.doesNotMatch(css,/\.lp-result\[aria-pressed="true"\]/);
  for(const forbidden of ['fetch(', 'innerHTML', 'localStorage', 'sessionStorage', '.from('])
   assert.equal(source.includes(forbidden),false,forbidden);
 });
