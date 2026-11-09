@@ -58,7 +58,8 @@ export function createSection9RotationReview({doc,host,getServer}={}){
         !Array.isArray(payload.blockers))
       throw Error('Unsafe operational evidence response');
      const ground=payload.turnaround||{},crew=payload.crew||{},
-      delivery=payload.deliveryEvidence||{},rights=payload.routeRights||{};
+      delivery=payload.deliveryEvidence||{},rights=payload.routeRights||{},
+      staffing=payload.crewStaffing||{},permissions=payload.operatingPermissionEvidence||{};
      evidenceState.textContent='Operational flight activation remains blocked until all evidence is verified.';
      addFact(doc,evidenceHost,'Provisional minimum aircraft ground time',
       Number.isInteger(ground.minimumMinutes)?ground.minimumMinutes+' minutes':'Not known');
@@ -70,6 +71,21 @@ export function createSection9RotationReview({doc,host,getServer}={}){
      addFact(doc,evidenceHost,'Crew requirement known',
       crew.catalogRequirementKnown===true?'Yes':'No');
      addFact(doc,evidenceHost,'Crew assignments verified','No');
+     addFact(doc,evidenceHost,'Crew staffing requirement',
+      Number.isInteger(staffing.catalogCrewRequirement)?
+       staffing.catalogCrewRequirement:'Not verified');
+     addFact(doc,evidenceHost,'Weekly flights missing registered crew',
+      Number.isInteger(staffing.entriesMissingRegisteredCrew)?
+       staffing.entriesMissingRegisteredCrew:'Unknown');
+     addFact(doc,evidenceHost,'Other-route crew reuse needs conflict checks',
+      Number.isInteger(staffing.otherRouteReuseNeedsConflictAndRestChecks)?
+       staffing.otherRouteReuseNeedsConflictAndRestChecks:'Unknown');
+     addFact(doc,evidenceHost,'Game airline licence evidence on record',
+      permissions.gameOperatorLicenceEvidenceRecorded===true?'Yes':'No');
+     addFact(doc,evidenceHost,'Game route-permission evidence on record',
+      Number.isInteger(permissions.gameRoutePermissionEvidenceRecorded)?
+       permissions.gameRoutePermissionEvidenceRecorded+' of '+
+       (permissions.requiredServiceTypes??'unknown'):'Unknown');
      addFact(doc,evidenceHost,'Operating licence / traffic rights authorized',
       rights.operationallyAuthorized===true?'Requires independent verification':'No');
      evidenceHost.append(el(doc,'h4','Outstanding activation requirements'));
@@ -85,6 +101,80 @@ export function createSection9RotationReview({doc,host,getServer}={}){
      if(current===serial)evidenceState.textContent=
       'Operational evidence unavailable. No flight was activated.';
     }finally{evidenceButton.disabled=false;}
+   });
+  }
+  const rosterService=getServer?.()?.scheduler;
+  if(typeof rosterService?.crewRoster==='function'){
+   const crewButton=el(doc,'button','Plan weekly crew');
+   crewButton.type='button';crewButton.className='secondary';
+   const crewMessage=el(doc,'p','Crew plans require separately registered airline employees.');
+   crewMessage.className='hint';
+   const crewHost=el(doc,'div');crewHost.className='section9-crew-planner';
+   control.append(crewButton);host.append(crewMessage,crewHost);
+   let crewSerial=0;
+   crewButton.addEventListener('click',async()=>{
+    const requestId=++crewSerial;
+    crewButton.disabled=true;crewMessage.textContent='Reading airline crew roster...';
+    crewHost.replaceChildren();
+    try{
+     const response=await getServer().scheduler.crewRoster({
+      airlineId,scheduleId:route.serverScheduleId
+     });
+     if(requestId!==crewSerial||current!==serial)return;
+     if(response?.readOnly!==true||
+      response?.canActivateNormalFlight!==false||
+      !Array.isArray(response.crewAvailableForPlanning)||
+      !Array.isArray(response.proposals))throw Error('Unsafe roster response');
+     const crew=response.crewAvailableForPlanning
+      .filter(x=>x.aircraftQualificationMatches===true);
+     crewMessage.textContent=crew.length?
+      'Crew-duty proposals are not flight clearance. Verified employment and rest rules are separately required.':
+      'No crew members qualified for this aircraft are registered with this airline. No assignment is possible yet.';
+     for(const planned of response.proposals.slice(0,60)){
+      crewHost.append(el(doc,'p','Weekly entry '+planned.weeklyEntry+
+       ' · '+planned.crewId+(planned.stale?' · needs resaving':'')));
+     }
+     if(!crew.length||typeof getServer().scheduler.crewPlan!=='function')return;
+     const crewLabel=el(doc,'label','Registered crew member');
+     const crewSelect=el(doc,'select');
+     for(const member of crew.slice(0,200)){
+      const opt=el(doc,'option',member.crewReference+
+       (member.employmentStatus==='verified_employed'?'':' · employment not verified'));
+      opt.value=member.crewId;crewSelect.append(opt);
+     }
+     crewSelect.value=crew[0].crewId;crewLabel.append(crewSelect);
+     const entryLabel=el(doc,'label','Weekly flight entry');
+     const entrySelect=el(doc,'select');
+     const entries=Math.min(7,Math.max(1,Array.isArray(route.schedule)?route.schedule.length:1));
+     for(let i=1;i<=entries;i++){
+      const opt=el(doc,'option','Entry '+i);opt.value=String(i);
+      entrySelect.append(opt);
+     }
+     entrySelect.value='1';entryLabel.append(entrySelect);
+     const plan=el(doc,'button','Propose assignment');
+     const remove=el(doc,'button','Remove proposal');
+     plan.type='button';remove.type='button';
+     const send=async decision=>{
+      plan.disabled=true;remove.disabled=true;
+      try{
+       const reply=await getServer().scheduler.crewPlan({
+        airlineId,scheduleId:route.serverScheduleId,
+        crewId:crewSelect.value,weeklyEntry:Number(entrySelect.value),decision
+       });
+       if(reply?.status!=='planned_not_verified'||
+          reply.canActivateNormalFlight!==false)throw Error('Unsafe crew plan response');
+       crewMessage.textContent='Crew duty proposal updated. Flights remain inactive. Recheck operational readiness.';
+      }catch{
+       crewMessage.textContent='Crew duty proposal was not saved. Flight activation remains blocked.';
+      }finally{plan.disabled=false;remove.disabled=false;}
+     };
+     plan.addEventListener('click',()=>send('plan'));
+     remove.addEventListener('click',()=>send('remove'));
+     crewHost.append(crewLabel,entryLabel,plan,remove);
+    }catch{
+     if(current===serial)crewMessage.textContent=
+      'Crew roster unavailable. No crew was assigned and no flight activated.';
+    }finally{crewButton.disabled=false;}
    });
   }
   check.addEventListener('click',async()=>{
