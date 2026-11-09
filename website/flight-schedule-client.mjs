@@ -58,6 +58,8 @@ export function createFlightScheduleClient({auth,origin,fetchImpl=(...args)=>fet
     post({action:'partner-decision',airlineId,agreementId,decision}),
   rotationPreview:({airlineId,scheduleId,startDate,days=28})=>
     post({action:'rotation-preview',airlineId,scheduleId,startDate,days}),
+  operationsPreview:({airlineId,scheduleId,startDate,days=28})=>
+    post({action:'operations-preview',airlineId,scheduleId,startDate,days}),
   activationCheck:({airlineId,scheduleId})=>post({action:'activation-check',airlineId,scheduleId}),
   delete:({airlineId,scheduleId})=>post({action:'delete',airlineId,scheduleId})
  });
