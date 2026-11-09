@@ -402,3 +402,23 @@ test('next departure calculation uses entered UTC arrival plus turnaround, never
  assert.equal(markup.includes("section('AIRPORT RESTRICTIONS'"),false);
  assert.match(markup,/route-inline-restrictions/);
 });
+
+test('all visible player selects use shared Airlinerra dropdown skin while hidden airport state is preserved',async()=>{
+ const [enhancer,player,bundle,menu,css]=await Promise.all([
+  read('../website/game-select-menus.mjs'),
+  read('../website/player-app.mjs'),
+  read('../website/dev-scripts/invited-overlay.mjs'),
+  read('../website/setup-choice-menu.mjs'),
+  read('../website/player-app.css')
+ ]);
+ assert.match(player,/installGameSelectMenus\(\{doc,root:doc\.getElementById\('player-main'\)\}\)/);
+ assert.match(bundle,/'game-select-menus\.mjs'/);
+ assert.match(enhancer,/createDownwardMenu\(select,/);
+ assert.match(enhancer,/select\.getAttribute\('aria-hidden'\)!=='true'/);
+ assert.match(enhancer,/!select\.multiple/);
+ assert.match(enhancer,/MutationObserver/);
+ assert.match(enhancer,/controller\.destroy\(\)/);
+ assert.match(menu,/select\.dispatchEvent\(new Event\('change'/);
+ assert.match(css,/#player-main \.game-select-menu \.down-menu-options/);
+ assert.match(css,/#player-main \.game-select-menu \.down-menu-option\[aria-selected="true"\]/);
+});
