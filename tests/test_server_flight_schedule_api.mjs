@@ -131,6 +131,46 @@ test('activation readiness is a nonmutating backend check; no action can activat
  assert.equal(statements.length,1);
  assert.equal((await handler(req({action:'activate',airlineId:AIRLINE,scheduleId:SCHEDULE}))).status,400);
 });
+test('unified commercial preflight returns only read-only blockers with no activation write',async()=>{
+ const {handler,statements}=create((sql,args)=>{
+  assert.equal(sql,SCHEDULE_SQL.operationsPreview);
+  assert.match(sql,/section9_owned_commercial_activation_preflight_v1/);
+  assert.deepEqual(args,[USER,AIRLINE,SCHEDULE,'2000-11-09',28]);
+  return {rowCount:1,rows:[{result:{
+   status:'BLOCKED_COMMERCIAL_ACTIVATION_NOT_RELEASED',
+   canActivateNormalFlight:false,readOnly:true,flightActivated:false,
+   movementRecorded:false,ledgerPosted:false,
+   activationBlockers:['SCHEDULE_IS_DRAFT_NOT_CERTIFIED']
+  }}]};
+ });
+ const response=await handler(req({action:'operations-preview',airlineId:AIRLINE,
+  scheduleId:SCHEDULE,startDate:'2000-11-09',days:28}));
+ assert.equal(response.status,200);
+ const result=await response.json();
+ assert.equal(result.readOnly,true);
+ assert.equal(result.canActivateNormalFlight,false);
+ assert.equal(result.flightActivated,false);
+ assert.equal(statements.length,1);
+});
+test('activation-check fails closed if SQL ever claims flight activation is allowed',async()=>{
+ const {handler,statements}=create((sql)=>{
+  assert.equal(sql,SCHEDULE_SQL.check);
+  return {rowCount:1,rows:[{result:{status:'incorrectly_ready',canActivateNormalFlight:true}}]};
+ });
+ const response=await handler(req({action:'activation-check',airlineId:AIRLINE,scheduleId:SCHEDULE}));
+ assert.equal(response.status,503);
+ assert.equal(statements.length,1);
+});
+test('operations-preview refuses unsafe database response and cannot activate flights',async()=>{
+ const {handler}=create((sql)=>{
+  assert.equal(sql,SCHEDULE_SQL.operationsPreview);
+  return {rowCount:1,rows:[{result:{readOnly:false,canActivateNormalFlight:true}}]};
+ });
+ const response=await handler(req({action:'operations-preview',airlineId:AIRLINE,
+  scheduleId:SCHEDULE,startDate:'2000-11-09',days:28}));
+ assert.equal(response.status,503);
+});
+
 test('Netlify routes authenticated schedule requests only to pinned dedicated Supabase Edge URL',async()=>{
  const targets=[],app=createProductionGameApi({fetchImpl:async(url,options)=>{
   targets.push({url,options});return Response.json({drafts:[],fleet:[]});
