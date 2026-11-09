@@ -21,6 +21,8 @@ import {createHmac,timingSafeEqual} from 'node:crypto';
 export const SECTION9_CLOCK_SQL=Object.freeze({
  accept:`SELECT airlinerra_game.section9_accept_verified_game_tick_v1(
   $1::smallint,$2::date,$3::text,$4::text) AS result`,
+ scheduled:`SELECT airlinerra_game.section9_accept_scheduled_game_tick_v1(
+  $1::smallint,$2::date,$3::text,$4::text) AS result`,
  readiness:`SELECT airlinerra_game.section9_world_clock_dispatch_readiness_v1(
   1::smallint) AS result`
 });
@@ -65,27 +67,10 @@ export function createSection9VerifiedGameClockIngress({
  const secret=Buffer.from(gameEngineHmacSecret,'utf8');
  return Object.freeze({
   async acceptEngineTick({worldId,gameDate,eventId,signature}={}){
-   if(worldId!==1||!dateValid(gameDate)||!EVENT.test(eventId||'')||
-     !HEX.test(signature||''))
-    throw Error('SECTION9_INVALID_SIGNED_GAME_DAY');
-   const expected=createHmac('sha256',secret).update(
-    eventPayload({worldId,gameDate,eventId}),'utf8').digest();
-   const received=Buffer.from(signature,'hex');
-   if(received.length!==32||!timingSafeEqual(expected,received))
-    throw Error('SECTION9_UNTRUSTED_GAME_ENGINE_EVENT');
-   // Signature never travels to player clients. DB receives the verified
-   // digest for exact immutable idempotency, not the HMAC secret.
-   const client=await database.connect();
-   try{
-    const result=await runSingle(client,SECTION9_CLOCK_SQL.accept,
-     [worldId,gameDate,eventId,signature]);
-    if(!legitimateResult(result))
-     throw Error('SECTION9_UNSAFE_GAME_CLOCK_RESPONSE');
-    if(result.status!=='blocked_world_not_open'&&
-       (result.gameDate!==gameDate||result.engineEventId!==eventId))
-     throw Error('SECTION9_CLOCK_EVENT_MISMATCH');
-    return result;
-   }finally{client.release();}
+   return acceptSigned({worldId,gameDate,eventId,signature},false);
+  },
+  async acceptScheduledEngineTick({worldId,gameDate,eventId,signature}={}){
+   return acceptSigned({worldId,gameDate,eventId,signature},true);
   },
   async readiness(){
    const client=await database.connect();
@@ -99,4 +84,28 @@ export function createSection9VerifiedGameClockIngress({
    }finally{client.release();}
   }
  });
+ async function acceptSigned({worldId,gameDate,eventId,signature},scheduled){
+   if(worldId!==1||!dateValid(gameDate)||!EVENT.test(eventId||'')||
+     !HEX.test(signature||''))
+    throw Error('SECTION9_INVALID_SIGNED_GAME_DAY');
+   const expected=createHmac('sha256',secret).update(
+    eventPayload({worldId,gameDate,eventId}),'utf8').digest();
+   const received=Buffer.from(signature,'hex');
+   if(received.length!==32||!timingSafeEqual(expected,received))
+    throw Error('SECTION9_UNTRUSTED_GAME_ENGINE_EVENT');
+   // Signature never travels to player clients. DB receives the verified
+   // digest for exact immutable idempotency, not the HMAC secret.
+   const client=await database.connect();
+   try{
+    const result=await runSingle(client,scheduled?
+     SECTION9_CLOCK_SQL.scheduled:SECTION9_CLOCK_SQL.accept,
+     [worldId,gameDate,eventId,signature]);
+    if(!legitimateResult(result))
+     throw Error('SECTION9_UNSAFE_GAME_CLOCK_RESPONSE');
+    if(result.status!=='blocked_world_not_open'&&
+       (result.gameDate!==gameDate||result.engineEventId!==eventId))
+     throw Error('SECTION9_CLOCK_EVENT_MISMATCH');
+    return result;
+   }finally{client.release();}
+  }
 }
