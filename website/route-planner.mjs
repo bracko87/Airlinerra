@@ -651,7 +651,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   if(keys!==lastKeys){lastKeys=keys;clearPreflight();void loadAirportDetails(from,to);}
   updateWeek();
   refreshAircraftTimeline();
-  doc.dispatchEvent(new Event('airlinerra:refresh-game-select-menus'));
+  doc.dispatchEvent?.(new Event('airlinerra:refresh-game-select-menus'));
   void automaticPreflight();
  };
  for(const side of ['from','to']){
