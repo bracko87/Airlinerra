@@ -15,40 +15,42 @@ const policy={fixedFeeUsd:'0.30',basisPoints:5,capFeeUsd:'2.00'};
 const plan={holdingId:H,worldId:1,source,target,transferKind:'equity_contribution',idempotencyKey:I,
  amountUsd:'100.00',feePolicy:policy};
 
-test('holding dates never fall back to airline registration or real time',()=>{
- const a=evaluateHoldingEligibility({worldState:'planned',gameDate:'2026-11-08',
-  firstOperatingGameDate:'2026-10-01',gameClockVerified:true,firstFlightVerified:true});
- assert.equal(a.reason,'world_not_active');
- assert.equal(a.completedDays,null);
- assert.equal(a.canApply,false);
- const b=evaluateHoldingEligibility({worldState:'active',gameDate:'2026-11-08',
-  firstOperatingGameDate:'2026-10-01',gameClockVerified:false,firstFlightVerified:true});
- assert.equal(b.reason,'game_clock_unverified');
- const c=evaluateHoldingEligibility({worldState:'active',gameDate:'2026-11-08',
-  firstOperatingGameDate:'2026-10-01',gameClockVerified:true,firstFlightVerified:false});
- assert.equal(c.reason,'first_operating_flight_unverified');
- assert.equal(evaluateHoldingEligibility({worldState:'active',gameDate:'2026-10-01',
-  firstOperatingGameDate:'2026-11-01',gameClockVerified:true,firstFlightVerified:true}).reason,
-  'clock_before_first_operation');
+test('holding age counts from original airline registration even in planned worlds',()=>{
+ const x=evaluateHoldingEligibility({worldState:'planned',
+  registeredAtUtc:'2026-10-29T08:12:26Z',nowUtc:'2026-11-09T09:12:26Z'});
+ assert.equal(x.reason,'waiting_for_60_registration_days');
+ assert.equal(x.completedDays,11);
+ assert.equal(x.remainingDays,49);
+ assert.equal(x.earliestDate,'2026-12-28');
+ assert.equal(x.canApply,false);
+ const missing=evaluateHoldingEligibility({worldState:'active',
+  registeredAtUtc:null,nowUtc:'2026-11-09T09:12:26Z'});
+ assert.equal(missing.reason,'registration_timestamp_unverified');
+ assert.equal(missing.earliestDate,null);
+ assert.equal(evaluateHoldingEligibility({worldState:'active',
+  registeredAtUtc:'2026-11-12T00:00:00Z',nowUtc:'2026-11-09T00:00:00Z'}).reason,
+  'clock_before_registration');
 });
 
-test('holding 60-day countdown uses full calendar game dates including leap day',()=>{
- const base={worldState:'active',firstOperatingGameDate:'2028-02-01',
-  gameClockVerified:true,firstFlightVerified:true};
- const a=evaluateHoldingEligibility({...base,gameDate:'2028-03-31'});
- assert.equal(a.completedDays,59);
+test('holding 60-day countdown handles leap day and exact UTC cutoff',()=>{
+ const base={worldState:'active',registeredAtUtc:'2028-02-01T12:00:00Z'};
+ const a=evaluateHoldingEligibility({...base,nowUtc:'2028-03-31T11:59:59Z'});
+ assert.equal(a.completedDays,58);
  assert.equal(a.remainingDays,1);
- assert.equal(a.earliestGameDate,'2028-04-01');
+ assert.equal(a.earliestDate,'2028-04-01');
  assert.equal(a.canApply,false);
- const b=evaluateHoldingEligibility({...base,gameDate:'2028-04-01'});
- assert.equal(b.completedDays,60);
- assert.equal(b.ageThresholdMet,true);
- assert.equal(b.remainingDays,0);
- assert.equal(b.reason,'holding_registration_not_released');
- assert.equal(b.canApply,false);
- const c=evaluateHoldingEligibility({...base,gameDate:'2028-04-01',formationEnabled:true});
- assert.equal(c.canApply,true);
- assert.equal(c.reason,'eligible_for_application');
+ const b=evaluateHoldingEligibility({...base,nowUtc:'2028-04-01T11:59:59Z'});
+ assert.equal(b.remainingDays,1);
+ assert.equal(b.ageThresholdMet,false);
+ const c=evaluateHoldingEligibility({...base,nowUtc:'2028-04-01T12:00:00Z'});
+ assert.equal(c.completedDays,60);
+ assert.equal(c.remainingDays,0);
+ assert.equal(c.reason,'holding_registration_not_released');
+ assert.equal(c.canApply,false);
+ const d=evaluateHoldingEligibility({...base,nowUtc:'2028-04-01T12:00:00Z',formationEnabled:true});
+ assert.equal(d.canApply,true);
+ assert.equal(d.reason,'eligible_for_application');
+ assert.equal(evaluateHoldingEligibility({...base,worldState:'planned',nowUtc:'2028-04-01T12:00:00Z',formationEnabled:true}).canApply,false);
 });
 
 test('money parsing is exact with two decimal places and never uses floating point',()=>{
