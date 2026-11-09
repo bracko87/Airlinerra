@@ -75,15 +75,13 @@ async function loadHoldingStatus(){
  const status=doc.getElementById('holding-eligibility-status');
  const days=doc.getElementById('holding-days-count');
  const earliest=doc.getElementById('holding-earliest-date');
- const today=doc.getElementById('holding-current-game-date');
  const progress=doc.getElementById('holding-progress-fill');
- if(!status||!days||!earliest||!today||!progress||holdingStatusLoading)return;
+ if(!status||!days||!earliest||!progress||holdingStatusLoading)return;
  const airlineId=currentAirline?.id;
  const worldId=currentAirline?.worldId;
  progress.style.width='0%';
- days.textContent='Waiting for verified flight operations';
+ days.textContent='Not yet calculable';
  earliest.textContent='Not yet calculable';
- today.textContent='Not yet available';
  if(!airlineId||!Number.isInteger(worldId)||!playerData?.holdingStatus){
   status.textContent='Waiting for a registered airline and verified game data';
   return;
@@ -111,17 +109,15 @@ async function loadHoldingStatus(){
   status.textContent=labels[row.reason]||'Eligibility not yet verified';
   if(Number.isInteger(row.completedDays)&&row.completedDays>=0&&
    Number.isInteger(row.remainingDays)&&row.remainingDays>=0&&row.remainingDays<=60){
-   days.textContent=String(row.completedDays)+' completed · '+String(row.remainingDays)+' remaining';
+   days.textContent=String(row.remainingDays)+' game days remaining';
    progress.style.width=String(Math.min(100,Math.floor(row.completedDays/60*100)))+'%';
   }
   if(typeof row.earliestGameDate==='string')earliest.textContent=row.earliestGameDate;
-  if(typeof row.verifiedGameDate==='string')today.textContent=row.verifiedGameDate;
  }catch{
-  status.textContent='Cannot verify game-day eligibility right now';
-  days.textContent='Unknown — no countdown can be calculated';
+  status.textContent='Eligibility data unavailable — please refresh';
+  days.textContent='Not yet calculable';
   earliest.textContent='Not yet calculable';
-  today.textContent='Not yet available';
- }finally{holdingStatusLoading=false;}
+  }finally{holdingStatusLoading=false;}
 }
 // This is a read-only reference catalogue, not an authority/entitlement check.
 // Keep the renderer inside the player bundle: no additional module required at startup.
