@@ -209,119 +209,152 @@ function paragraph(doc,parent,cls,label,value){
 export function createLicensingPlanner({doc,root,getAirline=()=>null}={}){
  if(!doc?.createElement||!root?.replaceChildren)throw Error('Licence planner requires a document and host');
  let group='all',query='',selected='AIR_OPERATOR_CERTIFICATE',scenario='original';
- let header,filters,results,detail,search,company;
+ let licenceSelect,categorySelect,scenarioSelect,search,details,afterApproval,company;
  const listFor=()=>LICENCE_PLAN.filter(item=>(group==='all'||item.group===group)&&
    (item.title+' '+item.code+' '+item.application.join(' ')+' '+item.approval.join(' ')).toLowerCase().includes(query));
  const feeFor=item=>item.code==='AIR_OPERATOR_CERTIFICATE'
   ?(scenario==='original'?'Included in original airline activation':'$150,000 for new airline subsidiary')
   :item.cost;
- const criteria=(title,steps)=>{
-  const block=element(doc,'section','lp-stage');
-  block.append(element(doc,'h3','',title));
-  const ul=element(doc,'ul','lp-criteria');
-  for(const step of steps){
-   const li=element(doc,'li','');
-   li.append(element(doc,'span','lp-criterion-icon','○'),element(doc,'span','',step));
-   ul.append(li);
-  }
-  block.append(ul);
-  return block;
+ const field=(name,control)=>{
+  const label=element(doc,'label','lp-field workspace-label');
+  label.append(element(doc,'span','',name),control);
+  return label;
  };
- const repaint=()=>{
-  const shown=listFor();
-  for(const btn of filters.querySelectorAll('button'))btn.setAttribute('aria-pressed',String(btn.dataset.group===group));
-  if(!shown.some(item=>item.code===selected))selected=shown[0]?.code||'';
-  results.replaceChildren();
-  detail.replaceChildren();
-  if(!shown.length){
-   results.append(element(doc,'p','lp-empty','No permission matches this search.'));
-   detail.append(element(doc,'p','lp-empty','Select a permission to see its requirements.'));
+ const buildSelect=(name,items)=>{
+  const control=element(doc,'select','lp-select');
+  control.setAttribute('aria-label',name);
+  for(const [value,title] of items){
+   const option=element(doc,'option','',title);
+   option.value=value;
+   control.append(option);
+  }
+  return control;
+ };
+ const checklist=(title,items)=>{
+  const panel=element(doc,'div','lp-step');
+  panel.append(element(doc,'h3','',title));
+  const list=element(doc,'ul','lp-criteria');
+  for(const item of items){
+   const line=element(doc,'li','');
+   line.append(element(doc,'span','lp-criterion-icon','○'),element(doc,'span','',item));
+   list.append(line);
+  }
+  panel.append(list);
+  return panel;
+ };
+ const renderOptions=()=>{
+  const available=listFor();
+  if(!available.some(item=>item.code===selected))selected=available[0]?.code||'';
+  licenceSelect.replaceChildren();
+  if(!available.length){
+   const option=element(doc,'option','','No matching permissions');
+   option.value='';
+   licenceSelect.append(option);
+   licenceSelect.disabled=true;
+  }else{
+   licenceSelect.disabled=false;
+   for(const item of available){
+    const option=element(doc,'option','',item.title);
+    option.value=item.code;
+    licenceSelect.append(option);
+   }
+   licenceSelect.value=selected;
+  }
+  renderDetails();
+ };
+ const renderDetails=()=>{
+  details.replaceChildren();
+  afterApproval.replaceChildren();
+  const item=LICENCE_PLAN.find(x=>x.code===selected);
+  if(!item){
+   details.append(element(doc,'p','hint','No permission matches these filters. Try another category or search.'));
+   afterApproval.hidden=true;
    return;
   }
-  for(const item of shown){
-   const btn=element(doc,'button','lp-result','');
-   btn.type='button';btn.dataset.code=item.code;
-   btn.setAttribute('aria-pressed',String(item.code===selected));
-   btn.append(element(doc,'span','lp-result-title',item.title),
-     element(doc,'span','lp-result-sub',item.group==='special'?'Special operations':item.group),
-     element(doc,'span','lp-result-cost',feeFor(item)));
-   btn.addEventListener('click',()=>{selected=item.code;repaint();});
-   results.append(btn);
-  }
-  const item=shown.find(x=>x.code===selected);
-  const upper=element(doc,'div','lp-detail-header');
-  upper.append(element(doc,'span','lp-kicker','PLANNED RULE · '+item.code.replaceAll('_',' ')),
-    element(doc,'h2','',item.title),
-    element(doc,'p','lp-detail-summary',item.aircraft));
-  detail.append(upper);
-  const metrics=element(doc,'div','lp-metrics');
+  afterApproval.hidden=false;
+  details.append(element(doc,'h3','lp-selected-name',item.title),
+   element(doc,'p','hint lp-aircraft',item.aircraft));
+  const metrics=element(doc,'div','workspace-kpis lp-metrics');
   for(const [label,value] of [['Proposed fee',feeFor(item)],['Review time',item.processing],['Validity / renewal',item.validity]]){
-   const cell=element(doc,'div','lp-metric');
-   cell.append(element(doc,'span','',label),element(doc,'strong','',value));metrics.append(cell);
+   const cell=element(doc,'div','');
+   cell.append(element(doc,'span','',label),element(doc,'strong','',value));
+   metrics.append(cell);
   }
-  detail.append(metrics);
-  const stages=element(doc,'div','lp-stages');
-  stages.append(criteria('1 · To apply',item.application),criteria('2 · For final approval',item.approval),
-    criteria('3 · Before operating',item.operation));
-  detail.append(stages);
-  const columns=element(doc,'div','lp-consequences');
-  paragraph(doc,columns,'lp-unlock','What it unlocks',item.unlocks);
-  paragraph(doc,columns,'lp-limit','What stays restricted',item.limits);
-  paragraph(doc,columns,'lp-loss','If suspended, expired or lost',item.loss);
-  paragraph(doc,columns,'lp-restore','How to restore',item.recovery);
-  detail.append(columns);
-  if(item.notes)detail.append(element(doc,'p','lp-footnote',item.notes));
-  const footer=element(doc,'div','lp-footer');
-  const blocked=element(doc,'button','lp-disabled','Applications not yet available');
+  details.append(metrics);
+  const stages=element(doc,'div','workspace-task-list lp-steps');
+  stages.append(checklist('1 · To apply',item.application),
+    checklist('2 · For final approval',item.approval),
+    checklist('3 · Before operating',item.operation));
+  details.append(stages);
+  if(item.notes)details.append(element(doc,'p','hint lp-footnote',item.notes));
+  const action=element(doc,'div','workspace-actions lp-actions');
+  const blocked=element(doc,'button','secondary','Applications not yet available');
   blocked.type='button';blocked.disabled=true;
-  footer.append(blocked,element(doc,'span','','Illustrative costs and rule proposals; no money, licence or operational permission changes.'));
-  detail.append(footer);
+  action.append(blocked,element(doc,'span','hint',
+    'Design only. No licence is granted, no application is submitted and no money is charged.'));
+  details.append(action);
+  const textGrid=element(doc,'div','workspace-task-list lp-effects');
+  for(const [label,value] of [['What it unlocks',item.unlocks],
+    ['What stays restricted',item.limits],
+    ['If suspended, expired or lost',item.loss],
+    ['How to restore',item.recovery]]){
+   const line=element(doc,'div','');
+   line.append(element(doc,'strong','',label),element(doc,'span','',value));
+   textGrid.append(line);
+  }
+  afterApproval.append(textGrid);
  };
- function show(){
-  if(!header){
-   header=element(doc,'div','lp-intro');
-   const lead=element(doc,'div','lp-headline');
-   lead.append(element(doc,'span','lp-kicker','LICENSING DESIGN PREVIEW'),
-     element(doc,'h2','','Know exactly what you need before you apply'),
-     element(doc,'p','','Choose a permission to see application requirements, final certification, flight checks, fees, limits and what happens if the permission is lost. None of these proposed checks has been completed for your company.'));
-   const controls=element(doc,'div','lp-controls');
-   const selLabel=element(doc,'label','lp-scenario');
-   selLabel.append(element(doc,'span','','Cost scenario'));
-   const select=element(doc,'select','','');
-   select.setAttribute('aria-label','Planning cost scenario');
-   for(const [val,title] of [['original','Original airline'],['subsidiary','New subsidiary airline']]){
-    const option=element(doc,'option','',title);option.value=val;select.append(option);
-   }
-   select.value=scenario;
-   select.addEventListener('change',()=>{scenario=select.value==='subsidiary'?'subsidiary':'original';repaint();});
-   selLabel.append(select);
-   company=element(doc,'p','lp-company','');
-   controls.append(selLabel,company);
-   header.append(lead,controls);
-   filters=element(doc,'div','lp-filters');
-   for(const [id,label] of GROUPS){
-    const btn=element(doc,'button','','');
-    btn.type='button';btn.dataset.group=id;btn.textContent=label;
-    btn.addEventListener('click',()=>{group=id;repaint();});
-    filters.append(btn);
-   }
-   const tools=element(doc,'div','lp-toolbar');
+ const show=()=>{
+  if(!licenceSelect){
+   const application=element(doc,'article','panel workspace-panel lp-panel');
+   application.append(element(doc,'span','panel-kicker','LICENSING PLANNING'),
+     element(doc,'h2','','Licence application requirements'),
+     element(doc,'p','hint','Choose a licence to check exactly what is needed to apply, receive approval and begin operating. Fees and timelines below are proposals, not active game charges.'));
+   company=element(doc,'p','hint lp-company','');
+   application.append(company);
+   const controls=element(doc,'div','workspace-money-grid lp-controls');
+   categorySelect=buildSelect('Permission category',GROUPS);
+   categorySelect.value=group;
+   categorySelect.addEventListener('change',()=>{
+    group=GROUPS.some(([value])=>value===categorySelect.value)?categorySelect.value:'all';
+    renderOptions();
+   });
+   licenceSelect=buildSelect('Licence or permit',[]);
+   licenceSelect.addEventListener('change',()=>{
+    if(LICENCE_PLAN.some(item=>item.code===licenceSelect.value))
+     selected=licenceSelect.value;
+    renderDetails();
+   });
+   scenarioSelect=buildSelect('Cost scenario',[
+    ['original','Original airline'],['subsidiary','New subsidiary airline']
+   ]);
+   scenarioSelect.value=scenario;
+   scenarioSelect.addEventListener('change',()=>{
+    scenario=scenarioSelect.value==='subsidiary'?'subsidiary':'original';
+    renderDetails();
+   });
    search=element(doc,'input','lp-search');
-   search.type='search';search.placeholder='Search permissions or requirements';
+   search.type='search';search.placeholder='Search licence names or requirements';
    search.setAttribute('aria-label','Search licences and requirements');
-   search.addEventListener('input',()=>{query=search.value.trim().toLowerCase();repaint();});
-   tools.append(search);
-   const body=element(doc,'div','lp-body');
-   results=element(doc,'div','lp-results');results.setAttribute('aria-label','Licence choices');
-   detail=element(doc,'article','lp-detail');detail.setAttribute('aria-label','Selected permission details');
-   body.append(results,detail);
-   root.replaceChildren(header,filters,tools,body);
+   search.addEventListener('input',()=>{query=search.value.trim().toLowerCase();renderOptions();});
+   controls.append(field('Permission category',categorySelect),field('Licence or permit',licenceSelect),
+    field('Cost scenario',scenarioSelect),field('Search permissions',search));
+   application.append(controls);
+   details=element(doc,'div','lp-details');
+   application.append(details);
+   const after=element(doc,'article','panel workspace-panel lp-panel');
+   after.append(element(doc,'span','panel-kicker','APPROVAL AND COMPLIANCE'),
+    element(doc,'h2','','After approval'),
+    element(doc,'p','hint','An approval unlocks only its defined activity. Other airline, market and airport rules still apply.'));
+   afterApproval=element(doc,'div','lp-after');
+   after.append(afterApproval);
+   root.replaceChildren(application,after);
   }
   const airline=getAirline();
   company.textContent=airline?.name
    ?'Signed-in airline: '+airline.name+' · requirements not evaluated'
-   :'No verified airline context available · this is a design preview';
-  repaint();
- }
+   :'No verified airline context available · planning example only';
+  renderOptions();
+ };
  return Object.freeze({show});
 }
