@@ -1193,9 +1193,11 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
 }
 
 
-/* Compact Holding preview: two summary cards above one full-width company tree.
+/* Holding preview: full-width registration-age counter above the company tree.
    Display only server-verified dates; all company and money actions stay disabled. */
-.holding-summary-grid{align-items:start;margin-bottom:18px}
+.holding-status-full{width:100%;margin:0 0 18px;background:#fff;box-sizing:border-box}
+#player-main .holding-status-full .holding-tracker-details{grid-template-columns:repeat(2,minmax(0,1fr))}
+.holding-status-full .holding-helper-note{max-width:940px}
 #player-main .holding-summary-panel{padding:21px 22px}
 #player-main .holding-summary-panel>p{margin:5px 0 0}
 .holding-tracker{border:1px solid #ccdaea;background:#f6f9fd;border-radius:10px;padding:14px;margin:14px 0 10px}
@@ -1208,10 +1210,10 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
 .holding-tracker-heading{display:flex;align-items:center;gap:8px;min-width:0}
 .holding-tracker-heading>span{font-size:11px;color:#60768c;line-height:1.5}
 .holding-helper-note{font-size:11px;line-height:1.6;color:var(--muted);margin:10px 0 0}
-.holding-cost-list{display:grid;gap:0;margin-top:14px;border-top:1px solid var(--line)}
-.holding-cost-list>div{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
-.holding-cost-list span{font-size:12px;color:var(--navy)}
-.holding-cost-list strong{font-size:12px;color:var(--muted);font-weight:600;text-align:right}
+
+
+
+
 #player-main .holding-example-panel{margin:0 0 14px;background:#fff}
 #player-main .holding-example-panel h2{font-size:19px}
 .holding-tree{display:grid;gap:26px;margin:19px 0 14px}
@@ -1227,16 +1229,19 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
 .holding-tree-branches span{font-size:11px;color:#61778e}
 .holding-tree-branches small{font-size:11px;line-height:1.5;color:var(--muted)}
 .holding-tree-existing{background:#f7fbff;border-color:#b9cde2!important}
+.holding-academy-note{border:1px solid var(--line);border-radius:10px;background:#f7fafc;padding:12px 15px;display:grid;gap:4px;max-width:100%;margin:14px 0 10px}
+.holding-academy-note strong{font-size:12px;color:var(--navy)}
+.holding-academy-note span{font-size:11px;line-height:1.6;color:var(--muted)}
 .holding-example-footnote{font-size:12px;color:var(--muted);line-height:1.6;margin-top:13px}
 .holding-example-footnote a{color:#1762a2;text-decoration:underline;text-underline-offset:2px}
 @media(max-width:1250px){
  .holding-tree-branches{grid-template-columns:repeat(3,minmax(0,1fr))}
  .holding-tree-branches:before,.holding-tree-branches>div:before{display:none}
 }
-@media(max-width:850px){.holding-summary-grid{grid-template-columns:1fr}}
+
 @media(max-width:650px){
  .holding-tree-branches{grid-template-columns:repeat(2,minmax(0,1fr))}
- .holding-cost-list>div{flex-wrap:wrap}
+
 }
 @media(max-width:480px){
  .holding-tracker-details,.holding-tree-branches{grid-template-columns:1fr}
@@ -1246,11 +1251,14 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
 :root[data-ui-theme="dark"] .holding-tracker,:root[data-ui-theme="dark"] .holding-tree-parent,
 :root[data-ui-theme="dark"] .holding-tree-existing{background:#192e46;border-color:#49627a}
 :root[data-ui-theme="dark"] .holding-tracker-progress{background:#33485e}
-:root[data-ui-theme="dark"] .holding-tracker-details span,:root[data-ui-theme="dark"] .holding-cost-list span,
+:root[data-ui-theme="dark"] .holding-tracker-details span,
 :root[data-ui-theme="dark"] .holding-tree-parent strong,:root[data-ui-theme="dark"] .holding-tree-branches strong{color:#e5f0fa}
 :root[data-ui-theme="dark"] .holding-tracker-heading>span,:root[data-ui-theme="dark"] .holding-tree-parent span,
 :root[data-ui-theme="dark"] .holding-tree-branches span{color:#c0d3e5}
-:root[data-ui-theme="dark"] #player-main .holding-example-panel{background:#192e46}
+:root[data-ui-theme="dark"] #player-main .holding-example-panel,
+:root[data-ui-theme="dark"] #player-main .holding-status-full{background:#192e46}
+:root[data-ui-theme="dark"] .holding-academy-note{background:#152b43;border-color:#49627a}
+:root[data-ui-theme="dark"] .holding-academy-note strong{color:#e5f0fa}
 
 
 /* Licensing catalogue: compact, responsive, reference-only; never a permission grant. */
