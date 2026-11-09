@@ -46,6 +46,8 @@ export function createFlightScheduleClient({auth,origin,fetchImpl=(...args)=>fet
     post({action:'demand-preview',airlineId,scheduleId,month}),
   commercialRead:({airlineId,scheduleId})=>
     post({action:'commercial-read',airlineId,scheduleId}),
+  routeFinancials:({airlineId,scheduleId,loadPercent=100,parkingMinutes=180})=>
+    post({action:'route-financials',airlineId,scheduleId,loadPercent,parkingMinutes}),
   commercialSave:({airlineId,scheduleId,economyFareUsd,
    cargoRateUsdPerTonne,marketingBudgetUsdPerDay})=>
     post({action:'commercial-save',airlineId,scheduleId,
