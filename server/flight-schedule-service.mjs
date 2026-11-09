@@ -19,6 +19,7 @@ const SLOT_FIELDS=new Set([...BASE_FIELDS,'aircraftInventoryId','originAirportKe
  'existingId','departureStand','arrivalStand']);
 const CHECK_FIELDS=new Set([...BASE_FIELDS,'scheduleId']);
 const DEMAND_FIELDS=new Set([...CHECK_FIELDS,'month']);
+const FINANCIAL_FIELDS=new Set([...CHECK_FIELDS,'loadPercent','parkingMinutes']);
 const ROTATION_FIELDS=new Set([...CHECK_FIELDS,'startDate','days']);
 const CREW_PLAN_FIELDS=new Set([...CHECK_FIELDS,'crewId','weeklyEntry','decision']);
 const CREW_HIRE_FIELDS=new Set([...CHECK_FIELDS,'candidateSlot']);
@@ -81,6 +82,11 @@ export function validateFlightSchedulePayload(body){
    ['plan','remove'].includes(body.decision);
  if(body.action==='commercial-read')
   return withinFields(body,CHECK_FIELDS)&&uuid(body.scheduleId);
+ if(body.action==='route-financials')
+  return withinFields(body,FINANCIAL_FIELDS)&&uuid(body.scheduleId)&&
+    Number.isInteger(body.loadPercent)&&body.loadPercent>=0&&body.loadPercent<=100&&
+    Number.isInteger(body.parkingMinutes)&&body.parkingMinutes>=0&&
+    body.parkingMinutes<=10080;
  if(body.action==='delete'||body.action==='activation-check')
   return withinFields(body,CHECK_FIELDS)&&uuid(body.scheduleId);
  if(body.action==='rotation-preview'||body.action==='operations-preview'){
@@ -146,6 +152,8 @@ export const SCHEDULE_SQL=Object.freeze({
   $1::uuid,$2::uuid,$3::uuid,$4::numeric,$5::numeric,$6::numeric) AS result`,
  commercialRead:`SELECT airlinerra_game.section9_get_owned_commercial_plan_v1(
   $1::uuid,$2::uuid,$3::uuid) AS result`,
+ routeFinancials:`SELECT airlinerra_game.section9_owned_route_financial_dashboard_v1(
+  $1::uuid,$2::uuid,$3::uuid,$4::integer,$5::integer) AS result`,
  partnershipList:`SELECT airlinerra_game.section9_list_owned_partnerships_v1(
   $1::uuid,$2::uuid) AS result`,
  partnershipPropose:`SELECT airlinerra_game.section9_manage_partnership_v1(
@@ -256,6 +264,25 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
     if(response.rowCount!==1||!response.rows[0]?.result)
      return respond(503,{error:'Commercial plan was not saved'});
     return respond(200,response.rows[0].result);
+   }
+   if(body.action==='route-financials'){
+    const response=await client.query(SCHEDULE_SQL.routeFinancials,[
+     userId,body.airlineId,body.scheduleId,body.loadPercent,body.parkingMinutes
+    ]);
+    const data=response.rows?.[0]?.result;
+    if(response.rowCount!==1||
+      data?.status!=='route_financial_dashboard_read_only'||
+      data?.scheduleId!==body.scheduleId||
+      data?.airlineId!==body.airlineId||data?.worldId!==1||
+      data?.readOnly!==true||data?.cashPosted!==false||
+      data?.bookingsCreated!==false||data?.flightActivated!==false||
+      data?.estimate?.status!=='draft_not_earned'||
+      data?.estimate?.airportFeeQuote?.canPostToLedger!==false||
+      data?.history?.source!=='verified_arrival_and_posted_airline_ledger_only'||
+      !Array.isArray(data?.history?.lastSevenFlights)||
+      data.history.lastSevenFlights.length>7)
+     return respond(503,{error:'Unverified route financial statement'});
+    return respond(200,data);
    }
    if(body.action==='commercial-read'){
     const response=await client.query(SCHEDULE_SQL.commercialRead,
