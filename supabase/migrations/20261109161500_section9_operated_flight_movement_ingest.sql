@@ -105,7 +105,7 @@ BEGIN
  WHERE tz.world_id=1 AND tz.airport_key=s.origin_airport_key;
  IF origin_tz IS NULL THEN RAISE EXCEPTION USING ERRCODE='42501',
   MESSAGE='SECTION9_OPERATED_ORIGIN_TIMEZONE_UNVERIFIED';END IF;
- local_departure:=p_local_date::timestamp+
+ local_departure:=p_local_date+
   (weekly_item->>'time')::time;
  scheduled_dep:=local_departure AT TIME ZONE origin_tz;
  scheduled_arr:=scheduled_dep+
