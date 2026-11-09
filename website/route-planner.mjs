@@ -153,8 +153,8 @@ export const flightNumberFor=(prefix,number)=>{
 };
 /** An example only: no flight performance, destination time zone or dispatch approval is inferred. */
 export function exampleNextDepartureUtc(departureUtc,arrivalUtc,turnaroundMinutes){
- if(!/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$/.test(String(departureUtc||''))||
-    !/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$/.test(String(arrivalUtc||''))||
+ if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(String(departureUtc||''))||
+    !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(String(arrivalUtc||''))||
     !Number.isInteger(turnaroundMinutes)||turnaroundMinutes<45||turnaroundMinutes>360)
   return null;
  const departure=Date.parse(departureUtc),arrival=Date.parse(arrivalUtc);
@@ -392,40 +392,46 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   const schedule=availableSchedule();
   const proposal=aircraftId&&from&&to&&from.key!==to.key&&schedule.length?
    {flightNumber,aircraftId,from,to,schedule,
-    operation:{departureStand:$('route-departure-stand')?.value,
+    operation:{departureStand:null,
       arrivalStand:$('route-arrival-stand')?.value}}:null;
   return buildAircraftWeeklyTimeline({
    aircraftId,routes:rows,proposal,excludeFlightNumber:editingFlightNumber,
    homeAirportKey:getData()?.airline?.homeAirportKey||null
   });
  };
+ const departureStandFromTimeline=timeline=>{
+  const proposed=timeline.events.filter(x=>x.proposed);
+  const initial=catalogChoice()?.useType==='cargo'?'cargo':'terminal';
+  const stands=[...new Set(proposed.map(x=>x.departureStand||initial))];
+  // Current server schedules accept one departure stand per route.
+  return stands.length<=1?(stands[0]||initial):null;
+ };
  const refreshAircraftTimeline=()=>{
   const timeline=selectedAircraftTimeline();
   renderAircraftWeeklyTimeline(doc,$('route-aircraft-timeline-content'),timeline);
   const chosen=timeline.events.filter(x=>x.proposed);
-  const stands=[...new Set(chosen.map(x=>x.departureStand||'unknown'))];
-  const label=stands.length===1?
-   (stands[0]==='terminal'?'Terminal stand selected':
-    stands[0]==='remote'?'Remote stand selected':
-    stands[0]==='cargo'?'Cargo stand selected':'Unverified'):
-   stands.length>1?'Different stands by weekday':'No flight days selected';
+  const derived=departureStandFromTimeline(timeline);
+  const label=!chosen.length?'No flight days selected':
+   !derived?'Different stands across weekdays — separate route drafts required':
+   (derived==='terminal'?'Terminal':derived==='remote'?'Remote stand':'Cargo stand')+
+    (chosen.some(x=>!x.departureStand)?' (provisional first stand)':' · inherited from previous arrival');
   message('route-departure-stand-derived',label);
   for(let day=0;day<7;day++){
    const e=chosen.find(x=>x.day===day);
-   message('route-stand-'+day,!e?'—':
-    e.departureStand==='terminal'?'Terminal':
-    e.departureStand==='remote'?'Remote':e.departureStand==='cargo'?'Cargo':'Unverified');
+   message('route-stand-'+day,!e?'—':e.departureStand?
+    (e.departureStand==='terminal'?'Terminal':e.departureStand==='remote'?'Remote':'Cargo'):
+    derived?'Initial stand unverified':'Stand varies');
+   message('route-arrival-stand-'+day,!e?'—':
+    e.arrivalStand==='terminal'?'Terminal':e.arrivalStand==='remote'?'Remote':
+    e.arrivalStand==='cargo'?'Cargo':'Unverified');
   }
-  const last=timeline.events.at(-1);
-  const hint=timeline.errors.length?timeline.errors[0].text:
-   !timeline.aircraftId?'Choose an aircraft to check its weekly location.':
-   last?'Last planned location: '+last.to+' after '+last.flightNumber+
-    '. Actual current position and flight timing are not connected.':
-    selectedConfigurationId()?'Catalog preview only — no owned aircraft or position assigned.':
-   'No previous flight drafts for this aircraft. Starting airport and stand are not verified.';
-  message('route-aircraft-position-status',hint);
   const feedback=$('route-aircraft-position-status');
-  if(feedback)feedback.classList.toggle('has-conflict',timeline.errors.length>0);
+  if(feedback){
+   const conflict=timeline.errors.length>0;
+   feedback.textContent=conflict?timeline.errors[0].text:'';
+   feedback.hidden=!conflict;
+   feedback.classList.toggle('has-conflict',conflict);
+  }
   return timeline;
  };
  const flagNode=iso=>{
@@ -479,32 +485,24 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
  const refreshCatalogOptions=()=>{
   const select=$('route-aircraft');if(!select)return;
   const saved=select.value;
-  const samples=Array.isArray(getData()?.airline?.testAircraft)?
-   getData().airline.testAircraft.filter(a=>a?.testOnly===true&&a.operationallyAllowed===false):[];
-  select.replaceChildren(new Option('Choose an aircraft model',''));
-  for(const f of ownedFleet){
-   if(typeof f.id!=='string'||!Number.isSafeInteger(f.configurationId))continue;
-   const model=catalogAircraft.find(a=>a.id===f.configurationId);
+  select.replaceChildren(new Option('Choose a company aircraft',''));
+  for(const aircraft of ownedFleet){
+   if(typeof aircraft.id!=='string'||!Number.isSafeInteger(aircraft.configurationId))continue;
+   // Owner-scoped list includes in-service aircraft only. Never show catalog
+   // models or demonstration aircraft as company-owned flight assignments.
+   if(!['owned','leased'].includes(aircraft.ownershipType))continue;
+   const model=catalogAircraft.find(a=>a.id===aircraft.configurationId);
    const assessment=model?runwayAssessment(model):null;
    const suffix=assessment?.status==='BLOCKED'?' — RUNWAY TOO SHORT':'';
-   select.add(new Option('MY FLEET · '+String(f.registration||'Aircraft')+
-    ' · '+String(model?.model||'Model '+f.configurationId)+suffix,'owned:'+f.id));
+   select.add(new Option((aircraft.ownershipType==='leased'?'LEASED':'OWNED')+' · '+
+    String(aircraft.registration||'Aircraft')+' · '+
+    String(model?.model||'Model '+aircraft.configurationId)+suffix,'owned:'+aircraft.id));
   }
-  for(const a of samples){
-   if(typeof a.id==='string'&&typeof a.model==='string')
-    select.add(new Option('TEST ONLY · '+a.model+' · '+String(a.registration||'TEST'),a.id));
-  }
-  for(const a of catalogAircraft){
-   if(!Number.isSafeInteger(a?.id)||a.id<1||!a.model)continue;
-   const assess=runwayAssessment(a);
-   const suffix=assess.status==='BLOCKED'?' — RUNWAY TOO SHORT':
-    assess.status==='REVIEW'?' — runway unverified':'';
-   select.add(new Option(String(a.manufacturer||'')+' '+a.model+' · '+
-    String(a.configuration||'')+' (catalog preview)'+suffix,'catalog:'+a.id));
-  }
-  if([...select.options].some(o=>o.value===saved))select.value=saved;
-  select.disabled=!samples.length&&!catalogAircraft.length&&!ownedFleet.length;
+  if([...select.options].some(option=>option.value===saved))select.value=saved;
+  select.disabled=select.options.length<2;
   syncAircraftCompatibility();
+  if(select.disabled)message('route-aircraft-feedback',
+   'No in-service aircraft owned or leased by this company. Acquire, deliver and inspect one before scheduling.');
  };
  const renderServerScheduleList=()=>{
   const holder=$('route-server-draft-list');if(!holder)return;
@@ -550,7 +548,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    refreshCatalogOptions();renderServerScheduleList();
    message('route-server-draft-status',ownedFleet.length?
     ownedFleet.length+' operational aircraft connected. Server schedule drafts are separate from live flight activation.':
-    'No operational airline aircraft are assigned. Catalog aircraft can be used for local route previews only.');
+    'No company aircraft are in service. Purchase or lease one, complete delivery and inspection, then create a route.');
   }catch{
    if(ticket===fleetTicket){
     ownedFleet=[];serverDrafts=[];refreshCatalogOptions();renderServerScheduleList();
