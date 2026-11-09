@@ -5,7 +5,7 @@ DO $test$
 DECLARE a uuid;u uuid;code text;plane uuid;schedule uuid;
  verified_crew uuid;pending_crew uuid;invalid_crew uuid;
  out jsonb;combined jsonb;roster jsonb; denied boolean:=false;
- conf bigint:=236;carrier_country text;valid_country text;
+ conf bigint:=3;carrier_country text;valid_country text;
  required_count integer;
 BEGIN
  SELECT a.id,a.owner_player_id,a.iata_code,home.country_iso
@@ -17,8 +17,8 @@ BEGIN
  IF a IS NULL THEN RAISE EXCEPTION 'No test airline';END IF;
  SELECT crew_required INTO required_count
  FROM airlinerra.aircraft_configurations WHERE id=conf;
- IF required_count<>2 THEN
-  RAISE EXCEPTION 'Fixture aircraft crew requirement changed';END IF;
+ IF required_count IS NOT NULL THEN
+  RAISE EXCEPTION 'Expected unknown crew requirement for released fixture';END IF;
  INSERT INTO airlinerra_game.airline_aircraft_inventory(
  airline_id,configuration_id,registration,ownership_type,fleet_status)
  VALUES(a,conf,'S9-CREW-ROLLBACK','owned','in_service')
@@ -53,7 +53,8 @@ BEGIN
   u,a,schedule,'2026-11-09',14);
  IF (out->'crew'->'weeklyEntries'->0->>'proposed')::int<>2
  OR (out->'crew'->'weeklyEntries'->0->>'registeredVerifiedEmployment')::int<>1
- OR (out->'crew'->'weeklyEntries'->0->>'missingRegisteredCrew')::int<>1
+ OR out->'crew'->>'catalogCrewRequirementKnown'<>'false'
+ OR (out->'crew'->'weeklyEntries'->0->>'missingRegisteredCrew') IS NOT NULL
  OR out->'permissions'->>'trafficRightsOperationallyGranted'<>'false'
  OR out->>'canActivateNormalFlight'<>'false'
  THEN RAISE EXCEPTION 'Unverified employee counted as ready: %',out;END IF;
