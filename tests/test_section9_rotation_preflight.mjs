@@ -441,3 +441,73 @@ test('Operational readiness shows crew rest counters without false certification
  assert.match(output,/Crew at wrong airport/);
  assert.match(output,/Provisional game policy/);
 });
+
+test('Route Details shows approved delivery airport versus first aircraft departure, not a fake current position',async()=>{
+ const doc={createElement:element},host=element('section');
+ const ui=createSection9RotationReview({doc,host,getServer:()=>({
+  scheduler:{
+   rotationPreview:async()=>({readOnly:true,canActivateNormalFlight:false}),
+   operationsPreview:async()=>({
+    readOnly:true,canActivateNormalFlight:false,
+    blockers:['FIRST_PLANNED_DEPARTURE_AT_WRONG_AIRPORT',
+      'OPERATED_AIRCRAFT_MOVEMENT_HISTORY_MISSING'],
+    turnaround:{minimumMinutes:40},
+    crew:{catalogRequirementKnown:false},
+    deliveryEvidence:{inspectionApproved:true},
+    routeRights:{operationallyAuthorized:false},
+    aircraftPosition:{
+     status:'first_departure_airport_mismatch',
+     readOnly:true,canActivateNormalFlight:false,
+     deliveryAnchorRecorded:true,
+     deliveryAirportKey:'OURAIRPORTS:4610',
+     firstPlannedDepartureAirport:'OURAIRPORTS:2212',
+     initialDepartureMatchesDelivery:false,
+     movementHistoryVerified:false,
+     currentAircraftLocationVerified:false
+    }
+   })
+  }
+ })});
+ await ui.open({serverScheduleId:SCHEDULE,
+  referenceDepartureUtc:'2026-11-09T10:00:00Z'},AIRLINE);
+ await descendants(host).find(x=>x.textContent==='Check operational readiness')
+  .listeners.click();
+ const report=descendants(host).map(x=>x.textContent).join(' ');
+ assert.match(report,/Approved initial aircraft location/);
+ assert.match(report,/OURAIRPORTS:4610/);
+ assert.match(report,/OURAIRPORTS:2212/);
+ assert.match(report,/Delivery and first departure match/);
+ assert.match(report,/No operated-flight evidence yet/);
+ assert.match(report,/Current aircraft location verified/);
+ assert.match(report,/FIRST PLANNED DEPARTURE AT WRONG AIRPORT/);
+ assert.doesNotMatch(report,/Flight activated|Ticket issued/);
+});
+test('Route Details reports missing approved delivery source rather than inventing an aircraft airport',async()=>{
+ const doc={createElement:element},host=element('section');
+ const ui=createSection9RotationReview({doc,host,getServer:()=>({
+  scheduler:{
+   rotationPreview:async()=>({readOnly:true,canActivateNormalFlight:false}),
+   operationsPreview:async()=>({
+    readOnly:true,canActivateNormalFlight:false,
+    blockers:['DELIVERY_POSITION_ANCHOR_NOT_RECORDED'],
+    turnaround:{},crew:{},deliveryEvidence:{},
+    routeRights:{operationallyAuthorized:false},
+    aircraftPosition:{
+     status:'delivery_anchor_missing',
+     readOnly:true,canActivateNormalFlight:false,
+     deliveryAnchorRecorded:false,
+     deliveryAirportKey:null,firstPlannedDepartureAirport:null,
+     initialDepartureMatchesDelivery:null,movementHistoryVerified:false
+    }
+   })
+  }
+ })});
+ await ui.open({serverScheduleId:SCHEDULE,
+  referenceDepartureUtc:'2026-11-09T10:00:00Z'},AIRLINE);
+ await descendants(host).find(x=>x.textContent==='Check operational readiness')
+  .listeners.click();
+ const report=descendants(host).map(x=>x.textContent).join(' ');
+ assert.match(report,/Not recorded/);
+ assert.match(report,/Not verified/);
+ assert.match(report,/DELIVERY POSITION ANCHOR NOT RECORDED/);
+});
