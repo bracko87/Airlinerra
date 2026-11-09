@@ -165,7 +165,14 @@ class Startup3140Tests(unittest.TestCase):
         self.assertEqual(87, self.audit["without_any_open_width"])
         self.assertEqual(52, self.audit["research_enrichment"]["municipality_rows"])
         self.assertEqual(5, self.audit["research_enrichment"]["official_width_rows"])
-        self.assertEqual(82, self.audit["research_enrichment"]["width_airports_pending"])
+        # Game width planning was completed with 82 marked SIMULATION
+        # estimates. Source-reported physical widths remain missing for
+        # 87 airports, so never claim real-world runway certification.
+        self.assertEqual(0, self.audit["research_enrichment"]["width_airports_pending"])
+        self.assertEqual(82, self.audit["research_enrichment"]["width_airports_estimated_for_simulation"])
+        self.assertEqual(87, self.audit["research_enrichment"]["width_source_data_still_missing"])
+        self.assertEqual("SIMULATION_ESTIMATE_COMPLETE_NOT_AERONAUTICAL_CERTIFICATION",
+                         self.audit["research_enrichment"]["width_game_status"])
 
 
     def test_simulation_width_coverage_and_average_provenance(self):
