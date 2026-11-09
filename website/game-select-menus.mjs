@@ -9,7 +9,7 @@ export function installGameSelectMenus({doc,root}={}){
  if(!doc?.querySelectorAll||!root?.querySelectorAll)throw Error('Game select menu needs a DOM root');
  const controllers=new Map();
  const eligible=select=>select?.tagName==='SELECT'&&
-  !select.hidden&&select.getAttribute('aria-hidden')!=='true'&&
+  !select.hidden&&!select.multiple&&select.getAttribute('aria-hidden')!=='true'&&
   !select.closest('.down-menu')&&!select.classList.contains('route-native-airport')&&
   !select.classList.contains('route-native-country')&&!select.hasAttribute('data-native-select');
  const addSelect=select=>{
@@ -23,7 +23,7 @@ export function installGameSelectMenus({doc,root}={}){
  const refresh=()=>{
   scan();
   for(const [select,controller] of controllers){
-   if(!select.isConnected){controllers.delete(select);continue;}
+   if(!select.isConnected){controller.destroy();controllers.delete(select);continue;}
    controller.refresh();
   }
  };
@@ -53,13 +53,7 @@ export function installGameSelectMenus({doc,root}={}){
  return Object.freeze({refresh,destroy(){
   observer.disconnect();
   doc.removeEventListener('airlinerra:refresh-game-select-menus',refreshListener);
-  for(const [select,controller] of controllers){
-   controller.close();
-   // Keep the native select and live game values untouched.
-   if(select.nextElementSibling?.classList.contains('game-select-menu'))
-    select.nextElementSibling.remove();
-   select.hidden=false;
-  }
+  for(const controller of controllers.values())controller.destroy();
   controllers.clear();
  }});
 }
