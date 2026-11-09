@@ -17,11 +17,12 @@ DECLARE world_state record;clock_row record;s record;
  position_exists boolean:=false; resolution jsonb;
  change_count int;
 BEGIN
- IF p_airline IS NULL OR p_schedule IS NULL OR p_schedule_version<1
+ IF p_airline IS NULL OR p_schedule IS NULL
+  OR p_schedule_version IS NULL OR p_schedule_version<1
   OR p_local_date IS NULL OR p_local_date NOT BETWEEN
    DATE '2000-01-01' AND DATE '2199-12-31'
-  OR p_weekly_entry NOT BETWEEN 1 AND 7
-  OR p_phase NOT IN ('departed','arrived')
+  OR p_weekly_entry IS NULL OR p_weekly_entry NOT BETWEEN 1 AND 7
+  OR p_phase IS NULL OR p_phase NOT IN ('departed','arrived')
   OR p_event_utc IS NULL
   OR (p_event_utc AT TIME ZONE 'UTC')::date NOT BETWEEN
       DATE '2000-01-01' AND DATE '2199-12-31'
