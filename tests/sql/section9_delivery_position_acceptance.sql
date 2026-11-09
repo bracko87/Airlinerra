@@ -6,7 +6,7 @@ DO $tests$
 DECLARE company uuid;owner_id uuid;code text;home text;
  aircraft uuid; offer uuid; ord uuid; inspect uuid;
  route1 uuid;route2 uuid;result jsonb;preview jsonb;
- first_money numeric;before_ledger bigint;before_positions bigint;
+ first_money numeric;paid_price numeric;before_ledger bigint;before_positions bigint;
  denied boolean;
 BEGIN
  SELECT id,owner_player_id,iata_code,home_airport_key,cash_usd
@@ -25,18 +25,22 @@ BEGIN
   airline_id,configuration_id,registration,ownership_type,fleet_status)
  VALUES(company,3,'S9-LOCATION-ROLLBACK','owned','in_service')
  RETURNING id INTO aircraft;
- INSERT INTO airlinerra_game.aircraft_acquisition_offers_v1(
-  configuration_id,transaction_type,upfront_price_usd,
-  delivery_days,offer_status)
- VALUES(3,'purchase',1000,0,'published')
- RETURNING offer_id INTO offer;
+ -- Reuse an ACTUALLY published market offer: never invent a
+ -- pricing approval or bypass aircraft-market release guards.
+ SELECT offer_id,upfront_price_usd INTO offer,paid_price
+ FROM airlinerra_game.aircraft_acquisition_offers_v1
+ WHERE world_id=1 AND configuration_id=3
+  AND transaction_type='purchase' AND offer_status='published'
+  AND pricing_basis LIKE 'AIRLINERRA_GAME_BALANCE_V1:%'
+ ORDER BY offer_id LIMIT 1;
+ IF offer IS NULL THEN RAISE EXCEPTION 'Released configuration 3 offer absent';END IF;
  INSERT INTO airlinerra_game.aircraft_acquisition_orders_v1(
   airline_id,player_id,request_id,offer_id,
   aircraft_inventory_id,registration,configuration_id,
   transaction_type,paid_upfront_usd,delivery_home_airport_key,
   delivery_due_at,order_status)
  VALUES(company,owner_id,gen_random_uuid(),offer,
-  aircraft,'S9-LOCATION-ROLLBACK',3,'purchase',1000,home,
+  aircraft,'S9-LOCATION-ROLLBACK',3,'purchase',paid_price,home,
   clock_timestamp()-interval '2 days','delivered_pending_inspection')
  RETURNING order_id INTO ord;
  INSERT INTO airlinerra_game.aircraft_delivery_inspections_v1(
