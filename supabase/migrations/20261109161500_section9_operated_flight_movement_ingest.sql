@@ -68,7 +68,7 @@ BEGIN
  JOIN airlinerra_game.airline_aircraft_inventory f
   ON f.id=d.aircraft_inventory_id AND f.airline_id=d.airline_id
  WHERE d.world_id=1 AND d.airline_id=p_airline AND d.id=p_schedule
- FOR SHARE OF d,f;
+ FOR SHARE OF d;
  IF NOT FOUND THEN RAISE EXCEPTION USING ERRCODE='42501',
   MESSAGE='SECTION9_OPERATED_FLIGHT_SCHEDULE_NOT_REGISTERED';END IF;
  IF s.version IS DISTINCT FROM p_schedule_version
@@ -111,8 +111,12 @@ BEGIN
  scheduled_arr:=scheduled_dep+
   (s.reference_arrival_utc-s.reference_departure_utc);
  IF (scheduled_dep AT TIME ZONE origin_tz) IS DISTINCT FROM local_departure
-  OR ((scheduled_dep-interval '1 hour') AT TIME ZONE origin_tz)=local_departure
-  OR ((scheduled_dep+interval '1 hour') AT TIME ZONE origin_tz)=local_departure
+  OR EXISTS(
+    SELECT 1 FROM generate_series(-12,12) AS alternative(offset_15m)
+    WHERE alternative.offset_15m<>0
+      AND ((scheduled_dep+
+        make_interval(mins=>alternative.offset_15m*15))
+        AT TIME ZONE origin_tz)=local_departure)
  THEN RAISE EXCEPTION USING ERRCODE='42501',
   MESSAGE='SECTION9_OPERATED_LOCAL_TIME_AMBIGUOUS_OR_NONEXISTENT';END IF;
  -- Provisional GAME event-time envelope, not an airline delay certificate.
