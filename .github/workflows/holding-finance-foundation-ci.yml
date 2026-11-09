@@ -7,6 +7,8 @@ on:
       - 'server/player-read-service.mjs'
       - 'server/canonical-game-api.mjs'
       - 'website/player-read-client.mjs'
+      - 'website/dev-scripts/real-player-read-gateway.mjs'
+      - 'tests/test_real_local_player_gateway.mjs'
       - 'website/player-app.mjs'
       - 'website/private-player-app.html'
       - 'tests/test_holding_finance_contract.mjs'
@@ -34,10 +36,12 @@ jobs:
           node --check server/player-read-service.mjs
           node --check server/canonical-game-api.mjs
           node --check website/player-read-client.mjs
+          node --check website/dev-scripts/real-player-read-gateway.mjs
           node --check website/player-app.mjs
       - name: Verified eligibility, safe money and browser read-only tests
         run: |
           node --test \
             tests/test_holding_finance_contract.mjs \
             tests/test_player_read_api.mjs \
-            tests/test_strategic_navigation.mjs
+            tests/test_strategic_navigation.mjs \
+            tests/test_real_local_player_gateway.mjs
