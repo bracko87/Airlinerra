@@ -307,3 +307,137 @@ test('Crew proposal UI submits registered employee and schedule weekly entry onl
  assert.match(descendants(host).map(x=>x.textContent).join(' '),
   /Flights remain inactive/);
 });
+
+test('Game crew hiring rejects arbitrary salary, user identity and approval fields',()=>{
+ const valid={action:'crew-hire',airlineId:AIRLINE,scheduleId:SCHEDULE,
+  candidateSlot:1};
+ assert.equal(validateFlightSchedulePayload(valid),true);
+ assert.equal(validateFlightSchedulePayload({action:'crew-offers',airlineId:AIRLINE,
+  scheduleId:SCHEDULE}),true);
+ assert.equal(validateFlightSchedulePayload({action:'crew-salary',airlineId:AIRLINE}),true);
+ for(const bad of [
+  {...valid,candidateSlot:0},{...valid,candidateSlot:2001},
+  {...valid,candidateSlot:'1'},{...valid,monthlySalaryUsd:1},
+  {...valid,playerId:USER},{...valid,verified:true},
+  {action:'crew-salary',airlineId:AIRLINE,forcePost:true},
+  {action:'crew-offers',airlineId:AIRLINE,scheduleId:SCHEDULE,role:'admin'}
+ ])assert.equal(validateFlightSchedulePayload(bad),false);
+});
+test('Hire API sources owner from verified auth and never returns a financial charge',async()=>{
+ const result={status:'game_crew_contract_signed',newContract:true,
+  crewId:USER,monthlySalaryUsd:4500,canActivateNormalFlight:false,
+  ledgerPosted:false};
+ const h=handler(async(sql,args)=>{
+  assert.equal(sql,SCHEDULE_SQL.crewHire);
+  assert.deepEqual(args,[USER,AIRLINE,SCHEDULE,7]);
+  return {rowCount:1,rows:[{result}]};
+ });
+ const r=await h(request({action:'crew-hire',airlineId:AIRLINE,
+  scheduleId:SCHEDULE,candidateSlot:7}));
+ assert.equal(r.status,200);
+ assert.deepEqual(await r.json(),result);
+ assert.equal(r.headers.get('cache-control'),'no-store');
+});
+test('Crew offer and salary API are owner-scoped and read-only',async()=>{
+ const offers={status:'game_npc_crew_market',readOnly:true,
+  canActivateNormalFlight:false,offers:[{candidateSlot:1,monthlySalaryUsd:4500}]};
+ const income={status:'game_crew_salary_forecast',readOnly:true,
+  automaticPayrollEnabled:false,monthlySalaryCommitmentUsd:4500};
+ const h1=handler(async(sql,args)=>{
+  assert.equal(sql,SCHEDULE_SQL.crewOffers);
+  assert.deepEqual(args,[USER,AIRLINE,SCHEDULE]);
+  return {rowCount:1,rows:[{result:offers}]};
+ });
+ const h2=handler(async(sql,args)=>{
+  assert.equal(sql,SCHEDULE_SQL.crewSalary);
+  assert.deepEqual(args,[USER,AIRLINE]);
+  return {rowCount:1,rows:[{result:income}]};
+ });
+ assert.equal((await h1(request({action:'crew-offers',airlineId:AIRLINE,
+  scheduleId:SCHEDULE}))).status,200);
+ assert.equal((await h2(request({action:'crew-salary',airlineId:AIRLINE}))).status,200);
+ const unsafe=handler(async()=>({rowCount:1,rows:[{result:{
+  status:'game_crew_contract_signed',ledgerPosted:true,
+  canActivateNormalFlight:false}}]}));
+ const r=await unsafe(request({action:'crew-hire',airlineId:AIRLINE,
+  scheduleId:SCHEDULE,candidateSlot:1}));
+ assert.equal(r.status,503);
+});
+test('Crew hire and salary browser calls send only safe fields',async()=>{
+ const posts=[];
+ const client=createFlightScheduleClient({
+  auth:{getAccessToken:async()=>TOKEN},origin:'https://airlinerra.com',
+  fetchImpl:async(_url,opts)=>{
+   posts.push(JSON.parse(opts.body));
+   return Response.json({status:'game_npc_crew_market',offers:[],
+    readOnly:true,canActivateNormalFlight:false,ledgerPosted:false});
+  }
+ });
+ await client.crewOffers({airlineId:AIRLINE,scheduleId:SCHEDULE});
+ await client.crewHire({airlineId:AIRLINE,scheduleId:SCHEDULE,candidateSlot:7});
+ await client.crewSalary({airlineId:AIRLINE});
+ assert.deepEqual(posts,[
+  {action:'crew-offers',airlineId:AIRLINE,scheduleId:SCHEDULE},
+  {action:'crew-hire',airlineId:AIRLINE,scheduleId:SCHEDULE,candidateSlot:7},
+  {action:'crew-salary',airlineId:AIRLINE}
+ ]);
+});
+test('Route Details game NPC hire shows salaries but never activates flight',async()=>{
+ const doc={createElement:element},host=element('section');
+ let hired=null;
+ const ui=createSection9RotationReview({doc,host,getServer:()=>({
+  scheduler:{
+   rotationPreview:async()=>({readOnly:true,canActivateNormalFlight:false}),
+   crewOffers:async()=>({
+    status:'game_npc_crew_market',readOnly:true,canActivateNormalFlight:false,
+    offers:[{candidateSlot:2,crewReference:'NPC-FD-3-2',
+     monthlySalaryUsd:4625,qualifiedConfigurationId:3}]
+   }),
+   crewHire:async args=>{
+    hired=args;
+    return {status:'game_crew_contract_signed',newContract:true,
+     ledgerPosted:false,canActivateNormalFlight:false};
+   },
+   crewSalary:async()=>({status:'game_crew_salary_forecast',
+    readOnly:true,automaticPayrollEnabled:false,
+    monthlySalaryCommitmentUsd:4625})
+  }
+ })});
+ await ui.open({serverScheduleId:SCHEDULE,schedule:[{day:0,time:'10:00'}]},AIRLINE);
+ const recruit=descendants(host).find(x=>x.textContent==='Hire game crew');
+ assert.ok(recruit);
+ await recruit.listeners.click();
+ const offerButton=descendants(host).find(x=>x.textContent==='Hire');
+ assert.ok(offerButton);
+ await offerButton.listeners.click();
+ assert.deepEqual(hired,{airlineId:AIRLINE,scheduleId:SCHEDULE,candidateSlot:2});
+ const output=descendants(host).map(x=>x.textContent).join(' ');
+ assert.match(output,/4,625/);
+ assert.match(output,/Game crew contract signed/);
+ assert.match(output,/Payroll posting remains disabled/);
+ assert.doesNotMatch(output,/Flight activated|Ticket booked/);
+});
+test('Operational readiness shows crew rest counters without false certification',async()=>{
+ const doc={createElement:element},host=element('section');
+ const ui=createSection9RotationReview({doc,host,getServer:()=>({
+  scheduler:{
+   rotationPreview:async()=>({readOnly:true,canActivateNormalFlight:false}),
+   operationsPreview:async()=>({
+    readOnly:true,canActivateNormalFlight:false,
+    blockers:['CREW_ASSIGNMENTS_NOT_VERIFIED'],
+    turnaround:{minimumMinutes:40},crew:{},deliveryEvidence:{},
+    routeRights:{operationallyAuthorized:false},
+    crewRest:{overlapConflicts:1,insufficientRest:2,crewWrongAirport:1}
+   })
+  }
+ })});
+ await ui.open({serverScheduleId:SCHEDULE,
+  referenceDepartureUtc:'2026-11-09T10:00:00Z'},AIRLINE);
+ await descendants(host).find(x=>x.textContent==='Check operational readiness')
+  .listeners.click();
+ const output=descendants(host).map(x=>x.textContent).join(' ');
+ assert.match(output,/Game crew duty conflicts/);
+ assert.match(output,/Insufficient game crew rest/);
+ assert.match(output,/Crew at wrong airport/);
+ assert.match(output,/Provisional game policy/);
+});

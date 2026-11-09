@@ -71,6 +71,15 @@ export function createSection9RotationReview({doc,host,getServer}={}){
      addFact(doc,evidenceHost,'Crew requirement known',
       crew.catalogRequirementKnown===true?'Yes':'No');
      addFact(doc,evidenceHost,'Crew assignments verified','No');
+     const rest=payload.crewRest||{};
+     addFact(doc,evidenceHost,'Game crew duty conflicts',
+      Number.isInteger(rest.overlapConflicts)?rest.overlapConflicts:'Not checked');
+     addFact(doc,evidenceHost,'Insufficient game crew rest',
+      Number.isInteger(rest.insufficientRest)?rest.insufficientRest:'Not checked');
+     addFact(doc,evidenceHost,'Crew at wrong airport',
+      Number.isInteger(rest.crewWrongAirport)?rest.crewWrongAirport:'Not checked');
+     addFact(doc,evidenceHost,'Crew duty rules',
+      'Provisional game policy · not aviation certification');
      addFact(doc,evidenceHost,'Crew staffing requirement',
       Number.isInteger(staffing.catalogCrewRequirement)?
        staffing.catalogCrewRequirement:'Not verified');
@@ -175,6 +184,74 @@ export function createSection9RotationReview({doc,host,getServer}={}){
      if(current===serial)crewMessage.textContent=
       'Crew roster unavailable. No crew was assigned and no flight activated.';
     }finally{crewButton.disabled=false;}
+   });
+  }
+  if(typeof rosterService?.crewOffers==='function' &&
+     typeof rosterService?.crewHire==='function'){
+   const hireButton=el(doc,'button','Hire game crew');
+   hireButton.type='button';hireButton.className='secondary';
+   const hireMessage=el(doc,'p',
+    'Game-generated crew have monthly salary contracts. Payroll requires the verified game clock.');
+   hireMessage.className='hint';
+   const offerHost=el(doc,'div');offerHost.className='section9-crew-hiring';
+   control.append(hireButton);host.append(hireMessage,offerHost);
+   hireButton.addEventListener('click',async()=>{
+    hireButton.disabled=true;offerHost.replaceChildren();
+    hireMessage.textContent='Checking game crew candidates...';
+    try{
+     const market=await getServer().scheduler.crewOffers({
+      airlineId,scheduleId:route.serverScheduleId
+     });
+     if(current!==serial)return;
+     if(market?.status!=='game_npc_crew_market'||market.readOnly!==true||
+        market.canActivateNormalFlight!==false||!Array.isArray(market.offers))
+      throw Error('Untrusted crew market');
+     hireMessage.textContent=market.offers.length?
+      'Choose a provisional monthly game salary contract. Aviation qualifications remain unverified.':
+      'No unclaimed candidates for this aircraft.';
+     for(const offer of market.offers.slice(0,12)){
+      if(!Number.isInteger(offer.candidateSlot)||
+         offer.candidateSlot<1||offer.candidateSlot>2000||
+         !Number.isFinite(Number(offer.monthlySalaryUsd)))continue;
+      const row=el(doc,'div');row.className='detail-row';
+      const label=el(doc,'span',offer.crewReference+' - USD '+
+       Number(offer.monthlySalaryUsd).toLocaleString('en-US')+' per month');
+      const hire=el(doc,'button','Hire');
+      hire.type='button';hire.className='secondary';
+      hire.addEventListener('click',async()=>{
+       hire.disabled=true;
+       try{
+        const signed=await getServer().scheduler.crewHire({
+         airlineId,scheduleId:route.serverScheduleId,
+         candidateSlot:offer.candidateSlot
+        });
+        if(signed?.status!=='game_crew_contract_signed'||
+           signed.ledgerPosted!==false||
+           signed.canActivateNormalFlight!==false)
+         throw Error('Unverified crew contract');
+        row.replaceChildren(label,el(doc,'span','Hired'));
+        hireMessage.textContent=signed.newContract?
+         'Game crew contract signed. No salary charged yet. Use Plan weekly crew to assign them.':
+         'Crew contract already exists; no duplicate created.';
+        if(typeof getServer().scheduler.crewSalary==='function'){
+         const payroll=await getServer().scheduler.crewSalary({airlineId});
+         if(payroll?.status==='game_crew_salary_forecast'&&
+           payroll.readOnly===true)
+          hireMessage.textContent+=' Monthly salary commitment: USD '+
+           Number(payroll.monthlySalaryCommitmentUsd).toLocaleString('en-US')+
+           '. Payroll posting remains disabled until the game clock is verified.';
+        }
+       }catch{
+        hireMessage.textContent='Crew was not hired. No flights were activated.';
+        hire.disabled=false;
+       }
+      });
+      row.append(label,hire);offerHost.append(row);
+     }
+    }catch{
+     if(current===serial)hireMessage.textContent=
+      'Game crew market unavailable. No contract or flight was created.';
+    }finally{hireButton.disabled=false;}
    });
   }
   check.addEventListener('click',async()=>{
