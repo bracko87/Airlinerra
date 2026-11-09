@@ -68,6 +68,22 @@ export function createSection9RotationReview({doc,host,getServer}={}){
        ground.shortTurnaroundOccurrences:'Unknown');
      addFact(doc,evidenceHost,'Aircraft delivery inspection approved',
       delivery.inspectionApproved===true?'Yes':'No');
+     const position=payload.aircraftPosition;
+     if(position&&position.readOnly===true&&
+       position.canActivateNormalFlight===false){
+      addFact(doc,evidenceHost,'Approved initial aircraft location',
+       position.deliveryAnchorRecorded===true?
+        (position.deliveryAirportKey||'Unknown airport'):'Not recorded');
+      addFact(doc,evidenceHost,'First planned departure airport',
+       position.firstPlannedDepartureAirport||'Not available');
+      addFact(doc,evidenceHost,'Delivery and first departure match',
+       position.initialDepartureMatchesDelivery===true?'Yes':
+       position.initialDepartureMatchesDelivery===false?'No':'Not verified');
+      addFact(doc,evidenceHost,'Aircraft movement history',
+       position.movementHistoryVerified===true?'Needs operational review':
+       'No operated-flight evidence yet');
+      addFact(doc,evidenceHost,'Current aircraft location verified','No');
+     }
      addFact(doc,evidenceHost,'Crew requirement known',
       crew.catalogRequirementKnown===true?'Yes':'No');
      addFact(doc,evidenceHost,'Crew assignments verified','No');
