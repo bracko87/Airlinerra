@@ -96,7 +96,7 @@ BEGIN
    '2000-01-03T11:00:00Z'::timestamptz+make_interval(days=>i),
    '2000-01-03T11:00:00Z'::timestamptz+make_interval(days=>i));
   INSERT INTO airlinerra_game.airline_ledger(airline_id,entry_kind,amount_usd)
-   VALUES(v_airline,'INCOME',20000+i) RETURNING id INTO rev_id;
+   VALUES(v_airline,'REVENUE',20000+i) RETURNING id INTO rev_id;
   INSERT INTO airlinerra_game.airline_ledger(airline_id,entry_kind,amount_usd)
    VALUES(v_airline,'EXPENSE',-10000) RETURNING id INTO cost_id;
   INSERT INTO airlinerra_game.section9_route_posted_flight_financials_v1(
