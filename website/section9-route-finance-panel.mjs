@@ -81,12 +81,33 @@ function safeDashboard(v,route,airlineId){
  if(v.history.lastSevenFlights.length!==
    Math.min(7,v.history.completedFlightCount))
   throw Error('Incomplete last-seven financial history');
+ if(['totalRevenueUsd','totalCostsUsd','totalProfitLossUsd',
+    'olderRevenueUsd','olderCostsUsd','olderProfitLossUsd']
+   .some(key=>number(v.history[key])===null)||
+   Math.abs(number(v.history.totalRevenueUsd)-
+    number(v.history.totalCostsUsd)-
+    number(v.history.totalProfitLossUsd))>0.02||
+   Math.abs(number(v.history.olderRevenueUsd)-
+    number(v.history.olderCostsUsd)-
+    number(v.history.olderProfitLossUsd))>0.02)
+  throw Error('Incomplete or inconsistent route financial totals');
  for(const flight of v.history.lastSevenFlights){
   if(flight.source!=='verified_arrival_and_posted_ledger'||
      number(flight.revenueUsd)===null||number(flight.totalCostsUsd)===null||
      number(flight.profitLossUsd)===null||
+     FLIGHT_INCOME.some(([key])=>number(flight[key])===null)||
+     OTHER_COSTS.some(([key])=>number(flight[key])===null)||
+     number(flight.airportNavigationCostsUsd)===null||
+     !flight.fees||FEES.some(([key])=>number(flight.fees[key])===null)||
+     Math.abs(FEES.reduce((sum,[key])=>sum+number(flight.fees[key]),0)-
+      number(flight.airportNavigationCostsUsd))>0.06||
+     Math.abs(FLIGHT_INCOME.reduce((sum,[key])=>sum+number(flight[key]),0)-
+      number(flight.revenueUsd))>0.02||
+     Math.abs(number(flight.airportNavigationCostsUsd)+
+      OTHER_COSTS.reduce((sum,[key])=>sum+number(flight[key]),0)-
+      number(flight.totalCostsUsd))>0.02||
      Math.abs(number(flight.revenueUsd)-number(flight.totalCostsUsd)-
-       number(flight.profitLossUsd))>0.02)
+      number(flight.profitLossUsd))>0.02)
    throw Error('Unverified completed-flight accounting');
  }
  return v;
