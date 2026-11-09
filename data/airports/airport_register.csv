@@ -4254,7 +4254,7 @@ source_airport_id,country_iso,airport_name,ident,gps_code,runway_length_m,runway
 4488,RO,Timișoara Traian Vuia International Airport,LRTR,LRTR,3500.0,CON,1,RUNWAY_QUALIFIED,OURAIRPORTS,
 4486,RO,Tulcea Danube Delta Airport,LRTC,LRTC,1986.4,CON,1,RUNWAY_QUALIFIED,OURAIRPORTS,
 4487,RO,Târgu Mureş Transilvania International Airport,LRTM,LRTM,2000.1,CON,1,RUNWAY_QUALIFIED,OURAIRPORTS,
-fictional:RS:LYAL,RS,Aleksandrovo Airport,LYAL,LYAL,2200.0,Asphalt,1,RUNWAY_QUALIFIED,FICTIONAL,Local
+fictional:RS:LYAL,RS,Aleksandrovo Airport,LYAL,LYAL,2200.0,Asphalt,1,RUNWAY_QUALIFIED,FICTIONAL,Regional
 4611,RS,Batajnica Air Base,LYBT,LYBT,2493.6,ASP,1,RUNWAY_QUALIFIED,OURAIRPORTS,
 4610,RS,Belgrade Nikola Tesla Airport,LYBE,LYBE,3500.0,ASPH,1,RUNWAY_QUALIFIED,OURAIRPORTS,
 1648,RS,Kovin Airstrip,LY87,,2183.9,ASP,1,RUNWAY_QUALIFIED,OURAIRPORTS,
