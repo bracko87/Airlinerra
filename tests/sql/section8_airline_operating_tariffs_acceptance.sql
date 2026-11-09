@@ -33,11 +33,11 @@ BEGIN
  SELECT count(*) INTO cash_before FROM airlinerra_game.airline_ledger;
 
  t:=airlinerra_game.section8_quote_flight_operating_fees_v1(
-  1,'OURAIRPORTS:2212','OURAIRPORTS:4013',2,'terminal','terminal',100,0,180);
+  1::smallint,'OURAIRPORTS:2212','OURAIRPORTS:4013',2,'terminal','terminal',100,0,180);
  r:=airlinerra_game.section8_quote_flight_operating_fees_v1(
-  1,'OURAIRPORTS:2212','OURAIRPORTS:4013',2,'remote','remote',100,0,180);
+  1::smallint,'OURAIRPORTS:2212','OURAIRPORTS:4013',2,'remote','remote',100,0,180);
  free:=airlinerra_game.section8_quote_flight_operating_fees_v1(
-  1,'OURAIRPORTS:2212','OURAIRPORTS:4013',2,'terminal','terminal',100,0,60);
+  1::smallint,'OURAIRPORTS:2212','OURAIRPORTS:4013',2,'terminal','terminal',100,0,60);
  IF t->>'status'<>'game_operating_fee_preview_only'
  OR (t->>'fuelIncluded')::boolean OR
  (t->>'cashPosted')::boolean OR (t->>'canPostToLedger')::boolean OR
@@ -68,9 +68,9 @@ BEGIN
  THEN RAISE EXCEPTION 'EMPTY_FREIGHT_CREATED_CARGO_CHARGE';END IF;
 
  short:=airlinerra_game.section8_quote_flight_operating_fees_v1(
-  1,'OURAIRPORTS:2212','OURAIRPORTS:2218',2,'terminal','terminal',100,0,180);
+  1::smallint,'OURAIRPORTS:2212','OURAIRPORTS:2218',2,'terminal','terminal',100,0,180);
  long:=airlinerra_game.section8_quote_flight_operating_fees_v1(
-  1,'OURAIRPORTS:2212','OURAIRPORTS:3622',2,'terminal','terminal',100,0,180);
+  1::smallint,'OURAIRPORTS:2212','OURAIRPORTS:3622',2,'terminal','terminal',100,0,180);
  IF (short->>'international')::boolean
  OR NOT (long->>'international')::boolean
  OR (short->'fees'->>'internationalPassengerProcessingUsd')::numeric<>0 OR
@@ -79,7 +79,7 @@ BEGIN
  THEN RAISE EXCEPTION 'INTERNATIONAL_AND_ROUTE_DISTANCES_WRONG';END IF;
 
  cargo:=airlinerra_game.section8_quote_flight_operating_fees_v1(
-  1,'OURAIRPORTS:2212','OURAIRPORTS:4013',4,'cargo','cargo',0,2.0,180);
+  1::smallint,'OURAIRPORTS:2212','OURAIRPORTS:4013',4,'cargo','cargo',0,2.0,180);
  IF (cargo->'fees'->>'originCargoHandlingUsd')::numeric<=0 OR
     (cargo->'fees'->>'destinationCargoHandlingUsd')::numeric<=0 OR
     (cargo->'fees'->>'departingPassengerFacilityUsd')::numeric<>0 OR
@@ -90,35 +90,35 @@ BEGIN
  bad:=false;
  BEGIN
   PERFORM airlinerra_game.section8_quote_flight_operating_fees_v1(
-    1,'OURAIRPORTS:2212','OURAIRPORTS:4013',2,
+    1::smallint,'OURAIRPORTS:2212','OURAIRPORTS:4013',2,
     'remote','remote',1000,0,180);
  EXCEPTION WHEN SQLSTATE '22023' THEN bad:=true;END;
  IF NOT bad THEN RAISE EXCEPTION 'OVER_CAPACITY_PREVIEW_ALLOWED';END IF;
  bad:=false;
  BEGIN
   PERFORM airlinerra_game.section8_quote_flight_operating_fees_v1(
-    1,'OURAIRPORTS:2212','OURAIRPORTS:4013',4,
+    1::smallint,'OURAIRPORTS:2212','OURAIRPORTS:4013',4,
     'cargo','cargo',0,20,180);
  EXCEPTION WHEN SQLSTATE '22023' THEN bad:=true;END;
  IF NOT bad THEN RAISE EXCEPTION 'OVER_CAPACITY_CARGO_PREVIEW_ALLOWED';END IF;
  bad:=false;
  BEGIN
   PERFORM airlinerra_game.section8_quote_flight_operating_fees_v1(
-    1,'OURAIRPORTS:2212','OURAIRPORTS:4013',2,
+    1::smallint,'OURAIRPORTS:2212','OURAIRPORTS:4013',2,
     'madeup_stand','remote',100,0,180);
  EXCEPTION WHEN SQLSTATE '22023' THEN bad:=true;END;
  IF NOT bad THEN RAISE EXCEPTION 'UNKNOWN_STAND_ACCEPTED';END IF;
  bad:=false;
  BEGIN
   PERFORM airlinerra_game.section8_quote_flight_operating_fees_v1(
-    1,'OURAIRPORTS:2212','OURAIRPORTS:4013',99999999,
+    1::smallint,'OURAIRPORTS:2212','OURAIRPORTS:4013',99999999,
     'terminal','terminal',100,0,180);
  EXCEPTION WHEN SQLSTATE '22023' THEN bad:=true;END;
  IF NOT bad THEN RAISE EXCEPTION 'MADEUP_AIRCRAFT_ACCEPTED';END IF;
  bad:=false;
  BEGIN
   PERFORM airlinerra_game.section8_quote_flight_operating_fees_v1(
-    1,'OURAIRPORTS:2212','OURAIRPORTS:4013',2,
+    1::smallint,'OURAIRPORTS:2212','OURAIRPORTS:4013',2,
     'terminal','terminal',100,-1,180);
  EXCEPTION WHEN SQLSTATE '22023' THEN bad:=true;END;
  IF NOT bad THEN RAISE EXCEPTION 'NEGATIVE_CARGO_ACCEPTED';END IF;
