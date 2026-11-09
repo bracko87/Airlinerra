@@ -10,6 +10,9 @@ on:
       - "website/player-app-model.mjs"
       - "website/private-player-app.html"
       - "website/player-app.css"
+      - "website/licensing-planner.mjs"
+      - "website/dev-scripts/invited-overlay.mjs"
+      - "tests/test_licensing_planner.mjs"
       - "tests/test_player_read_api.mjs"
       - "tests/test_strategic_navigation.mjs"
       - "tests/test_operations_center_navigation.mjs"
@@ -35,10 +38,17 @@ jobs:
           node --check server/canonical-game-api.mjs
           node --check website/player-read-client.mjs
           node --check website/player-app.mjs
+          node --check website/licensing-planner.mjs
+          node --check tests/test_licensing_planner.mjs
           node --check website/player-app-model.mjs
       - name: Test authenticated read endpoint and navigation
         run: |
           node --test \
             tests/test_player_read_api.mjs \
             tests/test_strategic_navigation.mjs \
-            tests/test_operations_center_navigation.mjs
+            tests/test_operations_center_navigation.mjs \
+            tests/test_licensing_planner.mjs
+      - name: Verify protected player build includes licence workspace
+        run: |
+          cd website
+          npm run build
