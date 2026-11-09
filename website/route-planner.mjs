@@ -88,7 +88,7 @@ export function routePlannerMarkup(){
    '<div class="route-map-facts"><h3>Route information and limitations</h3>'+routeCheckDetails+
    '<div class="route-inline-restrictions"><strong>Airport restrictions</strong><p id="route-preflight-status" class="hint" role="status" aria-live="polite">Not verified. Select an aircraft and planned times.</p>'+ 
    '<details class="route-restriction-details"><summary>Exact UTC times for automatic airport checks</summary>'+ 
-   '<p class="hint">This example is needed for server runway, noise and curfew checks. Weekly airport-local times and flight duration still require validation.</p>'+ 
+   '<p class="hint">Restrictions are checked automatically using these example UTC times. Weekly local times and flight duration still require verification.</p>'+ 
    '<div class="route-step2-top">'+ 
    routeSetupField('route-preflight-departure-utc','Example departure (UTC)', '<input id="route-preflight-departure-utc" type="datetime-local" step="60">')+ 
    routeSetupField('route-preflight-arrival-utc','Example arrival (UTC)', '<input id="route-preflight-arrival-utc" type="datetime-local" step="60">')+ 
@@ -416,6 +416,28 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   // Current server schedules accept one departure stand per route.
   return stands.length<=1?(stands[0]||initial):null;
  };
+ const groundStopConflict=()=>{
+  const aircraft=$('route-aircraft')?.value||'';
+  const from=selected('from');
+  const nextDeparture=utcFromInput($('route-preflight-departure-utc')?.value);
+  const turnaround=Number($('route-turnaround')?.value);
+  if(!aircraft||!from||!nextDeparture||!Number.isInteger(turnaround))return null;
+  const planned=Date.parse(nextDeparture);
+  const saved=loadDraft?.()||{};
+  for(const previous of Array.isArray(saved.routes)?saved.routes:[]){
+   if(!previous||previous.flightNumber===editingFlightNumber||
+      previous.aircraftId!==aircraft||previous.to?.key!==from.key)continue;
+   const arrival=Date.parse(previous.referenceArrivalUtc||'');
+   if(!Number.isFinite(arrival)||arrival>planned||planned-arrival>24*3600000)continue;
+   // These UTC dates are user-entered route examples, not actual flight
+   // arrivals. Reject a known overlapping draft, never authorize a flight.
+   const minutes=(planned-arrival)/60000;
+   if(minutes<turnaround)return 'Previous '+String(previous.flightNumber||'flight')+
+    ' example arrives at '+new Date(arrival).toISOString().slice(11,16)+' UTC. The next example departure must be at least '+
+    turnaround+' minutes later; current gap is '+Math.floor(minutes)+' minutes.';
+  }
+  return null;
+ };
  const refreshAircraftTimeline=()=>{
   const timeline=selectedAircraftTimeline();
   renderAircraftWeeklyTimeline(doc,$('route-aircraft-timeline-content'),timeline);
@@ -437,8 +459,9 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   }
   const feedback=$('route-aircraft-position-status');
   if(feedback){
-   const conflict=timeline.errors.length>0;
-   feedback.textContent=conflict?timeline.errors[0].text:'';
+   const ground=groundStopConflict();
+   const conflict=timeline.errors.length>0||Boolean(ground);
+   feedback.textContent=timeline.errors[0]?.text||ground||'';
    feedback.hidden=!conflict;
    feedback.classList.toggle('has-conflict',conflict);
   }
@@ -628,6 +651,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   if(keys!==lastKeys){lastKeys=keys;clearPreflight();void loadAirportDetails(from,to);}
   updateWeek();
   refreshAircraftTimeline();
+  doc.dispatchEvent(new Event('airlinerra:refresh-game-select-menus'));
   void automaticPreflight();
  };
  for(const side of ['from','to']){
@@ -811,7 +835,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    updateWeek();clearPreflight();show();void automaticPreflight();return;
   }
   if(['route-preflight-departure-utc','route-preflight-arrival-utc'].includes(el?.id)){
-   clearPreflight();updateWeek();void automaticPreflight();return;
+   clearPreflight();updateWeek();refreshAircraftTimeline();void automaticPreflight();return;
   }
   if(el?.id==='route-aircraft'){
    const type=catalogChoice()?.useType;
@@ -823,7 +847,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   if(el?.id==='route-arrival-stand'){
    clearPreflight();refreshAircraftTimeline();updateWeek();void automaticPreflight();return;
   }
-  if(el?.id==='route-turnaround'){updateWeek();return;}
+  if(el?.id==='route-turnaround'){updateWeek();refreshAircraftTimeline();return;}
   if(el?.id==='route-from-hub'||el?.id==='route-to-hub'){
    const side=el.id==='route-from-hub'?'from':'to';
    if(el.value===homeKey&&homeLocation)await selectHome(side);
@@ -1186,6 +1210,11 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   }
   if(!departureStandFromTimeline(timeline)){
    message('route-plan-status','This route needs different departure stands on different weekdays. Split the draft into separate routes.');
+   return;
+  }
+  const groundConflict=groundStopConflict();
+  if(groundConflict){
+   message('route-plan-status','Aircraft turnaround conflict: '+groundConflict);
    return;
   }
   // Other flight durations, time zones and slots are still not verified.
