@@ -94,6 +94,13 @@ BEGIN
  JOIN airlinerra_game.aircraft_delivery_inspections_v1 i
   ON i.order_id=o.order_id
    AND i.aircraft_inventory_id=o.aircraft_inventory_id
+ JOIN airlinerra_game.aircraft_acquisition_offers_v1 approved_offer
+  ON approved_offer.offer_id=o.offer_id
+   AND approved_offer.world_id=o.world_id
+   AND approved_offer.configuration_id=o.configuration_id
+   AND approved_offer.transaction_type=o.transaction_type
+   AND approved_offer.offer_status IN ('published','retired')
+   AND approved_offer.pricing_basis LIKE 'AIRLINERRA_GAME_BALANCE_V1:%'
  WHERE o.world_id=1 AND o.airline_id=p_airline
   AND o.aircraft_inventory_id=p_aircraft
   AND o.order_status='delivered_pending_inspection'
@@ -172,6 +179,13 @@ BEGIN
   JOIN airlinerra_game.aircraft_delivery_inspections_v1 i
    ON i.order_id=o.order_id
     AND i.aircraft_inventory_id=o.aircraft_inventory_id
+  JOIN airlinerra_game.aircraft_acquisition_offers_v1 approved_offer
+   ON approved_offer.offer_id=o.offer_id
+    AND approved_offer.world_id=o.world_id
+    AND approved_offer.configuration_id=o.configuration_id
+    AND approved_offer.transaction_type=o.transaction_type
+    AND approved_offer.offer_status IN ('published','retired')
+    AND approved_offer.pricing_basis LIKE 'AIRLINERRA_GAME_BALANCE_V1:%'
   WHERE o.world_id=1 AND o.order_status='delivered_pending_inspection'
    AND o.delivery_due_at<=clock_timestamp()
    AND i.inspection_status='approved'
@@ -181,8 +195,7 @@ BEGIN
     SELECT 1 FROM airlinerra_game.section9_aircraft_delivery_position_v1 p
     WHERE p.aircraft_inventory_id=o.aircraft_inventory_id)
   ORDER BY o.created_at,o.order_id LIMIT p_limit
-  FOR SHARE OF o,i
- LOOP
+  LOOP
   outcome:=airlinerra_game.section9_capture_approved_delivery_position_v1(
    s.airline_id,s.aircraft_inventory_id);
   IF outcome->>'status'='approved_delivery_position_recorded'
