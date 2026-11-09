@@ -114,9 +114,10 @@ test('Licences & Permits page and operations menu remain read-only with no fake 
  assert.equal(ops.match(/data-view-link="licenses"/g)?.length,1);
  assert.match(html,/data-player-view="licenses"/);
  const section=html.split('data-player-view="licenses"')[1].split('</section>')[0];
- assert.match(section,/Reference only/);
+ assert.match(section,/Licensing planner — preview only/);
+ assert.match(section,/licences-planner-root/);
  assert.match(section,/licenses-catalog-groups/);
- assert.match(section,/applications are not enabled/);
+ assert.match(section,/applications or licence grants are active/);
  assert.doesNotMatch(section,/<button|<input|<form|type="submit"/);
  assert.match(css,/\.license-card-grid\{/);
  assert.match(js,/await playerData\.licenses\(\)/);
