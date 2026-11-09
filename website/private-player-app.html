@@ -438,17 +438,22 @@
             </div>
           </div>
           <div class="license-page-notice" role="note">
-            <strong>Reference only — applications are not enabled.</strong>
-            <p>Licences belong to the operating company, not automatically to its holding. A licence catalogue entry does not mean your airline owns the approval or can fly a restricted route. Country-specific and bilateral rights require verification.</p>
+            <strong>Licensing planner — preview only. No applications or licence grants are active.</strong>
+            <p>Explore proposed game requirements before purchasing an aircraft or opening a company. Every checklist is a design rule, not a verified player status. No fees, accounts, aircraft or traffic rights change here.</p>
           </div>
-          <div class="license-page-facts">
-            <div><strong id="licenses-type-count">—</strong><span>Permission types in register</span></div>
-            <div><strong id="licenses-verified-count">—</strong><span>EU / official reference types</span></div>
-            <div><strong>Not available</strong><span>Applications, fees and automated approvals</span></div>
-          </div>
-          <p class="license-catalog-status" id="licenses-catalog-status" role="status" aria-live="polite">Licence reference catalogue not loaded yet.</p>
-          <div class="license-catalog-groups" id="licenses-catalog-groups" aria-label="Reference licence and permit categories"></div>
-          <p class="planning-state">No company, licence or international traffic right is created by viewing this page. The future application engine must check the exact operator, country, route, expiry and regulatory scope before allowing a service.</p>
+          <div id="licences-planner-root" class="lp-root" aria-label="Licence and permit planning preview"></div>
+          <details class="lp-reference">
+            <summary>Official framework references <span>16 existing read-only catalogue entries</span></summary>
+            <p class="lp-reference-lead">The authoritative reference list below is provided by the protected game API. Its descriptions are not issued licences. Proposed costs and checklists above are not published fees.</p>
+            <div class="license-page-facts">
+              <div><strong id="licenses-type-count">—</strong><span>Permission types returned by API</span></div>
+              <div><strong id="licenses-verified-count">—</strong><span>EU framework reference types</span></div>
+              <div><strong>Not available</strong><span>Applications, payments and automatic grants</span></div>
+            </div>
+            <p class="license-catalog-status" id="licenses-catalog-status" role="status" aria-live="polite">Checking reference catalogue…</p>
+            <div class="license-catalog-groups" id="licenses-catalog-groups" aria-label="Official framework references and permission categories"></div>
+          </details>
+          <p class="planning-state">The planning checklist is not an eligibility result. When activated later, the server must verify the actual company, available fleet, crew, money, country, licence scope, and flight restrictions before granting or using any permission.</p>
         </section>
         <section data-player-view="holding" hidden>
           <div class="page-head"><div>
