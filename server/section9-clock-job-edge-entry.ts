@@ -16,7 +16,7 @@ if(!DB_URL||!SECRET||SECRET.length<32||!JOB_TOKEN||JOB_TOKEN.length<32){
   {error:'Game clock producer not configured'},
   {status:503,headers:{'Cache-Control':'no-store'}}));
 }else{
- let pool=null;
+ let pool:any=null;
  const database={
   async connect(){
    if(!pool)pool=new Pool({
