@@ -129,7 +129,12 @@ export function createSection9VerifiedFlightOperationsDispatcher({
  }
  return Object.freeze({
   readCandidates,
-  async dispatchAircraftDay({airlineId,aircraftId,gameDate}={}){
+  async dispatchAircraftDay({airlineId,aircraftId,gameDate,lease=null}={}){
+   if(lease!==null&&(!IDENT.test(lease?.jobId||'')||
+      !IDENT.test(lease?.leaseToken||'')||
+      typeof lease?.heartbeat!=='function'||
+      typeof movementIngress.acceptSignedLeasedFlightEvent!=='function'))
+    throw Error('SECTION9_LEASED_OPERATION_DISPATCH_NOT_CONFIGURED');
    const plan=await readCandidates({airlineId,aircraftId,gameDate});
    if(plan.status!=='verified_operational_candidates_only')
     return {status:plan.status,gameDate,processed:0,movementRecorded:false,
@@ -138,6 +143,7 @@ export function createSection9VerifiedFlightOperationsDispatcher({
    for(const c of plan.candidates){
     // An unverified operation HALTS this physical aircraft's sequence.
     // Never skip a missing departure and process an arrival or next flight.
+    if(lease)await lease.heartbeat();
     const decision=await operationsAuthorizer.confirmActualOperation(
       Object.freeze({...c}));
     if(!decision||decision.decision!=='verified_operated'||
@@ -159,7 +165,11 @@ export function createSection9VerifiedFlightOperationsDispatcher({
     };
     signed.signature=createHmac('sha256',secret)
       .update(section9MovementSignaturePayload(signed),'utf8').digest('hex');
-    const result=await movementIngress.acceptSignedFlightEvent(signed);
+    if(lease)await lease.heartbeat();
+    const result=lease?
+      await movementIngress.acceptSignedLeasedFlightEvent(signed,{
+       jobId:lease.jobId,leaseToken:lease.leaseToken
+      }):await movementIngress.acceptSignedFlightEvent(signed);
     if(result?.status==='operated_movement_replayed'&&
        result.replayed===true&&result.movementRecorded===false){
       processed++;replayed++;
