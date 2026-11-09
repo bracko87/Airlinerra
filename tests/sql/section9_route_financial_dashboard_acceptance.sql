@@ -95,8 +95,12 @@ BEGIN
    '2000-01-03T09:00:00Z'::timestamptz+make_interval(days=>i),
    '2000-01-03T11:00:00Z'::timestamptz+make_interval(days=>i),
    '2000-01-03T11:00:00Z'::timestamptz+make_interval(days=>i));
-  INSERT INTO airlinerra_game.airline_ledger(airline_id,entry_kind,amount_usd)
-   VALUES(v_airline,'REVENUE',20000+i) RETURNING id INTO rev_id;
+  IF i=0 THEN
+   rev_id:=NULL; -- Even a ZERO-income flight has real operating losses.
+  ELSE
+   INSERT INTO airlinerra_game.airline_ledger(airline_id,entry_kind,amount_usd)
+    VALUES(v_airline,'REVENUE',20000+i) RETURNING id INTO rev_id;
+  END IF;
   INSERT INTO airlinerra_game.airline_ledger(airline_id,entry_kind,amount_usd)
    VALUES(v_airline,'EXPENSE',-10000) RETURNING id INTO cost_id;
   INSERT INTO airlinerra_game.section9_route_posted_flight_financials_v1(
@@ -107,8 +111,14 @@ BEGIN
    airport_fee_lines,revenue_ledger_id,expense_ledger_id,
    tariff_model_version,settlement_source_reference)
   VALUES(flight,v_schedule,v_airline,DATE '2000-01-03'+i,
-   event,100,0,20000+i,0,5000,2000,1000,1000,1000,
-   '{"departureAirportMovementUsd":300,"arrivalLandingUsd":1000}'::jsonb,
+   event,100,0,CASE WHEN i=0 THEN 0 ELSE 20000+i END,
+   0,5000,2000,1000,1000,1000,
+   '{"departureAirportMovementUsd":300,"arrivalLandingUsd":1000,
+     "departureGroundHandlingUsd":1000,"arrivalStandParkingUsd":100,
+     "departureTerminalAirTrafficControlUsd":200,"enrouteAirTrafficControlUsd":400,
+     "departingPassengerFacilityUsd":1000,"departingPassengerSecurityUsd":500,
+     "internationalPassengerProcessingUsd":500,
+     "originCargoHandlingUsd":0,"destinationCargoHandlingUsd":0}'::jsonb,
    rev_id,cost_id,'section8_airline_operating_fees_game_v1_20261109',
    'ROLLBACK_TEST_RECONCILED_POSTED_FINANCE');
  END LOOP;
@@ -117,8 +127,8 @@ BEGIN
  IF (v->'history'->>'completedFlightCount')::integer<>8 OR
    (v->'history'->>'olderFlightCount')::integer<>1 OR
    jsonb_array_length(v->'history'->'lastSevenFlights')<>7 OR
-   (v->'history'->>'totalProfitLossUsd')::numeric<>80028 OR
-   (v->'history'->>'olderProfitLossUsd')::numeric<>10000 OR
+   (v->'history'->>'totalProfitLossUsd')::numeric<>60028 OR
+   (v->'history'->>'olderProfitLossUsd')::numeric<>-10000 OR
    (v->'history'->'lastSevenFlights'->0->>'gameDate')<>'2000-01-10' OR
    (v->'history'->'lastSevenFlights'->0->>'profitLossUsd')::numeric<>10007
  THEN RAISE EXCEPTION 'LAST_SEVEN_AND_ARCHIVE_SUMMARY_WRONG: %',v->'history';END IF;
