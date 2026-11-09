@@ -17,11 +17,12 @@ const baseRows={
    source_url:'https://eur-lex.europa.eu/eli/reg/2008/1008/oj/eng',
    research_status:'reference_only',game_fee_usd:null,processing_game_days:null,enabled_in_game:false}],
  holdingStatus:[{
-   airline_id:UUID,world_id:1,world_state:'planned',minimum_operating_age_days:60,
-   first_operating_game_date:null,current_verified_game_date:null,
-   completed_world_days_since_first_operation:null,earliest_eligibility_game_date:null,
-   remaining_world_days:null,minimum_age_met:false,holding_registration_open:false,
-   eligibility_status:'world_not_active'
+   airline_id:UUID,world_id:1,world_state:'planned',minimum_registration_age_days:60,
+   registered_at_utc:'2026-10-29T08:12:26Z',
+   eligible_at_utc:'2026-12-28T08:12:26Z',eligible_utc_date:'2026-12-28',
+   completed_registration_days:11,remaining_registration_days:49,
+   minimum_age_met:false,holding_registration_open:false,
+   eligibility_status:'waiting_for_60_registration_days'
  }]
 };
 function make({enabled=true,verified=true,rows=baseRows}={}){
@@ -82,30 +83,38 @@ test('licence reference catalogue is authenticated, read-only, and grants no mar
  const tampered=make({rows:{...baseRows,licenses:[{...baseRows.licenses[0],enabled_in_game:true}]}});
  assert.equal((await tampered.handler(request('/api/v1/player/licenses'))).status,503);
 });
-test('holding eligibility status uses only authenticated owner and verified flight/clock evidence',async()=>{
+test('holding registration age comes from the authenticated airline record, not flights or player input',async()=>{
  const s=make();
  const resp=await s.handler(request('/api/v1/player/holding-status'));
  assert.equal(resp.status,200);
  const data=await resp.json();
+ assert.equal(data.ageBasis,'elapsed_calendar_days_since_airline_registration');
  assert.equal(data.holdingFormationAvailable,false);
  assert.equal(data.subsidiaryCreationAvailable,false);
  assert.equal(data.treasuryTransfersAvailable,false);
  assert.equal(data.worlds.length,1);
- assert.equal(data.worlds[0].reason,'world_not_active');
- assert.equal(data.worlds[0].completedDays,null);
- assert.equal(data.worlds[0].remainingDays,null);
- assert.equal(data.worlds[0].earliestGameDate,null);
- assert.equal(data.worlds[0].registrationOpen,false);
+ const row=data.worlds[0];
+ assert.equal(row.reason,'waiting_for_60_registration_days');
+ assert.equal(row.completedDays,11);
+ assert.equal(row.remainingDays,49);
+ assert.equal(row.earliestDate,'2026-12-28');
+ assert.equal(row.registeredAtUtc,'2026-10-29T08:12:26Z');
+ assert.equal(row.registrationOpen,false);
  assert.deepEqual(s.counts().queries[0].params,[UUID]);
+ assert.match(PLAYER_READ_SQL.holdingStatus,/holding_registration_eligibility_v2/);
  assert.match(PLAYER_READ_SQL.holdingStatus,/owner_player_id=\$1::uuid/);
- assert.doesNotMatch(PLAYER_READ_SQL.holdingStatus,/created_at|registered_at|now\(\)/);
- const requestWithId=make();
- assert.equal((await requestWithId.handler(request('/api/v1/player/holding-status',{airlineId:UUID}))).status,400);
- assert.equal(requestWithId.counts().connected,0);
+ assert.doesNotMatch(PLAYER_READ_SQL.holdingStatus,/first_operating_game_date|current_verified_game_date/);
+ const forged=make();
+ assert.equal((await forged.handler(request('/api/v1/player/holding-status',{airlineId:UUID}))).status,400);
+ assert.equal(forged.counts().connected,0);
  const tampered=make({rows:{...baseRows,holdingStatus:[{
   ...baseRows.holdingStatus[0],holding_registration_open:true
  }]}});
  assert.equal((await tampered.handler(request('/api/v1/player/holding-status'))).status,503);
+ const invalidDate=make({rows:{...baseRows,holdingStatus:[{
+  ...baseRows.holdingStatus[0],eligible_utc_date:'2026-12-27'
+ }]}});
+ assert.equal((await invalidDate.handler(request('/api/v1/player/holding-status'))).status,503);
  assert.equal((await make({verified:false}).handler(request('/api/v1/player/holding-status'))).status,401);
 });
 
