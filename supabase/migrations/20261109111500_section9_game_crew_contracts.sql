@@ -123,7 +123,7 @@ BEGIN
  SELECT confirmed_game_date,clock_source
  INTO game_date,clock_source FROM airlinerra_game.holding_world_clock_v1
  WHERE world_id=1;
- IF clock_source IS DISTINCT FROM 'engine_verified' THEN
+ IF clock_source IS DISTINCT FROM 'authoritative_game_engine' THEN
   game_date:=NULL;END IF;
  proof:='game-npc-contract-v1:'||p_airline||':'||conf||':'||p_candidate_slot;
  INSERT INTO airlinerra_game.section9_airline_crew_roster_v1(
