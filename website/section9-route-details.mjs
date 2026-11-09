@@ -1,6 +1,7 @@
 /** Section 9 read-only Route Details renderer; never activates flights or sells tickets. */
 import {createSection9CommercialPlanEditor} from './section9-commercial-plan-editor.mjs';
 import {createSection9RotationReview} from './section9-rotation-review.mjs';
+import {createSection9RouteFinancePanel} from './section9-route-finance-panel.mjs';
 const MONTHS=['January','February','March','April','May','June','July','August',
  'September','October','November','December'];
 const DAYS=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
@@ -58,8 +59,15 @@ export function createSection9RouteDetails({doc,host,getRoutes,getServer}={}){
   const planHost=doc.createElement('section');
   planHost.className='section9-commercial-plan';
   host.append(planHost);
+  const financeHost=doc.createElement('section');
+  financeHost.className='section9-route-finances';
+  host.append(financeHost);
+  const financePanel=createSection9RouteFinancePanel({
+   doc,host:financeHost,getServer
+  });
+  void financePanel.open(route,server.airline?.id);
   void createSection9CommercialPlanEditor({
-   doc,host:planHost,getServer
+   doc,host:planHost,getServer,onSaved:()=>financePanel.refresh()
   }).open(route,server.airline?.id);
   const rotationHost=doc.createElement('section');
   rotationHost.className='section9-aircraft-rotation';

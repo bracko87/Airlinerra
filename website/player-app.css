@@ -1377,3 +1377,47 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
 :root[data-ui-theme="dark"] .game-licence-application strong,
 :root[data-ui-theme="dark"] .game-licence-application b{color:#e5f0fa}
 :root[data-ui-theme="dark"] .game-licence-input{background:#192e46;border-color:#45617d;color:#e5f0fa}
+
+
+/* Protected per-route financial statement — plans separate from posted results. */
+.section9-route-finances{margin:18px 0}
+.route-finance-panel{border:1px solid var(--line,#dbe3eb);border-radius:12px;padding:18px;background:var(--surface,#fff);min-width:0}
+.route-finance-panel h3{margin:4px 0 6px;font-size:19px}
+.route-finance-panel h4{font-size:15px;margin:21px 0 10px;color:var(--navy,#122943)}
+.route-finance-panel h5{font-size:13px;margin:15px 0 7px;color:var(--navy,#122943)}
+.route-finance-panel .hint{font-size:12px;line-height:1.5;color:var(--muted,#64748b)}
+.route-finance-controls{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin:14px 0}
+.route-finance-control{display:grid;gap:5px;font-size:12px;font-weight:600;color:var(--muted,#64748b);min-width:170px}
+.route-finance-control select{border:1px solid #cbd5e1;background:#fff;color:#1e293b;border-radius:8px;padding:9px 10px;min-height:40px}
+.route-finance-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin:10px 0 15px}
+.route-finance-metric{display:flex;flex-direction:column;justify-content:space-between;gap:7px;padding:13px;border:1px solid var(--line,#dbe3eb);border-radius:9px;background:var(--surface,#fff)}
+.route-finance-metric span{font-size:11px;line-height:1.4;color:var(--muted,#64748b)}
+.route-finance-metric strong{font-size:17px;color:var(--navy,#122943);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.route-finance-estimate-lines,.route-finance-flight-lines{display:grid;gap:0}
+.route-finance-line{display:flex;justify-content:space-between;align-items:baseline;gap:14px;padding:7px 0;border-bottom:1px solid var(--line,#e2e8f0);font-size:12px}
+.route-finance-line span{color:var(--muted,#64748b)}
+.route-finance-line strong{color:var(--navy,#122943);text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.route-finance-total{font-weight:700;border-top:1px solid var(--line,#dbe3eb);padding-top:10px}
+.route-finance-fees{margin-top:10px}
+.route-finance-flight{border:1px solid var(--line,#dbe3eb);border-radius:9px;margin:7px 0;padding:10px 12px;background:var(--surface,#fff)}
+.route-finance-flight summary{cursor:pointer;font-size:12px;font-weight:700;color:var(--navy,#122943);line-height:1.5}
+.route-finance-flight-lines{padding-top:10px}
+.route-finance-history{margin-top:24px;padding-top:8px;border-top:1px solid var(--line,#dbe3eb)}
+@media(max-width:650px){
+ .route-finance-controls{display:grid;grid-template-columns:1fr}
+ .route-finance-control{min-width:0}
+ .route-finance-metrics{grid-template-columns:1fr 1fr}
+ .route-finance-panel{padding:12px}
+ .route-finance-line{font-size:11px}
+}
+@media(max-width:375px){.route-finance-metrics{grid-template-columns:1fr}}
+:root[data-ui-theme="dark"] .route-finance-panel,
+:root[data-ui-theme="dark"] .route-finance-metric,
+:root[data-ui-theme="dark"] .route-finance-flight{background:#182c43;border-color:#45617d}
+:root[data-ui-theme="dark"] .route-finance-panel h3,
+:root[data-ui-theme="dark"] .route-finance-panel h4,
+:root[data-ui-theme="dark"] .route-finance-panel h5,
+:root[data-ui-theme="dark"] .route-finance-line strong,
+:root[data-ui-theme="dark"] .route-finance-metric strong,
+:root[data-ui-theme="dark"] .route-finance-flight summary{color:#e5f0fa}
+:root[data-ui-theme="dark"] .route-finance-control select{background:#182c43;color:#e5f0fa;border-color:#45617d}

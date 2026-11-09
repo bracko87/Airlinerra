@@ -3,7 +3,7 @@
  * Marketing budgets are PLANNED only and cannot increase demand until a paid,
  * authoritative campaign activation is implemented elsewhere.
  */
-export function createSection9CommercialPlanEditor({doc,host,getServer}={}){
+export function createSection9CommercialPlanEditor({doc,host,getServer,onSaved}={}){
  if(!doc||!host)return Object.freeze({open:async()=>{}});
  let serial=0;
  const el=(tag,value='')=>{const node=doc.createElement(tag);
@@ -67,6 +67,7 @@ export function createSection9CommercialPlanEditor({doc,host,getServer}={}){
      throw Error('Commercial plan verification failed');
     status.textContent='Fare plan saved (version '+String(result.version)+
      '). Marketing remains planned and unpaid. No flight was activated.';
+    if(typeof onSaved==='function')void Promise.resolve().then(onSaved).catch(()=>{});
    }catch{status.textContent='Commercial plan was not confirmed. No fares were activated.';}
    finally{save.disabled=false;}
   });
