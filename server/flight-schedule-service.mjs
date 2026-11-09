@@ -154,7 +154,7 @@ export const SCHEDULE_SQL=Object.freeze({
   $1::uuid,$2::uuid,$3::text,NULL::text,$4::bigint) AS result`,
  rotationPreview:`SELECT airlinerra_game.section9_owned_aircraft_rotation_preview_v1(
   $1::uuid,$2::uuid,$3::uuid,$4::date,$5::integer) AS result`,
- operationsPreview:`SELECT airlinerra_game.section9_owned_operations_with_crew_rights_v1(
+ operationsPreview:`SELECT airlinerra_game.section9_owned_commercial_activation_preflight_v1(
   $1::uuid,$2::uuid,$3::uuid,$4::date,$5::integer) AS result`,
  crewRoster:`SELECT airlinerra_game.section9_owned_crew_roster_preview_v1(
   $1::uuid,$2::uuid,$3::uuid) AS result`,
@@ -365,7 +365,10 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
     const response=await client.query(SCHEDULE_SQL.check,[userId,body.scheduleId]);
     if(response.rowCount!==1||!response.rows[0]?.result)
      return respond(503,{error:'Flight activation check failed'});
-    return respond(200,response.rows[0].result);
+    const readiness=response.rows[0].result;
+    if(readiness.canActivateNormalFlight!==false)
+     return respond(503,{error:'Flight activation is not operationally released'});
+    return respond(200,readiness);
    }
    if(body.action==='delete'){
     const owner=await client.query(SCHEDULE_SQL.delete,[
