@@ -32,6 +32,61 @@ export function createSection9RotationReview({doc,host,getServer}={}){
   const result=el(doc,'div');result.className='section9-rotation-result';
   const state=el(doc,'p','Choose a date and check this aircraft.');state.className='hint';
   control.append(dateLabel,check);host.append(control,state,result);
+  // Separate evidence review: a clean rotation is not the same as having
+  // certified turnaround, crew, aircraft position or traffic rights.
+  const operations=getServer?.()?.scheduler?.operationsPreview;
+  if(typeof operations==='function'){
+   const evidenceButton=el(doc,'button','Check operational readiness');
+   evidenceButton.type='button';evidenceButton.className='secondary';
+   const evidenceState=el(doc,'p','Crew, legal rights and turnaround are checked separately.');
+   evidenceState.className='hint';
+   const evidenceHost=el(doc,'div');evidenceHost.className='section9-operation-evidence';
+   control.append(evidenceButton);host.append(evidenceState,evidenceHost);
+   evidenceButton.addEventListener('click',async()=>{
+    const date=input.value;
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){
+     evidenceState.textContent='Select a valid start date.';return;
+    }
+    evidenceButton.disabled=true;evidenceHost.replaceChildren();
+    evidenceState.textContent='Checking aircraft and operational evidence...';
+    try{
+     const payload=await getServer().scheduler.operationsPreview({
+      airlineId,scheduleId:route.serverScheduleId,startDate:date,days:28
+     });
+     if(current!==serial)return;
+     if(payload?.readOnly!==true||payload?.canActivateNormalFlight!==false||
+        !Array.isArray(payload.blockers))
+      throw Error('Unsafe operational evidence response');
+     const ground=payload.turnaround||{},crew=payload.crew||{},
+      delivery=payload.deliveryEvidence||{},rights=payload.routeRights||{};
+     evidenceState.textContent='Operational flight activation remains blocked until all evidence is verified.';
+     addFact(doc,evidenceHost,'Provisional minimum aircraft ground time',
+      Number.isInteger(ground.minimumMinutes)?ground.minimumMinutes+' minutes':'Not known');
+     addFact(doc,evidenceHost,'Short aircraft ground stops',
+      Number.isInteger(ground.shortTurnaroundOccurrences)?
+       ground.shortTurnaroundOccurrences:'Unknown');
+     addFact(doc,evidenceHost,'Aircraft delivery inspection approved',
+      delivery.inspectionApproved===true?'Yes':'No');
+     addFact(doc,evidenceHost,'Crew requirement known',
+      crew.catalogRequirementKnown===true?'Yes':'No');
+     addFact(doc,evidenceHost,'Crew assignments verified','No');
+     addFact(doc,evidenceHost,'Operating licence / traffic rights authorized',
+      rights.operationallyAuthorized===true?'Requires independent verification':'No');
+     evidenceHost.append(el(doc,'h4','Outstanding activation requirements'));
+     const ul=el(doc,'ul');
+     for(const reason of payload.blockers.slice(0,18)){
+      ul.append(el(doc,'li',String(reason).replaceAll('_',' ')));
+     }
+     evidenceHost.append(ul);
+     const note=el(doc,'p',
+      'Turnaround figures are provisional game estimates, not published aircraft certifications. Route legal principles are advisory, not operating rights.');
+     note.className='hint';evidenceHost.append(note);
+    }catch{
+     if(current===serial)evidenceState.textContent=
+      'Operational evidence unavailable. No flight was activated.';
+    }finally{evidenceButton.disabled=false;}
+   });
+  }
   check.addEventListener('click',async()=>{
    const date=input.value;
    if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){

@@ -125,3 +125,80 @@ test('Rotation preview fails closed when backend claims flights may activate',as
  const output=descendants(host).map(x=>x.textContent).join(' ');
  assert.match(output,/unavailable/i);
 });
+
+
+test('Operational-readiness preview validates date, owner scope and cannot activate flights',()=>{
+ const base={action:'operations-preview',airlineId:AIRLINE,scheduleId:SCHEDULE,
+  startDate:'2026-11-09',days:28};
+ assert.equal(validateFlightSchedulePayload(base),true);
+ for(const bad of [
+  {...base,playerId:USER},{...base,activate:true},
+  {...base,days:50},{...base,startDate:'2026-02-30'},
+  {...base,scheduleId:'invalid'}
+ ])assert.equal(validateFlightSchedulePayload(bad),false);
+});
+test('Operations preview server injects authenticated player and returns only blocked evidence',async()=>{
+ const evidence={status:'BLOCKED_OPERATIONAL_EVIDENCE_INCOMPLETE',
+  canActivateNormalFlight:false,readOnly:true,
+  blockers:['CREW_ASSIGNMENTS_NOT_VERIFIED'],
+  turnaround:{minimumMinutes:40,shortTurnaroundOccurrences:1}};
+ const h=handler(async(sql,args)=>{
+  assert.equal(sql,SCHEDULE_SQL.operationsPreview);
+  assert.deepEqual(args,[USER,AIRLINE,SCHEDULE,'2026-11-09',28]);
+  return {rowCount:1,rows:[{result:evidence}]};
+ });
+ const response=await h(request({action:'operations-preview',airlineId:AIRLINE,
+  scheduleId:SCHEDULE,startDate:'2026-11-09',days:28}));
+ assert.equal(response.status,200);
+ assert.deepEqual(await response.json(),evidence);
+ assert.equal(response.headers.get('cache-control'),'no-store');
+});
+test('Operations preview refuses an unsafe database activation flag',async()=>{
+ const h=handler(async()=>({rowCount:1,rows:[{result:{
+  canActivateNormalFlight:true,readOnly:true}}]}));
+ const response=await h(request({action:'operations-preview',airlineId:AIRLINE,
+  scheduleId:SCHEDULE,startDate:'2026-11-09',days:28}));
+ assert.equal(response.status,503);
+});
+test('Operations preview client never sends browser player identity',async()=>{
+ let payload=null;
+ const client=createFlightScheduleClient({auth:{getAccessToken:async()=>TOKEN},
+  origin:'https://airlinerra.com',
+  fetchImpl:async(_url,options)=>{
+   payload=JSON.parse(options.body);
+   return Response.json({readOnly:true,canActivateNormalFlight:false,blockers:[]});
+  }});
+ await client.operationsPreview({airlineId:AIRLINE,scheduleId:SCHEDULE,
+  startDate:'2026-11-09',days:28});
+ assert.deepEqual(payload,{action:'operations-preview',airlineId:AIRLINE,
+  scheduleId:SCHEDULE,startDate:'2026-11-09',days:28});
+});
+test('Route details shows ground, crew and legal evidence without an activation CTA',async()=>{
+ const doc={createElement:element},host=element('section');
+ const ui=createSection9RotationReview({doc,host,getServer:()=>({
+  scheduler:{
+   rotationPreview:async()=>({readOnly:true,canActivateNormalFlight:false}),
+   operationsPreview:async()=>({
+    readOnly:true,canActivateNormalFlight:false,
+    turnaround:{minimumMinutes:40,shortTurnaroundOccurrences:2},
+    crew:{catalogRequirementKnown:false,assignmentsVerified:false},
+    deliveryEvidence:{inspectionApproved:false},
+    routeRights:{operationallyAuthorized:false},
+    blockers:['CREW_REQUIREMENT_UNKNOWN','AIRCRAFT_TURNAROUND_TOO_SHORT',
+     'TRAFFIC_RIGHTS_NOT_OPERATIONALLY_AUTHORIZED']
+   })
+  }
+ })});
+ await ui.open({serverScheduleId:SCHEDULE,
+  referenceDepartureUtc:'2026-11-09T09:00:00Z'},AIRLINE);
+ const buttons=descendants(host).filter(x=>x.tag==='button');
+ assert.equal(buttons.length,2);
+ await buttons[1].listeners.click();
+ const output=descendants(host).map(x=>x.textContent).join(' ');
+ assert.match(output,/40 minutes/);
+ assert.match(output,/Short aircraft ground stops/);
+ assert.match(output,/CREW REQUIREMENT UNKNOWN/);
+ assert.match(output,/Turnaround figures are provisional/);
+ assert.match(output,/activation remains blocked/i);
+ assert.doesNotMatch(output,/Activate now/);
+});
