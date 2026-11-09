@@ -163,7 +163,7 @@ BEGIN
  IF next_day>DATE '2199-12-31' THEN
   RETURN jsonb_build_object('status','clock_date_limit',
    'worldId',p_world,'readOnly',true,'clockAdvanced',false);END IF;
- due_at:=w.opens_at+make_interval(days=>next_index);
+ due_at:=w.opens_at+make_interval(secs=>next_index::double precision*86400.0);
  RETURN jsonb_build_object('status','due','worldId',p_world,
   'gameDate',next_day,
   'eventId','horizon-world1-day-'||to_char(next_day,'YYYY-MM-DD'),
