@@ -32,7 +32,7 @@ test('Holding page has one full-width registration counter, no costs, and future
  for(const company of ['Original airline','Regional airline','Cargo airline','Maintenance company','Charter / VIP airline'])
   assert.ok(holding.includes(company),'Missing example subsidiary: '+company);
  assert.match(holding,/flight academy — airline infrastructure/i);
- assert.match(holding,/ATO or DTO where applicable/);
+ assert.match(holding,/ATO or DTO in Europe/);
  assert.match(holding,/own airline operating licence and AOC required/i);
  assert.match(holding,/Part-145 where applicable/);
  assert.match(holding,/Licences &amp; Permits/);
