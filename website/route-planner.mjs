@@ -602,6 +602,8 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   try{
    const response=await scheduler.list(airlineId);
    if(ticket!==fleetTicket)return;
+   if(!Array.isArray(response?.fleet)||!Array.isArray(response?.drafts))
+    throw Error('Unverified company fleet response');
    fleetReadState='verified';
    ownedFleet=Array.isArray(response?.fleet)?response.fleet.filter(a=>
     typeof a?.id==='string'&&Number.isSafeInteger(a.configurationId)&&a.configurationId>0):[];
