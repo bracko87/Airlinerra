@@ -64,13 +64,13 @@ function safePolicyRow(row){
  if(released&&(!Number.isFinite(fee)||fee<=0||fee>1000000||
    !Number.isInteger(days)||days<1||days>90||
    !Number.isInteger(validity)||validity<35||validity>1095||
-   typeof row.gameDay!=='string'))
+   (row.gameDay!==null&&typeof row.gameDay!=='string')))
   throw Error('SECTION9_INVALID_RELEASED_PERMISSION_POLICY');
+ const open=released&&typeof row.gameDay==='string';
  return {code:row.permissionCode,title:row.title,category:row.category,
-  canApply:released&&typeof row.gameDay==='string',
-  feeUsd:released?fee:null,
-  processingGameDays:released?days:null,
-  validityGameDays:released?validity:null};
+  canApply:open,feeUsd:open?fee:null,
+  processingGameDays:open?days:null,
+  validityGameDays:open?validity:null};
 }
 export function createSection9PermissionPlayerHandler({
  database,verifyUserToken,origin=PROD
