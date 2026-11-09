@@ -3,7 +3,7 @@
 BEGIN;
 DO $test$
 DECLARE owner_id uuid;airline uuid;home text;code text;plane uuid;draft uuid;
- status jsonb;old_cert bigint;old_event bigint;old_ledger bigint;
+ verdict jsonb;old_cert bigint;old_event bigint;old_ledger bigint;
  old_movements bigint;old_positions bigint;old_active bigint;
 BEGIN
  IF has_function_privilege('anon',
@@ -36,16 +36,16 @@ BEGIN
   '[{"day":0,"time":"10:00"}]'::jsonb,'{}'::jsonb,owner_id)
  RETURNING id INTO draft;
 
- status:=airlinerra_game.section9_verify_slot_clearance_source_v1(
+ verdict:=airlinerra_game.section9_verify_slot_clearance_source_v1(
   airline,draft,1,DATE '2000-01-03');
- IF status->>'status'<>'blocked_unverified_world_or_game_day'
- OR status->>'verified'<>'false'
- OR status->>'flightActivated'<>'false'
- THEN RAISE EXCEPTION 'Unopened game returned a slot grant: %',status;END IF;
- status:=airlinerra_game.section9_verify_slot_clearance_source_v1(
+ IF verdict->>'status'<>'blocked_unverified_world_or_game_day'
+ OR verdict->>'verified'<>'false'
+ OR verdict->>'flightActivated'<>'false'
+ THEN RAISE EXCEPTION 'Unopened game returned a slot grant: %',verdict;END IF;
+ verdict:=airlinerra_game.section9_verify_slot_clearance_source_v1(
   airline,draft,2,DATE '2000-01-03');
- IF status->>'status'<>'blocked_stale_or_non_draft_schedule'
- THEN RAISE EXCEPTION 'Stale schedule version returned slot clearance: %',status;END IF;
+ IF verdict->>'status'<>'blocked_stale_or_non_draft_schedule'
+ THEN RAISE EXCEPTION 'Stale schedule version returned slot clearance: %',verdict;END IF;
 
  -- Simulate signed game clock ONLY inside this rollback transaction.
  UPDATE public.airlinerra_game_worlds SET state='active',
@@ -59,14 +59,14 @@ BEGIN
   world_id,game_date,engine_event_id,event_hmac_sha256,dispatch_kind)
  VALUES(1,DATE '2000-01-03','rollback-slot-authority-20000103',
   repeat('b',64),'no_verified_flights');
- status:=airlinerra_game.section9_verify_slot_clearance_source_v1(
+ verdict:=airlinerra_game.section9_verify_slot_clearance_source_v1(
   airline,draft,1,DATE '2000-01-03');
- IF status->>'status'<>'blocked_slot_clearance_evidence'
- OR status->>'verified'<>'false'
- OR status->>'flightActivated'<>'false'
- OR status->'blockers' IS NULL
- OR NOT status->'blockers' ? 'RECURRING_SLOT_RESERVATIONS_MISMATCH'
- THEN RAISE EXCEPTION 'Unreserved draft received verified slot proof: %',status;END IF;
+ IF verdict->>'status'<>'blocked_slot_clearance_evidence'
+ OR verdict->>'verified'<>'false'
+ OR verdict->>'flightActivated'<>'false'
+ OR verdict->'blockers' IS NULL
+ OR NOT verdict->'blockers' ? 'RECURRING_SLOT_RESERVATIONS_MISMATCH'
+ THEN RAISE EXCEPTION 'Unreserved draft received verified slot proof: %',verdict;END IF;
  BEGIN
   PERFORM airlinerra_game.section9_record_verified_certification_event_v1(
    airline,draft,1,'airport_slot_capacity','certify',
