@@ -511,3 +511,75 @@ test('Route Details reports missing approved delivery source rather than inventi
  assert.match(report,/Not verified/);
  assert.match(report,/DELIVERY POSITION ANCHOR NOT RECORDED/);
 });
+
+test('Operational readiness shows last verified aircraft arrival distinctly from delivery',async()=>{
+ const doc={createElement:element},host=element('section');
+ const ui=createSection9RotationReview({doc,host,getServer:()=>({
+  scheduler:{
+   rotationPreview:async()=>({readOnly:true,canActivateNormalFlight:false}),
+   operationsPreview:async()=>({
+    readOnly:true,canActivateNormalFlight:false,
+    blockers:['FLIGHT_ACTIVATION_NOT_RELEASED'],
+    turnaround:{minimumMinutes:40},crew:{},deliveryEvidence:{},
+    routeRights:{operationallyAuthorized:false},
+    aircraftPosition:{
+     readOnly:true,canActivateNormalFlight:false,
+     deliveryAnchorRecorded:true,deliveryAirportKey:'OURAIRPORTS:4610',
+     firstPlannedDepartureAirport:'OURAIRPORTS:4610',
+     initialDepartureMatchesDelivery:true,movementHistoryVerified:false
+    },
+    aircraftMovement:{
+     readOnly:true,canActivateNormalFlight:false,
+     status:'last_verified_operated_arrival',
+     locationStatus:'grounded',
+     lastVerifiedGroundAirport:'OURAIRPORTS:2212',
+     lastMovementEventUtc:'2000-01-03T11:00:00Z',
+     verifiedOperatedMovementEvents:2,
+     currentRealTimeLocationCertified:false
+    }
+   })
+  }
+ })});
+ await ui.open({serverScheduleId:SCHEDULE,
+  referenceDepartureUtc:'2026-11-09T10:00:00Z'},AIRLINE);
+ await descendants(host).find(x=>x.textContent==='Check operational readiness')
+  .listeners.click();
+ const report=descendants(host).map(x=>x.textContent).join(' ');
+ assert.match(report,/Approved initial aircraft location/);
+ assert.match(report,/OURAIRPORTS:4610/);
+ assert.match(report,/OURAIRPORTS:2212/);
+ assert.match(report,/Verified operated-flight events/);
+ assert.match(report,/Grounded after verified arrival/);
+ assert.match(report,/Current real-time location certified/);
+ assert.doesNotMatch(report,/Flight activated|Tickets booked/);
+});
+test('In-flight aircraft displays no false available ground airport',async()=>{
+ const doc={createElement:element},host=element('section');
+ const ui=createSection9RotationReview({doc,host,getServer:()=>({
+  scheduler:{
+   rotationPreview:async()=>({readOnly:true,canActivateNormalFlight:false}),
+   operationsPreview:async()=>({
+    readOnly:true,canActivateNormalFlight:false,
+    blockers:['AIRCRAFT_STILL_IN_FLIGHT'],
+    turnaround:{},crew:{},deliveryEvidence:{},
+    routeRights:{operationallyAuthorized:false},
+    aircraftMovement:{
+     readOnly:true,canActivateNormalFlight:false,
+     status:'last_verified_operated_departure_in_flight',
+     locationStatus:'in_flight',lastVerifiedGroundAirport:null,
+     lastMovementEventUtc:'2000-01-03T10:00:00Z',
+     verifiedOperatedMovementEvents:1
+    }
+   })
+  }
+ })});
+ await ui.open({serverScheduleId:SCHEDULE,
+  referenceDepartureUtc:'2026-11-09T10:00:00Z'},AIRLINE);
+ await descendants(host).find(x=>x.textContent==='Check operational readiness')
+  .listeners.click();
+ const report=descendants(host).map(x=>x.textContent).join(' ');
+ assert.match(report,/In flight/);
+ assert.match(report,/Last verified ground airport/);
+ assert.match(report,/None verified/);
+ assert.match(report,/Current real-time location certified/);
+});
