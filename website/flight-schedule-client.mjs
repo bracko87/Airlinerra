@@ -60,6 +60,10 @@ export function createFlightScheduleClient({auth,origin,fetchImpl=(...args)=>fet
     post({action:'rotation-preview',airlineId,scheduleId,startDate,days}),
   operationsPreview:({airlineId,scheduleId,startDate,days=28})=>
     post({action:'operations-preview',airlineId,scheduleId,startDate,days}),
+  crewRoster:({airlineId,scheduleId})=>
+    post({action:'crew-roster',airlineId,scheduleId}),
+  crewPlan:({airlineId,scheduleId,crewId,weeklyEntry,decision})=>
+    post({action:'crew-plan',airlineId,scheduleId,crewId,weeklyEntry,decision}),
   activationCheck:({airlineId,scheduleId})=>post({action:'activation-check',airlineId,scheduleId}),
   delete:({airlineId,scheduleId})=>post({action:'delete',airlineId,scheduleId})
  });
