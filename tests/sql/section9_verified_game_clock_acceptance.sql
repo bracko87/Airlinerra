@@ -17,7 +17,7 @@ BEGIN
  THEN RAISE EXCEPTION 'Current production world state changed; do not use planned world fixture';END IF;
 
  tick:=airlinerra_game.section9_accept_verified_game_tick_v1(
-  1,'2000-01-01','engine-world1-day0001',repeat('a',64));
+  1::smallint,DATE '2000-01-01','engine-world1-day0001',repeat('a',64));
  IF tick->>'status'<>'blocked_world_not_open' OR
   tick->>'clockAdvanced'<>'false' THEN
    RAISE EXCEPTION 'A planned world was allowed to advance: %',tick;END IF;
@@ -30,7 +30,7 @@ BEGIN
  SET state='active',opens_at=clock_timestamp()-interval '1 day' WHERE id=1;
 
  tick:=airlinerra_game.section9_accept_verified_game_tick_v1(
-  1,'2000-01-01','engine-world1-day0001',repeat('a',64));
+  1::smallint,DATE '2000-01-01','engine-world1-day0001',repeat('a',64));
  IF tick->>'status'<>'verified_tick_accepted' OR
   tick->>'clockAdvanced'<>'true' OR
   tick->>'forecastEnqueued'<>'false' OR
@@ -39,29 +39,29 @@ BEGIN
  THEN RAISE EXCEPTION 'Safe first tick failed: %',tick;END IF;
 
  again:=airlinerra_game.section9_accept_verified_game_tick_v1(
-  1,'2000-01-01','engine-world1-day0001',repeat('a',64));
+  1::smallint,DATE '2000-01-01','engine-world1-day0001',repeat('a',64));
  IF again->>'status'<>'already_applied' OR again->>'replayed'<>'true'
  THEN RAISE EXCEPTION 'Replay advanced the clock or failed: %',again;END IF;
  denied:=false;
  BEGIN
   PERFORM airlinerra_game.section9_accept_verified_game_tick_v1(
-   1,'2000-01-01','engine-world1-day0001',repeat('b',64));
+   1::smallint,DATE '2000-01-01','engine-world1-day0001',repeat('b',64));
  EXCEPTION WHEN unique_violation THEN denied:=true;END;
  IF NOT denied THEN RAISE EXCEPTION 'Conflicting event evidence accepted';END IF;
  denied:=false;
  BEGIN
   PERFORM airlinerra_game.section9_accept_verified_game_tick_v1(
-   1,'2000-01-03','engine-world1-day0003',repeat('c',64));
+   1::smallint,DATE '2000-01-03','engine-world1-day0003',repeat('c',64));
  EXCEPTION WHEN SQLSTATE '22023' THEN denied:=true;END;
  IF NOT denied THEN RAISE EXCEPTION 'Skipped day accepted';END IF;
  tick:=airlinerra_game.section9_accept_verified_game_tick_v1(
-  1,'2000-01-02','engine-world1-day0002',repeat('d',64));
+  1::smallint,DATE '2000-01-02','engine-world1-day0002',repeat('d',64));
  IF tick->>'clockAdvanced'<>'true' THEN
   RAISE EXCEPTION 'Valid consecutive day not accepted';END IF;
  denied:=false;
  BEGIN
   PERFORM airlinerra_game.section9_accept_verified_game_tick_v1(
-   1,'2000-01-02','engine-world1-day-different',repeat('e',64));
+   1::smallint,DATE '2000-01-02','engine-world1-day-different',repeat('e',64));
  EXCEPTION WHEN unique_violation THEN denied:=true;END;
  IF NOT denied THEN RAISE EXCEPTION 'Different event replaced existing tick';END IF;
 
