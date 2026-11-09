@@ -43,6 +43,49 @@ test('local player gateway rejects absent or unrelated database credentials',asy
  });
  assert.equal((await missingDb(request())).status,503);
 });
+test('localhost Holding and Licences requests are forwarded to the authenticated read-only game API',async()=>{
+ const calls=[];
+ const holding={
+  worlds:[{airlineId:'550e8400-e29b-41d4-a716-446655440000',
+   worldId:1,minimumDays:60,remainingDays:49,earliestDate:'2026-12-28',
+   registrationOpen:false}],
+  holdingFormationAvailable:false,subsidiaryCreationAvailable:false,
+  treasuryTransfersAvailable:false,ageBasis:'elapsed_calendar_days_since_airline_registration'
+ };
+ const handler=await makeRealLocalPlayerHandler({
+  env:{},loadPg:async()=>{throw Error('Local database credentials must not be required');},
+  fetchImpl:async(url,options)=>{
+   calls.push(options.headers['x-airlinerra-route']);
+   assert.equal(url,'https://'+REF+'.supabase.co/functions/v1/airlinerra-game');
+   assert.equal(options.method,'POST');
+   assert.equal(options.headers.origin,'https://airlinerra.com');
+   assert.equal(options.headers.authorization,'Bearer '+token);
+   assert.ok(['\/api/v1\/player\/holding-status','\/api/v1\/player\/licenses'].includes(options.headers['x-airlinerra-route']));
+   return new Response(JSON.stringify(
+    options.headers['x-airlinerra-route']==='/api/v1/player/holding-status'
+     ?holding:{referenceOnly:true,applicationsAvailable:false,licenses:[]}
+   ),{status:200,headers:{'content-type':'application/json'}});
+  }
+ });
+ const holdingResponse=await handler(request({},'/api/v1/player/holding-status'));
+ assert.equal(holdingResponse.status,200);
+ const holdingData=await holdingResponse.json();
+ assert.equal(holdingData.worlds[0].earliestDate,'2026-12-28');
+ assert.equal(holdingData.worlds[0].remainingDays,49);
+ assert.equal(holdingData.holdingFormationAvailable,false);
+ const licensesResponse=await handler(request({},'/api/v1/player/licenses'));
+ assert.equal(licensesResponse.status,200);
+ assert.equal((await licensesResponse.json()).referenceOnly,true);
+ assert.deepEqual(calls,['/api/v1/player/holding-status','/api/v1/player/licenses']);
+ for(const blocked of ['/api/v1/airlines','/api/v1/holding/create','/api/v1/player/holding-transfer']){
+  assert.equal((await handler(request({},blocked))).status,403,blocked);
+ }
+ assert.equal((await handler(request({},'/api/v1/player/holding-status',token,'https://evil.example'))).status,403);
+ assert.equal((await handler(request({},'/api/v1/player/holding-status','invalid'))).status,401);
+ assert.deepEqual(calls,['/api/v1/player/holding-status','/api/v1/player/licenses'],
+  'Reject malformed and write calls before forwarding to Supabase');
+});
+
 test('live read adapter verifies hosted identity before using private PostgreSQL',async()=>{
  let connected=0,released=0,queries=[],poolOptions,authCalls=0;
  class Pool{
