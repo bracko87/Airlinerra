@@ -62,6 +62,13 @@ BEGIN
  OR (result->>'attempt')::integer<>1
  THEN RAISE EXCEPTION 'Oldest aircraft date not claimed first: %',result;END IF;
  token1:=(result->>'leaseToken')::uuid;
+ BEGIN
+  UPDATE airlinerra_game.section9_aircraft_day_operations_jobs_v1
+  SET status='running',attempt=1,lease_token=gen_random_uuid(),
+   lease_until=clock_timestamp()+interval '3 minutes'
+  WHERE id=tomorrow;
+  RAISE EXCEPTION 'Unique running-aircraft index allowed two jobs for same plane';
+ EXCEPTION WHEN unique_violation THEN NULL;END;
  result:=airlinerra_game.section9_claim_aircraft_operations_v1();
  IF result IS NOT NULL THEN RAISE EXCEPTION 'Second day of aircraft claimed while first running';END IF;
  BEGIN
