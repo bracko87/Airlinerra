@@ -6,7 +6,7 @@
 export const WEEKDAYS=Object.freeze(['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']);
 const validTime=value=>/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(String(value||''));
 const validStand=value=>['terminal','remote','cargo'].includes(value);
-const name=airport=>String(airport?.code==='LYAL'||airport?.icao==='LYAL'?'Aleksandrovo':airport?.name||airport?.municipality||airport?.code||'Unknown airport');
+const name=airport=>String(airport?.code==='LYAL'||airport?.icao==='LYAL'?'Aleksandrovo':airport?.municipality||airport?.name||airport?.code||'Unknown airport');
 const signature=event=>event.flightNumber+' '+WEEKDAYS[event.day]+' '+event.time;
 
 /** Do not derive live location or arrival time from a local-only flight draft. */
