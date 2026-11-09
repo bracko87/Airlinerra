@@ -256,7 +256,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
  let lastKeys='',airportProfiles={},editingFlightNumber=null,editingLegacyIndex=null,editSerial=0;
  let preflightCatalogFor=null,preflightLoadToken=0,preflightRequest=0;
  let catalogAircraft=[],preflightCache=null,preflightPromise=null;
- let ownedFleet=[],serverDrafts=[],fleetTicket=0;
+ let ownedFleet=[],serverDrafts=[],fleetTicket=0,fleetReadState='unavailable';
  const pickers={},selected=side=>pickers[side]?.selected()||null;
  // The country-picker constructor calls onSelect synchronously. Defer route
  // rendering until all planner callbacks, including preflight, are initialized.
@@ -559,8 +559,9 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   if([...select.options].some(option=>option.value===saved))select.value=saved;
   select.disabled=select.options.length<2;
   syncAircraftCompatibility();
-  if(select.disabled)message('route-aircraft-feedback',
-   'No in-service aircraft owned or leased by this company. Acquire, deliver and inspect one before scheduling.');
+  if(select.disabled)message('route-aircraft-feedback',fleetReadState==='verified'?
+   'No in-service aircraft owned or leased by this company. Acquire, deliver and inspect one before scheduling.':
+   'Verified company fleet is not available yet. Aircraft cannot be selected until an owner-scoped fleet read succeeds.');
  };
  const renderServerScheduleList=()=>{
   const holder=$('route-server-draft-list');if(!holder)return;
@@ -594,12 +595,14 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
  };
  const loadOwnedScheduleData=async airlineId=>{
   const ticket=++fleetTicket,scheduler=getData()?.scheduler;
+  fleetReadState=airlineId&&typeof scheduler?.list==='function'?'loading':'unavailable';
   ownedFleet=[];serverDrafts=[];refreshCatalogOptions();renderServerScheduleList();
   if(!airlineId||typeof scheduler?.list!=='function')return;
   message('route-server-draft-status','Loading your registered operational aircraft and server drafts...');
   try{
    const response=await scheduler.list(airlineId);
    if(ticket!==fleetTicket)return;
+   fleetReadState='verified';
    ownedFleet=Array.isArray(response?.fleet)?response.fleet.filter(a=>
     typeof a?.id==='string'&&Number.isSafeInteger(a.configurationId)&&a.configurationId>0):[];
    serverDrafts=Array.isArray(response?.drafts)?response.drafts:[];
@@ -609,7 +612,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
     'No company aircraft are in service. Purchase or lease one, complete delivery and inspection, then create a route.');
   }catch{
    if(ticket===fleetTicket){
-    ownedFleet=[];serverDrafts=[];refreshCatalogOptions();renderServerScheduleList();
+    fleetReadState='unavailable';ownedFleet=[];serverDrafts=[];refreshCatalogOptions();renderServerScheduleList();
     message('route-server-draft-status','Server fleet/schedule service unavailable. No flight was activated.');
    }
   }
