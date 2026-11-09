@@ -163,8 +163,8 @@ test('route planning has two steps, stacked airport lookup, real flag indicators
  assert.match(picker,/const choose=key=>/);
  assert.match(ui,/reader\.airportProfile\(homeKey\)/);
  assert.match(ui,/pickers\[side\]\.choose\(home\.key\)/);
- assert.match(ui,/aircraftId:\(ownedChoice\|\|simulationAircraft\)\?flightAircraft:null,/);
- assert.match(ui,/testAircraft:Boolean\(simulationAircraft\)/);
+ assert.match(ui,/aircraftId:flightAircraft,/);
+ assert.match(ui,/testAircraft:false/);
  assert.match(ui,/status:'draft',operationallyVerified:false/);
  assert.match(ui,/Aircraft, crew, airport slots and traffic rights require verification/);
  assert.match(work,/createRoutePlanner/);
@@ -229,16 +229,18 @@ test('airports now use one visible autocomplete, actual-image country flags and 
 });
 
 
-test('Panonian A319 fixture appears only as nonoperational simulation choice and weekly layout has visible spacing',async()=>{
+test('route aircraft dropdown lists only owner-scoped operational fleet, not test or catalogue models',async()=>{
  const [route,office,styles]=await Promise.all([
   read('../website/route-planner.mjs'),
   read('../website/airline-workspace.mjs'),
   read('../website/player-app.css')
  ]);
- assert.match(route,/getData\(\)\.airline\.testAircraft\.filter/);
- assert.match(route,/TEST ONLY/);
- assert.match(route,/aircraftId:\(ownedChoice\|\|simulationAircraft\)\?flightAircraft:null,/);
- assert.match(route,/testAircraft:Boolean\(simulationAircraft\)/);
+ assert.match(route,/for\(const aircraft of ownedFleet\)/);
+ assert.match(route,/!\['owned','leased'\]\.includes\(aircraft\.ownershipType\)/);
+ assert.doesNotMatch(route,/select\.add\(new Option\('TEST ONLY/);
+ assert.doesNotMatch(route,/\(catalog preview\)/);
+ assert.match(route,/aircraftId:flightAircraft,/);
+ assert.match(route,/testAircraft:false/);
  assert.match(route,/status:'draft',operationallyVerified:false/);
  assert.match(route,/cannot use the route|cannot be used on this route/);
  assert.match(office,/id="fleet-test-count"/);
@@ -266,6 +268,8 @@ test('three-step flight draft screen includes daily aircraft assignments and pri
   assert.ok(ui.includes('data-route-time="'+day+'"'));
   assert.ok(ui.includes('id="route-arrival-'+day+'"'));
   assert.ok(ui.includes('id="route-stand-'+day+'"'));
+  assert.ok(ui.includes('id="route-arrival-stand-'+day+'"'));
+  assert.ok(ui.includes('id="route-next-departure-'+day+'"'));
  }
  assert.match(source,/status:'draft',operationallyVerified:false/);
  assert.match(source,/await resetRouteForm\(\)/);
@@ -326,10 +330,10 @@ test('saved legacy route ideas remain editable while applied drafts reset the fo
 });
 
 
-test('Step 2 allows explicit departure and destination stand choices, including remote stands',async()=>{
+test('Step 2 inherits departure stand and keeps arrival stand selector, including remote stands',async()=>{
  const source=await read('../website/route-planner.mjs');
  const markup=routePlannerMarkup();
- assert.ok(markup.includes('id="route-departure-stand"'));
+ assert.equal(markup.includes('id="route-departure-stand"'),false);
  assert.match(markup,/Remote stand \(lower fees\)/);
  assert.ok(markup.includes('id="route-departure-stand-derived"'));
  assert.ok(markup.includes('id="route-aircraft-position-status"'));
@@ -337,7 +341,7 @@ test('Step 2 allows explicit departure and destination stand choices, including 
  assert.match(source,/const timeline=selectedAircraftTimeline\(\)/);
  assert.match(source,/if\(timeline\.errors\.length\)/);
  assert.match(source,/Aircraft schedule conflict:/);
- assert.match(source,/departureStand:\$\('route-departure-stand'\)\?\.value/);
+ assert.match(source,/departureStand:departureStandFromTimeline\(selectedAircraftTimeline\(\)\)/);
  assert.match(source,/arrivalStand:\$\('route-arrival-stand'\)\?\.value/);
  assert.match(source,/renderAircraftWeeklyTimeline\(doc,\$\('route-aircraft-timeline-content'\),timeline\)/);
  const office=await read('../website/airline-workspace.mjs');
@@ -385,4 +389,16 @@ test('route planner initializes both airport pickers without an early preflight 
   assert.match(node('route-preflight-status').textContent,
    /Select two different airports and an aircraft/);
  }finally{globalThis.Option=originalOption}
+});
+
+test('next departure calculation uses entered UTC arrival plus turnaround, never guesses a duration',async()=>{
+ const {exampleNextDepartureUtc}=await import('../website/route-planner.mjs');
+ assert.deepEqual(exampleNextDepartureUtc('2026-11-09T09:00:00Z','2026-11-09T10:00:00Z',45),{
+  iso:'2026-11-09T10:45:00.000Z',clock:'10:45 UTC',arrivalClock:'10:00 UTC'});
+ assert.equal(exampleNextDepartureUtc(null,null,45),null);
+ assert.equal(exampleNextDepartureUtc('2026-11-09T10:00:00Z','2026-11-09T09:00:00Z',45),null);
+ assert.equal(exampleNextDepartureUtc('2026-11-09T09:00:00Z','2026-11-09T10:00:00Z',30),null);
+ const markup=routePlannerMarkup();
+ assert.equal(markup.includes("section('AIRPORT RESTRICTIONS'"),false);
+ assert.match(markup,/route-inline-restrictions/);
 });
