@@ -54,7 +54,7 @@ test('route UI automatically applies checks and server gate on every save withou
   read('../website/route-planner.mjs'),
   read('../website/dev-scripts/invited-overlay.mjs')]);
  assert.match(source,/const syncAircraftCompatibility=\(\)=>/);
- assert.match(source,/runwayAssessment\(a\)/);
+ assert.match(source,/runwayAssessment\(model\)/);
  assert.match(source,/if\(button\)button\.disabled=assessment\?\.status==='BLOCKED'/);
  assert.match(source,/const automaticPreflight=async/);
  assert.match(source,/noiseCurfewCheck\(\{/);
