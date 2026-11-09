@@ -14,6 +14,7 @@ ALTER TABLE airlinerra_game.section9_route_posted_flight_financials_v1
 ALTER TABLE airlinerra_game.section9_route_posted_flight_financials_v1
  ADD CONSTRAINT section9_airport_fee_itemization_reconciles_v1
  CHECK (
+  true
   AND jsonb_typeof(airport_fee_lines->'departureAirportMovementUsd')='number'
   AND jsonb_typeof(airport_fee_lines->'arrivalLandingUsd')='number'
   AND jsonb_typeof(airport_fee_lines->'departureGroundHandlingUsd')='number'
