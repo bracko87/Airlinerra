@@ -75,6 +75,8 @@ BEGIN
    AND coalesce(d.weekly_item->>'day','') ~ '^[0-6]$'
    AND coalesce(d.weekly_item->>'time','') ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$'
    AND d.timezone_iana IS NOT NULL
+   AND EXISTS(SELECT 1 FROM pg_catalog.pg_timezone_names n
+    WHERE n.name=d.timezone_iana)
  ), dated AS MATERIALIZED(
   SELECT g.*,
     (day_value::date+(g.clock_text)::time) AS local_departure,
@@ -90,8 +92,12 @@ BEGIN
    d.departure_utc-make_interval(mins=>policy.preflight_minutes) AS duty_start,
    d.departure_utc+d.flight_duration+
      make_interval(mins=>policy.postflight_minutes) AS duty_end,
-   (d.departure_utc AT TIME ZONE d.timezone_iana)
-      IS DISTINCT FROM d.local_departure AS invalid_dst
+   ((d.departure_utc AT TIME ZONE d.timezone_iana)
+      IS DISTINCT FROM d.local_departure
+     OR ((d.departure_utc-interval '1 hour') AT TIME ZONE d.timezone_iana)
+        =d.local_departure
+     OR ((d.departure_utc+interval '1 hour') AT TIME ZONE d.timezone_iana)
+        =d.local_departure) AS invalid_dst
   FROM dated d
  ), ordered AS MATERIALIZED(
   SELECT i.*,
