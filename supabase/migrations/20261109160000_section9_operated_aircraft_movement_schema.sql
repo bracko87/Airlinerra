@@ -124,12 +124,12 @@ CREATE OR REPLACE FUNCTION airlinerra_game.section9_aircraft_movement_decision_v
 AS $f$
 DECLARE reason text;
 BEGIN
- IF p_phase NOT IN ('departed','arrived') OR
-  p_state NOT IN ('grounded','in_flight') OR
+ IF p_phase IS NULL OR p_phase NOT IN ('departed','arrived') OR
+  p_state IS NULL OR p_state NOT IN ('grounded','in_flight') OR
   p_origin IS NULL OR p_destination IS NULL OR
   p_origin=p_destination OR p_occurrence IS NULL OR
   p_event_utc IS NULL OR
-  p_event_utc::date NOT BETWEEN DATE '2000-01-01' AND DATE '2199-12-31'
+  (p_event_utc AT TIME ZONE 'UTC')::date NOT BETWEEN DATE '2000-01-01' AND DATE '2199-12-31'
  THEN RAISE EXCEPTION USING ERRCODE='22023',
   MESSAGE='SECTION9_INVALID_MOVEMENT_TRANSITION';END IF;
  reason:=CASE
