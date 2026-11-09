@@ -16,14 +16,15 @@ const MODULE_EXTENSIONS = new Set(['.mjs','.js']);
 export async function verifyBuiltPlayerModules({distDir}={}){
  if(typeof distDir!=='string'||!path.isAbsolute(distDir))
   throw Error('Absolute built website directory required');
+ const root=path.resolve(distDir);
  const visited = new Set();
  const pending = [{file:'player-app.mjs',from:'player.html'}];
  while(pending.length){
   const {file,from}=pending.pop();
-  const absolute=path.resolve(distDir,file);
-  if(absolute!==distDir&&!absolute.startsWith(distDir+path.sep))
+  const absolute=path.resolve(root,file);
+  if(absolute!==root&&!absolute.startsWith(root+path.sep))
    throw Error('Built player module import escapes website directory: '+file);
-  const relative=path.relative(distDir,absolute).split(path.sep).join('/');
+  const relative=path.relative(root,absolute).split(path.sep).join('/');
   if(visited.has(relative))continue;
   let bytes;
   try{
@@ -43,7 +44,7 @@ export async function verifyBuiltPlayerModules({distDir}={}){
   for(const specifier of imports){
    if(/[?#]/u.test(specifier))
     throw Error('Unexpected browser module import query: '+specifier);
-   const next=path.relative(distDir,path.resolve(path.dirname(absolute),specifier));
+   const next=path.relative(root,path.resolve(path.dirname(absolute),specifier));
    pending.push({file:next,from:relative});
   }
  }
