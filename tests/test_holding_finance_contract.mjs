@@ -36,7 +36,7 @@ test('holding 60-day countdown handles leap day and exact UTC cutoff',()=>{
  const base={worldState:'active',registeredAtUtc:'2028-02-01T12:00:00Z'};
  const a=evaluateHoldingEligibility({...base,nowUtc:'2028-03-31T11:59:59Z'});
  assert.equal(a.completedDays,58);
- assert.equal(a.remainingDays,1);
+ assert.equal(a.remainingDays,2,'Remainder is rounded up to full 24-hour days');
  assert.equal(a.earliestDate,'2028-04-01');
  assert.equal(a.canApply,false);
  const b=evaluateHoldingEligibility({...base,nowUtc:'2028-04-01T11:59:59Z'});
