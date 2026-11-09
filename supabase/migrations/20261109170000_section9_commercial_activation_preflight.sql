@@ -62,8 +62,8 @@ BEGIN
  staffing:=operations->'crewStaffing';
  rights:=operations->'operatingPermissionEvidence';
  rotation:=operations->'rotation';
- slots_recorded:=(rotation->'slotsRecorded'->>'departure')='true'
-   AND (rotation->'slotsRecorded'->>'arrival')='true';
+ slots_recorded:=(rotation->'slotsRecorded'->>'departure') IS NOT DISTINCT FROM 'true'
+   AND (rotation->'slotsRecorded'->>'arrival') IS NOT DISTINCT FROM 'true';
  rotation_clear:=coalesce((rotation->>'overlappingFlights')::integer,-1)=0
   AND coalesce((rotation->>'wrongAirportDepartures')::integer,-1)=0
   AND coalesce((rotation->>'daylightSavingTimeIssues')::integer,-1)=0
@@ -86,7 +86,7 @@ BEGIN
  IF (operations->'turnaround'->>'shortTurnaroundOccurrences')::integer IS DISTINCT FROM 0
   OR operations->'turnaround'->>'minimumMinutes' IS NULL
  THEN blockers:=array_append(blockers,'TURNAROUND_NOT_VERIFIED');END IF;
- IF NOT slots_recorded
+ IF slots_recorded IS DISTINCT FROM true
  THEN blockers:=array_append(blockers,'DEPARTURE_AND_ARRIVAL_SLOTS_NOT_RECORDED');END IF;
  IF movements->>'deliveryAnchorValid' IS DISTINCT FROM 'true'
  THEN blockers:=array_append(blockers,'VERIFIED_INITIAL_AIRCRAFT_LOCATION_MISSING');END IF;
