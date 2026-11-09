@@ -126,7 +126,7 @@ BEGIN
   JOIN airlinerra_game.airline_ledger revenue
    ON revenue.id=f.revenue_ledger_id
    AND revenue.airline_id=f.airline_id
-   AND revenue.entry_kind='INCOME'
+   AND revenue.entry_kind='REVENUE'
    AND revenue.amount_usd=
      f.ticket_income_usd+f.cargo_income_usd+f.other_income_usd
   JOIN airlinerra_game.airline_ledger expense
