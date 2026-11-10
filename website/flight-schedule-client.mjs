@@ -30,6 +30,13 @@ export function createFlightScheduleClient({auth,origin,fetchImpl=(...args)=>fet
  }
  return Object.freeze({
   list:airlineId=>post({action:'list',airlineId}),
+  planSave:({airlineId,aircraftInventoryId,flightNumber,originAirportKey,
+   destinationAirportKey,weeklySchedule,departureStand=null,arrivalStand='terminal',
+   turnaroundMinutes,fares,service,referenceDepartureUtc=null,referenceArrivalUtc=null})=>
+    post({action:'plan-save',airlineId,aircraftInventoryId,flightNumber,
+     originAirportKey,destinationAirportKey,weeklySchedule,departureStand,
+     arrivalStand,turnaroundMinutes,fares,service,referenceDepartureUtc,referenceArrivalUtc}),
+
   save:({airlineId,aircraftInventoryId,flightNumber,originAirportKey,destinationAirportKey,
    referenceDepartureUtc,referenceArrivalUtc,weeklySchedule,existingId,
    departureStand='terminal',arrivalStand='terminal'})=>
