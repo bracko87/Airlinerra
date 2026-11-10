@@ -24,6 +24,7 @@ on:
       - 'server/flight-schedule-service.mjs'
       - 'website/flight-schedule-client.mjs'
       - 'tests/test_route_planner_ui.mjs'
+      - 'tests/test_cabin_route_cleanup_2026_11_10.mjs'
       - '.github/workflows/cabin-services-ci.yml'
   workflow_dispatch:
 jobs:
@@ -45,8 +46,8 @@ jobs:
           node --check website/route-planner.mjs
           node --check website/player-app.mjs
           node --check website/airline-workspace.mjs
-      - name: Test package selection, price/rating and saved default class assignments
-        run: node --test tests/test_cabin_services_manager.mjs tests/test_cabin_services_api.mjs tests/test_cabin_onboard_route_packages.mjs tests/test_cabin_onboard_simulation.mjs
+      - name: Test package selection, save notifications, pricing and removed route previews
+        run: node --test tests/test_cabin_services_manager.mjs tests/test_cabin_services_api.mjs tests/test_cabin_onboard_route_packages.mjs tests/test_cabin_onboard_simulation.mjs tests/test_cabin_route_cleanup_2026_11_10.mjs
       - name: Build complete protected website
         run: cd website && npm run build
       - name: Confirm protected build bundles cabin UI module
