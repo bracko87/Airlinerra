@@ -132,7 +132,7 @@ function appendRow(doc,table,c,typeList,plan,onEdit){
  row.append(label,select,input,indicator);table.append(row);
  return {indicator,input,select};
 }
-export function createCabinConfigurationManager({doc,host,factoryHost}={}){
+export function createCabinConfigurationManager({doc,host,factoryHost,onDirectoryUpdate}={}){
  if(!doc||!host)throw Error('Cabin planner needs an existing page host');
  let current={connected:false,airline:null,fleetClient:null};
  let loaded=null,selectedId=null,plan=null,factoryPlan=null,factoryConfigurationId=null;
@@ -329,6 +329,7 @@ export function createCabinConfigurationManager({doc,host,factoryHost}={}){
     response.previewOnly!==true||response.installedLayoutsImmutable!==true)
     throw Error('Unexpected cabin data');
    loaded=response;render();renderFactory();
+   try{onDirectoryUpdate?.()}catch{console.warn('MRO directory view unavailable')}
   }catch{
    if(ticket!==version)return;
    host.textContent='Cabin configuration service is temporarily unavailable. Aircraft seats and flights have not changed.';
