@@ -166,13 +166,11 @@ WITH templates AS (
  ) obs ON true
  LEFT JOIN LATERAL (
   SELECT ap.timezone_iana,ap.game_elevation_ft,
-   round((6371*2*asin(sqrt(least(1::double precision,
-     greatest(0::double precision,
-       power(sin(radians((ap.latitude_deg-r.latitude_deg)::double precision)/2),2)+
-       cos(radians(ap.latitude_deg::double precision))*
-       cos(radians(r.latitude_deg::double precision))*
-       power(sin(radians((ap.longitude_deg-r.longitude_deg)::double precision)/2),2)
-   ))))::numeric,1) km
+   round(sqrt(
+     power((ap.latitude_deg-r.latitude_deg)::double precision*111.2,2)+
+     power((ap.longitude_deg-r.longitude_deg)::double precision*
+       111.2*cos(radians(r.latitude_deg::double precision)),2)
+   )::numeric,1) km
   FROM airlinerra_game.airport_reference_profiles ap
   WHERE ap.world_id=1 AND ap.country_iso=r.country_iso
     AND ap.timezone_iana IS NOT NULL
