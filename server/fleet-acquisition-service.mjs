@@ -359,10 +359,10 @@ export const FLEET_SQL=Object.freeze({
   "q.installation_usd::text AS \"removalInstallationUsd\", "+
   "q.estimated_downtime_hours AS \"estimatedDowntimeHours\", "+
   "q.created_at AS \"preparedAt\", "+
-  "(q.draft_updated_at=d.updated_at) AS \"matchesCurrentDraft\", "+
-  "(r.configuration_id=i.configuration_id AND r.planning_status='game_planning_approved') "+
+  "COALESCE(q.draft_updated_at=d.updated_at,false) AS \"matchesCurrentDraft\", "+
+  "COALESCE(r.configuration_id=i.configuration_id AND r.planning_status='game_planning_approved',false) "+
   "AS \"providerStillEligible\", "+
-  "(p.location_status='grounded' AND p.airport_key=q.airport_key) "+
+  "COALESCE(p.location_status='grounded' AND p.airport_key=q.airport_key,false) "+
   "AS \"confirmedAtRefitSite\", "+
   "COALESCE(g.authoritative_clock_connected,false) AS \"clockConnected\", "+
   "COALESCE(g.trusted_flight_execution_release='ACTIVATED',false) "+
