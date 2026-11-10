@@ -4,6 +4,8 @@ on:
     branches: [main]
     paths:
       - 'website/cabin-configuration-manager.mjs'
+      - 'website/aircraft-configuration-options.mjs'
+      - 'website/aircraft-configuration-dialog.mjs'
       - 'website/airline-workspace.mjs'
       - 'website/fleet-acquisition-client.mjs'
       - 'website/local-owner-fleet-reader.mjs'
@@ -13,6 +15,7 @@ on:
       - 'website/dev-scripts/real-player-read-gateway.mjs'
       - 'server/fleet-acquisition-service.mjs'
       - 'tests/test_cabin_configuration.mjs'
+      - 'tests/test_aircraft_configuration_modal.mjs'
       - 'tests/test_airline_workspace.mjs'
       - 'tests/test_fleet_acquisition_api.mjs'
       - 'supabase/migrations/*cabin*'
@@ -37,7 +40,7 @@ jobs:
           node --check website/dev-scripts/real-player-read-gateway.mjs
           node --check server/fleet-acquisition-service.mjs
       - name: Test aircraft configuration, server ownership, and existing navigation
-        run: node --test tests/test_cabin_configuration.mjs tests/test_fleet_acquisition_api.mjs tests/test_airline_workspace.mjs
+        run: node --test tests/test_cabin_configuration.mjs tests/test_aircraft_configuration_modal.mjs tests/test_fleet_acquisition_api.mjs tests/test_airline_workspace.mjs
       - name: Verify full built invitation-only website
         run: |
           cd website
