@@ -145,19 +145,26 @@ const pages=Object.freeze({
    '<p>Inspect aircraft condition and maintenance deadlines before placing flights. Aircraft must remain unavailable while grounded or in a required inspection window.</p>',
    'SAFETY'),
  'routes':()=>routePlannerMarkup(),
- 'schedule':()=>card('Aircraft weekly flight schedule',
-   '<p class="hint">Each row is a real aircraft owned or leased by this airline. Each weekday spans 00:00–24:00 UTC. Departure times, route numbers and verified flight windows appear inside each day.</p>'+
-   '<div class="workspace-actions schedule-board-actions">'+
-    '<button type="button" class="secondary" id="schedule-refresh">Refresh timetable</button>'+
-    button('routes','Create a route')+'</div>'+
+ 'schedule':()=>card('Aircraft daily flight schedule',
+   '<p class="hint">Choose one weekday. The full width shows that day only, from 00:00 to 24:00 UTC. Each row is a real aircraft owned or leased by your airline.</p>'+
+   '<div class="schedule-board-toolbar">'+
+    '<div class="schedule-day-switch" role="group" aria-label="Choose timetable weekday">'+
+     '<button type="button" class="secondary" id="schedule-day-prev" aria-label="Previous day">◀</button>'+
+     '<strong id="schedule-selected-day" aria-live="polite">Monday</strong>'+
+     '<button type="button" class="secondary" id="schedule-day-next" aria-label="Next day">▶</button>'+
+    '</div>'+
+    '<div class="workspace-actions schedule-board-actions">'+
+     '<button type="button" class="secondary" id="schedule-refresh">Refresh timetable</button>'+
+     button('routes','Create a route')+'</div>'+
+   '</div>'+
    '<div class="schedule-board-legend" aria-label="Schedule status legend">'+
-    '<span><i class="schedule-board-legend-marker" aria-hidden="true"></i> Planning departure — duration unverified</span>'+
-    '<span><i class="schedule-board-legend-band" aria-hidden="true"></i> Airport slots held — flight window only</span>'+
+    '<span><i class="schedule-board-legend-marker" aria-hidden="true"></i> Draft departure — no booked time</span>'+
+    '<span><i class="schedule-board-legend-band" aria-hidden="true"></i> Verified airport-slot flight window</span>'+
     '</div>'+
    '<p id="schedule-status" role="status" class="hint">Loading the verified airline fleet and routes…</p>'+
-   '<div id="schedule-aircraft-board" class="schedule-aircraft-board" aria-label="Airline aircraft seven-day flight timetable"></div>'+
-   small('Planning drafts do not reserve an aircraft or airport slot. Slot-held flight windows are not activated flights; arrival ground handling, turnaround and crew checks still apply. An unverified duration is never shown as a booked window.'),
-   'AIRCRAFT × 7 DAYS × 24 HOURS'),
+   '<div id="schedule-aircraft-board" class="schedule-aircraft-board" aria-label="Airline aircraft 24-hour daily flight timetable"></div>'+
+   small('Time bars match verified flight duration only. Planning departures without duration are markers, not aircraft bookings. Real flight activation and turnaround clearance are still separate.'),
+   'AIRCRAFT × ONE DAY × 24 HOURS'),
  'finances':()=>card('Financial position',
    '<div class="workspace-kpis"><div><span>Available cash</span><strong id="finance-live-cash">-</strong></div>'+
    '<div><span>Transactions</span><strong>Not connected</strong></div>'+
@@ -307,6 +314,8 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
  let scheduleSnapshot=null;
  let scheduleFetchVersion=0;
  let scheduleReadError=false;
+ let scheduleSelectedDay=0;
+ const scheduleDays=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
  for(const [name,render] of Object.entries(pages)){
   const el=$('workspace-'+name);if(el)el.innerHTML=render();
  }
@@ -415,16 +424,21 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    plans:scheduleSnapshot?.plans,drafts:scheduleSnapshot?.drafts,
    localRoutes:local
   });
-  renderAirlineWeeklyBoard(doc,host,board);
+  renderAirlineWeeklyBoard(doc,host,board,{day:scheduleSelectedDay});
+  const selected=$('schedule-selected-day');
+  if(selected)selected.textContent=scheduleDays[scheduleSelectedDay];
   const status=$('schedule-status');
   if(status){
    status.textContent=board.status==='unavailable'?
     'Verified aircraft data is not available. Cannot determine airline timetable.':
     board.status==='empty'?
     'No real owned or leased aircraft were returned for this airline.':
-    String(board.rows.length)+' company aircraft · '+String(board.counts.flights)+
-    ' planned departures/week · '+String(board.counts.held)+
-    ' departures with verified airport-slot flight windows.'+
+    String(board.rows.length)+' company aircraft · '+
+    String(board.rows.reduce((n,row)=>n+row.days[scheduleSelectedDay].events.length,0))+
+    ' departures on '+scheduleDays[scheduleSelectedDay]+' · '+
+    String(board.rows.reduce((n,row)=>n+row.days[scheduleSelectedDay].bands
+     .filter(b=>!b.continues).length,0))+
+    ' verified flight windows that day.'+
     (scheduleReadError?' Some server routes could not be loaded; this timetable is incomplete.':'');
   }
  }
@@ -756,6 +770,11 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    $('budget-result').textContent='Monthly income: '+currency(scenario.income)+
     ' | Monthly expenses: '+currency(scenario.expenses)+' | Net: '+currency(scenario.net)+
     ' | Estimated cash runway: '+months+'. Scenario only - no server changes.';
+  }
+  if(id==='schedule-day-prev'||id==='schedule-day-next'){
+   scheduleSelectedDay=(scheduleSelectedDay+(id==='schedule-day-next'?1:6))%7;
+   renderSchedule();
+   return;
   }
   if(id==='schedule-refresh'){
    $('schedule-status').textContent='Refreshing company fleet and airline routes…';
