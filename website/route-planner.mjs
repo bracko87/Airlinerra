@@ -35,7 +35,7 @@ const picker=(side,title)=>'<fieldset class="route-planner-airport"><legend>'+ti
   'role="listbox" aria-label="'+title+' airports" hidden></div></div>')+
  '<select id="route-'+side+'-airport" class="route-native-airport" '+
  'aria-hidden="true" tabindex="-1" disabled><option value="">Select airport</option></select>'+
- '<p id="route-'+side+'-count" class="hint" role="status">Choose a country or search all airports, including Group 2 planning locations.</p>'+
+ '<p id="route-'+side+'-count" class="hint" role="status">Choose a country or search all airports.</p>'+
  '<div id="route-'+side+'-summary" class="route-selection-summary">Select an airport.</div></fieldset>';
 const dayNames=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 const dayShort=['Mo','Tu','We','Th','Fr','Sa','Su'];
@@ -508,8 +508,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    flag.alt='';flag.width=20;flag.height=13;flag.className='route-summary-flag';
    button.append(flag);
    const name=doc.createElement('span');
-   name.textContent=a.name+(a.code?' ('+a.code+')':'')+(a.municipality?' · '+a.municipality:'')+
-     (a.sourceGroup==='GROUP_2'?' · Group 2: planning only':'');
+   name.textContent=a.name+(a.code?' ('+a.code+')':'')+(a.municipality?' · '+a.municipality:'');
    button.append(name);list.append(button);
   }
   list.hidden=false;input.setAttribute('aria-expanded','true');
@@ -680,8 +679,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
   const flag=flagNode(airport.countryIso);
   if(flag)node.append(flag);
   const title=doc.createElement('span');
-  title.textContent=airport.name+(airport.code?' ('+airport.code+')':'')+
-    (airport.sourceGroup==='GROUP_2'?' · Group 2 (not flight-approved)':'');
+  title.textContent=airport.name+(airport.code?' ('+airport.code+')':'');
   node.append(title);
  };
  const shortRestrictions=airportRouteRestrictionSummary;
