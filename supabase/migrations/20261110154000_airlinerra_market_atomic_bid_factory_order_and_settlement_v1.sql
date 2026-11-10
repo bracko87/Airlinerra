@@ -1,3 +1,7 @@
+-- A lease contract needs recurring billing, so keep lease bidding locked until
+-- the separate recurring-payment engine has been proven.
+ALTER TABLE airlinerra_game.aircraft_market_control_v1
+ ADD COLUMN lease_enabled boolean NOT NULL DEFAULT false;
 -- Airlinerra market state machine v1. No auctions or factory payments until
 -- a separately authorised world/game release changes market gate to live.
 -- All bid/settlement transfers execute in one PostgreSQL transaction.
@@ -48,6 +52,11 @@ BEGIN
    'listingId',lot.listing_id,'bidUsd',bid.bid_usd::text,
    'holdStatus',bid.hold_status,'deadlineUtc',lot.close_after_utc,
    'cashReservedAgain',false);
+ END IF;
+ IF lot.offering_type='lease' AND NOT (
+   SELECT lease_enabled FROM airlinerra_game.aircraft_market_control_v1
+   WHERE world_id=1) THEN
+  RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='AIRCRAFT_LEASE_BILLING_NOT_ACTIVE';
  END IF;
  IF lot.status NOT IN ('available','bidding') THEN
   RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='USED_AIRCRAFT_OFFER_NOT_AVAILABLE';
@@ -171,6 +180,11 @@ BEGIN
   AND model.production_end_year<extract(year from now())::int) THEN
   RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='NEW_AIRCRAFT_MODEL_NOT_ELIGIBLE';
  END IF;
+ IF model.transaction_type='lease' AND NOT (
+   SELECT lease_enabled FROM airlinerra_game.aircraft_market_control_v1
+   WHERE world_id=1) THEN
+  RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='AIRCRAFT_LEASE_BILLING_NOT_ACTIVE';
+ END IF;
  IF EXISTS (SELECT 1 FROM airlinerra_game.used_aircraft_auction_lots_v1 l
   WHERE l.status='bidding' AND upper(l.highest_registration)=upper(btrim(p_registration))) THEN
   RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='AIRCRAFT_REGISTRATION_ALREADY_TAKEN';
@@ -291,10 +305,5 @@ REVOKE EXECUTE ON FUNCTION
 SELECT cron.schedule('airlinerra-used-market-settle-v1','* * * * *',
  'SELECT airlinerra_game.settle_used_aircraft_auctions_v1(30);');
 
--- Safe to publish factory catalog now: the Edge service will be switched to
--- the guarded wrapper before these are offered for purchase in the UI.
--- Operator can see these published reference prices while money remains gated.
-UPDATE airlinerra_game.aircraft_acquisition_offers_v1
- SET offer_status='published',updated_at=now()
- WHERE pricing_basis='AIRLINERRA_NEW_FACTORY_GAME_ESTIMATE_V2'
- AND offer_status='draft';
+-- Factory offers remain DRAFT until the Edge entrypoint is updated to use
+-- the new guarded order function. Publication is a separate deployment step.
