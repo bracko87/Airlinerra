@@ -95,7 +95,13 @@ test('settings and local hypothetical briefs remain separate from owner-scoped p
  assert.match(workspace,/const DRAFT_KEY='airlinerra.local.workplan.v1.'/);
  assert.match(workspace,/const PREF_KEY='airlinerra.ui.preferences.v1.'/);
  assert.match(workspace,/getLandingView:\(\)=>preferences.landing/);
- assert.match(workspace,/No aircraft was ordered/);
+ assert.doesNotMatch(workspace,/YOUR PROCUREMENT PLAN|Simulation aircraft|Save local fleet brief/);
+ assert.match(workspace,/id="fleet-owned-aircraft"/);
+ assert.match(workspace,/id="fleet-detail-nickname"/);
+ assert.match(workspace,/data-fleet-aircraft-open/);
+ assert.match(workspace,/Location not verified/);
+ assert.match(workspace,/fleet-detail-save/);
+ assert.match(html,/data-player-view="fleet-aircraft"/);
  assert.match(workspace,/No live route was created/);
  assert.match(workspace,/Planning departures without duration are markers, not aircraft bookings/);
  assert.match(workspace,/No aircraft layout was changed/);
