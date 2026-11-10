@@ -67,32 +67,25 @@ test('fleet Edge accepts Supabase-internal URL rewrites, while origin, route and
   }]};
   throw Error('Unexpected read');
  });
- const internal=new Request('http://internal-edge-runtime/airlinerra-fleet-acquisition',{
+ const makeInternal=(headers={})=>new Request('http://internal-edge-runtime/airlinerra-fleet-acquisition',{
   method:'POST',headers:{
    origin:'https://airlinerra.com',
    'x-airlinerra-route':FLEET_ACQUISITION_API_ROUTE,
-   authorization:'Bearer '+TOKEN,
-   'content-type':'application/json'
+   authorization:'Bearer '+TOKEN,'content-type':'application/json',...headers
   },body:JSON.stringify({action:'list',airlineId:airline})
  });
- const ok=await handler(internal);
+ const ok=await handler(makeInternal());
  assert.equal(ok.status,200);
  assert.equal((await ok.json()).fleet[0].registration,'YU-PAN01');
- const wrongRoute=new Request(internal,{headers:{
-  origin:'https://airlinerra.com','x-airlinerra-route':'/api/v1/player/overview',
-  authorization:'Bearer '+TOKEN,'content-type':'application/json'
- }});
+ const wrongRoute=makeInternal({'x-airlinerra-route':'/api/v1/player/overview'});
  assert.equal((await handler(wrongRoute)).status,403);
- const wrongOrigin=new Request(internal,{headers:{
-  origin:'https://attacker.example','x-airlinerra-route':FLEET_ACQUISITION_API_ROUTE,
-  authorization:'Bearer '+TOKEN,'content-type':'application/json'
- }});
+ const wrongOrigin=makeInternal({origin:'https://attacker.example'});
  assert.equal((await handler(wrongOrigin)).status,403);
  const other=setup((sql,args)=>{
   if(sql===FLEET_SQL.owner)return {rowCount:0,rows:[]};
   throw Error('No foreign fleet access');
  });
- assert.equal((await other.handler(internal)).status,403);
+ assert.equal((await other.handler(makeInternal())).status,403);
 });
 test('list is scoped to verified airline owner and returns only approved offers and real inventory',async()=>{
  const {handler,statements,releases}=setup((sql,args)=>{
