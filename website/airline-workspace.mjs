@@ -152,6 +152,7 @@ const pages=Object.freeze({
     <div class="fleet-configuration-dialog-actions">
       <button type="button" class="secondary" id="fleet-configuration-create">Design new company layout</button>
       <button type="button" class="primary" id="fleet-configuration-save-draft" disabled>Save configuration proposal</button>
+      <button type="button" class="secondary" id="fleet-configuration-prepare-quote" disabled>Prepare refit quote (no booking)</button>
     </div>
     <p id="fleet-configuration-feedback" class="hint" role="status" aria-live="polite"></p>
     <p class="hint">Saving a proposal does not replace installed seats, ground the aircraft, reserve a maintenance slot, or charge the airline. Final refit cost and installation date need a verified booking.</p>
