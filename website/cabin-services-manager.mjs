@@ -34,7 +34,7 @@ const CATALOG=new Map(CABIN_SERVICE_CATALOG.map(item=>[item.id,item]));
 const MODES=new Set(CABIN_MODE_OPTIONS.map(item=>item[0]));
 const CLASSES=new Set(CABIN_CLASSES.map(item=>item[0]));
 const cents=num=>Number.isInteger(num)&&num>=0&&num<=100000?num:null;
-const money=n=>'$'+(n/100).toFixed(2);
+const money=n=>(n<0?'-$':'$')+(Math.abs(n)/100).toFixed(2);
 export const cabinDefaultItems=()=>Object.fromEntries(CABIN_SERVICE_CATALOG.map(item=>[
  item.id,{mode:item.id==='water'?'included':'off',freeQty:item.id==='water'?1:0,
   onlineCents:Math.round(item.costCents*4),onboardCents:Math.round(item.costCents*4)}
@@ -271,7 +271,7 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
    const free=input(doc,{type:'number',value:current.freeQty,min:1,max:3,step:1,
     disabled:basic||!included});
    free.dataset.cabinField='freeQty';appendField('Free units',free);
-   const onboard=input(doc,{type:'number',value:(current.onboardCents/100).toFixed(2),
+   const onboard=input(doc,{type:'number',value:(priceOnboard?current.onboardCents/100:0).toFixed(2),
     min:0,max:1000,step:.01,disabled:basic||!priceOnboard});
    onboard.dataset.cabinField='onboardCents';appendField('Passenger price onboard (USD)',onboard);
    const estimated=element(doc,'span','cabin-row-cost',
@@ -333,6 +333,7 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
   const id=item.dataset.cabinItem;
   if(!CATALOG.has(id)||!working.items[id])return;
   if(field==='mode'){
+   working.name=String(host.querySelector('#cabin-package-name')?.value||working.name);
    const mode=event.target.value;
    if(!MODES.has(mode))return;
    working.items[id].mode=mode;
