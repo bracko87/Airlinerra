@@ -1164,7 +1164,7 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
 #workspace-routes #route-slot-check.has-conflict{color:#b42318;font-weight:700}
 
 /* Section 9: connected-market Route Details, still preview-only. */
-#workspace-route-details .operations-route-detail-content{max-width:1024px;display:grid;gap:12px}
+#workspace-route-details .operations-route-detail-content{width:100%;max-width:none;min-width:0;display:grid;gap:18px}
 #workspace-route-details .operations-route-detail-content h3{margin:8px 0 4px;font-size:1.3rem}
 #workspace-route-details .operations-route-detail-content h4{margin:18px 0 4px;font-size:1.08rem}
 #workspace-route-details .operations-route-detail-content .detail-row{
