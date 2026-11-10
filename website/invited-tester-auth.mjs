@@ -105,6 +105,45 @@ export async function createInvitedTesterAuth({
         .createSignedUrl(user.id+'/'+airlineId+'/logo.webp',3600);
       return error?null:data?.signedUrl||null;
     },
+    // Aircraft images are per tail, not the airline logo or shared model image.
+    // Private Storage RLS verifies BOTH the signed-in owner and the exact
+    // owned aircraft ID. The browser cannot upload to another airline's tail.
+    async uploadAircraftImage({airlineId,aircraftInventoryId,blob}={}){
+      const valid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
+      if(!valid.test(airlineId||'')||!valid.test(aircraftInventoryId||'')||
+         !(blob instanceof Blob)||blob.type!=='image/webp'||
+         blob.size<1||blob.size>1048576)
+        throw Error('Select a valid WebP image up to 1 MB.');
+      const user=await service.getUser();
+      if(!user?.id||!user.email_confirmed_at||user.is_anonymous||user.deleted_at)
+        throw Error('Verified manager required.');
+      const path=user.id+'/'+airlineId+'/'+aircraftInventoryId+'/aircraft.webp';
+      const {error}=await client.storage.from('airlinerra-aircraft-images')
+        .upload(path,blob,{contentType:'image/webp',upsert:true,cacheControl:'60'});
+      if(error)throw Error('Aircraft image could not be saved. Check airline ownership.');
+      return path;
+    },
+    async getAircraftImageUrl({airlineId,aircraftInventoryId}={}){
+      const valid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
+      if(!valid.test(airlineId||'')||!valid.test(aircraftInventoryId||''))return null;
+      const user=await service.getUser();
+      if(!user?.id||!user.email_confirmed_at||user.is_anonymous)return null;
+      const {data,error}=await client.storage.from('airlinerra-aircraft-images')
+        .createSignedUrl(user.id+'/'+airlineId+'/'+aircraftInventoryId+'/aircraft.webp',3600);
+      return error?null:data?.signedUrl||null;
+    },
+    async removeAircraftImage({airlineId,aircraftInventoryId}={}){
+      const valid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
+      if(!valid.test(airlineId||'')||!valid.test(aircraftInventoryId||''))
+        throw Error('Invalid aircraft selection.');
+      const user=await service.getUser();
+      if(!user?.id||!user.email_confirmed_at||user.is_anonymous)
+        throw Error('Verified manager required.');
+      const path=user.id+'/'+airlineId+'/'+aircraftInventoryId+'/aircraft.webp';
+      const {error}=await client.storage.from('airlinerra-aircraft-images').remove([path]);
+      if(error)throw Error('Aircraft image could not be removed.');
+      return true;
+    },
     requestPasswordReset:service.requestPasswordReset,
     completeCallback:service.completeCallback,
     updatePassword:service.updatePassword,
