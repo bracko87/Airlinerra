@@ -91,6 +91,8 @@ test('only existing owner-verified fleet SQL provides reference data; preview do
   assert.ok(query.includes(field),field);
  assert.match(query,/WHERE i.airline_id=\$1::uuid/);
  assert.match(query,/aircraft_fuel_planning_profiles_v1/);
+ assert.match(query,/aircraft_fuel_family_reference_v1/);
+ assert.match(query,/fuelFamilyEvidence/);
  assert.match(query,/aircraft_catalog_fuel_capacity_game_v1/);
  assert.match(query,/fuelConfidenceClass/);
  assert.match(query,/fuelPeerModel/);
@@ -115,9 +117,12 @@ test('route planner shows all phases, no dispatch or ledger activation',async()=
 });
 
 test('airport price is a category-balanced game assumption, never supplier or fuel payment',()=>{
- const mega=previewAirportFuelPrice({key:'OURAIRPORTS:1',category:'Mega Hub',categoryStatus:'approved'});
- const local=previewAirportFuelPrice({key:'OURAIRPORTS:2',category:'Local',categoryStatus:'approved'});
- const missing=previewAirportFuelPrice({key:'OURAIRPORTS:3',category:'Unknown'});
+ const mega=previewAirportFuelPrice({key:'OURAIRPORTS:1',category:'Mega Hub',categoryStatus:'approved'},
+  {fuelFamily:'TURBINE_KEROSENE_ASSUMED'});
+ const local=previewAirportFuelPrice({key:'OURAIRPORTS:2',category:'Local',categoryStatus:'approved'},
+  {fuelFamily:'TURBINE_KEROSENE_ASSUMED'});
+ const missing=previewAirportFuelPrice({key:'OURAIRPORTS:3',category:'Unknown'},
+  {fuelFamily:'TURBINE_KEROSENE_ASSUMED'});
  assert.equal(mega.categoryApproved,true);
  assert.ok(mega.usdPerKg<local.usdPerKg);
  assert.equal(mega.fromCurrentSupplier,false);
@@ -132,9 +137,30 @@ test('airport price is a category-balanced game assumption, never supplier or fu
 });
 test('route fuel uses owner airport profile tier and shows peer provenance without claiming actual charges',async()=>{
  const code=await read('website/route-planner.mjs');
- assert.match(code,/previewAirportFuelPrice\(originProfile\)/);
+ assert.match(code,/previewAirportFuelPrice\(originProfile,\{fuelFamily:aircraft.fuelFamily\}\)/);
  assert.match(code,/fuelRateStatus/);
  assert.match(code,/fuelPeerModel/);
- assert.match(code,/No confirmed airport fuel price/);
+ assert.match(code,/No confirmed fuel grade, airport delivered price/);
  assert.match(code,/priceUsdPerKg:price\.usdPerKg/);
+});
+
+test('unverified engine and piston AVGAS never receive a kerosene game price',()=>{
+ for(const family of ['UNKNOWN_ENGINE','AVGAS_PISTON',undefined]){
+  const price=previewAirportFuelPrice({key:'OURAIRPORTS:131',category:'Large',
+   categoryStatus:'approved'}, {fuelFamily:family});
+  assert.equal(price.usdPerKg,null);
+  assert.equal(price.status,'UNPRICED_FUEL_FAMILY');
+  assert.equal(price.accountingEnabled,false);
+ }
+});
+test('full five-phase fuel quantities survive unavailable fuel price, without fake $0',()=>{
+ const result=estimateFivePhaseFuel({...A319,distanceKm:1000,priceUsdPerKg:null});
+ assert.equal(result.status,'PLANNING_ESTIMATE');
+ assert.ok(result.tripFuelKg>3000);
+ assert.equal(result.estimatedBurnCostUsd,null);
+ assert.equal(result.fuelPriceUsdPerKg,null);
+ assert.equal(result.phases.length,5);
+ assert.equal(result.phases[0].fuelUsd,null);
+ assert.equal(result.priceEvidence,'UNKNOWN_OR_UNSUPPORTED_FUEL_FAMILY');
+ assert.equal(result.ledgerPosted,false);
 });
