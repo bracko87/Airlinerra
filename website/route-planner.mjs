@@ -78,7 +78,7 @@ export function routePlannerMarkup(){
     '<input id="route-plan-number" inputmode="numeric" type="text" autocomplete="off" pattern="[0-9]{1,4}" maxlength="4" placeholder="101"></div>')+
    '<p id="route-prefix-note" class="hint">Checking registered airline code...</p></div>'+
    '<div class="route-planner-airports">'+picker('from','Origin')+picker('to','Destination')+'</div>'+
-   '<div class="workspace-actions"><button type="button" id="route-plan-swap" class="secondary">Swap airports</button>'+
+   '<div class="workspace-actions route-step1-actions"><button type="button" id="route-plan-swap" class="secondary">Swap airports</button>'+
    '<button type="button" id="route-plan-preview" class="primary">Preview route</button></div>'+
    '<p id="route-feedback" class="hint" role="status"></p>')+
   section('ROUTE MAP','Geographic route preview',
@@ -127,8 +127,8 @@ export function routePlannerMarkup(){
   '</div>'+
   '<p class="route-subtle-note">Draft settings only. Pricing, cargo capacity and services are not yet operationally enforced.</p>'+
   '<div class="workspace-actions route-apply-actions">'+
-   '<button type="button" id="route-plan-save" class="primary">Apply route draft</button>'+
-   '<button type="button" id="route-plan-new" class="secondary">Create new route</button>'+
+   '<button type="button" id="route-plan-save" class="primary">Create new route</button>'+
+   '<button type="button" id="route-plan-new" class="secondary">Clear form</button>'+
    '<button type="button" class="route-text-action" data-workspace-go="route-list">My routes</button></div>'+
   '<p id="route-plan-status" class="hint" role="status" aria-live="polite"></p>'+
   '<div id="route-plan-review" class="workspace-detail"></div>')+
@@ -538,7 +538,8 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   const aircraft=catalogChoice(),assessment=aircraft?runwayAssessment(aircraft):null;
   const selection=$('route-aircraft')?.value||'';
   const button=$('route-plan-save');
-  if(button)button.disabled=assessment?.status==='BLOCKED';
+  if(button)button.disabled=assessment?.status==='BLOCKED'||
+   routeAirportPairStatus(selected('from'),selected('to'))==='SAME_AIRPORT';
   const reason=assessment?.status==='BLOCKED'?
    'BLOCKED — This aircraft cannot be used on this route. '+assessment.blockingReasons.join(' '):
    assessment?.status==='REVIEW'?'Runway review: '+assessment.reviewReasons.join(' '):
@@ -1198,7 +1199,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   }
   if(target.id==='route-plan-new'){
    await resetRouteForm();
-   message('route-plan-status','Ready to create another route draft.');
+   message('route-plan-status','Form cleared. Nothing was saved. Enter a route and click Create new route to save a draft.');
    return;
   }
   if(target.id!=='route-plan-save')return;
