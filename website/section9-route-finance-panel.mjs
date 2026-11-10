@@ -252,7 +252,20 @@ export function createSection9RouteFinancePanel({doc,host,getServer}={}){
   const fn=getServer?.()?.scheduler?.routeFinancials;
   estimate.replaceChildren();historical.replaceChildren();
   if(!route?.serverScheduleId||!airlineId||typeof fn!=='function'){
-   status.textContent='Save a protected flight schedule to see its full game operating cost estimate and verified history.';
+   status.textContent='Planning route · no verified operating costs, passenger sales, slots or completed flights yet. The following cost categories will be calculated by the operational engine.';
+   estimate.append(add(doc,'h4','Planned per-flight income and cost components'));
+   const planned=add(doc,'div','','route-finance-estimate-lines');
+   for(const label of ['Passenger ticket revenue','Cargo income','Other flight income'])
+    line(doc,planned,label,'Not calculated');
+   planned.append(add(doc,'h5','Airport, navigation and ground service fees'));
+   for(const [,label] of FEES)line(doc,planned,label,'Pending verified operation');
+   planned.append(add(doc,'h5','Additional operating expenses'));
+   for(const [,label] of OTHER_COSTS)line(doc,planned,label,'Not calculated');
+   line(doc,planned,'Estimated total costs','Not calculated','route-finance-total');
+   line(doc,planned,'Expected profit / loss','Not calculated','route-finance-total');
+   estimate.append(planned);
+   historical.append(add(doc,'h4','Actual route results'));
+   historical.append(add(doc,'p','Latest 7 completed flights: none. Older settled flight totals: none. This planning route has not operated, and no profit, loss or ledger entry is being invented.','hint'));
    return;
   }
   const refId=route.serverScheduleId;
