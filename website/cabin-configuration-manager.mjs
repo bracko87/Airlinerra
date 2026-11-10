@@ -98,6 +98,8 @@ export function cabinRowLayout(geometry,cabinClass,referenceUnits=0){
  if(n>40)return cabinClass==='economy'?[2,2]:[1,1];
  return [1,1];
 }
+/** Straight-cut cabin cross-section. FRONT is at the top; passenger rows
+ * always run First -> Business -> Premium -> Economy toward the rear. */
 export function createCabinFloorplanModel(evaluation,referenceUnits,geometry){
  const defaultLayout=cabinRowLayout(geometry,'economy',referenceUnits);
  const across=defaultLayout.reduce((n,x)=>n+x,0);
@@ -105,37 +107,37 @@ export function createCabinFloorplanModel(evaluation,referenceUnits,geometry){
   across===5?174:across===6?190:across===7?225:across===8?255:
   across===9?285:316;
  const center=190,left=center-interiorWidth/2,right=center+interiorWidth/2;
- let y=85;const seats=[],sections=[];
- for(const c of evaluation.classes||[]){
-  if(c.seats===0)continue;
+ const ordered=['first','business','premium','economy'];
+ const classes=ordered.map(key=>(evaluation.classes||[]).find(c=>c.key===key))
+  .filter(c=>c&&c.seats>0);
+ let y=59;const seats=[],sections=[];
+ for(const c of classes){
   const layout=cabinRowLayout(geometry,c.key,referenceUnits);
   const total=layout.reduce((sum,n)=>sum+n,0);
-  const aisles=layout.length-1;
-  const aisleGap=aisles===2?14:aisles===1?19:0;
-  const padding=5;
-  const seatWidth=(interiorWidth-padding*2-aisleGap*aisles)/total;
-  const pitch=Math.max(20,Math.min(65,c.pitch/30*21));
+  const aisleGap=layout.length===3?14:layout.length===2?19:0;
+  const padding=5,seatWidth=(interiorWidth-padding*2-aisleGap*(layout.length-1))/total;
+  const pitch=Math.max(19,Math.min(85,c.pitch/30*21));
   const seatHeight=Math.max(14,pitch-4);
   const rows=Math.ceil(c.seats/total);
   sections.push({className:c.key,layout:[...layout],rows,seats:c.seats,
    firstSeatY:y,lastSeatY:y+(rows-1)*pitch});
   let remaining=c.seats;
   for(let r=0;r<rows;r++){
-   let index=0;
    for(let block=0;block<layout.length;block++){
+    const prior=layout.slice(0,block).reduce((sum,n)=>sum+n,0);
     for(let col=0;col<layout[block]&&remaining>0;col++){
-     const prior=layout.slice(0,block).reduce((sum,x)=>sum+x,0);
      const x=left+padding+(prior+col)*seatWidth+block*aisleGap;
      seats.push({x:x+1,y,width:seatWidth-2,height:seatHeight,
-      color:c.color,className:c.key,row:r,block,seatIndex:index++});
+      color:c.color,className:c.key,row:r,block});
      remaining--;
     }
    }
    y+=pitch;
   }
-  y+=10;
+  y+=9;
  }
- const height=Math.max(245,y+69);
+ const defaultHeight=Math.ceil(Number(referenceUnits)/Math.max(1,across))*22+150;
+ const height=Math.max(245,defaultHeight,y+58);
  return {seats,sections,center,left,right,interiorWidth,height,
   basePattern:defaultLayout,totalSeats:seats.length};
 }
@@ -144,37 +146,42 @@ export function renderCabinFloorplan(doc,svg,plan,evaluation,referenceUnits,geom
  svg.replaceChildren();
  svg.setAttribute('role','img');
  svg.setAttribute('aria-label',
-  'Illustrative top view of '+(evaluation.count||0)+' seats using the '+
-  cabinRowLayout(geometry,'economy',referenceUnits).join('-')+
-  ' default economy row layout. Not a certified aircraft floor plan.');
- if(!evaluation.valid)return;
- const model=createCabinFloorplanModel(evaluation,referenceUnits,geometry);
- const {center,left,right,interiorWidth,height}=model;
+  'Flat-ended top view, front to rear First, Business, Premium Economy, Economy. '+
+  (evaluation?.valid?(evaluation.count+' seats. '):'No space for this cabin layout. ')+
+  'Indicative game design, not certified.');
+ const illustration=evaluation?.valid?evaluation:{valid:true,classes:[],count:0};
+ const model=createCabinFloorplanModel(illustration,referenceUnits,geometry);
+ const {center,left,interiorWidth,height}=model;
  svg.setAttribute('viewBox','0 0 380 '+height);
  svg.setAttribute('preserveAspectRatio','xMidYMin meet');
- const fuselage=svgNode(doc,'path',{d:'M '+center+' 5 C '+(left-30)+' 30 '+left+' 60 '+left+' 107 L '+
-  left+' '+(height-62)+' Q '+left+' '+(height-14)+' '+center+' '+(height-9)+
-  ' Q '+right+' '+(height-14)+' '+right+' '+(height-62)+' L '+right+
-  ' 107 C '+right+' 60 '+(right+30)+' 30 '+center+' 5 Z',
-  fill:'#f4f8fc',stroke:'#9ab0c6','stroke-width':2});
- svg.append(fuselage);
- // Reserved front and rear service zones — no passenger seats overlap them.
- for(const [zoneY,label] of [[54,'FRONT GALLEY'],[height-58,'REAR GALLEY / LAV']]){
-  const rect=svgNode(doc,'rect',{x:left+6,y:zoneY,width:interiorWidth-12,
-   height:25,rx:4,fill:'#dce5ec',stroke:'#bbcbd9','stroke-width':1});
-  svg.append(rect);
-  const txt=svgNode(doc,'text',{x:center,y:zoneY+16,'font-size':10,
-   'text-anchor':'middle',fill:'#506980'});
-  txt.textContent=label;svg.append(txt);
+ // An internal cabin plan has CUT ends; the nose/tail curvature is deliberately absent.
+ svg.append(svgNode(doc,'rect',{x:left,y:4,width:interiorWidth,height:height-8,
+  rx:0,fill:'#f7f9fc',stroke:'#8aa6be','stroke-width':2}));
+ const zones=[
+  {y:10,label:'FRONT · GALLEY',fill:'#d8e9fb'},
+  {y:height-45,label:'REAR · GALLEY / LAV',fill:'#eedfcd'}
+ ];
+ for(const zone of zones){
+  svg.append(svgNode(doc,'rect',{x:left+5,y:zone.y,width:interiorWidth-10,
+   height:30,rx:0,fill:zone.fill,stroke:'#bbcad7','stroke-width':.9}));
+  const txt=svgNode(doc,'text',{x:center,y:zone.y+19,'font-size':10,
+   'text-anchor':'middle',fill:'#37546d'});
+  txt.textContent=zone.label;svg.append(txt);
  }
- for(const seat of model.seats){
+ if(!evaluation?.valid){
+  const message=svgNode(doc,'text',{x:center,y:Math.round(height/2),
+   'font-size':16,'font-weight':'700','text-anchor':'middle',fill:'#a34436'});
+  message.textContent=String(evaluation?.reason||'NO SPACE').startsWith('NO SPACE')?
+   'NO SPACE':'INVALID LAYOUT';svg.append(message);
+  const advice=svgNode(doc,'text',{x:center,y:Math.round(height/2)+21,
+   'font-size':10,'text-anchor':'middle',fill:'#566b80'});
+  advice.textContent='Reduce seats or extra legroom';svg.append(advice);
+  return;
+ }
+ for(const seat of model.seats)
   svg.append(svgNode(doc,'rect',{x:seat.x,y:seat.y,width:seat.width,
-   height:seat.height,rx:Math.min(4,seat.width/6),
-   fill:seat.color,stroke:'#3c5266','stroke-width':.45}));
- }
- const note=svgNode(doc,'text',{x:center,y:height-18,'font-size':9,
-  'text-anchor':'middle',fill:'#53677e'});
- note.textContent='Exits not verified · Game layout';svg.append(note);
+   height:seat.height,rx:Math.min(4,seat.width/6),fill:seat.color,
+   stroke:'#3c5266','stroke-width':.45}));
 }
 function appendRow(doc,table,c,typeList,plan,onEdit){
  const row=create(doc,'div','cabin-designer-row');
