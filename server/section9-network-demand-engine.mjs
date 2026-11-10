@@ -53,7 +53,17 @@ function cleanFlight(f){
     !Number.isSafeInteger(f.passengerSeats)||
     !num(f.cargoTonnes)||f.cargoTonnes<0||f.cargoTonnes>1000)
   throw Error('SECTION9_INVALID_OCCURRENCE_CAPACITY');
- return {...f,depMs,arrMs,
+ // Only a trusted flight snapshot may identify the already INSTALLED cabin.
+ // A draft's comfort score has no operational or booking effect.
+ const installedEvidence=f.installedCabinEvidence==='server_verified_installed_v1';
+ if(installedEvidence&&(!id(f.aircraftInventoryId)||
+    f.installedCabinAircraftId!==f.aircraftInventoryId||
+    !Number.isInteger(f.installedCabinComfortRating)||
+    f.installedCabinComfortRating<0||f.installedCabinComfortRating>100))
+  throw Error('SECTION9_INVALID_INSTALLED_CABIN_EVIDENCE');
+ const installedCabinMultiplier=installedEvidence?
+  1+(f.installedCabinComfortRating-50)*0.0003:1;
+ return {...f,depMs,arrMs,installedCabinMultiplier,
   fareUsd:cap(f.fareUsd,100000),
   cargoRateUsd:cap(f.cargoRateUsd,100000),
   marketingBoost:f.marketingAuthorized===true?cap(f.marketingBoost,0.25):0,
@@ -72,9 +82,12 @@ const offerForLegs=(market,legs,wait=0,minimum=0,hubBackground='')=>{
   fareUsd:weightedFare,referenceFareUsd:market.referenceFareUsd||100,
   serviceScore:quality,weeklyDepartures:Math.min(...legs.map(f=>f.weeklyDepartures)),
   marketingBoost:Math.min(...legs.map(f=>f.marketingBoost)),
+  installedCabinMultiplier:Math.min(...legs.map(f=>f.installedCabinMultiplier)),
   minimumTransferMinutes:minimum,connectionMinutes:wait
  };
  return {passenger:original,cargo:{...original,
+  // Passenger cabin comfort must never change freight demand.
+  installedCabinMultiplier:1,
   fareUsd:cargoRate,referenceFareUsd:market.referenceCargoRateUsd||100}};
 };
 /**
