@@ -18,6 +18,10 @@ export function validateFleetAcquisitionRequest(body){
   Object.keys(body).every(k=>['action','airlineId'].includes(k));
  if(body.action==='check-delivery')return Object.keys(body).length===3 &&
   Object.keys(body).every(k=>['action','airlineId','orderId'].includes(k)) && uuid(body.orderId);
+ if(body.action==='update-nickname')return Object.keys(body).length===4 &&
+  Object.keys(body).every(k=>['action','airlineId','aircraftInventoryId','nickname'].includes(k)) &&
+  uuid(body.aircraftInventoryId) && typeof body.nickname==='string' &&
+  body.nickname.trim().length<=40 && !/[\u0000-\u001F\u007F]/u.test(body.nickname);
  if(body.action==='acquire')return Object.keys(body).length===5 &&
   Object.keys(body).every(k=>['action','airlineId','offerId','registration','requestId'].includes(k)) &&
   uuid(body.offerId)&&uuid(body.requestId)&&typeof body.registration==='string' &&
@@ -40,16 +44,29 @@ export const FLEET_SQL=Object.freeze({
   "AND NOT EXISTS(SELECT 1 FROM airlinerra.aircraft_expansion_group3 x WHERE x.configuration_id=o.configuration_id) "+
   "ORDER BY c.manufacturer_name,c.model_name,o.transaction_type,o.offer_id LIMIT 150",
  fleet:"SELECT i.id::text AS id,i.configuration_id::int AS \"configurationId\", "+
-  "i.registration,i.ownership_type AS \"ownershipType\",i.fleet_status AS \"fleetStatus\", "+
-  "c.manufacturer_name AS manufacturer,c.model_name AS model,c.use_type AS \"useType\", "+
+  "i.registration,i.nickname,i.ownership_type AS \"ownershipType\",i.fleet_status AS \"fleetStatus\", "+
+  "c.manufacturer_name AS manufacturer,c.model_name AS model,c.family_name AS family, "+
+  "c.configuration_code AS configuration,c.use_type AS \"useType\", "+
+  "c.reference_passenger_capacity AS \"referenceSeats\",c.maximum_cargo_payload_kg::text AS \"cargoKg\", "+
+  "p.location_status AS \"locationStatus\",p.airport_key AS \"locationAirportKey\", "+
+  "ap.airport_name AS \"locationAirportName\",ap.airport_code AS \"locationAirportCode\", "+
+  "p.current_flight_occurrence_id AS \"currentFlightOccurrenceId\", "+
   "o.order_id::text AS \"orderId\",o.order_status AS \"deliveryStatus\",o.delivery_due_at AS \"deliveryDueAt\", "+
   "o.delivery_home_airport_key AS \"deliveryAirportKey\",o.transaction_type AS \"acquisitionType\" "+
   "FROM airlinerra_game.airline_aircraft_inventory i "+
   "LEFT JOIN airlinerra_game.aircraft_acquisition_orders_v1 o "+
   "ON o.aircraft_inventory_id=i.id AND o.airline_id=i.airline_id "+
   "LEFT JOIN airlinerra.aircraft_catalog_configuration_inventory c ON c.configuration_id=i.configuration_id "+
+  "LEFT JOIN airlinerra_game.section9_aircraft_current_position_v1 p "+
+  "ON p.aircraft_inventory_id=i.id AND p.airline_id=i.airline_id "+
+  "LEFT JOIN airlinerra_game.approved_game_airports ap "+
+  "ON ap.world_id=p.world_id AND ap.airport_key=p.airport_key "+
   "WHERE i.airline_id=$1::uuid ORDER BY i.created_at DESC,i.id LIMIT 250",
  delivery:"SELECT airlinerra_game.check_owned_aircraft_delivery_v1($1::uuid,$2::uuid,$3::uuid) AS result",
+ nickname:"UPDATE airlinerra_game.airline_aircraft_inventory i "+
+  "SET nickname=NULLIF(btrim($3::text),''),updated_at=now() "+
+  "WHERE i.id=$2::uuid AND i.airline_id=$1::uuid "+
+  "RETURNING i.id::text AS id,i.nickname",
  acquire:"SELECT airlinerra_game.acquire_offered_aircraft_v1("+
   "$1::uuid,$2::uuid,$3::uuid,$4::text,$5::uuid) AS result"
 });
@@ -101,6 +118,15 @@ export function createFleetAcquisitionHandler({verifyUserToken,database}={}){
     if(result.rowCount!==1||!result.rows[0]?.result)
       return respond(503,{error:'Delivery status could not be confirmed'});
     return respond(200,result.rows[0].result);
+   }
+   if(body.action==='update-nickname'){
+    const owner=await client.query(FLEET_SQL.owner,[body.airlineId,playerId]);
+    if(owner.rowCount!==1)return respond(403,{error:'Airline not owned by this account'});
+    const changed=await client.query(FLEET_SQL.nickname,[
+     body.airlineId,body.aircraftInventoryId,body.nickname
+    ]);
+    if(changed.rowCount!==1)return respond(404,{error:'Aircraft not found in your fleet'});
+    return respond(200,changed.rows[0]);
    }
    const registration=body.registration.trim().toUpperCase();
    const result=await client.query(FLEET_SQL.acquire,[
