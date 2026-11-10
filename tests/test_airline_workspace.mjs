@@ -87,7 +87,7 @@ test('route draft cannot use identical or missing airports and never launches a 
  assert.equal(validateRouteIdea({from:null,to:b,flights:7}),false);
 });
 
-test('settings and planning work remain local drafts until server-side execution exists',async()=>{
+test('settings and local hypothetical briefs remain separate from owner-scoped planning routes',async()=>{
  const [workspace,html,model,client]=await Promise.all([
   read('../website/airline-workspace.mjs'),read('../website/private-player-app.html'),
   read('../website/player-app-model.mjs'),read('../website/player-read-client.mjs')
@@ -97,14 +97,16 @@ test('settings and planning work remain local drafts until server-side execution
  assert.match(workspace,/getLandingView:\(\)=>preferences.landing/);
  assert.match(workspace,/No aircraft was ordered/);
  assert.match(workspace,/No live route was created/);
- assert.match(workspace,/No flight was scheduled with the server/);
+ assert.match(workspace,/Planning drafts do not reserve an aircraft or airport slot/);
  assert.match(workspace,/No aircraft layout was changed/);
  assert.match(workspace,/id="fleet-owned-aircraft"/);
  assert.match(workspace,/id="market-acquire"/);
  assert.match(workspace,/role="status"/);
- assert.match(workspace,/id="schedule-hours"/);
- assert.match(workspace,/for\(let hour=0;hour<24;hour\+\+\)/);
- assert.match(workspace,/for\(let day=0;day<7;day\+\+\)/);
+ assert.match(workspace,/id="schedule-aircraft-board"/);
+ assert.match(workspace,/buildAirlineWeeklyBoard/);
+ assert.match(workspace,/renderAirlineWeeklyBoard/);
+ assert.match(workspace,/scheduleSnapshot\?\.plans/);
+ assert.match(workspace,/scheduleSnapshot\?\.drafts/);
  assert.match(workspace,/\['economy','Economy'\]/);
  assert.match(workspace,/\['premium','Premium economy'\]/);
  assert.match(workspace,/\['business','Business'\]/);
