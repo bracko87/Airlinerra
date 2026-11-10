@@ -876,6 +876,20 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
 .route-check-item{display:flex;justify-content:space-between;align-items:baseline;gap:20px;min-width:0;border-bottom:1px solid var(--line);padding:13px 0;font-size:12px}
 .route-check-item>span{color:var(--muted);max-width:48%}
 .route-check-item>strong{text-align:right;color:var(--navy);font-weight:600;font-size:12px;overflow-wrap:anywhere}
+.route-fuel-phases{margin:15px 0 2px;padding:15px 0;border-top:1px solid var(--line)}
+.route-fuel-phases:empty{display:none}
+.route-fuel-phases h4{margin:0 0 10px;color:var(--navy);font-size:14px}
+.route-fuel-phase-grid{display:grid;gap:0}
+.route-fuel-phase-row{display:grid;grid-template-columns:minmax(150px,1fr) 100px 115px;
+ gap:10px;padding:9px 8px;border-bottom:1px solid var(--line);font-size:12px;color:var(--navy)}
+.route-fuel-phase-row span:nth-child(n+2){font-variant-numeric:tabular-nums;text-align:right}
+.route-fuel-phases .hint{margin:10px 0 0;font-size:11px;line-height:1.5}
+@media(max-width:550px){
+ .route-fuel-phase-row{grid-template-columns:minmax(110px,1fr) 70px 90px;gap:5px}
+}
+:root[data-ui-theme="dark"] .route-fuel-phases h4,
+:root[data-ui-theme="dark"] .route-fuel-phase-row{color:#eaf3ff}
+
 .route-check-message{margin:15px 0 0;padding:12px 14px;border:1px solid var(--line);border-radius:8px;font-size:12px;color:var(--navy);background:#f7faff}
 :root[data-ui-theme="dark"] .route-week-day{background:#20364e}
 :root[data-ui-theme="dark"] .route-number-input,:root[data-ui-theme="dark"] #route-number-prefix{background:#192f45;color:#eaf3ff;border-color:#3b526b}
