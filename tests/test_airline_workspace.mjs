@@ -116,6 +116,11 @@ test('settings and local hypothetical briefs remain separate from owner-scoped p
  assert.doesNotMatch(workspace,/YOUR PROCUREMENT PLAN|Simulation aircraft|Save local fleet brief/);
  assert.match(workspace,/fleet-owned-aircraft/);
  assert.match(workspace,/id="fleet-detail-nickname"/);
+ assert.match(workspace,/id=\\\"fleet-maintenance-preview\\\"/);
+ assert.match(workspace,/loadMaintenancePreview/);
+ assert.match(workspace,/Maintenance data loading/);
+ assert.match(workspace,/canScheduleMaintenance!==false/);
+ assert.match(workspace,/Base game cost/);
  assert.match(workspace,/data-fleet-aircraft-open/);
  assert.match(workspace,/Location not verified/);
  assert.match(workspace,/fleet-detail-save/);
