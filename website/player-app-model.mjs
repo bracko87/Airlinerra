@@ -19,12 +19,17 @@ export const WORLD_LABELS=Object.freeze([
   Object.freeze({id:2,name:'Atlas',status:'Planned'}),
   Object.freeze({id:3,name:'Odyssey',status:'Planned'})
 ]);
+const AIRCRAFT_ROUTE=/^fleet-aircraft\/([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/iu;
 export function safePlayerView(hash){
   const candidate=typeof hash==='string'?hash.replace(/^#/u,''):'';
+  if(AIRCRAFT_ROUTE.test(candidate))return 'fleet-aircraft';
   return VIEW_SET.has(candidate)?candidate:'overview';
 }
 export function playerViewUrl(view){
-  return PLAYER_APP_PATH+'#'+safePlayerView('#'+view);
+  const candidate=String(view||'').replace(/^#/u,'');
+  const aircraft=AIRCRAFT_ROUTE.exec(candidate);
+  if(aircraft)return PLAYER_APP_PATH+'#fleet-aircraft/'+aircraft[1].toLowerCase();
+  return PLAYER_APP_PATH+'#'+safePlayerView('#'+candidate);
 }
 /**
  * A newly authenticated manager lands on the airline creation wizard while
