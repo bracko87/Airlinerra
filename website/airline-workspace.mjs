@@ -3,7 +3,7 @@ import {aircraftDisplayName} from './aircraft-library.mjs';
 import {buildAirlineWeeklyBoard,renderAirlineWeeklyBoard} from './aircraft-weekly-schedule-board.mjs';
 import {createCabinServiceManager} from './cabin-services-manager.mjs';
 import {createCabinConfigurationManager} from './cabin-configuration-manager.mjs';
-import {companyCabinChoices,configurationCostPreview} from './aircraft-configuration-options.mjs';
+import {createAircraftConfigurationDialog} from './aircraft-configuration-dialog.mjs';
 /** Airlinerra airline-management workspace.
  * Real server read models stay separate from local-only planning. All page
  * structure in this module is constant markup authored by the application.
@@ -367,6 +367,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
  let scheduleReadError=false;
  let cabinManager=null;
  let cabinConfigurationManager=null;
+ let aircraftConfigurationDialog=null;
  let scheduleSelectedDay=0;
  const scheduleDays=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
  for(const [name,render] of Object.entries(pages)){
@@ -393,6 +394,20 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    });
   }catch{console.warn('Cabin configuration editor unavailable')}
  }
+ // Configuration popup is optional; failures must never block airline login.
+ try{
+  aircraftConfigurationDialog=createAircraftConfigurationDialog({
+   doc,
+   getAirline:()=>data.airline,
+   getAircraft:()=>marketSnapshot?.fleet?.find(a=>a.id===selectedFleetAircraftId)||null,
+   getFleetClient:()=>data.fleetClient,
+   onDesign:id=>{
+    cabinConfigurationManager?.selectAircraft(id);
+    if(typeof goTo==='function')goTo('cabin-configurations');
+   },
+   onSaved:()=>cabinConfigurationManager?.updateData(data)
+  });
+ }catch{console.warn('Aircraft configuration popup unavailable')}
  function applyPreferences(){
   doc.documentElement.dataset.uiTheme=preferences.theme;
   doc.documentElement.dataset.uiDensity=preferences.density;
@@ -1220,6 +1235,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    console.warn('Cabin configuration refresh unavailable')
   }
   if((airline?.id||null)!==oldAirlineId){
+   aircraftConfigurationDialog?.close();
    // Never present an earlier airline's inventory or bookings while the
    // new owner's asynchronous authenticated reads are still in progress.
    marketSnapshot=null;scheduleSnapshot=null;
@@ -1298,6 +1314,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   if(openAircraft){
    const aircraftId=openAircraft.dataset.fleetAircraftOpen;
    if(!marketSnapshot?.fleet?.some(a=>a.id===aircraftId))return;
+   aircraftConfigurationDialog?.close();
    selectedFleetAircraftId=aircraftId;
    cabinConfigurationManager?.selectAircraft(aircraftId);
    renderAircraftDetail();
@@ -1349,6 +1366,10 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    return;}
   const id=event.target.closest('button')?.id;
   if(!id)return;
+  if(id==='fleet-configuration-change'){
+   await aircraftConfigurationDialog?.open();
+   return;
+  }
   const general={'settings-units':'units','settings-time':'time','settings-date':'date',
    'settings-timezone':'timezone','settings-language':'language'};
   const interfaceKeys={'pref-theme':'theme','pref-density':'density','pref-motion':'motion','pref-landing':'landing'};
