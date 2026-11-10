@@ -5,6 +5,7 @@ import {createAirportCountryPicker,populateAirportCountries,airportFlag,airportC
 import {renderRouteMap} from './route-map.mjs';
 import {buildAircraftWeeklyTimeline,renderAircraftWeeklyTimeline} from './aircraft-weekly-timeline.mjs';
 import {assessAircraftRouteRunways} from './route-aircraft-runway-screen.mjs';
+import {cabinPackageEstimate,createBasicCabinPackage} from './cabin-services-manager.mjs';
 const section=(eyebrow,title,body)=>
  '<article class="panel route-planner-panel"><span class="panel-kicker">'+eyebrow+'</span><h2>'+title+'</h2>'+body+'</article>';
 const field=(id,label,el)=>'<label class="workspace-label" for="'+id+'">'+label+'</label>'+el;
@@ -121,11 +122,16 @@ export function routePlannerMarkup(){
    optionalFare('route-fare-first','First Class fare')+
   '</div>'+
   '<div class="route-service-grid">'+
-   routeSetupField('route-onboard-service','Onboard service','<select id="route-onboard-service"><option value="standard">Standard</option><option value="basic">Basic</option><option value="enhanced">Enhanced</option></select>')+
+   routeSetupField('route-cabin-package','Cabin service package','<select id="route-cabin-package"><option value="none">No onboard service</option><option value="basic">Basic Cabin Service</option></select>')+
    routeSetupField('route-baggage-service','Baggage package','<select id="route-baggage-service"><option value="standard">Standard</option><option value="hand-only">Hand baggage only</option><option value="checked">Checked baggage included</option></select>')+
    routeSetupField('route-cargo-service','Cargo on this flight','<select id="route-cargo-service"><option value="none">No cargo</option><option value="requested">Request belly cargo (unverified)</option></select>')+
   '</div>'+
-  '<p class="route-subtle-note">Draft settings only. Pricing, cargo capacity and services are not yet operationally enforced.</p>'+
+  '<div class="route-cabin-cost-preview">'+
+    '<span>Assumed passengers for cost preview</span>'+
+    '<input id="route-cabin-passengers" type="number" min="0" max="1000" step="1" value="100" aria-label="Assumed passengers for cabin service cost estimate">'+
+    '<p id="route-cabin-service-note" class="hint" role="status">Select a cabin package to see estimated airline costs.</p>'+
+   '</div>'+
+   '<p class="route-subtle-note">The selected service is saved on planning routes only. Cost estimates assume the passenger count above; no actual bookings, expenses or charges occur here.</p>'+
   '<div class="workspace-actions route-apply-actions">'+
    '<button type="button" id="route-plan-save" class="primary">Create new route</button>'+
    '<button type="button" id="route-plan-new" class="secondary">Clear form</button>'+
@@ -176,13 +182,15 @@ export function exampleNextDepartureUtc(departureUtc,arrivalUtc,turnaroundMinute
 export const validLocalDeparture=time=>/^([01]\d|2[0-3]):[0-5]\d$/.test(String(time||''));
 // Arrival stands are player choices. Departure stands come from prior aircraft arrivals
 // where known; a first-flight terminal fallback remains provisional and server-gated.
-export const validateFlightDraftOptions=({departureStand='terminal',arrivalStand,turnaroundMinutes,fares,onboard,baggage,cargo}={})=>{
+export const validateFlightDraftOptions=({departureStand='terminal',arrivalStand,turnaroundMinutes,fares,
+ onboard,baggage,cargo,cabinPackageId}={})=>{
  if(!['terminal','remote','cargo'].includes(departureStand)||
     !['terminal','remote','cargo'].includes(arrivalStand)||
   !Number.isInteger(turnaroundMinutes)||turnaroundMinutes<45||turnaroundMinutes>360||
   !['standard','basic','enhanced'].includes(onboard)||
   !['standard','hand-only','checked'].includes(baggage)||
-  !['none','requested'].includes(cargo))return null;
+  !['none','requested'].includes(cargo)||
+   (cabinPackageId!==undefined&&!/^(?:none|basic|pkg-[1-9][0-9]{0,5})$/.test(cabinPackageId)))return null;
  const prices={};
  for(const key of ['economy','premium','business','first']){
   const raw=fares?.[key];
@@ -192,7 +200,7 @@ export const validateFlightDraftOptions=({departureStand='terminal',arrivalStand
   prices[key]=amount;
  }
  return {departureStand,arrivalStand,turnaroundMinutes,fares:prices,
-  service:{onboard,baggage,cargo},operationallyVerified:false};
+  service:{onboard,baggage,cargo,...(cabinPackageId!==undefined?{cabinPackageId}:{})},operationallyVerified:false};
 };
 export const routeWeekdays=schedule=>{
  const rows=Array.isArray(schedule)?schedule:[];
@@ -255,7 +263,7 @@ export function formatRouteWeatherPreview(preview){
   describe('Arrival',preview.destination)+
   ' · Forecast only; aviation weather clearance not provided';
 }
-export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
+export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinState}={}){
  if(!doc||typeof getData!=='function'||typeof draftWrite!=='function')
   throw Error('Verified route planner data required');
  const $=id=>doc.getElementById(id);
