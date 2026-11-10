@@ -390,7 +390,13 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   try{
    cabinConfigurationManager=createCabinConfigurationManager({
     doc,host:configurationHost,factoryHost:$('factory-cabin-customizer'),
-    onDirectoryUpdate:()=>renderMroDirectory()
+    onDirectoryUpdate:()=>renderMroDirectory(),
+    onFactoryLayoutChange:()=>{
+     const buy=$('market-acquire'),offer=currentFactoryOffer();
+     if(buy)buy.disabled=!(marketIsOpen()&&newAircraftChoice.payment==='cash'&&
+      isReleasedFactoryOffer(offer)&&cabinConfigurationManager?.getFactoryPlan()?.standard===true&&
+      typeof data.fleetClient?.acquire==='function');
+    }
    });
   }catch{console.warn('Cabin configuration editor unavailable')}
  }
