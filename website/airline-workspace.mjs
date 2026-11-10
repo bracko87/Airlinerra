@@ -562,8 +562,14 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   }
  }
  function updateData(next={}){
+  const oldAirlineId=data.airline?.id||null;
   data={...data,...next};
   const airline=data.airline;
+  if((airline?.id||null)!==oldAirlineId){
+   // Never present an earlier airline's inventory or bookings while the
+   // new owner's asynchronous authenticated reads are still in progress.
+   marketSnapshot=null;scheduleSnapshot=null;
+  }
   const connected=data.connected===true;
   const unknown='Game data not loaded';
   const home=airline?.homeAirportName?
