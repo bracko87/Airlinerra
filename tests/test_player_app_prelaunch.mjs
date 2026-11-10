@@ -188,3 +188,27 @@ test('prepared Group 2 airport catalog is informational only and separate from r
  assert.match(backend,/PREPARED_AIRPORTS_PATH/);
  assert.match(backend,/sourceGroup:'GROUP_2'/);
 });
+
+test('Group 2 locations support real HQ registration and owner-only hub/station drafts without flight release',async()=>{
+ const [app,html,client,context,office]=await Promise.all([
+  readFile(new URL('../website/player-app.mjs',import.meta.url),'utf8'),
+  readFile(new URL('../website/private-player-app.html',import.meta.url),'utf8'),
+  readFile(new URL('../website/player-read-client.mjs',import.meta.url),'utf8'),
+  readFile(new URL('../server/onboarding-context-service.mjs',import.meta.url),'utf8'),
+  readFile(new URL('../server/airport-office-persistence.mjs',import.meta.url),'utf8')
+ ]);
+ assert.match(context,/airport_location_eligibility_v1/);
+ assert.match(context,/a\.hq_selectable=true/);
+ assert.match(office,/office_selectable=true/);
+ assert.match(office,/airport_location_eligibility_v1/);
+ assert.match(app,/Create hub draft/);
+ assert.match(app,/Create station draft/);
+ assert.match(app,/loadGroup2Offices/);
+ assert.match(app,/data\.office\?\.status!=='draft'/);
+ assert.match(app,/Group2Plan|changeGroup2Plan/);
+ assert.match(client,/saveAirportOffice:/);
+ assert.match(client,/removeAirportOffice:/);
+ assert.match(html,/Flights and reservations remain restricted/);
+ assert.doesNotMatch(app.slice(app.indexOf('async function loadGroup2Plans'),app.indexOf('async function airportSearch')),
+  /activateFlight\(|reserveSlots\(|dispatchFlight\(/);
+});
