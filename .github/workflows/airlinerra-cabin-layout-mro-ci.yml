@@ -24,6 +24,7 @@ on:
       - 'tests/test_aircraft_configuration_modal.mjs'
       - 'tests/test_airline_workspace.mjs'
       - 'tests/test_fleet_acquisition_api.mjs'
+      - 'tests/test_local_owner_fleet_reader.mjs'
       - 'supabase/migrations/*cabin*'
       - 'supabase/migrations/*mro*'
       - 'supabase/migrations/*refit*'
@@ -47,7 +48,7 @@ jobs:
           node --check website/dev-scripts/real-player-read-gateway.mjs
           node --check server/fleet-acquisition-service.mjs
       - name: Test aircraft configuration, server ownership, and existing navigation
-        run: node --test tests/test_cabin_configuration.mjs tests/test_aircraft_configuration_modal.mjs tests/test_fleet_acquisition_api.mjs tests/test_airline_workspace.mjs
+        run: node --test tests/test_cabin_configuration.mjs tests/test_aircraft_configuration_modal.mjs tests/test_fleet_acquisition_api.mjs tests/test_airline_workspace.mjs tests/test_local_owner_fleet_reader.mjs
       - name: Verify passenger-only installed cabin demand with no draft or cargo effect
         run: node --test tests/test_section9_demand_allocation.mjs tests/test_section9_network_engine.mjs
       - name: Verify dormant cabin refit gates (no charges or installation)
