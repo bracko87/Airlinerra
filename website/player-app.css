@@ -2104,3 +2104,94 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
 #prepared-airports-panel .prepared-airport-result:last-child{border-bottom:0}
 #prepared-airports-panel .prepared-airport-result strong{overflow-wrap:anywhere}
 #prepared-airports-panel .prepared-airport-result .hint{font-size:12px;color:var(--muted)}
+
+/* Aircraft market uses the same single shared manager panel, input heights,
+   flat rows and understated actions as My Routes (no additional nested cards). */
+#workspace-aircraft-new-orders .aircraft-market-filter-grid,
+#workspace-aircraft-market .aircraft-market-filter-grid{
+ display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:15px 0 12px
+}
+.aircraft-market-filter-grid label,.aircraft-market-finance-row label,
+.aircraft-market-search-row label{
+ display:flex;flex-direction:column;min-width:0;gap:5px;font-size:11px;color:var(--muted);font-weight:500
+}
+#player-main .aircraft-market-filter-grid select,
+#player-main .aircraft-market-finance-row input,
+#player-main .aircraft-market-finance-row select,
+#player-main .aircraft-market-search-row input,
+#player-main .aircraft-market-search-row select{
+ width:100%;min-width:0;min-height:33px;max-height:37px;
+ box-sizing:border-box;margin:0;padding:6px 10px;
+ background:var(--card,#fff);color:var(--navy);
+ border:1px solid #cbd9e7;border-radius:7px;font-size:12px
+}
+.aircraft-market-finance-row{
+ display:grid;grid-template-columns:repeat(2,minmax(200px,300px));gap:12px;
+ margin:12px 0 14px;align-items:end
+}
+.aircraft-market-search-row{
+ display:grid;grid-template-columns:minmax(190px,1.3fr) minmax(150px,.8fr)
+ minmax(170px,1fr) auto;gap:12px;margin:0 0 15px;align-items:end
+}
+.aircraft-market-search-actions,.aircraft-market-actionbar{
+ display:flex;gap:7px;align-items:center;flex-wrap:wrap
+}
+#player-main .aircraft-market-compact-button{
+ min-height:32px;padding:6px 11px;margin:0;border-radius:7px;
+ font-size:11px;line-height:1.3
+}
+.aircraft-market-quote{
+ min-height:46px;margin:13px 0 11px;padding:12px 0;
+ border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+ color:var(--navy);font-size:12px;line-height:1.65
+}
+#workspace-aircraft-market .used-market-list{margin-top:12px}
+#workspace-aircraft-market .used-market-aircraft{
+ display:grid;grid-template-columns:minmax(260px,2fr) minmax(200px,1fr)
+ minmax(150px,.85fr) minmax(110px,.6fr);
+ gap:12px;padding:10px 12px;align-items:center
+}
+#workspace-aircraft-market .used-market-aircraft-identity,
+#workspace-aircraft-market .used-market-aircraft-price{gap:3px}
+#workspace-aircraft-market .used-market-aircraft-identity small,
+#workspace-aircraft-market .used-market-aircraft-price small{
+ max-width:100%;white-space:normal;font-size:11px
+}
+#workspace-aircraft-market .used-market-aircraft button.route-text-action{
+ padding:4px 0!important;margin:0!important;min-height:0!important;
+ background:transparent!important;border:0!important;color:var(--navy);
+ text-decoration:underline;font-size:12px;text-align:left
+}
+#workspace-aircraft-market .used-market-aircraft button.route-text-action:disabled{
+ opacity:.55;text-decoration:none;cursor:default
+}
+#workspace-aircraft-market .used-market-bid-panel{
+ margin:13px 0;padding:13px 0;border:0;border-top:1px solid var(--line);
+ background:transparent
+}
+@media(max-width:960px){
+ #workspace-aircraft-new-orders .aircraft-market-filter-grid,
+ #workspace-aircraft-market .aircraft-market-filter-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .aircraft-market-search-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #workspace-aircraft-market .used-market-aircraft{
+  grid-template-columns:minmax(160px,1.3fr) minmax(130px,1fr) 110px
+ }
+ #workspace-aircraft-market .used-market-auction-timer{grid-column:1 / 3}
+}
+@media(max-width:570px){
+ #workspace-aircraft-new-orders .aircraft-market-filter-grid,
+ #workspace-aircraft-market .aircraft-market-filter-grid,
+ .aircraft-market-search-row,.aircraft-market-finance-row{grid-template-columns:1fr}
+ #workspace-aircraft-market .used-market-aircraft{grid-template-columns:1fr auto;gap:7px}
+ #workspace-aircraft-market .used-market-aircraft-identity,
+ #workspace-aircraft-market .used-market-aircraft-price{grid-column:1}
+ #workspace-aircraft-market .used-market-auction-timer{grid-column:1}
+ #workspace-aircraft-market .used-market-aircraft button{grid-column:2;grid-row:1 / span 3}
+}
+:root[data-ui-theme="dark"] .aircraft-market-filter-grid select,
+:root[data-ui-theme="dark"] .aircraft-market-finance-row input,
+:root[data-ui-theme="dark"] .aircraft-market-finance-row select,
+:root[data-ui-theme="dark"] .aircraft-market-search-row input,
+:root[data-ui-theme="dark"] .aircraft-market-search-row select{
+ background:#192f45;color:#e8f2fb;border-color:#3b526b
+}
