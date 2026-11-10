@@ -42,7 +42,8 @@ const rateForLoad=(data,loadFraction)=>{
  const full=finitePositive(data.fullFuelKgPer100Km);
  if(full===null)return null;
  if(loadFraction<=.5&&empty!==null){
-  return empty+(half??((empty+full)/2)-empty)*(loadFraction/.5);
+  const mid=half??((empty+full)/2);
+  return empty+(mid-empty)*(loadFraction/.5);
  }
  if(half!==null)return half+(full-half)*((loadFraction-.5)/.5);
  return full*(.86+.14*loadFraction); // fallback assumption explicitly tagged
