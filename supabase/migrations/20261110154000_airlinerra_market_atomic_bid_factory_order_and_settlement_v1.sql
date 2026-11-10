@@ -12,7 +12,7 @@ RETURNS jsonb LANGUAGE plpgsql SECURITY INVOKER
 SET search_path TO 'airlinerra_game','airlinerra','pg_catalog'
 AS $fn$
 DECLARE lot record; bid record; prior record; actor record;
- normalized text; required_hold numeric(14,2);
+ normalized text; required_hold numeric(14,2); required_min_bid numeric(14,2);
  new_deadline timestamptz; market_allowed boolean;
 BEGIN
  IF p_player_id IS NULL OR p_airline_id IS NULL OR p_listing_id IS NULL
@@ -71,8 +71,9 @@ BEGIN
  IF lot.highest_bid_airline_id=p_airline_id THEN
   RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='ALREADY_HIGHEST_BIDDER';
  END IF;
- IF p_bid_usd < CASE WHEN lot.highest_bid_usd IS NULL THEN lot.opening_bid_usd
-                     ELSE lot.highest_bid_usd+lot.min_bid_increment_usd END THEN
+ required_min_bid:=coalesce(lot.highest_bid_usd+lot.min_bid_increment_usd,
+  lot.opening_bid_usd);
+ IF p_bid_usd<required_min_bid THEN
   RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='AUCTION_BID_BELOW_REQUIRED_AMOUNT';
  END IF;
  IF EXISTS(SELECT 1 FROM airlinerra_game.airline_aircraft_inventory i
