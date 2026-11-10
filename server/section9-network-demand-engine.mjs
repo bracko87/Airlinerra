@@ -41,7 +41,7 @@ function partnershipAllowed(a,b,journeyStart,journeyEnd,agreements,holdingGroups
   p.rightApproved===true&&time(p.validFrom)<=journeyStart&&
   (!p.validUntil||time(p.validUntil)>journeyEnd));
 }
-function cleanFlight(f){
+function cleanFlight(f,installedCabin=null){
  if(!id(f?.id)||!id(f.airlineId)||!id(f.origin)||!id(f.destination)||
     f.origin===f.destination||!validDate(f.marketDate)||
     f.status!=='operational_verified')
@@ -53,16 +53,13 @@ function cleanFlight(f){
     !Number.isSafeInteger(f.passengerSeats)||
     !num(f.cargoTonnes)||f.cargoTonnes<0||f.cargoTonnes>1000)
   throw Error('SECTION9_INVALID_OCCURRENCE_CAPACITY');
- // Only a trusted flight snapshot may identify the already INSTALLED cabin.
- // A draft's comfort score has no operational or booking effect.
- const installedEvidence=f.installedCabinEvidence==='server_verified_installed_v1';
- if(installedEvidence&&(!id(f.aircraftInventoryId)||
-    f.installedCabinAircraftId!==f.aircraftInventoryId||
-    !Number.isInteger(f.installedCabinComfortRating)||
-    f.installedCabinComfortRating<0||f.installedCabinComfortRating>100))
-  throw Error('SECTION9_INVALID_INSTALLED_CABIN_EVIDENCE');
+ // Comfort may be supplied ONLY through a separate protected installed-cabin
+ // read model. Never trust comfort / evidence fields on a flight payload.
+ const installedEvidence=installedCabin?.aircraft_inventory_id===f.aircraftInventoryId&&
+  installedCabin?.airline_id===f.airlineId&&
+  installedCabin?.evidence_kind==='server_verified_installed_v1';
  const installedCabinMultiplier=installedEvidence?
-  1+(f.installedCabinComfortRating-50)*0.0003:1;
+  1+(installedCabin.comfort_rating-50)*0.0003:1;
  return {...f,depMs,arrMs,installedCabinMultiplier,
   fareUsd:cap(f.fareUsd,100000),
   cargoRateUsd:cap(f.cargoRateUsd,100000),
@@ -98,16 +95,28 @@ const offerForLegs=(market,legs,wait=0,minimum=0,hubBackground='')=>{
  */
 export function section9SimulateDay({
  flights=[],markets=[],airports={},agreements=[],holdingGroups={},
- maxItinerariesPerMarket=1000
+ installedCabins=[],maxItinerariesPerMarket=1000
 }={}){
  if(!Array.isArray(flights)||!Array.isArray(markets)||
-   !Array.isArray(agreements)||flights.length>300000||markets.length>100000||
+   !Array.isArray(agreements)||!Array.isArray(installedCabins)||
+   installedCabins.length>300000||
+   flights.length>300000||markets.length>100000||
    !Number.isInteger(maxItinerariesPerMarket)||
    maxItinerariesPerMarket<1||maxItinerariesPerMarket>10000)
   throw Error('SECTION9_INVALID_BATCH');
+ const installedByAirframe=new Map();
+ for(const row of installedCabins){
+  if(!id(row?.aircraft_inventory_id)||!id(row.airline_id)||
+     row.evidence_kind!=='server_verified_installed_v1'||
+     !Number.isInteger(row.comfort_rating)||row.comfort_rating<0||
+     row.comfort_rating>100||
+     installedByAirframe.has(row.aircraft_inventory_id))
+   throw Error('SECTION9_INVALID_PRIVATE_INSTALLED_CABIN_ROW');
+  installedByAirframe.set(row.aircraft_inventory_id,row);
+ }
  const flightsById=new Map(),byOriginDate=new Map(),byPair=new Map();
  for(const raw of flights){
-  const f=cleanFlight(raw);
+  const f=cleanFlight(raw,installedByAirframe.get(raw?.aircraftInventoryId));
   if(flightsById.has(f.id))throw Error('SECTION9_DUPLICATE_FLIGHT_OCCURRENCE');
   flightsById.set(f.id,f);
   const orig=key(f.origin,f.marketDate),pair=key(f.origin,f.destination);
