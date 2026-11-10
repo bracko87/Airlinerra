@@ -27,6 +27,8 @@ on:
       - 'website/player-app.mjs'
       - 'website/local-owner-fleet-reader.mjs'
       - 'website/dev-scripts/real-player-read-gateway.mjs'
+      - 'website/dev-scripts/dev.mjs'
+      - 'tests/test_local_fleet_http_dispatch.mjs'
       - 'tests/test_local_owner_fleet_reader.mjs'
       - 'supabase/migrations/20261110104500_world1_panonian_initial_a319_allocation.sql'
       - 'tests/test_server_flight_schedule_api.mjs'
@@ -138,6 +140,8 @@ jobs:
           node --check website/player-app.mjs
           node --check website/local-owner-fleet-reader.mjs
           node --check website/dev-scripts/real-player-read-gateway.mjs
+          node --check website/dev-scripts/dev.mjs
+          node --check tests/test_local_fleet_http_dispatch.mjs
           node --check website/player-read-client.mjs
           node --check website/dev-scripts/real-player-read-gateway.mjs
           node --check website/route-planner.mjs
@@ -184,6 +188,8 @@ jobs:
       - name: Build complete private website with new route modules
         working-directory: website
         run: npm run build
+      - name: Smoke-test real built localhost fleet HTTP dispatch
+        run: node --test tests/test_local_fleet_http_dispatch.mjs
       - name: Verify complete player ES module dependency graph in built website
         run: |
           node --test tests/test_player_built_module_graph.mjs
