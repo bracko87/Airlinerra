@@ -30,6 +30,9 @@ export function allowedLocalOwnerRead(pathname,payload){
  if(payload.action==='list')
   return Object.keys(payload).length===2 &&
    Object.keys(payload).every(x=>x==='action'||x==='airlineId');
+ // New and used marketplace discovery is read-only.
+ if(pathname===FLEET_READ_PATH&&payload.action==='list-used')
+  return validateFleetAcquisitionRequest(payload);
  // Maintenance preview is read-only. Never accept a client-selected cost or site.
  if(pathname===FLEET_READ_PATH&&payload.action==='maintenance-preview')
   return validateFleetAcquisitionRequest(payload);
