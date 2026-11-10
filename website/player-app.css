@@ -2417,3 +2417,25 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
 :root[data-ui-theme="dark"] #workspace-service .cabin-product-row input[data-cabin-field="onboardCents"]{
  background:#192f45
 }
+
+/* Per-aircraft real row patterns and source-linked seat choices. */
+#workspace-cabin-configurations .cabin-seat-reference,
+#workspace-aircraft-new-orders .cabin-seat-reference{
+ display:flex;flex-direction:column;min-width:0;gap:3px
+}
+#workspace-cabin-configurations .cabin-seat-source,
+#workspace-aircraft-new-orders .cabin-seat-source{
+ width:max-content;max-width:100%;
+ color:var(--muted);font-size:10px;text-decoration:underline;
+ line-height:1.4;overflow-wrap:anywhere
+}
+#workspace-cabin-configurations .cabin-seat-source[hidden],
+#workspace-aircraft-new-orders .cabin-seat-source[hidden]{display:none}
+#workspace-cabin-configurations .cabin-designer-visual svg,
+#workspace-aircraft-new-orders .cabin-designer-visual svg{
+ width:100%;max-width:380px;max-height:750px;overflow:visible
+}
+#workspace-cabin-configurations .cabin-designer-status,
+#workspace-aircraft-new-orders .cabin-designer-status{
+ font-size:11px;line-height:1.65
+}
