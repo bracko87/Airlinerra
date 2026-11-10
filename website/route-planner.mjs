@@ -7,7 +7,7 @@ import {estimateFivePhaseFuel} from './flight-fuel-phase-engine.mjs';
 import {previewAirportFuelPrice} from './airport-fuel-price-preview.mjs';
 import {buildAircraftWeeklyTimeline,renderAircraftWeeklyTimeline} from './aircraft-weekly-timeline.mjs';
 import {assessAircraftRouteRunways} from './route-aircraft-runway-screen.mjs';
-import {forecastCabinServiceFlight,createBasicCabinPackage} from './cabin-services-manager.mjs';
+import {createBasicCabinPackage} from './cabin-services-manager.mjs';
 const section=(eyebrow,title,body)=>
  '<article class="panel route-planner-panel"><span class="panel-kicker">'+eyebrow+'</span><h2>'+title+'</h2>'+body+'</article>';
 const field=(id,label,el)=>'<label class="workspace-label" for="'+id+'">'+label+'</label>'+el;
@@ -130,14 +130,7 @@ export function routePlannerMarkup(){
    routeSetupField('route-baggage-service','Baggage package','<select id="route-baggage-service"><option value="standard">Standard</option><option value="hand-only">Hand baggage only</option><option value="checked">Checked baggage included</option></select>')+
    routeSetupField('route-cargo-service','Cargo on this flight','<select id="route-cargo-service"><option value="none">No cargo</option><option value="requested">Request belly cargo (unverified)</option></select>')+
   '</div>'+
-  '<div class="route-cabin-cost-preview">'+
-    '<span>Estimated passengers (preview only)</span>'+
-    '<input id="route-cabin-passengers" type="number" min="0" max="1000" step="1" value="100" aria-label="Assumed passengers for cabin service cost estimate">'+
-    '<label for="route-cabin-hours">Estimated flight duration (hours)</label>'+
-    '<input id="route-cabin-hours" type="number" min="0.25" max="24" step="0.25" value="3" aria-label="Estimated hours for onboard catering">'+
-    '<p id="route-cabin-service-note" class="hint" role="status">Select a cabin package to see estimated airline costs.</p>'+
-   '</div>'+
-   '<p class="route-subtle-note">The selected service is saved on planning routes only. Cost estimates assume the passenger count above; no actual bookings, expenses or charges occur here.</p>'+
+  '<p class="route-subtle-note">The selected cabin package is saved with your route. Actual flight services and costs depend on real flights; no charges are made when creating a route.</p>'+
   '<div class="workspace-actions route-apply-actions">'+
    '<button type="button" id="route-plan-save" class="primary">Create new route</button>'+
    '<button type="button" id="route-plan-new" class="secondary">Clear form</button>'+
@@ -279,36 +272,6 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
   return {packages:Array.isArray(value?.packages)?value.packages:[createBasicCabinPackage()],
    ready:value?.ready===true};
  };
- const updateCabinEstimate=()=>{
-  const picker=$('route-cabin-package'),note=$('route-cabin-service-note');
-  const passengers=Number($('route-cabin-passengers')?.value);
-  const hours=Number($('route-cabin-hours')?.value);
-  if(!picker||!note)return;
-  const {packages,ready}=cabinSnapshot();
-  if(!ready){note.textContent='Cabin packages are loading or unavailable. No money is charged.';return;}
-  if(picker.value==='none'){
-   note.textContent='No onboard service selected · catering cost $0.00. No real flight expense.';return;
-  }
-  const pkg=packages.find(p=>p.id===picker.value);
-  if(!pkg){note.textContent='This package was deleted. Select another package before saving.';return;}
-  if(!Number.isSafeInteger(passengers)||passengers<0||passengers>1000||
-     !Number.isFinite(hours)||hours<.25||hours>24){
-   note.textContent='Enter 0–1,000 passengers and 0.25–24 estimated flight hours.';return;
-  }
-  const rating=getData()?.airline?.verifiedReputationScore;
-  const verified=Number.isFinite(rating)&&rating>=0&&rating<=100;
-  const score=verified?rating:50; // explicit neutral estimate, never fabricate reputation.
-  const forecast=forecastCabinServiceFlight(pkg,{
-   passengers,durationMinutes:Math.round(hours*60),reputationScore:score
-  });
-  const usd=cents=>(cents<0?'-$':'$')+(Math.abs(cents)/100).toFixed(2);
-  note.textContent=pkg.name+' · budgeted stock and usage cost '+usd(forecast.totalCostCents)+
-   ', expected onboard sales '+usd(forecast.onboardRevenueCents)+
-   ', net estimated cost '+usd(forecast.netCostCents)+
-   '. '+passengers+' passengers, '+hours+'h flight, reputation '+score+
-   '/100'+(verified?' (verified)':' (neutral assumption)')+
-   '. Sales are forecasts, not guarantees. No financial posting.';
- };
  const updateFuelEstimate=()=>{
   const holder=$('route-fuel-phases'),from=selected('from'),to=selected('to');
   const id=$('route-aircraft')?.value||'';
@@ -322,9 +285,9 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    setSummary('Owner-verified aircraft fuel reference is loading or unavailable.');return;
   }
   const km=routeDistanceKm(from,to);
-  const pax=Number($('route-cabin-passengers')?.value),seats=Number(aircraft.referenceSeats);
-  const payload=aircraft.useType==='passenger'&&seats>0&&Number.isSafeInteger(pax)&&pax>=0?
-   Math.min(1,pax/seats):.5;
+  // Until actual passenger/cargo manifests exist, show neutral 50% load.
+  // This is not a booked passenger count or verified flight payload.
+  const payload=.5;
   const originProfile=airportProfiles.from?.key===from.key?airportProfiles.from:null;
   const price=previewAirportFuelPrice(originProfile,{fuelFamily:aircraft.fuelFamily});
   const fuel=estimateFivePhaseFuel({
@@ -396,17 +359,13 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    missing.disabled=true;picker.add(missing);
   }
   picker.value=chosen&&[...picker.options].some(x=>x.value===chosen)?chosen:'basic';
-  picker.disabled=!ready;updateCabinEstimate();
+  picker.disabled=!ready;
   doc.dispatchEvent?.(new Event('airlinerra:refresh-game-select-menus'));
  };
  doc.addEventListener('airlinerra:cabin-packages-updated',event=>{
   if(event.detail?.airlineId===getData()?.airline?.id)refreshCabinPackages();
  });
 
- $('route-cabin-package')?.addEventListener('change',updateCabinEstimate);
- $('route-cabin-passengers')?.addEventListener('input',updateCabinEstimate);
- $('route-cabin-passengers')?.addEventListener('input',updateFuelEstimate);
- $('route-cabin-hours')?.addEventListener('input',updateCabinEstimate);
  const days=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
  let homeKey=null,homeLocation=null,currentAirlineId=null,homeTicket=0,detailTicket=0;
  let lastKeys='',airportProfiles={},editingFlightNumber=null,editingLegacyIndex=null,editSerial=0;
@@ -1036,12 +995,6 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    const value=route.operation?.service?.[field];
    $(id).value=values.includes(value)?value:def;
   }
-  if($('route-cabin-passengers'))$('route-cabin-passengers').value=
-   String(Number.isSafeInteger(route.cabinCostPreviewPassengers)?
-    route.cabinCostPreviewPassengers:100);
-  if($('route-cabin-hours'))$('route-cabin-hours').value=
-   String(Number.isFinite(route.cabinCostPreviewHours)?
-    route.cabinCostPreviewHours:3);
   refreshCabinPackages(route.operation?.service?.cabinPackageId||'basic');
   show();
   message('route-plan-status',route.flightNumber?
@@ -1461,9 +1414,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    referenceArrivalUtc:utcFromInput($('route-preflight-arrival-utc')?.value),
    airportRuleScreen:{gameHardBlocked:false,needsReview:preflight?.needsReview!==false,
     checkedAt:new Date().toISOString(),notFlightActivation:true},
-   operation,status:'draft',operationallyVerified:false,
-   cabinCostPreviewPassengers:Number($('route-cabin-passengers')?.value)||0,
-   cabinCostPreviewHours:Number($('route-cabin-hours')?.value)||3};
+   operation,status:'draft',operationallyVerified:false};
   const latest=loadDraft?.()||{},routes=Array.isArray(latest.routes)?latest.routes:[];
   if(routes.some(x=>x?.flightNumber===flightNumber&&x?.flightNumber!==editingFlightNumber)){
    message('route-plan-status','Flight number already exists. Open that draft from My routes to edit it.');
