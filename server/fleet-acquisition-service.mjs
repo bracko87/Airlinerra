@@ -16,12 +16,15 @@ export function validateFleetAcquisitionRequest(body){
     typeof body.action!=='string'||!uuid(body.airlineId))return false;
  if(body.action==='list')return Object.keys(body).length===2 &&
   Object.keys(body).every(k=>['action','airlineId'].includes(k));
- if(body.action==='list-used')return Object.keys(body).length===5 &&
-  Object.keys(body).every(k=>['action','airlineId','page','filterMode','search'].includes(k)) &&
+ if(body.action==='list-used')return Object.keys(body).length>=5 &&
+  Object.keys(body).every(k=>['action','airlineId','page','filterMode','search','manufacturer','family','model','configuration'].includes(k)) &&
   Number.isInteger(body.page)&&body.page>=0&&body.page<=1000 &&
   ['all','purchase','lease'].includes(body.filterMode)&&
   typeof body.search==='string'&&body.search.length<=60&&
-  !/[\u0000-\u001F\u007F]/u.test(body.search);
+  !/[\u0000-\u001F\u007F]/u.test(body.search)&&
+  ['manufacturer','family','model','configuration'].every(k=>
+    body[k]===undefined||(typeof body[k]==='string'&&body[k].length<=100&&
+      !/[\u0000-\u001F\u007F]/u.test(body[k])));
  if(body.action==='bid-used')return Object.keys(body).length===6 &&
   Object.keys(body).every(k=>['action','airlineId','listingId','bidUsd','registration','requestId'].includes(k)) &&
   uuid(body.listingId)&&uuid(body.requestId)&&typeof body.bidUsd==='string' &&
@@ -53,9 +56,26 @@ export const FLEET_SQL=Object.freeze({
   "o.upfront_price_usd::text AS \"upfrontPriceUsd\", "+
   "o.recurring_monthly_usd::text AS \"recurringMonthlyUsd\",o.contract_months AS \"contractMonths\", "+
   "o.delivery_days AS \"deliveryDays\",c.manufacturer_name AS manufacturer,c.model_name AS model, "+
-  "c.use_type AS \"useType\",c.reference_passenger_capacity AS \"referenceSeats\" "+
+  "c.family_name AS family,c.configuration_code AS configuration, "+
+  "c.use_type AS \"useType\",c.reference_passenger_capacity AS \"referenceSeats\", "+
+  "stock.stocked_units AS \"stockUnits\",stock.stock_delivery_days AS \"stockDeliveryDays\", "+
+  "cap.aircraft_per_day AS \"manufacturerDailyCapacity\", "+
+  "CASE WHEN stock.stocked_units>0 THEN 'stock' ELSE 'factory_queue' END AS \"deliverySource\", "+
+  "CASE WHEN stock.stocked_units>0 THEN clock_timestamp()+make_interval(days=>stock.stock_delivery_days) "+
+  "ELSE ((greatest(coalesce(cap.next_factory_day,current_date+14),current_date+14)+ "+
+  "CASE WHEN cap.next_factory_day>=current_date+14 AND cap.scheduled_on_next_day>=cap.aircraft_per_day "+
+  "THEN 1 ELSE 0 END)::timestamp AT TIME ZONE 'UTC')+interval '1 day' "+
+  "END AS \"estimatedDeliveryUtc\", "+
+  "r.reference_price_usd::text AS \"referencePriceUsd\", "+
+  "r.reference_year AS \"referencePriceYear\",r.evidence_kind AS \"priceEvidence\" "+
   "FROM airlinerra_game.aircraft_acquisition_offers_v1 o "+
   "JOIN airlinerra.aircraft_catalog_configuration_inventory c ON c.configuration_id=o.configuration_id "+
+  "LEFT JOIN airlinerra_game.factory_model_stock_v1 stock "+
+  "ON stock.world_id=1 AND stock.configuration_id=o.configuration_id "+
+  "LEFT JOIN airlinerra_game.factory_manufacturer_capacity_v1 cap "+
+  "ON cap.world_id=1 AND cap.manufacturer_name=c.manufacturer_name "+
+  "LEFT JOIN airlinerra_game.aircraft_model_reference_prices_v1 r "+
+  "ON r.configuration_id=o.configuration_id "+
   "WHERE o.world_id=1 AND o.offer_status IN('published','draft') "+
   "AND o.pricing_basis='AIRLINERRA_NEW_FACTORY_GAME_ESTIMATE_V2' "+
   "AND c.production_status='in_production' "+
@@ -86,17 +106,26 @@ export const FLEET_SQL=Object.freeze({
   "l.close_after_utc AS \"closeAfterUtc\", "+
   "(l.highest_bid_airline_id=$1::uuid) AS \"myHighestBid\", "+
   "c.manufacturer_name AS manufacturer,c.model_name AS model, "+
-  "c.family_name AS family,c.use_type AS \"useType\", "+
+  "c.family_name AS family,c.configuration_code AS configuration,c.use_type AS \"useType\", "+
+  "seller.display_name AS \"sellerName\",seller.is_fictional AS \"sellerFictional\", "+
+  "r.reference_price_usd::text AS \"referencePriceUsd\", "+
+  "r.reference_year AS \"referencePriceYear\",r.evidence_kind AS \"priceEvidence\", "+
   "c.production_start_year AS \"productionStartYear\", "+
   "c.production_end_year AS \"productionEndYear\", "+
   "l.price_basis AS \"pricingBasis\" "+
   "FROM airlinerra_game.used_aircraft_auction_lots_v1 l "+
   "JOIN airlinerra.aircraft_catalog_configuration_inventory c "+
   "ON c.configuration_id=l.configuration_id "+
+  "JOIN airlinerra_game.aircraft_market_sellers_v1 seller ON seller.seller_id=l.seller_id "+
+  "LEFT JOIN airlinerra_game.aircraft_model_reference_prices_v1 r ON r.configuration_id=l.configuration_id "+
   "WHERE l.world_id=1 AND l.status IN('available','bidding') "+
   "AND ($2::text='all' OR l.offering_type=$2::text) "+
   "AND ($3::text='' OR position(lower($3::text) in lower("+
   "c.manufacturer_name||' '||c.model_name||' '||coalesce(c.family_name,'')))>0) "+
+  "AND ($5::text='' OR c.manufacturer_name=$5::text) "+
+  "AND ($6::text='' OR c.family_name=$6::text) "+
+  "AND ($7::text='' OR c.model_name=$7::text) "+
+  "AND ($8::text='' OR c.configuration_code=$8::text) "+
   "ORDER BY CASE WHEN l.status='bidding' THEN 0 ELSE 1 END, "+
   "CASE WHEN l.status='bidding' THEN l.close_after_utc END NULLS LAST,"+
   "c.manufacturer_name,c.model_name,l.opening_bid_usd,l.listing_id "+
@@ -108,7 +137,18 @@ export const FLEET_SQL=Object.freeze({
   "WHERE l.world_id=1 AND l.status IN('available','bidding') "+
   "AND ($1::text='all' OR l.offering_type=$1::text) "+
   "AND ($2::text='' OR position(lower($2::text) in lower("+
-  "c.manufacturer_name||' '||c.model_name||' '||coalesce(c.family_name,'')))>0)",
+  "c.manufacturer_name||' '||c.model_name||' '||coalesce(c.family_name,'')))>0) "+
+  "AND ($3::text='' OR c.manufacturer_name=$3::text) "+
+  "AND ($4::text='' OR c.family_name=$4::text) "+
+  "AND ($5::text='' OR c.model_name=$5::text) "+
+  "AND ($6::text='' OR c.configuration_code=$6::text)",
+ usedCatalog:"SELECT DISTINCT c.configuration_id::int AS \"configurationId\", "+
+  "c.manufacturer_name AS manufacturer,c.family_name AS family, "+
+  "c.model_name AS model,c.configuration_code AS configuration,c.use_type AS \"useType\" "+
+  "FROM airlinerra_game.used_aircraft_auction_lots_v1 l "+
+  "JOIN airlinerra.aircraft_catalog_configuration_inventory c ON c.configuration_id=l.configuration_id "+
+  "WHERE l.world_id=1 AND l.status IN('available','bidding') "+
+  "ORDER BY c.manufacturer_name,c.family_name,c.model_name,c.configuration_code,c.configuration_id",
  usedBid:"SELECT airlinerra_game.place_used_aircraft_bid_v1("+
   "$1::uuid,$2::uuid,$3::uuid,$4::numeric,$5::text,$6::uuid) AS result",
  fleet:"SELECT i.id::text AS id,i.configuration_id::int AS \"configurationId\", "+
@@ -234,14 +274,17 @@ export function createFleetAcquisitionHandler({verifyUserToken,database}={}){
    if(body.action==='list-used'){
     const owner=await client.query(FLEET_SQL.owner,[body.airlineId,playerId]);
     if(owner.rowCount!==1)return respond(403,{error:'Airline not owned by this account'});
-    const [state,listed,count]=await Promise.all([
+    const [state,listed,count,catalog]=await Promise.all([
      client.query(FLEET_SQL.marketState),
-     client.query(FLEET_SQL.usedLots,[body.airlineId,body.filterMode,body.search.trim(),body.page]),
-     client.query(FLEET_SQL.usedCount,[body.filterMode,body.search.trim()])
+     client.query(FLEET_SQL.usedLots,[body.airlineId,body.filterMode,body.search.trim(),body.page,
+      body.manufacturer||'',body.family||'',body.model||'',body.configuration||'']),
+     client.query(FLEET_SQL.usedCount,[body.filterMode,body.search.trim(),
+      body.manufacturer||'',body.family||'',body.model||'',body.configuration||'']),
+     client.query(FLEET_SQL.usedCatalog)
     ]);
     const market=state.rows?.[0];
     return respond(200,{airlineId:body.airlineId,page:body.page,
-     pageSize:30,total:count.rows?.[0]?.total||0,offers:listed.rows,
+     pageSize:30,total:count.rows?.[0]?.total||0,offers:listed.rows,catalog:catalog.rows,
      marketOpen:market?.marketOpen===true,leaseEnabled:market?.leaseEnabled===true,
      worldState:market?.worldState||'unavailable',
      serverNowUtc:market?.serverNowUtc||null,
