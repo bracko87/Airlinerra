@@ -148,12 +148,21 @@ function appendRow(doc,table,c,typeList,plan,onEdit){
  select.setAttribute('aria-label',c.label+' seat style');
  for(const seat of typeList.filter(s=>s.cabinClass===c.key)){
   const option=doc.createElement('option');option.value=seat.code;
-  option.textContent=seat.label+' · '+seat.spaceUnits+'× space';
+  option.textContent=seat.label+' · '+seat.pitchInches+'″ pitch · '+
+   seat.widthInches+'″ wide · '+seat.spaceUnits+'× space';
   select.append(option);
  }
- select.value=plan[c.key+'Type'];select.addEventListener('change',()=>{
-  plan[c.key+'Type']=select.value;onEdit();
- });
+ const styleField=create(doc,'div','cabin-seat-reference');
+ const sourceLink=create(doc,'a','cabin-seat-source','Seat product source');
+ sourceLink.target='_blank';sourceLink.rel='noopener noreferrer';
+ const updateSource=()=>{
+  const seat=typeList.find(s=>s.code===select.value);
+  sourceLink.hidden=!(seat?.realProduct&&/^https:\/\//u.test(seat?.sourceUrl||''));
+  if(!sourceLink.hidden)sourceLink.href=seat.sourceUrl;
+  else sourceLink.removeAttribute('href');
+ };
+ select.value=plan[c.key+'Type'];styleField.append(select,sourceLink);updateSource();
+ select.addEventListener('change',()=>{plan[c.key+'Type']=select.value;updateSource();onEdit()});
  const input=create(doc,'input');input.type='number';input.min='0';input.max='850';input.step='1';
  input.value=String(plan[c.key]);input.setAttribute('aria-label',c.label+' seat count');
  input.addEventListener('input',()=>{
@@ -161,7 +170,7 @@ function appendRow(doc,table,c,typeList,plan,onEdit){
   plan[c.key]=Number.isInteger(n)&&n>=0&&n<=850?n:-1;onEdit();
  });
  const indicator=create(doc,'span','cabin-designer-unit','—');
- row.append(label,select,input,indicator);table.append(row);
+ row.append(label,styleField,input,indicator);table.append(row);
  return {indicator,input,select};
 }
 export function createCabinConfigurationManager({doc,host,factoryHost,onDirectoryUpdate,onFactoryLayoutChange}={}){
@@ -174,6 +183,20 @@ export function createCabinConfigurationManager({doc,host,factoryHost,onDirector
  let factoryUsage=null,factorySvg=null,factoryMessage=null;
  const currency=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n);
  function selectedAircraft(){return loaded?.aircraft?.find(a=>a.aircraftInventoryId===selectedId)||null}
+ function modelGeometry(configurationId){
+  return loaded?.geometries?.find(g=>Number(g.configurationId)===Number(configurationId))||null;
+ }
+ function describeCabinPatterns(geometry,referenceUnits){
+  if(!geometry)return 'Aircraft seating pattern awaiting verification';
+  const groups=[['Economy','economy'],['Premium','premium'],
+   ['Business','business'],['First','first']].map(([name,key])=>
+   name+' '+cabinRowLayout(geometry,key,referenceUnits).join('–'));
+  const review=geometry.manuallyVerified?'Reviewed':
+   geometry.reviewStatus==='game_estimate_needs_review'?
+    'Provisional — manual model review needed':
+    'Published typical row pattern — individual aircraft review pending';
+  return groups.join(' · ')+' · '+review;
+ }
  function modelPlan(a){
   if(!a)return standardCabinPlan(0);
   if(a.draftEconomy!==null&&a.draftEconomy!==undefined)
@@ -214,6 +237,7 @@ export function createCabinConfigurationManager({doc,host,factoryHost,onDirector
  }
  function updateFactory(){
   const f=pendingFactoryOffer;if(!f||!factoryPlan||!factoryUsage)return;
+  const geometry=modelGeometry(f.configurationId);
   const evaluation=evaluateCabinPlan(factoryPlan,loaded.seatTypes,f.referenceSeats);
   const standard=factoryPlan.economy===Number(f.referenceSeats)&&
    factoryPlan.economyType==='eco_standard'&&
@@ -226,10 +250,11 @@ export function createCabinConfigurationManager({doc,host,factoryHost,onDirector
    const c=CLASSES[factoryRows.indexOf(r)];const t=loaded.seatTypes.find(t=>t.code===factoryPlan[c.key+'Type']);
    r.indicator.textContent=t?(Number(factoryPlan[c.key])*Number(t.spaceUnits)).toFixed(1):'—';
   }
-  if(evaluation.valid)renderCabinFloorplan(doc,factorySvg,factoryPlan,evaluation,f.referenceSeats);
+  if(evaluation.valid)renderCabinFloorplan(doc,factorySvg,factoryPlan,evaluation,f.referenceSeats,geometry);
   else factorySvg?.replaceChildren();
-  factoryMessage.textContent=standard?'Standard seats will be included in the aircraft price.':
-   'Custom seat orders need the future factory-installation contract. For now they are a design preview, not a paid order.';
+  factoryMessage.textContent=describeCabinPatterns(geometry,f.referenceSeats)+' · '+
+   (standard?'Standard seats included in the aircraft price.':
+   'Custom seats are design-only until factory installation contracts are ready.');
   try{onFactoryLayoutChange?.()}catch{console.warn('Factory layout order control unavailable')}
  }
  function getFactoryPlan(){
@@ -331,14 +356,16 @@ export function createCabinConfigurationManager({doc,host,factoryHost,onDirector
   usageLabel.textContent=result.valid?result.count+' seats · '+result.used+
    ' / '+result.available+' cabin units used ('+
    Math.round(100*result.used/result.available)+'%) · '+
-   'Indicative seat equipment '+currency(result.equipmentUsd):
+   'Indicative seat equipment '+currency(result.equipmentUsd)+' · '+
+   describeCabinPatterns(modelGeometry(a.configurationId),a.referenceUnits):
    result.reason+(result.used!==undefined?' ('+result.used+'/'+result.available+' units)':'');
   for(let i=0;i<renderedRows.length;i++){
    const c=CLASSES[i],t=loaded.seatTypes.find(t=>t.code===plan[c.key+'Type']);
    renderedRows[i].indicator.textContent=t&&plan[c.key]>=0?
     (plan[c.key]*Number(t.spaceUnits)).toFixed(1):'—';
   }
-  if(result.valid)renderCabinFloorplan(doc,previewSvg,plan,result,a.referenceUnits);
+  if(result.valid)renderCabinFloorplan(doc,previewSvg,plan,result,a.referenceUnits,
+    modelGeometry(a.configurationId));
   else previewSvg?.replaceChildren();
   const chosen=(loaded.refitSites||[]).find(x=>x.aircraftInventoryId===selectedId&&x.airportKey===siteSelect?.value);
   if(chosen&&result.valid){
@@ -358,7 +385,8 @@ export function createCabinConfigurationManager({doc,host,factoryHost,onDirector
    const response=await current.fleetClient.cabinOverview(airlineId);
    if(ticket!==version||current.airline?.id!==airlineId)return;
    if(response?.airlineId!==airlineId||!Array.isArray(response.seatTypes)||
-    !Array.isArray(response.aircraft)||!Array.isArray(response.directory)||
+    !Array.isArray(response.aircraft)||!Array.isArray(response.geometries)||
+    !Array.isArray(response.directory)||
     response.previewOnly!==true||response.installedLayoutsImmutable!==true)
     throw Error('Unexpected cabin data');
    loaded=response;render();renderFactory();
