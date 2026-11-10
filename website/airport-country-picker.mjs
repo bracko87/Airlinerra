@@ -40,8 +40,7 @@ export function createAirportCountryPicker({country,search,airport,getReader,onS
    [a.name,a.code,a.municipality].some(s=>String(s||'').toLocaleLowerCase('en').includes(words))):entries;
   airport.replaceChildren(new Option(loading?'Loading airports...':'Select airport',''));
   for(const a of filtered){
-   const label=a.name+' ('+(a.code||'Code pending')+')'+(a.municipality?' - '+a.municipality:'')+
-    (a.sourceGroup==='GROUP_2'?' · Group 2 (planning only; no flights)':'');
+   const label=a.name+' ('+(a.code||'Code pending')+')'+(a.municipality?' - '+a.municipality:'');
    const option=new Option(label,a.key);
    option.dataset.airportName=a.name;option.dataset.code=a.code||'';
    airport.add(option);
