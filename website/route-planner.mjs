@@ -2,7 +2,8 @@
  * Authenticated airport reads and owner-verified planning drafts; never activates flights.
  */
 import {createAirportCountryPicker,populateAirportCountries,airportFlag,airportCountryName} from './airport-country-picker.mjs';
-import {renderRouteMap} from './route-map.mjs';
+import {renderRouteMap,routeDistanceKm} from './route-map.mjs';
+import {estimateFivePhaseFuel,DEFAULT_FUEL_GAME_PRICE_USD_PER_KG} from './flight-fuel-phase-engine.mjs';
 import {buildAircraftWeeklyTimeline,renderAircraftWeeklyTimeline} from './aircraft-weekly-timeline.mjs';
 import {assessAircraftRouteRunways} from './route-aircraft-runway-screen.mjs';
 import {forecastCabinServiceFlight,createBasicCabinPackage} from './cabin-services-manager.mjs';
@@ -65,9 +66,11 @@ const routeCheckDetails =
    '<div class="route-check-item"><span>Origin passenger / cargo demand</span><strong id="route-origin-demand">Data pending</strong></div>'+
    '<div class="route-check-item"><span>Destination passenger / cargo demand</span><strong id="route-destination-demand">Data pending</strong></div>'+
    '<div class="route-check-item"><span>Departure / arrival slots</span><strong id="route-slot-check">Not yet connected</strong></div>'+
-   '<div class="route-check-item"><span>Aircraft / runway suitability</span><strong id="route-aircraft-check">No aircraft assigned</strong></div>'+
+   '<div class="route-check-item"><span>Aircraft / runway suitability</span><strong id="route-aircraft-check">No aircraft assigned</strong></div>'+ 
+   '<div class="route-check-item"><span>Fuel / estimated flight cost</span><strong id="route-fuel-summary">Select airports and owned aircraft</strong></div>'+
    '<div class="route-check-item"><span>Passenger / cargo traffic rights</span><strong id="route-traffic-rights">Not yet connected</strong></div>'+
   '</div>'+
+  '<div id="route-fuel-phases" class="route-fuel-phases" aria-live="polite"></div>'+ 
   '<p id="route-check-message" class="route-check-message" role="status">Select a route and aircraft to begin checking feasibility.</p>';
 export function routePlannerMarkup(){
  return '<div class="route-planner-grid route-planner-first-step">'+
@@ -265,7 +268,7 @@ export function formatRouteWeatherPreview(preview){
   describe('Arrival',preview.destination)+
   ' · Forecast only; aviation weather clearance not provided';
 }
-export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinState}={}){
+export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinState,getFuelAircraft}={}){
  if(!doc||typeof getData!=='function'||typeof draftWrite!=='function')
   throw Error('Verified route planner data required');
  const $=id=>doc.getElementById(id);
@@ -305,6 +308,66 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    '/100'+(verified?' (verified)':' (neutral assumption)')+
    '. Sales are forecasts, not guarantees. No financial posting.';
  };
+ const updateFuelEstimate=()=>{
+  const holder=$('route-fuel-phases'),from=selected('from'),to=selected('to');
+  const id=$('route-aircraft')?.value||'';
+  const owned=ownedFleet.find(a=>'owned:'+a.id===id);
+  const aircraft=owned&&typeof getFuelAircraft==='function'?getFuelAircraft(owned.id):null;
+  if(!holder)return;
+  holder.replaceChildren();
+  const setSummary=value=>{const el=$('route-fuel-summary');if(el)el.textContent=value;};
+  if(!from||!to||!owned){setSummary('Select two airports and an owned aircraft.');return;}
+  if(aircraft?.id!==owned.id||Number(aircraft?.configurationId)!==owned.configurationId){
+   setSummary('Owner-verified aircraft fuel reference is loading or unavailable.');return;
+  }
+  const km=routeDistanceKm(from,to);
+  const pax=Number($('route-cabin-passengers')?.value),seats=Number(aircraft.referenceSeats);
+  const payload=aircraft.useType==='passenger'&&seats>0&&Number.isSafeInteger(pax)&&pax>=0?
+   Math.min(1,pax/seats):.5;
+  const fuel=estimateFivePhaseFuel({
+   distanceKm:km,cruiseSpeedKmh:aircraft.cruiseSpeedKmh,
+   cruiseFuelKgPerHour:aircraft.cruiseFuelKgPerHour,
+   emptyFuelKgPer100Km:aircraft.emptyFuelKgPer100Km,
+   halfFuelKgPer100Km:aircraft.halfFuelKgPer100Km,
+   fullFuelKgPer100Km:aircraft.fullFuelKgPer100Km,
+   fuelTankCapacityKg:aircraft.fuelTankCapacityKg,payloadFraction:payload
+  });
+  if(fuel.status!=='PLANNING_ESTIMATE'){
+   setSummary('Fuel profile incomplete; no reliable estimate for this model.');return;
+  }
+  const kg=n=>Math.round(n).toLocaleString('en-US')+' kg';
+  const usd=n=>'$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const heading=doc.createElement('h4');
+  heading.textContent='Five-phase flight and fuel forecast';
+  const grid=doc.createElement('div');grid.className='route-fuel-phase-grid';
+  for(const phase of fuel.phases){
+   const line=doc.createElement('div');line.className='route-fuel-phase-row';
+   for(const value of [phase.label,phase.minutes.toFixed(1)+' min',kg(phase.fuelKg)]){
+    const span=doc.createElement('span');span.textContent=value;line.append(span);
+   }
+   grid.append(line);
+  }
+  const totals=doc.createElement('p');totals.className='hint';
+  totals.textContent='Block time '+Math.round(fuel.totalMinutes)+' min · trip burn '+kg(fuel.tripFuelKg)+
+   ' · screening reserve '+kg(fuel.screeningReserveFuelKg)+
+   ' · tentative fuel load '+kg(fuel.screeningFuelLoadKg)+
+   ' · estimated fuel expense '+usd(fuel.estimatedBurnCostUsd)+
+   ' at $'+DEFAULT_FUEL_GAME_PRICE_USD_PER_KG.toFixed(2)+'/kg.';
+  const caveat=doc.createElement('p');caveat.className='hint';
+  caveat.textContent=(fuel.source==='CALIBRATED_PROVISIONAL_MISSION_DISTANCE_RATE'?
+   'Existing whole-mission fuel estimate redistributed between phases; not double-counted.':
+   'Reference hourly consumption converted to phase estimates.')+
+   ' Payload '+Math.round(payload*100)+'%'+
+   (aircraft.useType==='cargo'?' (unverified cargo load assumption)':' (assumed occupancy)')+
+   ' · reference fuel tank: '+fuel.referenceTankScreen+
+   '. No airport-specific price, weather, approved dispatch or money movement.';
+  holder.append(heading,grid,totals,caveat);
+  setSummary(kg(fuel.tripFuelKg)+' · '+usd(fuel.estimatedBurnCostUsd)+' (forecast)');
+  message('route-block-time',Math.round(fuel.totalMinutes)+' min (phase estimate)');
+ };
+ doc.addEventListener('airlinerra:fleet-fuel-updated',event=>{
+  if(event.detail?.airlineId===getData()?.airline?.id)updateFuelEstimate();
+ });
  const refreshCabinPackages=(preferred=null)=>{
   const picker=$('route-cabin-package');if(!picker)return;
   const {packages,ready}=cabinSnapshot(),chosen=preferred??picker.value??'basic';
@@ -329,6 +392,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
 
  $('route-cabin-package')?.addEventListener('change',updateCabinEstimate);
  $('route-cabin-passengers')?.addEventListener('input',updateCabinEstimate);
+ $('route-cabin-passengers')?.addEventListener('input',updateFuelEstimate);
  $('route-cabin-hours')?.addEventListener('input',updateCabinEstimate);
  const days=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
  let homeKey=null,homeLocation=null,currentAirlineId=null,homeTicket=0,detailTicket=0;
@@ -761,7 +825,8 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
   if(title)title.textContent=from&&to?
    (from.code||from.name)+' – '+(to.code||to.name):'Select two airports';
   drawMap();
-  message('route-block-time','Pending verified aircraft performance');
+  message('route-block-time','Pending aircraft fuel reference');
+  updateFuelEstimate();
   message('route-market',from&&to?
    (from.countryIso===to.countryIso?'Domestic route':'International route'):'Select airports');
   const pairStatus=routeAirportPairStatus(from,to);
