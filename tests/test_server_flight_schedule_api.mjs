@@ -95,6 +95,7 @@ test('owned airline list returns only the protected fleet and saved drafts',asyn
    ownershipType:'leased',fleetStatus:'in_service'}]};
   if(sql===SCHEDULE_SQL.drafts)return {rowCount:1,rows:[{
    id:SCHEDULE,flightNumber:'PA101',status:'draft'}]};
+  if(sql===SCHEDULE_SQL.planList)return {rowCount:0,rows:[]};
   throw Error('Unexpected SQL');
  });
  const response=await handler(req({action:'list',airlineId:AIRLINE}));
@@ -103,7 +104,8 @@ test('owned airline list returns only the protected fleet and saved drafts',asyn
  assert.equal(result.activationAvailable,false);
  assert.equal(result.fleet[0].configurationId,3);
  assert.equal(result.drafts[0].status,'draft');
- assert.equal(calls.length,3);
+ assert.deepEqual(result.plans,[]);
+ assert.equal(calls.length,4);
 });
 test('curfew rejection cannot be masked as a successful schedule save',async()=>{
  const {handler}=create(()=>{
