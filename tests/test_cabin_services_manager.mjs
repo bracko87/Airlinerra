@@ -83,7 +83,7 @@ test('cabin services UI is wired into real Operations page and protected website
  assert.match(html,/data-view-link="service">Cabin services/);
  assert.match(workspace,/id="cabin-services-manager"/);
  assert.match(workspace,/createCabinServiceManager/);
- assert.match(workspace,/cabinManager\.updateData\(data\)/);
+ assert.match(workspace,/cabinManager\?\.updateData\(data\)/);
  assert.match(workspace,/Save seat-layout brief/);
  assert.match(workspace,/\['economy','Economy'\]/);
  assert.match(bundle,/'cabin-services-manager\.mjs'/);
