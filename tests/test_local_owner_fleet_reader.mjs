@@ -108,3 +108,44 @@ test('actual player startup connects the local read-only owner fleet to the work
  assert.doesNotMatch(sql,/UPDATE airlinerra_game\.airlines\s+SET cash/);
  assert.doesNotMatch(sql,/inspection_status='approved'/);
 });
+
+test('localhost allows owner-validated refit estimate and quote reload but never bookings',async()=>{
+ const requestId='44444444-4444-4444-8444-444444444444';
+ const quote={action:'cabin-prepare-quote',airlineId:AIRLINE,
+  aircraftInventoryId:AIRCRAFT,airportKey:'OURAIRPORTS:15',
+  providerKey:'lht-sofia',requestId};
+ const status={action:'cabin-quote-status',airlineId:AIRLINE,
+  aircraftInventoryId:AIRCRAFT};
+ assert.equal(allowedLocalOwnerRead(pathFleet,quote),true);
+ assert.equal(allowedLocalOwnerRead(pathFleet,status),true);
+ for(const bad of [{...quote,quotedCostUsd:'1'},
+   {...quote,airlineCashOverride:100000},
+   {...status,playerId:'spoofed'},
+   {...status,approved:true},
+   {action:'cabin-book-refit',airlineId:AIRLINE,aircraftInventoryId:AIRCRAFT}])
+  assert.equal(allowedLocalOwnerRead(pathFleet,bad),false);
+ const seen=[];
+ const handler=createLiveReadOnlyPreviewHandler({fetchImpl:async(url,opts)=>{
+  seen.push({url,body:JSON.parse(opts.body)});
+  return Response.json({status:'prepared_not_booked',appointmentBooked:false,
+   moneyCharged:false,installedSeatsChanged:false});
+ }});
+ assert.equal((await handler(request(pathFleet,quote))).status,200);
+ assert.equal((await handler(request(pathFleet,status))).status,200);
+ assert.deepEqual(seen.map(x=>x.body.action),['cabin-prepare-quote','cabin-quote-status']);
+ assert.equal((await handler(request(pathFleet,{action:'cabin-book-refit',
+  airlineId:AIRLINE,aircraftInventoryId:AIRCRAFT}))).status,403);
+ const calls=[];
+ const local=createLocalOwnerFleetReaders({auth:{getAccessToken:async()=>TOKEN},
+  origin:LOCAL,fetchImpl:async(url,opts)=>{
+   calls.push(JSON.parse(opts.body));
+   return Response.json({status:'prepared_not_booked'});
+  }});
+ await local.fleetClient.prepareCabinRefitQuote({
+  airlineId:AIRLINE,aircraftInventoryId:AIRCRAFT,
+  airportKey:'OURAIRPORTS:15',providerKey:'lht-sofia',requestId});
+ await local.fleetClient.cabinRefitQuoteStatus({
+  airlineId:AIRLINE,aircraftInventoryId:AIRCRAFT});
+ assert.deepEqual(calls.map(x=>x.action),['cabin-prepare-quote','cabin-quote-status']);
+ assert.equal(local.fleetClient.bookRefit,undefined);
+});
