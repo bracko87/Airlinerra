@@ -26,6 +26,8 @@ export function createLocalOwnerFleetReaders({auth,origin,fetchImpl=globalThis.f
  }
  const fleetClient=Object.freeze({
   list:airlineId=>read(FLEET_PATH,{action:'list',airlineId}),
+  listUsed:({airlineId,page=0,filterMode='all',search=''})=>
+   read(FLEET_PATH,{action:'list-used',airlineId,page,filterMode,search}),
   maintenancePreview:({airlineId,aircraftInventoryId})=>
    read(FLEET_PATH,{action:'maintenance-preview',airlineId,aircraftInventoryId}),
   updateNickname:({airlineId,aircraftInventoryId,nickname})=>
