@@ -138,6 +138,11 @@ export function routePlannerMarkup(){
   '<p id="route-server-draft-status" class="hint" role="status" aria-live="polite"></p>')+
  '';
 }
+/** An airline route must connect two distinct approved airport identities. */
+export function routeAirportPairStatus(origin,destination){
+ if(!origin?.key||!destination?.key)return 'INCOMPLETE';
+ return origin.key===destination.key?'SAME_AIRPORT':'VALID';
+}
 export const flightPrefixFor=airline=>{
  const code=String(airline?.iataCode||'').trim().toUpperCase();
  if(/^[A-Z0-9]{2}$/.test(code)&&/[A-Z]/.test(code))
@@ -650,9 +655,11 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   };
   const from=verified('from',selected('from'));
   const to=verified('to',selected('to'));
-  const map=renderRouteMap($('route-map-canvas'),from,to,{doc});
-  message('route-map-feedback',map?
-   'Orange line: geographic distance between verified airports (not an approved flight path).':
+  const equal=routeAirportPairStatus(from,to)==='SAME_AIRPORT';
+  const map=renderRouteMap($('route-map-canvas'),equal?null:from,equal?null:to,{doc});
+  message('route-map-feedback',equal?
+   'BLOCKED — origin and destination are the same airport. Choose another destination.':
+   map?'Orange line: geographic distance between verified airports (not an approved flight path).':
    'Checking airport coordinates from the approved directory and airport profiles...');
   message('route-distance',map?
    Math.round(map.distanceKm).toLocaleString('en-US')+' km':'Data pending');
@@ -668,7 +675,12 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   message('route-block-time','Pending verified aircraft performance');
   message('route-market',from&&to?
    (from.countryIso===to.countryIso?'Domestic route':'International route'):'Select airports');
-  const validPair=Boolean(from&&to&&from.key!==to.key);
+  const pairStatus=routeAirportPairStatus(from,to);
+  const validPair=pairStatus==='VALID';
+  for(const id of ['route-plan-preview','route-plan-save']){
+   const button=$(id);
+   if(button)button.disabled=pairStatus==='SAME_AIRPORT';
+  }
   const validOrigin=Boolean(from&&from.key===homeKey);
   const demoAircraft=(Array.isArray(getData()?.airline?.testAircraft)?
    getData().airline.testAircraft:[]).find(a=>a.id===$('route-aircraft')?.value&&
@@ -676,8 +688,10 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   syncAircraftCompatibility();
   message('route-slot-check','Select aircraft and flight times to check slots');
   message('route-traffic-rights','Not connected — rights not verified');
-  message('route-status','Draft only');
-  message('route-check-message',!validPair?'Choose two different approved airports.':
+  message('route-status',pairStatus==='SAME_AIRPORT'?'Restricted — same airport':'Draft only');
+  message('route-check-message',pairStatus==='SAME_AIRPORT'?
+   'BLOCKED — a flight cannot depart from and arrive at the same airport. Choose another destination.':
+   !validPair?'Choose two different approved airports.':
    !validOrigin?'Draft only: origin is not a confirmed active hub. Only your main hub is currently verified.':
    'Route geography available. Aircraft, crew, airport slots and traffic rights require verification before activation.');
   const keys=[from?.key||'',to?.key||''].join('|');
@@ -965,7 +979,11 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    message('route-preflight-status','BLOCKED — '+assessment.blockingReasons.join(' '));
    return {gameHardBlocked:true,reason:'runway'};
   }
-  if(!from||!to||from.key===to.key||!configurationId){
+  if(routeAirportPairStatus(from,to)==='SAME_AIRPORT'){
+   message('route-preflight-status','BLOCKED — same-airport flights are not valid routes.');
+   return {gameHardBlocked:true,reason:'SAME_AIRPORT'};
+  }
+  if(!from||!to||!configurationId){
    message('route-preflight-status','Select two different airports and an aircraft. Runway length is checked immediately.');
    return null;
   }
@@ -1066,7 +1084,9 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
     message('route-preflight-status',status);
     const save=$('route-plan-save');
     if(save)save.disabled=result.gameHardBlocked||runwayAssessment(aircraft).status==='BLOCKED'||
-      (Boolean(ownedChoice)&&slotAvailability?.available!==true);
+      (Boolean(ownedChoice)&&typeof getData()?.scheduler?.save==='function'&&
+       slotAvailability?.available!==true)||
+      routeAirportPairStatus(from,to)!=='VALID';
     return checkedResult;
    }catch{
     if(ticket===preflightRequest){
@@ -1185,8 +1205,8 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   if(!data?.connected||!data.airline?.id){
    message('route-plan-status','Sign in with a verified airline before saving a draft.');return;
   }
-  if(!from||!to||from.key===to.key){
-   message('route-plan-status','Select two different approved airports.');return;
+  if(routeAirportPairStatus(from,to)!=='VALID'){
+   message('route-plan-status','BLOCKED — choose two different approved airports.');return;
   }
   if(!flightNumber){
    message('route-plan-status','Enter 1–4 digits after a valid airline flight prefix.');return;
