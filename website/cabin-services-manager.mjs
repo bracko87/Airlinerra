@@ -174,8 +174,7 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
   host.replaceChildren();
   const heading=element(doc,'div','cabin-product-header');
   const title=element(doc,'div');
-  title.append(element(doc,'h2','', 'Cabin Services Management'),
-   element(doc,'p','hint','Create service packages and assign one to each cabin class. '+(remote?'Package settings are stored in Supabase for your airline; no cash settlement or actual flight changes.':'Local preview: settings are saved in this browser; no flight or cash effects.')));
+  title.append(element(doc,'p','hint cabin-product-lead','Choose a package to edit its passenger offers and prices. '+(remote?'Settings are saved to your airline in Supabase; flights and money are not changed.':'Local preview: saved in this browser; no flight or cash effects.')));
   heading.append(title);
   const addBtn=element(doc,'button','primary cabin-compact-button','+ New package');
   addBtn.type='button';addBtn.dataset.cabinAction='new';
@@ -242,25 +241,30 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
    const current=working.items[item.id];
    const row=element(doc,'div','cabin-product-row');
    row.dataset.cabinItem=item.id;
-   const description=element(doc,'div','cabin-product-item-name');
+   const appendField=(title,control)=>{
+     const cell=element(doc,'label','cabin-product-cell');
+     cell.append(element(doc,'span','cabin-mobile-label',title),control);
+     row.append(cell);
+    };
+    const description=element(doc,'div','cabin-product-item-name');
    description.append(element(doc,'strong','',item.name),
     element(doc,'small','',money(item.costCents)+' per unit · game estimate'));
    if(item.condition)description.append(element(doc,'small','',item.condition));
    row.append(description);
    const mode=select(doc,CABIN_MODE_OPTIONS,current.mode,basic);
-   mode.dataset.cabinField='mode';row.append(mode);
+   mode.dataset.cabinField='mode';appendField('Offer to passengers',mode);
    const included=['included','hybrid'].includes(current.mode);
    const priceOnline=['online','both','hybrid'].includes(current.mode);
    const priceOnboard=['onboard','both','hybrid'].includes(current.mode);
    const free=input(doc,{type:'number',value:current.freeQty,min:1,max:3,step:1,
     disabled:basic||!included});
-   free.dataset.cabinField='freeQty';row.append(free);
+   free.dataset.cabinField='freeQty';appendField('Free units',free);
    const online=input(doc,{type:'number',value:(current.onlineCents/100).toFixed(2),
     min:0,max:1000,step:.01,disabled:basic||!priceOnline});
-   online.dataset.cabinField='onlineCents';row.append(online);
+   online.dataset.cabinField='onlineCents';appendField('Online price (USD)',online);
    const onboard=input(doc,{type:'number',value:(current.onboardCents/100).toFixed(2),
     min:0,max:1000,step:.01,disabled:basic||!priceOnboard});
-   onboard.dataset.cabinField='onboardCents';row.append(onboard);
+   onboard.dataset.cabinField='onboardCents';appendField('Onboard price (USD)',onboard);
    table.append(row);
   }
   editor.append(table);
