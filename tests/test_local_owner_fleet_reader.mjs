@@ -1,0 +1,110 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {createLiveReadOnlyPreviewHandler,allowedLocalOwnerRead}
+ from '../website/dev-scripts/real-player-read-gateway.mjs';
+import {createLocalOwnerFleetReaders} from '../website/local-owner-fleet-reader.mjs';
+
+const AIRLINE='9c5c6aff-588f-4d25-abe5-dd91efc2e0d1';
+const AIRCRAFT='a4547aef-e5a6-4362-8b2b-fbdf96d21907';
+const TOKEN='x'.repeat(40),LOCAL='http://localhost:5188';
+const pathFleet='/api/v1/player/fleet-acquisition';
+const pathSchedule='/api/v1/player/flight-schedule-drafts';
+const request=(path,payload,auth=TOKEN)=>new Request(LOCAL+path,{
+ method:'POST',headers:{
+  origin:LOCAL,authorization:'Bearer '+auth,'content-type':'application/json'
+ },body:JSON.stringify(payload)
+});
+
+test('local gateway forwards only owner-scoped real fleet/schedule reads, never acquisitions',async()=>{
+ const calls=[];
+ const handler=createLiveReadOnlyPreviewHandler({fetchImpl:async(url,options)=>{
+  calls.push({url,body:JSON.parse(options.body),route:options.headers['x-airlinerra-route']});
+  return Response.json({airlineId:AIRLINE,fleet:[
+   {id:AIRCRAFT,configurationId:16,registration:'YU-PAN01',ownershipType:'owned',fleetStatus:'in_service'}
+  ],drafts:[],offers:[]});
+ }});
+ const fleet=await handler(request(pathFleet,{action:'list',airlineId:AIRLINE}));
+ assert.equal(fleet.status,200);
+ assert.equal((await fleet.json()).fleet[0].registration,'YU-PAN01');
+ const schedule=await handler(request(pathSchedule,{action:'list',airlineId:AIRLINE}));
+ assert.equal(schedule.status,200);
+ assert.equal(calls.length,2);
+ assert.equal(calls[0].url,'https://hwllkabgzaynalahvkpz.supabase.co/functions/v1/airlinerra-fleet-acquisition');
+ assert.equal(calls[1].url,'https://hwllkabgzaynalahvkpz.supabase.co/functions/v1/airlinerra-flight-schedule-drafts');
+ assert.equal(calls[0].route,pathFleet);
+ assert.equal(calls[1].route,pathSchedule);
+ for(const bad of [
+  request(pathFleet,{action:'acquire',airlineId:AIRLINE,registration:'YU-PAN02'}),
+  request(pathFleet,{action:'check-delivery',airlineId:AIRLINE,orderId:AIRCRAFT}),
+  request(pathSchedule,{action:'save',airlineId:AIRLINE}),
+  request(pathSchedule,{action:'delete',airlineId:AIRLINE}),
+  request(pathSchedule,{action:'commercial-save',airlineId:AIRLINE}),
+  request(pathFleet,{action:'list',airlineId:AIRLINE,priceUsd:0})
+ ])assert.equal((await handler(bad)).status,403);
+ assert.equal(calls.length,2,'no write must reach Supabase');
+ assert.equal((await handler(request(pathFleet,{action:'list',airlineId:AIRLINE},'bad'))).status,401);
+});
+
+test('slot preflight remains readable but cannot reserve or save a route',async()=>{
+ const payload={action:'slot-check',airlineId:AIRLINE,aircraftInventoryId:AIRCRAFT,
+  originAirportKey:'OURAIRPORTS:4610',destinationAirportKey:'OURAIRPORTS:4611',
+  referenceDepartureUtc:'2026-11-11T09:00:00Z',
+  referenceArrivalUtc:'2026-11-11T10:00:00Z',
+  weeklySchedule:[{day:0,time:'09:00'}],
+  departureStand:'terminal',arrivalStand:'terminal'};
+ assert.equal(allowedLocalOwnerRead(pathSchedule,payload),true);
+ assert.equal(allowedLocalOwnerRead(pathSchedule,{...payload,action:'save'}),false);
+ let forwarded=0;
+ const handler=createLiveReadOnlyPreviewHandler({fetchImpl:async(url,opts)=>{
+  forwarded++;
+  assert.equal(JSON.parse(opts.body).action,'slot-check');
+  return Response.json({available:true,departureAvailable:true,arrivalAvailable:true});
+ }});
+ const response=await handler(request(pathSchedule,payload));
+ assert.equal(response.status,200);
+ assert.equal((await response.json()).available,true);
+ assert.equal(forwarded,1);
+});
+
+test('local fleet reader uses signed-in Auth and exposes no purchase, inspection or schedule writes',async()=>{
+ const calls=[];
+ const clients=createLocalOwnerFleetReaders({auth:{getAccessToken:async()=>TOKEN},
+  origin:LOCAL,fetchImpl:async(url,options)=>{
+   calls.push({url,options});
+   return Response.json({airlineId:AIRLINE,fleet:[],offers:[],drafts:[]});
+  }});
+ await clients.fleetClient.list(AIRLINE);
+ await clients.scheduler.list(AIRLINE);
+ assert.equal(calls.length,2);
+ assert.equal(calls[0].url,LOCAL+pathFleet);
+ assert.equal(calls[1].url,LOCAL+pathSchedule);
+ for(const c of calls){
+  assert.equal(c.options.headers.authorization,'Bearer '+TOKEN);
+  assert.equal(c.options.mode,'same-origin');
+  assert.equal(c.options.credentials,'omit');
+ }
+ assert.equal(clients.fleetClient.acquire,undefined);
+ assert.equal(clients.fleetClient.checkDelivery,undefined);
+ assert.equal(clients.scheduler.save,undefined);
+ assert.equal(clients.scheduler.delete,undefined);
+ assert.throws(()=>createLocalOwnerFleetReaders({auth:{getAccessToken:async()=>TOKEN},
+  origin:'https://airlinerra.com'}),/Verified localhost session/);
+});
+
+test('actual player startup connects the local read-only owner fleet to the workspace',async()=>{
+ const [app,overlay,sql]=await Promise.all([
+  readFile(new URL('../website/player-app.mjs',import.meta.url),'utf8'),
+  readFile(new URL('../website/dev-scripts/invited-overlay.mjs',import.meta.url),'utf8'),
+  readFile(new URL('../supabase/migrations/20261110104500_world1_panonian_initial_a319_allocation.sql',import.meta.url),'utf8')
+ ]);
+ assert.match(app,/createLocalOwnerFleetReaders\(/);
+ assert.match(app,/fleetClient=localReaders\?\.fleetClient/);
+ assert.match(app,/scheduler=localReaders\?\.scheduler/);
+ assert.match(overlay,/'local-owner-fleet-reader\.mjs'/);
+ assert.match(sql,/initial_aircraft_allocations_v1/);
+ assert.match(sql,/owned','in_service'/);
+ assert.match(sql,/DELETE FROM airlinerra_game\.airline_aircraft_test_fixtures/);
+ assert.doesNotMatch(sql,/UPDATE airlinerra_game\.airlines\s+SET cash/);
+ assert.doesNotMatch(sql,/inspection_status='approved'/);
+});
