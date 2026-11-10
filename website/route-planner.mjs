@@ -267,6 +267,1192 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
  if(!doc||typeof getData!=='function'||typeof draftWrite!=='function')
   throw Error('Verified route planner data required');
  const $=id=>doc.getElementById(id);
+ let cabinOptionAirlineId=null;
+ const cabinSnapshot=()=>{
+  const value=typeof getCabinState==='function'?getCabinState():null;
+  return {packages:Array.isArray(value?.packages)?value.packages:[createBasicCabinPackage()],
+   ready:value?.ready===true};
+ };
+ const updateCabinEstimate=()=>{
+  const picker=$('route-cabin-package'),note=$('route-cabin-service-note');
+  const passengers=Number($('route-cabin-passengers')?.value);
+  if(!picker||!note)return;
+  const snapshot=cabinSnapshot();
+  if(!snapshot.ready){note.textContent='Cabin packages are loading or unavailable. No charges are made.';return;}
+  const id=picker.value;
+  if(id==='none'){note.textContent='No onboard service · estimated airline cabin cost $0.00 for this flight.';return;}
+  const pkg=snapshot.packages.find(p=>p.id===id);
+  if(!pkg){note.textContent='This package was deleted. Choose another before saving.';return;}
+  if(!Number.isSafeInteger(passengers)||passengers<0||passengers>1000){
+   note.textContent='Enter 0–1,000 assumed passengers for this planning preview.';return;
+  }
+  const estimate=cabinPackageEstimate(pkg),usd=cents=>'
+ const days=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+ let homeKey=null,homeLocation=null,currentAirlineId=null,homeTicket=0,detailTicket=0;
+ let lastKeys='',airportProfiles={},editingFlightNumber=null,editingLegacyIndex=null,editSerial=0;
+ let preflightCatalogFor=null,preflightLoadToken=0,preflightRequest=0;
+ let catalogAircraft=[],preflightCache=null,preflightPromise=null;
+ let ownedFleet=[],serverDrafts=[],serverPlans=[],fleetTicket=0,fleetReadState='unavailable';
+ const pickers={},selected=side=>pickers[side]?.selected()||null;
+ // The country-picker constructor calls onSelect synchronously. Defer route
+ // rendering until all planner callbacks, including preflight, are initialized.
+ let plannerInitialized=false;
+ const message=(id,value)=>{if($(id))$(id).textContent=value;};
+ const selectedConfigurationId=()=>{
+  const key=$('route-aircraft')?.value||'';
+  if(/^catalog:[1-9][0-9]*$/.test(key))return Number(key.slice(8));
+  if(key.startsWith('owned:')){
+   const owned=ownedFleet.find(a=>'owned:'+a.id===key);
+   return Number.isSafeInteger(owned?.configurationId)&&owned.configurationId>0?
+    owned.configurationId:null;
+  }
+  const sample=(getData()?.airline?.testAircraft||[]).find(a=>a?.id===key);
+  return Number.isSafeInteger(sample?.configurationId)&&sample.configurationId>0?sample.configurationId:null;
+ };
+ const catalogChoice=()=>catalogAircraft.find(a=>a.id===selectedConfigurationId())||null;
+ const runwayAssessment=aircraft=>assessAircraftRouteRunways({
+  aircraft,
+  origin:airportProfiles.from?.key===selected('from')?.key?airportProfiles.from:null,
+  destination:airportProfiles.to?.key===selected('to')?.key?airportProfiles.to:null
+ });
+ const clearPreflight=()=>{
+  ++preflightRequest;preflightCache=null;preflightPromise=null;
+  message('route-slot-check','Select times to check arrival and departure availability');
+  message('route-weather-check','Select departure and arrival times to check forecast');
+  $('route-slot-check')?.classList?.remove('has-conflict','has-available');
+ };
+ const countryFlag=side=>{
+  const iso=$('route-'+side+'-country')?.value||'';
+  const img=$('route-'+side+'-country-flag');
+  const label=$('route-'+side+'-country-text');
+  if(label)label.textContent=/^[A-Z]{2}$/.test(iso)?
+   airportCountryName(iso):'All countries — search anywhere';
+  for(const option of $('route-'+side+'-country-list')?.querySelectorAll('[data-route-country-choice]')||[])
+   option.setAttribute('aria-selected',String(option.dataset.countryIso===iso));
+  if(!img)return;
+  if(/^[A-Z]{2}$/.test(iso)){
+   img.src='https://flagcdn.com/w40/'+iso.toLowerCase()+'.png';
+   img.alt=airportCountryName(iso)+' flag';img.hidden=false;
+  }else{img.removeAttribute('src');img.hidden=true;}
+ };
+ const hideCountryMenus=()=>{
+  for(const side of ['from','to']){
+   const list=$('route-'+side+'-country-list');
+   const trigger=$('route-'+side+'-country-trigger');
+   if(list)list.hidden=true;
+   if(trigger)trigger.setAttribute('aria-expanded','false');
+  }
+ };
+ const renderCountryMenus=countries=>{
+  const countriesSorted=[...(countries||[])].filter(c=>/^[A-Z]{2}$/.test(c.countryIso||''))
+   .sort((a,b)=>airportCountryName(a.countryIso).localeCompare(airportCountryName(b.countryIso),'en'));
+  for(const side of ['from','to']){
+   const root=$('route-'+side+'-country-list');
+   if(!root)continue;
+   root.replaceChildren();
+   for(const c of [{countryIso:'',airportCount:null},...countriesSorted]){
+    const button=doc.createElement('button');
+    button.type='button';button.className='route-country-option';
+    button.setAttribute('role','option');
+    button.dataset.routeCountryChoice=side;button.dataset.countryIso=c.countryIso;
+    button.setAttribute('aria-selected',String($('route-'+side+'-country')?.value===c.countryIso));
+    if(c.countryIso){
+     const img=doc.createElement('img');img.src='https://flagcdn.com/w40/'+c.countryIso.toLowerCase()+'.png';
+     img.alt='';img.width=20;img.height=13;img.loading='lazy';img.className='route-summary-flag';
+     button.append(img);
+    }
+    const label=doc.createElement('span');
+    label.textContent=c.countryIso?airportCountryName(c.countryIso)+
+     ' ('+Number(c.airportCount||0)+' airports)':'All countries — search anywhere';
+    button.append(label);root.append(button);
+   }
+  }
+ };
+ const hideSuggestions=side=>{
+  const list=$('route-'+side+'-suggestions'),input=$('route-'+side+'-search');
+  if(list)list.hidden=true;
+  if(input)input.setAttribute('aria-expanded','false');
+ };
+ const renderSuggestions=(side,results,ready=true)=>{
+  const list=$('route-'+side+'-suggestions'),input=$('route-'+side+'-search');
+  if(!list||!input)return;
+  list.replaceChildren();
+  if(!ready||!Array.isArray(results)||!results.length){hideSuggestions(side);return;}
+  for(const a of results.slice(0,30)){
+   const button=doc.createElement('button');
+   button.type='button';button.className='route-airport-option';
+   button.setAttribute('role','option');button.dataset.routeAirportKey=a.key;
+   button.dataset.routeAirportSide=side;
+   const flag=doc.createElement('img');
+   flag.src='https://flagcdn.com/w40/'+a.countryIso.toLowerCase()+'.png';
+   flag.alt='';flag.width=20;flag.height=13;flag.className='route-summary-flag';
+   button.append(flag);
+   const name=doc.createElement('span');
+   name.textContent=a.name+(a.code?' ('+a.code+')':'')+(a.municipality?' · '+a.municipality:'');
+   button.append(name);list.append(button);
+  }
+  list.hidden=false;input.setAttribute('aria-expanded','true');
+ };
+ const availableSchedule=()=>{
+  const result=[];
+  for(let day=0;day<7;day++){
+   const check=doc.querySelector('[data-route-day="'+day+'"]');
+   const time=doc.querySelector('[data-route-time="'+day+'"]');
+   if(check?.checked)result.push({day,time:time?.value||''});
+  }
+  return result;
+ };
+ const updateWeek=()=>{
+  const schedule=availableSchedule(),chosenDays=new Set(schedule.map(x=>x.day));
+  for(let day=0;day<7;day++){
+   const check=doc.querySelector('[data-route-day="'+day+'"]');
+   const time=doc.querySelector('[data-route-time="'+day+'"]');
+   if(time)time.disabled=!check?.checked;
+  }
+  message('route-flights',schedule.length+' '+(schedule.length===1?'departure':'departures')+'/week');
+  const target=Number($('route-turnaround')?.value);
+  // Only calculate from user-entered UTC reference times. No aircraft
+  // speed, local time zone, actual arrival or future slot is invented.
+  const estimate=exampleNextDepartureUtc(
+   utcFromInput($('route-preflight-departure-utc')?.value),
+   utcFromInput($('route-preflight-arrival-utc')?.value),target);
+  for(let day=0;day<7;day++){
+   message('route-arrival-'+day,chosenDays.has(day)?
+    (estimate?'Example '+estimate.arrivalClock:'Pending verified duration'):'—');
+   message('route-next-departure-'+day,chosenDays.has(day)?
+    (estimate?'Example '+estimate.clock:'Pending arrival time'):'—');
+  }
+  message('route-rotation-check',Number.isInteger(target)&&target>=45&&target<=360?
+   (estimate?'Example next ground departure '+estimate.clock+' · not an approved slot':
+    'Target '+target+' min · flight duration and slots unverified'):
+   'Choose a turnaround between 45 and 360 minutes');
+ };
+ const scheduledRoutesForAircraft=aircraftId=>{
+  const saved=loadDraft?.()||{};
+  const local=Array.isArray(saved.routes)?saved.routes:[];
+  if(!aircraftId?.startsWith('owned:'))return local;
+  const inventoryId=aircraftId.slice('owned:'.length);
+  const seen=new Set(local.filter(x=>x?.aircraftId===aircraftId).map(x=>x.flightNumber));
+  const resolveAirport=key=>{
+   for(const side of ['from','to']){
+    const airport=selected(side);
+    if(airport?.key===key)return airport;
+   }
+   return {key,name:key};
+  };
+  const server=[];
+  for(const d of serverDrafts){
+   if(d?.status!=='draft'||d.aircraftInventoryId!==inventoryId||
+      !d.originAirportKey||!d.destinationAirportKey||
+      typeof d.flightNumber!=='string'||seen.has(d.flightNumber))continue;
+   seen.add(d.flightNumber);
+   server.push({flightNumber:d.flightNumber,aircraftId,
+    from:resolveAirport(d.originAirportKey),to:resolveAirport(d.destinationAirportKey),
+    schedule:Array.isArray(d.weeklySchedule)?d.weeklySchedule:[],
+    operation:{departureStand:d.departureStand,arrivalStand:d.arrivalStand},
+    referenceDepartureUtc:d.referenceDepartureUtc,referenceArrivalUtc:d.referenceArrivalUtc});
+  }
+  for(const p of serverPlans){
+   if(p?.status!=='planning'||p.aircraftInventoryId!==inventoryId||
+      !p.originAirportKey||!p.destinationAirportKey||
+      typeof p.flightNumber!=='string'||seen.has(p.flightNumber))continue;
+   seen.add(p.flightNumber);
+   server.push({flightNumber:p.flightNumber,aircraftId,
+    from:p.from||resolveAirport(p.originAirportKey),
+    to:p.to||resolveAirport(p.destinationAirportKey),
+    schedule:Array.isArray(p.schedule)?p.schedule:[],
+    operation:p.operation||{},
+    referenceDepartureUtc:p.referenceDepartureUtc,
+    referenceArrivalUtc:p.referenceArrivalUtc});
+  }
+  return [...local,...server];
+ };
+ const selectedAircraftTimeline=()=>{
+  const selectedId=$('route-aircraft')?.value||null;
+  const aircraftId=selectedId?.startsWith('catalog:')?null:selectedId;
+  const from=selected('from'),to=selected('to');
+  const rows=scheduledRoutesForAircraft(aircraftId);
+  const flightNumber=flightNumberFor(flightPrefixFor(getData()?.airline).prefix,
+   $('route-plan-number')?.value)||'Preview';
+  const schedule=availableSchedule();
+  const proposal=aircraftId&&from&&to&&from.key!==to.key&&schedule.length?
+   {flightNumber,aircraftId,from,to,schedule,
+    operation:{departureStand:null,
+      arrivalStand:$('route-arrival-stand')?.value}}:null;
+  return buildAircraftWeeklyTimeline({
+   aircraftId,routes:rows,proposal,excludeFlightNumber:editingFlightNumber,
+   homeAirportKey:getData()?.airline?.homeAirportKey||null
+  });
+ };
+ const departureStandFromTimeline=timeline=>{
+  const proposed=timeline.events.filter(x=>x.proposed);
+  const initial=catalogChoice()?.useType==='cargo'?'cargo':'terminal';
+  const stands=[...new Set(proposed.map(x=>x.departureStand||initial))];
+  // Current server schedules accept one departure stand per route.
+  return stands.length<=1?(stands[0]||initial):null;
+ };
+ const groundStopConflict=()=>{
+  const aircraft=$('route-aircraft')?.value||'';
+  const from=selected('from');
+  const nextDeparture=utcFromInput($('route-preflight-departure-utc')?.value);
+  const turnaround=Number($('route-turnaround')?.value);
+  if(!aircraft||!from||!nextDeparture||!Number.isInteger(turnaround))return null;
+  const planned=Date.parse(nextDeparture);
+  for(const previous of scheduledRoutesForAircraft(aircraft)){
+   if(!previous||previous.flightNumber===editingFlightNumber||
+      previous.aircraftId!==aircraft||previous.to?.key!==from.key)continue;
+   const priorDeparture=Date.parse(previous.referenceDepartureUtc||'');
+   const arrival=Date.parse(previous.referenceArrivalUtc||'');
+   if(!Number.isFinite(priorDeparture)||!Number.isFinite(arrival)||
+      priorDeparture>planned||planned-priorDeparture>24*3600000)continue;
+   // Use only date-matched UTC examples. This catches departures even BEFORE
+   // the previous arrival; it never creates actual aircraft availability.
+   const earliest=arrival+turnaround*60000;
+   if(planned<earliest)return 'Previous '+String(previous.flightNumber||'flight')+
+    ' example arrives at '+new Date(arrival).toISOString().slice(11,16)+' UTC. '+ 
+    'With a '+turnaround+'-minute ground stop, the next departure cannot be before '+
+    new Date(earliest).toISOString().slice(11,16)+' UTC on the example date.';
+  }
+  return null;
+ };
+ const refreshAircraftTimeline=()=>{
+  const timeline=selectedAircraftTimeline();
+  renderAircraftWeeklyTimeline(doc,$('route-aircraft-timeline-content'),timeline);
+  const chosen=timeline.events.filter(x=>x.proposed);
+  const derived=departureStandFromTimeline(timeline);
+  const label=!chosen.length?'No flight days selected':
+   !derived?'Different stands across weekdays — separate route drafts required':
+   (derived==='terminal'?'Terminal':derived==='remote'?'Remote stand':'Cargo stand')+
+    (chosen.some(x=>!x.departureStand)?' (provisional first stand)':' · inherited from previous arrival');
+  message('route-departure-stand-derived',label);
+  for(let day=0;day<7;day++){
+   const e=chosen.find(x=>x.day===day);
+   message('route-stand-'+day,!e?'—':e.departureStand?
+    (e.departureStand==='terminal'?'Terminal':e.departureStand==='remote'?'Remote':'Cargo'):
+    derived?'Initial stand unverified':'Stand varies');
+   message('route-arrival-stand-'+day,!e?'—':
+    e.arrivalStand==='terminal'?'Terminal':e.arrivalStand==='remote'?'Remote':
+    e.arrivalStand==='cargo'?'Cargo':'Unverified');
+  }
+  const feedback=$('route-aircraft-position-status');
+  if(feedback){
+   const ground=groundStopConflict();
+   const conflict=timeline.errors.length>0||Boolean(ground);
+   feedback.textContent=timeline.errors[0]?.text||ground||'';
+   feedback.hidden=!conflict;
+   feedback.classList.toggle('has-conflict',conflict);
+  }
+  return timeline;
+ };
+ const flagNode=iso=>{
+  if(!/^[A-Z]{2}$/.test(iso||''))return null;
+  const img=doc.createElement('img');
+  img.className='route-summary-flag';img.src='https://flagcdn.com/w40/'+iso.toLowerCase()+'.png';
+  img.alt=airportCountryName(iso)+' flag';img.width=20;img.height=13;img.loading='lazy';
+  return img;
+ };
+ const renderAirport=(side,airport)=>{
+  const node=$('route-'+side+'-summary');
+  if(!node)return;
+  node.replaceChildren();
+  if(!airport){node.textContent='Select an approved airport.';return;}
+  const flag=flagNode(airport.countryIso);
+  if(flag)node.append(flag);
+  const title=doc.createElement('span');
+  title.textContent=airport.name+(airport.code?' ('+airport.code+')':'');
+  node.append(title);
+ };
+ const shortRestrictions=airportRouteRestrictionSummary;
+ const shortDemand=profile=>{
+  if(!profile)return 'Data pending';
+  const p=profile.demand?.passengerGroup,c=profile.demand?.cargoGroup;
+  return 'Passengers '+(Number.isInteger(p)?p+'/5':'unknown')+
+   ' · Cargo '+(Number.isInteger(c)?c+'/5':'unknown');
+ };
+ const showDetails=()=>{
+  message('route-origin-restrictions',shortRestrictions(airportProfiles.from));
+  message('route-destination-restrictions',shortRestrictions(airportProfiles.to));
+  message('route-origin-demand',shortDemand(airportProfiles.from));
+  message('route-destination-demand',shortDemand(airportProfiles.to));
+ };
+ const syncAircraftCompatibility=()=>{
+  const aircraft=catalogChoice(),assessment=aircraft?runwayAssessment(aircraft):null;
+  const selection=$('route-aircraft')?.value||'';
+  const button=$('route-plan-save');
+  if(button)button.disabled=assessment?.status==='BLOCKED'||
+   routeAirportPairStatus(selected('from'),selected('to'))==='SAME_AIRPORT';
+  const reason=assessment?.status==='BLOCKED'?
+   'BLOCKED — This aircraft cannot be used on this route. '+assessment.blockingReasons.join(' '):
+   assessment?.status==='REVIEW'?'Runway review: '+assessment.reviewReasons.join(' '):
+   assessment?.status==='PASS'?'Runway length suitable for takeoff and landing (game screening only).':
+   selection?'Aircraft configuration loading — not approved for flight.':
+   'Choose an aircraft to check departure and arrival runway lengths.';
+  message('route-aircraft-check',reason);
+  message('route-aircraft-feedback',reason);
+  const el=$('route-aircraft-feedback');
+  if(el){el.dataset.runwayStatus=assessment?.status||'PENDING';el.setAttribute('role','status');}
+  return assessment;
+ };
+ const refreshCatalogOptions=()=>{
+  const select=$('route-aircraft');if(!select)return;
+  const saved=select.value;
+  select.replaceChildren(new Option('Choose a company aircraft',''));
+  for(const aircraft of ownedFleet){
+   if(typeof aircraft.id!=='string'||!Number.isSafeInteger(aircraft.configurationId))continue;
+   // Owner-scoped list includes in-service aircraft only. Never show catalog
+   // models or demonstration aircraft as company-owned flight assignments.
+   if(!['owned','leased'].includes(aircraft.ownershipType))continue;
+   const model=catalogAircraft.find(a=>a.id===aircraft.configurationId);
+   const assessment=model?runwayAssessment(model):null;
+   const suffix=assessment?.status==='BLOCKED'?' — RUNWAY TOO SHORT':'';
+   select.add(new Option((aircraft.ownershipType==='leased'?'LEASED':'OWNED')+' · '+
+    String(aircraft.registration||'Aircraft')+' · '+
+    String(model?.model||'Model '+aircraft.configurationId)+suffix,'owned:'+aircraft.id));
+  }
+  if([...select.options].some(option=>option.value===saved))select.value=saved;
+  select.disabled=select.options.length<2;
+  syncAircraftCompatibility();
+  if(select.disabled)message('route-aircraft-feedback',fleetReadState==='verified'?
+   'No in-service aircraft owned or leased by this company. Acquire, deliver and inspect one before scheduling.':
+   'Verified company fleet is not available yet. Aircraft cannot be selected until an owner-scoped fleet read succeeds.');
+ };
+ const renderServerScheduleList=()=>{
+  const holder=$('route-server-draft-list');if(!holder)return;
+  holder.replaceChildren();
+  if(!getData()?.scheduler){
+   holder.textContent='Protected airline schedule service is not connected in this preview.';
+   return;
+  }
+  if(!serverDrafts.length){
+   holder.textContent='No slot-reserved operational schedules yet. Your airline planning routes appear in My Routes.';
+   return;
+  }
+  for(const draft of serverDrafts.slice(0,50)){
+   if(typeof draft?.id!=='string')continue;
+   const row=doc.createElement('div');row.className='fleet-test-aircraft-row';
+   const title=doc.createElement('strong');
+   title.textContent=String(draft.flightNumber||'Draft')+' · '+String(draft.originAirportKey||'')+
+    ' to '+String(draft.destinationAirportKey||'');
+   const subtitle=doc.createElement('small');
+   subtitle.textContent='Server draft · weekly airport slots held · not active · '+String(draft.weeklySchedule?.length||0)+' departures per week';
+   const inspect=doc.createElement('button');
+   inspect.type='button';inspect.className='secondary';
+   inspect.textContent='Check activation readiness';
+   inspect.dataset.routeActivationReadinessId=draft.id;
+   const remove=doc.createElement('button');
+   remove.type='button';remove.className='secondary';
+   remove.textContent='Delete and release slots';
+   remove.dataset.routeServerDeleteId=draft.id;
+   row.append(title,subtitle,inspect,remove);holder.append(row);
+  }
+ };
+ const loadOwnedScheduleData=async airlineId=>{
+  const ticket=++fleetTicket,scheduler=getData()?.scheduler;
+  fleetReadState=airlineId&&typeof scheduler?.list==='function'?'loading':'unavailable';
+  ownedFleet=[];serverDrafts=[];serverPlans=[];refreshCatalogOptions();renderServerScheduleList();
+  if(!airlineId||typeof scheduler?.list!=='function')return;
+  message('route-server-draft-status','Loading your registered operational aircraft and server drafts...');
+  try{
+   const response=await scheduler.list(airlineId);
+   if(ticket!==fleetTicket)return;
+   if(!Array.isArray(response?.fleet)||!Array.isArray(response?.drafts)||!Array.isArray(response?.plans))
+    throw Error('Unverified company fleet response');
+   fleetReadState='verified';
+   ownedFleet=Array.isArray(response?.fleet)?response.fleet.filter(a=>
+    typeof a?.id==='string'&&Number.isSafeInteger(a.configurationId)&&a.configurationId>0):[];
+   serverDrafts=response.drafts;
+   serverPlans=response.plans;
+   refreshCatalogOptions();renderServerScheduleList();refreshAircraftTimeline();
+   message('route-server-draft-status',ownedFleet.length?
+    ownedFleet.length+' operational aircraft connected. Server schedule drafts are separate from live flight activation.':
+    'No company aircraft are in service. Purchase or lease one, complete delivery and inspection, then create a route.');
+  }catch{
+   if(ticket===fleetTicket){
+    fleetReadState='unavailable';ownedFleet=[];serverDrafts=[];serverPlans=[];refreshCatalogOptions();renderServerScheduleList();
+    message('route-server-draft-status','Server fleet/schedule service unavailable. No flight was activated.');
+   }
+  }
+ };
+ const loadAirportDetails=async(from,to)=>{
+  const ticket=++detailTicket,reader=getData()?.reader;
+  airportProfiles={};showDetails();
+  if(!getData()?.connected||typeof reader?.airportProfile!=='function')return;
+  const airports=[from,to];
+  const result=await Promise.all(airports.map(async airport=>{
+   if(!airport)return null;
+   try{
+    const response=await reader.airportProfile(airport.key);
+    return response?.airport?.key===airport.key?response.airport:null;
+   }catch{return null}
+  }));
+  if(ticket!==detailTicket)return;
+  airportProfiles={from:result[0],to:result[1]};
+  showDetails();
+  drawMap();
+  refreshCatalogOptions();
+  void automaticPreflight();
+ };
+ const drawMap=()=>{
+  const verified=(side,a)=>{
+   if(!a)return null;
+   const p=airportProfiles[side];
+   return p?.key===a.key&&typeof p.latitude==='number'&&typeof p.longitude==='number'?
+    {...a,latitude:p.latitude,longitude:p.longitude}:a;
+  };
+  const from=verified('from',selected('from'));
+  const to=verified('to',selected('to'));
+  const equal=routeAirportPairStatus(from,to)==='SAME_AIRPORT';
+  const map=renderRouteMap($('route-map-canvas'),equal?null:from,equal?null:to,{doc});
+  message('route-map-feedback',equal?
+   'BLOCKED — origin and destination are the same airport. Choose another destination.':
+   map?'Orange line: geographic distance between verified airports (not an approved flight path).':
+   'Checking airport coordinates from the approved directory and airport profiles...');
+  message('route-distance',map?
+   Math.round(map.distanceKm).toLocaleString('en-US')+' km':'Data pending');
+ };
+ const show=()=>{
+  const from=selected('from'),to=selected('to');
+  renderAirport('from',from);renderAirport('to',to);
+  for(const side of ['from','to'])countryFlag(side);
+  const title=$('route-map-heading');
+  if(title)title.textContent=from&&to?
+   (from.code||from.name)+' – '+(to.code||to.name):'Select two airports';
+  drawMap();
+  message('route-block-time','Pending verified aircraft performance');
+  message('route-market',from&&to?
+   (from.countryIso===to.countryIso?'Domestic route':'International route'):'Select airports');
+  const pairStatus=routeAirportPairStatus(from,to);
+  const validPair=pairStatus==='VALID';
+  for(const id of ['route-plan-preview','route-plan-save']){
+   const button=$(id);
+   if(button)button.disabled=pairStatus==='SAME_AIRPORT';
+  }
+  const validOrigin=Boolean(from&&from.key===homeKey);
+  const demoAircraft=(Array.isArray(getData()?.airline?.testAircraft)?
+   getData().airline.testAircraft:[]).find(a=>a.id===$('route-aircraft')?.value&&
+    a.testOnly===true&&a.operationallyAllowed===false);
+  syncAircraftCompatibility();
+  message('route-slot-check','Select aircraft and flight times to check slots');
+  message('route-traffic-rights','Not connected — rights not verified');
+  message('route-status',pairStatus==='SAME_AIRPORT'?'Restricted — same airport':'Draft only');
+  message('route-check-message',pairStatus==='SAME_AIRPORT'?
+   'BLOCKED — a flight cannot depart from and arrive at the same airport. Choose another destination.':
+   !validPair?'Choose two different approved airports.':
+   !validOrigin?'Draft only: origin is not a confirmed active hub. Only your main hub is currently verified.':
+   'Route geography available. Aircraft, crew, airport slots and traffic rights require verification before activation.');
+  const keys=[from?.key||'',to?.key||''].join('|');
+  if(keys!==lastKeys){lastKeys=keys;clearPreflight();void loadAirportDetails(from,to);}
+  updateWeek();
+  refreshAircraftTimeline();
+  doc.dispatchEvent?.(new Event('airlinerra:refresh-game-select-menus'));
+  void automaticPreflight();
+ };
+ for(const side of ['from','to']){
+  pickers[side]=createAirportCountryPicker({
+   country:$('route-'+side+'-country'),search:$('route-'+side+'-search'),
+   airport:$('route-'+side+'-airport'),
+   getReader:()=>getData()?.connected?getData()?.reader:null,
+   onStatus:status=>message('route-'+side+'-count',status),
+   onResults:(results,ready)=>renderSuggestions(side,results,ready),
+   onSelect:airport=>{
+    const quick=$('route-'+side+'-hub');
+    if(quick)quick.value=airport?.key===homeKey&&homeLocation?homeKey:'';
+    if(plannerInitialized)show();
+   }
+  });
+  $('route-'+side+'-country')?.addEventListener('change',()=>countryFlag(side));
+ }
+ const renderQuickOptions=()=>{
+  const home=homeLocation;
+  for(const side of ['from','to']){
+   const dropdown=$('route-'+side+'-hub');
+   if(!dropdown)continue;
+   const chosen=dropdown.value;
+   dropdown.replaceChildren(new Option('Choose airport or browse country below',''));
+   if(home){
+    dropdown.add(new Option('★ Main hub · '+home.name+(home.code?' ('+home.code+')':''),home.key));
+    if(chosen===home.key)dropdown.value=home.key;
+   }
+  }
+ };
+ const selectHome=async(side)=>{
+  const home=homeLocation;
+  if(!home||!pickers[side])return;
+  const country=$('route-'+side+'-country');
+  if(country.value!==home.countryIso){
+   country.value=home.countryIso;
+   countryFlag(side);
+   await pickers[side].load();
+  }
+  if(pickers[side].choose(home.key))$('route-'+side+'-hub').value=home.key;
+  show();
+ };
+ const updatePrefix=airline=>{
+  const result=flightPrefixFor(airline);
+  message('route-number-prefix',result.prefix||'—');
+  message('route-prefix-note',result.prefix?
+   result.provisional?'PA is a temporary Panonian game prefix; the database has no assigned airline code.':
+   result.prefix+' is the airline’s stored IATA code.':
+   'A valid two-character airline flight prefix must be registered before this flight can be numbered.');
+ };
+ const activateHome=async(data)=>{
+  const ticket=++homeTicket,airline=data.airline,reader=data.reader;
+  homeKey=airline?.homeAirportKey||null;homeLocation=null;
+  renderQuickOptions();
+  if(!homeKey||!data.connected||typeof reader?.airportProfile!=='function')return;
+  try{
+   const response=await reader.airportProfile(homeKey);
+   if(ticket!==homeTicket||response?.airport?.key!==homeKey)return;
+   const a=response.airport;
+   if(!/^[A-Z]{2}$/.test(a.countryIso||''))return;
+   homeLocation={
+    key:homeKey,name:a.name||airline.homeAirportName||'Home airport',
+    code:a.icao||airline.homeAirportCode||'',
+    countryIso:a.countryIso,municipality:a.municipality||'',
+    latitude:a.latitude,longitude:a.longitude
+   };
+   renderQuickOptions();
+   if(!selected('from'))await selectHome('from');
+  }catch{message('route-feedback','Home airport could not be preselected. Choose an approved origin manually.');}
+ };
+ const resetRouteForm=async()=>{
+  const serial=++editSerial;
+  editingFlightNumber=null;editingLegacyIndex=null;++detailTicket;lastKeys='';airportProfiles={};
+  showDetails();
+  if($('route-plan-number'))$('route-plan-number').value='';
+  if($('route-aircraft'))$('route-aircraft').value='';
+  for(const id of ['route-preflight-departure-utc','route-preflight-arrival-utc'])
+   if($(id))$(id).value='';
+  clearPreflight();
+  if($('route-arrival-stand'))$('route-arrival-stand').value='terminal';
+  if($('route-turnaround'))$('route-turnaround').value='45';
+  for(const label of ['economy','premium','business','first'])
+   if($('route-fare-'+label))$('route-fare-'+label).value='';
+  for(const id of ['route-onboard-service','route-baggage-service'])
+   if($(id))$(id).value='standard';
+  if($('route-cargo-service'))$('route-cargo-service').value='none';
+  for(let day=0;day<7;day++){
+   const check=doc.querySelector('[data-route-day="'+day+'"]');
+   const time=doc.querySelector('[data-route-time="'+day+'"]');
+   if(check)check.checked=false;
+   if(time)time.value='09:00';
+  }
+  for(const side of ['from','to']){
+   const country=$('route-'+side+'-country'),search=$('route-'+side+'-search');
+   if(country)country.value='';
+   if(search)search.value='';
+   pickers[side].invalidate();
+   hideSuggestions(side);countryFlag(side);
+   const quick=$('route-'+side+'-hub');if(quick)quick.value='';
+  }
+  message('route-feedback','');message('route-plan-review','');message('route-plan-status','');
+  $('route-plan-status')?.classList?.remove('is-success');
+  show();
+  if(homeLocation&&serial===editSerial)await selectHome('from');
+ };
+ const selectStoredAirport=async(side,airport,serial)=>{
+  if(!airport||typeof airport.key!=='string'||typeof airport.name!=='string')return false;
+  const country=$('route-'+side+'-country'),search=$('route-'+side+'-search');
+  if(!country||!search)return false;
+  country.value='';
+  search.value=String(airport.code||airport.name).slice(0,40);
+  await pickers[side].load();
+  if(serial!==editSerial)return false;
+  if(pickers[side].choose(airport.key))return true;
+  if(!/^[A-Z]{2}$/.test(airport.countryIso||''))return false;
+  country.value=airport.countryIso;search.value='';
+  await pickers[side].load();
+  if(serial!==editSerial)return false;
+  return pickers[side].choose(airport.key);
+ };
+ const editRouteDraft=async ref=>{
+  const stored=loadDraft?.()||{};
+  const routes=Array.isArray(stored.routes)&&stored.routes.length?stored.routes:
+   stored.route?[stored.route]:[];
+  const index=Number.isInteger(ref)?ref:null;
+  const route=index!==null?routes[index]:ref;
+  if(!route?.from||!route?.to)return;
+  const serial=++editSerial;editingFlightNumber=route.flightNumber||null;
+  editingLegacyIndex=route.flightNumber?null:index;
+  message('route-plan-status','Loading saved route draft for editing...');
+  for(const [side,airport] of [['from',route.from],['to',route.to]]){
+   if(!await selectStoredAirport(side,airport,serial)){
+    if(serial===editSerial)message('route-plan-status','Airport could not be verified. Select it again.');
+    return;
+   }
+  }
+  if(serial!==editSerial)return;
+  const prefix=flightPrefixFor(getData()?.airline).prefix;
+  const flight=String(route.flightNumber||'');
+  if(prefix&&flight.startsWith(prefix)){
+   const number=flight.slice(prefix.length);
+   if(/^[0-9]{1,4}$/.test(number))$('route-plan-number').value=number;
+  }
+  $('route-aircraft').value=route.aircraftId||
+   (Number.isSafeInteger(route.aircraftConfigurationId)?'catalog:'+route.aircraftConfigurationId:'');
+  if($('route-preflight-departure-utc'))$('route-preflight-departure-utc').value=route.referenceDepartureUtc?.slice(0,16)||'';
+  if($('route-preflight-arrival-utc'))$('route-preflight-arrival-utc').value=route.referenceArrivalUtc?.slice(0,16)||'';
+  const arrivalStand=route.operation?.arrivalStand;
+  if($('route-arrival-stand'))$('route-arrival-stand').value=
+   ['remote','terminal','cargo'].includes(arrivalStand)?arrivalStand:'terminal';
+  $('route-turnaround').value=String(route.operation?.turnaroundMinutes||45);
+  for(let day=0;day<7;day++){
+   const row=(Array.isArray(route.schedule)?route.schedule:[]).find(x=>x.day===day);
+   const check=doc.querySelector('[data-route-day="'+day+'"]');
+   const time=doc.querySelector('[data-route-time="'+day+'"]');
+   if(check)check.checked=Boolean(row);
+   if(time)time.value=row&&validLocalDeparture(row.time)?row.time:'09:00';
+  }
+  for(const label of ['economy','premium','business','first']){
+   const value=route.operation?.fares?.[label];
+   $('route-fare-'+label).value=value===null||value===undefined?'':String(value);
+  }
+  for(const [id,field,values,def] of [
+   ['route-onboard-service','onboard',['standard','basic','enhanced'],'standard'],
+   ['route-baggage-service','baggage',['standard','hand-only','checked'],'standard'],
+   ['route-cargo-service','cargo',['none','requested'],'none']]){
+   const value=route.operation?.service?.[field];
+   $(id).value=values.includes(value)?value:def;
+  }
+  show();
+  message('route-plan-status',route.flightNumber?
+   'Editing '+route.flightNumber+' · Create new route will save the updated planning draft to your airline where connected.':
+   'Previous route idea loaded. Enter a flight number and choose days to save it as a draft.');
+ };
+ doc.addEventListener('airlinerra:edit-route-draft',event=>{
+  const ref=event.detail?.route||event.detail?.index;
+  if(ref&&typeof ref==='object'&&ref.from&&ref.to)void editRouteDraft(ref);
+  else if(Number.isInteger(ref)&&ref>=0&&ref<100)void editRouteDraft(ref);
+ });
+ const main=$('player-main');
+ main?.addEventListener('change',async event=>{
+  const el=event.target;
+  if(el?.matches?.('[data-route-day]')||el?.matches?.('[data-route-time]')){
+   updateWeek();clearPreflight();show();void automaticPreflight();return;
+  }
+  if(['route-preflight-departure-utc','route-preflight-arrival-utc'].includes(el?.id)){
+   clearPreflight();updateWeek();refreshAircraftTimeline();void automaticPreflight();return;
+  }
+  if(el?.id==='route-aircraft'){
+   const type=catalogChoice()?.useType;
+   if(type==='cargo')$('route-arrival-stand').value='cargo';
+   else if(type==='passenger'&&$('route-arrival-stand')?.value==='cargo')
+    $('route-arrival-stand').value='terminal';
+   clearPreflight();show();void automaticPreflight();return;
+  }
+  if(el?.id==='route-arrival-stand'){
+   clearPreflight();refreshAircraftTimeline();updateWeek();void automaticPreflight();return;
+  }
+  if(el?.id==='route-turnaround'){updateWeek();refreshAircraftTimeline();return;}
+  if(el?.id==='route-from-hub'||el?.id==='route-to-hub'){
+   const side=el.id==='route-from-hub'?'from':'to';
+   if(el.value===homeKey&&homeLocation)await selectHome(side);
+  }
+ });
+ main?.addEventListener('input',event=>{
+  if(event.target?.id==='route-plan-number'){
+   const el=event.target;
+   el.value=el.value.replace(/\D/g,'').slice(0,4);
+  }
+ });
+ main?.addEventListener('focusin',event=>{
+  for(const side of ['from','to']){
+   if(event.target?.id==='route-'+side+'-search'){
+    hideCountryMenus();
+    renderSuggestions(side,pickers[side].getAirports(),true);
+   }
+  }
+ });
+ main?.addEventListener('keydown',event=>{
+  for(const side of ['from','to']){
+   if(event.target?.id==='route-'+side+'-search'){
+    if(event.key==='Escape'){hideSuggestions(side);return;}
+    if(event.key==='ArrowDown'){
+     const list=$('route-'+side+'-suggestions');
+     if(list?.hidden)renderSuggestions(side,pickers[side].getAirports(),true);
+     const first=list?.querySelector('button');
+     if(first){event.preventDefault();first.focus();}
+    }
+   }
+   if(event.target?.dataset?.routeAirportSide===side&&
+      ['ArrowUp','ArrowDown'].includes(event.key)){
+    const buttons=[...($('route-'+side+'-suggestions')?.querySelectorAll('button')||[])];
+    const index=buttons.indexOf(event.target);
+    const next=buttons[(index+(event.key==='ArrowDown'?1:-1)+buttons.length)%buttons.length];
+    if(next){event.preventDefault();next.focus();}
+   }
+  }
+ });
+ doc.addEventListener('click',event=>{
+  if(!event.target?.closest?.('.route-country-picker'))hideCountryMenus();
+  for(const side of ['from','to']){
+   if(!event.target?.closest?.('#route-'+side+'-suggestions')&&
+      event.target?.id!=='route-'+side+'-search')hideSuggestions(side);
+  }
+ });
+ const utcFromInput=value=>{
+  if(typeof value!=='string'||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value))return null;
+  const date=new Date(value+':00Z');
+  return Number.isFinite(date.valueOf())&&date.toISOString().slice(0,16)===value?
+   date.toISOString().slice(0,19)+'Z':null;
+ };
+ const loadPreflightCatalog=async()=>{
+  const reader=getData()?.reader,ticket=++preflightLoadToken;
+  catalogAircraft=[];refreshCatalogOptions();
+  if(!getData()?.connected||typeof reader?.aircraftLibrary!=='function'){
+   message('route-preflight-status','Aircraft catalog not connected. No flight can be activated.');
+   return;
+  }
+  try{
+   const data=await reader.aircraftLibrary();
+   if(ticket!==preflightLoadToken)return;
+   catalogAircraft=Array.isArray(data?.aircraft)?data.aircraft.filter(a=>
+    Number.isSafeInteger(a?.id)&&a.id>0):[];
+   refreshCatalogOptions();
+   void automaticPreflight();
+  }catch{
+   if(ticket===preflightLoadToken){
+    catalogAircraft=[];refreshCatalogOptions();
+    message('route-preflight-status','Unable to load aircraft catalog. Cannot verify aircraft for this route.');
+   }
+  }
+ };
+ const automaticPreflight=async({force=false}={})=>{
+  const reader=getData()?.reader,from=selected('from'),to=selected('to');
+  const configurationId=selectedConfigurationId(),aircraft=catalogChoice();
+  const assessment=aircraft?runwayAssessment(aircraft):null;
+  const departureUtc=utcFromInput($('route-preflight-departure-utc')?.value);
+  const arrivalUtc=utcFromInput($('route-preflight-arrival-utc')?.value);
+  const weeklySchedule=availableSchedule().map(row=>({day:row.day,time:row.time}));
+  if(assessment?.status==='BLOCKED'){
+   message('route-preflight-status','BLOCKED — '+assessment.blockingReasons.join(' '));
+   return {gameHardBlocked:true,reason:'runway'};
+  }
+  if(routeAirportPairStatus(from,to)==='SAME_AIRPORT'){
+   message('route-preflight-status','BLOCKED — same-airport flights are not valid routes.');
+   return {gameHardBlocked:true,reason:'SAME_AIRPORT'};
+  }
+  if(!from||!to||!configurationId){
+   message('route-preflight-status','Select two different airports and an aircraft. Runway length is checked immediately.');
+   return null;
+  }
+  if(!departureUtc||!arrivalUtc){
+   message('route-preflight-status','Enter a departure and arrival UTC example. The game checks every selected weekday over four weeks automatically.');
+   return null;
+  }
+  if(!weeklySchedule.length||weeklySchedule.some(x=>!validLocalDeparture(x.time))){
+   message('route-preflight-status','Select weekdays and valid local departure times to check each flight in the weekly timetable.');
+   return null;
+  }
+  if(Date.parse(arrivalUtc)<=Date.parse(departureUtc)||
+   Date.parse(arrivalUtc)-Date.parse(departureUtc)>72*3600*1000){
+   message('route-preflight-status','Arrival must be after departure and not more than 72 hours later.');
+   return null;
+  }
+  if(!getData()?.connected||typeof reader?.noiseCurfewCheck!=='function'){
+   message('route-preflight-status','Airport restriction service unavailable — cannot verify this route.');
+   return null;
+  }
+  const ownedChoice=ownedFleet.find(a=>'owned:'+a.id===$('route-aircraft')?.value)||null;
+  const departureStand=departureStandFromTimeline(selectedAircraftTimeline());
+  if(!departureStand){
+   message('route-preflight-status','Different departure stands across weekdays; split this schedule into separate route drafts.');
+   return null;
+  }
+  const arrivalStand=$('route-arrival-stand')?.value||'terminal';
+  const signature=[from.key,to.key,configurationId,departureUtc,arrivalUtc,
+   JSON.stringify(weeklySchedule),departureStand,arrivalStand,ownedChoice?.id||'',
+   editingFlightNumber||''].join('|');
+  if(!force&&preflightCache?.signature===signature)return preflightCache.result;
+  if(!force&&preflightPromise?.signature===signature)return preflightPromise.promise;
+  const ticket=++preflightRequest;
+  message('route-preflight-status','Checking each selected weekday across four weeks for runway, curfew and confirmed noise restrictions...');
+  const promise=(async()=>{
+   try{
+    const result=await reader.noiseCurfewCheck({
+     originAirportKey:from.key,destinationAirportKey:to.key,configurationId,
+     departureUtc,arrivalUtc,weeklySchedule
+    });
+    if(ticket!==preflightRequest)return null;
+    if(!result||typeof result.gameHardBlocked!=='boolean')throw Error('Invalid restriction result');
+    let slotAvailability=null;
+    const scheduler=getData()?.scheduler;
+    if(!result.gameHardBlocked&&ownedChoice&&typeof scheduler?.slotCheck==='function'){
+     try{
+      slotAvailability=await scheduler.slotCheck({
+       airlineId:getData().airline.id,aircraftInventoryId:ownedChoice.id,
+       originAirportKey:from.key,destinationAirportKey:to.key,
+       referenceDepartureUtc:departureUtc,referenceArrivalUtc:arrivalUtc,
+       weeklySchedule,departureStand,arrivalStand,
+       ...(loadDraft?.()?.routes?.find(d=>d?.flightNumber===editingFlightNumber)?.serverScheduleId?
+        {existingId:loadDraft().routes.find(d=>d?.flightNumber===editingFlightNumber).serverScheduleId}:
+        serverDrafts.find(d=>d.flightNumber===flightNumberFor(
+         flightPrefixFor(getData().airline).prefix,$('route-plan-number')?.value))?.id?
+         {existingId:serverDrafts.find(d=>d.flightNumber===flightNumberFor(
+          flightPrefixFor(getData().airline).prefix,$('route-plan-number')?.value)).id}:{})
+      });
+     }catch{slotAvailability=null;}
+    }
+    if(ticket!==preflightRequest)return null;
+    const checkedResult={...result,slotAvailability};
+    message('route-weather-check',formatRouteWeatherPreview(result.weatherPreview));
+    preflightCache={signature,result:checkedResult};
+    if(ownedChoice){
+     const available=slotAvailability?.available===true;
+     const originOk=slotAvailability?.departureAvailable===true;
+     const destinationOk=slotAvailability?.arrivalAvailable===true;
+     message('route-slot-check',
+      (originOk?'✓ Departure available':'✕ Departure unavailable')+' · '+
+      (destinationOk?'✓ Arrival available':'✕ Arrival unavailable'));
+     const display=$('route-slot-check');
+     if(display){display.classList.toggle('has-conflict',!available);
+      display.classList.toggle('has-available',available);}
+    }else{
+     message('route-slot-check','Owned aircraft required to check or reserve game slots');
+    }
+    const failures=[];
+    for(const [place,leg] of [['Origin',result.origin],['Destination',result.destination]]){
+     if(!leg)continue;
+     if(leg.runwayBlocked){
+      const available=typeof leg.availableRunwayM==='number'?Math.floor(leg.availableRunwayM):null;
+      const required=typeof leg.requiredRunwayM==='number'?Math.ceil(leg.requiredRunwayM):null;
+      failures.push(place+': runway not suitable'+(available!==null&&required!==null?
+       ' ('+available.toLocaleString('en-US')+' m available; '+required.toLocaleString('en-US')+' m needed)':''));
+     }
+     if(leg.curfewBlocked)failures.push(place+': departure or arrival prohibited by airport hours');
+     if(leg.verifiedNoiseBlocked)failures.push(place+': confirmed aircraft noise restriction');
+    }
+    const weeklyBlocks=Array.isArray(result.blockedWeeklyOccurrences)?result.blockedWeeklyOccurrences:[];
+    const blockedDetail=weeklyBlocks.slice(0,3).map(x=>
+     String(x.departureUtc||'Unknown time')+' UTC ('+
+      [x.originOutcome,x.destinationOutcome].filter(Boolean).join(' / ').replace(/_/g,' ')+')').join('; ');
+    const checked=result.weeklyOccurrencesChecked||weeklySchedule.length;
+    const status=result.gameHardBlocked?'BLOCKED — '+(blockedDetail||failures.join(' ')||String(result.gameScheduleOutcome||'Airport restriction applies')):
+     result.needsReview?'No confirmed airport ban for '+checked+' checked departures, but operating restrictions are not fully verified.':
+      'No confirmed runway, nighttime or noise restrictions for '+checked+' checked departures. Other flight permissions still apply.';
+    message('route-preflight-status',status);
+    const save=$('route-plan-save');
+    if(save)save.disabled=result.gameHardBlocked||runwayAssessment(aircraft).status==='BLOCKED'||
+      (Boolean(ownedChoice)&&typeof getData()?.scheduler?.save==='function'&&
+       slotAvailability?.available!==true)||
+      routeAirportPairStatus(from,to)!=='VALID';
+    return checkedResult;
+   }catch{
+    if(ticket===preflightRequest){
+     preflightCache=null;
+     message('route-preflight-status','Airport restriction check unavailable — no verified flight permission.');
+     message('route-weather-check','Forecast unavailable — no weather authorization');
+    }
+    return null;
+   }finally{
+    if(preflightPromise?.signature===signature)preflightPromise=null;
+   }
+  })();
+  preflightPromise={signature,promise};
+  return promise;
+ };
+ main?.addEventListener('click',async event=>{
+  const target=event.target?.closest?.('button');
+  if(!target)return;
+  if(target.dataset.routeServerDeleteId){
+   const id=target.dataset.routeServerDeleteId;
+   const airlineId=getData()?.airline?.id,scheduler=getData()?.scheduler;
+   if(!airlineId||typeof scheduler?.delete!=='function'){
+    message('route-server-draft-status','Schedule deletion service unavailable. Slots remain reserved.');
+    return;
+   }
+   target.disabled=true;
+   try{
+    const result=await scheduler.delete({airlineId,scheduleId:id});
+    if(result.deleted!==true)throw Error('Deletion not confirmed');
+    serverDrafts=serverDrafts.filter(d=>d.id!==id);
+    renderServerScheduleList();
+    const current=loadDraft?.()||{};
+    const cleaned=r=>r?.serverScheduleId===id?
+      {...r,serverScheduleId:null,slotsReserved:false}:r;
+    if(Array.isArray(current.routes))draftWrite('routes',current.routes.map(cleaned));
+    if(current.route?.serverScheduleId===id)draftWrite('route',cleaned(current.route));
+    doc.dispatchEvent(new CustomEvent('airlinerra:route-draft-saved'));
+    message('route-server-draft-status','Schedule deleted. Reserved airport slots released.');
+    clearPreflight();
+   }catch{
+    target.disabled=false;
+    message('route-server-draft-status','Deletion not confirmed. Slot reservations have not been released.');
+   }
+   return;
+  }
+  if(target.dataset.routeActivationReadinessId){
+   const id=target.dataset.routeActivationReadinessId;
+   const airlineId=getData()?.airline?.id,scheduler=getData()?.scheduler;
+   if(!airlineId||typeof scheduler?.activationCheck!=='function'){
+    message('route-server-draft-status','Flight activation service is unavailable.');
+    return;
+   }
+   message('route-server-draft-status','Checking restrictions and operational readiness...');
+   try{
+    const result=await scheduler.activationCheck({airlineId,scheduleId:id});
+    const missing=Array.isArray(result.reasons)?result.reasons.slice(0,6)
+      .map(x=>String(x).replace(/_/g,' ').toLowerCase()).join('; '):'';
+    message('route-server-draft-status',String(result.status||'Activation unavailable').replace(/_/g,' ')+
+     (missing?' · '+missing:'')+'. No flight activated.');
+   }catch{
+    message('route-server-draft-status','Activation readiness check failed. No flight activated.');
+   }
+   return;
+  }
+  if(target.dataset.routeCountryTrigger){
+   const side=target.dataset.routeCountryTrigger;
+   const list=$('route-'+side+'-country-list'),open=Boolean(list?.hidden);
+   hideCountryMenus();
+   if(list&&open){list.hidden=false;target.setAttribute('aria-expanded','true');}
+   return;
+  }
+  if(target.dataset.routeCountryChoice){
+   const side=target.dataset.routeCountryChoice;
+   const select=$('route-'+side+'-country');
+   if(select){
+    select.value=target.dataset.countryIso||'';
+    select.dispatchEvent(new Event('change',{bubbles:true}));
+    countryFlag(side);
+   }
+   hideCountryMenus();return;
+  }
+  if(target.dataset.routeAirportSide&&target.dataset.routeAirportKey){
+   const side=target.dataset.routeAirportSide;
+   pickers[side].choose(target.dataset.routeAirportKey);
+   hideSuggestions(side);return;
+  }
+  if(target.id==='route-plan-swap'){
+   const from=selected('from'),to=selected('to');
+   if(!from||!to){message('route-feedback','Select two airports before swapping.');return;}
+   for(const [side,a] of [['from',to],['to',from]]){
+    $('route-'+side+'-country').value=a.countryIso;countryFlag(side);
+   }
+   await Promise.all([pickers.from.load(),pickers.to.load()]);
+   pickers.from.choose(to.key);pickers.to.choose(from.key);
+   message('route-feedback','Origin and destination exchanged.');show();return;
+  }
+  if(target.id==='route-plan-preview'){
+   const from=selected('from'),to=selected('to');
+   if(!from||!to||from.key===to.key){
+    message('route-feedback','Choose two different approved airports before previewing.');return;
+   }
+   show();
+   message('route-feedback','Route preview ready. Select an aircraft and weekday departures below.');
+   return;
+  }
+  if(target.id==='route-plan-new'){
+   await resetRouteForm();
+   message('route-plan-status','Form cleared. Nothing was saved. Enter a route and click Create new route to save a draft.');
+   return;
+  }
+  if(target.id!=='route-plan-save')return;
+  const data=getData(),from=selected('from'),to=selected('to');
+  const flightNumber=flightNumberFor(flightPrefixFor(data?.airline).prefix,
+   $('route-plan-number')?.value);
+  const schedule=availableSchedule();
+  if(!data?.connected||!data.airline?.id){
+   message('route-plan-status','Sign in with a verified airline before saving a draft.');return;
+  }
+  if(routeAirportPairStatus(from,to)!=='VALID'){
+   message('route-plan-status','BLOCKED — choose two different approved airports.');return;
+  }
+  if(!flightNumber){
+   message('route-plan-status','Enter 1–4 digits after a valid airline flight prefix.');return;
+  }
+  if(!schedule.length||schedule.some(row=>!validLocalDeparture(row.time))){
+   message('route-plan-status','Select at least one weekday and a valid local departure time.');return;
+  }
+  const operation=validateFlightDraftOptions({
+   departureStand:departureStandFromTimeline(selectedAircraftTimeline()),
+   arrivalStand:$('route-arrival-stand')?.value,
+   turnaroundMinutes:Number($('route-turnaround')?.value),
+   fares:Object.fromEntries(['economy','premium','business','first'].map(label=>
+    [label,$('route-fare-'+label)?.value||''])),
+   onboard:$('route-onboard-service')?.value,
+   baggage:$('route-baggage-service')?.value,
+   cargo:$('route-cargo-service')?.value
+  });
+  if(!operation){
+   message('route-plan-status','Check turnaround (45–360 minutes), fares ($0–100,000), stand and service choices.');
+   return;
+  }
+  const flightAircraft=$('route-aircraft')?.value||null;
+  const ownedChoice=ownedFleet.find(a=>'owned:'+a.id===flightAircraft)||null;
+  const selectedCatalog=catalogChoice(),selectedRunway=selectedCatalog?runwayAssessment(selectedCatalog):null;
+  if(selectedRunway?.status==='BLOCKED'){
+   message('route-plan-status','BLOCKED — This aircraft cannot use the route. '+selectedRunway.blockingReasons.join(' '));
+   return;
+  }
+  if(!ownedChoice){
+   message('route-plan-status','Select an in-service aircraft owned or leased by this company. Test and catalogue aircraft cannot be scheduled.');
+   return;
+  }
+  const canSaveToServer=routeDraftSaveMode(data?.scheduler)==='server-planning';
+  // Owner-verified planning saves do NOT reserve slots or require invented
+  // arrival timestamps. Commercial schedule creation uses a separate gate.
+  const preflight=await automaticPreflight({force:true});
+  if(preflight?.gameHardBlocked===true){
+   message('route-plan-status','BLOCKED — a verified airport restriction prevents saving this route.');
+   return;
+  }
+  const timeline=selectedAircraftTimeline();
+  if(timeline.errors.length){
+   message('route-plan-status','Aircraft schedule conflict: '+timeline.errors[0].text);
+   const details=$('route-aircraft-timeline');if(details)details.open=true;
+   return;
+  }
+  if(!departureStandFromTimeline(timeline)){
+   message('route-plan-status','This route needs different departure stands on different weekdays. Split the draft into separate routes.');
+   return;
+  }
+  const groundConflict=groundStopConflict();
+  if(groundConflict){
+   message('route-plan-status','Aircraft turnaround conflict: '+groundConflict);
+   return;
+  }
+  // Other flight durations, time zones and slots are still not verified.
+  // A local draft never mutates server finance, aircraft, schedules or live flights.
+  const draft={from,to,flightNumber,flights:schedule.length,schedule,
+   storage:canSaveToServer?'server-planning':'browser',
+   aircraftId:flightAircraft,
+   aircraftConfigurationId:selectedCatalog?.id??ownedChoice.configurationId,
+   aircraftLabel:[selectedCatalog?.manufacturer||ownedChoice.manufacturer,
+    selectedCatalog?.model||ownedChoice.model,
+    selectedCatalog?.configuration].filter(Boolean).join(' ')||ownedChoice.registration,
+   catalogPreviewOnly:false,testAircraft:false,
+   serverScheduleId:null,serverPlanningId:null,
+   referenceDepartureUtc:utcFromInput($('route-preflight-departure-utc')?.value),
+   referenceArrivalUtc:utcFromInput($('route-preflight-arrival-utc')?.value),
+   airportRuleScreen:{gameHardBlocked:false,needsReview:preflight?.needsReview!==false,
+    checkedAt:new Date().toISOString(),notFlightActivation:true},
+   operation,status:'draft',operationallyVerified:false};
+  const latest=loadDraft?.()||{},routes=Array.isArray(latest.routes)?latest.routes:[];
+  if(routes.some(x=>x?.flightNumber===flightNumber&&x?.flightNumber!==editingFlightNumber)){
+   message('route-plan-status','Flight number already exists. Open that draft from My routes to edit it.');
+   return;
+  }
+  const filtered=routes.filter((x,i)=>i!==editingLegacyIndex&&x?.flightNumber!==editingFlightNumber&&x?.flightNumber!==flightNumber);
+  if(filtered.length>=25){
+   message('route-plan-status','Maximum 25 route drafts. Remove another draft in My routes.');
+   return;
+  }
+  const previousServerDraft=routes.find(x=>x?.flightNumber===editingFlightNumber);
+  if(previousServerDraft?.serverScheduleId&&!ownedChoice){
+   message('route-plan-status','This server schedule must stay linked to your registered fleet aircraft. Choose an owned/leased aircraft.');
+   return;
+  }
+  if(canSaveToServer){
+   const scheduler=data.scheduler;
+   message('route-plan-status','Saving owner-verified planning route in your airline database...');
+   try{
+    const result=await scheduler.planSave({
+     airlineId:data.airline.id,aircraftInventoryId:ownedChoice.id,
+     flightNumber,originAirportKey:from.key,destinationAirportKey:to.key,
+     weeklySchedule:schedule,
+     departureStand:operation.departureStand,
+     arrivalStand:operation.arrivalStand,
+     turnaroundMinutes:operation.turnaroundMinutes,
+     fares:operation.fares,service:operation.service,
+     referenceDepartureUtc:draft.referenceDepartureUtc&&draft.referenceArrivalUtc?
+      draft.referenceDepartureUtc:null,
+     referenceArrivalUtc:draft.referenceDepartureUtc&&draft.referenceArrivalUtc?
+      draft.referenceArrivalUtc:null
+    });
+    if(result?.status!=='planning'||typeof result.planId!=='string'||
+       result.canActivateNormalFlight!==false||result.slotsReserved!==false||
+       result.ledgerPosted!==false)
+     throw Error('UNVERIFIED_PLAN_SAVE_CONFIRMATION');
+    draft.serverPlanningId=result.planId;
+    draft.storage='server-planning';
+    serverPlans=[{
+     planId:result.planId,status:'planning',flightNumber,
+     aircraftInventoryId:ownedChoice.id,
+     originAirportKey:from.key,destinationAirportKey:to.key,
+     from,to,schedule,operation,
+     referenceDepartureUtc:draft.referenceDepartureUtc,
+     referenceArrivalUtc:draft.referenceArrivalUtc
+    },...serverPlans.filter(p=>p.flightNumber!==flightNumber)];
+   }catch(error){
+    const reason=String(error?.message||'');
+    message('route-plan-status',reason.includes('409')||reason.includes('CONFLICT_')?
+      'NOT SAVED — airline, aircraft, airport or flight number is not eligible. Check the route details.':
+      'NOT SAVED — server planning save failed. This route has not been recorded in Supabase.');
+    return;
+   }
+  }
+  if(!draftWrite('routes',[...filtered,draft])){
+   message('route-plan-status',draft.serverPlanningId?
+    'Route saved in the airline database. Local cache is unavailable; open My Routes to load it from the server.':
+    'NOT SAVED — browser storage is unavailable. No local route draft was created.');
+   if(!draft.serverPlanningId)return;
+  }
+  // My Routes uses the routes array, not the legacy single-route key.
+  // A failed compatibility write must never hide a successfully stored route.
+  draftWrite('route',draft);
+  doc.dispatchEvent(new CustomEvent('airlinerra:route-draft-saved',{
+   detail:{flightNumber,serverSaved:Boolean(draft.serverPlanningId||draft.serverScheduleId)}
+  }));
+  await resetRouteForm();
+  const text=flightNumber+(draft.serverPlanningId?
+   ' saved in your AIRLINE DATABASE as a planning route. It is available under My Routes on any signed-in device. No slots reserved or flights activated.':
+   ' saved as a LOCAL planning draft. It is now listed under My Routes in this browser tab. No server schedule or flight was created.');
+  const status=$('route-plan-status');
+  if(status){status.classList.add('is-success');status.textContent=text;}
+
+ });
+ function updateData(data){
+  for(const side of ['from','to'])
+   populateAirportCountries($('route-'+side+'-country'),data?.countries||[],doc);
+  renderCountryMenus(data?.countries||[]);
+  refreshCatalogOptions();
+  updatePrefix(data?.airline);
+  const id=data?.connected?data?.airline?.id||null:null;
+  if(id!==preflightCatalogFor){
+   preflightCatalogFor=id;
+   void loadPreflightCatalog();
+  }
+  if(id!==currentAirlineId){
+   currentAirlineId=id;homeKey=null;homeLocation=null;
+   void loadOwnedScheduleData(id);
+   for(const side of ['from','to'])pickers[side].invalidate();
+   void activateHome(data);
+  }
+  show();
+ }
+ plannerInitialized=true;
+ updateWeek();show();
+ return Object.freeze({updateData,preview:show,selected});
+}
++(cents/100).toFixed(2);
+  note.textContent=pkg.name+' · airline cost '+usd(estimate.totalCostCents)+
+   ' per passenger; '+usd(estimate.totalCostCents*passengers)+' for '+
+   passengers+' assumed passengers · potential onboard sales '+
+   usd(estimate.paidRevenueCents*passengers)+
+   '. Estimates only: no flight money or bookings changed.';
+ };
+ const refreshCabinPackages=(preferred=null)=>{
+  const picker=$('route-cabin-package');if(!picker)return;
+  const {packages,ready}=cabinSnapshot(),chosen=preferred??picker.value??'basic';
+  picker.replaceChildren(new Option('No onboard service','none'));
+  for(const pkg of packages){
+   if(!pkg?.id||!/^(?:basic|pkg-[1-9][0-9]{0,5})$/.test(pkg.id))continue;
+   picker.add(new Option(pkg.name,pkg.id));
+  }
+  if(![...picker.options].some(x=>x.value==='basic'))
+   picker.add(new Option('Basic Cabin Service','basic'));
+  if(chosen&&![...picker.options].some(x=>x.value===chosen)){
+   const missing=new Option('Deleted package — select another',chosen);
+   missing.disabled=true;picker.add(missing);
+  }
+  picker.value=chosen&&[...picker.options].some(x=>x.value===chosen)?chosen:'basic';
+  picker.disabled=!ready;updateCabinEstimate();
+  doc.dispatchEvent?.(new Event('airlinerra:refresh-game-select-menus'));
+ };
+ doc.addEventListener('airlinerra:cabin-packages-updated',event=>{
+  if(event.detail?.airlineId===getData()?.airline?.id)refreshCabinPackages();
+ });
+
  const days=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
  let homeKey=null,homeLocation=null,currentAirlineId=null,homeTicket=0,detailTicket=0;
  let lastKeys='',airportProfiles={},editingFlightNumber=null,editingLegacyIndex=null,editSerial=0;
