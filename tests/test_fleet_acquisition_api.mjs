@@ -72,6 +72,42 @@ test('only valid owner-scoped nickname changes are accepted',async()=>{
  });
  assert.equal((await denied.handler(request(rename))).status,403);
 });
+test('maintenance preview is a read-only owner-verified six-check profile with type-specific MROs',async()=>{
+ const body={action:'maintenance-preview',airlineId:airline,aircraftInventoryId:aircraft};
+ assert.equal(validateFleetAcquisitionRequest(body),true);
+ for(const extra of [{priceUsd:0},{approved:true},{targetAirportKey:'OURAIRPORTS:1'},
+  {conditionPct:100},{aircraftInventoryId:'invalid'}])
+  assert.equal(validateFleetAcquisitionRequest({...body,...extra}),false);
+ const checks=['daily','weekly','a','b','c','d'].map(checkCode=>({
+  checkCode,durationHours:checkCode==='a'?6:1,groupName:'Small narrowbody',
+  manufactureYear:null,conditionPct:null,lastCompletedUtc:null
+ }));
+ const site={checkCode:'c',airportKey:'OURAIRPORTS:26887',
+  airportCode:'WSSS',airportName:'Singapore Changi Airport',provider:'SIA Engineering'};
+ const scoped=setup((sql,args)=>{
+  if(sql===FLEET_SQL.owner)return {rowCount:1,rows:[{id:airline}]};
+  if(sql===FLEET_SQL.maintenance){
+   assert.deepEqual(args,[airline,aircraft]);return {rowCount:6,rows:checks};
+  }
+  if(sql===FLEET_SQL.maintenanceSites){
+   assert.deepEqual(args,[airline,aircraft]);return {rowCount:1,rows:[site]};
+  }
+  throw Error('Unapproved maintenance SQL');
+ });
+ const response=await scoped.handler(request(body));
+ assert.equal(response.status,200);
+ const payload=await response.json();
+ assert.equal(payload.previewOnly,true);
+ assert.equal(payload.canScheduleMaintenance,false);
+ assert.equal(payload.canBookFerryFlight,false);
+ assert.equal(payload.checks.length,6);
+ assert.equal(payload.maintenanceSites[0].airportCode,'WSSS');
+ const foreign=setup(sql=>{
+  if(sql===FLEET_SQL.owner)return {rowCount:0,rows:[]};
+  throw Error('Foreign airframe maintenance read must be blocked');
+ });
+ assert.equal((await foreign.handler(request(body))).status,403);
+});
 test('auth, same-origin route, and safe payload validation run before opening a database connection',async()=>{
  let used=false;
  const {handler}=setup(()=>{used=true;throw Error('Unexpected query')},
