@@ -1,10 +1,11 @@
 /** Localhost-only Airlinerra bridge. Normal built-site preview uses the same
- * authenticated Supabase game API as production, but ONLY for allowed reads.
+ * authenticated Supabase game API as production, but ONLY for allowed reads and limited owner-checked edits.
  * A direct PostgreSQL adapter requires an explicit developer opt-in and private
  * credentials in the server environment; never expose either to the browser.
  */
 import {createCanonicalGameApi,CANONICAL_GAME_API_PATHS} from '../../server/canonical-game-api.mjs';
 import {validateFlightSchedulePayload} from '../../server/flight-schedule-service.mjs';
+import {validateFleetAcquisitionRequest} from '../../server/fleet-acquisition-service.mjs';
 import {AIRLINERRA_INVITED_TESTER_PUBLIC_SETTINGS} from '../invited-tester-public-settings.mjs';
 export const REAL_PLAYER_PATHS=CANONICAL_GAME_API_PATHS;
 const REF='hwllkabgzaynalahvkpz';
@@ -20,7 +21,7 @@ export const LOCAL_PLAYER_API_PATHS=Object.freeze([
  ...CANONICAL_GAME_API_PATHS,FLEET_READ_PATH,SCHEDULE_READ_PATH
 ]);
 /** The local gateway never forwards payment, schedule reservation,
- * delivery update or other state-changing command.
+ * delivery update, payments or operational state-changing command.
  */
 export function allowedLocalOwnerRead(pathname,payload){
  if(pathname!==FLEET_READ_PATH&&pathname!==SCHEDULE_READ_PATH)return false;
@@ -29,6 +30,10 @@ export function allowedLocalOwnerRead(pathname,payload){
  if(payload.action==='list')
   return Object.keys(payload).length===2 &&
    Object.keys(payload).every(x=>x==='action'||x==='airlineId');
+ // Nickname edits are harmless owner-verified metadata updates; never allow
+ // purchase, delivery, schedule activation or any other fleet write here.
+ if(pathname===FLEET_READ_PATH&&payload.action==='update-nickname')
+  return validateFleetAcquisitionRequest(payload);
  // Explicitly allow ONLY an authenticated, owner-checked, pre-operational
  // planning-draft save. The deployed Edge function revalidates everything.
  // Slot reservations, normal schedule writes and commercial operations
