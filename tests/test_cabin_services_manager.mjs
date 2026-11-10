@@ -96,3 +96,24 @@ test('cabin services UI is wired into real Operations page and protected website
  assert.match(manager,/No flight was modified/);
  assert.doesNotMatch(manager,/\.auth\.signUp|service_role|sb_secret_|fetch\(|airline_cash|INSERT INTO/i);
 });
+
+test('Cabin Services follows My routes page layout with one shared white panel and readable mobile fields',async()=>{
+ const readWeb=name=>readFile(new URL('../website/'+name,import.meta.url),'utf8');
+ const [workspace,operations,manager,css]=await Promise.all([
+  readWeb('airline-workspace.mjs'),readWeb('airline-operations-center.mjs'),
+  readWeb('cabin-services-manager.mjs'),readWeb('player-app.css')
+ ]);
+ assert.match(workspace,/const card=\(title,content,kicker='WORKSPACE'\)=>'<article class="panel workspace-panel">/);
+ assert.match(operations,/const card=\(title,body,kicker='OPERATIONS PLANNING'\)=>'<article class="panel workspace-panel">/);
+ assert.match(workspace,/'service':\(\)=>card\('Cabin service packages'/);
+ assert.match(operations,/card\('My routes'/);
+ assert.match(workspace,/'SERVICE DIRECTORY'/);
+ assert.doesNotMatch(manager,/element\(doc,'h2','', 'Cabin Services Management'\)/);
+ assert.match(manager,/className='cabin-product-cell'|element\(doc,'label','cabin-product-cell'\)/);
+ assert.match(manager,/cabin-mobile-label/);
+ assert.match(css,/\.cabin-product-sidebar,\.cabin-product-editor,\.cabin-assignment-panel\{/);
+ assert.match(css,/\.cabin-product-table-head\{\s*background:#f1f6fc/);
+ assert.match(css,/\.cabin-mobile-label\{display:none\}/);
+ assert.match(css,/\.cabin-mobile-label\{display:block/);
+ assert.match(css,/:root\[data-ui-theme="dark"\] \.cabin-product-item-name strong/);
+});
