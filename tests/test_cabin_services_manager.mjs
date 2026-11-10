@@ -4,7 +4,7 @@ import {readFile} from 'node:fs/promises';
 import {
  CABIN_SERVICE_CATALOG,CABIN_MODE_OPTIONS,CABIN_CLASSES,
  createBasicCabinPackage,initialCabinState,cleanCabinState,
- cleanCabinPackage,cabinPackageEstimate
+ cleanCabinPackage,cabinPackageEstimate,cabinPackageUnitEconomics
 } from '../website/cabin-services-manager.mjs';
 
 test('each airline automatically has a protected Basic package and all four classes',()=>{
@@ -56,6 +56,38 @@ test('all offered services have valid mode and prices; arbitrary names and amoun
  assert.equal(CABIN_MODE_OPTIONS.length,3);
  assert.equal(CABIN_CLASSES.length,4);
 });
+test('unit economics show free one-serving airline allowance without assuming a flight',()=>{
+ const basic=createBasicCabinPackage();
+ const noFlight=cabinPackageUnitEconomics(basic);
+ assert.equal(noFlight.includedPerPassengerCents,65);
+ assert.equal(noFlight.includedItems,1);
+ assert.equal(noFlight.flightTotalsCalculated,false);
+ assert.equal(noFlight.excludesWastageAndUnsoldStock,true);
+ const custom=structuredClone(basic);
+ custom.items.coffee.mode='included';
+ custom.items.hotmeal.mode='included';
+ const free=cabinPackageUnitEconomics(custom);
+ assert.equal(free.includedPerPassengerCents,65+150+950);
+ assert.equal(free.rows.find(x=>x.id==='hotmeal').oneUnitIncludedPerPassengerCents,950);
+ assert.equal(free.rows.find(x=>x.id==='softdrink').oneUnitIncludedPerPassengerCents,0);
+});
+test('paid service shows airline supply cost, selling price and gross per-unit margin',()=>{
+ const custom=structuredClone(createBasicCabinPackage());
+ custom.items.coffee.mode='onboard';
+ custom.items.coffee.onboardCents=500;
+ custom.items.hotmeal.mode='onboard';
+ custom.items.hotmeal.onboardCents=2200;
+ const economics=cabinPackageUnitEconomics(custom);
+ const coffee=economics.rows.find(x=>x.id==='coffee');
+ const meal=economics.rows.find(x=>x.id==='hotmeal');
+ assert.deepEqual([coffee.airlineUnitCostCents,coffee.passengerPriceCents,coffee.grossMarginPerSaleCents],[150,500,350]);
+ assert.deepEqual([meal.airlineUnitCostCents,meal.passengerPriceCents,meal.grossMarginPerSaleCents],[950,2200,1250]);
+ assert.equal(economics.includedPerPassengerCents,65);
+ assert.equal(coffee.airlineUnitCostBasis,'per item supplied');
+ assert.equal(economics.rows.find(x=>x.id==='wifi').airlineUnitCostBasis,'per access/use');
+ custom.items.coffee.onboardCents=100;
+ assert.equal(cabinPackageUnitEconomics(custom).rows.find(x=>x.id==='coffee').grossMarginPerSaleCents,-50);
+});
 test('saved state restores only valid packages and does not accept forged default package',()=>{
  const basic=createBasicCabinPackage();
  const comfort={...basic,id:'pkg-2',name:'Business Comfort',locked:false};
@@ -104,7 +136,11 @@ test('Flight Services setup never calculates imaginary flight costs or passenger
  const end=source.indexOf(' const onChange=event=>{',start);
  assert.ok(start>=0&&end>start);
  const displayed=source.slice(start,end);
- assert.ok(displayed.includes('Passenger selling price (USD)'));
+ assert.ok(displayed.includes('Passenger price (USD)'));
+ assert.ok(displayed.includes('Airline unit cost (USD)'));
+ assert.ok(displayed.includes("money(item.costCents)"));
+ assert.ok(displayed.includes('Unit margin '));
+ assert.ok(displayed.includes('cabin-included-unit-cost'));
  assert.ok(displayed.includes('Included in ticket'));
  assert.ok(displayed.includes('cabinServiceAttractiveness(working)'));
  for(const forbidden of ['cabin-preview-passengers','cabin-preview-hours',
