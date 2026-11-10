@@ -10,6 +10,7 @@ const baseRows={
  airlines:[],
  ledger:[{entry_kind:'STARTING_CAPITAL',amount_usd:'5000000.00',recorded_at:'2026-10-29T08:12:26.559Z'}],
  airports:[{airport_key:'OURAIRPORTS:111',airport_name:'Berlin Airport',airport_code:'EDDB',country_iso:'DE',municipality:'Berlin'}],
+ preparedAirports:[{airport_key:'OURAIRPORTS:20581',airport_name:'Grant County International Airport',airport_code:'G2-20581',country_iso:'US',municipality:'Moses Lake',latitude_deg:'47.2077',longitude_deg:'-119.3202',game_category:'Medium',game_data_status:'game_complete_estimated',commercial_access_scope:'GROUP2_PREPARED_NOT_ADMITTED'}],
  licenses:[{permission_code:'EU_AIRLINE_OPERATING_LICENCE',category:'airline',holder_scope:'operating_company',
    reference_basis:'eu_reference',title:'Airline operating licence',
    purpose:'Commercial air services within approved scope',
@@ -33,6 +34,7 @@ function make({enabled=true,verified=true,rows=baseRows}={}){
      if(sql===PLAYER_READ_SQL.airlines)return {rows:rows.airlines};
      if(sql===PLAYER_READ_SQL.ledger)return {rows:rows.ledger};
      if(sql===PLAYER_READ_SQL.airports)return {rows:rows.airports};
+     if(sql===PLAYER_READ_SQL.preparedAirports)return {rows:rows.preparedAirports};
      if(sql===PLAYER_READ_SQL.licenses)return {rows:rows.licenses};
      if(sql===PLAYER_READ_SQL.holdingStatus)return {rows:rows.holdingStatus};
      throw Error('Unexpected query');},
@@ -252,4 +254,35 @@ test('owner-only aircraft test fixtures are returned as explicitly nonoperationa
  assert.match(PLAYER_READ_SQL.airlines,/t\.airline_id=a\.id/);
  assert.match(PLAYER_READ_SQL.airlines,/a\.owner_player_id=\$1::uuid/);
  assert.match(PLAYER_READ_SQL.airlines,/t\.operationally_allowed=false/);
+});
+
+test('Group 2 prepared airport information is separately authenticated and cannot be booked',async()=>{
+ const s=make();
+ const response=await s.handler(request('/api/v1/player/prepared-airports',
+  {countryIso:'US',search:'Grant',offset:0}));
+ assert.equal(response.status,200);
+ const data=await response.json();
+ assert.equal(data.scope,'prepared_information_only');
+ assert.equal(data.bookable,false);
+ assert.equal(data.canActivateFlights,false);
+ assert.equal(data.airports.length,1);
+ assert.equal(data.airports[0].key,'OURAIRPORTS:20581');
+ assert.equal(data.airports[0].category,'Medium');
+ assert.equal(data.airports[0].commercialAccess,false);
+ assert.equal(data.airports[0].status,'prepared_only');
+ assert.deepEqual(s.counts().queries[0].params,['US','Grant',0]);
+ assert.match(PLAYER_READ_SQL.preparedAirports,/source_group='GROUP_2'/);
+ assert.match(PLAYER_READ_SQL.preparedAirports,/GROUP2_PREPARED_NOT_ADMITTED/);
+ assert.doesNotMatch(PLAYER_READ_SQL.airports,/airport_sections1_8_combined_catalog_v1/);
+ const invalid=make();
+ assert.equal((await invalid.handler(request('/api/v1/player/prepared-airports',
+  {countryIso:'US',offset:4000}))).status,400);
+ assert.equal((await make({verified:false}).handler(request('/api/v1/player/prepared-airports',
+  {countryIso:'US'}))).status,401);
+ const tampered=make({rows:{...baseRows,preparedAirports:[
+  {...baseRows.preparedAirports[0],commercial_access_scope:'EXISTING_GROUP1_APPROVAL'}
+ ]}});
+ assert.equal((await tampered.handler(request('/api/v1/player/prepared-airports',
+  {countryIso:'US'}))).status,503);
+ assert.equal(invalid.counts().connected,0);
 });
