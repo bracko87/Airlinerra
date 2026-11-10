@@ -432,15 +432,15 @@ test('Serbian merged route selector shows Ponikve as fifth planning airport',asy
    {...airport('OURAIRPORTS:4610','Belgrade Nikola Tesla Airport','LYBE','RS'),sourceGroup:'GROUP_1'},
    {...airport('OURAIRPORTS:31872','Morava Airport','LYKV','RS'),sourceGroup:'GROUP_1'},
    {...airport('OURAIRPORTS:4612','Niš Constantine the Great Airport','LYNI','RS'),sourceGroup:'GROUP_1'},
-   {...airport('OURAIRPORTS:1649','Ponikve Airport','G2-1649','RS'),
+   {...airport('OURAIRPORTS:1649','Ponikve Airport','LYUZ','RS'),
     sourceGroup:'GROUP_2',latitude:43.898899,longitude:19.697701,bookable:false}
   ];
   const picker=createAirportCountryPicker({country,search,airport:airportSelect,
    getReader:()=>({airports:async()=>({countryIso:'RS',airports:airportRows,nextOffset:null})})});
   country.value='RS';await picker.load();
   assert.equal(picker.getAirports().length,5);
-  assert.ok(airportSelect.options.some(o=>o.textContent.includes('Ponikve Airport') &&
-   o.textContent.includes('planning only')));
+  assert.ok(airportSelect.options.some(o=>o.textContent.includes('Ponikve Airport (LYUZ)')));
+  assert.ok(airportSelect.options.every(o=>!o.textContent.includes('Group 2')&&!o.textContent.includes('planning only')));
   assert.equal(picker.choose('OURAIRPORTS:1649'),true);
   assert.equal(picker.selected().bookable,false);
  }finally{globalThis.Option=old}
