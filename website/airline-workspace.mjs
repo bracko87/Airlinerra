@@ -1420,7 +1420,9 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
  for(const id of ['settings-time','settings-date','settings-units'])
   $(id)?.addEventListener('change',examples);
  const routePlannerController=createRoutePlanner({
-  doc,getData:()=>data,loadDraft:()=>safelyLoad(session,draftKey)||{},draftWrite
+  doc,getData:()=>data,loadDraft:()=>safelyLoad(session,draftKey)||{},draftWrite,
+  getCabinState:()=>({packages:cabinManager?.getPackages()||[],
+   ready:cabinManager?.isReady()===true})
  });
  doc.addEventListener('airlinerra:route-draft-saved',()=>{
   renderSchedule();
