@@ -15,6 +15,7 @@ import {createGamePermissionApplicationsView} from './game-permission-applicatio
 import {createRealOnboardingClient} from './real-onboarding-client.mjs';
 import {createDownwardMenu} from './setup-choice-menu.mjs';
 import {installGameSelectMenus} from './game-select-menus.mjs';
+import {installGameTimePickers} from './game-time-pickers.mjs';
 
 import {createAirlineWorkspace} from './airline-workspace.mjs';
 import {createOperationsCenter} from './airline-operations-center.mjs';
@@ -306,6 +307,7 @@ const collator=new Intl.Collator('en',{sensitivity:'base'});
 const menus=Object.fromEntries([['setup-world',false],['setup-country',true],['setup-airport-results',false],['airports-country',true]]
  .map(([id,flags])=>[id,createDownwardMenu(doc.getElementById(id),{flags})]));
 const gameSelectMenus=installGameSelectMenus({doc,root:doc.getElementById('player-main')});
+const gameTimePickers=installGameTimePickers({doc,root:doc.getElementById('player-main')});
 function refreshMenu(id){menus[id]?.refresh();}
 const SIX_CATEGORIES=new Set(['Local','Regional','Medium','Large','Major Hub','Mega Hub']);
 function selectedAirport(){
