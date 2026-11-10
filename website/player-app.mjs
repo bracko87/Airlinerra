@@ -52,6 +52,7 @@ function navigateTo(view){
   const returningFromAircraftProfile=doc.querySelector('[data-player-view="aircraft-profile"]')?.hidden===false;
   const selected=safePlayerView('#'+view);
   const name=selected==='onboarding'&&hasRealAirline?'overview':selected;
+  if(name==='fleet-aircraft')workspaceController?.openFleetAircraft?.(window.location.hash);
   if(name!==selected)window.history.replaceState({},'',playerViewUrl(name));
   for(const section of doc.querySelectorAll('[data-player-view]')){
     section.hidden=section.dataset.playerView!==name;
@@ -978,8 +979,8 @@ async function initialize(){
   // A static preview never checks the live user's credentials.
   const isLocal=isLocalDemoOrigin(window.location);
   const selected=safePlayerView(window.location.hash);
-  window.history.replaceState({},'',playerViewUrl(selected));
-  navigateTo(selected);
+  window.history.replaceState({},'',playerViewUrl(window.location.hash.slice(1)));
+  navigateTo(window.location.hash.slice(1));
   const readiness=onboardingReadiness();
   if(readiness.canCreate)throw Error('Prelaunch creation gate unexpectedly enabled.');
   if(isLocal){
@@ -1088,7 +1089,7 @@ doc.querySelectorAll('[data-go-view]').forEach(button=>button.addEventListener('
   window.history.replaceState({},'',playerViewUrl(view));
   navigateTo(view);
 }));
-window.addEventListener('hashchange',()=>{initialManagerLanding=false;navigateTo(safePlayerView(window.location.hash));});
+window.addEventListener('hashchange',()=>{initialManagerLanding=false;navigateTo(window.location.hash.slice(1));});
 signOut.addEventListener('click',async()=>{
   if(!auth)return;
   signOut.disabled=true;
