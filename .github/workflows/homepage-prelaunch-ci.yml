@@ -1,0 +1,29 @@
+name: Airlinerra homepage development notice and closed registration
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'website/index.html'
+      - 'website/styles.css'
+      - 'website/register.html'
+      - 'website/real-registration.mjs'
+      - 'website/registration-access.mjs'
+      - 'tests/test_homepage_account_entries.mjs'
+      - 'tests/test_registration_access.mjs'
+      - '.github/workflows/homepage-prelaunch-ci.yml'
+  workflow_dispatch:
+jobs:
+  homepage-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify public registration stays closed and existing sign-in remains linked
+        run: node --test tests/test_homepage_account_entries.mjs tests/test_registration_access.mjs
+      - name: Build protected Airlinerra website
+        run: cd website && npm run build
+      - name: Validate complete player bundle imports
+        run: node --test tests/test_player_built_module_graph.mjs
