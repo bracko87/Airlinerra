@@ -919,7 +919,11 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
     aircraft?.fuelRateStatus==='EXISTING_PROVISIONAL_DISTANCE_RATE'?
      'Existing provisional aircraft model estimate':
      'Not available',
-   'fleet-detail-fuel-type':'Not verified (fuel type research pending)',
+   'fleet-detail-fuel-type':aircraft?.fuelFamily==='AVGAS_PISTON'?
+    'Aviation gasoline (piston model; approved grade not verified)':
+    aircraft?.fuelFamily==='TURBINE_KEROSENE_ASSUMED'?
+    'Turbine kerosene / Jet fuel family (model reference; grade not verified)':
+    'Unknown (engine details missing)',
    'fleet-detail-range':fmtAircraftNumber(aircraft?.rangeKm,' km'),
    'fleet-detail-mtow':fmtAircraftNumber(aircraft?.mtowKg,' kg'),
    'fleet-detail-mlw':fmtAircraftNumber(aircraft?.mlwKg,' kg'),
