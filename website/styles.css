@@ -493,3 +493,35 @@ h2{font-weight:720}
 .nav-link{font-weight:570}
 .hero-proof strong{font-weight:650}
 @media(max-width:740px){.section{padding:66px 0}}
+
+/* Homepage prelaunch registration notice */
+.development-notice{
+ display:flex;align-items:flex-start;gap:12px;position:relative;z-index:3;
+ width:100%;margin:-48px 0 36px;padding:17px 19px;
+ border:1px solid #f2d1b6;border-left:4px solid #ff6b17;border-radius:11px;
+ background:#fffaf5;color:#173c60;box-shadow:0 8px 30px rgba(38,54,72,.05)
+}
+.development-notice-icon{
+ display:flex;align-items:center;justify-content:center;flex:none;
+ width:28px;height:28px;color:#d45d12;border-radius:50%;background:#fff0df
+}
+.development-notice-icon .icon{width:18px;height:18px}
+.development-notice strong{display:block;font-size:14px;line-height:1.45;color:#102f54}
+.development-notice p{font-size:12px;line-height:1.65;margin:4px 0 0;color:#526579}
+.button.registration-closed-button{
+ display:inline-flex;align-items:center;justify-content:center;gap:9px;
+ min-height:39px;border:1px solid #ced9e5;border-radius:9px;
+ background:#eaf0f6;color:#536a80!important;box-shadow:none!important;
+ font-size:12px;font-weight:750;cursor:not-allowed;pointer-events:none
+}
+.registration-closed-button .icon{width:15px;height:15px}
+.hero-buttons .registration-closed-button{min-height:49px;padding:13px 20px}
+.closing-section .registration-closed-button{background:#f1f5fa;color:#314e68!important}
+@media(max-width:900px){
+ .development-notice{margin:-32px 0 30px}
+}
+@media(max-width:600px){
+ .development-notice{gap:10px;margin:-24px 0 25px;padding:13px}
+ .development-notice strong{font-size:13px}
+ .development-notice p{font-size:11px}
+}
