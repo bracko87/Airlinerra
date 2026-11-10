@@ -10,7 +10,7 @@ const approved={officialGameClockConnected:true,trustedFlightOperationsReleased:
  financialPostingServiceReleased:true,airlineFundsVerified:true,
  idempotencyKeyReserved:true,aircraftInventoryId:'airframe-1',
  airlineId:'airline-1',downtimeHours:24,quotedTotalCents:12590000};
-test('refit is denied in today's unreleased World 1',()=>{
+test('refit is denied in the unreleased World 1',()=>{
  const x=cabinRefitReadiness({});
  assert.equal(x.ready,false);
  assert.ok(x.blockers.includes('GAME_CLOCK_NOT_CONNECTED'));
