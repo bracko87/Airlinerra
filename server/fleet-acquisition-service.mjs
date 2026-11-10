@@ -47,6 +47,9 @@ export function validateFleetAcquisitionRequest(body){
   ['economyType','premiumType','businessType','firstType'].every(k=>
    typeof body[k]==='string'&&/^[a-z][a-z0-9_]{2,39}$/u.test(body[k])) &&
   body.economy+body.premium+body.business+body.first>0;
+ if(body.action==='cabin-quote-status')return Object.keys(body).length===3 &&
+  Object.keys(body).every(k=>['action','airlineId','aircraftInventoryId'].includes(k))&&
+  uuid(body.aircraftInventoryId);
  if(body.action==='cabin-prepare-quote')return Object.keys(body).length===6 &&
   Object.keys(body).every(k=>['action','airlineId','aircraftInventoryId',
     'airportKey','providerKey','requestId'].includes(k)) &&
@@ -349,6 +352,38 @@ export const FLEET_SQL=Object.freeze({
   "extra_legroom_cm=EXCLUDED.extra_legroom_cm,updated_at=now() "+
   "WHERE airlinerra_game.aircraft_cabin_drafts_v1.airline_id=EXCLUDED.airline_id "+
   "RETURNING aircraft_inventory_id::text AS \"aircraftInventoryId\",updated_at AS \"savedAt\"",
+ cabinLatestQuote:"SELECT q.quote_id::text AS \"quoteId\",q.status, "+ 
+  "q.airport_key AS \"airportKey\",q.provider_key AS \"providerKey\", "+
+  "q.total_usd::text AS \"estimatedTotalUsd\", "+
+  "q.equipment_usd::text AS \"equipmentUsd\", "+
+  "q.installation_usd::text AS \"removalInstallationUsd\", "+
+  "q.estimated_downtime_hours AS \"estimatedDowntimeHours\", "+
+  "q.created_at AS \"preparedAt\", "+
+  "(q.draft_updated_at=d.updated_at) AS \"matchesCurrentDraft\", "+
+  "(r.configuration_id=i.configuration_id AND r.planning_status='game_planning_approved') "+
+  "AS \"providerStillEligible\", "+
+  "(p.location_status='grounded' AND p.airport_key=q.airport_key) "+
+  "AS \"confirmedAtRefitSite\", "+
+  "COALESCE(g.authoritative_clock_connected,false) AS \"clockConnected\", "+
+  "COALESCE(g.trusted_flight_execution_release='ACTIVATED',false) "+
+  "AS \"flightEngineReleased\", "+
+  "COALESCE(g.automatic_flight_and_fuel_settlement_enabled,false) "+
+  "AS \"financialSystemReleased\" "+
+  "FROM airlinerra_game.cabin_refit_prepared_quotes_v1 q "+
+  "JOIN airlinerra_game.airline_aircraft_inventory i "+
+  "ON i.id=q.aircraft_inventory_id AND i.airline_id=q.airline_id "+
+  "LEFT JOIN airlinerra_game.aircraft_cabin_drafts_v1 d "+
+  "ON d.aircraft_inventory_id=q.aircraft_inventory_id AND d.airline_id=q.airline_id "+
+  "LEFT JOIN airlinerra_game.cabin_refit_facility_types_v1 r "+
+  "ON r.world_id=1 AND r.airport_key=q.airport_key AND "+
+  "r.provider_key=q.provider_key AND r.configuration_id=i.configuration_id "+
+  "LEFT JOIN airlinerra_game.section9_aircraft_current_position_v1 p "+
+  "ON p.world_id=1 AND p.aircraft_inventory_id=q.aircraft_inventory_id "+
+  "AND p.airline_id=q.airline_id "+
+  "LEFT JOIN airlinerra_game.section9_flight_engine_readiness_audit_v1 g "+
+  "ON g.world_id=1 "+
+  "WHERE q.airline_id=$1::uuid AND q.aircraft_inventory_id=$2::uuid "+
+  "ORDER BY q.created_at DESC,q.quote_id DESC LIMIT 1",
  cabinPrepareQuote:"SELECT airlinerra_game.prepare_owned_cabin_refit_quote_v1("+
   "$1::uuid,$2::uuid,$3::uuid,$4::text,$5::text,$6::uuid) AS result",
  delivery:"SELECT airlinerra_game.check_owned_aircraft_delivery_v1($1::uuid,$2::uuid,$3::uuid) AS result",
@@ -492,6 +527,33 @@ export function createFleetAcquisitionHandler({verifyUserToken,database}={}){
      indicativeDowntimeHours:body.premium+body.business+body.first>0?48:24,
      status:'draft_saved_not_installed',canScheduleRefit:false,
      aircraftLocationUnchanged:true,liveSeatsUnchanged:true,cashDebited:false});
+   }
+   if(body.action==='cabin-quote-status'){
+    const owner=await client.query(FLEET_SQL.owner,[body.airlineId,playerId]);
+    if(owner.rowCount!==1)return respond(403,{error:'Airline not owned by this account'});
+    const latest=await client.query(FLEET_SQL.cabinLatestQuote,[
+     body.airlineId,body.aircraftInventoryId
+    ]);
+    const q=latest.rows?.[0];
+    if(!q)return respond(200,{status:'no_quote',airlineId:body.airlineId,
+     aircraftInventoryId:body.aircraftInventoryId,canBookRefit:false});
+    const blockers=['REFIT_APPOINTMENTS_NOT_RELEASED','GAME_HOUR_CLOCK_NOT_CONNECTED'];
+    if(q.matchesCurrentDraft!==true)blockers.push('SAVED_DESIGN_CHANGED');
+    if(q.providerStillEligible!==true)blockers.push('PROVIDER_NOT_TYPE_ELIGIBLE');
+    if(q.confirmedAtRefitSite!==true)blockers.push('AIRCRAFT_NOT_CONFIRMED_AT_FACILITY');
+    if(q.clockConnected!==true)blockers.push('GAME_DAY_CLOCK_NOT_CONNECTED');
+    if(q.flightEngineReleased!==true)blockers.push('FLIGHT_OPERATIONS_NOT_ACTIVATED');
+    if(q.financialSystemReleased!==true)blockers.push('FINANCIAL_SETTLEMENT_NOT_ACTIVATED');
+    return respond(200,{
+     status:q.status,airlineId:body.airlineId,aircraftInventoryId:body.aircraftInventoryId,
+     quoteId:q.quoteId,airportKey:q.airportKey,providerKey:q.providerKey,
+     estimatedTotalUsd:q.estimatedTotalUsd,equipmentUsd:q.equipmentUsd,
+     removalInstallationUsd:q.removalInstallationUsd,
+     estimatedDowntimeHours:q.estimatedDowntimeHours,preparedAt:q.preparedAt,
+     matchesCurrentDraft:q.matchesCurrentDraft===true,
+     blockers,canBookRefit:false,appointmentBooked:false,
+     moneyCharged:false,installedSeatsChanged:false
+    });
    }
    if(body.action==='cabin-prepare-quote'){
     const owner=await client.query(FLEET_SQL.owner,[body.airlineId,playerId]);
