@@ -304,6 +304,7 @@ let currentAirline=null,manageLogoBlob=null,manageLogoPreviewUrl=null,manageLogo
 let initialManagerLanding=false;
 let nextAirportOffset=null;
 let nextPreparedAirportOffset=null,preparedAirportLookupSerial=0,preparedAirportPageLoaded=false;
+let group2Plans=[];
 let setupAirportRequest=0,logoBlob=null,logoObjectUrl=null;
 const countryNameOf=code=>typeof Intl.DisplayNames==='function'
  ?new Intl.DisplayNames(['en'],{type:'region'}).of(code):code;
@@ -430,6 +431,38 @@ function drawRealWorlds(worlds){
     card.append(header,title,status);root.append(card);
   }
 }
+async function loadGroup2Plans(){
+ group2Plans=[];
+ if(!currentAirline?.id||!playerData?.group2LocationPlans)return false;
+ try{
+  const data=await playerData.group2LocationPlans();
+  if(data?.source!=='group2_planned_only'||data.commercialAccess!==false||
+    data.flightsEnabled!==false||!Array.isArray(data.locations)||data.locations.length>21||
+    data.locations.some(x=>x?.status!=='planned_only'||
+     !['future_hq','hub','station'].includes(x.type)||
+     typeof x.key!=='string'||!/^OURAIRPORTS:[1-9][0-9]{0,18}$/.test(x.key)))
+    throw Error('Unexpected Group 2 planning state');
+  group2Plans=data.locations;
+  return true;
+ }catch{return false;}
+}
+async function changeGroup2Plan(airportKey,type,remove=false){
+ const result=doc.getElementById('prepared-airports-feedback');
+ if(result)result.textContent='Saving planned location…';
+ try{
+  if(!currentAirline?.id)throw Error('Register an airline before planning a location.');
+  const data=remove?await playerData.removeGroup2Location(airportKey):
+   await playerData.saveGroup2Location({airportKey,type});
+  if(data?.commercialAccess!==false||data.flightsEnabled!==false||
+    (remove?data.removed!==true:data.location?.status!=='planned_only'))
+    throw Error('Unverified planning response.');
+  if(result)result.textContent=remove?'Planned location removed.':'Location saved as a plan only. Flights remain unavailable.';
+  await searchPreparedAirports();
+ }catch{
+  if(result)result.textContent='Could not save this location. Check your airline account and try again.';
+ }
+}
+
 async function searchPreparedAirports({offset=0}={}){
  const output=doc.getElementById('prepared-airports-results');
  const more=doc.getElementById('prepared-airports-more');
@@ -444,6 +477,7 @@ async function searchPreparedAirports({offset=0}={}){
  if(offset===0){output.replaceChildren();output.textContent='Loading prepared airports…';}
  more.disabled=true;
  try{
+  const plansAvailable=await loadGroup2Plans();
   const response=await playerData.preparedAirports({countryIso:'',search:query,offset});
   if(serial!==preparedAirportLookupSerial)return;
   if(response?.scope!=='prepared_information_only'||response.bookable!==false||
@@ -460,7 +494,40 @@ async function searchPreparedAirports({offset=0}={}){
     (airport.category?' · '+airport.category:'');
    const label=doc.createElement('span');label.className='hint';
    label.textContent='Prepared only — not available for routes or flights';
-   row.append(header,place,label);output.append(row);
+   row.append(header,place,label);
+   const chosen=group2Plans.find(x=>x.key===airport.key);
+   if(chosen){
+    const note=doc.createElement('span');note.className='hint';
+    note.textContent=(chosen.type==='future_hq'?'Future HQ':chosen.type==='hub'?'Hub':'Station')+' saved as plan — not active';
+    row.append(note);
+    if(plansAvailable){
+     const remove=doc.createElement('button');remove.type='button';remove.className='secondary';
+     remove.textContent='Remove plan';
+     remove.addEventListener('click',()=>{remove.disabled=true;void changeGroup2Plan(airport.key,chosen.type,true);});
+     row.append(remove);
+    }
+   }else if(plansAvailable){
+    const actions=doc.createElement('div');actions.className='prepared-airport-actions';
+    for(const [type,title] of [['future_hq','Plan future HQ'],['hub','Plan hub'],['station','Plan station']]){
+     const action=doc.createElement('button');action.type='button';action.className='secondary';
+     action.textContent=title;
+     action.addEventListener('click',()=>{
+      for(const button of actions.querySelectorAll('button'))button.disabled=true;
+      void changeGroup2Plan(airport.key,type);
+     });
+     actions.append(action);
+    }
+    row.append(actions);
+   }else if(!currentAirline?.id){
+    const note=doc.createElement('span');note.className='hint';
+    note.textContent='Register an airline to save a future location plan.';
+    row.append(note);
+   }else{
+    const note=doc.createElement('span');note.className='hint';
+    note.textContent='Planning service unavailable — choices are disabled.';
+    row.append(note);
+   }
+   output.append(row);
   }
   if(!output.children.length)output.textContent='No prepared airports match this search.';
   nextPreparedAirportOffset=Number.isInteger(response.nextOffset)?response.nextOffset:null;
