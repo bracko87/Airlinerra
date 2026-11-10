@@ -2492,3 +2492,49 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
 :root[data-ui-theme="dark"] #workspace-service .cabin-product-unit-cost strong{
  color:#e8f3ff
 }
+
+/* Cabin editor: adjustable row pitch, simple comfort/refit numbers, no card clutter. */
+#workspace-cabin-configurations .cabin-legroom-field,
+#workspace-aircraft-new-orders .cabin-legroom-field{
+ display:grid;grid-template-columns:minmax(0,1fr) minmax(90px,115px);
+ align-items:center;column-gap:12px;row-gap:5px;
+ padding:13px 2px 11px;margin:0;border-bottom:1px solid var(--line);
+ color:var(--navy);font-size:12px;font-weight:600
+}
+#workspace-cabin-configurations .cabin-legroom-field input,
+#workspace-aircraft-new-orders .cabin-legroom-field input{
+ width:100%;box-sizing:border-box;min-height:34px;padding:6px 10px;
+ border:1px solid #cbd9e7;border-radius:7px;
+ background:var(--card,#fff);color:var(--navy);font-size:12px
+}
+#workspace-cabin-configurations .cabin-legroom-field small,
+#workspace-aircraft-new-orders .cabin-legroom-field small{
+ grid-column:1 / -1;font-size:11px;line-height:1.5;
+ color:var(--muted);font-weight:400
+}
+#workspace-cabin-configurations .cabin-designer-unit,
+#workspace-aircraft-new-orders .cabin-designer-unit{
+ text-align:right;white-space:nowrap;font-size:12px;font-weight:650
+}
+#workspace-cabin-configurations .cabin-designer-status,
+#workspace-aircraft-new-orders .cabin-designer-status{
+ padding:8px 2px;margin:0;color:var(--navy);font-size:12px;line-height:1.5
+}
+#workspace-cabin-configurations .cabin-cost-breakdown{
+ border-top:1px solid var(--line);margin-top:6px;padding-top:11px;
+ font-weight:650
+}
+#workspace-cabin-configurations .cabin-designer-visual svg,
+#workspace-aircraft-new-orders .cabin-designer-visual svg{
+ display:block;width:100%;height:auto;max-height:none;overflow:visible
+}
+@media(max-width:580px){
+ #workspace-cabin-configurations .cabin-designer-row,
+ #workspace-aircraft-new-orders .cabin-designer-row{
+  grid-template-columns:minmax(65px,.6fr) minmax(120px,1.5fr) 60px 57px;
+  gap:6px
+ }
+}
+:root[data-ui-theme="dark"] .cabin-legroom-field input{
+ background:#192f45!important;color:#e8f2fb!important;border-color:#3b526b!important
+}
