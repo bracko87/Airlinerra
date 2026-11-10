@@ -47,6 +47,12 @@ export function validateFleetAcquisitionRequest(body){
   ['economyType','premiumType','businessType','firstType'].every(k=>
    typeof body[k]==='string'&&/^[a-z][a-z0-9_]{2,39}$/u.test(body[k])) &&
   body.economy+body.premium+body.business+body.first>0;
+ if(body.action==='cabin-prepare-quote')return Object.keys(body).length===6 &&
+  Object.keys(body).every(k=>['action','airlineId','aircraftInventoryId',
+    'airportKey','providerKey','requestId'].includes(k)) &&
+  uuid(body.aircraftInventoryId)&&uuid(body.requestId)&&
+  typeof body.airportKey==='string'&&/^[A-Za-z0-9:_-]{2,100}$/u.test(body.airportKey)&&
+  typeof body.providerKey==='string'&&/^[a-z0-9-]{2,100}$/u.test(body.providerKey);
  if(body.action==='maintenance-preview')return Object.keys(body).length===3 &&
   Object.keys(body).every(k=>['action','airlineId','aircraftInventoryId'].includes(k)) &&
   uuid(body.aircraftInventoryId);
@@ -343,6 +349,8 @@ export const FLEET_SQL=Object.freeze({
   "extra_legroom_cm=EXCLUDED.extra_legroom_cm,updated_at=now() "+
   "WHERE airlinerra_game.aircraft_cabin_drafts_v1.airline_id=EXCLUDED.airline_id "+
   "RETURNING aircraft_inventory_id::text AS \"aircraftInventoryId\",updated_at AS \"savedAt\"",
+ cabinPrepareQuote:"SELECT airlinerra_game.prepare_owned_cabin_refit_quote_v1("+
+  "$1::uuid,$2::uuid,$3::uuid,$4::text,$5::text,$6::uuid) AS result",
  delivery:"SELECT airlinerra_game.check_owned_aircraft_delivery_v1($1::uuid,$2::uuid,$3::uuid) AS result",
  nickname:"UPDATE airlinerra_game.airline_aircraft_inventory i "+
   "SET nickname=NULLIF(btrim($3::text),''),updated_at=now() "+
@@ -485,6 +493,17 @@ export function createFleetAcquisitionHandler({verifyUserToken,database}={}){
      status:'draft_saved_not_installed',canScheduleRefit:false,
      aircraftLocationUnchanged:true,liveSeatsUnchanged:true,cashDebited:false});
    }
+   if(body.action==='cabin-prepare-quote'){
+    const owner=await client.query(FLEET_SQL.owner,[body.airlineId,playerId]);
+    if(owner.rowCount!==1)return respond(403,{error:'Airline not owned by this account'});
+    const quote=await client.query(FLEET_SQL.cabinPrepareQuote,[
+     playerId,body.airlineId,body.aircraftInventoryId,body.airportKey,
+     body.providerKey,body.requestId
+    ]);
+    if(quote.rowCount!==1||!quote.rows?.[0]?.result)
+     return respond(503,{error:'Verified cabin refit quote unavailable'});
+    return respond(200,quote.rows[0].result);
+   }
    if(body.action==='maintenance-preview'){
     const owner=await client.query(FLEET_SQL.owner,[body.airlineId,playerId]);
     if(owner.rowCount!==1)return respond(403,{error:'Airline not owned by this account'});
@@ -539,7 +558,13 @@ export function createFleetAcquisitionHandler({verifyUserToken,database}={}){
      'AIRCRAFT_LEASE_BILLING_NOT_ACTIVE','USED_AIRCRAFT_OFFER_NOT_AVAILABLE',
      'AUCTION_REQUEST_ID_ALREADY_USED','AUCTION_IDEMPOTENCY_KEY_REUSED',
      'AUCTION_CLOSED_PENDING_SETTLEMENT','ALREADY_HIGHEST_BIDDER',
-     'AUCTION_BID_BELOW_REQUIRED_AMOUNT','AUCTION_ESCROW_INCONSISTENT'
+     'AUCTION_BID_BELOW_REQUIRED_AMOUNT','AUCTION_ESCROW_INCONSISTENT',
+     'CABIN_REFIT_NOT_PASSENGER_AIRCRAFT',
+     'CABIN_REFIT_PROVIDER_NOT_APPROVED_FOR_MODEL',
+     'CABIN_REFIT_SAVE_DESIGN_FIRST','CABIN_REFIT_INVALID_SEAT_SELECTION',
+     'CABIN_REFIT_INVALID_SEAT_COUNT','CABIN_REFIT_LAYOUT_EXCEEDS_SPACE',
+     'CABIN_REFIT_INSTALLED_LAYOUT_NOT_FOUND',
+     'CABIN_REFIT_IDEMPOTENCY_KEY_REUSED'
     ]);
     return respond(409,{reason:allowed.has(err.message)?err.message:'AIRCRAFT_ACQUISITION_UNAVAILABLE'});
    }
