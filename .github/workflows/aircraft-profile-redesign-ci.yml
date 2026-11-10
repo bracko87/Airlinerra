@@ -10,6 +10,11 @@ on:
       - 'server/fleet-acquisition-service.mjs'
       - 'supabase/migrations/20261110185000_aircraft_per_tail_private_images.sql'
       - 'tests/test_aircraft_profile_redesign.mjs'
+      - 'website/aircraft-configuration-options.mjs'
+      - 'website/aircraft-configuration-dialog.mjs'
+      - 'website/cabin-configuration-manager.mjs'
+      - 'website/dev-scripts/invited-overlay.mjs'
+      - 'tests/test_aircraft_configuration_modal.mjs'
       - 'tests/test_airline_workspace.mjs'
       - '.github/workflows/aircraft-profile-redesign-ci.yml'
   workflow_dispatch:
@@ -28,8 +33,10 @@ jobs:
           node --check website/invited-tester-auth.mjs
           node --check website/player-app.mjs
           node --check server/fleet-acquisition-service.mjs
+          node --check website/aircraft-configuration-dialog.mjs
+          node --check website/aircraft-configuration-options.mjs
       - name: Verify owned-aircraft image and flat row profile
-        run: node --test tests/test_aircraft_profile_redesign.mjs
+        run: node --test tests/test_aircraft_profile_redesign.mjs tests/test_aircraft_configuration_modal.mjs
       - name: Build production invited-account website
         run: cd website && npm run build
       - name: Validate complete browser module graph
