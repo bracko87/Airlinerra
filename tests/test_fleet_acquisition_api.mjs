@@ -137,9 +137,10 @@ test('used-aircraft market enforces validated read paging and bid identity',asyn
   if(sql===FLEET_SQL.marketState)return {rowCount:1,rows:[{
    worldState:'planned',marketOpen:false,leaseEnabled:false,serverNowUtc:'2026-11-10T14:00:00Z'
   }]};
-  if(sql===FLEET_SQL.usedLots){readCount++;assert.deepEqual(args,[airline,'all','Airbus',0]);
+  if(sql===FLEET_SQL.usedLots){readCount++;assert.deepEqual(args,[airline,'all','Airbus',0,'','','','']);
    return {rowCount:1,rows:[{listingId:offer,offeringType:'purchase',openingBidUsd:'22000000'}]};}
-  if(sql===FLEET_SQL.usedCount)return {rowCount:1,rows:[{total:1}]};
+  if(sql===FLEET_SQL.usedCount){assert.deepEqual(args,['all','Airbus','','','','']);return {rowCount:1,rows:[{total:1}]};}
+  if(sql===FLEET_SQL.usedCatalog)return {rowCount:1,rows:[{manufacturer:'Airbus',family:'A320',model:'A319neo',configuration:'PASSENGER-BASE'}]};
   throw Error('unexpected query');
  });
  const response=await api.handler(request(read));
@@ -148,6 +149,7 @@ test('used-aircraft market enforces validated read paging and bid identity',asyn
  assert.equal(result.total,1);
  assert.equal(result.marketOpen,false);
  assert.equal(result.offers.length,1);
+ assert.equal(result.catalog[0].manufacturer,'Airbus');
  assert.equal(readCount,1);
  const foreign=setup(sql=>{
   if(sql===FLEET_SQL.owner)return {rowCount:0,rows:[]};
@@ -165,6 +167,23 @@ test('used-aircraft market enforces validated read paging and bid identity',asyn
  const receipt=await submit.handler(request(bid));
  assert.equal(receipt.status,200);
  assert.equal((await receipt.json()).status,'bid_accepted');
+});
+test('market selectors are owner-verified and all financing drafts fail closed',async()=>{
+ const filter={action:'list-used',airlineId:airline,page:0,filterMode:'purchase',
+  search:'',manufacturer:'Boeing',family:'737',model:'737 MAX 8',configuration:'PASSENGER-BASE'};
+ assert.equal(validateFleetAcquisitionRequest(filter),true);
+ for(const invalid of [{manufacturer:'X'.repeat(101)},{family:'Bad\\nFamily'},
+  {configuration:5},{extraField:'ignore'}])
+   assert.equal(validateFleetAcquisitionRequest({...filter,...invalid}),false);
+ const app=await readFile(new URL('../website/airline-workspace.mjs',import.meta.url),'utf8');
+ for(const id of ['new-maker','new-family','new-model','new-configuration','new-payment',
+   'used-maker','used-family','used-model','used-configuration','used-market-payment'])
+  assert.ok(app.includes('id=\\"'+id+'\\"')||app.includes('id="'+id+'"'),id);
+ assert.match(app,/newAircraftChoice.payment==='cash'/);
+ assert.match(app,/usedMarketChoice.payment==='cash'/);
+ assert.match(app,/currentFactoryOffer/);
+ assert.match(app,/sellerName/);
+ assert.match(app,/estimatedDeliveryUtc/);
 });
 test('auth, same-origin route, and safe payload validation run before opening a database connection',async()=>{
  let used=false;
