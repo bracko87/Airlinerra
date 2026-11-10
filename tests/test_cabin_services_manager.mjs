@@ -122,11 +122,12 @@ test('flight services UI is wired into real Operations page and protected websit
  assert.match(bundle,/'cabin-services-manager\.mjs'/);
  assert.match(css,/\.cabin-product-layout/);
  assert.match(css,/\.cabin-product-policy-summary/);
- assert.match(css,/\.cabin-assignment-grid/);
+ assert.doesNotMatch(manager,/Default package by cabin class/);
+ assert.match(manager,/showSaveConfirmation\(next.name\)/);
  assert.match(manager,/getPackages:/);
  assert.match(manager,/getAssignments:/);
  assert.match(manager,/airlinerra\.cabin\.services\.v1\./);
- assert.match(manager,/No flight was modified/);
+ assert.match(manager,/available in Create new route/);
  assert.doesNotMatch(manager,/\.auth\.signUp|service_role|sb_secret_|fetch\(|airline_cash|INSERT INTO/i);
 });
 
@@ -169,7 +170,8 @@ test('Flight Services follows My routes page layout with one shared white panel 
  assert.doesNotMatch(manager,/element\(doc,'h2','', 'Cabin Services Management'\)/);
  assert.match(manager,/className='cabin-product-cell'|element\(doc,'label','cabin-product-cell'\)/);
  assert.match(manager,/cabin-mobile-label/);
- assert.match(css,/\.cabin-product-sidebar,\.cabin-product-editor,\.cabin-assignment-panel\{/);
+ assert.match(css,/\.cabin-product-sidebar,\.cabin-product-editor\{/);
+ assert.match(css,/\.cabin-package-saved-toast\{/);
  assert.match(css,/\.cabin-product-table-head\{\s*background:#f1f6fc/);
  assert.match(css,/\.cabin-mobile-label\{display:none\}/);
  assert.match(css,/\.cabin-mobile-label\{display:block/);
