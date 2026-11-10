@@ -55,7 +55,7 @@ test('new operations menu begins with hub review and continues to routes',async(
  const section=html.slice(html.indexOf('data-nav-group="operations"'),
   html.indexOf('data-nav-group="fleet"'));
  assert.deepEqual([...section.matchAll(/data-view-link="([^"]+)"/g)].map(m=>m[1]),
-  ['hubs','route-list','routes','schedule','service','tickets','staff']);
+  ['hubs','route-list','routes','schedule','service','cabin-configurations','licenses']);
  assert.doesNotMatch(section,/data-view-link="airline"/);
 });
 test('consistent medium-weight compact design across app, public, account and legal pages',async()=>{
