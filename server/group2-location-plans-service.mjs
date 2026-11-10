@@ -21,7 +21,7 @@ const eligibleSql=`select g.airport_key from airlinerra_game.airport_group2_game
  on c.airport_key=g.airport_key and c.world_id=1
  where g.airport_key=$1::text and c.source_group='GROUP_2'
  and c.commercial_access_scope='GROUP2_PREPARED_NOT_ADMITTED'
- and g.game_data_status='game_complete_estimated'
+ and c.game_data_status='game_complete_estimated'
  and not g.commercial_playable and not g.commercial_access_verified`;
 const countsSql=`select intent_type,airport_key from airlinerra_game.airport_group2_location_intents_v1
  where airline_id=$1::uuid and world_id=1 for update`;
