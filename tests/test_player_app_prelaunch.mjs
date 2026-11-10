@@ -162,3 +162,29 @@ test('real dashboard displays complimentary unlimited membership only when serve
  assert.match(js,/first.premiumUnlimited===true/);
  assert.match(js,/Premium Unlimited/);
 });
+
+test('prepared Group 2 airport catalog is informational only and separate from route selector',async()=>{
+ const [html,js,client,backend]=await Promise.all([
+  readFile(new URL('../website/private-player-app.html',import.meta.url),'utf8'),
+  readFile(new URL('../website/player-app.mjs',import.meta.url),'utf8'),
+  readFile(new URL('../website/player-read-client.mjs',import.meta.url),'utf8'),
+  readFile(new URL('../server/player-read-service.mjs',import.meta.url),'utf8')
+ ]);
+ assert.match(html,/id="prepared-airports-panel"/);
+ assert.match(html,/id="prepared-airports-results"/);
+ assert.match(html,/id="prepared-airports-search"/);
+ assert.match(html,/id="prepared-airports-more"/);
+ assert.match(html,/Prepared airports \(1,118\)/);
+ const section=html.split('id="prepared-airports-panel"')[1].split('</article>')[0];
+ assert.doesNotMatch(section,/route-plan|office-action|Airport profile|book-flight/i);
+ assert.match(js,/async function searchPreparedAirports/);
+ assert.match(js,/playerData\.preparedAirports\(/);
+ assert.match(js,/a\.bookable!==false/);
+ assert.match(js,/canActivateFlights!==false/);
+ assert.doesNotMatch(js.slice(js.indexOf('async function searchPreparedAirports'),js.indexOf('async function airportSearch')),/openAirport\(|createRoute\(|scheduleSave\(/);
+ assert.match(client,/preparedAirports:/);
+ assert.match(backend,/c\.source_group='GROUP_2'/);
+ assert.match(backend,/commercial_access_scope='GROUP2_PREPARED_NOT_ADMITTED'/);
+ assert.match(backend,/PREPARED_AIRPORTS_PATH/);
+ assert.match(backend,/sourceGroup:'GROUP_2'/);
+});
