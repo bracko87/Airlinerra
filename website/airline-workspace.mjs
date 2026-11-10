@@ -286,11 +286,22 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
  let scheduleSnapshot=null;
  let scheduleFetchVersion=0;
  let scheduleReadError=false;
- const cabinManager=createCabinServiceManager({doc,host:$('cabin-services-manager'),storage,identity});
+ let cabinManager=null;
  let scheduleSelectedDay=0;
  const scheduleDays=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
  for(const [name,render] of Object.entries(pages)){
   const el=$('workspace-'+name);if(el)el.innerHTML=render();
+ }
+ // The cabin manager's DOM host is created by the service page renderer above.
+ // Cabin services are optional UI: never reject a verified player's entire
+ // account session if a secondary feature cannot initialize.
+ const cabinHost=$('cabin-services-manager');
+ if(cabinHost){
+  try{
+   cabinManager=createCabinServiceManager({doc,host:cabinHost,storage,identity});
+  }catch{
+   console.warn('Airlinerra cabin service interface unavailable');
+  }
  }
  function applyPreferences(){
   doc.documentElement.dataset.uiTheme=preferences.theme;
@@ -594,7 +605,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   const oldAirlineId=data.airline?.id||null;
   data={...data,...next};
   const airline=data.airline;
-  cabinManager.updateData(data);
+  try{cabinManager?.updateData(data)}catch{console.warn('Airlinerra cabin service refresh unavailable')}
   if((airline?.id||null)!==oldAirlineId){
    // Never present an earlier airline's inventory or bookings while the
    // new owner's asynchronous authenticated reads are still in progress.
