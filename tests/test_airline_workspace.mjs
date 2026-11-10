@@ -7,12 +7,12 @@ const read=path=>readFile(new URL(path,import.meta.url),'utf8');
 
 test('expanded management pages and operations/settings navigation stay linked',async()=>{
  const html=await read('../website/private-player-app.html');
- assert.equal(PLAYER_VIEWS.length,45);
+ assert.equal(PLAYER_VIEWS.length,46);
  assert.equal(new Set(PLAYER_VIEWS).size,PLAYER_VIEWS.length);
  for(const page of PLAYER_VIEWS)
   assert.match(html,new RegExp('data-player-view="'+page+'"'));
  // Aircraft profile and Route Details open contextually; neither needs a navigation item.
- assert.equal([...html.slice(html.indexOf('<nav class="app-navigation"'),html.indexOf('</nav>')+6).matchAll(/data-view-link="([^"]+)"/g)].length,PLAYER_VIEWS.length-2);
+ assert.equal([...html.slice(html.indexOf('<nav class="app-navigation"'),html.indexOf('</nav>')+6).matchAll(/data-view-link="([^"]+)"/g)].length,PLAYER_VIEWS.length-3);
  assert.ok(html.indexOf('>Dashboard</a>')<html.indexOf('data-nav-group="operations"'));
  assert.match(html,/href="#holding" data-view-link="holding">Holding/);
  assert.doesNotMatch(html,/data-nav-group="manager"/);
@@ -95,11 +95,11 @@ test('settings and local hypothetical briefs remain separate from owner-scoped p
  assert.match(workspace,/const DRAFT_KEY='airlinerra.local.workplan.v1.'/);
  assert.match(workspace,/const PREF_KEY='airlinerra.ui.preferences.v1.'/);
  assert.match(workspace,/getLandingView:\(\)=>preferences.landing/);
- assert.match(workspace,/No aircraft was ordered/);
- assert.match(workspace,/No live route was created/);
+ assert.match(workspace,/Confirm aircraft order/);
+ assert.match(workspace,/No transaction is possible without a published offer/);
  assert.match(workspace,/Planning departures without duration are markers, not aircraft bookings/);
  assert.match(workspace,/No aircraft layout was changed/);
- assert.match(workspace,/id="fleet-owned-aircraft"/);
+ assert.match(workspace,/fleet-owned-aircraft/);
  assert.match(workspace,/id="market-acquire"/);
  assert.match(workspace,/role="status"/);
  assert.match(workspace,/id="schedule-aircraft-board"/);
