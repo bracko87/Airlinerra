@@ -28,6 +28,10 @@ export function createFleetAcquisitionClient({auth,origin,fetchImpl=(...a)=>fetc
  }
  return Object.freeze({
   list:airlineId=>post({action:'list',airlineId}),
+  listUsed:({airlineId,page=0,filterMode='all',search=''})=>
+   post({action:'list-used',airlineId,page,filterMode,search}),
+  bidUsed:({airlineId,listingId,bidUsd,registration,requestId})=>
+   post({action:'bid-used',airlineId,listingId,bidUsd,registration,requestId}),
   maintenancePreview:({airlineId,aircraftInventoryId})=>
    post({action:'maintenance-preview',airlineId,aircraftInventoryId}),
   updateNickname:({airlineId,aircraftInventoryId,nickname})=>
