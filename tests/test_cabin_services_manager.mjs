@@ -37,7 +37,7 @@ test('complimentary and paid product levels affect preview rating and cost diffe
  assert.ok(result.includedCents>15);
  assert.ok(result.indicativeMarginCents>0);
  const paid=structuredClone(pkg);
- paid.items.coffee.mode='online';
+ paid.items.coffee.mode='onboard';
  assert.ok(cabinPackageEstimate(paid).attractiveness<result.attractiveness);
  assert.ok(cabinPackageEstimate(paid).includedCents<result.includedCents);
 });
@@ -47,12 +47,13 @@ test('all offered services have valid mode and prices; arbitrary names and amoun
  custom.items.hotmeal={mode:'online',freeQty:0,onlineCents:1200,onboardCents:1500};
  custom.items.alcohol={mode:'onboard',freeQty:0,onlineCents:600,onboardCents:800};
  const result=cleanCabinPackage(custom);
- assert.equal(result.items.hotmeal.onlineCents,1200);
+ assert.equal(result.items.hotmeal.onlineCents,1500); // v1 compatibility mirrors onboard
  assert.equal(result.items.alcohol.mode,'onboard');
+ assert.equal(result.items.hotmeal.mode,'onboard'); // legacy online offer converted
  assert.equal(cleanCabinPackage({...custom,name:'<script>'}),null);
  assert.equal(cleanCabinPackage({...custom,id:'bad-id'}),null);
  assert.equal(cleanCabinPackage({...custom,name:'a'}),null);
- assert.equal(CABIN_MODE_OPTIONS.length,6);
+ assert.equal(CABIN_MODE_OPTIONS.length,4);
  assert.equal(CABIN_CLASSES.length,4);
 });
 test('saved state restores only valid packages and does not accept forged default package',()=>{
