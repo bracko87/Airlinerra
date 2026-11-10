@@ -37,7 +37,7 @@ test('real connected views remain while 16 richer section mounts render',async()
   read('../website/dev-scripts/invited-overlay.mjs'),read('../website/airline-workspace.mjs')
  ]);
  for(const view of ['fleet','routes','schedule','finances','worlds','airport-insights',
-  'airline','staff','rankings','service','aircraft-market','maintenance',
+  'airline','staff','rankings','service','aircraft-new-orders','aircraft-market','maintenance',
   'interface','notifications','help'])
   assert.match(html,new RegExp('id="workspace-'+view+'"'));
  assert.match(html,/id="world-directory"/);
