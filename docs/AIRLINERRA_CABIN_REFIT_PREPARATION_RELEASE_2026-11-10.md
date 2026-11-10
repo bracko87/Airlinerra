@@ -6,8 +6,17 @@
 - A valid, authenticated, current airline owner must request it through protected Fleet API action `cabin-prepare-quote`. Player ID is taken from verified bearer token, never the request body. Database function uses SECURITY INVOKER, ownership and active membership checks; the table and function are denied to public/anon/authenticated direct access.
 - Aircraft-profile dialogue now offers **Prepare refit quote (no booking)** after the user saves the cabin proposal and picks a type-matched facility. It sends only aircraft/airline/site/request IDs, **never a claimed price**. Existing save-proposal behavior remains.
 - New refit quote table stores only `prepared_not_booked` status: cannot charge airline cash, create a maintenance appointment, ground aircraft, alter installed seats, or post to airline ledger. No cron or automatic processor is attached.
-- Deployment: `airlinerra-fleet-acquisition` Supabase Edge function **v16**, ACTIVE; JWT is freshly checked by the hosted verifier in application logic, as in the previous deployed version. The dedicated cabin and aircraft-profile GitHub workflows passed on commit `7dd658eb09c76b428072a1b1cfc86003f34c88d2`.
+- Deployment: `airlinerra-fleet-acquisition` Supabase Edge function **v18**, ACTIVE; JWT is freshly checked by the hosted verifier in application logic, as in the previous deployed version. The dedicated cabin and aircraft-profile GitHub workflows passed on commit `7dd658eb09c76b428072a1b1cfc86003f34c88d2`.
 - Direct role ACL checks returned false for authenticated INSERT, anonymous SELECT and authenticated EXECUTE. Unauthorized owner test was rejected. Live verification immediately afterward: 0 prepared quotes, 0 refit planning records, 1 existing installed cabin, 0 EXPENSE ledger entries. No test-plane live changes.
+
+## Subsequent verified owner quote status and local preview work
+- `cabin-quote-status` reads the latest saved quote for the signed-in airline and aircraft only, and returns explicit blockers sourced from database status, including missing authoritative clock, no confirmed physical position, still-pending provider eligibility, stale saved draft and disabled flight/financial execution.
+- Aircraft Profile restores existing saved quote information after reopening the dialog; a design already saved on the same owned airframe does not need to be saved a second time just to prepare an updated quote.
+- The localhost proxy allowlist and `local-owner-fleet-reader.mjs` support `cabin-prepare-quote` and `cabin-quote-status` while refusing purchase, installation, slot reservation and unauthorized pricing fields.
+- SQL quoted-read acceptance ran inside an intentional rollback: a valid owned A319 draft and quote were created for the test and read correctly; afterward 0 drafts, 0 quotes and 0 expense entries remained.
+- Latest dedicated cabin/local tests and website build passed: https://github.com/bracko87/Airlinerra/actions/runs/42895850398 .
+- Both refit quote actions are non-binding: no booked appointment, debit, aircraft grounding, or installed cabin update.
+- Current verified state: 0 published/persisted refit quotes, 0 saved player designs, 0 EXPENSE ledger entries, World 1 `clock_source=not_connected`, 0 valid matching Vault tokens for `airlinerra_clock_job_token_v1`. Users must configure secret values through secured Supabase secrets management, not in chat.
 
 ## NOT completed (do not mark as live)
 1. **Browser acceptance test:** log in as the invited account; select A319; save a design; choose a type-specific facility; prepare quote; reload and verify. This has not been independently browser-tested in the user's session.
