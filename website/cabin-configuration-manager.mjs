@@ -136,6 +136,7 @@ export function createCabinConfigurationManager({doc,host,factoryHost}={}){
  if(!doc||!host)throw Error('Cabin planner needs an existing page host');
  let current={connected:false,airline:null,fleetClient:null};
  let loaded=null,selectedId=null,plan=null,factoryPlan=null,factoryConfigurationId=null;
+ let pendingFactoryOffer=null;
  let version=0;let renderedRows=[],factoryRows=[];
  let installedDisplay=null,usageLabel=null,statusLabel=null,previewSvg=null,siteSelect=null;
  let factoryUsage=null,factorySvg=null,factoryMessage=null;
@@ -151,7 +152,7 @@ export function createCabinConfigurationManager({doc,host,factoryHost}={}){
  }
  function renderFactory(){
   if(!factoryHost)return;
-  const factory=loaded?.factorySelection;
+  const factory=pendingFactoryOffer;
   if(!factory){factoryHost.textContent='Choose a passenger aircraft configuration to preview its seats.';return}
   if(factory.useType==='cargo'){factoryHost.textContent='Cargo aircraft: passenger cabin customization is not applicable.';return}
   if(!loaded?.seatTypes?.length){factoryHost.textContent='Loading seat catalog…';return}
@@ -180,7 +181,7 @@ export function createCabinConfigurationManager({doc,host,factoryHost}={}){
   updateFactory();
  }
  function updateFactory(){
-  const f=loaded?.factorySelection;if(!f||!factoryPlan||!factoryUsage)return;
+  const f=pendingFactoryOffer;if(!f||!factoryPlan||!factoryUsage)return;
   const evaluation=evaluateCabinPlan(factoryPlan,loaded.seatTypes,f.referenceSeats);
   const standard=factoryPlan.economy===Number(f.referenceSeats)&&
    factoryPlan.economyType==='eco_standard'&&
@@ -199,7 +200,7 @@ export function createCabinConfigurationManager({doc,host,factoryHost}={}){
    'Custom seat orders need the future factory-installation contract. For now they are a design preview, not a paid order.';
  }
  function getFactoryPlan(){
-  const f=loaded?.factorySelection;
+  const f=pendingFactoryOffer;
   if(!f||f.useType==='cargo')return {standard:true,valid:true};
   const val=evaluateCabinPlan(factoryPlan,loaded.seatTypes,f.referenceSeats);
   return {...val,standard:val.valid&&factoryPlan.economy===Number(f.referenceSeats)&&
@@ -342,12 +343,11 @@ export function createCabinConfigurationManager({doc,host,factoryHost}={}){
   selectAircraft(id){if(!loaded?.aircraft?.some(a=>a.aircraftInventoryId===id))return;
    selectedId=id;plan=null;render()},
   setFactoryAircraft(offer){
-   if(!loaded)return;
-   loaded.factorySelection=offer?{
+   pendingFactoryOffer=offer?{
     configurationId:offer.configurationId,referenceSeats:offer.referenceSeats,
     useType:offer.useType,manufacturer:offer.manufacturer,model:offer.model
    }:null;
-   renderFactory();
+   if(loaded)renderFactory();
   },
   getFactoryPlan,
   getDirectory:()=>loaded?.directory||[]
