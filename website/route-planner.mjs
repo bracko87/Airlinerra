@@ -856,9 +856,10 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
   if($('route-turnaround'))$('route-turnaround').value='45';
   for(const label of ['economy','premium','business','first'])
    if($('route-fare-'+label))$('route-fare-'+label).value='';
-  for(const id of ['route-onboard-service','route-baggage-service'])
+  for(const id of ['route-baggage-service'])
    if($(id))$(id).value='standard';
   if($('route-cargo-service'))$('route-cargo-service').value='none';
+  refreshCabinPackages('basic');
   for(let day=0;day<7;day++){
    const check=doc.querySelector('[data-route-day="'+day+'"]');
    const time=doc.querySelector('[data-route-time="'+day+'"]');
@@ -936,12 +937,12 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    $('route-fare-'+label).value=value===null||value===undefined?'':String(value);
   }
   for(const [id,field,values,def] of [
-   ['route-onboard-service','onboard',['standard','basic','enhanced'],'standard'],
    ['route-baggage-service','baggage',['standard','hand-only','checked'],'standard'],
    ['route-cargo-service','cargo',['none','requested'],'none']]){
    const value=route.operation?.service?.[field];
    $(id).value=values.includes(value)?value:def;
   }
+  refreshCabinPackages(route.operation?.service?.cabinPackageId||'basic');
   show();
   message('route-plan-status',route.flightNumber?
    'Editing '+route.flightNumber+' · Create new route will save the updated planning draft to your airline where connected.':
@@ -1297,13 +1298,19 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    turnaroundMinutes:Number($('route-turnaround')?.value),
    fares:Object.fromEntries(['economy','premium','business','first'].map(label=>
     [label,$('route-fare-'+label)?.value||''])),
-   onboard:$('route-onboard-service')?.value,
+   onboard:'basic',cabinPackageId:$('route-cabin-package')?.value,
    baggage:$('route-baggage-service')?.value,
    cargo:$('route-cargo-service')?.value
   });
   if(!operation){
    message('route-plan-status','Check turnaround (45–360 minutes), fares ($0–100,000), stand and service choices.');
    return;
+  }
+  const selectedPackageId=operation.service.cabinPackageId;
+  const availablePackages=cabinSnapshot();
+  if(!availablePackages.ready||!selectedPackageId||
+     (selectedPackageId!=='none'&&!availablePackages.packages.some(p=>p.id===selectedPackageId))){
+   message('route-plan-status','Cabin packages unavailable or the selection was deleted. Choose an available package before saving.');return;
   }
   const flightAircraft=$('route-aircraft')?.value||null;
   const ownedChoice=ownedFleet.find(a=>'owned:'+a.id===flightAircraft)||null;
@@ -1354,7 +1361,8 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    referenceArrivalUtc:utcFromInput($('route-preflight-arrival-utc')?.value),
    airportRuleScreen:{gameHardBlocked:false,needsReview:preflight?.needsReview!==false,
     checkedAt:new Date().toISOString(),notFlightActivation:true},
-   operation,status:'draft',operationallyVerified:false};
+   operation,status:'draft',operationallyVerified:false,
+   cabinCostPreviewPassengers:Number($('route-cabin-passengers')?.value)||0};
   const latest=loadDraft?.()||{},routes=Array.isArray(latest.routes)?latest.routes:[];
   if(routes.some(x=>x?.flightNumber===flightNumber&&x?.flightNumber!==editingFlightNumber)){
    message('route-plan-status','Flight number already exists. Open that draft from My routes to edit it.');
@@ -1440,6 +1448,9 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    preflightCatalogFor=id;
    void loadPreflightCatalog();
   }
+  if(id!==cabinOptionAirlineId){
+   cabinOptionAirlineId=id;refreshCabinPackages('basic');
+  }else refreshCabinPackages();
   if(id!==currentAirlineId){
    currentAirlineId=id;homeKey=null;homeLocation=null;
    void loadOwnedScheduleData(id);
@@ -1449,6 +1460,6 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
   show();
  }
  plannerInitialized=true;
- updateWeek();show();
+ updateWeek();refreshCabinPackages('basic');show();
  return Object.freeze({updateData,preview:show,selected});
 }
