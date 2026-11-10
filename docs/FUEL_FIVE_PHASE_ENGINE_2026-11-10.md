@@ -86,3 +86,17 @@ For implementation we use simpler, explicitly disclosed balancing factors rather
 3. Obtain fuel price/availability evidence at airports by fuel family, supplier, date, and local taxes. Six airport game-tier multipliers remain deliberately **non-quoted game estimates**.
 4. Make the future server-owned aircraft fuel stock/tank, per-phase burn, reserve/alternate policy, airport uplift and accounting processor idempotent; do not activate until real trusted movements and safety gates pass.
 5. Visually verify signed-in routes, edge-function authentication and the deployed frontend before claiming game-readiness.
+
+## 2026-11-10 universal gameplay fuel decision (supersedes fuel-family split **for game calculations**)
+
+The player approved **one fuel type for every Airlinerra aircraft**:
+
+- Gameplay label: **Turbine/kerosene — model-level game assumption**.
+- Private read-only gameplay view: `airlinerra_game.aircraft_game_fuel_family_v1`.
+- SQL verified: **271/271** catalog configurations in this view report `TURBINE_KEROSENE_ASSUMED` and `UNIVERSAL_GAMEPLAY_ASSUMPTION`.
+- The airline-owned fleet API reads this gameplay view (v13). Route fuel-price estimates now work with the universal kerosene tier assumptions for every aircraft with the normal pricing input.
+- **Different aircraft still have different consumption rates**; the common fuel type does not unify fuel burn, tank capacity or flight time.
+- The separate source-research views `aircraft_fuel_family_reference_v1`/`v2` are **unchanged**. For example, the DC-6's real piston/AVGAS evidence remains stored as `research_fuel_family`. This is deliberate: the game simplification must never falsify aircraft research.
+- No claim of a certified installed engine, approved fuel grade or actual airport supply. Every gameplay row keeps `refuelling_approved=false` and `fuel_financial_settlement_approved=false`.
+- Existing provisional fuel rates and estimated airport-tier prices remain game estimates, not actual invoices.
+- The isolated fuel CI passed, including browser build; signed-in frontend visual verification remains outstanding.
