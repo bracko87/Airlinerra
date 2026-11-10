@@ -58,7 +58,12 @@ export function installGameTimePickers({doc,root}={}){
      button.setAttribute('aria-pressed',String(time===active));
      button.addEventListener('click',()=>{
       chosen=type==='hour'?time+chosen.slice(2):chosen.slice(0,3)+time;
-      render();
+      // Do not rebuild the popup during this click. Removing the clicked
+      // button before the event bubbles would make the document's outside
+      // click handler think the user clicked outside and close the menu.
+      heading.textContent='Departure time · '+chosen;
+      for(const option of group.querySelectorAll('.game-time-option'))
+       option.setAttribute('aria-pressed',String(option.dataset.gameTimeValue===time));
      });
      group.append(button);
     }
@@ -127,7 +132,13 @@ export function installGameTimePickers({doc,root}={}){
   }
  });
  observer.observe(root,{subtree:true,childList:true,attributes:true,attributeFilter:['disabled']});
- const onClick=event=>{if(opened&&!opened.wrap.contains(event.target))close()};
+ const onClick=event=>{
+  if(!opened)return;
+  // The event path is stable even if another listener changes popup DOM.
+  const path=typeof event.composedPath==='function'?event.composedPath():null;
+  if(path?.includes(opened.wrap)||opened.wrap.contains(event.target))return;
+  close();
+ };
  const onKey=event=>{if(opened&&event.key==='Escape'){const active=opened;close();active.trigger.focus()}};
  const onScroll=event=>{if(opened&&!opened.popup.contains(event.target))close()};
  doc.addEventListener('click',onClick);
