@@ -132,7 +132,7 @@ function appendRow(doc,table,c,typeList,plan,onEdit){
  row.append(label,select,input,indicator);table.append(row);
  return {indicator,input,select};
 }
-export function createCabinConfigurationManager({doc,host,factoryHost,onDirectoryUpdate}={}){
+export function createCabinConfigurationManager({doc,host,factoryHost,onDirectoryUpdate,onFactoryLayoutChange}={}){
  if(!doc||!host)throw Error('Cabin planner needs an existing page host');
  let current={connected:false,airline:null,fleetClient:null};
  let loaded=null,selectedId=null,plan=null,factoryPlan=null,factoryConfigurationId=null;
@@ -198,6 +198,7 @@ export function createCabinConfigurationManager({doc,host,factoryHost,onDirector
   else factorySvg?.replaceChildren();
   factoryMessage.textContent=standard?'Standard seats will be included in the aircraft price.':
    'Custom seat orders need the future factory-installation contract. For now they are a design preview, not a paid order.';
+  try{onFactoryLayoutChange?.()}catch{console.warn('Factory layout order control unavailable')}
  }
  function getFactoryPlan(){
   const f=pendingFactoryOffer;
