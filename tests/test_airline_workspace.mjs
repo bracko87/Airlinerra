@@ -7,19 +7,19 @@ const read=path=>readFile(new URL(path,import.meta.url),'utf8');
 
 test('expanded management pages and operations/settings navigation stay linked',async()=>{
  const html=await read('../website/private-player-app.html');
- assert.equal(PLAYER_VIEWS.length,47);
+ assert.equal(PLAYER_VIEWS.length,48);
  assert.equal(new Set(PLAYER_VIEWS).size,PLAYER_VIEWS.length);
  for(const page of PLAYER_VIEWS)
   assert.match(html,new RegExp('data-player-view="'+page+'"'));
  // Aircraft profile and Route Details open contextually; neither needs a navigation item.
- assert.equal([...html.slice(html.indexOf('<nav class="app-navigation"'),html.indexOf('</nav>')+6).matchAll(/data-view-link="([^"]+)"/g)].length,PLAYER_VIEWS.length-3);
+ assert.equal([...html.slice(html.indexOf('<nav class="app-navigation"'),html.indexOf('</nav>')+6).matchAll(/data-view-link="([^"]+)"/g)].length,PLAYER_VIEWS.length-4);
  assert.ok(html.indexOf('>Dashboard</a>')<html.indexOf('data-nav-group="operations"'));
  assert.match(html,/href="#holding" data-view-link="holding">Holding/);
  assert.doesNotMatch(html,/data-nav-group="manager"/);
  const operations=html.slice(html.indexOf('data-nav-group="operations"'),html.indexOf('data-nav-group="fleet"'));
- for(const name of ['routes','route-list','hubs','schedule','service','tickets'])
+ for(const name of ['routes','route-list','hubs','schedule','service','cabin-configurations'])
   assert.match(operations,new RegExp('data-view-link="'+name+'"'));
- assert.doesNotMatch(operations,/data-view-link="staff"|data-view-link="worlds"|data-view-link="airports"/);
+ assert.doesNotMatch(operations,/data-view-link="staff"|data-view-link="worlds"|data-view-link="airports"|data-view-link="tickets"/);
  const employees=html.slice(html.indexOf('data-nav-group="employees"'),html.indexOf('data-nav-group="marketing"'));
  assert.match(employees,/data-view-link="staff"/);
  const statistics=html.slice(html.indexOf('data-nav-group="statistics"'),html.indexOf('data-nav-group="account"'));
