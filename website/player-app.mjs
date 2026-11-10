@@ -502,7 +502,7 @@ async function loadPlayerReadData({local=false}={}){
   catch{console.warn('Airlinerra secondary directory failed to display');}
   try{
     workspaceController?.updateData({connected:true,airline:first||null,worlds:data.worlds,
-     countries:data.countries,reader:playerData,scheduler,fleetClient,cabinServiceClient});
+     countries:data.countries,reader:playerData,scheduler,fleetClient,cabinServiceClient,aircraftMedia:auth});
     operationsController?.updateData({connected:true,airline:first||null,worlds:data.worlds,countries:data.countries,reader:playerData,scheduler});
   }
   catch{console.warn('Airlinerra secondary workspace failed to display');}
@@ -541,7 +541,7 @@ async function loadPlayerReadData({local=false}={}){
   console.warn('Airlinerra player overview',readStage,code);
   playerData=null;
   hasRealAirline=false; // Unknown because the protected read failed - NOT proof no airline exists.
-  workspaceController?.updateData({connected:false,airline:null,reader:null,scheduler:null,fleetClient:null,cabinServiceClient:null});
+  workspaceController?.updateData({connected:false,airline:null,reader:null,scheduler:null,fleetClient:null,cabinServiceClient:null,aircraftMedia:null});
   operationsController?.updateData({connected:false,airline:null,reader:null});
   currentAirline=null;
   renderAirlineDashboard(doc,{airline:null,ledgerEntries:null});
