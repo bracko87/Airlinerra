@@ -1,7 +1,7 @@
 /** Safe localhost preview reader for actual company-owned/leased fleet.
  * This uses the signed-in session and the protected same-origin proxy.
- * The proxy forwards only read-only 'list' and 'slot-check' actions.
- * All acquisition, cancellation, delivery, schedule creation and payments
+ * The proxy forwards reads and exactly one owner-verified planning-draft write.
+ * All acquisition, cancellation, delivery, slot reservation, flight activation and payments
  * remain unavailable in localhost preview.
  */
 const LOCAL_ORIGIN='http://localhost:5188';
@@ -18,7 +18,7 @@ export function createLocalOwnerFleetReaders({auth,origin,fetchImpl=globalThis.f
    body:JSON.stringify(body),mode:'same-origin',credentials:'omit',
    cache:'no-store',redirect:'error',referrerPolicy:'no-referrer'
   });
-  if(!response.ok)throw Error('LOCAL_AIRCRAFT_READ_HTTP_'+response.status);
+  if(!response.ok)throw Error('LOCAL_AIRLINERRA_API_HTTP_'+response.status);
   const result=await response.json();
   if(!result||typeof result!=='object'||Array.isArray(result))
    throw Error('Invalid airline aircraft response');
@@ -29,6 +29,13 @@ export function createLocalOwnerFleetReaders({auth,origin,fetchImpl=globalThis.f
  });
  const scheduler=Object.freeze({
   list:airlineId=>read(SCHEDULE_PATH,{action:'list',airlineId}),
+  planSave:({airlineId,aircraftInventoryId,flightNumber,originAirportKey,
+   destinationAirportKey,weeklySchedule,departureStand=null,arrivalStand='terminal',
+   turnaroundMinutes,fares,service,referenceDepartureUtc=null,referenceArrivalUtc=null})=>
+    read(SCHEDULE_PATH,{action:'plan-save',airlineId,aircraftInventoryId,
+     flightNumber,originAirportKey,destinationAirportKey,weeklySchedule,
+     departureStand,arrivalStand,turnaroundMinutes,fares,service,
+     referenceDepartureUtc,referenceArrivalUtc}),
   slotCheck:args=>read(SCHEDULE_PATH,{action:'slot-check',
    airlineId:args?.airlineId,aircraftInventoryId:args?.aircraftInventoryId,
    originAirportKey:args?.originAirportKey,
