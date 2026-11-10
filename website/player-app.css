@@ -1744,24 +1744,95 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
 .fleet-row-action{justify-self:end}
 #player-main .fleet-view-button{min-height:28px;padding:5px 9px;font-size:11px;line-height:1.25;border-radius:6px;margin:0}
 .fleet-empty{padding:18px;margin:0;color:var(--muted);font-size:12px}
-.fleet-detail-back{margin-bottom:15px}
-#fleet-detail-name{font-size:19px;color:var(--navy);margin:4px 0 5px}
-#fleet-detail-subtitle{margin:0 0 16px}
-.fleet-detail-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
-.fleet-detail-grid>div{background:#f5f8fc;border:1px solid var(--line);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:7px;min-width:0}
-.fleet-detail-grid span{font-size:11px;color:var(--muted)}
-.fleet-detail-grid strong{font-size:13px;overflow-wrap:anywhere;color:var(--navy)}
-.fleet-nickname-editor{margin:22px 0 12px;max-width:580px}
-.fleet-nickname-controls{display:flex;gap:8px;align-items:center}
-.fleet-nickname-controls input{min-height:38px;flex:1;min-width:0;padding:8px 11px;border:1px solid var(--line);border-radius:7px;background:var(--card,#fff);color:var(--navy)}
-#player-main .fleet-nickname-controls button{min-height:36px;padding:7px 13px;font-size:12px;white-space:nowrap;margin:0}
-:root[data-ui-theme="dark"] .fleet-inventory-head,:root[data-ui-theme="dark"] .fleet-detail-grid>div{background:#20364e}
-@media(max-width:920px){.fleet-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* Aircraft Profile — exactly the My routes white panel and flat row language. */
+.fleet-detail-back{margin:0 0 17px}
+#player-main .fleet-detail-back button{margin:0}
+.fleet-aircraft-profile-top{
+ display:grid;grid-template-columns:minmax(300px,.85fr) minmax(0,1.15fr);
+ gap:24px;align-items:start;margin:0 0 24px
+}
+.fleet-aircraft-image-panel{min-width:0}
+.fleet-aircraft-image-frame{
+ display:flex;align-items:center;justify-content:center;
+ height:300px;width:100%;padding:14px;overflow:hidden;
+ background:#f7f9fc;border:1px solid var(--line);border-radius:10px
+}
+.fleet-aircraft-image-frame img{
+ display:block;max-width:100%;max-height:100%;object-fit:contain
+}
+.fleet-aircraft-image-frame img[hidden],.fleet-aircraft-image-frame p[hidden]{display:none!important}
+.fleet-aircraft-image-frame .hint{margin:0;text-align:center}
+.fleet-aircraft-image-actions{padding:12px 0 0}
+.fleet-aircraft-image-actions .workspace-label{margin:2px 0 7px;font-size:12px}
+#workspace-fleet-aircraft #fleet-aircraft-image-file{
+ width:100%;max-width:none;min-height:41px;padding:8px;
+ font-size:12px;border-radius:8px;background:#f7f9fc
+}
+.fleet-aircraft-image-buttons{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+#player-main .fleet-aircraft-image-buttons button{
+ margin:0;padding:8px 12px;font-size:12px;min-height:36px
+}
+#fleet-aircraft-image-help,#fleet-aircraft-image-status{margin:7px 0 0;font-size:11px;line-height:1.55}
+.fleet-aircraft-identity-panel{min-width:0}
+#fleet-detail-name{font-size:20px;color:var(--navy);margin:0 0 3px}
+#fleet-detail-subtitle{margin:0 0 14px;font-size:12px}
+.fleet-detail-section{
+ margin:22px 0 0;min-width:0;
+ border-top:1px solid var(--line);padding-top:15px
+}
+.fleet-aircraft-identity-panel .fleet-detail-section{margin-top:0;padding-top:0;border-top:0}
+.fleet-detail-section h4{
+ margin:0 0 10px;font-size:15px;font-weight:700;color:var(--navy)
+}
+.fleet-detail-grid{display:block;width:100%;min-width:0}
+.fleet-detail-grid>.fleet-detail-row{
+ display:grid;grid-template-columns:minmax(150px,40%) minmax(0,1fr);
+ align-items:center;gap:14px;min-width:0;padding:11px 7px;
+ border:0;border-bottom:1px solid var(--line);
+ border-radius:0;background:transparent
+}
+.fleet-detail-grid>.fleet-detail-row:first-of-type{
+ border-top:1px solid var(--line)
+}
+.fleet-detail-grid .fleet-detail-row>span{
+ color:var(--muted);font-size:12px;font-weight:400
+}
+.fleet-detail-grid .fleet-detail-row>strong{
+ min-width:0;overflow-wrap:anywhere;color:var(--navy);
+ font-size:12px;font-weight:600;line-height:1.5;text-align:left
+}
+.fleet-nickname-editor{margin:21px 0 9px;max-width:none}
+.fleet-nickname-editor .workspace-label{margin:0 0 7px}
+.fleet-nickname-controls{display:flex;gap:9px;align-items:center}
+.fleet-nickname-controls input{
+ flex:1;min-width:0;min-height:40px;padding:9px 11px;
+ border:1px solid #c7d7e9;border-radius:8px;background:#f7f9fc;color:var(--navy)
+}
+#player-main .fleet-nickname-controls button{
+ min-height:37px;padding:8px 13px;font-size:12px;white-space:nowrap;margin:0
+}
+.fleet-nickname-editor>.hint{font-size:11px;margin:8px 0 0}
+.fleet-detail-disclaimer{margin:16px 0 0;font-size:11px}
+@media(max-width:920px){
+ .fleet-aircraft-profile-top{grid-template-columns:1fr}
+ .fleet-aircraft-image-frame{height:250px}
+ .fleet-aircraft-identity-panel{width:100%}
+}
 @media(max-width:620px){
  #workspace-fleet .fleet-summary-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
- .fleet-detail-grid{grid-template-columns:1fr}
+ .fleet-detail-grid>.fleet-detail-row{grid-template-columns:1fr;gap:3px;padding:10px 2px}
  .fleet-nickname-controls{align-items:stretch;flex-direction:column}
+ .fleet-aircraft-image-frame{height:210px}
+ .fleet-aircraft-image-buttons{flex-direction:column;align-items:stretch}
 }
+:root[data-ui-theme="dark"] .fleet-aircraft-image-frame,
+:root[data-ui-theme="dark"] .fleet-nickname-controls input,
+:root[data-ui-theme="dark"] #workspace-fleet-aircraft #fleet-aircraft-image-file{
+ background:#1c3148;border-color:#415d78;color:#eaf3ff
+}
+:root[data-ui-theme="dark"] .fleet-detail-section h4,
+:root[data-ui-theme="dark"] #fleet-detail-name,
+:root[data-ui-theme="dark"] .fleet-detail-grid .fleet-detail-row>strong{color:#eaf3ff}
 
 /* Cabin Services uses the same single-panel, flat directory/form design as My routes.
    Page header and outer .panel.workspace-panel come from the shared workspace. */
