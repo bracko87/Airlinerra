@@ -98,6 +98,27 @@ test('flight services UI is wired into real Operations page and protected websit
  assert.doesNotMatch(manager,/\.auth\.signUp|service_role|sb_secret_|fetch\(|airline_cash|INSERT INTO/i);
 });
 
+test('Flight Services setup never calculates imaginary flight costs or passengers',async()=>{
+ const source=await readFile(new URL('../website/cabin-services-manager.mjs',import.meta.url),'utf8');
+ const start=source.indexOf(' const render=()=>{');
+ const end=source.indexOf(' const onChange=event=>{',start);
+ assert.ok(start>=0&&end>start);
+ const displayed=source.slice(start,end);
+ assert.ok(displayed.includes('Passenger selling price (USD)'));
+ assert.ok(displayed.includes('Included in ticket'));
+ assert.ok(displayed.includes('cabinServiceAttractiveness(working)'));
+ for(const forbidden of ['cabin-preview-passengers','cabin-preview-hours',
+  'Units loaded / 100 passengers','cabin-item-inventory','cabin-item-unit-cost',
+  'Airline cost for example flight','Expected onboard sales',
+  'Net service cost for example flight','forecastCabinServiceFlight('])
+  assert.equal(displayed.includes(forbidden),false,forbidden);
+ for(const item of CABIN_SERVICE_CATALOG)
+  assert.ok(item.referencePrice>item.costCents,item.name+' game default sell price exceeds supply cost');
+ const existing={...createBasicCabinPackage(),id:'pkg-8',locked:false,
+  name:'Preserved customer package'};
+ existing.items.coffee={mode:'onboard',onboardCents:700,onlineCents:700};
+ assert.equal(cleanCabinPackage(existing).items.coffee.onboardCents,700);
+});
 test('Flight Services follows My routes page layout with one shared white panel and readable mobile fields',async()=>{
  const readWeb=name=>readFile(new URL('../website/'+name,import.meta.url),'utf8');
  const [workspace,operations,manager,css]=await Promise.all([
