@@ -28,6 +28,8 @@ export function createLocalOwnerFleetReaders({auth,origin,fetchImpl=globalThis.f
   list:airlineId=>read(FLEET_PATH,{action:'list',airlineId}),
   listUsed:({airlineId,page=0,filterMode='all',search='',manufacturer='',family='',model='',configuration=''})=>
    read(FLEET_PATH,{action:'list-used',airlineId,page,filterMode,search,manufacturer,family,model,configuration}),
+  cabinOverview:airlineId=>read(FLEET_PATH,{action:'cabin-overview',airlineId}),
+  saveCabinDraft:layout=>read(FLEET_PATH,{action:'cabin-save-draft',...layout}),
   maintenancePreview:({airlineId,aircraftInventoryId})=>
    read(FLEET_PATH,{action:'maintenance-preview',airlineId,aircraftInventoryId}),
   updateNickname:({airlineId,aircraftInventoryId,nickname})=>
