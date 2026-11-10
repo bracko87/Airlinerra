@@ -16,10 +16,17 @@ test('only three options; old online and hybrid are migrated without promising h
  assert.ok(!ui.includes('Free allowance + paid onboard extras'));
  assert.ok(!ui.includes('Paid online before flight'));
  assert.ok(ui.includes("onboard.dataset.cabinField='onboardCents'"));
- assert.ok(ui.includes('cabin-item-unit-cost'));
- assert.ok(ui.includes('cabin-preview-passengers'));
- assert.ok(ui.includes('cabin-preview-hours'));
- assert.ok(ui.includes('Units loaded / 100 passengers'));
+ // Package setup controls only product policy; real passenger counts and sales
+ // are evaluated later with the verified flight, not here.
+ assert.ok(ui.includes('Passenger selling price (USD)'));
+ assert.ok(ui.includes("const ratingValue=cabinServiceAttractiveness(working)"));
+ assert.ok(!ui.includes('cabin-preview-passengers'));
+ assert.ok(!ui.includes('cabin-preview-hours'));
+ assert.ok(!ui.includes('Units loaded / 100 passengers'));
+ assert.ok(!ui.includes('cabin-item-inventory'));
+ assert.ok(!ui.includes('cabin-item-unit-cost'));
+ assert.ok(!ui.includes("id='cabin-cost'"));
+ assert.ok(!ui.includes("id='cabin-sales'"));
  assert.equal(basic.items.water.mode,'included');
  const old=custom();
  old.items.coffee={mode:'online',onlineCents:600,onboardCents:400,freeQty:0};
