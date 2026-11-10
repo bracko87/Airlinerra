@@ -331,6 +331,22 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
   }
   if(action==='save'){
    if(activeId==='basic')return;
+   for(const price of host.querySelectorAll('[data-cabin-field="onlineCents"],[data-cabin-field="onboardCents"]')){
+    if(price.disabled)continue;
+    const value=String(price.value||'');
+    if(!/^\d{1,4}(?:\.\d{1,2})?$/.test(value)||Number(value)>1000){
+     status('A paid-item price is invalid. Use $0–$1,000 and up to two decimal places.');
+     price.focus();return;
+    }
+   }
+   for(const allowance of host.querySelectorAll('[data-cabin-field="freeQty"]')){
+    if(allowance.disabled)continue;
+    const n=Number(allowance.value);
+    if(!Number.isInteger(n)||n<1||n>3){
+     status('Free allowance must be 1–3 units for each included service.');
+     allowance.focus();return;
+    }
+   }
    working.name=String(host.querySelector('#cabin-package-name')?.value||'').trim();
    const next=cleanCabinPackage(working);
    if(!next){status('Name must have 2–45 characters. Review prices and allowances.');return;}
