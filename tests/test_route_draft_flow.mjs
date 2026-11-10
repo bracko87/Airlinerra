@@ -7,6 +7,23 @@ import {gameTimeValue} from '../website/game-time-pickers.mjs';
 
 const read=name=>readFile(new URL('../website/'+name,import.meta.url),'utf8');
 
+test('orange Create new route button saves, while Clear form only resets',async()=>{
+ const html=routePlannerMarkup(),source=await read('route-planner.mjs');
+ const css=await read('player-app.css');
+ assert.match(html,/<button type="button" id="route-plan-save" class="primary">Create new route<\/button>/);
+ assert.match(html,/<button type="button" id="route-plan-new" class="secondary">Clear form<\/button>/);
+ assert.doesNotMatch(html,/>Apply route draft<\/button>/);
+ assert.match(html,/class="workspace-actions route-step1-actions"/);
+ assert.match(source,/if\(target.id==='route-plan-new'\)\{\s*await resetRouteForm\(\);/);
+ assert.match(source,/if\(target.id!=='route-plan-save'\)return;/);
+ assert.match(source,/if\(!draftWrite\('routes',\[\.\.\.filtered,draft\]\)\)/);
+ assert.match(source,/doc\.dispatchEvent\(new CustomEvent\('airlinerra:route-draft-saved'/);
+ assert.match(source,/Form cleared\. Nothing was saved/);
+ assert.match(css,/#workspace-routes \.route-step1-actions \.primary/);
+ assert.match(css,/#workspace-routes #route-plan-save\{background:var\(--orange\)/);
+ assert.match(css,/min-height:35px;padding:7px 13px;font-size:12px/);
+});
+
 test('identical airport key is blocked even if displayed under another name',()=>{
  const a={key:'OURAIRPORTS:4610',name:'Belgrade Nikola Tesla'};
  const renamed={key:'OURAIRPORTS:4610',name:'Another name'};
