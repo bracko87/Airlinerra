@@ -91,6 +91,7 @@ export const FLEET_SQL=Object.freeze({
   "p.flight_hour_interval::text AS \"flightHourInterval\", "+
   "v.group_id AS \"groupId\",v.group_name AS \"groupName\", "+
   "v.manufacture_year AS \"manufactureYear\",v.condition_pct::text AS \"conditionPct\", "+
+  "v.verified_tracking_started_utc AS \"verifiedTrackingStartedUtc\", "+
   "v.tracked_flight_hours::text AS \"trackedFlightHours\", "+
   "v.tracked_flight_cycles::text AS \"trackedFlightCycles\", "+
   "v.last_completed_utc AS \"lastCompletedUtc\", "+
