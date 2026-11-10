@@ -67,7 +67,7 @@ export function createSection9AircraftOperationsJobHandler({
       !Number.isInteger(result.jobsClaimed)||result.jobsClaimed<0||
       result.jobsClaimed>20||
       !['completed','failed','queued'].every(key=>
-        Number.isInteger(result[key])&&result[key]>=0)&&
+        Number.isInteger(result[key])&&result[key]>=0)||
       result.completed+result.failed+result.queued!==result.jobsClaimed)
     throw Error('SECTION9_PRIVATE_OPERATIONS_UNSAFE_WORKER_RESULT');
    return reply(200,{...result,ledgerPosted:false,bookingsCreated:false});
