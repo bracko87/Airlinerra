@@ -274,6 +274,15 @@ test('Group 2 prepared airport information is separately authenticated and canno
  assert.match(PLAYER_READ_SQL.preparedAirports,/source_group='GROUP_2'/);
  assert.match(PLAYER_READ_SQL.preparedAirports,/GROUP2_PREPARED_NOT_ADMITTED/);
  assert.doesNotMatch(PLAYER_READ_SQL.airports,/airport_sections1_8_combined_catalog_v1/);
+ const browseAll=make();
+ const wholePage=await browseAll.handler(request('/api/v1/player/prepared-airports',
+  {countryIso:'',search:'',offset:0}));
+ assert.equal(wholePage.status,200);
+ assert.deepEqual(browseAll.counts().queries[0].params,['','',0]);
+ const approvedBlank=make();
+ assert.equal((await approvedBlank.handler(request('/api/v1/player/airports',
+  {countryIso:'',search:'',offset:0}))).status,400);
+ assert.equal(approvedBlank.counts().connected,0);
  const invalid=make();
  assert.equal((await invalid.handler(request('/api/v1/player/prepared-airports',
   {countryIso:'US',offset:4000}))).status,400);
