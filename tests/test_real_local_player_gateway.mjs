@@ -282,11 +282,26 @@ test('normal localhost preview returns the previously registered owner airline f
  assert.equal(forwarded,1,'No write may be forwarded through the local read-only preview');
 });
 
-test('normal localhost Edge proxy does not forward undeployed prepared-airport route',async()=>{
- let forwarded=0;
- const proxy=createLiveReadOnlyPreviewHandler({fetchImpl:async()=>{forwarded++;throw Error('Must not forward');}});
- const result=await proxy(request({countryIso:'US'},'/api/v1/player/prepared-airports'));
- assert.equal(result.status,403);
- assert.equal(forwarded,0);
+test('localhost proxy forwards deployed prepared-airport read only with verified session',async()=>{
+ const calls=[];
+ const proxy=createLiveReadOnlyPreviewHandler({fetchImpl:async(url,options)=>{
+  calls.push({url,route:options.headers['x-airlinerra-route'],body:options.body});
+  return new Response(JSON.stringify({
+   airports:[{key:'OURAIRPORTS:20581',sourceGroup:'GROUP_2',bookable:false}],
+   scope:'prepared_information_only',bookable:false,canActivateFlights:false
+  }),{status:200,headers:{'content-type':'application/json'}});
+ }});
+ const result=await proxy(request({countryIso:'US',search:'Grant',offset:0},'/api/v1/player/prepared-airports'));
+ assert.equal(result.status,200);
+ const data=await result.json();
+ assert.equal(data.scope,'prepared_information_only');
+ assert.equal(data.bookable,false);
+ assert.equal(data.canActivateFlights,false);
+ assert.equal(calls.length,1);
+ assert.equal(calls[0].route,'/api/v1/player/prepared-airports');
+ assert.equal(calls[0].url,'https://'+REF+'.supabase.co/functions/v1/airlinerra-game');
  assert.ok(LOCAL_PLAYER_API_PATHS.includes('/api/v1/player/prepared-airports'));
+ const bad=await proxy(request({},'/api/v1/player/prepared-airports','bad'));
+ assert.equal(bad.status,401);
+ assert.equal(calls.length,1);
 });
