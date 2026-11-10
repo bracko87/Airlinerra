@@ -440,8 +440,9 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   const offers=Array.isArray(snapshot?.offers)?snapshot.offers:[];
   const owned=fleet.filter(x=>x?.ownershipType==='owned');
   const leased=fleet.filter(x=>x?.ownershipType==='leased');
-  if($('fleet-owned-count'))$('fleet-owned-count').textContent=String(owned.length);
-  if($('fleet-leased-count'))$('fleet-leased-count').textContent=String(leased.length);
+  // A failed read is UNKNOWN, never a verified count of zero aircraft.
+  if($('fleet-owned-count'))$('fleet-owned-count').textContent=snapshot?String(owned.length):'—';
+  if($('fleet-leased-count'))$('fleet-leased-count').textContent=snapshot?String(leased.length):'—';
   if($('fleet-real-status'))$('fleet-real-status').textContent=snapshot?
    (fleet.length?String(fleet.length)+' registered':'No aircraft'):'Not connected';
   const fleetList=$('fleet-owned-aircraft');
@@ -520,9 +521,18 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    if(!result||!Array.isArray(result.fleet)||!Array.isArray(result.offers)||
      result.airlineId!==airlineId)throw Error('Invalid fleet list');
    renderRealFleetMarket(result);
-  }catch{
+  }catch(error){
    if(version!==marketFetchVersion)return;
    renderRealFleetMarket(null);
+   // Expose only a safe status code; never tokens, SQL details or identities.
+   const diagnostic=String(error?.message||'');
+   const code=/^(?:LOCAL_AIRCRAFT_READ_HTTP_|FLEET_HTTP_)([1-5][0-9]{2})$/.exec(diagnostic)?.[1]||null;
+   const status=code?'HTTP '+code:'Connection unavailable';
+   if($('fleet-real-status'))$('fleet-real-status').textContent=status;
+   const holder=$('fleet-owned-aircraft');
+   if(holder)holder.textContent='Real company fleet could not be loaded ('+status+
+    '). Your aircraft ownership has not been changed. Check the local API connection.';
+   console.warn('Airlinerra fleet read',status);
   }
  }
  function updateData(next={}){
