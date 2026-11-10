@@ -1668,3 +1668,55 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
 :root[data-ui-theme="dark"] #workspace-schedule .schedule-board-track{background:#34516c;border-color:#57738e}
 :root[data-ui-theme="dark"] #workspace-schedule .schedule-board-flight{background:#4b3728;color:#fff0de;border-color:#9e6942}
 :root[data-ui-theme="dark"] #workspace-schedule .schedule-board-flight.slot-held{background:#254b67;border-color:#5089b0;color:#eaf6ff}
+
+/* Single-day aircraft flight strip: ONE selected weekday across the page. */
+#workspace-schedule .schedule-board-toolbar{display:flex;align-items:center;justify-content:space-between;
+ gap:12px;flex-wrap:wrap;margin:13px 0 13px}
+#workspace-schedule .schedule-board-actions{margin:0;display:flex;align-items:center;gap:8px}
+#workspace-schedule .schedule-day-switch{display:flex;align-items:center;gap:9px}
+#workspace-schedule .schedule-day-switch strong{color:var(--navy);font-size:14px;
+ text-align:center;min-width:91px}
+#workspace-schedule .schedule-day-switch button{margin:0!important;min-width:36px;
+ min-height:34px;padding:5px 8px;border-radius:7px;font-size:11px}
+#workspace-schedule .schedule-board-single-day{width:100%;min-width:650px;
+ table-layout:fixed;border-collapse:separate;border-spacing:0}
+#workspace-schedule .schedule-board-single-day .schedule-board-aircraft-col{width:188px}
+#workspace-schedule .schedule-board-single-day thead th:last-child{width:auto;padding:13px 15px 11px}
+#workspace-schedule .schedule-board-single-day .schedule-board-hour-labels{
+ display:flex;justify-content:space-between;width:100%;font-size:10px;letter-spacing:0;
+ font-variant-numeric:tabular-nums}
+#workspace-schedule .schedule-board-single-day tbody td{height:auto;min-height:88px;
+ padding:12px 15px;overflow:hidden}
+#workspace-schedule .schedule-board-day-track{width:100%;min-width:0;position:relative}
+#workspace-schedule .schedule-board-track-lane{height:52px;position:relative;
+ border:1px solid #dce6f1;border-radius:5px;margin:3px 0 9px;
+ background:repeating-linear-gradient(90deg,transparent 0,transparent calc(12.5% - 1px),
+ #cddbeb calc(12.5% - 1px),#cddbeb 12.5%),#f4f7fb}
+#workspace-schedule .schedule-board-track-lane:last-child{margin-bottom:0}
+#workspace-schedule .schedule-board-track-lane.is-empty{display:flex;align-items:center;padding:9px}
+#workspace-schedule .schedule-board-time-marker{top:26px;bottom:5px;width:3px;
+ background:#f46c19;border-radius:3px;z-index:2}
+#workspace-schedule .schedule-board-held-band{top:27px;bottom:6px;min-width:2px;
+ background:#2377ad;border-radius:3px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.07)}
+#workspace-schedule .schedule-board-inline-flight{position:absolute;top:4px;
+ padding:3px 7px;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+ border-radius:5px;background:#fff1e6;color:#9b4814;border:1px solid #f5cba9;
+ font-size:10px;font-weight:700;font-variant-numeric:tabular-nums;z-index:3}
+#workspace-schedule .schedule-board-inline-flight.is-slot-held{
+ background:#e3f3fc;color:#1c5d87;border-color:#acd0e5}
+#workspace-schedule .schedule-board-single-day .schedule-board-no-departures{
+ display:inline-block;color:#758a9e;font-size:11px}
+#workspace-schedule .schedule-board-single-day .schedule-board-warning{
+ font-size:11px;line-height:1.6;margin:5px 0 0}
+@media(max-width:740px){
+ #workspace-schedule .schedule-board-single-day{min-width:680px}
+ #workspace-schedule .schedule-board-single-day .schedule-board-aircraft-col{width:150px}
+ #workspace-schedule .schedule-board-toolbar{align-items:flex-start;flex-direction:column}
+}
+:root[data-ui-theme="dark"] #workspace-schedule .schedule-board-track-lane{
+ background:repeating-linear-gradient(90deg,transparent 0,transparent calc(12.5% - 1px),
+ #54718c calc(12.5% - 1px),#54718c 12.5%),#2b4762;border-color:#52718f}
+:root[data-ui-theme="dark"] #workspace-schedule .schedule-board-inline-flight{
+ background:#48362a;color:#ffdebf;border-color:#a36d45}
+:root[data-ui-theme="dark"] #workspace-schedule .schedule-board-inline-flight.is-slot-held{
+ background:#254e6b;color:#e1f5ff;border-color:#477fa7}
