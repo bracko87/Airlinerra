@@ -2,7 +2,7 @@
  * This module never installs seats, moves aircraft, books a refit, or posts money.
  * All alternatives come from the authenticated cabin-overview response.
  */
-import {standardCabinPlan,evaluateCabinPlan} from './cabin-configuration-manager.mjs';
+import {standardCabinPlan,evaluateCabinPlan,estimateCabinRefit} from './cabin-configuration-manager.mjs';
 
 const counts=['economy','premium','business','first'];
 const safeName=x=>typeof x==='string'&&x.length<=80?x:'';
@@ -18,9 +18,11 @@ const savedPlan=a=>{
   if(!Number.isInteger(v)||v<0||typeof type!=='string')return null;
   plan[key]=v;plan[key+'Type']=type;
  }
+ plan.extraLegroomCm=Number(a.draftExtraLegroomCm||0);
  return plan;
 };
-const fingerprint=p=>counts.map(key=>p[key]+':'+p[key+'Type']).join('|');
+const fingerprint=p=>counts.map(key=>p[key]+':'+p[key+'Type']).join('|')+
+ '|pitch:'+String(p.extraLegroomCm??0);
 
 export function companyCabinChoices(overview,aircraftId){
  if(!overview||!Array.isArray(overview.aircraft)||!Array.isArray(overview.seatTypes)||
@@ -59,17 +61,20 @@ export function companyCabinChoices(overview,aircraftId){
    business:target.installedBusiness,first:target.installedFirst},
   choices,sites,canBookRefit:false,approvedSlot:null};
 }
-export function configurationCostPreview(choice,site){
+export function configurationCostPreview(choice,site,installedSeats=0){
  if(!choice||choice.quote?.valid!==true)return {
   valid:false,message:choice?.quote?.reason||'No valid aircraft layout selected.'
  };
  const q=choice.quote;
  const siteName=site?(safeName(site.airportName)||safeName(site.airportCode)||'Approved facility')+
   ' · '+safeName(site.provider):null;
+ const estimate=estimateCabinRefit(q,installedSeats,Number(site?.siteMultiplier||1));
  return {valid:true,seatCount:q.count,spaceUsed:q.used,
-  spaceAvailable:q.available,
+  spaceAvailable:q.available,spacePct:q.spacePct,comfortRating:q.comfortRating,
+  extraLegroomCm:q.extraLegroomCm,
   equipmentUsd:q.equipmentUsd,downtimeHours:q.refitHours,
-  siteName,labourCostUsd:null,totalFinalCostUsd:null,
-  firstAvailableSlot:null,canBook:false,
-  status:'Planning estimate only. Labour, flight availability and refit slots are not confirmed.'};
+  siteName,labourCostUsd:estimate.valid?estimate.removalAndInstallationUsd:null,
+  indicativeTotalUsd:estimate.valid?estimate.totalUsd:null,
+  totalFinalCostUsd:null,firstAvailableSlot:null,canBook:false,
+  status:'Game quote: equipment plus installation/removal. Actual labour, ferry flights and booked slots are not confirmed.'};
 }
