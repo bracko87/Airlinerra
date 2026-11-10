@@ -189,9 +189,14 @@ export function renderAirlineWeeklyBoard(doc,host,board){
      add(doc,item,'span',(event.from||'Origin')+' → '+(event.to||'Destination'));
     let text;
     if(event.status==='slot-held'&&event.durationMinutes!==null){
-     text='Flight window '+event.durationMinutes+' min · airport slots reserved; turnaround not verified';
+     const end=event.minute+event.durationMinutes;
+     const dayOffset=Math.floor(end/1440);
+     text='UTC window '+event.time+'–'+minuteToClock(end)+
+      (dayOffset?' (+'+dayOffset+' day'+(dayOffset===1?'':'s')+')':'')+
+      ' · '+event.durationMinutes+' min · airport slots held; turnaround not verified';
     }else if(event.sampleDurationMinutes!==null){
-     text='Example '+event.sampleDurationMinutes+' min · duration not verified or booked';
+     text='Example flight duration '+event.sampleDurationMinutes+
+      ' min · not verified or booked';
     }else{
      text='Flight duration pending · time not reserved';
     }
