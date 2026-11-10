@@ -108,6 +108,55 @@ test('maintenance preview is a read-only owner-verified six-check profile with t
  });
  assert.equal((await foreign.handler(request(body))).status,403);
 });
+test('used-aircraft market enforces validated read paging and bid identity',async()=>{
+ const read={action:'list-used',airlineId:airline,page:0,filterMode:'all',search:'Airbus'};
+ const bid={action:'bid-used',airlineId:airline,listingId:offer,
+  bidUsd:'22000000.00',registration:'D-AUCT',requestId};
+ assert.equal(validateFleetAcquisitionRequest(read),true);
+ assert.equal(validateFleetAcquisitionRequest({...read,page:-1}),false);
+ assert.equal(validateFleetAcquisitionRequest({...read,page:1001}),false);
+ assert.equal(validateFleetAcquisitionRequest({...read,filterMode:'extra'}),false);
+ assert.equal(validateFleetAcquisitionRequest({...read,search:'X'.repeat(61)}),false);
+ assert.equal(validateFleetAcquisitionRequest(bid),true);
+ assert.equal(validateFleetAcquisitionRequest({...bid,bidUsd:'-500'}),false);
+ assert.equal(validateFleetAcquisitionRequest({...bid,bidUsd:'1e7'}),false);
+ assert.equal(validateFleetAcquisitionRequest({...bid,bidUsd:'220.000'}),false);
+ assert.equal(validateFleetAcquisitionRequest({...bid,cashUsd:0}),false);
+ let readCount=0;
+ const api=setup((sql,args)=>{
+  if(sql===FLEET_SQL.owner)return {rowCount:1,rows:[{id:airline}]};
+  if(sql===FLEET_SQL.marketState)return {rowCount:1,rows:[{
+   worldState:'planned',marketOpen:false,leaseEnabled:false,serverNowUtc:'2026-11-10T14:00:00Z'
+  }]};
+  if(sql===FLEET_SQL.usedLots){readCount++;assert.deepEqual(args,[airline,'all','Airbus',0]);
+   return {rowCount:1,rows:[{listingId:offer,offeringType:'purchase',openingBidUsd:'22000000'}]};}
+  if(sql===FLEET_SQL.usedCount)return {rowCount:1,rows:[{total:1}]};
+  throw Error('unexpected query');
+ });
+ const response=await api.handler(request(read));
+ assert.equal(response.status,200);
+ const result=await response.json();
+ assert.equal(result.total,1);
+ assert.equal(result.marketOpen,false);
+ assert.equal(result.offers.length,1);
+ assert.equal(readCount,1);
+ const foreign=setup(sql=>{
+  if(sql===FLEET_SQL.owner)return {rowCount:0,rows:[]};
+  throw Error('Foreign market must not be queried');
+ });
+ assert.equal((await foreign.handler(request(read))).status,403);
+ const submit=setup((sql,args)=>{
+  if(sql===FLEET_SQL.usedBid){
+   assert.deepEqual(args,[user,airline,offer,'22000000.00','D-AUCT',requestId]);
+   return {rowCount:1,rows:[{result:{status:'bid_accepted',
+    listingId:offer,bidId:requestId,deadlineUtc:'2026-11-10T14:15:00Z'}}]};
+  }
+  throw Error('Only the trusted server auction function can execute');
+ });
+ const receipt=await submit.handler(request(bid));
+ assert.equal(receipt.status,200);
+ assert.equal((await receipt.json()).status,'bid_accepted');
+});
 test('auth, same-origin route, and safe payload validation run before opening a database connection',async()=>{
  let used=false;
  const {handler}=setup(()=>{used=true;throw Error('Unexpected query')},
