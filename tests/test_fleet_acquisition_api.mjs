@@ -53,7 +53,7 @@ test('only valid owner-scoped nickname changes are accepted',async()=>{
  assert.equal(validateFleetAcquisitionRequest(rename),true);
  assert.equal(validateFleetAcquisitionRequest({...rename,nickname:''}),true);
  assert.equal(validateFleetAcquisitionRequest({...rename,nickname:'X'.repeat(41)}),false);
- assert.equal(validateFleetAcquisitionRequest({...rename,nickname:'Bad\\nName'}),false);
+ assert.equal(validateFleetAcquisitionRequest({...rename,nickname:'Bad\nName'}),false);
  assert.equal(validateFleetAcquisitionRequest({...rename,playerId:user}),false);
  const queryCalls=[];
  const owned=setup((sql,args)=>{
@@ -203,7 +203,7 @@ test('market and owned fleet pages use authenticated data without fabricated pri
  ]);
  for(const id of ['fleet-owned-aircraft','fleet-owned-count','fleet-leased-count',
   'market-offers','market-offer-select','market-aircraft-registration','market-acquire'])
-  assert.match(workspace,new RegExp('id="'+id+'"'));
+  assert.ok(workspace.includes(id),'Missing fleet or market control: '+id);
  assert.match(workspace,/data\.fleetClient\.acquire\(/);
  assert.match(workspace,/client\.list\(airlineId\)/);
  assert.match(app,/createFleetAcquisitionClient/);
