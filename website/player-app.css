@@ -1763,101 +1763,182 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
  .fleet-nickname-controls{align-items:stretch;flex-direction:column}
 }
 
-/* Cabin services package manager — same full-width white/navy/orange game system */
-#workspace-service #cabin-services-manager{width:100%;min-width:0;margin-top:13px}
-.cabin-product-header{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px}
-.cabin-product-header h2{font-size:19px;margin:0 0 4px}
-.cabin-product-header .hint{margin:0;font-size:12px;max-width:700px}
-.cabin-compact-button{margin:0!important;padding:8px 13px!important;min-height:35px!important;
- font-size:12px!important;line-height:1.3!important;border-radius:7px!important}
-.cabin-product-layout{display:grid;grid-template-columns:minmax(205px,250px) minmax(0,1fr);gap:16px;align-items:start;width:100%}
-.cabin-product-sidebar,.cabin-product-editor,.cabin-assignment-panel{border:1px solid #dce7f1;border-radius:12px;background:#fff;min-width:0}
-.cabin-product-sidebar{padding:15px;display:grid;align-content:start;gap:9px}
-.cabin-product-sidebar h3{margin:0 0 5px;font-size:15px;color:var(--navy)}
-.cabin-package-choice{display:grid;gap:4px;text-align:left;width:100%;max-width:100%;padding:12px 13px;
- background:#f5f8fb;border:1px solid #d9e4ef;border-radius:8px;color:var(--navy);font-size:12px}
-.cabin-package-choice strong{font-size:12px;line-height:1.4}
-.cabin-package-choice small{color:#6b7e92;line-height:1.4;font-size:10px}
-.cabin-package-choice.is-active{background:#fff6ee;border-color:#ff883d;box-shadow:inset 3px 0 0 var(--orange)}
-.cabin-package-choice:hover{border-color:#ffb27e}
-.cabin-product-sidebar>.hint{font-size:11px;margin:8px 0 0;line-height:1.6}
-.cabin-product-editor{padding:17px}
-.cabin-product-titlebar{display:flex;justify-content:space-between;align-items:end;gap:15px;flex-wrap:wrap;margin:0 0 16px}
-.cabin-product-title-fields{flex:1;min-width:200px;max-width:440px}
-.cabin-product-actions{display:flex;flex-wrap:wrap;gap:7px;align-items:center}
-.cabin-product-field{display:grid;gap:5px;color:var(--navy);font-size:11px;font-weight:750}
-.cabin-product-field>span{font-size:11px}
+/* Cabin Services uses the same single-panel, flat directory/form design as My routes.
+   Page header and outer .panel.workspace-panel come from the shared workspace. */
+#workspace-service #cabin-services-manager{width:100%;min-width:0;margin-top:18px}
+#workspace-service .cabin-product-header{
+ display:flex;align-items:center;justify-content:space-between;
+ gap:14px;flex-wrap:wrap;margin:0 0 21px
+}
+#workspace-service .cabin-product-header .hint{
+ margin:0;max-width:770px;font-size:12px;line-height:1.6
+}
+#workspace-service .cabin-compact-button{
+ margin:0!important;padding:7px 13px!important;min-height:35px!important;
+ font-size:12px!important;line-height:1.25!important;border-radius:7px!important
+}
+.cabin-product-layout{
+ display:grid;grid-template-columns:minmax(195px,230px) minmax(0,1fr);
+ gap:23px;align-items:start;width:100%;min-width:0;
+ border-top:1px solid var(--line);padding-top:22px
+}
+/* The white background and outside border belong to the shared page panel:
+   avoid the nested outlined cards visible in the earlier Cabin Services view. */
+.cabin-product-sidebar,.cabin-product-editor,.cabin-assignment-panel{
+ min-width:0;background:transparent;border:0;border-radius:0;box-shadow:none
+}
+.cabin-product-sidebar{
+ padding:2px 18px 0 0;border-right:1px solid var(--line);
+ display:grid;align-content:start;gap:0
+}
+.cabin-product-sidebar h3{margin:0 0 12px;font-size:14px;color:var(--navy);font-weight:700}
+.cabin-package-choice{
+ display:grid;gap:3px;text-align:left;width:100%;max-width:100%;
+ padding:11px 12px;margin:0;border:0;border-bottom:1px solid var(--line);
+ border-radius:0;background:transparent;color:var(--navy);
+ font-size:12px;box-shadow:none
+}
+.cabin-package-choice strong{font-size:12px;line-height:1.45;font-weight:650}
+.cabin-package-choice small{color:var(--muted);line-height:1.5;font-size:11px}
+.cabin-package-choice.is-active{
+ background:#e8f2fc;color:var(--navy);box-shadow:inset 3px 0 0 var(--orange)
+}
+.cabin-package-choice:hover{background:#f0f5fb}
+.cabin-product-sidebar>.hint{font-size:11px;margin:14px 0 0;line-height:1.6}
+.cabin-product-editor{padding:0;min-width:0}
+.cabin-product-titlebar{
+ display:flex;justify-content:space-between;align-items:end;
+ gap:15px;flex-wrap:wrap;margin:0 0 16px
+}
+.cabin-product-title-fields{flex:1;min-width:195px;max-width:440px}
+.cabin-product-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.cabin-product-field{
+ display:grid;gap:5px;color:#526b84;font-size:12px;font-weight:600
+}
+.cabin-product-field>span{font-size:12px}
 #workspace-service .cabin-product-field input,
-#workspace-service .cabin-product-field select{margin:0;min-height:37px;padding:7px 10px;
- border:1px solid #c8d9e8;border-radius:7px;background:#f8fafc;color:var(--navy);
- width:100%;min-width:0;font-size:12px}
-#workspace-service .cabin-product-field input:disabled{background:#f0f4f8;color:#74879b}
-.cabin-product-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:14px 0 20px}
-.cabin-product-metric{border:1px solid #e0e9f2;background:#f6f9fc;border-radius:9px;min-width:0;padding:13px}
-.cabin-product-metric>span{display:block;font-size:11px;color:#63758a;line-height:1.55;min-height:31px}
-.cabin-product-metric strong{display:block;font-size:24px;color:var(--navy);margin:3px 0;font-variant-numeric:tabular-nums}
-.cabin-score-track{height:7px;margin-top:10px;background:#e2eaf2;border-radius:10px;overflow:hidden}
+#workspace-service .cabin-product-field select,
+#workspace-service .cabin-product-row input,
+#workspace-service .cabin-product-row select{
+ display:block;width:100%;min-width:0;max-width:none;min-height:39px;
+ margin:0;padding:9px 11px;border:1px solid #c7d7e9;border-radius:8px;
+ background:#f7f9fc;color:var(--navy);font-size:12px
+}
+#workspace-service .cabin-product-field input:disabled,
+#workspace-service .cabin-product-row input:disabled{
+ background:#f1f5f9;color:#74879b
+}
+.cabin-product-metrics{
+ display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+ gap:18px;margin:14px 0 23px
+}
+.cabin-product-metric{
+ min-width:0;padding:12px 5px 15px;border:0;
+ border-bottom:1px solid var(--line);border-radius:0;background:transparent
+}
+.cabin-product-metric>span{
+ display:block;font-size:11px;color:var(--muted);
+ line-height:1.55;min-height:30px
+}
+.cabin-product-metric strong{
+ display:block;font-size:22px;color:var(--navy);
+ margin:3px 0;font-weight:700;font-variant-numeric:tabular-nums
+}
+.cabin-score-track{height:6px;margin-top:10px;background:#e2eaf2;border-radius:10px;overflow:hidden}
 .cabin-score-fill{height:100%;background:var(--orange);border-radius:10px;max-width:100%;transition:width .12s}
 .cabin-product-table{display:grid;gap:0;min-width:0;width:100%}
-.cabin-product-row{display:grid;grid-template-columns:minmax(150px,1.3fr) minmax(170px,1.2fr) minmax(72px,.45fr) minmax(100px,.65fr) minmax(100px,.65fr);
- align-items:center;gap:10px;min-width:0;border-bottom:1px solid #e5edf5;padding:9px 5px}
-.cabin-product-table-head{background:#f2f6fa;color:#5e7388;font-size:10px;letter-spacing:.015em;
- font-weight:800;border-radius:6px;padding:10px 6px}
-.cabin-product-category{font-size:11px;color:#e76813;letter-spacing:.09em;text-transform:uppercase;
- padding:12px 6px 5px;margin:3px 0 0;border-bottom:1px solid #e4edf5}
-.cabin-product-item-name{min-width:0}
-.cabin-product-item-name strong{display:block;font-size:12px;font-weight:750;color:var(--navy)}
-.cabin-product-item-name small{display:block;color:#72859b;font-size:10px;line-height:1.5;margin-top:2px}
-#workspace-service .cabin-product-row input,#workspace-service .cabin-product-row select{
- width:100%;min-width:0;min-height:34px;padding:7px 8px;border:1px solid #cbd9e7;border-radius:7px;
- background:#f8fafc;color:var(--navy);font-size:11px;margin:0
+.cabin-product-row{
+ display:grid;grid-template-columns:minmax(155px,1.3fr) minmax(165px,1.15fr)
+ minmax(70px,.4fr) minmax(105px,.65fr) minmax(105px,.65fr);
+ gap:10px;align-items:center;min-width:0;
+ border-bottom:1px solid var(--line);padding:11px 7px
 }
-#workspace-service .cabin-product-row select{font-size:11px}
-#workspace-service .cabin-product-row input:disabled{opacity:.65}
-.cabin-assignment-panel{margin-top:17px;padding:17px}
+.cabin-product-table-head{
+ background:#f1f6fc;color:var(--muted);font-size:11px;
+ letter-spacing:0;font-weight:400;padding:12px 7px
+}
+.cabin-product-category{
+ grid-column:1/-1;font-size:11px;color:var(--orange);
+ letter-spacing:.08em;text-transform:uppercase;
+ padding:15px 7px 6px;margin:3px 0 0;border-bottom:1px solid var(--line)
+}
+.cabin-product-item-name{min-width:0}
+.cabin-product-item-name strong{
+ display:block;font-size:12px;font-weight:650;color:var(--navy)
+}
+.cabin-product-item-name small{
+ display:block;color:var(--muted);font-size:11px;line-height:1.5;margin-top:2px
+}
+.cabin-product-cell{display:block;min-width:0}
+.cabin-mobile-label{display:none}
+.cabin-assignment-panel{
+ margin-top:26px;padding:22px 0 0;border-top:1px solid var(--line)
+}
 .cabin-assignment-panel h3{font-size:16px;margin:0 0 6px;color:var(--navy)}
 .cabin-assignment-panel>p{margin:0 0 13px}
-.cabin-assignment-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:13px}
-.cabin-product-status{min-height:21px;margin:13px 0 0;font-weight:650}
-@media(max-width:1250px){
- .cabin-product-layout{grid-template-columns:210px minmax(0,1fr)}
- .cabin-product-row{grid-template-columns:minmax(122px,1.15fr) minmax(148px,1.1fr) 64px 85px 85px;gap:7px}
+.cabin-assignment-grid{
+ display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+ gap:14px;margin-bottom:14px
 }
-@media(max-width:950px){
- .cabin-product-layout{grid-template-columns:1fr}
- .cabin-product-sidebar{display:flex;flex-wrap:wrap}
- .cabin-product-sidebar h3,.cabin-product-sidebar>.hint{width:100%}
- .cabin-package-choice{width:calc(50% - 5px)}
+.cabin-product-status{min-height:20px;margin:14px 0 0;font-weight:600;font-size:12px}
+@media(max-width:1280px){
+ .cabin-product-layout{grid-template-columns:minmax(175px,205px) minmax(0,1fr);gap:16px}
+ .cabin-product-row{
+  grid-template-columns:minmax(125px,1.1fr) minmax(145px,1fr) 65px 88px 88px;
+  gap:7px
+ }
+}
+@media(max-width:1000px){
+ .cabin-product-layout{grid-template-columns:minmax(0,1fr)}
+ .cabin-product-sidebar{
+  display:flex;flex-wrap:wrap;gap:8px;border:0;
+  border-bottom:1px solid var(--line);padding:0 0 16px
+ }
+ .cabin-product-sidebar h3,.cabin-product-sidebar>.hint{width:100%;margin:0}
+ .cabin-package-choice{width:auto;min-width:180px;flex:1;border:1px solid var(--line);border-radius:7px}
+ .cabin-product-row{
+  grid-template-columns:minmax(140px,1.1fr) minmax(165px,1.1fr) 70px 90px 90px
+ }
  .cabin-assignment-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
-@media(max-width:680px){
- .cabin-product-metrics{grid-template-columns:1fr}
+@media(max-width:760px){
+ .cabin-product-titlebar{align-items:stretch}
+ .cabin-product-title-fields{max-width:none}
+ .cabin-product-metrics{grid-template-columns:1fr;gap:4px}
+ .cabin-product-metric{padding:9px 2px 12px}
  .cabin-product-metric>span{min-height:0}
- .cabin-product-editor{padding:11px}
- .cabin-product-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:7px 10px;padding:13px 4px}
- .cabin-product-row.cabin-product-table-head{display:none}
+ .cabin-product-table-head{display:none}
+ .cabin-product-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;padding:15px 0}
  .cabin-product-item-name{grid-column:1/-1}
- .cabin-product-row input,.cabin-product-row select{max-width:100%}
- .cabin-product-row input[data-cabin-field="freeQty"]{max-width:120px}
- .cabin-product-sidebar{padding:11px}
+ .cabin-product-cell{display:grid;gap:5px}
+ .cabin-mobile-label{display:block;font-size:11px;color:var(--muted);font-weight:600}
+ .cabin-product-sidebar .cabin-package-choice{min-width:150px}
  .cabin-assignment-grid{grid-template-columns:1fr}
+}
+@media(max-width:430px){
+ .cabin-product-row{grid-template-columns:minmax(0,1fr)}
+ .cabin-product-actions{width:100%}
+ .cabin-product-header .primary{width:100%}
 }
 :root[data-ui-theme="dark"] .cabin-product-sidebar,
 :root[data-ui-theme="dark"] .cabin-product-editor,
-:root[data-ui-theme="dark"] .cabin-assignment-panel{background:#1b3046;border-color:#405972}
+:root[data-ui-theme="dark"] .cabin-assignment-panel{background:transparent;border-color:#405972}
 :root[data-ui-theme="dark"] .cabin-product-metric,
-:root[data-ui-theme="dark"] .cabin-package-choice,
-:root[data-ui-theme="dark"] .cabin-product-table-head{background:#253c53;border-color:#45617d;color:#c9dcef}
-:root[data-ui-theme="dark"] .cabin-package-choice.is-active{background:#463223;border-color:#ff8a3e}
+:root[data-ui-theme="dark"] .cabin-package-choice{background:transparent;border-color:#405972}
+:root[data-ui-theme="dark"] .cabin-package-choice.is-active{background:#284968}
+:root[data-ui-theme="dark"] .cabin-package-choice:hover{background:#2b4661}
+:root[data-ui-theme="dark"] .cabin-product-table-head{background:#253a54;color:#d1dfef}
 :root[data-ui-theme="dark"] .cabin-product-item-name strong,
 :root[data-ui-theme="dark"] .cabin-product-metric strong,
-:root[data-ui-theme="dark"] .cabin-product-field,
+:root[data-ui-theme="dark"] .cabin-package-choice,
 :root[data-ui-theme="dark"] .cabin-assignment-panel h3{color:#e8f3ff}
+:root[data-ui-theme="dark"] .cabin-product-field,
+:root[data-ui-theme="dark"] .cabin-mobile-label{color:#b9cde2}
 :root[data-ui-theme="dark"] #workspace-service .cabin-product-row input,
 :root[data-ui-theme="dark"] #workspace-service .cabin-product-row select,
 :root[data-ui-theme="dark"] #workspace-service .cabin-product-field input,
 :root[data-ui-theme="dark"] #workspace-service .cabin-product-field select{
- background:#23394e;color:#e8f3ff;border-color:#45617d
+ background:#192f45;color:#e8f3ff;border-color:#45617d
 }
 
 /* Per-aircraft maintenance preview: compact rows, no fabricated condition. */
