@@ -5,6 +5,8 @@ on:
     paths:
       - 'server/section9-flight-phase-timeline.mjs'
       - 'server/section9-independent-flight-operation-authorizer.mjs'
+      - 'server/section9-aircraft-operations-job-handler.mjs'
+      - 'server/section9-aircraft-operations-edge-entry.ts'
       - 'server/section9-independent-operation-evidence-reader.mjs'
       - 'supabase/migrations/20261110235950_section9_flight_engine_readiness_audit_v1.sql'
       - 'supabase/migrations/20261110235955_section9_independent_operated_flight_evidence_v1.sql'
@@ -13,9 +15,10 @@ on:
       - 'website/flight-fuel-phase-engine.mjs'
       - 'tests/test_section9_flight_phase_timeline.mjs'
       - 'tests/test_section9_independent_operation_authorizer.mjs'
+      - 'tests/test_section9_private_operations_job_handler.mjs'
       - 'tests/test_section9_independent_operation_evidence_reader.mjs'
       - 'tests/test_section9_fuel_arrival_bridge.mjs'
-      - 'tests/test_section9_full_flight_dry_run.mjs'
+      - 'tests/test_section9_full_flight_dry_run.mjs tests/test_section9_private_operations_job_handler.mjs'
       - '.github/workflows/flight-phase-execution-ci.yml'
   workflow_dispatch:
 jobs:
@@ -31,6 +34,7 @@ jobs:
         run: |
           node --check server/section9-flight-phase-timeline.mjs
           node --check server/section9-independent-flight-operation-authorizer.mjs
+          node --check server/section9-aircraft-operations-job-handler.mjs
           node --check server/section9-independent-operation-evidence-reader.mjs
           node --check server/section9-verified-flight-operations-dispatcher.mjs
           node --check server/section9-verified-flight-fuel-bridge.mjs
