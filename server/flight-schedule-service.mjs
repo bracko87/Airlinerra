@@ -14,6 +14,10 @@ const BASE_FIELDS=new Set(['action','airlineId']);
 const SAVE_FIELDS=new Set([...BASE_FIELDS,'aircraftInventoryId','flightNumber',
  'originAirportKey','destinationAirportKey','referenceDepartureUtc','referenceArrivalUtc',
  'weeklySchedule','existingId','departureStand','arrivalStand']);
+const PLAN_FIELDS=new Set([...BASE_FIELDS,'aircraftInventoryId','flightNumber',
+ 'originAirportKey','destinationAirportKey','weeklySchedule','departureStand',
+ 'arrivalStand','turnaroundMinutes','fares','service',
+ 'referenceDepartureUtc','referenceArrivalUtc']);
 const SLOT_FIELDS=new Set([...BASE_FIELDS,'aircraftInventoryId','originAirportKey',
  'destinationAirportKey','referenceDepartureUtc','referenceArrivalUtc','weeklySchedule',
  'existingId','departureStand','arrivalStand']);
@@ -50,6 +54,41 @@ export function validWeeklyFlightSchedule(value){
 export function validateFlightSchedulePayload(body){
  if(!body||typeof body!=='object'||Array.isArray(body)||
     !uuid(body.airlineId)||typeof body.action!=='string')return false;
+ if(body.action==='plan-save'){
+  if(!withinFields(body,PLAN_FIELDS)||!uuid(body.aircraftInventoryId)||
+     !/^[A-Z0-9]{2}[0-9]{1,4}$/.test(body.flightNumber||'')||
+     !AIRPORT.test(body.originAirportKey||'')||
+     !AIRPORT.test(body.destinationAirportKey||'')||
+     body.originAirportKey===body.destinationAirportKey||
+     !validWeeklyFlightSchedule(body.weeklySchedule)||
+     !Number.isInteger(body.turnaroundMinutes)||
+     body.turnaroundMinutes<45||body.turnaroundMinutes>360||
+     (body.departureStand!==null&&body.departureStand!==undefined&&
+      !['terminal','remote','cargo'].includes(body.departureStand))||
+     !['terminal','remote','cargo'].includes(body.arrivalStand)||
+     !body.fares||typeof body.fares!=='object'||Array.isArray(body.fares)||
+     Object.keys(body.fares).some(k=>!['economy','premium','business','first'].includes(k))||
+     !['economy','premium','business','first'].every(k=>
+       Object.hasOwn(body.fares,k)&&
+       (body.fares[k]===null||
+        (Number.isSafeInteger(body.fares[k])&&body.fares[k]>=0&&body.fares[k]<=100000)))||
+     !body.service||typeof body.service!=='object'||Array.isArray(body.service)||
+     Object.keys(body.service).some(k=>!['onboard','baggage','cargo'].includes(k))||
+     !['standard','basic','enhanced'].includes(body.service.onboard)||
+     !['standard','hand-only','checked'].includes(body.service.baggage)||
+     !['none','requested'].includes(body.service.cargo)||
+     (body.referenceDepartureUtc!==null&&body.referenceDepartureUtc!==undefined&&
+      !utc(body.referenceDepartureUtc))||
+     (body.referenceArrivalUtc!==null&&body.referenceArrivalUtc!==undefined&&
+      !utc(body.referenceArrivalUtc)))return false;
+  const departure=body.referenceDepartureUtc??null,arrival=body.referenceArrivalUtc??null;
+  if((departure===null)!==(arrival===null))return false;
+  if(departure!==null){
+   const minutes=Date.parse(arrival)-Date.parse(departure);
+   if(minutes<=0||minutes>72*3600000)return false;
+  }
+  return true;
+ }
  if(body.action==='list'||body.action==='partner-list')
   return withinFields(body,BASE_FIELDS);
  if(body.action==='partner-propose')return withinFields(body,PARTNER_PROPOSE_FIELDS)&&
@@ -123,6 +162,61 @@ export const SCHEDULE_SQL=Object.freeze({
    FROM airlinerra_game.airline_aircraft_inventory i
    WHERE i.airline_id=$1::uuid AND i.fleet_status='in_service'
    ORDER BY i.registration LIMIT 100`,
+ planList:`SELECT p.id::text AS "planId",p.flight_number AS "flightNumber",
+ p.aircraft_inventory_id::text AS "aircraftInventoryId",
+ p.origin_airport_key AS "originAirportKey",p.destination_airport_key AS "destinationAirportKey",
+ jsonb_build_object('key',p.origin_airport_key,'name',coalesce(o.airport_name,p.origin_airport_key),
+  'code',o.airport_code,'municipality',o.municipality,'countryIso',o.country_iso) AS "from",
+ jsonb_build_object('key',p.destination_airport_key,'name',coalesce(d.airport_name,p.destination_airport_key),
+  'code',d.airport_code,'municipality',d.municipality,'countryIso',d.country_iso) AS "to",
+ p.weekly_schedule AS "schedule",
+ jsonb_build_object('departureStand',p.departure_stand_type,
+  'arrivalStand',p.arrival_stand_type,'turnaroundMinutes',p.turnaround_minutes,
+  'fares',p.planning_options->'fares','service',p.planning_options->'service') AS "operation",
+ p.reference_departure_utc AS "referenceDepartureUtc",
+ p.reference_arrival_utc AS "referenceArrivalUtc",
+ 'owned:'||p.aircraft_inventory_id::text AS "aircraftId",
+ p.status,p.version,p.updated_at AS "updatedAt",
+ i.registration||' · '||c.configuration_code AS "aircraftLabel"
+ FROM airlinerra_game.airline_route_planning_drafts_v1 p
+ JOIN airlinerra_game.airline_aircraft_inventory i ON i.id=p.aircraft_inventory_id
+ JOIN airlinerra.aircraft_configurations c ON c.id=i.configuration_id
+ JOIN airlinerra_game.approved_game_airports o ON o.world_id=1 AND o.airport_key=p.origin_airport_key
+ JOIN airlinerra_game.approved_game_airports d ON d.world_id=1 AND d.airport_key=p.destination_airport_key
+ WHERE p.airline_id=$1::uuid ORDER BY p.updated_at DESC,p.id LIMIT 100`,
+ planSave:`INSERT INTO airlinerra_game.airline_route_planning_drafts_v1 AS p
+ (world_id,airline_id,aircraft_inventory_id,flight_number,origin_airport_key,
+ destination_airport_key,weekly_schedule,departure_stand_type,arrival_stand_type,
+ turnaround_minutes,planning_options,reference_departure_utc,reference_arrival_utc,created_by_player_id)
+ SELECT 1,a.id,i.id,$4::text,$5::text,$6::text,$7::jsonb,$8::text,$9::text,
+ $10::integer,$11::jsonb,$12::timestamptz,$13::timestamptz,$1::uuid
+ FROM airlinerra_game.airlines a
+ JOIN airlinerra_game.world_memberships w ON w.world_id=a.world_id AND w.player_id=a.owner_player_id
+ JOIN airlinerra_game.airline_aircraft_inventory i ON i.airline_id=a.id
+ JOIN airlinerra_game.approved_game_airports o ON o.world_id=a.world_id AND o.airport_key=$5::text
+ JOIN airlinerra_game.approved_game_airports d ON d.world_id=a.world_id AND d.airport_key=$6::text
+ WHERE a.id=$2::uuid AND a.owner_player_id=$1::uuid AND a.world_id=1
+  AND w.state='active' AND a.iata_code IS NOT NULL AND left($4::text,2)=a.iata_code
+  AND i.id=$3::uuid AND i.fleet_status='in_service'
+  AND i.ownership_type IN ('owned','leased')
+  AND $5::text<>$6::text
+  AND NOT EXISTS (
+   SELECT 1 FROM airlinerra_game.airline_flight_schedule_drafts_v1 s
+   WHERE s.airline_id=a.id AND s.flight_number=$4::text)
+ ON CONFLICT (airline_id,flight_number) DO UPDATE
+ SET aircraft_inventory_id=excluded.aircraft_inventory_id,
+  origin_airport_key=excluded.origin_airport_key,
+  destination_airport_key=excluded.destination_airport_key,
+  weekly_schedule=excluded.weekly_schedule,
+  departure_stand_type=excluded.departure_stand_type,
+  arrival_stand_type=excluded.arrival_stand_type,
+  turnaround_minutes=excluded.turnaround_minutes,
+  planning_options=excluded.planning_options,
+  reference_departure_utc=excluded.reference_departure_utc,
+  reference_arrival_utc=excluded.reference_arrival_utc,
+  updated_at=now(),version=p.version+1
+ RETURNING id::text AS "planId",flight_number AS "flightNumber",
+ version,status,airline_id::text AS "airlineId"`,
  drafts:`SELECT s.id::text AS id,s.flight_number AS "flightNumber",
    s.aircraft_inventory_id::text AS "aircraftInventoryId",
    s.configuration_id::int AS "configurationId",
@@ -210,12 +304,30 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
    if(body.action==='list'){
     const owner=await client.query(SCHEDULE_SQL.owner,[body.airlineId,userId]);
     if(owner.rowCount!==1)return respond(403,{error:'Airline not owned by this account'});
-    const [fleet,drafts]=await Promise.all([
+    const [fleet,drafts,plans]=await Promise.all([
       client.query(SCHEDULE_SQL.fleet,[body.airlineId]),
-      client.query(SCHEDULE_SQL.drafts,[body.airlineId])
+      client.query(SCHEDULE_SQL.drafts,[body.airlineId]),
+      client.query(SCHEDULE_SQL.planList,[body.airlineId])
     ]);
     return respond(200,{readOnly:false,activationAvailable:false,
-      fleet:fleet.rows,drafts:drafts.rows});
+      fleet:fleet.rows,drafts:drafts.rows,plans:plans.rows});
+   }
+   if(body.action==='plan-save'){
+    const result=await client.query(SCHEDULE_SQL.planSave,[
+     userId,body.airlineId,body.aircraftInventoryId,body.flightNumber,
+     body.originAirportKey,body.destinationAirportKey,
+     JSON.stringify(body.weeklySchedule),body.departureStand??null,
+     body.arrivalStand,body.turnaroundMinutes,
+     JSON.stringify({fares:body.fares,service:body.service}),
+     body.referenceDepartureUtc??null,body.referenceArrivalUtc??null
+    ]);
+    if(result.rowCount!==1||!result.rows[0]?.planId)
+     return respond(409,{error:'ROUTE_PLANNING_REQUIREMENTS_NOT_MET',
+      reason:'AIRLINE_AIRCRAFT_AIRPORT_OR_FLIGHT_NUMBER_NOT_ELIGIBLE'});
+    const saved=result.rows[0];
+    return respond(200,{...saved,canActivateNormalFlight:false,
+     slotsReserved:false,passengerBookingsCreated:false,ledgerPosted:false,
+     message:'Owner-scoped planning route saved; no flight activated or slot reserved.'});
    }
    if(body.action==='save'){
     const response=await client.query(SCHEDULE_SQL.save,[
