@@ -1277,12 +1277,14 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    return;
   }
   // Other flight durations, time zones and slots are still not verified.
-  // No live financial, schedule or aircraft mutations: local browser-session draft only.
+  // A local draft never mutates server finance, aircraft, schedules or live flights.
   const draft={from,to,flightNumber,flights:schedule.length,schedule,
    storage:canSaveToServer?'server':'browser',
    aircraftId:flightAircraft,
-   aircraftConfigurationId:selectedCatalog.id,
-   aircraftLabel:[selectedCatalog.manufacturer,selectedCatalog.model,selectedCatalog.configuration].filter(Boolean).join(' '),
+   aircraftConfigurationId:selectedCatalog?.id??ownedChoice.configurationId,
+   aircraftLabel:[selectedCatalog?.manufacturer||ownedChoice.manufacturer,
+    selectedCatalog?.model||ownedChoice.model,
+    selectedCatalog?.configuration].filter(Boolean).join(' ')||ownedChoice.registration,
    catalogPreviewOnly:false,testAircraft:false,
    serverScheduleId:null,
    referenceDepartureUtc:utcFromInput($('route-preflight-departure-utc')?.value),
