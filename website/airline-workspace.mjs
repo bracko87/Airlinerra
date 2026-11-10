@@ -97,6 +97,24 @@ const pages=Object.freeze({
   'fleet':()=>card('Fleet inventory',"<div class=\"workspace-kpis fleet-summary-kpis\">\n<div><span>Owned aircraft</span><strong id=\"fleet-owned-count\">—</strong></div>\n<div><span>Leased aircraft</span><strong id=\"fleet-leased-count\">—</strong></div>\n<div><span>Fleet status</span><strong id=\"fleet-real-status\">Not loaded</strong></div></div>\n<div class=\"fleet-table-scroll\">\n<div class=\"fleet-inventory-table\" role=\"table\" aria-label=\"Owned and leased aircraft\">\n<div class=\"fleet-inventory-row fleet-inventory-head\" role=\"row\"><span role=\"columnheader\">Aircraft / registration</span><span role=\"columnheader\">Passenger seats</span><span role=\"columnheader\">Configuration</span><span role=\"columnheader\">Cargo</span><span role=\"columnheader\">Current location</span><span role=\"columnheader\">Status</span><span role=\"columnheader\">View</span></div>\n<div id=\"fleet-owned-aircraft\" class=\"fleet-inventory-body\" role=\"rowgroup\" aria-live=\"polite\">Loading verified fleet...</div>\n</div></div><p id=\"fleet-delivery-feedback\" class=\"hint\" role=\"status\" aria-live=\"polite\"></p>\n<div class=\"fleet-toolbar\"><button type=\"button\" class=\"secondary\" data-workspace-go=\"aircraft-market\">View market offers</button><button type=\"button\" class=\"secondary\" data-workspace-go=\"maintenance\">Maintenance planning</button></div>",'AIRCRAFT FLEET'),
  'fleet-aircraft':()=>card('Aircraft details',`<div class="fleet-detail-back"><button type="button" class="secondary" data-workspace-go="fleet">← Back to my fleet</button></div>
 <div class="fleet-aircraft-profile-top">
+  <div class="fleet-aircraft-identity-panel">
+    <h3 id="fleet-detail-name">Select an aircraft</h3>
+    <p id="fleet-detail-subtitle" class="hint"></p>
+    <section class="fleet-detail-section"><h4>Registration and status</h4><div class="fleet-detail-grid"><div class="fleet-detail-row"><span>Aircraft registration</span><strong id="fleet-detail-registration">—</strong></div>
+<div class="fleet-detail-row"><span>Ownership</span><strong id="fleet-detail-ownership">—</strong></div>
+<div class="fleet-detail-row"><span>Configuration</span><div class="fleet-configuration-value"><strong id="fleet-detail-configuration">—</strong><button id="fleet-configuration-change" type="button" class="secondary fleet-configuration-change-button" disabled>Change configuration</button></div></div>
+<div class="fleet-detail-row"><span>Current verified location</span><strong id="fleet-detail-location">—</strong></div>
+</div></section>
+    <div class="fleet-nickname-editor">
+      <label class="workspace-label" for="fleet-detail-nickname">Aircraft nickname (optional)</label>
+      <div class="fleet-nickname-controls">
+        <input id="fleet-detail-nickname" type="text" maxlength="40" autocomplete="off" placeholder="Give this aircraft a nickname">
+        <button id="fleet-detail-save" type="button" class="primary">Save nickname</button>
+      </div>
+      <p class="hint">Nickname and image belong only to this aircraft. Its official model and registration do not change.</p>
+      <p id="fleet-detail-feedback" class="hint" role="status" aria-live="polite"></p>
+    </div>
+  </div>
   <section class="fleet-aircraft-image-panel" aria-label="Aircraft photo or livery">
     <div class="fleet-aircraft-image-frame">
       <img id="fleet-aircraft-image" alt="Current aircraft photo or custom livery" hidden>
@@ -113,27 +131,29 @@ const pages=Object.freeze({
       <p id="fleet-aircraft-image-status" class="hint" role="status" aria-live="polite"></p>
     </div>
   </section>
-  <div class="fleet-aircraft-identity-panel">
-    <h3 id="fleet-detail-name">Select an aircraft</h3>
-    <p id="fleet-detail-subtitle" class="hint"></p>
-    <section class="fleet-detail-section"><h4>Registration and status</h4><div class="fleet-detail-grid"><div class="fleet-detail-row"><span>Aircraft registration</span><strong id="fleet-detail-registration">—</strong></div>
-<div class="fleet-detail-row"><span>Ownership</span><strong id="fleet-detail-ownership">—</strong></div>
-<div class="fleet-detail-row"><span>Configuration</span><strong id="fleet-detail-configuration">—</strong></div>
-<div class="fleet-detail-row"><span>Passenger seats (model reference)</span><strong id="fleet-detail-seats">—</strong></div>
-<div class="fleet-detail-row"><span>Cargo capacity (model reference)</span><strong id="fleet-detail-cargo">—</strong></div>
-<div class="fleet-detail-row"><span>Current verified location</span><strong id="fleet-detail-location">—</strong></div>
-<div class="fleet-detail-row"><span>Fleet and delivery status</span><strong id="fleet-detail-status">—</strong></div></div></section>
-    <div class="fleet-nickname-editor">
-      <label class="workspace-label" for="fleet-detail-nickname">Aircraft nickname (optional)</label>
-      <div class="fleet-nickname-controls">
-        <input id="fleet-detail-nickname" type="text" maxlength="40" autocomplete="off" placeholder="Give this aircraft a nickname">
-        <button id="fleet-detail-save" type="button" class="primary">Save nickname</button>
-      </div>
-      <p class="hint">Nickname and image belong only to this aircraft. Its official model and registration do not change.</p>
-      <p id="fleet-detail-feedback" class="hint" role="status" aria-live="polite"></p>
-    </div>
-  </div>
 </div>
+<dialog id="fleet-configuration-dialog" class="fleet-configuration-dialog" aria-labelledby="fleet-configuration-dialog-heading">
+  <div class="fleet-configuration-dialog-inner">
+    <div class="fleet-configuration-dialog-title">
+      <h3 id="fleet-configuration-dialog-heading">Change aircraft configuration</h3>
+      <button type="button" class="secondary" id="fleet-configuration-close" aria-label="Close configuration options">Close</button>
+    </div>
+    <p id="fleet-configuration-aircraft-label" class="hint"></p>
+    <p id="fleet-configuration-load-status" class="hint" role="status" aria-live="polite">Loading company configurations...</p>
+    <label class="workspace-label" for="fleet-configuration-choice">Available company configurations for this aircraft model</label>
+    <select id="fleet-configuration-choice" disabled><option value="">Loading...</option></select>
+    <div id="fleet-configuration-preview" class="fleet-configuration-preview" aria-live="polite"></div>
+    <label class="workspace-label" for="fleet-configuration-facility">Refit facility</label>
+    <select id="fleet-configuration-facility" disabled><option value="">No confirmed refit appointment</option></select>
+    <p id="fleet-configuration-slot-status" class="hint">Refit booking slots and confirmed installation dates are not available yet.</p>
+    <div class="fleet-configuration-dialog-actions">
+      <button type="button" class="secondary" id="fleet-configuration-create">Design new company layout</button>
+      <button type="button" class="primary" id="fleet-configuration-save-draft" disabled>Save configuration proposal</button>
+    </div>
+    <p id="fleet-configuration-feedback" class="hint" role="status" aria-live="polite"></p>
+    <p class="hint">Saving a proposal does not replace installed seats, ground the aircraft, reserve a maintenance slot, or charge the airline. Final refit cost and installation date need a verified booking.</p>
+  </div>
+</dialog>
 <section class="fleet-detail-section"><h4>Airframe condition and usage</h4><div class="fleet-detail-grid"><div class="fleet-detail-row"><span>Individual aircraft manufacture year</span><strong id="fleet-detail-manufacture-year">—</strong></div>
 <div class="fleet-detail-row"><span>Individual aircraft age</span><strong id="fleet-detail-aircraft-age">—</strong></div>
 <div class="fleet-detail-row"><span>Verified condition</span><strong id="fleet-detail-condition">—</strong></div>
@@ -142,6 +162,8 @@ const pages=Object.freeze({
 <div class="fleet-detail-row"><span>Tracking started</span><strong id="fleet-detail-tracking-start">—</strong></div>
 <div class="fleet-detail-row"><span>Added to fleet</span><strong id="fleet-detail-fleet-added">—</strong></div></div></section>
 <section class="fleet-detail-section"><h4>Aircraft technical specifications</h4><div class="fleet-detail-grid"><div class="fleet-detail-row"><span>Model family</span><strong id="fleet-detail-family">—</strong></div>
+<div class="fleet-detail-row"><span>Passenger seats (model reference)</span><strong id="fleet-detail-seats">—</strong></div>
+<div class="fleet-detail-row"><span>Cargo capacity (model reference)</span><strong id="fleet-detail-cargo">—</strong></div>
 <div class="fleet-detail-row"><span>Model engine option</span><strong id="fleet-detail-engine">—</strong></div>
 <div class="fleet-detail-row"><span>Model production years</span><strong id="fleet-detail-production-years">—</strong></div>
 <div class="fleet-detail-row"><span>Reference crew required</span><strong id="fleet-detail-crew">—</strong></div>
