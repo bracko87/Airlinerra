@@ -31,7 +31,7 @@ BEGIN
  IF (SELECT count(*) FROM airlinerra_game.airport_group2_section1_game_registry_v1
    WHERE section1_game_data_complete)<>1118
  OR EXISTS(SELECT 1 FROM airlinerra_game.airport_group2_section1_game_registry_v1
-   WHERE game_airport_name IS NULL OR unique_game_lookup_code IS NULL
+   WHERE game_airport_name IS NULL OR game_navigation_code IS NULL
    OR game_locality_label IS NULL OR country_iso IS NULL
    OR latitude_deg IS NULL OR longitude_deg IS NULL
    OR game_timezone_iana IS NULL OR game_elevation_ft IS NULL)
