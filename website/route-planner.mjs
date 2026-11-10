@@ -1235,23 +1235,29 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    message('route-plan-status','BLOCKED — This aircraft cannot use the route. '+selectedRunway.blockingReasons.join(' '));
    return;
   }
-  if(!selectedCatalog){
-   message('route-plan-status','A valid aircraft model from the game catalog is required to check this route.');
+  if(!ownedChoice){
+   message('route-plan-status','Select an in-service aircraft owned or leased by this company. Test and catalogue aircraft cannot be scheduled.');
    return;
   }
-  if(!airportProfiles.from||!airportProfiles.to){
-   message('route-plan-status','Airport runway data unavailable. Cannot verify aircraft compatibility.');
+  const canSaveToServer=typeof data?.scheduler?.save==='function';
+  // The localhost gateway is deliberately read-only for server schedules.
+  // Allow an explicit LOCAL planning draft rather than silently losing work
+  // or claiming that an operational flight was registered.
+  if(canSaveToServer&&!selectedCatalog){
+   message('route-plan-status','A verified aircraft model is required before saving a server schedule.');
+   return;
+  }
+  if(canSaveToServer&&(!airportProfiles.from||!airportProfiles.to)){
+   message('route-plan-status','Airport runway profiles must be verified before saving to the server.');
    return;
   }
   const preflight=await automaticPreflight({force:true});
-  if(!preflight||preflight.gameHardBlocked===true){
-   message('route-plan-status',preflight?.gameHardBlocked===true?
-    'BLOCKED — The selected aircraft or times violate an airport rule. See details above.':
-    'Enter exact UTC times and complete automatic restrictions checking before saving this aircraft route.');
+  if(preflight?.gameHardBlocked===true){
+   message('route-plan-status','BLOCKED — a verified airport restriction prevents saving this route.');
    return;
   }
-  if(!ownedChoice){
-   message('route-plan-status','Select an in-service aircraft owned or leased by this company. Test and catalogue aircraft cannot be scheduled.');
+  if(canSaveToServer&&!preflight){
+   message('route-plan-status','Complete UTC examples and restriction checks before saving to the airline server.');
    return;
   }
   const timeline=selectedAircraftTimeline();
@@ -1272,6 +1278,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   // Other flight durations, time zones and slots are still not verified.
   // No live financial, schedule or aircraft mutations: local browser-session draft only.
   const draft={from,to,flightNumber,flights:schedule.length,schedule,
+   storage:canSaveToServer?'server':'browser',
    aircraftId:flightAircraft,
    aircraftConfigurationId:selectedCatalog.id,
    aircraftLabel:[selectedCatalog.manufacturer,selectedCatalog.model,selectedCatalog.configuration].filter(Boolean).join(' '),
@@ -1279,7 +1286,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    serverScheduleId:null,
    referenceDepartureUtc:utcFromInput($('route-preflight-departure-utc')?.value),
    referenceArrivalUtc:utcFromInput($('route-preflight-arrival-utc')?.value),
-   airportRuleScreen:{gameHardBlocked:false,needsReview:preflight.needsReview===true,
+   airportRuleScreen:{gameHardBlocked:false,needsReview:preflight?.needsReview!==false,
     checkedAt:new Date().toISOString(),notFlightActivation:true},
    operation,status:'draft',operationallyVerified:false};
   const latest=loadDraft?.()||{},routes=Array.isArray(latest.routes)?latest.routes:[];
@@ -1297,7 +1304,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    message('route-plan-status','This server schedule must stay linked to your registered fleet aircraft. Choose an owned/leased aircraft.');
    return;
   }
-  if(ownedChoice){
+  if(canSaveToServer){
    if(preflight.slotAvailability?.available!==true){
     message('route-plan-status','Departure or arrival slot is unavailable. Choose another time or stand type.');
     return;
@@ -1338,18 +1345,24 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
     return;
    }
   }
-  if(!draftWrite('routes',[...filtered,draft])||!draftWrite('route',draft)){
+  if(!draftWrite('routes',[...filtered,draft])){
    message('route-plan-status',draft.serverScheduleId?
-    'Schedule saved to your airline server, but this browser could not cache the draft. See the server schedule list.':
-    'Browser storage unavailable. Local route draft was not saved.');
+    'Server schedule saved, but this browser could not cache it. See server schedule drafts.':
+    'NOT SAVED — browser storage is unavailable. No local route draft was created.');
    return;
   }
-  doc.dispatchEvent(new CustomEvent('airlinerra:route-draft-saved'));
+  // My Routes uses the routes array, not the legacy single-route key.
+  // A failed compatibility write must never hide a successfully stored route.
+  draftWrite('route',draft);
+  doc.dispatchEvent(new CustomEvent('airlinerra:route-draft-saved',{
+   detail:{flightNumber,serverSaved:Boolean(draft.serverScheduleId)}
+  }));
   await resetRouteForm();
-  message('route-plan-status',flightNumber+
-   (draft.serverScheduleId?' saved with protected weekly airport slot reservations.':
-     ' saved as a local catalog route preview without airport slot reservations.')+
-    ' No commercial flight was activated.');
+  const text=flightNumber+(draft.serverScheduleId?
+   ' saved as a SERVER schedule draft. No commercial flight has been activated.':
+   ' saved as a LOCAL planning draft. It is now listed under My Routes in this browser tab. No server schedule or flight was created.');
+  const status=$('route-plan-status');
+  if(status){status.classList.add('is-success');status.textContent=text;}
 
  });
  function updateData(data){
