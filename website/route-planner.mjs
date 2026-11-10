@@ -1326,8 +1326,10 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
      arrivalStand:operation.arrivalStand,
      turnaroundMinutes:operation.turnaroundMinutes,
      fares:operation.fares,service:operation.service,
-     referenceDepartureUtc:draft.referenceDepartureUtc,
-     referenceArrivalUtc:draft.referenceArrivalUtc
+     referenceDepartureUtc:draft.referenceDepartureUtc&&draft.referenceArrivalUtc?
+      draft.referenceDepartureUtc:null,
+     referenceArrivalUtc:draft.referenceDepartureUtc&&draft.referenceArrivalUtc?
+      draft.referenceArrivalUtc:null
     });
     if(result?.status!=='planning'||typeof result.planId!=='string'||
        result.canActivateNormalFlight!==false||result.slotsReserved!==false||
