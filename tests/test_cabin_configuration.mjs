@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {standardCabinPlan,evaluateCabinPlan,cabinClasses}
+import {standardCabinPlan,evaluateCabinPlan,cabinClasses,cabinRowLayout,createCabinFloorplanModel}
  from '../website/cabin-configuration-manager.mjs';
 import {FLEET_SQL,validateFleetAcquisitionRequest,createFleetAcquisitionHandler,
  FLEET_ACQUISITION_API_ROUTE} from '../server/fleet-acquisition-service.mjs';
@@ -101,6 +101,10 @@ test('cabins overview fetches only airline-owned aircraft and source-linked faci
   }]};
   if(sql===FLEET_SQL.cabinDirectory)return {rowCount:1,rows:[{continent:'Europe',airportCode:'LBSF'}]};
   if(sql===FLEET_SQL.cabinRefitSites)return {rowCount:1,rows:[{aircraftInventoryId:aircraft,airportCode:'LBSF'}]};
+  if(sql===FLEET_SQL.cabinGeometry)return {rowCount:1,rows:[{
+   configurationId:16,economyColumns:[3,3],premiumColumns:[2,2],
+   businessColumns:[2,2],firstColumns:[1,1],reviewStatus:'operator_supported_pattern'
+  }]};
   throw Error('Unexpected SQL');
  });
  const out=await handler(makeRequest({action:'cabin-overview',airlineId:airline}));
@@ -110,6 +114,7 @@ test('cabins overview fetches only airline-owned aircraft and source-linked faci
  assert.equal(data.canActivateRefit,false);
  assert.equal(data.aircraft[0].installedEconomy,156);
  assert.equal(data.directory[0].continent,'Europe');
+ assert.deepEqual(data.geometries[0].economyColumns,[3,3]);
 });
 test('floorplan and navigation do not claim certified exit positions or live refits',async()=>{
  const [ui,workspace,html,overlay]=await Promise.all([
@@ -118,11 +123,49 @@ test('floorplan and navigation do not claim certified exit positions or live ref
   readFile(new URL('../website/private-player-app.html',import.meta.url),'utf8'),
   readFile(new URL('../website/dev-scripts/invited-overlay.mjs',import.meta.url),'utf8')
  ]);
- assert.match(ui,/Exit geometry not certified/);
+ assert.match(ui,/Exits not verified/);
  assert.match(ui,/renderCabinFloorplan/);
  assert.match(ui,/draft_saved_not_installed/);
  assert.match(workspace,/data-workspace-go="cabin-configurations"/);
  assert.match(html,/data-view-link="cabin-configurations"/);
  assert.match(html,/>Flight services</);
  assert.match(overlay,/'cabin-configuration-manager.mjs'/);
+});
+
+test('A319 3–3 rows occupy over 90 percent of usable cabin width',()=>{
+ const geometry={economyColumns:[3,3],premiumColumns:[2,2],
+  businessColumns:[2,2],firstColumns:[1,1],reviewStatus:'operator_supported_pattern'};
+ const result=evaluateCabinPlan(standardCabinPlan(156),seatTypes,156);
+ const floor=createCabinFloorplanModel(result,156,geometry);
+ assert.equal(floor.totalSeats,156);
+ assert.deepEqual(floor.basePattern,[3,3]);
+ assert.equal(floor.sections[0].rows,26);
+ assert.equal(floor.sections[0].layout.join('-'),'3-3');
+ const minimum=Math.min(...floor.seats.map(s=>s.x));
+ const maximum=Math.max(...floor.seats.map(s=>s.x+s.width));
+ assert.ok((maximum-minimum)/floor.interiorWidth>.9);
+ assert.ok(minimum>=floor.left&&maximum<=floor.right);
+ assert.ok(floor.seats.every(s=>s.y>=80&&s.y+s.height<floor.height-60));
+});
+test('regional, narrowbody and widebody rows do not reuse the A319 3–3 pattern',()=>{
+ const p=(eco,pre,bus,first)=>({economyColumns:eco,premiumColumns:pre,
+  businessColumns:bus,firstColumns:first});
+ assert.deepEqual(cabinRowLayout(p([2,3],[2,2],[1,1],[1,1]),'economy',160),[2,3]);
+ assert.deepEqual(cabinRowLayout(p([2,2],[1,1],[1,1],[1,1]),'economy',136),[2,2]);
+ assert.deepEqual(cabinRowLayout(p([3,4,3],[2,3,2],[1,2,1],[1,2,1]),'economy',550),[3,4,3]);
+ assert.deepEqual(cabinRowLayout(p([3,3,3],[2,3,2],[1,2,1],[1,2,1]),'economy',440),[3,3,3]);
+ const val=evaluateCabinPlan(standardCabinPlan(156),seatTypes,156);
+ assert.equal(createCabinFloorplanModel(val,156,p([3,3],[2,2],[2,2],[1,1])).totalSeats,156);
+});
+test('40 options and all 271 default patterns are represented in migration',async()=>{
+ const sql=await readFile(new URL('../supabase/migrations/20261110184500_airlinerra_40_real_reference_seats_and_model_geometry_v1.sql',import.meta.url),'utf8');
+ assert.match(sql,/cabin_model_row_geometry_v1/);
+ assert.match(sql,/INSERT INTO airlinerra_game.cabin_seat_types_v1/);
+ assert.match(sql,/ON CONFLICT\(configuration_id\) DO NOTHING/);
+ assert.match(sql,/manually_verified boolean NOT NULL DEFAULT false/);
+ assert.match(sql,/real_product_reference/);
+ const service=await readFile(new URL('../server/fleet-acquisition-service.mjs',import.meta.url),'utf8');
+ assert.match(service,/cabinGeometry:/);
+ assert.match(service,/client.query\(FLEET_SQL.cabinGeometry\)/);
+ assert.match(service,/geometries:geometry.rows/);
 });
