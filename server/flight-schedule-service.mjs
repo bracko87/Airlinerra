@@ -73,10 +73,13 @@ export function validateFlightSchedulePayload(body){
        (body.fares[k]===null||
         (Number.isSafeInteger(body.fares[k])&&body.fares[k]>=0&&body.fares[k]<=100000)))||
      !body.service||typeof body.service!=='object'||Array.isArray(body.service)||
-     Object.keys(body.service).some(k=>!['onboard','baggage','cargo'].includes(k))||
+     Object.keys(body.service).some(k=>!['onboard','baggage','cargo','cabinPackageId'].includes(k))||
      !['standard','basic','enhanced'].includes(body.service.onboard)||
      !['standard','hand-only','checked'].includes(body.service.baggage)||
      !['none','requested'].includes(body.service.cargo)||
+     (body.service.cabinPackageId!==undefined&&
+      (typeof body.service.cabinPackageId!=='string'||
+       !/^(?:none|basic|pkg-[1-9][0-9]{0,5})$/.test(body.service.cabinPackageId)))||
      (body.referenceDepartureUtc!==null&&body.referenceDepartureUtc!==undefined&&
       !utc(body.referenceDepartureUtc))||
      (body.referenceArrivalUtc!==null&&body.referenceArrivalUtc!==undefined&&
@@ -203,6 +206,15 @@ export const SCHEDULE_SQL=Object.freeze({
   AND NOT EXISTS (
    SELECT 1 FROM airlinerra_game.airline_flight_schedule_drafts_v1 s
    WHERE s.airline_id=a.id AND s.flight_number=$4::text)
+  AND (
+   coalesce($11::jsonb->'service'->>'cabinPackageId','basic') IN ('basic','none')
+   OR EXISTS (
+    SELECT 1 FROM airlinerra_game.airline_cabin_service_settings_v1 c
+    CROSS JOIN LATERAL jsonb_array_elements(c.state->'packages') package
+    WHERE c.airline_id=a.id
+      AND package->>'id'=$11::jsonb->'service'->>'cabinPackageId'
+   )
+  )
  ON CONFLICT (airline_id,flight_number) DO UPDATE
  SET aircraft_inventory_id=excluded.aircraft_inventory_id,
   origin_airport_key=excluded.origin_airport_key,
