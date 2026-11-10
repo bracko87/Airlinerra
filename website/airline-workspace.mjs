@@ -14,7 +14,7 @@ export const AIRLINE_UI_DEFAULTS=Object.freeze({
 });
 export const AIRLINE_UI_VIEWS=Object.freeze([
  'overview','airline','fleet','fleet-aircraft','routes','route-details','schedule','finances','worlds',
- 'airports','staff','rankings','service','aircraft-market','maintenance',
+ 'airports','staff','rankings','service','aircraft-new-orders','aircraft-market','maintenance',
  'settings','interface','notifications','help'
 ]);
 export function cleanUiPreferences(value){
