@@ -65,19 +65,23 @@ export const FLEET_SQL=Object.freeze({
   "LEFT JOIN airlinerra_game.approved_game_airports ap "+
   "ON ap.world_id=p.world_id AND ap.airport_key=p.airport_key "+
   "WHERE i.airline_id=$1::uuid ORDER BY i.created_at DESC,i.id LIMIT 250",
- maintenance:"SELECT check_code AS \"checkCode\",display_name AS label, "+
-  "downtime_hours AS \"durationHours\",airport_scope AS \"airportScope\", "+
-  "group_id AS \"groupId\",group_name AS \"groupName\", "+
-  "manufacture_year AS \"manufactureYear\",condition_pct::text AS \"conditionPct\", "+
-  "tracked_flight_hours::text AS \"trackedFlightHours\", "+
-  "tracked_flight_cycles::text AS \"trackedFlightCycles\", "+
-  "last_completed_utc AS \"lastCompletedUtc\", "+
-  "last_completed_at_flight_hours::text AS \"lastCompletedFlightHours\", "+
-  "base_estimate_usd::text AS \"baseEstimateUsd\", "+
-  "cost_evidence AS \"costEvidence\" "+
-  "FROM airlinerra_game.aircraft_maintenance_check_overview_v1 "+
-  "WHERE airline_id=$1::uuid AND aircraft_inventory_id=$2::uuid "+
-  "ORDER BY CASE check_code WHEN 'daily' THEN 1 WHEN 'weekly' THEN 2 "+
+ maintenance:"SELECT v.check_code AS \"checkCode\",v.display_name AS label, "+
+  "v.downtime_hours AS \"durationHours\",v.airport_scope AS \"airportScope\", "+
+  "p.calendar_interval_hours AS \"calendarIntervalHours\", "+
+  "p.calendar_interval_months AS \"calendarIntervalMonths\", "+
+  "p.flight_hour_interval::text AS \"flightHourInterval\", "+
+  "v.group_id AS \"groupId\",v.group_name AS \"groupName\", "+
+  "v.manufacture_year AS \"manufactureYear\",v.condition_pct::text AS \"conditionPct\", "+
+  "v.tracked_flight_hours::text AS \"trackedFlightHours\", "+
+  "v.tracked_flight_cycles::text AS \"trackedFlightCycles\", "+
+  "v.last_completed_utc AS \"lastCompletedUtc\", "+
+  "v.last_completed_at_flight_hours::text AS \"lastCompletedFlightHours\", "+
+  "v.base_estimate_usd::text AS \"baseEstimateUsd\", "+
+  "v.cost_evidence AS \"costEvidence\" "+
+  "FROM airlinerra_game.aircraft_maintenance_check_overview_v1 v "+
+  "JOIN airlinerra_game.maintenance_check_policy_v1 p ON p.check_code=v.check_code "+
+  "WHERE v.airline_id=$1::uuid AND v.aircraft_inventory_id=$2::uuid "+
+  "ORDER BY CASE v.check_code WHEN 'daily' THEN 1 WHEN 'weekly' THEN 2 "+
   "WHEN 'a' THEN 3 WHEN 'b' THEN 4 WHEN 'c' THEN 5 ELSE 6 END",
  maintenanceSites:"SELECT c.check_code AS \"checkCode\",a.airport_key AS \"airportKey\", "+
   "a.airport_code AS \"airportCode\",a.airport_name AS \"airportName\", "+
