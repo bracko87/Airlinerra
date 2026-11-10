@@ -179,7 +179,7 @@ test('market and owned fleet pages use authenticated data without fabricated pri
  ]);
  for(const id of ['fleet-owned-aircraft','fleet-owned-count','fleet-leased-count',
   'market-offers','market-offer-select','market-aircraft-registration','market-acquire'])
-  assert.match(workspace,new RegExp('id="'+id+'"'));
+  assert.match(workspace,new RegExp('(?:id=\\\\"|id=")'+id+'(?:\\\\"|")'));
  assert.match(workspace,/data\.fleetClient\.acquire\(/);
  assert.match(workspace,/client\.list\(airlineId\)/);
  assert.match(app,/createFleetAcquisitionClient/);
