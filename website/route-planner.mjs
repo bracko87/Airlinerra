@@ -800,6 +800,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    const quick=$('route-'+side+'-hub');if(quick)quick.value='';
   }
   message('route-feedback','');message('route-plan-review','');message('route-plan-status','');
+  $('route-plan-status')?.classList?.remove('is-success');
   show();
   if(homeLocation&&serial===editSerial)await selectHome('from');
  };
