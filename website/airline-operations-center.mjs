@@ -411,8 +411,10 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
      arrivalStand:route.operation.arrivalStand,
      turnaroundMinutes:route.operation.turnaroundMinutes,
      fares:route.operation.fares,service:route.operation.service,
-     referenceDepartureUtc:route.referenceDepartureUtc??null,
-     referenceArrivalUtc:route.referenceArrivalUtc??null
+     referenceDepartureUtc:route.referenceDepartureUtc&&route.referenceArrivalUtc?
+      route.referenceDepartureUtc:null,
+     referenceArrivalUtc:route.referenceDepartureUtc&&route.referenceArrivalUtc?
+      route.referenceArrivalUtc:null
     });
     if(result?.status!=='planning'||typeof result.planId!=='string'||
        result.canActivateNormalFlight!==false||result.slotsReserved!==false)
