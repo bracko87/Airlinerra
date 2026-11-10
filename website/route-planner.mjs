@@ -769,13 +769,13 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
     typeof a?.id==='string'&&Number.isSafeInteger(a.configurationId)&&a.configurationId>0):[];
    serverDrafts=response.drafts;
    serverPlans=response.plans;
-   refreshCatalogOptions();renderServerScheduleList();refreshAircraftTimeline();
+   refreshCatalogOptions();renderServerScheduleList();refreshAircraftTimeline();updateFuelEstimate();
    message('route-server-draft-status',ownedFleet.length?
     ownedFleet.length+' operational aircraft connected. Server schedule drafts are separate from live flight activation.':
     'No company aircraft are in service. Purchase or lease one, complete delivery and inspection, then create a route.');
   }catch{
    if(ticket===fleetTicket){
-    fleetReadState='unavailable';ownedFleet=[];serverDrafts=[];serverPlans=[];refreshCatalogOptions();renderServerScheduleList();
+    fleetReadState='unavailable';ownedFleet=[];serverDrafts=[];serverPlans=[];refreshCatalogOptions();renderServerScheduleList();updateFuelEstimate();
     message('route-server-draft-status','Server fleet/schedule service unavailable. No flight was activated.');
    }
   }
