@@ -4,27 +4,29 @@
  * supply contract, inventory, aircraft-fit or flight dispatch is asserted.
  * Only fixed, developer-defined catalog data may be shown as supplier costs.
  */
+/** Cost model v2: illustrative aircraft-catering supplier cost, not an actual contract.
+ * Base unit cost INCLUDES preparation/packing/handling. No online commerce.
+ * Stock defaults are per 100 passengers; digital services have usage-based costs. */
 export const CABIN_SERVICE_CATALOG=Object.freeze([
- {id:'water',name:'Drinking water',category:'Drinks',costCents:15,weight:0,condition:'Basic complimentary supply'},
- {id:'coffee',name:'Coffee and tea',category:'Drinks',costCents:35,weight:5},
- {id:'softdrink',name:'Soft drinks and juice',category:'Drinks',costCents:60,weight:6},
- {id:'alcohol',name:'Beer and wine',category:'Drinks',costCents:150,weight:5,condition:'Subject to country, route and age restrictions'},
- {id:'snack',name:'Small snack',category:'Food',costCents:70,weight:8},
- {id:'sandwich',name:'Sandwich / light meal',category:'Food',costCents:250,weight:9},
- {id:'hotmeal',name:'Hot meal',category:'Food',costCents:500,weight:14,condition:'Aircraft galley and catering required'},
- {id:'specialmeal',name:'Special dietary meal',category:'Food',costCents:600,weight:6,condition:'Pre-order, galley and catering required'},
- {id:'newspaper',name:'Digital newspapers',category:'Media',costCents:10,weight:3},
- {id:'wifi',name:'Basic Wi-Fi',category:'Media',costCents:60,weight:10,condition:'Onboard Wi-Fi equipment required'},
- {id:'fullwifi',name:'Full-speed Wi-Fi',category:'Media',costCents:200,weight:10,condition:'Onboard Wi-Fi equipment required'},
- {id:'entertainment',name:'Entertainment',category:'Media',costCents:35,weight:9,condition:'Compatible aircraft/player devices required'},
- {id:'blanket',name:'Blanket / comfort kit',category:'Comfort',costCents:200,weight:4},
- {id:'amenity',name:'Amenity kit',category:'Comfort',costCents:260,weight:5}
+ {id:'water',name:'Drinking water',category:'Drinks',costCents:65,weight:0,stock:100,rate:.28,referencePrice:200,condition:'Basic complimentary supply'},
+ {id:'coffee',name:'Coffee and tea',category:'Drinks',costCents:150,weight:5,stock:20,rate:.14,referencePrice:400},
+ {id:'softdrink',name:'Soft drinks and juice',category:'Drinks',costCents:175,weight:6,stock:25,rate:.18,referencePrice:450},
+ {id:'alcohol',name:'Beer and wine',category:'Drinks',costCents:375,weight:5,stock:10,rate:.09,referencePrice:850,condition:'Subject to country, route and age restrictions'},
+ {id:'snack',name:'Small snack',category:'Food',costCents:225,weight:8,stock:20,rate:.15,referencePrice:550},
+ {id:'sandwich',name:'Sandwich / light meal',category:'Food',costCents:525,weight:9,stock:12,rate:.10,referencePrice:1100},
+ {id:'hotmeal',name:'Hot meal',category:'Food',costCents:950,weight:14,stock:10,rate:.07,referencePrice:1900,condition:'Aircraft galley and catering required'},
+ {id:'specialmeal',name:'Special dietary meal',category:'Food',costCents:1100,weight:6,stock:3,rate:.018,referencePrice:2200,condition:'Pre-order, galley and catering required'},
+ {id:'newspaper',name:'Digital newspapers',category:'Media',costCents:55,weight:3,digital:true,rate:.07,referencePrice:200},
+ {id:'wifi',name:'Basic Wi-Fi',category:'Media',costCents:225,weight:10,digital:true,rate:.12,referencePrice:800,condition:'Onboard Wi-Fi equipment required'},
+ {id:'fullwifi',name:'Full-speed Wi-Fi',category:'Media',costCents:550,weight:10,digital:true,rate:.055,referencePrice:1600,condition:'Onboard Wi-Fi equipment required'},
+ {id:'entertainment',name:'Entertainment',category:'Media',costCents:200,weight:9,digital:true,rate:.10,referencePrice:600,condition:'Compatible aircraft/player devices required'},
+ {id:'blanket',name:'Blanket / comfort kit',category:'Comfort',costCents:450,weight:4,stock:10,rate:.06,referencePrice:950},
+ {id:'amenity',name:'Amenity kit',category:'Comfort',costCents:675,weight:5,stock:5,rate:.025,referencePrice:1500}
 ]);
 export const CABIN_MODE_OPTIONS=Object.freeze([
  ['off','Not offered'],
  ['included','Included / free'],
- ['onboard','Paid onboard'],
- ['hybrid','Free allowance + paid onboard extras']
+ ['onboard','Paid onboard']
 ]);
 export const CABIN_CLASSES=Object.freeze([
  ['economy','Economy'],['premium','Premium Economy'],
@@ -36,22 +38,31 @@ const CLASSES=new Set(CABIN_CLASSES.map(item=>item[0]));
 const cents=num=>Number.isInteger(num)&&num>=0&&num<=100000?num:null;
 const money=n=>(n<0?'-$':'$')+(Math.abs(n)/100).toFixed(2);
 export const cabinDefaultItems=()=>Object.fromEntries(CABIN_SERVICE_CATALOG.map(item=>[
- item.id,{mode:item.id==='water'?'included':'off',freeQty:item.id==='water'?1:0,
-  onlineCents:Math.round(item.costCents*4),onboardCents:Math.round(item.costCents*4)}
+ item.id,{mode:item.id==='water'?'included':'off',
+  freeQty:item.id==='water'?1:0,
+  stockPer100:item.id==='water'?100:(item.digital?0:item.stock),
+  onlineCents:item.referencePrice,onboardCents:item.referencePrice}
 ]));
 export const createBasicCabinPackage=()=>({
  id:'basic',name:'Basic Cabin Service',locked:true,items:cabinDefaultItems()
 });
 const cleanItem=(value,id)=>{
  const v=value&&typeof value==='object'&&!Array.isArray(value)?value:{};
- const mode=MODES.has(v.mode)?v.mode:['online','both'].includes(v.mode)?
-  'onboard':(id==='water'?'included':'off');
+ const catalog=CATALOG.get(id);
+ // Hybrid previously promised a free unit, so migrate it to Included / free.
+ // Older online-only and online+onboard prices become onboard-only.
+ const mode=v.mode==='hybrid'?'included':
+  ['online','both'].includes(v.mode)?'onboard':
+  MODES.has(v.mode)?v.mode:(id==='water'?'included':'off');
+ const unitPrice=cents(v.onboardCents)??catalog.referencePrice;
+ const stockPer100=mode==='included'?100:mode==='onboard'&&!catalog.digital?
+  (Number.isSafeInteger(v.stockPer100)&&v.stockPer100>=0&&v.stockPer100<=200?
+   v.stockPer100:catalog.stock):0;
  return {
-  mode,freeQty:mode==='included'||mode==='hybrid'?
-   Math.max(1,Math.min(3,Number.isInteger(v.freeQty)?v.freeQty:1)):0,
-  // The v1 field stays for backwards compatibility, but online purchases are disabled.
-  onlineCents:cents(v.onboardCents)??Math.round(CATALOG.get(id).costCents*4),
-  onboardCents:cents(v.onboardCents)??Math.round(CATALOG.get(id).costCents*4)
+  mode,freeQty:mode==='included'?1:0,
+  stockPer100,
+  // The unused v1 storage key is mirrored for backwards compatibility.
+  onlineCents:unitPrice,onboardCents:unitPrice
  };
 };
 export function cleanCabinPackage(input){
@@ -86,33 +97,78 @@ export function cleanCabinState(value){
   state.assignments[key]=value.assignments[key];
  return state;
 }
-/** GAME DESIGN estimate only; does not calculate or change real demand. */
-/** Transparent illustrative costs; no actual passenger bookings or cash entries. */
-export function cabinPackageEstimate(pkg){
+/** A deterministic, inspectable forecast, not a passenger purchase or ledger.
+ * Airlines pay for all physical items loaded (conservative no-carryover planning).
+ * Digital access is licensed only on use and needs hardware on the real flight.
+ * Flight length/reputation/price influence expected sales; no guaranteed revenue. */
+export function forecastCabinServiceFlight(pkg,{passengers=100,durationMinutes=180,reputationScore=50}={}){
+ if(!Number.isSafeInteger(passengers)||passengers<0||passengers>1000||
+    !Number.isFinite(durationMinutes)||durationMinutes<15||durationMinutes>24*60||
+    !Number.isFinite(reputationScore)||reputationScore<0||reputationScore>100)
+  throw Error('Invalid cabin forecast assumptions');
+ const reputationFactor=.7+.006*reputationScore;
+ let includedScore=0,paidOfferCount=0;
  const rows=CABIN_SERVICE_CATALOG.map(item=>{
-  const config=cleanItem(pkg?.items?.[item.id],item.id);
-  const included=config.mode==='included'||config.mode==='hybrid';
-  const paid=config.mode==='onboard'||config.mode==='hybrid';
-  const freeTakeup=item.id==='water'?1:.55;
-  const includedCents=included?Math.round(item.costCents*freeTakeup*config.freeQty):0;
-  const paidCostCents=paid?Math.round(.2*item.costCents):0;
-  const paidRevenueCents=paid?Math.round(.2*config.onboardCents):0;
-  const satisfaction=config.mode==='included'?item.weight:
-   config.mode==='hybrid'?Math.round(item.weight*.75):
-   paid?Math.round(item.weight*.35):0;
-  return {id:item.id,costCents:includedCents+paidCostCents,
-   includedCents,paidCostCents,paidRevenueCents,
-   paidMarginCents:paidRevenueCents-paidCostCents,contribution:satisfaction};
+  const selection=cleanItem(pkg?.items?.[item.id],item.id);
+  const offered=selection.mode!=='off',included=selection.mode==='included';
+  const paid=selection.mode==='onboard',unitCost=item.costCents;
+  const lengthHours=durationMinutes/60;
+  const food=['hotmeal','specialmeal'].includes(item.id);
+  // Short-haul hot meals have tiny demand; longer flights raise meal take-up.
+  const lengthFactor=food?
+   (lengthHours<=1?.04:lengthHours<=2?.38:lengthHours<=3?.9:
+    Math.min(1.9,.9+(lengthHours-3)*.27)):
+   item.id==='sandwich'?Math.min(1.65,Math.max(.35,lengthHours/2.6)):
+   item.id==='snack'?Math.min(1.55,Math.max(.45,lengthHours/2.4)):
+   Math.min(1.6,Math.max(.5,.65+lengthHours*.13));
+  const priceFactor=paid?Math.min(1.35,Math.max(.25,
+    Math.pow(item.referencePrice/Math.max(selection.onboardCents,100),.8))):1;
+  const purchaseRate=paid?Math.min(.65,item.rate*lengthFactor*reputationFactor*priceFactor):0;
+  const expectedWants=paid?Math.min(passengers,Math.round(passengers*purchaseRate)):0;
+  const loadedUnits=included?(item.digital?0:passengers):
+   paid&&!item.digital?Math.ceil(passengers*selection.stockPer100/100):0;
+  const expectedSales=paid?(item.digital?expectedWants:Math.min(expectedWants,loadedUnits)):0;
+  // Physical catering counts loaded units including unsold/expired products.
+  const costUnits=item.digital?(included?passengers:expectedSales):loadedUnits;
+  const airlineCostCents=offered?costUnits*unitCost:0;
+  const onboardRevenueCents=paid?expectedSales*selection.onboardCents:0;
+  const cannotServeShortMeal=food&&durationMinutes<80;
+  if(included&&!cannotServeShortMeal)includedScore+=item.weight;
+  if(paid)paidOfferCount++;
+  return {
+   id:item.id,mode:selection.mode,unitCostCents:unitCost,
+   loadedUnits,costUnits,expectedSales,purchaseRate,
+   stockPer100:selection.stockPer100,passengerPriceCents:paid?selection.onboardCents:0,
+   airlineCostCents,onboardRevenueCents,
+   unsoldUnits:paid&&!item.digital?Math.max(0,loadedUnits-expectedSales):0,
+   equipmentRequired:Boolean(item.condition),
+   shortFlightIncompatible:cannotServeShortMeal&&included
+  };
  });
- const totalCostCents=rows.reduce((sum,row)=>sum+row.costCents,0);
- const paidRevenueCents=rows.reduce((sum,row)=>sum+row.paidRevenueCents,0);
- const attractiveness=Math.min(100,25+rows.reduce((sum,row)=>sum+row.contribution,0));
- return {attractiveness,relativeToBasic:attractiveness-25,
-  includedCents:rows.reduce((sum,row)=>sum+row.includedCents,0),
-  totalCostCents,paidRevenueCents,netCostCents:totalCostCents-paidRevenueCents,
-  indicativeMarginCents:paidRevenueCents-rows.reduce((sum,row)=>sum+row.paidCostCents,0),
-  rows};
+ const paidBonus=Math.min(2,Math.round(paidOfferCount*.5));
+ const attractiveness=Math.min(100,25+includedScore+paidBonus);
+ const totalCostCents=rows.reduce((n,r)=>n+r.airlineCostCents,0);
+ const onboardRevenueCents=rows.reduce((n,r)=>n+r.onboardRevenueCents,0);
+ return {attractiveness,relativeToBasic:attractiveness-25,paidBonus,
+  totalCostCents,onboardRevenueCents,netCostCents:totalCostCents-onboardRevenueCents,
+  passengers,durationMinutes,reputationScore,rows,
+  forecastOnly:true,ledgerPosted:false};
 }
+/** Legacy short summary for package directory and compatibility consumers. */
+export function cabinPackageEstimate(pkg){
+ const flight=forecastCabinServiceFlight(pkg);
+ const unit=val=>Math.round(val/Math.max(1,flight.passengers));
+ return {...flight,
+  includedCents:unit(flight.rows.filter(r=>r.mode==='included')
+   .reduce((s,r)=>s+r.airlineCostCents,0)),
+  paidRevenueCents:unit(flight.onboardRevenueCents),
+  indicativeMarginCents:unit(flight.onboardRevenueCents-
+   flight.rows.filter(r=>r.mode==='onboard').reduce((s,r)=>s+r.airlineCostCents,0)),
+  totalCostPerPassengerCents:unit(flight.totalCostCents),
+  rows:flight.rows.map(r=>({...r,costCents:unit(r.airlineCostCents),
+   paidRevenueCents:unit(r.onboardRevenueCents),
+   paidMarginCents:unit(r.onboardRevenueCents-r.airlineCostCents)}))}
+ }
 const label=(doc,text,cls)=>{const node=doc.createElement('span');node.textContent=text;
  if(cls)node.className=cls;return node;};
 const element=(doc,tag,cls,text)=>{
