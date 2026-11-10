@@ -1,0 +1,41 @@
+name: Airlinerra new-used aircraft market (isolated)
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'server/fleet-acquisition-service.mjs'
+      - 'website/airline-workspace.mjs'
+      - 'website/private-player-app.html'
+      - 'website/player-app-model.mjs'
+      - 'website/player-app.css'
+      - 'website/fleet-acquisition-client.mjs'
+      - 'website/local-owner-fleet-reader.mjs'
+      - 'website/dev-scripts/real-player-read-gateway.mjs'
+      - 'tests/test_fleet_acquisition_api.mjs'
+      - 'tests/test_airline_workspace.mjs'
+      - 'tests/test_player_app_prelaunch.mjs'
+      - 'supabase/migrations/*aircraft*market*'
+      - '.github/workflows/airlinerra-aircraft-market-ci.yml'
+  workflow_dispatch:
+jobs:
+  validate-market:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check protected market and UI syntax
+        run: |
+          node --check server/fleet-acquisition-service.mjs
+          node --check website/airline-workspace.mjs
+          node --check website/fleet-acquisition-client.mjs
+          node --check website/local-owner-fleet-reader.mjs
+          node --check website/dev-scripts/real-player-read-gateway.mjs
+      - name: Test market endpoint, accounts, navigation and preview gates
+        run: node --test tests/test_fleet_acquisition_api.mjs tests/test_airline_workspace.mjs tests/test_player_app_prelaunch.mjs tests/test_operations_center_navigation.mjs
+      - name: Build full invitation-only player website
+        run: |
+          cd website
+          npm run build
