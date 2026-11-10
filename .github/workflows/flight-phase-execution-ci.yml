@@ -4,21 +4,32 @@ on:
     branches: [main]
     paths:
       - 'server/section9-flight-phase-timeline.mjs'
+      - 'server/section9-clock-job-handler.mjs'
+      - 'server/section9-clock-job-edge-entry.ts'
+      - 'server/section9-scheduled-game-day-producer.mjs'
+      - 'server/section9-aircraft-operations-worker.mjs'
       - 'server/section9-independent-flight-operation-authorizer.mjs'
       - 'server/section9-aircraft-operations-job-handler.mjs'
       - 'server/section9-aircraft-operations-edge-entry.ts'
       - 'server/section9-independent-operation-evidence-reader.mjs'
+      - 'supabase/migrations/20261111000500_section9_guarded_world1_clock_cron.sql'
       - 'supabase/migrations/20261110235950_section9_flight_engine_readiness_audit_v1.sql'
       - 'supabase/migrations/20261110235955_section9_independent_operated_flight_evidence_v1.sql'
       - 'server/section9-verified-flight-operations-dispatcher.mjs'
       - 'server/section9-verified-flight-fuel-bridge.mjs'
       - 'website/flight-fuel-phase-engine.mjs'
       - 'tests/test_section9_flight_phase_timeline.mjs'
+      - 'tests/test_section9_scheduled_game_day_producer.mjs'
+      - 'tests/test_section9_verified_game_clock_ingress.mjs'
+      - 'tests/test_section9_aircraft_operations_worker.mjs'
+      - 'tests/test_section9_verified_flight_operations_dispatcher.mjs'
+      - 'tests/test_section9_operated_flight_movement_ingress.mjs'
       - 'tests/test_section9_independent_operation_authorizer.mjs'
       - 'tests/test_section9_private_operations_job_handler.mjs'
       - 'tests/test_section9_independent_operation_evidence_reader.mjs'
       - 'tests/test_section9_fuel_arrival_bridge.mjs'
-      - 'tests/test_section9_full_flight_dry_run.mjs tests/test_section9_private_operations_job_handler.mjs'
+      - 'tests/test_section9_full_flight_dry_run.mjs'
+      - 'tests/test_section9_private_operations_job_handler.mjs'
       - '.github/workflows/flight-phase-execution-ci.yml'
   workflow_dispatch:
 jobs:
@@ -33,6 +44,9 @@ jobs:
       - name: Syntax of independent engine contracts
         run: |
           node --check server/section9-flight-phase-timeline.mjs
+          node --check server/section9-clock-job-handler.mjs
+          node --check server/section9-scheduled-game-day-producer.mjs
+          node --check server/section9-aircraft-operations-worker.mjs
           node --check server/section9-independent-flight-operation-authorizer.mjs
           node --check server/section9-aircraft-operations-job-handler.mjs
           node --check server/section9-independent-operation-evidence-reader.mjs
@@ -40,6 +54,6 @@ jobs:
           node --check server/section9-verified-flight-fuel-bridge.mjs
       - name: Verify five flight phases and trusted movement decisions (no real movements)
         run: |
-          node --test tests/test_section9_flight_phase_timeline.mjs tests/test_section9_independent_operation_authorizer.mjs tests/test_section9_independent_operation_evidence_reader.mjs tests/test_section9_fuel_arrival_bridge.mjs tests/test_section9_full_flight_dry_run.mjs
+          node --test tests/test_section9_flight_phase_timeline.mjs tests/test_section9_independent_operation_authorizer.mjs tests/test_section9_independent_operation_evidence_reader.mjs tests/test_section9_fuel_arrival_bridge.mjs tests/test_section9_full_flight_dry_run.mjs tests/test_section9_private_operations_job_handler.mjs tests/test_section9_scheduled_game_day_producer.mjs tests/test_section9_verified_game_clock_ingress.mjs tests/test_section9_aircraft_operations_worker.mjs tests/test_section9_verified_flight_operations_dispatcher.mjs tests/test_section9_operated_flight_movement_ingress.mjs
       - name: Protected website build
         run: cd website && npm run build
