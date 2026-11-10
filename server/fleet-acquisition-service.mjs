@@ -16,6 +16,18 @@ export function validateFleetAcquisitionRequest(body){
     typeof body.action!=='string'||!uuid(body.airlineId))return false;
  if(body.action==='list')return Object.keys(body).length===2 &&
   Object.keys(body).every(k=>['action','airlineId'].includes(k));
+ if(body.action==='list-used')return Object.keys(body).length===5 &&
+  Object.keys(body).every(k=>['action','airlineId','page','filterMode','search'].includes(k)) &&
+  Number.isInteger(body.page)&&body.page>=0&&body.page<=1000 &&
+  ['all','purchase','lease'].includes(body.filterMode)&&
+  typeof body.search==='string'&&body.search.length<=60&&
+  !/[\u0000-\u001F\u007F]/u.test(body.search);
+ if(body.action==='bid-used')return Object.keys(body).length===6 &&
+  Object.keys(body).every(k=>['action','airlineId','listingId','bidUsd','registration','requestId'].includes(k)) &&
+  uuid(body.listingId)&&uuid(body.requestId)&&typeof body.bidUsd==='string' &&
+  /^[1-9][0-9]{2,11}(?:\.[0-9]{1,2})?$/u.test(body.bidUsd) &&
+  typeof body.registration==='string' &&
+  REGISTRATION.test(body.registration.trim().toUpperCase());
  if(body.action==='maintenance-preview')return Object.keys(body).length===3 &&
   Object.keys(body).every(k=>['action','airlineId','aircraftInventoryId'].includes(k)) &&
   uuid(body.aircraftInventoryId);
@@ -43,9 +55,60 @@ export const FLEET_SQL=Object.freeze({
   "FROM airlinerra_game.aircraft_acquisition_offers_v1 o "+
   "JOIN airlinerra.aircraft_catalog_configuration_inventory c ON c.configuration_id=o.configuration_id "+
   "WHERE o.world_id=1 AND o.offer_status='published' "+
+  "AND o.pricing_basis='AIRLINERRA_NEW_FACTORY_GAME_ESTIMATE_V2' "+
+  "AND c.production_status='in_production' "+
+  "AND c.production_start_year<=extract(year from now()) "+
+  "AND (c.production_end_year IS NULL OR c.production_end_year>=extract(year from now())) "+
   "AND c.model_catalog_status='service_verified' AND c.civilian_service_status='active' "+
   "AND NOT EXISTS(SELECT 1 FROM airlinerra.aircraft_expansion_group3 x WHERE x.configuration_id=o.configuration_id) "+
   "ORDER BY c.manufacturer_name,c.model_name,o.transaction_type,o.offer_id LIMIT 150",
+ marketState:"SELECT m.release_state AS \"releaseState\",m.lease_enabled AS \"leaseEnabled\", "+
+  "w.state AS \"worldState\", "+
+  "(m.release_state='live' AND w.state='active' AND "+
+  "w.opens_at IS NOT NULL AND w.opens_at<=clock_timestamp()) AS \"marketOpen\", "+
+  "clock_timestamp() AS \"serverNowUtc\" "+
+  "FROM airlinerra_game.aircraft_market_control_v1 m "+
+  "JOIN public.airlinerra_game_worlds w ON w.id=m.world_id WHERE m.world_id=1",
+ usedLots:"SELECT l.listing_id::text AS \"listingId\", "+
+  "l.configuration_id::int AS \"configurationId\", "+
+  "l.offering_type AS \"offeringType\",l.manufacture_year AS \"manufactureYear\", "+
+  "l.condition_pct::text AS \"conditionPct\", "+
+  "l.next_c_check_in_hours::text AS \"nextCCheckInHours\", "+
+  "l.provisional_new_value_usd::text AS \"provisionalNewValueUsd\", "+
+  "l.opening_bid_usd::text AS \"openingBidUsd\", "+
+  "l.min_bid_increment_usd::text AS \"minIncrementUsd\", "+
+  "l.highest_bid_usd::text AS \"highestBidUsd\", "+
+  "l.fixed_lease_deposit_usd::text AS \"leaseDepositUsd\", "+
+  "l.lease_months AS \"leaseMonths\", "+
+  "l.status,l.bid_count AS \"bidCount\", "+
+  "l.close_after_utc AS \"closeAfterUtc\", "+
+  "(l.highest_bid_airline_id=$1::uuid) AS \"myHighestBid\", "+
+  "c.manufacturer_name AS manufacturer,c.model_name AS model, "+
+  "c.family_name AS family,c.use_type AS \"useType\", "+
+  "c.production_start_year AS \"productionStartYear\", "+
+  "c.production_end_year AS \"productionEndYear\", "+
+  "l.price_basis AS \"pricingBasis\" "+
+  "FROM airlinerra_game.used_aircraft_auction_lots_v1 l "+
+  "JOIN airlinerra.aircraft_catalog_configuration_inventory c "+
+  "ON c.configuration_id=l.configuration_id "+
+  "WHERE l.world_id=1 AND l.status IN('available','bidding') "+
+  "AND ($2::text='all' OR l.offering_type=$2::text) "+
+  "AND ($3::text='' OR position(lower($3::text) in lower("+
+  "c.manufacturer_name||' '||c.model_name||' '||coalesce(c.family_name,'')))>0) "+
+  "ORDER BY CASE WHEN l.status='bidding' THEN 0 ELSE 1 END, "+
+  "CASE WHEN l.status='bidding' THEN l.close_after_utc END NULLS LAST,"+
+  "c.manufacturer_name,c.model_name,l.opening_bid_usd,l.listing_id "+
+  "LIMIT 30 OFFSET ($4::integer*30)",
+ usedCount:"SELECT count(*)::int AS total "+
+  "FROM airlinerra_game.used_aircraft_auction_lots_v1 l "+
+  "JOIN airlinerra.aircraft_catalog_configuration_inventory c "+
+  "ON c.configuration_id=l.configuration_id "+
+  "WHERE l.world_id=1 AND l.status IN('available','bidding') "+
+  "AND ($1::text='all' OR l.offering_type=$1::text) "+
+  "AND ($2::text='' OR position(lower($2::text) in lower("+
+  "c.manufacturer_name||' '||c.model_name||' '||coalesce(c.family_name,'')))>0)",
+ usedBid:"SELECT airlinerra_game.place_used_aircraft_bid_v1("+
+  "$1::uuid,$2::uuid,$3::uuid,$4::numeric,$5::text,$6::uuid) AS result",
  fleet:"SELECT i.id::text AS id,i.configuration_id::int AS \"configurationId\", "+
   "i.registration,i.nickname,i.ownership_type AS \"ownershipType\",i.fleet_status AS \"fleetStatus\", "+
   "c.manufacturer_name AS manufacturer,c.model_name AS model,c.family_name AS family, "+
@@ -120,7 +183,7 @@ export const FLEET_SQL=Object.freeze({
   "SET nickname=NULLIF(btrim($3::text),''),updated_at=now() "+
   "WHERE i.id=$2::uuid AND i.airline_id=$1::uuid "+
   "RETURNING i.id::text AS id,i.nickname",
- acquire:"SELECT airlinerra_game.acquire_offered_aircraft_v1("+
+ acquire:"SELECT airlinerra_game.order_new_factory_aircraft_v2("+
   "$1::uuid,$2::uuid,$3::uuid,$4::text,$5::uuid) AS result"
 });
 export function createFleetAcquisitionHandler({verifyUserToken,database}={}){
@@ -165,6 +228,32 @@ export function createFleetAcquisitionHandler({verifyUserToken,database}={}){
     ]);
     return respond(200,{airlineId:body.airlineId,cashUsd:owner.rows[0].cashUsd,
      offers:offers.rows,fleet:fleet.rows,liveFlightActivation:false});
+   }
+   if(body.action==='list-used'){
+    const owner=await client.query(FLEET_SQL.owner,[body.airlineId,playerId]);
+    if(owner.rowCount!==1)return respond(403,{error:'Airline not owned by this account'});
+    const [state,listed,count]=await Promise.all([
+     client.query(FLEET_SQL.marketState),
+     client.query(FLEET_SQL.usedLots,[body.airlineId,body.filterMode,body.search.trim(),body.page]),
+     client.query(FLEET_SQL.usedCount,[body.filterMode,body.search.trim()])
+    ]);
+    const market=state.rows?.[0];
+    return respond(200,{airlineId:body.airlineId,page:body.page,
+     pageSize:30,total:count.rows?.[0]?.total||0,offers:listed.rows,
+     marketOpen:market?.marketOpen===true,leaseEnabled:market?.leaseEnabled===true,
+     worldState:market?.worldState||'unavailable',
+     serverNowUtc:market?.serverNowUtc||null,
+     auctionRule:'rolling_15_minutes_after_each_valid_higher_bid',
+     noBidsNoExpiry:true});
+   }
+   if(body.action==='bid-used'){
+    const result=await client.query(FLEET_SQL.usedBid,[
+     playerId,body.airlineId,body.listingId,body.bidUsd,
+     body.registration.trim().toUpperCase(),body.requestId
+    ]);
+    if(result.rowCount!==1||!result.rows?.[0]?.result)
+     return respond(503,{error:'Auction bid could not be confirmed'});
+    return respond(200,result.rows[0].result);
    }
    if(body.action==='maintenance-preview'){
     const owner=await client.query(FLEET_SQL.owner,[body.airlineId,playerId]);
@@ -215,7 +304,12 @@ export function createFleetAcquisitionHandler({verifyUserToken,database}={}){
      'AIRCRAFT_CONFIGURATION_NOT_RELEASED_FOR_PLAYER_MARKET',
      'GROUP3_AIRCRAFT_NOT_RELEASED_FOR_FLEET',
      'AIRCRAFT_REGISTRATION_ALREADY_TAKEN','INSUFFICIENT_AIRLINE_CASH',
-     'AIRLINE_WORLD_NOT_ACTIVE_FOR_DELIVERY'
+     'AIRLINE_WORLD_NOT_ACTIVE_FOR_DELIVERY',
+     'AIRCRAFT_MARKET_NOT_OPEN','NEW_AIRCRAFT_MODEL_NOT_ELIGIBLE',
+     'AIRCRAFT_LEASE_BILLING_NOT_ACTIVE','USED_AIRCRAFT_OFFER_NOT_AVAILABLE',
+     'AUCTION_REQUEST_ID_ALREADY_USED','AUCTION_IDEMPOTENCY_KEY_REUSED',
+     'AUCTION_CLOSED_PENDING_SETTLEMENT','ALREADY_HIGHEST_BIDDER',
+     'AUCTION_BID_BELOW_REQUIRED_AMOUNT','AUCTION_ESCROW_INCONSISTENT'
     ]);
     return respond(409,{reason:allowed.has(err.message)?err.message:'AIRCRAFT_ACQUISITION_UNAVAILABLE'});
    }
