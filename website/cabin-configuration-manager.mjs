@@ -13,29 +13,64 @@ export function standardCabinPlan(seats){
  const count=Math.max(0,Math.min(850,Math.floor(Number(seats)||0)));
  return {economy:count,premium:0,business:0,first:0,
   economyType:'eco_standard',premiumType:'premium_standard',
-  businessType:'business_standard',firstType:'first_standard'};
+  businessType:'business_standard',firstType:'first_standard',extraLegroomCm:0};
 }
+const ROUND2=n=>Math.round(n*100)/100;
+const cabinRatingBase=Object.freeze({economy:49,premium:61,business:72,first:80});
+/** Game-only capacity model; extra centimetres consume cabin length per row.
+ * Exact certified LOPA and emergency exit geometry are not represented. */
 export function evaluateCabinPlan(plan,seatTypes,referenceUnits){
- const defs=new Map((seatTypes||[]).map(s=>[s.code,s]));
+ const defs=new Map((seatTypes||[]).map(seat=>[seat.code,seat]));
  const cap=Number(referenceUnits);
- let used=0,cost=0,count=0;const classes=[];
+ const extraCm=plan?.extraLegroomCm??0;
+ const validExtra=typeof extraCm==='number'&&Number.isFinite(extraCm)&&extraCm>=0&&
+  extraCm<=20&&Math.abs(extraCm*10-Math.round(extraCm*10))<1e-8;
+ if(!validExtra)return {valid:false,reason:'Extra legroom must be from 0 to 20 cm in steps of 0.1 cm.'};
+ let used=0,equipment=0,count=0,scoreSum=0;
+ const classes=[];
  for(const c of CLASSES){
   const n=plan?.[c.key],code=plan?.[c.key+'Type'],type=defs.get(code);
   if(!Number.isInteger(n)||n<0||n>850||!type||type.cabinClass!==c.key)
-   return {valid:false,reason:'Select a valid seat type and nonnegative seat count for each class.'};
-  const space=n*Number(type.spaceUnits);
-  used+=space;cost+=n*Number(type.installUsd);count+=n;
+   return {valid:false,reason:'Select a valid seat type and seat count for each class.'};
+  const pitch=Number(type.pitchInches);
+  const seatSpace=Number(type.spaceUnits);
+  const seatCost=Number(type.installUsd);
+  if(!(pitch>0)||!(seatSpace>0)||!Number.isFinite(seatCost)||seatCost<0)
+   return {valid:false,reason:'This seat type is missing its design reference.'};
+  const perSeat=seatSpace*(1+extraCm/(pitch*2.54));
+  const space=n*perSeat;
+  used+=space;equipment+=n*seatCost;count+=n;
+  const quality= Math.max(15,Math.min(96,
+   cabinRatingBase[c.key]+(seatSpace-1)*3+extraCm*1.35));
+  scoreSum+=n*quality;
   classes.push({key:c.key,label:c.label,color:c.color,seats:n,code,
-   pitch:Number(type.pitchInches),space,perSeat:Number(type.spaceUnits),
-   style:type.label});
+   pitch:pitch+extraCm/2.54,space,perSeat,style:type.label});
  }
- if(!(cap>0))return {valid:false,reason:'Aircraft passenger cabin reference is unavailable.'};
- if(count===0)return {valid:false,reason:'Add at least one passenger seat.'};
- if(used>cap+0.000001)return {valid:false,reason:'The chosen seats exceed this aircraft\'s available cabin space.',
-  used:Math.round(used*100)/100,available:cap,count};
- return {valid:true,count,used:Math.round(used*100)/100,available:cap,
-  equipmentUsd:Math.round(cost),classes,
+ const rating=count>0?Math.round(scoreSum/count):0;
+ const base={count,used:ROUND2(used),available:cap,
+  spacePct:cap>0?Math.round(used/cap*1000)/10:0,
+  equipmentUsd:Math.round(equipment),classes,comfortRating:rating,
+  // Proposed small demand effect only: NOT applied to real booking logic.
+  bookingPreferencePreviewPct:Math.round((rating-50)/50*15)/10,
+  extraLegroomCm:extraCm,
   refitHours:(plan.premium+plan.business+plan.first)>0?48:24};
+ if(!(cap>0))return {...base,valid:false,reason:'Cabin reference capacity is unavailable.'};
+ if(count===0)return {...base,valid:false,reason:'Add at least one passenger seat.'};
+ if(used>cap+1e-8)return {...base,valid:false,reason:'NO SPACE — reduce seat count, seat size or extra legroom.'};
+ return {...base,valid:true};
+}
+/** Replacement quote: new seats plus ONE combined removal/installation job.
+ * Site cost factor only applies to labour; this does not debit any account. */
+export function estimateCabinRefit(evaluation,installedSeatCount=0,siteMultiplier=1){
+ if(!evaluation?.valid)return {valid:false};
+ const existing=Number(installedSeatCount),factor=Number(siteMultiplier);
+ if(!Number.isSafeInteger(existing)||existing<0||existing>850||
+  !Number.isFinite(factor)||factor<0.6||factor>1.5)return {valid:false};
+ const baseLabourUsd=5000+evaluation.count*150+existing*75;
+ const labourUsd=Math.round(baseLabourUsd*factor);
+ return {valid:true,seatEquipmentUsd:evaluation.equipmentUsd,
+  removalAndInstallationUsd:labourUsd,totalUsd:evaluation.equipmentUsd+labourUsd,
+  siteMultiplier:factor,priceStatus:'provisional_game_estimate',chargeTriggered:false};
 }
 const create=(doc,tag,className,text)=>{
  const el=doc.createElement(tag);if(className)el.className=className;
