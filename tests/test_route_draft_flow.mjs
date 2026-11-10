@@ -67,7 +67,7 @@ test('weekday time picker uses in-game hours and minutes, not browser-native tim
  ]);
  assert.match(picker,/input\.type='text';input\.readOnly=true/);
  assert.match(picker,/new Event\('change',\{bubbles:true\}\)/);
- assert.match(picker,/total,active.*24/); // allow custom picker hour / minute range
+ assert.match(picker,/\['hour',24,/); // allow custom picker hour / minute range
  assert.match(picker,/input\.disabled/);
  assert.match(picker,/MutationObserver/);
  assert.match(app,/installGameTimePickers\(\{doc,root:doc\.getElementById\('player-main'\)\}\)/);
