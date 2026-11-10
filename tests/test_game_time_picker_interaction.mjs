@@ -53,12 +53,14 @@ class Element {
   return false;
  }
  matches(selector){
+  const hasClass=name=>this.classes.has(name)||
+   String(this.className||'').split(/\s+/).includes(name);
   if(selector==='input[type="time"]')return this.tagName==='INPUT'&&this.type==='time';
-  if(selector==='.game-time-option')return this.classes.has('game-time-option');
+  if(selector==='.game-time-option')return hasClass('game-time-option');
   if(selector==='.game-time-option[aria-pressed="true"]')
-   return this.classes.has('game-time-option')&&this.getAttribute('aria-pressed')==='true';
-  if(selector==='.game-time-popup')return this.classes.has('game-time-popup');
-  if(selector==='.game-time-trigger')return this.classes.has('game-time-trigger');
+   return hasClass('game-time-option')&&this.getAttribute('aria-pressed')==='true';
+  if(selector==='.game-time-popup')return hasClass('game-time-popup');
+  if(selector==='.game-time-trigger')return hasClass('game-time-trigger');
   return false;
  }
  querySelectorAll(selector){
