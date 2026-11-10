@@ -144,7 +144,7 @@ BEGIN
   'heldUsd',required_hold::text,'deadlineUtc',new_deadline,
   'bidCount',lot.bid_count+1,'cashReservedAgain',true,
   'aircraftAssigned',false);
-END
+END;
 $fn$;
 
 -- New factory order must use production-approved models and a still-open
@@ -195,7 +195,7 @@ BEGIN
  END IF;
  RETURN airlinerra_game.acquire_offered_aircraft_v1(
   p_player_id,p_airline_id,p_offer_id,p_registration,p_request_id);
-END
+END;
 $fn$;
 
 -- Batch close by trusted Postgres cron only. Cash is already held from the
@@ -295,7 +295,7 @@ BEGIN
   completed:=completed+1;
  END LOOP;
  RETURN completed;
-END
+END;
 $fn$;
 
 REVOKE EXECUTE ON FUNCTION
