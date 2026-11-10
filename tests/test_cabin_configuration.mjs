@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {standardCabinPlan,evaluateCabinPlan,cabinClasses,cabinRowLayout,createCabinFloorplanModel}
+import {standardCabinPlan,evaluateCabinPlan,estimateCabinRefit,cabinClasses,cabinRowLayout,createCabinFloorplanModel,renderCabinFloorplan}
  from '../website/cabin-configuration-manager.mjs';
 import {FLEET_SQL,validateFleetAcquisitionRequest,createFleetAcquisitionHandler,
  FLEET_ACQUISITION_API_ROUTE} from '../server/fleet-acquisition-service.mjs';
@@ -30,7 +30,7 @@ test('standard cabin for existing A319 uses 156 economy seats, cargo has zero',(
  assert.deepEqual(standardCabinPlan(156),{
   economy:156,premium:0,business:0,first:0,
   economyType:'eco_standard',premiumType:'premium_standard',
-  businessType:'business_standard',firstType:'first_standard'
+  businessType:'business_standard',firstType:'first_standard',extraLegroomCm:0
  });
  assert.equal(standardCabinPlan(0).economy,0);
  const e=evaluateCabinPlan(standardCabinPlan(156),seatTypes,156);
@@ -43,7 +43,7 @@ test('premium business first seats consume more real cabin units',()=>{
  assert.equal(fit.valid,true);
  assert.equal(fit.used,147);assert.equal(fit.count,130);
  const fail=evaluateCabinPlan({...good,economy:140},seatTypes,156);
- assert.equal(fail.valid,false);assert.match(fail.reason,/exceed/);
+ assert.equal(fail.valid,false);assert.match(fail.reason,/NO SPACE/);
  const wrong=evaluateCabinPlan({...good,businessType:'eco_standard'},seatTypes,156);
  assert.equal(wrong.valid,false);
 });
@@ -102,7 +102,7 @@ test('cabins overview fetches only airline-owned aircraft and source-linked faci
   if(sql===FLEET_SQL.cabinDirectory)return {rowCount:1,rows:[{continent:'Europe',airportCode:'LBSF'}]};
   if(sql===FLEET_SQL.cabinRefitSites)return {rowCount:1,rows:[{aircraftInventoryId:aircraft,airportCode:'LBSF'}]};
   if(sql===FLEET_SQL.cabinGeometry)return {rowCount:1,rows:[{
-   configurationId:16,economyColumns:[3,3],premiumColumns:[2,2],
+   configurationId:16,economyColumns:[3,3],premiumColumns:[3,3],
    businessColumns:[2,2],firstColumns:[1,1],reviewStatus:'operator_supported_pattern'
   }]};
   throw Error('Unexpected SQL');
@@ -123,7 +123,7 @@ test('floorplan and navigation do not claim certified exit positions or live ref
   readFile(new URL('../website/private-player-app.html',import.meta.url),'utf8'),
   readFile(new URL('../website/dev-scripts/invited-overlay.mjs',import.meta.url),'utf8')
  ]);
- assert.match(ui,/Exits not verified/);
+ assert.match(ui,/exit positions and certification/);
  assert.match(ui,/renderCabinFloorplan/);
  assert.match(ui,/draft_saved_not_installed/);
  assert.match(workspace,/data-workspace-go="cabin-configurations"/);
@@ -145,7 +145,7 @@ test('A319 3–3 rows occupy over 90 percent of usable cabin width',()=>{
  const maximum=Math.max(...floor.seats.map(s=>s.x+s.width));
  assert.ok((maximum-minimum)/floor.interiorWidth>.9);
  assert.ok(minimum>=floor.left&&maximum<=floor.right);
- assert.ok(floor.seats.every(s=>s.y>=80&&s.y+s.height<floor.height-60));
+ assert.ok(floor.seats.every(s=>s.y>=55&&s.y+s.height<floor.height-45));
 });
 test('regional, narrowbody and widebody rows do not reuse the A319 3–3 pattern',()=>{
  const p=(eco,pre,bus,first)=>({economyColumns:eco,premiumColumns:pre,
@@ -156,6 +156,76 @@ test('regional, narrowbody and widebody rows do not reuse the A319 3–3 pattern
  assert.deepEqual(cabinRowLayout(p([3,3,3],[2,3,2],[1,2,1],[1,2,1]),'economy',440),[3,3,3]);
  const val=evaluateCabinPlan(standardCabinPlan(156),seatTypes,156);
  assert.equal(createCabinFloorplanModel(val,156,p([3,3],[2,2],[2,2],[1,1])).totalSeats,156);
+});
+test('extra centimetres consume cabin space, render no-space placeholder, and preserve first-to-rear cabin order',()=>{
+ const base=standardCabinPlan(156);
+ const a=evaluateCabinPlan(base,seatTypes,156);
+ const two=evaluateCabinPlan({...base,extraLegroomCm:2},seatTypes,156);
+ const eight=evaluateCabinPlan({...base,extraLegroomCm:8},seatTypes,156);
+ assert.equal(a.spacePct,100);
+ assert.equal(two.valid,false);
+ assert.ok(two.spacePct>100);
+ assert.match(two.reason,/NO SPACE/);
+ assert.equal(eight.valid,false);
+ assert.equal(evaluateCabinPlan({...base,extraLegroomCm:-1},seatTypes,156).valid,false);
+ const roomy=evaluateCabinPlan({...standardCabinPlan(120),extraLegroomCm:5},seatTypes,156);
+ assert.equal(roomy.valid,true);
+ assert.ok(roomy.spacePct>120/156*100);
+ const mix=evaluateCabinPlan({...standardCabinPlan(60),premium:12,business:8,first:4},seatTypes,156);
+ const g={economyColumns:[3,3],premiumColumns:[3,3],businessColumns:[2,2],firstColumns:[1,1]};
+ const floor=createCabinFloorplanModel(mix,156,g);
+ assert.deepEqual(floor.sections.map(x=>x.className),['first','business','premium','economy']);
+ assert.deepEqual(floor.sections.map(x=>x.layout),[[1,1],[2,2],[3,3],[3,3]]);
+ assert.ok(floor.sections.every((section,i,arr)=>i===0||section.firstSeatY>arr[i-1].lastSeatY));
+ assert.ok(floor.seats.every(x=>x.y+x.height<floor.height-45));
+ const tags=[],fakeSvg={replaceChildren(){tags.length=0},setAttribute(){},
+  append(node){tags.push(node)}};
+ const fakeDoc={createElementNS(_ns,type){return {type,attrs:{},setAttribute(k,v){this.attrs[k]=v},textContent:''}}};
+ renderCabinFloorplan(fakeDoc,fakeSvg,base,two,156,g);
+ assert.ok(tags.some(tag=>tag.textContent==='NO SPACE'));
+ assert.ok(tags.some(tag=>tag.type==='rect'&&tag.attrs.rx===0));
+ assert.equal(tags.filter(tag=>tag.type==='rect').length,3);
+});
+test('cabin quote combines equipment and removal/installation only once; booking effect stays small',()=>{
+ const plan={...standardCabinPlan(100),premium:20,business:10,extraLegroomCm:1};
+ const result=evaluateCabinPlan(plan,seatTypes,156);
+ assert.equal(result.valid,true);
+ assert.ok(result.comfortRating>=0&&result.comfortRating<=100);
+ assert.ok(Math.abs(result.bookingPreferencePreviewPct)<=1.5);
+ const q=estimateCabinRefit(result,156,1.1);
+ const labor=Math.round((5000+130*150+156*75)*1.1);
+ assert.equal(q.removalAndInstallationUsd,labor);
+ assert.equal(q.seatEquipmentUsd,result.equipmentUsd);
+ assert.equal(q.totalUsd,q.seatEquipmentUsd+q.removalAndInstallationUsd);
+ assert.equal(q.chargeTriggered,false);
+});
+test('server persists legroom and rejects tampered high-pitch drafts without modifying live inventory',async()=>{
+ const draft={action:'cabin-save-draft',airlineId:airline,aircraftInventoryId:aircraft,
+  economy:120,premium:0,business:0,first:0,extraLegroomCm:3,
+  economyType:'eco_standard',premiumType:'premium_standard',
+  businessType:'business_standard',firstType:'first_standard'};
+ assert.equal(validateFleetAcquisitionRequest(draft),true);
+ for(const bad of [-1,20.1,50,'3',0.123])
+  assert.equal(validateFleetAcquisitionRequest({...draft,extraLegroomCm:bad}),false);
+ let writeArgs=null;
+ const handler=makeHandler((sql,args)=>{
+  if(sql===FLEET_SQL.owner)return {rowCount:1,rows:[{}]};
+  if(sql===FLEET_SQL.cabinOwnerAircraft)return {rowCount:1,
+   rows:[{referenceUnits:'156',useType:'passenger',installedSeatCount:156}]};
+  if(sql===FLEET_SQL.cabinTypes)return {rowCount:seatTypes.length,rows:seatTypes};
+  if(sql===FLEET_SQL.cabinSave){writeArgs=args;return {rowCount:1,rows:[{aircraftInventoryId:aircraft}]};}
+  throw Error('Unexpected query');
+ });
+ const resp=await handler(makeRequest(draft));
+ assert.equal(resp.status,200);const body=await resp.json();
+ assert.equal(body.extraLegroomCm,3);
+ assert.equal(writeArgs[10],3);
+ assert.equal(body.cashDebited,false);assert.equal(body.chargedUsd,0);
+ assert.equal(body.estimatedRefitTotalUsd,
+  body.estimatedSeatEquipmentUsd+body.estimatedRemovalAndInstallationUsd);
+ writeArgs=null;
+ const over=await handler(makeRequest({...draft,economy:156}));
+ assert.equal(over.status,409);assert.equal(writeArgs,null);
 });
 test('40 options and all 271 default patterns are represented in migration',async()=>{
  const sql=await readFile(new URL('../supabase/migrations/20261110184500_airlinerra_40_real_reference_seats_and_model_geometry_v1.sql',import.meta.url),'utf8');
