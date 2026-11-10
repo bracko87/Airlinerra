@@ -104,7 +104,7 @@ test('settings and local hypothetical briefs remain separate from owner-scoped p
  assert.match(html,/data-player-view="fleet-aircraft"/);
  assert.match(workspace,/No live route was created/);
  assert.match(workspace,/Planning departures without duration are markers, not aircraft bookings/);
- assert.match(workspace,/No aircraft layout was changed/);
+ assert.match(workspace,/No aircraft configuration was changed/);
  assert.match(workspace,/id="fleet-owned-aircraft"/);
  assert.match(workspace,/id="market-acquire"/);
  assert.match(workspace,/role="status"/);
