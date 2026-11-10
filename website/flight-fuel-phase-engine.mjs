@@ -61,10 +61,10 @@ export function estimateFivePhaseFuel({
 }={}){
  const distance=finitePositive(distanceKm),speed=finitePositive(cruiseSpeedKmh);
  const tank=finitePositive(fuelTankCapacityKg),hourly=finitePositive(cruiseFuelKgPerHour);
- const loaded=Number(payloadFraction),price=Number(priceUsdPerKg);
+ const loaded=Number(payloadFraction),price=priceUsdPerKg===null?null:Number(priceUsdPerKg);
  if(distance===null||distance>20000||speed===null||speed>1300||
    !Number.isFinite(loaded)||loaded<0||loaded>1||
-   !Number.isFinite(price)||price<=0||price>20||
+   (price!==null&&(!Number.isFinite(price)||price<=0||price>20))||
    !Number.isFinite(routingMultiplier)||routingMultiplier<1||routingMultiplier>1.3||
    !Number.isFinite(referenceMissionKm)||referenceMissionKm<300||referenceMissionKm>4000)
   return {status:'UNAVAILABLE',reason:'Invalid route, aircraft, payload or price inputs',
@@ -93,7 +93,7 @@ export function estimateFivePhaseFuel({
   const kg=stage.minutes/60*PHASE_SETTINGS[stage.key].factor*kgPerHour;
   return {key:stage.key,label:CODES[i][1],minutes:rounded(stage.minutes),
    distanceKm:rounded(stage.distanceKm),fuelKg:rounded(kg),
-   fuelUsd:rounded(kg*price)};
+   fuelUsd:price===null?null:rounded(kg*price)};
  });
  const flightMinutes=profile.reduce((n,p)=>n+p.minutes,0);
  const burned=profile.reduce((n,p)=>
@@ -109,10 +109,10 @@ export function estimateFivePhaseFuel({
   payloadFraction:loaded,cruiseSpeedKmh:speed,estimatedCruiseKgPerHour:rounded(kgPerHour),
   totalMinutes:rounded(flightMinutes),tripFuelKg:rounded(burned),
   screeningReserveFuelKg:rounded(reserve),screeningFuelLoadKg:rounded(uplift),
-  fuelPriceUsdPerKg:price,estimatedBurnCostUsd:rounded(burned*price),
+  fuelPriceUsdPerKg:price,estimatedBurnCostUsd:price===null?null:rounded(burned*price),
   fuelTankCapacityKg:tank,referenceTankScreen:tank===null?'UNKNOWN':
    uplift>tank?'EXCEEDS_REFERENCE_TANK':'WITHIN_REFERENCE_TANK',
-  phases,rateEvidence:source,priceEvidence:'FIXED_GAME_BALANCING_ASSUMPTION',
+  phases,rateEvidence:source,priceEvidence:price===null?'UNKNOWN_OR_UNSUPPORTED_FUEL_FAMILY':'GAME_BALANCING_ASSUMPTION',
   previewOnly:true,dispatchApproved:false,ledgerPosted:false,
   note:'Reference/game balance only. No confirmed weather, winds, alternate, fuel uplift, airport quote, aircraft mass, flight movement or charge.'
  };
