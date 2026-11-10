@@ -14,6 +14,7 @@ const AUTH_URL='https://'+REF+'.supabase.co';
 const AIRLINE_ID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const FLEET_READ_PATH='/api/v1/player/fleet-acquisition';
 const SCHEDULE_READ_PATH='/api/v1/player/flight-schedule-drafts';
+const GROUP2_LOCATION_PATH='/api/v1/player/group2-location-plans';
 // The HTTP server must route these dedicated read-only proxy endpoints before
 // it tries the static dist/ directory. Canonical game API paths alone do not
 // contain the two dedicated Edge APIs.
@@ -66,6 +67,22 @@ export function allowedLocalOwnerRead(pathname,payload){
  }
  return false;
 }
+/** Validate private, owner-resolved Group 2 planned location requests, never active offices. */
+export function validGroup2LocationPlanRequest(payload){
+ if(!payload||typeof payload!=='object'||Array.isArray(payload)||
+    payload.worldId!==1||!['list','save','remove'].includes(payload.action))
+  return false;
+ const keys=Object.keys(payload);
+ if(payload.action==='list')return keys.length===2 &&
+  keys.every(k=>k==='action'||k==='worldId');
+ const airport=typeof payload.airportKey==='string'&&
+  /^OURAIRPORTS:[1-9][0-9]{0,18}$/.test(payload.airportKey);
+ if(!airport)return false;
+ if(payload.action==='remove')return keys.length===3 &&
+  keys.every(k=>['action','worldId','airportKey'].includes(k));
+ return keys.length===4 && keys.every(k=>['action','worldId','airportKey','type'].includes(k))&&
+  ['future_hq','hub','station'].includes(payload.type);
+}
 export function validConnectionUrl(value){
  try{
   const u=new URL(value);
@@ -83,6 +100,7 @@ export function createLiveReadOnlyPreviewHandler({fetchImpl=globalThis.fetch}={}
   '/api/v1/player/overview',
   '/api/v1/player/airports',
   '/api/v1/player/prepared-airports',
+  GROUP2_LOCATION_PATH,
   '/api/v1/player/airport-profile',
   '/api/v1/player/aircraft-library',
   '/api/v1/player/noise-curfew-check',
@@ -115,10 +133,10 @@ export function createLiveReadOnlyPreviewHandler({fetchImpl=globalThis.fetch}={}
    body=await request.text();
    if(new TextEncoder().encode(body).length>2048)return error(413,'Request too large');
   }catch{return error(400,'Invalid body')}
-  if(url.pathname===FLEET_READ_PATH||url.pathname===SCHEDULE_READ_PATH){
+  if(url.pathname===FLEET_READ_PATH||url.pathname===SCHEDULE_READ_PATH||url.pathname===GROUP2_LOCATION_PATH){
    let payload;
    try{payload=JSON.parse(body);}catch{return error(400,'Invalid JSON body')}
-   if(!allowedLocalOwnerRead(url.pathname,payload))
+   if(!(url.pathname===GROUP2_LOCATION_PATH?validGroup2LocationPlanRequest(payload):allowedLocalOwnerRead(url.pathname,payload)))
     return error(403,'Local preview only allows verified reads and pre-operational planning drafts');
    body=JSON.stringify(payload);
   }
