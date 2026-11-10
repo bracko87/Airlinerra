@@ -94,6 +94,11 @@ export function createAircraftConfigurationDialog({
    const found=companyCabinChoices(result,aircraftId);
    if(!found)throw Error('Configuration reference data unavailable');
    context=found;
+   // A valid saved draft on THIS airframe is already persisted on the server.
+   // Do not force another save merely because the dialog was reopened.
+   const ownSaved=found.choices.find(c=>c.key===aircraftId &&
+    c.available && c.source==='Saved draft in this airline');
+   savedLayoutJson=ownSaved?JSON.stringify(ownSaved.plan):null;
    for(const option of found.choices)listOption(choice,option.key,
     option.label+(option.available?'':' (not compatible)'),!option.available);
    choice.value='default';choice.disabled=false;
@@ -109,7 +114,31 @@ export function createAircraftConfigurationDialog({
    say('fleet-configuration-load-status',found.choices.length>1?
     (found.choices.length-1)+' saved company cabin layout(s) for this model.':
     'No alternative company layouts saved for this model yet. Design one using the existing cabin editor.');
-   preview();return true;
+   preview();
+   if(typeof client.cabinRefitQuoteStatus==='function'){
+    try{
+     const previous=await client.cabinRefitQuoteStatus({
+      airlineId:ownerId,aircraftInventoryId:aircraftId
+     });
+     if(ticket!==sequence||!isSame())return false;
+     if(previous?.status==='prepared_not_booked' &&
+      previous.airlineId===ownerId &&
+      previous.aircraftInventoryId===aircraftId &&
+      previous.appointmentBooked===false && previous.moneyCharged===false){
+      const amount=dollars(Number(previous.estimatedTotalUsd));
+      const suffix=previous.matchesCurrentDraft===true?
+       'It is still a non-binding estimate; no slot is booked.':
+       'Your saved design has changed since this quote. Prepare a new estimate.';
+      say('fleet-configuration-feedback',
+       'Last saved refit estimate: '+amount+'. '+suffix);
+     }
+    }catch{
+     if(ticket===sequence&&isSame())
+      say('fleet-configuration-feedback',
+       'Previous refit quote is unavailable. Installed cabin and airline cash are unchanged.');
+    }
+   }
+   return true;
   }catch{
    if(ticket===sequence&&isSame())
     say('fleet-configuration-load-status',
