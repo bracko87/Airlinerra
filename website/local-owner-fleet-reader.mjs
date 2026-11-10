@@ -1,6 +1,6 @@
 /** Safe localhost preview reader for actual company-owned/leased fleet.
  * This uses the signed-in session and the protected same-origin proxy.
- * The proxy forwards reads and exactly one owner-verified planning-draft write.
+ * The proxy forwards reads, owner-verified planning drafts and non-binding refit quotes.
  * All acquisition, cancellation, delivery, slot reservation, flight activation and payments
  * remain unavailable in localhost preview.
  */
@@ -30,6 +30,9 @@ export function createLocalOwnerFleetReaders({auth,origin,fetchImpl=globalThis.f
    read(FLEET_PATH,{action:'list-used',airlineId,page,filterMode,search,manufacturer,family,model,configuration}),
   cabinOverview:airlineId=>read(FLEET_PATH,{action:'cabin-overview',airlineId}),
   saveCabinDraft:layout=>read(FLEET_PATH,{action:'cabin-save-draft',...layout}),
+  prepareCabinRefitQuote:details=>read(FLEET_PATH,{action:'cabin-prepare-quote',...details}),
+  cabinRefitQuoteStatus:({airlineId,aircraftInventoryId})=>
+   read(FLEET_PATH,{action:'cabin-quote-status',airlineId,aircraftInventoryId}),
   maintenancePreview:({airlineId,aircraftInventoryId})=>
    read(FLEET_PATH,{action:'maintenance-preview',airlineId,aircraftInventoryId}),
   updateNickname:({airlineId,aircraftInventoryId,nickname})=>
