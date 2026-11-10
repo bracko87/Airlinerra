@@ -949,9 +949,10 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    const title=doc.createElement('strong');
    title.textContent=aircraftDisplayName(aircraft.manufacturer,aircraft.model);
    const subtitle=doc.createElement('small');subtitle.textContent=
-    'Built '+aircraft.manufactureYear+' · '+aircraft.conditionPct+'% overall condition · '+
-    String(aircraft.useType||'aircraft')+
-    ' · next C check estimate in '+Number(aircraft.nextCCheckInHours).toLocaleString('en-US')+' h';
+    'Seller: '+String(aircraft.sellerName||'Fictional seller')+
+    ' (fictional) · '+(new Date().getFullYear()-Number(aircraft.manufactureYear))+
+    ' years old · '+aircraft.conditionPct+'% condition · C check estimated in '+
+    Number(aircraft.nextCCheckInHours).toLocaleString('en-US')+' h';
    identity.append(title,subtitle);
    const price=doc.createElement('div');price.className='used-market-aircraft-price';
    const priceLabel=doc.createElement('strong');priceLabel.textContent=
@@ -959,7 +960,10 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
     (aircraft.offeringType==='lease'?'/month':' purchase');
    const secondary=doc.createElement('small');secondary.textContent=
     (aircraft.offeringType==='lease'?'Lease '+aircraft.leaseMonths+' mo · deposit '+usd(aircraft.leaseDepositUsd):
-      'Purchase bid · minimum rise '+usd(aircraft.minIncrementUsd));
+      'Cash auction · minimum rise '+usd(aircraft.minIncrementUsd))+
+    ' · '+(aircraft.priceEvidence==='manufacturer_list_2018'?
+      '2018 list '+usd(aircraft.referencePriceUsd):
+      'New-value estimate '+usd(aircraft.provisionalNewValueUsd));
    price.append(priceLabel,secondary);
    const timer=doc.createElement('span');timer.className='used-market-auction-timer';
    const deadline=aircraft.closeAfterUtc?Date.parse(aircraft.closeAfterUtc):NaN;
@@ -1261,6 +1265,9 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
     usedMarketSearch=String($('used-market-search')?.value||'').trim().slice(0,60);
     usedMarketFilter=['all','purchase','lease'].includes($('used-market-mode')?.value)?
       $('used-market-mode').value:'all';
+    for(const [key,id] of [['maker','used-maker'],['family','used-family'],
+      ['model','used-model'],['configuration','used-configuration']])
+     usedMarketChoice[key]=String($(id)?.value||'');
    }
    if(id==='used-market-prev')usedMarketPage=Math.max(0,usedMarketPage-1);
    if(id==='used-market-next'&&usedMarketSnapshot&&
