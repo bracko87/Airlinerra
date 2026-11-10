@@ -101,3 +101,24 @@ test('dry run never accesses or updates the database',async()=>{
  assert.match(dispatcher,/confirmActualOperation/);
  assert.match(dispatcher,/acceptSignedLeasedFlightEvent/);
 });
+
+test('verified arrival can inspect scheduled five-phase timeline without posting or issuing movement evidence',()=>{
+ const q=sample();
+ q.route.scheduledDepartureUtc='2026-11-11T08:00:00Z';
+ const result=inspectVerifiedArrivalForFuel(q);
+ assert.equal(result.status,'ARRIVAL_FUEL_DRY_RUN_READY');
+ assert.equal(result.projectedTimeline.status,'FLIGHT_PHASE_DRY_RUN_PLAN');
+ assert.deepEqual(result.projectedTimeline.phases.map(p=>p.key),
+  ['taxiOut','climb','cruise','descent','taxiIn']);
+ assert.equal(result.projectedTimeline.flightOccurrenceId,occurrence);
+ assert.equal(result.projectedTimeline.movementRecorded,false);
+ assert.equal(result.projectedTimeline.dispatchAuthorized,false);
+ assert.equal(result.projectedTimeline.ledgerPosted,false);
+});
+test('invalid scheduled five-phase timing blocks bridge instead of faking actual arrival evidence',()=>{
+ const q=sample();q.route.scheduledDepartureUtc='browser-time-untrusted';
+ const result=inspectVerifiedArrivalForFuel(q);
+ assert.equal(result.status,'FUEL_BRIDGE_BLOCKED');
+ assert.equal(result.reason,'PHASE_TIMELINE_SOURCE_INVALID');
+ assert.equal(result.ledgerPosted,false);
+});
