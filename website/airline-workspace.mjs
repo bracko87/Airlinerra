@@ -1169,9 +1169,17 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    }finally{deliveryButton.disabled=false;}
    return;
   }
+  const selectedUsed=event.target.closest('[data-used-market-select]');
+  if(selectedUsed){
+   const offer=usedMarketSnapshot?.offers?.find(x=>x.listingId===selectedUsed.dataset.usedMarketSelect);
+   showUsedBidPanel(offer);
+   return;
+  }
   const nav=event.target.closest('[data-workspace-go]');
   if(nav){const to=nav.dataset.workspaceGo;if(AIRLINE_UI_VIEWS.includes(to)&&typeof goTo==='function')goTo(to);
-   if(to==='fleet'||to==='aircraft-market')void loadRealFleetMarket();return;}
+   if(to==='fleet'||to==='aircraft-new-orders')void loadRealFleetMarket();
+   if(to==='aircraft-new-orders'||to==='aircraft-market')void loadUsedMarket();
+   return;}
   const id=event.target.closest('button')?.id;
   if(!id)return;
   const general={'settings-units':'units','settings-time':'time','settings-date':'date',
@@ -1196,14 +1204,92 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    doc.dispatchEvent(new CustomEvent('airlinerra:route-draft-saved'));
    $('route-feedback').textContent='Route draft saved in this browser tab under My routes. No live route was created.';
   }
+  if(id==='used-market-find'||id==='used-market-refresh'||
+     id==='used-market-prev'||id==='used-market-next'){
+   if(id==='used-market-find'){
+    usedMarketPage=0;
+    usedMarketSearch=String($('used-market-search')?.value||'').trim().slice(0,60);
+    usedMarketFilter=['all','purchase','lease'].includes($('used-market-mode')?.value)?
+      $('used-market-mode').value:'all';
+   }
+   if(id==='used-market-prev')usedMarketPage=Math.max(0,usedMarketPage-1);
+   if(id==='used-market-next'&&usedMarketSnapshot&&
+       (usedMarketPage+1)*usedMarketSnapshot.pageSize<usedMarketSnapshot.total)
+    usedMarketPage++;
+   selectedUsedListingId=null;
+   if($('used-market-bid-panel'))$('used-market-bid-panel').hidden=true;
+   if($('used-market-state'))$('used-market-state').textContent='Refreshing approved auction listings…';
+   await loadUsedMarket();
+   return;
+  }
+  if(id==='used-market-bid-cancel'){
+   selectedUsedListingId=null;
+   if($('used-market-bid-panel'))$('used-market-bid-panel').hidden=true;
+   return;
+  }
+  if(id==='used-market-bid-confirm'){
+   const offer=usedMarketSnapshot?.offers?.find(x=>x.listingId===selectedUsedListingId);
+   const feedback=$('used-market-bid-feedback');
+   const button=$('used-market-bid-confirm');
+   const amount=String($('used-market-bid-amount')?.value||'').trim();
+   const registration=String($('used-market-bid-registration')?.value||'').trim().toUpperCase();
+   if(!offer||!marketIsOpen()||!data.fleetClient?.bidUsed||
+     (offer.offeringType==='lease'&&!usedMarketSnapshot?.leaseEnabled)){
+    if(feedback)feedback.textContent='Bidding is not available for this listing.';
+    return;
+   }
+   const minimum=Number(offer.highestBidUsd===null||offer.highestBidUsd===undefined?
+    offer.openingBidUsd:Number(offer.highestBidUsd)+Number(offer.minIncrementUsd));
+   if(!/^[1-9][0-9]{2,11}(?:\\.[0-9]{1,2})?$/.test(amount)||
+      !Number.isFinite(minimum)||Number(amount)<minimum){
+    if(feedback)feedback.textContent='Bid must be at least '+usd(minimum)+' with no more than two decimal places.';
+    return;
+   }
+   if(!/^[A-Z0-9][A-Z0-9-]{2,18}[A-Z0-9]$/.test(registration)){
+    if(feedback)feedback.textContent='Choose a unique registration with 4–20 letters, digits or hyphens.';
+    return;
+   }
+   const requestId=doc.defaultView?.crypto?.randomUUID?.();
+   if(!requestId){
+    if(feedback)feedback.textContent='Secure request identifier unavailable. No money was reserved.';
+    return;
+   }
+   const airlineId=data.airline?.id;
+   if(!airlineId)return;
+   button.disabled=true;
+   if(feedback)feedback.textContent='Submitting owner-verified bid and reserving funds…';
+   try{
+    const result=await data.fleetClient.bidUsed({
+     airlineId,listingId:offer.listingId,bidUsd:amount,registration,requestId
+    });
+    if(!['bid_accepted','accepted_replay'].includes(result?.status)||
+       result.listingId!==offer.listingId||!result.bidId)
+     throw Error('Bid not confirmed');
+    if(feedback)feedback.textContent='Bid accepted by the server. '+
+     (result.cashReservedAgain?'Funds reserved. ':'No additional funds reserved. ')+
+     'Auction closes after 15 minutes without another higher bid.';
+    selectedUsedListingId=null;
+    await Promise.all([loadUsedMarket(),loadRealFleetMarket()]);
+   }catch(error){
+    const msg=String(error?.message||'');
+    if(feedback)feedback.textContent=
+     msg.includes('INSUFFICIENT_AIRLINE_CASH')?'Bid refused: insufficient airline cash.':
+     msg.includes('AUCTION_BID_BELOW_REQUIRED_AMOUNT')?'A higher bid arrived first. Refresh to see the new minimum.':
+     msg.includes('AIRCRAFT_MARKET_NOT_OPEN')?'The marketplace is not yet open. No funds were reserved.':
+     'Bid could not be confirmed. Refresh the listing before trying again.';
+   }finally{button.disabled=false;}
+   return;
+  }
   if(id==='market-acquire'){
    const select=$('market-offer-select'),entry=$('market-aircraft-registration');
    const feedback=$('market-feedback'),button=$('market-acquire');
    const offer=marketSnapshot?.offers?.find(item=>item.offerId===select?.value);
    const registration=String(entry?.value||'').trim().toUpperCase();
-   if(!offer||!data.airline?.id||!data.fleetClient){
-    feedback.textContent='Choose a published aircraft offer first.';return;
+   if(!offer||!data.airline?.id||!data.fleetClient?.acquire||!marketIsOpen()){
+    if(feedback)feedback.textContent='Factory orders are not open yet. No funds were charged.';
+    return;
    }
+
    if(!/^[A-Z0-9][A-Z0-9-]{2,18}[A-Z0-9]$/.test(registration)){
     feedback.textContent='Use a 4–20 character registration with letters, digits or hyphens.';return;
    }
