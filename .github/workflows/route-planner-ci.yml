@@ -107,6 +107,8 @@ on:
       - 'website/section9-commercial-plan-editor.mjs'
       - 'server/section9-demand-allocation.mjs'
       - 'website/section9-route-details.mjs'
+      - 'website/airline-operations-center.mjs'
+      - 'website/player-app.css'
       - 'website/private-player-app.html'
       - 'website/player-app-model.mjs'
       - 'website/player-read-client.mjs'
