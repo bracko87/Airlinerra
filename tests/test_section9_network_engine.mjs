@@ -140,30 +140,31 @@ test('500 airlines x 100 flight occurrences: 50,000-flight snapshot with bounded
  console.log('Section9 50k-flight synthetic batch duration_ms='+Math.round(ms));
 });
 
-test('Only verified installed cabin comfort influences passenger choice, never drafts or cargo',()=>{
+test('Only protected installed cabin rows influence passenger demand, not draft/spoof/cargo',()=>{
  const luxury=f('lux','alpha','A','D','2026-11-09T09:00:00Z','2026-11-09T10:00:00Z',
-  {aircraftInventoryId:'trusted-aircraft-1',installedCabinAircraftId:'trusted-aircraft-1',
-   installedCabinEvidence:'server_verified_installed_v1',installedCabinComfortRating:100,
-   passengerSeats:500,cargoTonnes:10});
+  {aircraftInventoryId:'trusted-aircraft-1',passengerSeats:500,cargoTonnes:10,
+   // Caller-provided values, including fake evidence, must have NO effect.
+   installedCabinEvidence:'server_verified_installed_v1',installedCabinComfortRating:100});
  const rival=f('rival','beta','A','D','2026-11-09T09:00:00Z','2026-11-09T10:00:00Z',
   {passengerSeats:500,cargoTonnes:10});
- const simple={id:'A-D',origin:'A',destination:'D',marketDate:date,
+ const market={id:'A-D',origin:'A',destination:'D',marketDate:date,
   passengers:500,cargoTonnes:10,referenceFareUsd:100,referenceCargoRateUsd:100};
- const base=section9SimulateDay({flights:[{...luxury,installedCabinEvidence:'draft_only'},rival],
-  markets:[simple]});
- const active=section9SimulateDay({flights:[luxury,rival],markets:[simple]});
+ const installed=[{aircraft_inventory_id:'trusted-aircraft-1',airline_id:'alpha',
+  evidence_kind:'server_verified_installed_v1',comfort_rating:100}];
+ const base=section9SimulateDay({flights:[luxury,rival],markets:[market]});
+ const active=section9SimulateDay({flights:[luxury,rival],markets:[market],
+  installedCabins:installed});
  const used=(res,id)=>res.flights.find(x=>x.flightId===id).passengers;
  assert.ok(used(active,'lux')>used(base,'lux'));
  assert.equal(active.passengers.markets[0].allocated,500);
  assert.deepEqual(active.cargo.allocations,base.cargo.allocations);
- assert.equal(section9SimulateDay({flights:[{...luxury,
-  installedCabinComfortRating:0,installedCabinEvidence:'draft_only'},rival],
-  markets:[simple]}).flights.find(x=>x.flightId==='lux').passengers,
-  used(base,'lux'));
- assert.throws(()=>section9SimulateDay({flights:[{...luxury,
-   installedCabinAircraftId:'another-airframe'}],markets:[simple]}),
-  /INVALID_INSTALLED_CABIN_EVIDENCE/);
- assert.throws(()=>section9SimulateDay({flights:[{...luxury,
-   installedCabinComfortRating:101}],markets:[simple]}),
-  /INVALID_INSTALLED_CABIN_EVIDENCE/);
+ const otherCompany=section9SimulateDay({flights:[luxury,rival],markets:[market],
+  installedCabins:[{...installed[0],airline_id:'beta'}]});
+ assert.equal(used(otherCompany,'lux'),used(base,'lux'));
+ assert.throws(()=>section9SimulateDay({flights:[luxury,rival],markets:[market],
+  installedCabins:[{...installed[0],comfort_rating:101}]}),
+  /INVALID_PRIVATE_INSTALLED_CABIN_ROW/);
+ assert.throws(()=>section9SimulateDay({flights:[luxury,rival],markets:[market],
+  installedCabins:[installed[0],installed[0]]}),
+  /INVALID_PRIVATE_INSTALLED_CABIN_ROW/);
 });
