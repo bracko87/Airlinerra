@@ -34,12 +34,10 @@ export function simulateCabinOnboardPurchases(pkg,{flightEventKey,passengers,
   if(row.mode!=='onboard')return {...row,actualSales:0};
   let wants=0;
   for(let p=0;p<passengers;p++)if(nextRandom()<row.purchaseRate)wants++;
-  const actualSales=Math.min(wants,row.loadedUnits>0?row.loadedUnits:
-   // Zero physical stock means no sales. Digitals are available on demand.
-   row.costUnits===0&&row.loadedUnits===0&&
-   ['newspaper','wifi','fullwifi','entertainment'].includes(row.id)?passengers:0);
-  const unitCostCents=row.unitCostCents;
   const isDigital=['newspaper','wifi','fullwifi','entertainment'].includes(row.id);
+  // Digital services have no physical units; all other products need stock.
+  const actualSales=Math.min(wants,isDigital?passengers:row.loadedUnits);
+  const unitCostCents=row.unitCostCents;
   const airlineCostCents=isDigital?actualSales*unitCostCents:row.airlineCostCents;
   return {...row,actualSales,airlineCostCents,
    onboardRevenueCents:actualSales*row.passengerPriceCents,
