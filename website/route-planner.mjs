@@ -76,7 +76,7 @@ const routeCheckDetails =
 export function routePlannerMarkup(){
  return '<div class="route-planner-grid route-planner-first-step">'+
   section('STEP 1','Define your flight',
-   '<p class="hint">Choose your flight number, origin and destination. Approved airport data is read-only until real scheduling is connected.</p>'+
+   '<p class="hint">Choose your flight number, origin and destination. Airport information is available for route evaluation; flight scheduling requires separate approval.</p>'+
    '<div class="route-flight-number-entry">'+
    field('route-plan-number','Flight number',
     '<div class="route-number-input"><span id="route-number-prefix">—</span>'+
@@ -827,7 +827,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
   message('route-map-feedback',equal?
    'BLOCKED — origin and destination are the same airport. Choose another destination.':
    map?'Orange line: geographic distance between verified airports (not an approved flight path).':
-   'Checking airport coordinates from the approved directory and airport profiles...');
+   'Checking airport coordinates from the airport directory and profiles...');
   message('route-distance',map?
    Math.round(map.distanceKm).toLocaleString('en-US')+' km':'Data pending');
  };
@@ -935,7 +935,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    };
    renderQuickOptions();
    if(!selected('from'))await selectHome('from');
-  }catch{message('route-feedback','Home airport could not be preselected. Choose an approved origin manually.');}
+  }catch{message('route-feedback','Home airport could not be preselected. Choose an origin manually.');}
  };
  const resetRouteForm=async()=>{
   const serial=++editSerial;
