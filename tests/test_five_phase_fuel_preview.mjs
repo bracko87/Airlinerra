@@ -91,7 +91,7 @@ test('only existing owner-verified fleet SQL provides reference data; preview do
   assert.ok(query.includes(field),field);
  assert.match(query,/WHERE i.airline_id=\$1::uuid/);
  assert.match(query,/aircraft_fuel_planning_profiles_v1/);
- assert.match(query,/aircraft_fuel_family_reference_v1/);
+ assert.match(query,/aircraft_fuel_family_reference_v2/);
  assert.match(query,/fuelFamilyEvidence/);
  assert.match(query,/aircraft_catalog_fuel_capacity_game_v1/);
  assert.match(query,/fuelConfidenceClass/);
@@ -163,4 +163,20 @@ test('full five-phase fuel quantities survive unavailable fuel price, without fa
  assert.equal(result.phases[0].fuelUsd,null);
  assert.equal(result.priceEvidence,'UNKNOWN_OR_UNSUPPORTED_FUEL_FAMILY');
  assert.equal(result.ledgerPosted,false);
+});
+
+test('model family evidence never means installed engine, certified fuel or game cash approval',async()=>{
+ const service=await read('server/fleet-acquisition-service.mjs');
+ assert.match(service,/fuelModelWithoutEngine/);
+ assert.match(service,/fuelFamilySourceUrl/);
+ assert.match(service,/fuelFamilyEvidence/);
+ const migration=await read('supabase/migrations/20261110235900_source_linked_aircraft_fuel_family_models_v2.sql');
+ assert.match(migration,/security_invoker = true/);
+ assert.match(migration,/refueling|refuelling/i);
+ assert.match(migration,/false/); // inherited approval flags from prior private view
+ assert.match(migration,/revoke all on airlinerra_game\.aircraft_fuel_family_reference_v2/);
+ const profile=await read('website/airline-workspace.mjs');
+ assert.match(profile,/AVGAS_PISTON/);
+ assert.match(profile,/approved grade not verified/);
+ assert.match(profile,/TURBINE_KEROSENE_ASSUMED/);
 });
