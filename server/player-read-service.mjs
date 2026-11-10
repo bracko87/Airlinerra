@@ -5,7 +5,7 @@
  */
 import {verifiedPlayerId} from './airline-activation.mjs';
 import {AIRCRAFT_LIBRARY_PATH,AIRCRAFT_LIBRARY_SQL,serializeAircraftLibrary} from './aircraft-library-query.mjs';
-import {AIRPORT_PROFILE_PATH,AIRPORT_PROFILE_SQL,serializeAirportProfile,validAirportKey} from './airport-profile-service.mjs';
+import {AIRPORT_PROFILE_PATH,AIRPORT_PROFILE_SQL,GROUP2_AIRPORT_PROFILE_SQL,serializeAirportProfile,validAirportKey} from './airport-profile-service.mjs';
 import {countrySqlExpression,GAME_COUNTRY_CODES,GAME_COUNTRY_SET} from './country-policy.mjs';
 const PARENT_ISO=countrySqlExpression('country_iso');
 const MEMBER_CODES=GAME_COUNTRY_CODES.map(code=>"'"+code+"'").join(',');
@@ -236,9 +236,14 @@ export function createPlayerReadHandler({enabled=false,verifyUserToken,database,
      if(url.pathname===AIRPORT_PROFILE_PATH){
        phase='airport-profile';
        const rows=expectArray((await client.query(AIRPORT_PROFILE_SQL,[profileKey])).rows);
-       if(rows.length===0)return respond(404,{error:'Airport not in approved World 1 roster'});
-       if(rows.length!==1)return respond(503,{error:'Airport profile is unavailable'});
-       return respond(200,{airport:serializeAirportProfile(rows[0])});
+       if(rows.length>1)return respond(503,{error:'Airport profile is unavailable'});
+       if(rows.length===1)return respond(200,{airport:serializeAirportProfile(rows[0])});
+       const prepared=expectArray((await client.query(GROUP2_AIRPORT_PROFILE_SQL,[profileKey])).rows);
+       if(prepared.length===0)return respond(404,{error:'Airport not in location catalog'});
+       if(prepared.length!==1)return respond(503,{error:'Airport profile unavailable'});
+       return respond(200,{airport:{...serializeAirportProfile(prepared[0]),
+         sourceGroup:'GROUP_2',locationSelectable:true,
+         bookable:false,commercialAccess:false,canActivateFlights:false}});
      }
      if(url.pathname===PREPARED_AIRPORTS_PATH){
        phase='prepared-airport-search';
