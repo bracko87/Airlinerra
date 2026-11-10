@@ -26,6 +26,7 @@ on:
       - 'tests/test_fleet_acquisition_api.mjs'
       - 'supabase/migrations/*cabin*'
       - 'supabase/migrations/*mro*'
+      - 'supabase/migrations/*refit*'
       - '.github/workflows/airlinerra-cabin-layout-mro-ci.yml'
   workflow_dispatch:
 jobs:
