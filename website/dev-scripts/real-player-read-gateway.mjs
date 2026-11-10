@@ -206,7 +206,7 @@ export async function makeRealLocalPlayerHandler({
   return {user,error:null};
  };
  return createCanonicalGameApi({
-  enabled:true,origin:ORIGIN,verifyUserToken,database,
+  enabled:true,airportOfficeDraftsEnabled:true,origin:ORIGIN,verifyUserToken,database,
   documentPaths:{terms:'/terms.html',privacy:'/privacy.html'}
  });
 }
