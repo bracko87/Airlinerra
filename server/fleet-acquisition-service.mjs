@@ -318,7 +318,7 @@ export const FLEET_SQL=Object.freeze({
   "WHERE f.world_id=1 ORDER BY f.continent,a.airport_code,f.provider_name LIMIT 150",
  cabinRefitSites:"SELECT i.id::text AS \"aircraftInventoryId\",a.airport_code AS \"airportCode\", "+
   "a.airport_name AS \"airportName\",a.airport_key AS \"airportKey\", "+
-  "f.provider_name AS provider,f.continent,f.game_cost_multiplier::text AS \"siteMultiplier\" "+
+  "f.provider_name AS provider,f.provider_key AS \"providerKey\",f.continent,f.game_cost_multiplier::text AS \"siteMultiplier\" "+
   "FROM airlinerra_game.airline_aircraft_inventory i "+
   "JOIN airlinerra_game.cabin_refit_facility_types_v1 r ON r.configuration_id=i.configuration_id "+
   "JOIN airlinerra_game.maintenance_facility_locations_v1 f "+
