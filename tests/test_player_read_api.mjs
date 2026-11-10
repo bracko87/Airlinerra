@@ -33,7 +33,7 @@ function make({enabled=true,verified=true,rows=baseRows}={}){
      if(sql===PLAYER_READ_SQL.countries)return {rows:rows.countries};
      if(sql===PLAYER_READ_SQL.airlines)return {rows:rows.airlines};
      if(sql===PLAYER_READ_SQL.ledger)return {rows:rows.ledger};
-     if(sql===PLAYER_READ_SQL.airports)return {rows:rows.airports};
+     if(sql===PLAYER_READ_SQL.airports)return {rows:rows.airports.map(row=>({...row,source_group:row.source_group||'GROUP_1'}))};
      if(sql===PLAYER_READ_SQL.preparedAirports)return {rows:rows.preparedAirports};
      if(sql===PLAYER_READ_SQL.licenses)return {rows:rows.licenses};
      if(sql===PLAYER_READ_SQL.holdingStatus)return {rows:rows.holdingStatus};
@@ -273,7 +273,8 @@ test('Group 2 prepared airport information is separately authenticated and canno
  assert.deepEqual(s.counts().queries[0].params,['US','Grant',0]);
  assert.match(PLAYER_READ_SQL.preparedAirports,/source_group='GROUP_2'/);
  assert.match(PLAYER_READ_SQL.preparedAirports,/GROUP2_PREPARED_NOT_ADMITTED/);
- assert.doesNotMatch(PLAYER_READ_SQL.airports,/airport_sections1_8_combined_catalog_v1/);
+ assert.match(PLAYER_READ_SQL.airports,/airport_sections1_8_combined_catalog_v1/);
+ assert.match(PLAYER_READ_SQL.airports,/airport_location_eligibility_v1/);
  const browseAll=make();
  const wholePage=await browseAll.handler(request('/api/v1/player/prepared-airports',
   {countryIso:'',search:'',offset:0}));
@@ -301,4 +302,26 @@ test('Group 2 prepared airport information is separately authenticated and canno
  assert.equal((await tampered.handler(request('/api/v1/player/prepared-airports',
   {countryIso:'US'}))).status,503);
  assert.equal(invalid.counts().connected,0);
+});
+
+test('merged Serbian route selector returns fifth Group 2 Ponikve location without flight authority',async()=>{
+ const rows={...baseRows,airports:[
+  {airport_key:'FICTIONAL:fictional:RS:LYAL',airport_name:'Aleksandrovo Airport',airport_code:'LYAL',country_iso:'RS',source_group:'GROUP_1'},
+  {airport_key:'OURAIRPORTS:4610',airport_name:'Belgrade Nikola Tesla Airport',airport_code:'LYBE',country_iso:'RS',source_group:'GROUP_1'},
+  {airport_key:'OURAIRPORTS:31872',airport_name:'Morava Airport',airport_code:'LYKV',country_iso:'RS',source_group:'GROUP_1'},
+  {airport_key:'OURAIRPORTS:4612',airport_name:'Niš Constantine the Great Airport',airport_code:'LYNI',country_iso:'RS',source_group:'GROUP_1'},
+  {airport_key:'OURAIRPORTS:1649',airport_name:'Ponikve Airport',airport_code:'G2-1649',country_iso:'RS',source_group:'GROUP_2',latitude_deg:'43.898899',longitude_deg:'19.697701'}
+ ]};
+ const response=await make({rows}).handler(request('/api/v1/player/airports',{countryIso:'RS',search:'',offset:0}));
+ assert.equal(response.status,200);
+ const out=await response.json();
+ assert.equal(out.airports.length,5);
+ assert.equal(out.airports.filter(x=>x.sourceGroup==='GROUP_1').length,4);
+ const ponikve=out.airports.find(x=>x.key==='OURAIRPORTS:1649');
+ assert.equal(ponikve.name,'Ponikve Airport');
+ assert.equal(ponikve.locationSelectable,true);
+ assert.equal(ponikve.bookable,false);
+ assert.equal(ponikve.commercialAccess,false);
+ assert.equal(ponikve.canActivateFlights,false);
+ assert.equal(ponikve.latitude,43.898899);
 });
