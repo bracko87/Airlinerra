@@ -30,6 +30,9 @@ export function allowedLocalOwnerRead(pathname,payload){
  if(payload.action==='list')
   return Object.keys(payload).length===2 &&
    Object.keys(payload).every(x=>x==='action'||x==='airlineId');
+ // Maintenance preview is read-only. Never accept a client-selected cost or site.
+ if(pathname===FLEET_READ_PATH&&payload.action==='maintenance-preview')
+  return validateFleetAcquisitionRequest(payload);
  // Nickname edits are harmless owner-verified metadata updates; never allow
  // purchase, delivery, schedule activation or any other fleet write here.
  if(pathname===FLEET_READ_PATH&&payload.action==='update-nickname')
