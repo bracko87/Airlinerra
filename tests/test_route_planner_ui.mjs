@@ -257,7 +257,7 @@ test('three-step flight draft screen includes daily aircraft assignments and pri
  for(const id of ['route-departure-stand-derived','route-arrival-stand','route-turnaround',
   'route-cruise-speed','route-airborne-time','route-min-turnaround','route-rotation-check',
   'route-fare-economy','route-fare-premium','route-fare-business','route-fare-first',
-  'route-onboard-service','route-baggage-service','route-cargo-service',
+  'route-cabin-package','route-cabin-passengers','route-baggage-service','route-cargo-service',
   'route-plan-save','route-plan-new']){
   assert.ok(ui.includes('id="'+id+'"'),id);
  }
