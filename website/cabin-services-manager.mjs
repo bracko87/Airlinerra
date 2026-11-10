@@ -137,14 +137,32 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
  if(!doc?.createElement||!host||typeof identity!=='string'||
     !/^[\w-]{3,128}$/.test(identity))throw Error('Verified manager required');
  let airlineId=undefined,state=initialCabinState(),activeId='basic',working=null,savedKey=null;
+ let remote=null,revision=0,ready=false,loading=false,saving=false,loadTicket=0;
  const status=text=>{const box=host.querySelector('#cabin-package-status');
   if(box)box.textContent=text;};
  const find=id=>state.packages.find(p=>p.id===id);
  const read=key=>{try{return storage?.getItem(key)}catch{return null}};
- const persist=()=>{
-  if(!savedKey)return false;
+ const persist=async()=>{
+  if(!savedKey||loading||saving)return false;
+  if(remote){
+   if(!ready)return false;
+   const currentId=airlineId,api=remote,expectedVersion=revision;
+   saving=true;
+   try{
+    const result=await api.save({airlineId:currentId,state,expectedVersion});
+    if(currentId!==airlineId||api!==remote)return false;
+    state=cleanCabinState(result.state);revision=result.version;return true;
+   }catch(error){
+    ready=false;
+    status(error?.message==='CABIN_VERSION_CONFLICT'?
+     'These cabin settings changed in another session. Reload before editing.':
+     'Supabase could not save the change. No flight or money was changed.');
+    return false;
+   }finally{saving=false}
+  }
   try{storage?.setItem(savedKey,JSON.stringify(state));return true}catch{return false}
  };
+ const locationLabel=()=>remote?'Supabase for this airline':'this browser';
  const choose=id=>{const found=find(id);if(!found)return;
   activeId=id;working=structuredClone(found);render();
  };
@@ -157,11 +175,11 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
   const heading=element(doc,'div','cabin-product-header');
   const title=element(doc,'div');
   title.append(element(doc,'h2','', 'Cabin Services Management'),
-   element(doc,'p','hint','Create service packages and assign one to each cabin class. Draft design only; not yet linked to passenger booking or cash settlement.'));
+   element(doc,'p','hint','Create service packages and assign one to each cabin class. '+(remote?'Package settings are stored in Supabase for your airline; no cash settlement or actual flight changes.':'Local preview: settings are saved in this browser; no flight or cash effects.')));
   heading.append(title);
   const addBtn=element(doc,'button','primary cabin-compact-button','+ New package');
   addBtn.type='button';addBtn.dataset.cabinAction='new';
-  addBtn.disabled=!airlineId||state.packages.length>=9;
+  addBtn.disabled=!airlineId||loading||saving||(remote&&!ready)||state.packages.length>=9;
   heading.append(addBtn);host.append(heading);
   const body=element(doc,'div','cabin-product-layout');
   const sidebar=element(doc,'aside','cabin-product-sidebar');
@@ -261,7 +279,7 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
   classBox.append(grid);
   const saveAssignments=element(doc,'button','primary cabin-compact-button','Save class assignments');
   saveAssignments.type='button';saveAssignments.dataset.cabinAction='assign';
-  saveAssignments.disabled=!airlineId;
+  saveAssignments.disabled=!airlineId||loading||saving||(remote&&!ready);
   classBox.append(saveAssignments);host.append(classBox);
   const feedback=element(doc,'p','hint cabin-product-status');
   feedback.id='cabin-package-status';feedback.setAttribute('role','status');
@@ -281,6 +299,7 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
   if(margin)margin.textContent=money(results.indicativeMarginCents);
  };
  const onChange=event=>{
+  if(loading||saving||(remote&&!ready))return;
   const className=event.target.dataset?.cabinClass;
   if(className){return;}
   const item=event.target.closest?.('[data-cabin-item]');
@@ -310,10 +329,13 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
   }
   updateMetrics();
  };
- const onClick=event=>{
+ const onClick=async event=>{
   const button=event.target.closest?.('[data-cabin-action],[data-cabin-choose]');
   if(!button||!host.contains(button))return;
-  const selected=button.dataset.cabinChoose;
+  if(loading||saving||(remote&&!ready)){
+    status('Cabin packages are not ready. Check the connection and reload.');return;
+   }
+   const selected=button.dataset.cabinChoose;
   if(selected){choose(selected);return;}
   const action=button.dataset.cabinAction;
   if(!airlineId){status('Connect a verified airline first.');return;}
@@ -353,8 +375,8 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
    const i=state.packages.findIndex(p=>p.id===activeId);
    if(i<1)return;
    const old=state.packages[i];state.packages[i]=next;
-   if(!persist()){state.packages[i]=old;status('Browser storage unavailable. Package was not saved.');return;}
-   choose(activeId);status(next.name+' saved for this airline in this browser.');
+   if(!await persist()){state.packages[i]=old;return;}
+   choose(activeId);status(next.name+' saved in '+locationLabel()+'.');
    return;
   }
   if(action==='delete'){
@@ -363,7 +385,7 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
    const oldState=structuredClone(state);
    state.packages=state.packages.filter(p=>p.id!==activeId);
    for(const key of CLASSES)if(state.assignments[key]===activeId)state.assignments[key]='basic';
-   if(!persist()){state=oldState;status('Browser storage unavailable. Package not deleted.');return;}
+   if(!await persist()){state=oldState;return;}
    choose('basic');status('Package deleted. Cabin class assignments reverted to Basic where necessary.');
    return;
   }
@@ -376,23 +398,39 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
     assignments[key]=id;
    }
    const prior=state.assignments;state.assignments=assignments;
-   if(!persist()){state.assignments=prior;status('Browser storage unavailable. Assignments not saved.');return;}
-   status('Class assignments saved for this airline in this browser. No flight was modified.');
+   if(!await persist()){state.assignments=prior;return;}
+   status('Class assignments saved in '+locationLabel()+'. No flight was modified.');
   }
  };
  host.addEventListener('change',onChange);
  host.addEventListener('click',onClick);
  const updateData=data=>{
-  const id=data?.connected&&typeof data?.airline?.id==='string'?data.airline.id:null;
-  if(id===airlineId)return;
-  airlineId=id;savedKey=id?'airlinerra.cabin.services.v1.'+identity+'.'+id:null;
-  let parsed=null;
-  if(savedKey)try{parsed=JSON.parse(read(savedKey)||'null')}catch{}
-  state=cleanCabinState(parsed);
-  activeId='basic';working=structuredClone(state.packages[0]);
-  render();
-  if(!id)status('Sign in to an airline to save your cabin-service designs.');
- };
+   const id=data?.connected&&typeof data?.airline?.id==='string'?data.airline.id:null;
+   const api=id&&typeof data?.cabinServiceClient?.read==='function'&&
+    typeof data?.cabinServiceClient?.save==='function'?data.cabinServiceClient:null;
+   if(id===airlineId&&api===remote)return;
+   const ticket=++loadTicket;
+   airlineId=id;remote=api;savedKey=id?'airlinerra.cabin.services.v1.'+identity+'.'+id:null;
+   revision=0;ready=!remote;loading=Boolean(remote);saving=false;
+   let parsed=null;
+   if(savedKey&&!remote)try{parsed=JSON.parse(read(savedKey)||'null')}catch{}
+   state=cleanCabinState(parsed);activeId='basic';
+   working=structuredClone(state.packages[0]);render();
+   if(!id){status('Sign in to an airline to save cabin-service designs.');return;}
+   if(!remote)return;
+   status('Loading cabin packages from Supabase…');
+   void remote.read(id).then(result=>{
+    if(ticket!==loadTicket||airlineId!==id)return;
+    state=cleanCabinState(result.state);revision=result.version;
+    ready=true;loading=false;activeId='basic';
+    working=structuredClone(state.packages[0]);render();
+    status('Cabin packages loaded from Supabase for this airline.');
+   }).catch(()=>{
+    if(ticket!==loadTicket||airlineId!==id)return;
+    loading=false;ready=false;render();
+    status('Cabin packages could not be loaded. Editing disabled to protect saved data.');
+   });
+  };
  updateData({connected:false,airline:null});
  return Object.freeze({
   updateData,
