@@ -12,10 +12,11 @@ import {createAirlineHttpHandler} from './airline-http-handler.mjs';
 import {createRegistrationReadinessHandler,REGISTRATION_READINESS_PATH} from './registration-readiness.mjs';
 import {createAirportOfficePersistence} from './airport-office-persistence.mjs';
 import {createAirportOfficeHttpHandler,AIRPORT_OFFICE_API_PATH} from './airport-office-http-handler.mjs';
+import {createGroup2LocationPlanHandler,GROUP2_LOCATION_PATH} from './group2-location-plans-service.mjs';
 
 export const CANONICAL_GAME_API_PATHS=Object.freeze([
  '/api/v1/player/overview','/api/v1/player/airports','/api/v1/player/prepared-airports','/api/v1/player/airport-profile',
- '/api/v1/player/aircraft-library','/api/v1/player/licenses','/api/v1/player/holding-status',AIRPORT_OFFICE_API_PATH,
+ '/api/v1/player/aircraft-library','/api/v1/player/licenses','/api/v1/player/holding-status',AIRPORT_OFFICE_API_PATH,GROUP2_LOCATION_PATH,
  '/api/v1/onboarding/context','/api/v1/legal/consents','/api/v1/airlines',
  REGISTRATION_READINESS_PATH
 ]);
@@ -55,6 +56,7 @@ export function createCanonicalGameApi({
    enabled:airportOfficeDraftsEnabled===true,verifyUserToken,database
   }),origin,enabled:airportOfficeDraftsEnabled===true
  });
+ const plannedLocations=createGroup2LocationPlanHandler({verifyUserToken,database,origin});
  const handlers={
   [AIRPORT_OFFICE_API_PATH]:airportOffices,
   '/api/v1/onboarding/context':context,
@@ -75,6 +77,7 @@ export function createCanonicalGameApi({
     headers:Object.fromEntries(request.headers.entries()),body});
    return new Response(result.body,{status:result.status,headers:result.headers});
   }
+  if(url.pathname===GROUP2_LOCATION_PATH)return plannedLocations(request);
   if(url.pathname.startsWith('/api/v1/player/'))return read(request);
   if(request.method!=='POST')return respond(405,'Method not allowed');
   const body=await request.text();
