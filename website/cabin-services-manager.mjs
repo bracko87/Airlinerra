@@ -8,20 +8,20 @@
  * Base unit cost INCLUDES preparation/packing/handling. No online commerce.
  * Stock defaults are per 100 passengers; digital services have usage-based costs. */
 export const CABIN_SERVICE_CATALOG=Object.freeze([
- {id:'water',name:'Drinking water',category:'Drinks',costCents:65,weight:0,stock:100,rate:.28,referencePrice:200,condition:'Basic complimentary supply'},
- {id:'coffee',name:'Coffee and tea',category:'Drinks',costCents:150,weight:5,stock:20,rate:.14,referencePrice:400},
- {id:'softdrink',name:'Soft drinks and juice',category:'Drinks',costCents:175,weight:6,stock:25,rate:.18,referencePrice:450},
- {id:'alcohol',name:'Beer and wine',category:'Drinks',costCents:375,weight:5,stock:10,rate:.09,referencePrice:850,condition:'Subject to country, route and age restrictions'},
- {id:'snack',name:'Small snack',category:'Food',costCents:225,weight:8,stock:20,rate:.15,referencePrice:550},
- {id:'sandwich',name:'Sandwich / light meal',category:'Food',costCents:525,weight:9,stock:12,rate:.10,referencePrice:1100},
- {id:'hotmeal',name:'Hot meal',category:'Food',costCents:950,weight:14,stock:10,rate:.07,referencePrice:1900,condition:'Aircraft galley and catering required'},
- {id:'specialmeal',name:'Special dietary meal',category:'Food',costCents:1100,weight:6,stock:3,rate:.018,referencePrice:2200,condition:'Pre-order, galley and catering required'},
- {id:'newspaper',name:'Digital newspapers',category:'Media',costCents:55,weight:3,digital:true,rate:.07,referencePrice:200},
- {id:'wifi',name:'Basic Wi-Fi',category:'Media',costCents:225,weight:10,digital:true,rate:.12,referencePrice:800,condition:'Onboard Wi-Fi equipment required'},
- {id:'fullwifi',name:'Full-speed Wi-Fi',category:'Media',costCents:550,weight:10,digital:true,rate:.055,referencePrice:1600,condition:'Onboard Wi-Fi equipment required'},
- {id:'entertainment',name:'Entertainment',category:'Media',costCents:200,weight:9,digital:true,rate:.10,referencePrice:600,condition:'Compatible aircraft/player devices required'},
- {id:'blanket',name:'Blanket / comfort kit',category:'Comfort',costCents:450,weight:4,stock:10,rate:.06,referencePrice:950},
- {id:'amenity',name:'Amenity kit',category:'Comfort',costCents:675,weight:5,stock:5,rate:.025,referencePrice:1500}
+ {id:'water',name:'Drinking water',category:'Drinks',costCents:65,weight:0,stock:100,rate:.28,referencePrice:350,condition:'Basic complimentary supply'},
+ {id:'coffee',name:'Coffee and tea',category:'Drinks',costCents:150,weight:5,stock:20,rate:.14,referencePrice:500},
+ {id:'softdrink',name:'Soft drinks and juice',category:'Drinks',costCents:175,weight:6,stock:25,rate:.18,referencePrice:550},
+ {id:'alcohol',name:'Beer and wine',category:'Drinks',costCents:375,weight:5,stock:10,rate:.09,referencePrice:1050,condition:'Subject to country, route and age restrictions'},
+ {id:'snack',name:'Small snack',category:'Food',costCents:225,weight:8,stock:20,rate:.15,referencePrice:650},
+ {id:'sandwich',name:'Sandwich / light meal',category:'Food',costCents:525,weight:9,stock:12,rate:.10,referencePrice:1350},
+ {id:'hotmeal',name:'Hot meal',category:'Food',costCents:950,weight:14,stock:10,rate:.07,referencePrice:2200,condition:'Aircraft galley and catering required'},
+ {id:'specialmeal',name:'Special dietary meal',category:'Food',costCents:1100,weight:6,stock:3,rate:.018,referencePrice:2800,condition:'Pre-order, galley and catering required'},
+ {id:'newspaper',name:'Digital newspapers',category:'Media',costCents:55,weight:3,digital:true,rate:.07,referencePrice:350},
+ {id:'wifi',name:'Basic Wi-Fi',category:'Media',costCents:225,weight:10,digital:true,rate:.12,referencePrice:1200,condition:'Onboard Wi-Fi equipment required'},
+ {id:'fullwifi',name:'Full-speed Wi-Fi',category:'Media',costCents:550,weight:10,digital:true,rate:.055,referencePrice:2300,condition:'Onboard Wi-Fi equipment required'},
+ {id:'entertainment',name:'Entertainment',category:'Media',costCents:200,weight:9,digital:true,rate:.10,referencePrice:900,condition:'Compatible aircraft/player devices required'},
+ {id:'blanket',name:'Blanket / comfort kit',category:'Comfort',costCents:450,weight:4,stock:10,rate:.06,referencePrice:1400},
+ {id:'amenity',name:'Amenity kit',category:'Comfort',costCents:675,weight:5,stock:5,rate:.025,referencePrice:1900}
 ]);
 export const CABIN_MODE_OPTIONS=Object.freeze([
  ['off','Not offered'],
@@ -44,7 +44,7 @@ export const cabinDefaultItems=()=>Object.fromEntries(CABIN_SERVICE_CATALOG.map(
   onlineCents:item.referencePrice,onboardCents:item.referencePrice}
 ]));
 export const createBasicCabinPackage=()=>({
- id:'basic',name:'Basic Cabin Service',locked:true,items:cabinDefaultItems()
+ id:'basic',name:'Basic Flight Services',locked:true,items:cabinDefaultItems()
 });
 const cleanItem=(value,id)=>{
  const v=value&&typeof value==='object'&&!Array.isArray(value)?value:{};
@@ -154,6 +154,18 @@ export function forecastCabinServiceFlight(pkg,{passengers=100,durationMinutes=1
   passengers,durationMinutes,reputationScore,rows,
   forecastOnly:true,ledgerPosted:false};
 }
+/** Planning-only appeal score. Does not assume a flight, its passengers,
+ * its duration, or any purchases. Actual consumption belongs to the flight engine.
+ */
+export function cabinServiceAttractiveness(pkg){
+ let appeal=25,paidWeight=0;
+ for(const service of CABIN_SERVICE_CATALOG){
+  const item=cleanItem(pkg?.items?.[service.id],service.id);
+  if(item.mode==='included')appeal+=service.weight;
+  if(item.mode==='onboard')paidWeight+=service.weight;
+ }
+ return Math.min(100,Math.round(appeal+Math.min(8,paidWeight*.25)));
+}
 /** Legacy short summary for package directory and compatibility consumers. */
 export function cabinPackageEstimate(pkg){
  const flight=forecastCabinServiceFlight(pkg);
@@ -195,7 +207,6 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
     !/^[\w-]{3,128}$/.test(identity))throw Error('Verified manager required');
  let airlineId=undefined,state=initialCabinState(),activeId='basic',working=null,savedKey=null;
  let remote=null,revision=0,ready=false,loading=false,saving=false,loadTicket=0;
- let previewPassengers=100,previewMinutes=180,previewReputation=50;
  const status=text=>{const box=host.querySelector('#cabin-package-status');
   if(box)box.textContent=text;};
  const find=id=>state.packages.find(p=>p.id===id);
@@ -249,7 +260,7 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
    const line=element(doc,'button','cabin-package-choice'+(pkg.id===activeId?' is-active':''));
    line.type='button';line.dataset.cabinChoose=pkg.id;
    line.append(element(doc,'strong','',pkg.name));
-   const score=cabinPackageEstimate(pkg).attractiveness;
+   const score=cabinServiceAttractiveness(pkg);
    line.append(element(doc,'small','',score+'/100 · '+(pkg.id==='basic'?'Default / protected':'Custom package')));
    entry.append(line);
    if(pkg.id!=='basic'){
@@ -454,10 +465,10 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
    let number=1;while(used.has('pkg-'+number))number++;
    const pkg=structuredClone(action==='duplicate'?working:createBasicCabinPackage());
    pkg.id='pkg-'+number;pkg.locked=false;
-   pkg.name=action==='duplicate'?('Copy of '+working.name).slice(0,45):'New cabin package';
+   pkg.name=action==='duplicate'?('Copy of '+working.name).slice(0,45):'New flight package';
    state.packages.push(pkg);
    choose(pkg.id);
-   status('New package created in the editor. Configure it and click Save package.');
+   status('New service package created. Set each offer and passenger price, then save.');
    return;
   }
   if(action==='save'){
