@@ -145,7 +145,7 @@ export function routeAirportPairStatus(origin,destination){
 }
 /** Real schedule mutation is never implied by read-only list or slot checks. */
 export const routeDraftSaveMode=scheduler=>
- typeof scheduler?.save==='function'?'server':'browser';
+ typeof scheduler?.planSave==='function'?'server-planning':'browser';
 export const flightPrefixFor=airline=>{
  const code=String(airline?.iataCode||'').trim().toUpperCase();
  if(/^[A-Z0-9]{2}$/.test(code)&&/[A-Z]/.test(code))
@@ -1244,25 +1244,12 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    message('route-plan-status','Select an in-service aircraft owned or leased by this company. Test and catalogue aircraft cannot be scheduled.');
    return;
   }
-  const canSaveToServer=routeDraftSaveMode(data?.scheduler)==='server';
-  // The localhost gateway is deliberately read-only for server schedules.
-  // Allow an explicit LOCAL planning draft rather than silently losing work
-  // or claiming that an operational flight was registered.
-  if(canSaveToServer&&!selectedCatalog){
-   message('route-plan-status','A verified aircraft model is required before saving a server schedule.');
-   return;
-  }
-  if(canSaveToServer&&(!airportProfiles.from||!airportProfiles.to)){
-   message('route-plan-status','Airport runway profiles must be verified before saving to the server.');
-   return;
-  }
+  const canSaveToServer=routeDraftSaveMode(data?.scheduler)==='server-planning';
+  // Owner-verified planning saves do NOT reserve slots or require invented
+  // arrival timestamps. Commercial schedule creation uses a separate gate.
   const preflight=await automaticPreflight({force:true});
   if(preflight?.gameHardBlocked===true){
    message('route-plan-status','BLOCKED — a verified airport restriction prevents saving this route.');
-   return;
-  }
-  if(canSaveToServer&&!preflight){
-   message('route-plan-status','Complete UTC examples and restriction checks before saving to the airline server.');
    return;
   }
   const timeline=selectedAircraftTimeline();
@@ -1283,14 +1270,14 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   // Other flight durations, time zones and slots are still not verified.
   // A local draft never mutates server finance, aircraft, schedules or live flights.
   const draft={from,to,flightNumber,flights:schedule.length,schedule,
-   storage:canSaveToServer?'server':'browser',
+   storage:canSaveToServer?'server-planning':'browser',
    aircraftId:flightAircraft,
    aircraftConfigurationId:selectedCatalog?.id??ownedChoice.configurationId,
    aircraftLabel:[selectedCatalog?.manufacturer||ownedChoice.manufacturer,
     selectedCatalog?.model||ownedChoice.model,
     selectedCatalog?.configuration].filter(Boolean).join(' ')||ownedChoice.registration,
    catalogPreviewOnly:false,testAircraft:false,
-   serverScheduleId:null,
+   serverScheduleId:null,serverPlanningId:null,
    referenceDepartureUtc:utcFromInput($('route-preflight-departure-utc')?.value),
    referenceArrivalUtc:utcFromInput($('route-preflight-arrival-utc')?.value),
    airportRuleScreen:{gameHardBlocked:false,needsReview:preflight?.needsReview!==false,
@@ -1312,61 +1299,49 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    return;
   }
   if(canSaveToServer){
-   if(preflight.slotAvailability?.available!==true){
-    message('route-plan-status','Departure or arrival slot is unavailable. Choose another time or stand type.');
-    return;
-   }
-   const scheduler=data?.scheduler;
-   if(typeof scheduler?.save!=='function'){
-    message('route-plan-status','Secure schedule service not connected. Cannot save an operational-fleet schedule.');
-    return;
-   }
-   message('route-plan-status','Saving checked owned-aircraft schedule to your airline server...');
+   const scheduler=data.scheduler;
+   message('route-plan-status','Saving owner-verified planning route in your airline database...');
    try{
-    const result=await scheduler.save({
+    const result=await scheduler.planSave({
      airlineId:data.airline.id,aircraftInventoryId:ownedChoice.id,
      flightNumber,originAirportKey:from.key,destinationAirportKey:to.key,
-     referenceDepartureUtc:draft.referenceDepartureUtc,
-     referenceArrivalUtc:draft.referenceArrivalUtc,
      weeklySchedule:schedule,
-     departureStand:operation.departureStand,arrivalStand:operation.arrivalStand,
-     ...(previousServerDraft?.serverScheduleId?{existingId:previousServerDraft.serverScheduleId}:{})
+     departureStand:operation.departureStand,
+     arrivalStand:operation.arrivalStand,
+     turnaroundMinutes:operation.turnaroundMinutes,
+     fares:operation.fares,service:operation.service,
+     referenceDepartureUtc:draft.referenceDepartureUtc,
+     referenceArrivalUtc:draft.referenceArrivalUtc
     });
-    if(result?.status!=='draft'||typeof result.scheduleId!=='string'||
-       result.canActivateNormalFlight!==false||result.slotsReserved!==true)
-     throw Error('Invalid schedule draft confirmation');
-    draft.serverScheduleId=result.scheduleId;
-    draft.slotsReserved=true;
-    draft.operationallyVerified=false;
-    // Refresh list without altering the already checked form.
-    serverDrafts=[{id:result.scheduleId,status:'draft',flightNumber,
-      aircraftInventoryId:ownedChoice.id,originAirportKey:from.key,
-      destinationAirportKey:to.key,weeklySchedule:schedule,
-      referenceDepartureUtc:draft.referenceDepartureUtc,
-      referenceArrivalUtc:draft.referenceArrivalUtc,
-      departureStand:operation.departureStand,arrivalStand:operation.arrivalStand},
-     ...serverDrafts.filter(x=>x.id!==result.scheduleId&&x.flightNumber!==flightNumber)];
-    renderServerScheduleList();
-   }catch{
-    message('route-plan-status','Server rejected or could not save this aircraft schedule. No active flight created.');
+    if(result?.status!=='planning'||typeof result.planId!=='string'||
+       result.canActivateNormalFlight!==false||result.slotsReserved!==false||
+       result.ledgerPosted!==false)
+     throw Error('UNVERIFIED_PLAN_SAVE_CONFIRMATION');
+    draft.serverPlanningId=result.planId;
+    draft.storage='server-planning';
+   }catch(error){
+    const reason=String(error?.message||'');
+    message('route-plan-status',reason.includes('409')||reason.includes('CONFLICT_')?
+      'NOT SAVED — airline, aircraft, airport or flight number is not eligible. Check the route details.':
+      'NOT SAVED — server planning save failed. This route has not been recorded in Supabase.');
     return;
    }
   }
   if(!draftWrite('routes',[...filtered,draft])){
-   message('route-plan-status',draft.serverScheduleId?
-    'Server schedule saved, but this browser could not cache it. See server schedule drafts.':
+   message('route-plan-status',draft.serverPlanningId?
+    'Route saved in the airline database. Local cache is unavailable; open My Routes to load it from the server.':
     'NOT SAVED — browser storage is unavailable. No local route draft was created.');
-   return;
+   if(!draft.serverPlanningId)return;
   }
   // My Routes uses the routes array, not the legacy single-route key.
   // A failed compatibility write must never hide a successfully stored route.
   draftWrite('route',draft);
   doc.dispatchEvent(new CustomEvent('airlinerra:route-draft-saved',{
-   detail:{flightNumber,serverSaved:Boolean(draft.serverScheduleId)}
+   detail:{flightNumber,serverSaved:Boolean(draft.serverPlanningId||draft.serverScheduleId)}
   }));
   await resetRouteForm();
-  const text=flightNumber+(draft.serverScheduleId?
-   ' saved as a SERVER schedule draft. No commercial flight has been activated.':
+  const text=flightNumber+(draft.serverPlanningId?
+   ' saved in your AIRLINE DATABASE as a planning route. It is available under My Routes on any signed-in device. No slots reserved or flights activated.':
    ' saved as a LOCAL planning draft. It is now listed under My Routes in this browser tab. No server schedule or flight was created.');
   const status=$('route-plan-status');
   if(status){status.classList.add('is-success');status.textContent=text;}
