@@ -14,6 +14,8 @@ on:
       - 'website/player-app.css'
       - 'website/dev-scripts/invited-overlay.mjs'
       - 'server/fleet-acquisition-service.mjs'
+      - 'server/section9-verified-flight-fuel-bridge.mjs'
+      - 'tests/test_section9_fuel_arrival_bridge.mjs'
       - 'tests/test_five_phase_fuel_preview.mjs'
       - '.github/workflows/fuel-phase-preview-ci.yml'
   workflow_dispatch:
@@ -33,8 +35,9 @@ jobs:
           node --check website/route-planner.mjs
           node --check website/airline-workspace.mjs
           node --check server/fleet-acquisition-service.mjs
+          node --check server/section9-verified-flight-fuel-bridge.mjs
       - name: Test five-phase physics, pricing, owner data and route screen
-        run: node --test tests/test_five_phase_fuel_preview.mjs
+        run: node --test tests/test_five_phase_fuel_preview.mjs tests/test_section9_fuel_arrival_bridge.mjs
       - name: Build complete protected website
         run: cd website && npm run build
       - name: Verify complete browser module graph
