@@ -495,8 +495,12 @@ export function createCabinConfigurationManager({doc,host,factoryHost,onDirector
  }
  return Object.freeze({
   updateData(next){
-   const old=current.airline?.id||null;current={...current,...next};
-   if(old!==(current.airline?.id||null))selectedId=null;
+   const old=current.airline?.id||null;
+   current={...current,...next};
+   const currentId=current.airline?.id||null;
+   // Game clock/data refresh must not erase a manager's unsaved cabin design.
+   if(old===currentId&&loaded)return;
+   if(old!==currentId)selectedId=null;
    void reload();
   },
   selectAircraft(id){if(!loaded?.aircraft?.some(a=>a.aircraftInventoryId===id))return;
