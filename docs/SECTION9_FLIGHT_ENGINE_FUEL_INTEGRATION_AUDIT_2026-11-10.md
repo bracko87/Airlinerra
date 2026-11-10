@@ -122,3 +122,22 @@ production flight operator:
 5. Only after genuine flight events exist, add server-owned tank
    balances/refuelling, idempotent flight occurrence fuel posting and
    finance settlement. Never charge based on a route preview.
+
+## Final integration proof — deterministic full-flight dry run
+
+- New test: `tests/test_section9_full_flight_dry_run.mjs`.
+- Tests one *synthetic*, server-owned A319 route through all five phase
+  timestamps and modeled fuel burns, then separately authenticated mock
+  departure and arrival operations through the real dispatcher's contracts.
+- The existing arrival→fuel bridge accepts the signed mock arrival only
+  once and attaches the full five-phase planning timeline. A duplicate
+  movement is treated as a replay, with **no extra arrival/charge**.
+- No independent operational evidence means the dispatcher processes **zero**
+  mock movements despite a valid simulated phase timeline.
+- CI `Airlinerra flight phase execution (isolated)`: run **42869878872**
+  PASSED, including independent HMAC attestation checks, private evidence
+  reader, flight/fuel compatibility, duplicate replay and protected website
+  build.
+- This is **not** a production executed flight. Do not claim that production
+  trusted flight-execution signers or background operation workers are
+  connected. The live readiness audit still reports those release gates OFF.
