@@ -102,7 +102,7 @@ test('manager route page is coded and bundled, with valid map and no invented op
   read('../website/player-app.css')
  ]);
  const view=routePlannerMarkup();
- assert.match(PLAYER_READ_SQL.airports,/from airlinerra_game\.approved_game_airports a left join/);
+ assert.match(PLAYER_READ_SQL.airports,/from airlinerra_game\.airport_location_eligibility_v1 a left join lateral/);
  assert.match(PLAYER_READ_SQL.airports,/latitude_deg::text as latitude_deg/);
  assert.match(PLAYER_READ_SQL.airports,/where a\.world_id=1/);
  for(const id of ['route-from-country','route-to-country','route-map-canvas','route-distance',
@@ -421,4 +421,27 @@ test('all visible player selects use shared Airlinerra dropdown skin while hidde
  assert.match(menu,/select\.dispatchEvent\(new Event\('change'/);
  assert.match(css,/#player-main \.game-select-menu \.down-menu-options/);
  assert.match(css,/#player-main \.game-select-menu \.down-menu-option\[aria-selected="true"\]/);
+});
+
+test('Serbian merged route selector shows Ponikve as fifth planning airport',async()=>{
+ const old=globalThis.Option;globalThis.Option=FakeOption;
+ try{
+  const country=new FakeControl(),search=new FakeControl(),airportSelect=new FakeControl();
+  const airportRows=[
+   {...airport('FICTIONAL:fictional:RS:LYAL','Aleksandrovo Airport','LYAL','RS'),sourceGroup:'GROUP_1'},
+   {...airport('OURAIRPORTS:4610','Belgrade Nikola Tesla Airport','LYBE','RS'),sourceGroup:'GROUP_1'},
+   {...airport('OURAIRPORTS:31872','Morava Airport','LYKV','RS'),sourceGroup:'GROUP_1'},
+   {...airport('OURAIRPORTS:4612','Niš Constantine the Great Airport','LYNI','RS'),sourceGroup:'GROUP_1'},
+   {...airport('OURAIRPORTS:1649','Ponikve Airport','G2-1649','RS'),
+    sourceGroup:'GROUP_2',latitude:43.898899,longitude:19.697701,bookable:false}
+  ];
+  const picker=createAirportCountryPicker({country,search,airport:airportSelect,
+   getReader:()=>({airports:async()=>({countryIso:'RS',airports:airportRows,nextOffset:null})})});
+  country.value='RS';await picker.load();
+  assert.equal(picker.getAirports().length,5);
+  assert.ok(airportSelect.options.some(o=>o.textContent.includes('Ponikve Airport') &&
+   o.textContent.includes('planning only')));
+  assert.equal(picker.choose('OURAIRPORTS:1649'),true);
+  assert.equal(picker.selected().bookable,false);
+ }finally{globalThis.Option=old}
 });
