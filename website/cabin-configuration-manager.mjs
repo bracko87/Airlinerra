@@ -202,6 +202,7 @@ export function createCabinConfigurationManager({doc,host,factoryHost}={}){
  function getFactoryPlan(){
   const f=pendingFactoryOffer;
   if(!f||f.useType==='cargo')return {standard:true,valid:true};
+  if(!loaded||!factoryPlan)return {standard:false,valid:false,reason:'Cabin preview not yet loaded'};
   const val=evaluateCabinPlan(factoryPlan,loaded.seatTypes,f.referenceSeats);
   return {...val,standard:val.valid&&factoryPlan.economy===Number(f.referenceSeats)&&
    factoryPlan.economyType==='eco_standard'&&
