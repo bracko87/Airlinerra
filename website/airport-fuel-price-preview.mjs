@@ -24,29 +24,33 @@ const moneyPrice=n=>Math.round(n*1000)/1000;
 /** Airport profile is owner-authenticated and category either approved or provisional.
  * A profile without a known class never gets invented airport-specific pricing.
  */
-export function previewAirportFuelPrice(airportProfile){
+export function previewAirportFuelPrice(airportProfile,{fuelFamily='UNKNOWN_ENGINE'}={}){
+ const canModelKerosene=fuelFamily==='TURBINE_KEROSENE_ASSUMED';
  const className=airportProfile?.category;
  const valid=Object.prototype.hasOwnProperty.call(AIRPORT_TIER_FACTORS,className);
  const factor=valid?AIRPORT_TIER_FACTORS[className]:1;
  const key=typeof airportProfile?.key==='string'?airportProfile.key:null;
  const sourceVerified=valid&&airportProfile?.categoryStatus==='approved';
- const usdPerKg=moneyPrice(GAME_BASE_FUEL_USD_PER_KG*factor);
+ const usdPerKg=canModelKerosene?moneyPrice(GAME_BASE_FUEL_USD_PER_KG*factor):null;
  return Object.freeze({
-  status:valid?'TIER_GAME_ESTIMATE':'GENERIC_GAME_BASE',
+  status:!canModelKerosene?'UNPRICED_FUEL_FAMILY':
+   valid?'TIER_GAME_ESTIMATE':'GENERIC_GAME_BASE',
   modelVersion:PRICE_MODEL_VERSION,
   airportKey:key,
   gameCategory:valid?className:null,
   categoryApproved:sourceVerified,
   usdPerKg,
   factor,
-  fuelType:'GENERIC_UNVERIFIED_FUEL_BASIS',
+  fuelType:fuelFamily,
   source:'GAME_BALANCING_ASSUMPTION',
   fromCurrentSupplier:false,
   currentAirportQuote:false,
   bookingEnabled:false,
   accountingEnabled:false,
   benchmarkSpot:BENCHMARK_SPOT,
-  note:valid?'Tier multipliers are economic game estimates; actual airport prices differ.':
-   'Airport category unknown; generic baseline only, not an airport-specific quote.'
+  note:!canModelKerosene?
+   'No supported fuel price: aircraft engine/fuel type must be researched and airport fuel grade verified. Fuel burn may still be estimated in kg.':
+   valid?'Tier multipliers are economic game estimates; actual airport prices differ.':
+   'Airport category unknown; generic game baseline only, not an airport-specific quote.'
  });
 }
