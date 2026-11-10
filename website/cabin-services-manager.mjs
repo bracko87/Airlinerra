@@ -233,6 +233,17 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
  let remote=null,revision=0,ready=false,loading=false,saving=false,loadTicket=0;
  const status=text=>{const box=host.querySelector('#cabin-package-status');
   if(box)box.textContent=text;};
+ let saveNoticeTimer=null;
+ const showSaveConfirmation=packageName=>{
+  host.querySelector('.cabin-package-saved-toast')?.remove();
+  if(saveNoticeTimer!==null)clearTimeout(saveNoticeTimer);
+  const toast=element(doc,'div','cabin-package-saved-toast');
+  toast.setAttribute('role','status');
+  toast.setAttribute('aria-live','polite');
+  toast.textContent='Package “'+packageName+'” saved successfully. You can now select it when creating a route.';
+  host.append(toast);
+  saveNoticeTimer=setTimeout(()=>{toast.remove();saveNoticeTimer=null;},6500);
+ };
  const find=id=>state.packages.find(p=>p.id===id);
  const read=key=>{try{return storage?.getItem(key)}catch{return null}};
  const notifyRoutes=()=>{
@@ -391,20 +402,6 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
   editor.append(element(doc,'p','hint',
    'Airline unit costs are provisional game estimates. Free services count as one unit each in the per-passenger allowance; actual use may differ. Physical paid items cost money when stocked, even if unsold. Unit margin means selling price minus supply cost, before waste and other expenses. Flight totals are calculated only from actual flights.'));
   body.append(editor);host.append(body);
-  const classBox=element(doc,'section','cabin-assignment-panel');
-  classBox.append(element(doc,'h3','','Default package by cabin class'),
-   element(doc,'p','hint','These assignments are planning preferences. Actual aircraft configurations, route sales and passenger demand are not changed.'));
-  const grid=element(doc,'div','cabin-assignment-grid');
-  for(const [id,title] of CABIN_CLASSES){
-   const dropdown=select(doc,state.packages.map(p=>[p.id,p.name]),state.assignments[id],!airlineId);
-   dropdown.dataset.cabinClass=id;
-   textField(grid,title,dropdown);
-  }
-  classBox.append(grid);
-  const saveAssignments=element(doc,'button','primary cabin-compact-button','Save class assignments');
-  saveAssignments.type='button';saveAssignments.dataset.cabinAction='assign';
-  saveAssignments.disabled=!airlineId||loading||saving||(remote&&!ready);
-  classBox.append(saveAssignments);host.append(classBox);
   const feedback=element(doc,'p','hint cabin-product-status');
   feedback.id='cabin-package-status';feedback.setAttribute('role','status');
   feedback.setAttribute('aria-live','polite');host.append(feedback);
@@ -494,7 +491,9 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
    if(i<1)return;
    const old=state.packages[i];state.packages[i]=next;
    if(!await persist()){state.packages[i]=old;return;}
-   choose(activeId);status(next.name+' saved in '+locationLabel()+'.');
+   choose(activeId);
+   status('Saved successfully in '+locationLabel()+'. “'+next.name+'” is available in Create new route → Cabin service package.');
+   showSaveConfirmation(next.name);
    return;
   }
   if(action==='delete'){
@@ -507,21 +506,10 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
    for(const key of CLASSES)if(state.assignments[key]===deleteId)state.assignments[key]='basic';
    if(!await persist()){state=oldState;render();return;}
    choose(activeId===deleteId?'basic':activeId);
-   status('Custom package deleted. Cabin class defaults returned to Basic where necessary.');
+   status('Custom package deleted. Existing routes can be updated to select another package.');
    return;
   }
-  if(action==='assign'){
-   const assignments={};
-   for(const key of CLASSES){
-    const node=host.querySelector('[data-cabin-class="'+key+'"]');
-    const id=node?.value;
-    if(!find(id)){status('Choose a valid package for all cabin classes.');return;}
-    assignments[key]=id;
-   }
-   const prior=state.assignments;state.assignments=assignments;
-   if(!await persist()){state.assignments=prior;return;}
-   status('Class assignments saved in '+locationLabel()+'. No flight was modified.');
-  }
+
  };
  host.addEventListener('change',onChange);
  host.addEventListener('click',onClick);
