@@ -376,3 +376,58 @@ test('fleet page exposes owner delivery check while leaving actual flight releas
  assert.match(workspace,/inspection is required before it can be scheduled/i);
  assert.match(workspace,/fleet-delivery-feedback/);
 });
+
+
+test('protected cabin refit quote is owner-only, price-free, and never a booking',async()=>{
+ const payload={action:'cabin-prepare-quote',airlineId:airline,
+  aircraftInventoryId:aircraft,airportKey:'OURAIRPORTS:26887',
+  providerKey:'lht-sofia',requestId};
+ assert.equal(validateFleetAcquisitionRequest(payload),true);
+ for(const malicious of [{priceUsd:1},{playerId:user},{moneyCharged:true},
+   {approved:true},{providerKey:'provider; DROP TABLE'},
+   {airportKey:'a/b'},{requestId:'invalid'},{aircraftInventoryId:'invalid'}])
+  assert.equal(validateFleetAcquisitionRequest({...payload,...malicious}),false);
+ const serverResponse={status:'prepared_not_booked',
+  moneyCharged:false,aircraftGrounded:false,installedSeatsChanged:false,
+  appointmentBooked:false,estimatedTotalUsd:'125900.00'};
+ const owner=setup((sql,args)=>{
+  if(sql===FLEET_SQL.owner)return {rowCount:1,rows:[{id:airline}]};
+  if(sql===FLEET_SQL.cabinPrepareQuote){
+   assert.deepEqual(args,[user,airline,aircraft,'OURAIRPORTS:26887',
+    'lht-sofia',requestId]);
+   return {rowCount:1,rows:[{result:serverResponse}]};
+  }
+  throw Error('Unexpected cabin refit query');
+ });
+ const response=await owner.handler(request(payload));
+ assert.equal(response.status,200);
+ const result=await response.json();
+ assert.equal(result.status,'prepared_not_booked');
+ assert.equal(result.moneyCharged,false);
+ assert.equal(result.appointmentBooked,false);
+ const foreign=setup(sql=>{
+  if(sql===FLEET_SQL.owner)return {rowCount:0,rows:[]};
+  throw Error('Cannot prepare quote for foreign airline');
+ });
+ assert.equal((await foreign.handler(request(payload))).status,403);
+ const refused=setup(sql=>{
+  if(sql===FLEET_SQL.owner)return {rowCount:1,rows:[{id:airline}]};
+  if(sql===FLEET_SQL.cabinPrepareQuote)
+   throw Object.assign(Error('CABIN_REFIT_SAVE_DESIGN_FIRST'),{code:'P0001'});
+  throw Error('Unexpected SQL');
+ });
+ const blocked=await refused.handler(request(payload));
+ assert.equal(blocked.status,409);
+ assert.equal((await blocked.json()).reason,'CABIN_REFIT_SAVE_DESIGN_FIRST');
+});
+test('refit SQL only prepares snapshots; cannot post payments or install seats',async()=>{
+ const sql=await readFile(new URL('../supabase/migrations/20261110212000_airlinerra_refit_preparation_quotes_v1.sql',import.meta.url),'utf8');
+ assert.match(sql,/CREATE FUNCTION airlinerra_game.prepare_owned_cabin_refit_quote_v1/);
+ assert.match(sql,/SECURITY INVOKER/);
+ assert.match(sql,/UNIQUE \(airline_id,request_id\)/);
+ assert.match(sql,/prepared_not_booked/);
+ assert.match(sql,/REVOKE EXECUTE ON FUNCTION/);
+ assert.doesNotMatch(sql,/UPDATE airlinerra_game.airlines/i);
+ assert.doesNotMatch(sql,/UPDATE airlinerra_game.aircraft_installed_cabins_v1/i);
+ assert.doesNotMatch(sql,/INSERT INTO airlinerra_game.airline_ledger/i);
+});
