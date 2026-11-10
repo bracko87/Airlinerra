@@ -3,7 +3,8 @@
  */
 import {createAirportCountryPicker,populateAirportCountries,airportFlag,airportCountryName} from './airport-country-picker.mjs';
 import {renderRouteMap,routeDistanceKm} from './route-map.mjs';
-import {estimateFivePhaseFuel,DEFAULT_FUEL_GAME_PRICE_USD_PER_KG} from './flight-fuel-phase-engine.mjs';
+import {estimateFivePhaseFuel} from './flight-fuel-phase-engine.mjs';
+import {previewAirportFuelPrice} from './airport-fuel-price-preview.mjs';
 import {buildAircraftWeeklyTimeline,renderAircraftWeeklyTimeline} from './aircraft-weekly-timeline.mjs';
 import {assessAircraftRouteRunways} from './route-aircraft-runway-screen.mjs';
 import {forecastCabinServiceFlight,createBasicCabinPackage} from './cabin-services-manager.mjs';
@@ -324,13 +325,16 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
   const pax=Number($('route-cabin-passengers')?.value),seats=Number(aircraft.referenceSeats);
   const payload=aircraft.useType==='passenger'&&seats>0&&Number.isSafeInteger(pax)&&pax>=0?
    Math.min(1,pax/seats):.5;
+  const originProfile=airportProfiles.from?.key===from.key?airportProfiles.from:null;
+  const price=previewAirportFuelPrice(originProfile);
   const fuel=estimateFivePhaseFuel({
    distanceKm:km,cruiseSpeedKmh:aircraft.cruiseSpeedKmh,
    cruiseFuelKgPerHour:aircraft.cruiseFuelKgPerHour,
    emptyFuelKgPer100Km:aircraft.emptyFuelKgPer100Km,
    halfFuelKgPer100Km:aircraft.halfFuelKgPer100Km,
    fullFuelKgPer100Km:aircraft.fullFuelKgPer100Km,
-   fuelTankCapacityKg:aircraft.fuelTankCapacityKg,payloadFraction:payload
+   fuelTankCapacityKg:aircraft.fuelTankCapacityKg,payloadFraction:payload,
+   priceUsdPerKg:price.usdPerKg
   });
   if(fuel.status!=='PLANNING_ESTIMATE'){
    setSummary('Fuel profile incomplete; no reliable estimate for this model.');return;
@@ -352,7 +356,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    ' · screening reserve '+kg(fuel.screeningReserveFuelKg)+
    ' · tentative fuel load '+kg(fuel.screeningFuelLoadKg)+
    ' · estimated fuel expense '+usd(fuel.estimatedBurnCostUsd)+
-   ' at $'+DEFAULT_FUEL_GAME_PRICE_USD_PER_KG.toFixed(2)+'/kg.';
+   ' at $'+price.usdPerKg.toFixed(3)+'/kg (modelled departure-airport tier).';
   const caveat=doc.createElement('p');caveat.className='hint';
   caveat.textContent=(fuel.source==='CALIBRATED_PROVISIONAL_MISSION_DISTANCE_RATE'?
    'Existing whole-mission fuel estimate redistributed between phases; not double-counted.':
@@ -360,7 +364,11 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    ' Payload '+Math.round(payload*100)+'%'+
    (aircraft.useType==='cargo'?' (unverified cargo load assumption)':' (assumed occupancy)')+
    ' · reference fuel tank: '+fuel.referenceTankScreen+
-   '. No airport-specific price, weather, approved dispatch or money movement.';
+   ' · fuel-rate evidence: '+(aircraft.fuelRateStatus||'unverified')+
+   (aircraft.fuelPeerModel?' (estimated from '+aircraft.fuelPeerModel+')':'')+
+   ' · airport price: '+(price.gameCategory||'no tier')+
+   ' ('+(price.categoryApproved?'approved category':'unverified category')+
+   ', assumed price multiplier). No confirmed airport fuel price, weather, approved dispatch or money movement.';
   holder.append(heading,grid,totals,caveat);
   setSummary(kg(fuel.tripFuelKg)+' · '+usd(fuel.estimatedBurnCostUsd)+' (forecast)');
   message('route-block-time',Math.round(fuel.totalMinutes)+' min (phase estimate)');
@@ -797,6 +805,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
   showDetails();
   drawMap();
   refreshCatalogOptions();
+  updateFuelEstimate();
   void automaticPreflight();
  };
  const drawMap=()=>{
