@@ -53,3 +53,72 @@ The bridge deliberately performs ZERO database writes. A synthetic contract test
 ## Gate
 
 Flight engine *infrastructure exists and supports an explicit integration seam*, but the complete trusted automatic flight engine is not active or proven. DO NOT state it is operating, fully connected or production ready. The new bridge and CI validate technical compatibility only; real aircraft movements and fuel charges are still blocked.
+
+## 2026-11-10 continuation: real flight-phase core and release evidence groundwork
+
+The following was implemented on GitHub `main`, not deployed as a
+production flight operator:
+
+- `server/section9-flight-phase-timeline.mjs`: deterministic five-phase
+  *simulation projection* (taxi out, climb, cruise, descent, taxi in). Takes
+  an aircraft/schedule identity, model-specific fuel rates and scheduled UTC.
+  Provides projected phase boundaries, burn and optional game-time progress.
+  Handles short routes and UTC rollover, but never issues a physical
+  movement certification or charges money.
+- `server/section9-independent-flight-operation-authorizer.mjs`: HMAC verifier
+  for an *independent* trusted flight engine's signed attestation. It plugs
+  into `section9-verified-flight-operations-dispatcher`'s existing
+  `operationsAuthorizer.confirmActualOperation` contract. Without signed
+  independent proof it returns `unverified_operation`.
+- `server/section9-independent-operation-evidence-reader.mjs`: strictly
+  identity-scoped SELECT-only SQL adapter that looks up durable independent
+  attestations in the private DB. It cannot sign, insert or invent proof.
+- `server/section9-verified-flight-fuel-bridge.mjs`: if a trusted route
+  provides scheduled departure UTC, its read-only arrival inspection now
+  attaches a projected five-phase timeline.
+- New **private read-only** operational audit view:
+  `airlinerra_game.section9_flight_engine_readiness_audit_v1` (migration
+  `20261110235950_section9_flight_engine_readiness_audit_v1.sql`).
+- New **private, currently empty** attestation table:
+  `airlinerra_game.section9_independent_operated_flight_evidence_v1`
+  (migration `20261110235955_section9_independent_operated_flight_evidence_v1.sql`).
+  Table uses exact occurrence/phase identities, event uniqueness, phase-time
+  constraints and row-level security. Anon/authenticated have **no SELECT**;
+  service_role can **SELECT**, but has **no INSERT**. No signer deployed.
+- CI: `Airlinerra flight phase execution (isolated)` run 42869308110 passed,
+  including syntax, phase timeline, signed attestation/dispatcher mock
+  composition, evidence read, arrival/fuel bridge and protected web build.
+
+### Live DB observation after this continuation
+
+- World 1 `state=active` with official opening 2026-11-10 16:40:21 UTC,
+  **but** World 1's clock remains `not_connected` and
+  `section9_clock_producer_due_v1(1)` reports `not_configured`.
+- 0 saved / active flight schedules; 0 operational certifications;
+  0 aircraft operation jobs; 0 verified movement events;
+  0 settled flight transactions; 0 attestation records.
+- 271 positive fuel-planning profiles and 271 universal kerosene GAME categories.
+- `trusted_flight_execution_release=NOT_ACTIVATED`, and
+  `fuel_transaction_release=NOT_ACTIVATED`.
+- The existing world producer configuration expects a release reference
+  and starting in-game date. None was guessed or invented, and the
+  production game clock was not advanced.
+- NO schedule was activated, no flight actually departed/arrived, and
+  no fuel or airline finances were changed.
+
+### Blockers to operational launch (do not bypass)
+
+1. Approve and configure the authoritative World 1 game-clock starting
+   date, release reference and recurring protected scheduler.
+2. Activate independently verified schedule/crew/licence/slot/capacity
+   certifications and a real trusted flight-operations producer. The
+   verifier/empty evidence store must **not** be treated as the producer.
+3. Connect a private durable aircraft-day worker and phase executor to
+   independently certified real game-time events, with lease safety and
+   idempotent evidence production; it must not turn a schedule alone into
+   an operation.
+4. Demonstrate an actual signed departure/arrival in an isolated authorized
+   game test before enabling World 1 production operations.
+5. Only after genuine flight events exist, add server-owned tank
+   balances/refuelling, idempotent flight occurrence fuel posting and
+   finance settlement. Never charge based on a route preview.
