@@ -148,7 +148,7 @@ export const FLEET_SQL=Object.freeze({
   "FROM airlinerra_game.used_aircraft_auction_lots_v1 l "+
   "JOIN airlinerra.aircraft_catalog_configuration_inventory c ON c.configuration_id=l.configuration_id "+
   "WHERE l.world_id=1 AND l.status IN('available','bidding') "+
-  "ORDER BY c.manufacturer_name,c.family_name,c.model_name,c.configuration_code,c.configuration_id",
+  "ORDER BY manufacturer,family,model,configuration,\"configurationId\"",
  usedBid:"SELECT airlinerra_game.place_used_aircraft_bid_v1("+
   "$1::uuid,$2::uuid,$3::uuid,$4::numeric,$5::text,$6::uuid) AS result",
  fleet:"SELECT i.id::text AS id,i.configuration_id::int AS \"configurationId\", "+
