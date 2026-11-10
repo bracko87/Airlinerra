@@ -12,6 +12,12 @@ const AUTH_URL='https://'+REF+'.supabase.co';
 const AIRLINE_ID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const FLEET_READ_PATH='/api/v1/player/fleet-acquisition';
 const SCHEDULE_READ_PATH='/api/v1/player/flight-schedule-drafts';
+// The HTTP server must route these dedicated read-only proxy endpoints before
+// it tries the static dist/ directory. Canonical game API paths alone do not
+// contain the two dedicated Edge APIs.
+export const LOCAL_PLAYER_API_PATHS=Object.freeze([
+ ...CANONICAL_GAME_API_PATHS,FLEET_READ_PATH,SCHEDULE_READ_PATH
+]);
 /** The local gateway never forwards a transaction, schedule reservation,
  * delivery update or other state-changing command.
  */
