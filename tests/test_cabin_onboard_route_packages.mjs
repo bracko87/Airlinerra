@@ -18,7 +18,9 @@ test('only three options; old online and hybrid are migrated without promising h
  assert.ok(ui.includes("onboard.dataset.cabinField='onboardCents'"));
  // Package setup controls only product policy; real passenger counts and sales
  // are evaluated later with the verified flight, not here.
- assert.ok(ui.includes('Passenger selling price (USD)'));
+ assert.ok(ui.includes('Passenger price (USD)'));
+ assert.ok(ui.includes('Airline unit cost (USD)'));
+ assert.ok(ui.includes('cabinPackageUnitEconomics(working)'));
  assert.ok(ui.includes("const ratingValue=cabinServiceAttractiveness(working)"));
  assert.ok(!ui.includes('cabin-preview-passengers'));
  assert.ok(!ui.includes('cabin-preview-hours'));
