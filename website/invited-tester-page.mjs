@@ -149,16 +149,29 @@ async function initialize(){
   }
   // Scrub OTP/hash from browser history before network, SDK, config or awaits.
   const originalHref=window.location.href;
+  const cleanSignInHref=TESTER_ORIGIN+'/account.html?screen=sign-in';
   let entry;
+  let openHref=originalHref;
+  let invalidAccountLink=false;
   try{
     entry=consumeInvitedTesterEntry({
       href:originalHref,
       replaceState:(...args)=>window.history.replaceState(...args)
     });
   }catch{
-    heading.textContent='Invalid or expired account link';
-    feedbackMessage('Request a new invitation or password reset link.',true);
-    return;
+    // A stale, malformed or legacy email link must not permanently hide the
+    // password sign-in form from already registered testers. Never reuse its
+    // token or fragment. Only permit fallback on the canonical official page.
+    const current=new URL(window.location.href);
+    if(current.origin!==TESTER_ORIGIN||current.pathname!=='/account.html'){
+      heading.textContent='Private account access unavailable';
+      feedbackMessage('Open the official Airlinerra account page.',true);
+      return;
+    }
+    window.history.replaceState({},'','/account.html?screen=sign-in');
+    openHref=cleanSignInHref;
+    entry={screen:'sign-in',callback:null,needsRecoveryLink:false};
+    invalidAccountLink=true;
   }
   const config=window.__AIRLINERRA_INVITED_TESTER_CONFIG__;
   if(window.location.origin!==TESTER_ORIGIN||
@@ -170,16 +183,29 @@ async function initialize(){
     return;
   }
   try{
-    const opened=await openInvitedTesterEntry({
-      href:originalHref,
-      // Already synchronously scrubbed; do not restore the old auth URL.
+    const openAccount=href=>openInvitedTesterEntry({
+      href,
+      // The address bar has already been scrubbed; never restore a token URL.
       replaceState:()=>{},
       publishableKey:config.publishableKey,
       createAuth:createInvitedTesterAuth
     });
+    let opened;
+    try{
+      opened=await openAccount(openHref);
+    }catch(error){
+      if(!entry.callback)throw error;
+      // Invalid/expired one-use token: try ONLY the clean sign-in entry.
+      // No password or callback privileges are inferred from a failed token.
+      opened=await openAccount(cleanSignInHref);
+      invalidAccountLink=true;
+    }
     activeAuth=opened.auth;
     otpAuthorizesPassword=opened.screen==='set-password';
-    if(otpAuthorizesPassword){
+    if(invalidAccountLink){
+      otpAuthorizesPassword=false;
+      showPanel('sign-in','That account link is invalid or expired. You can still sign in with your existing account or use Forgot password.');
+    }else if(otpAuthorizesPassword){
       showPanel('set-password',opened.message);
     }else if(entry.screen==='verify'&&!entry.callback){
       showPanel('sign-in','Confirm your email address using the link we sent.');
