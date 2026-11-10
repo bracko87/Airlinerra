@@ -1,0 +1,44 @@
+name: Airlinerra cabin layouts and MRO directory (isolated)
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'website/cabin-configuration-manager.mjs'
+      - 'website/airline-workspace.mjs'
+      - 'website/fleet-acquisition-client.mjs'
+      - 'website/local-owner-fleet-reader.mjs'
+      - 'website/private-player-app.html'
+      - 'website/player-app-model.mjs'
+      - 'website/dev-scripts/invited-overlay.mjs'
+      - 'website/dev-scripts/real-player-read-gateway.mjs'
+      - 'server/fleet-acquisition-service.mjs'
+      - 'tests/test_cabin_configuration.mjs'
+      - 'tests/test_airline_workspace.mjs'
+      - 'tests/test_fleet_acquisition_api.mjs'
+      - 'supabase/migrations/*cabin*'
+      - 'supabase/migrations/*mro*'
+      - '.github/workflows/airlinerra-cabin-layout-mro-ci.yml'
+  workflow_dispatch:
+jobs:
+  cabin-mro:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify browser and owner API syntax
+        run: |
+          node --check website/cabin-configuration-manager.mjs
+          node --check website/airline-workspace.mjs
+          node --check website/fleet-acquisition-client.mjs
+          node --check website/local-owner-fleet-reader.mjs
+          node --check website/dev-scripts/real-player-read-gateway.mjs
+          node --check server/fleet-acquisition-service.mjs
+      - name: Test aircraft configuration, server ownership, and existing navigation
+        run: node --test tests/test_cabin_configuration.mjs tests/test_fleet_acquisition_api.mjs tests/test_airline_workspace.mjs
+      - name: Verify full built invitation-only website
+        run: |
+          cd website
+          npm run build
