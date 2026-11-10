@@ -30,7 +30,7 @@ test('Five DST mismatches are source-backed, private, not marked verified or app
   assert.ok(s.includes(k),'missing timezone case '+k);
  assert.match(s,/2026-11-10 12:00:00\+00/);
  assert.match(s,/2026-06-10 12:00:00\+00/);
- assert.match(s,/SOURCE_GAME_TIMEZONE_ICA_/i.test(s)?/source_game_timezone_iana/:/source_game_timezone_iana/);
+ assert.match(s,/source_game_timezone_iana/);
  assert.match(s,/applied_to_canonical_game_profile boolean NOT NULL DEFAULT false/);
  assert.match(s,/authority_verified_for_flight_schedule boolean NOT NULL DEFAULT false/);
  assert.match(s,/ENABLE ROW LEVEL SECURITY/);
