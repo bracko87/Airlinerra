@@ -89,7 +89,9 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
   'ROUTE DIRECTORY');
  if(root['route-details'])root['route-details'].innerHTML=card('Route Details',
   '<div class="workspace-actions"><button type="button" class="secondary" data-ops-page="route-list">Back to My routes</button>'+
-  '<button type="button" class="secondary" id="operations-route-edit-from-details">Edit route</button></div>'+
+  '<button type="button" class="secondary" id="operations-route-edit-from-details">Edit route</button>'+
+  '<button type="button" class="primary" id="operations-route-publish-plan" hidden>Save to airline database</button></div>'+
+  '<p id="operations-route-detail-save-status" class="hint" role="status"></p>'+
   '<div id="operations-route-detail" class="operations-route-detail-content"></div>',
   'ROUTE INFORMATION');
  if(root.tickets)root.tickets.innerHTML=card('Ticket prices and fare analysis',
@@ -125,21 +127,54 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
   '<p class="hint">Budget estimates only. No employees are hired, no salaries charged, and no staff market orders are placed.</p>',
   'STAFF AND SALARIES');
  let state=storageRead(session,key);
+ let remotePlans=[],remotePlanTicket=0,loadedPlanAirline=null,loadedPlanScheduler=null;
  const persist=()=>storageWrite(session,key,{...storageRead(session,key),...state});
+ const localRoutes=()=>Array.isArray(state.routes)&&state.routes.length?state.routes:
+  state.route?[state.route]:[];
+ const allRoutes=()=>{
+  const remoteNumbers=new Set(remotePlans.map(x=>x.flightNumber));
+  return [...remotePlans,...localRoutes().filter(x=>!remoteNumbers.has(x?.flightNumber))];
+ };
+ const normalizePlan=plan=>plan&&typeof plan.planId==='string'&&
+  /^[A-Z0-9]{2}[0-9]{1,4}$/.test(plan.flightNumber||'')&&
+  typeof plan.from?.key==='string'&&typeof plan.to?.key==='string'&&
+  plan.from.key!==plan.to.key&&Array.isArray(plan.schedule)?{
+   ...plan,serverPlanningId:plan.planId,
+   status:'planning',storage:'server-planning',operationallyVerified:false,
+   serverScheduleId:null,slotsReserved:false,
+   flights:plan.schedule.length,aircraftId:'owned:'+plan.aircraftInventoryId
+  }:null;
+ async function loadRemotePlans(){
+  const airlineId=server.airline?.id,scheduler=server.scheduler;
+  const ticket=++remotePlanTicket;
+  if(!server.connected||!airlineId||typeof scheduler?.list!=='function'){
+   remotePlans=[];renderRoutes();return;
+  }
+  try{
+   const reply=await scheduler.list(airlineId);
+   if(ticket!==remotePlanTicket)return;
+   if(!Array.isArray(reply?.plans))throw Error('Plan list unavailable');
+   remotePlans=reply.plans.map(normalizePlan).filter(Boolean);
+   renderRoutes();
+  }catch{
+   if(ticket!==remotePlanTicket)return;
+   remotePlans=[];renderRoutes();
+   message('operations-routes-feedback',
+    'Server planning routes could not be loaded. Browser drafts are still visible; refresh when connected.');
+  }
+ }
  const message=(id,text)=>{if($(id))$(id).textContent=text};
  const partners=createSection9PartnerConsole({
   doc,host:$('operations-partner-console'),getServer:()=>server
  });
  const details=createSection9RouteDetails({
   doc,host:$('operations-route-detail'),getServer:()=>server,
-  getRoutes:()=>Array.isArray(state.routes)&&state.routes.length?state.routes:
-   state.route?[state.route]:[]
+  getRoutes:()=>allRoutes()
  });
  function renderRoutes(){
   const root=$('operations-route-list');if(!root)return;
   root.replaceChildren();
-  const candidates=Array.isArray(state.routes)&&state.routes.length?state.routes:
-   state.route?[state.route]:[];
+  const candidates=allRoutes();
   if(!candidates.length){
    const p=doc.createElement('p');p.className='hint';
    p.textContent='No saved route drafts. Use Create a route to prepare your first flight.';
@@ -180,7 +215,8 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
    row.append(weekdays);
    const state=doc.createElement('span');
    state.className='operations-route-save-type';
-   state.textContent=route.serverScheduleId?'Server draft · inactive':'Local draft · inactive';
+   state.textContent=route.serverScheduleId?'Schedule draft · inactive':
+    route.serverPlanningId?'Airline planning draft':'Local planning draft';
    row.append(state);
    const link=doc.createElement('button');link.type='button';
    link.className='operations-route-open-text';
@@ -313,6 +349,10 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
    server.airline.homeAirportName+' ('+(server.airline.homeAirportCode||'-')+')':
    'Not available';message('operations-home-airport',server.connected?home:'Not connected');
   renderRoutes();renderHubs();void partners.refresh();
+  if(server.airline?.id!==loadedPlanAirline||server.scheduler!==loadedPlanScheduler){
+   loadedPlanAirline=server.airline?.id||null;loadedPlanScheduler=server.scheduler;
+   void loadRemotePlans();
+  }
   airportOfficeController?.updateData(value);
  }
  const main=$('player-main');
@@ -321,18 +361,25 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
   if(target.dataset.opsPage){goTo?.(target.dataset.opsPage);return;}
   if(target.dataset.opsRouteEdit!==undefined){
    const i=Number(target.dataset.opsRouteEdit);
-   const candidates=Array.isArray(state.routes)&&state.routes.length?state.routes:
-    state.route?[state.route]:[];
+   const candidates=allRoutes();
    if(!Number.isInteger(i)||i<0||i>=candidates.length)return;
    goTo?.('route-details');
    void details.open(i);
+   const plan=allRoutes()[i];
+   const saveButton=$('operations-route-publish-plan');
+   if(saveButton){
+    saveButton.hidden=Boolean(plan?.serverPlanningId||plan?.serverScheduleId)||
+     typeof server.scheduler?.planSave!=='function';
+    saveButton.disabled=false;
+   }
+   message('operations-route-detail-save-status','');
    return;
   }
   if(target.id==='operations-route-edit-from-details'){
-   const i=details.index();
-   if(Number.isInteger(i)){
+   const i=details.index(),route=allRoutes()[i];
+   if(Number.isInteger(i)&&route){
     goTo?.('routes');
-    doc.dispatchEvent(new CustomEvent('airlinerra:edit-route-draft',{detail:{index:i}}));
+    doc.dispatchEvent(new CustomEvent('airlinerra:edit-route-draft',{detail:{route}}));
    }
    return;
   }
@@ -342,6 +389,48 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
    if(!Number.isInteger(i)||i<0||i>=rows.length)return;
    state={...state,routes:rows.filter((_,n)=>n!==i),route:null};persist();renderRoutes();
    message('operations-routes-feedback','Route draft deleted from this browser tab.');return;
+  }
+  if(target.id==='operations-route-publish-plan'){
+   const i=details.index(),route=allRoutes()[i];
+   const scheduler=server.scheduler,airlineId=server.airline?.id;
+   if(!route||!airlineId||typeof scheduler?.planSave!=='function'||
+      route.serverPlanningId||route.serverScheduleId)return;
+   if(!route.aircraftId?.startsWith('owned:')||!route.operation||
+      route.from?.key===route.to?.key){
+    message('operations-route-detail-save-status','This local draft is missing a verified aircraft, two airports, or operating options.');
+    return;
+   }
+   target.disabled=true;
+   message('operations-route-detail-save-status','Saving your existing route to the airline database...');
+   try{
+    const result=await scheduler.planSave({
+     airlineId,aircraftInventoryId:route.aircraftId.slice(6),
+     flightNumber:route.flightNumber,originAirportKey:route.from.key,
+     destinationAirportKey:route.to.key,weeklySchedule:route.schedule,
+     departureStand:route.operation.departureStand??null,
+     arrivalStand:route.operation.arrivalStand,
+     turnaroundMinutes:route.operation.turnaroundMinutes,
+     fares:route.operation.fares,service:route.operation.service,
+     referenceDepartureUtc:route.referenceDepartureUtc??null,
+     referenceArrivalUtc:route.referenceArrivalUtc??null
+    });
+    if(result?.status!=='planning'||typeof result.planId!=='string'||
+       result.canActivateNormalFlight!==false||result.slotsReserved!==false)
+     throw Error('Unverified planning save');
+    const local=localRoutes().map(x=>x.flightNumber===route.flightNumber?{
+     ...x,serverPlanningId:result.planId,storage:'server-planning'
+    }:x);
+    state={...state,routes:local};persist();
+    await loadRemotePlans();
+    message('operations-route-detail-save-status',
+     route.flightNumber+' is now saved in your airline database. No slots or flights activated.');
+    target.hidden=true;
+   }catch{
+    message('operations-route-detail-save-status',
+     'NOT SAVED — the airline server rejected this planning route. Review aircraft and airport permissions.');
+    target.disabled=false;
+   }
+   return;
   }
   if(target.dataset.opsHubRemove!==undefined){
    const i=Number(target.dataset.opsHubRemove);
@@ -389,8 +478,9 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
   state=storageRead(session,key);renderRoutes();void details.refresh();
   const flight=typeof event?.detail?.flightNumber==='string'?event.detail.flightNumber:'Route';
   message('operations-routes-feedback',event?.detail?.serverSaved?
-   flight+' saved as a protected server schedule draft — not an active flight.':
+   flight+' saved in the airline database as an inactive planning route. No flight or slot was activated.':
    flight+' saved as a local planning draft and listed above. No server flight was created.');
+  if(event?.detail?.serverSaved)void loadRemotePlans();
  });
  const prices=state.ticketPrice;
  if(prices&&typeof prices==='object'){
