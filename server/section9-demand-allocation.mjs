@@ -20,11 +20,14 @@ export function section9OfferWeight(offer={}){
  const service=bounded(offer.serviceScore,0.75,1.25,1);
  const marketing=1+bounded(offer.marketingBoost,0,0.25,0);
  const frequency=1+Math.min(0.3,0.035*Math.sqrt(bounded(offer.weeklyDepartures,1,1000,7)));
+ // Passenger-only cabin multiplier. Caller must derive it from a verified
+ // INSTALLED layout, never from a player's saved draft or preview.
+ const installedCabin=bounded(offer.installedCabinMultiplier,0.985,1.015,1);
  const minimum=bounded(offer.minimumTransferMinutes,0,720,0);
  const connecting=Array.isArray(offer.flightIds)&&offer.flightIds.length>1;
  const wait=bounded(offer.connectionMinutes,0,720,minimum);
  const waitFactor=connecting?Math.exp(-Math.max(0,wait-minimum)/420):1;
- return Math.max(0.0001,priceFactor*service*marketing*frequency*waitFactor);
+ return Math.max(0.0001,priceFactor*service*marketing*frequency*waitFactor*installedCabin);
 }
 
 /**
