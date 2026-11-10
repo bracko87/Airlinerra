@@ -308,18 +308,29 @@ export function createCabinConfigurationManager({doc,host,factoryHost,onDirector
    factoryPlan.premium===0&&factoryPlan.business===0&&factoryPlan.first===0&&
    factoryPlan.extraLegroomCm===0;
   factoryUsage.textContent=evaluation.valid?
-   evaluation.count+' seats · '+evaluation.used+'/'+evaluation.available+
-    ' cabin units · '+(standard?'Standard factory cabin':'Custom factory draft'):
-   evaluation.reason+' Used '+(evaluation.used??'—')+'/'+(evaluation.available??'—')+' units';
-  for(const r of factoryRows){
-   const c=CLASSES[factoryRows.indexOf(r)];const t=loaded.seatTypes.find(t=>t.code===factoryPlan[c.key+'Type']);
-   r.indicator.textContent=t?(Number(factoryPlan[c.key])*Number(t.spaceUnits)).toFixed(1):'—';
+   evaluation.count+' seats · '+evaluation.spacePct+'% of cabin space used · '+
+    (standard?'Standard factory layout':'Custom factory design'):
+   (evaluation.reason||'Invalid layout')+
+    (Number.isFinite(evaluation.spacePct)?' · '+evaluation.spacePct+'% requested':'');
+  for(let i=0;i<factoryRows.length;i++){
+   const c=CLASSES[i],section=evaluation.classes?.find(row=>row.key===c.key);
+   factoryRows[i].indicator.textContent=section&&evaluation.available>0?
+    (section.space/evaluation.available*100).toFixed(1)+'%':'—';
   }
-  if(evaluation.valid)renderCabinFloorplan(doc,factorySvg,factoryPlan,evaluation,f.referenceSeats,geometry);
-  else factorySvg?.replaceChildren();
+  if(factoryComfort)factoryComfort.textContent=evaluation.valid?
+   'Cabin comfort rating '+evaluation.comfortRating+'/100 · '+
+   'Potential passenger preference '+(evaluation.bookingPreferencePreviewPct>=0?'+':'')+
+    evaluation.bookingPreferencePreviewPct+'% (future game rule; not active)':
+   'No valid comfort rating until the layout fits.';
+  if(factoryCost)factoryCost.textContent=evaluation.valid?
+   'Seat equipment game value '+currency(evaluation.equipmentUsd)+
+    (standard?' · Included in the factory aircraft offer.':
+     ' · Custom factory fit-out pricing and ordering are not enabled.'):
+   'No cost quote for an invalid cabin layout.';
+  renderCabinFloorplan(doc,factorySvg,factoryPlan,evaluation,f.referenceSeats,geometry);
   factoryMessage.textContent=describeCabinPatterns(geometry,f.referenceSeats)+' · '+
    (standard?'Standard seats included in the aircraft price.':
-   'Custom seats are design-only until factory installation contracts are ready.');
+   'Custom design is a preview only, not attached to a paid order.');
   try{onFactoryLayoutChange?.()}catch{console.warn('Factory layout order control unavailable')}
  }
  function getFactoryPlan(){
@@ -423,25 +434,40 @@ export function createCabinConfigurationManager({doc,host,factoryHost,onDirector
   installedDisplay.textContent='Installed: '+a.installedEconomy+' Economy, '+
    a.installedPremium+' Premium Economy, '+a.installedBusiness+
    ' Business, '+a.installedFirst+' First · Source: game standard until verified refit.';
-  usageLabel.textContent=result.valid?result.count+' seats · '+result.used+
-   ' / '+result.available+' cabin units used ('+
-   Math.round(100*result.used/result.available)+'%) · '+
-   'Indicative seat equipment '+currency(result.equipmentUsd)+' · '+
+  usageLabel.textContent=result.valid?
+   result.count+' seats · '+result.spacePct+'% of available cabin space used · '+
+   (100-result.spacePct).toFixed(1)+'% remaining · '+
    describeCabinPatterns(modelGeometry(a.configurationId),a.referenceUnits):
-   result.reason+(result.used!==undefined?' ('+result.used+'/'+result.available+' units)':'');
+   (result.reason||'Invalid layout')+
+   (Number.isFinite(result.spacePct)?' · '+result.spacePct+'% of cabin space requested':'');
   for(let i=0;i<renderedRows.length;i++){
-   const c=CLASSES[i],t=loaded.seatTypes.find(t=>t.code===plan[c.key+'Type']);
-   renderedRows[i].indicator.textContent=t&&plan[c.key]>=0?
-    (plan[c.key]*Number(t.spaceUnits)).toFixed(1):'—';
+   const c=CLASSES[i],section=result.classes?.find(row=>row.key===c.key);
+   renderedRows[i].indicator.textContent=section&&result.available>0?
+    (section.space/result.available*100).toFixed(1)+'%':'—';
   }
-  if(result.valid)renderCabinFloorplan(doc,previewSvg,plan,result,a.referenceUnits,
-    modelGeometry(a.configurationId));
-  else previewSvg?.replaceChildren();
-  const chosen=(loaded.refitSites||[]).find(x=>x.aircraftInventoryId===selectedId&&x.airportKey===siteSelect?.value);
+  renderCabinFloorplan(doc,previewSvg,plan,result,a.referenceUnits,modelGeometry(a.configurationId));
+  const chosen=(loaded.refitSites||[]).find(x=>x.aircraftInventoryId===selectedId&&
+   x.airportKey===siteSelect?.value);
+  if(comfortSummary)comfortSummary.textContent=result.valid?
+   'Passenger cabin comfort: '+result.comfortRating+'/100 · Potential future booking '+
+    'preference adjustment '+(result.bookingPreferencePreviewPct>=0?'+':'')+
+    result.bookingPreferencePreviewPct+'% (game-design preview only; not active).':
+   'Passenger comfort rating unavailable until the proposed layout fits.';
+  const installedCount=['Economy','Premium','Business','First'].reduce((n,key)=>
+   n+Number(a['installed'+key]||0),0);
+  const quote=estimateCabinRefit(result,installedCount,Number(chosen?.siteMultiplier||1));
+  if(costSummary)costSummary.textContent=quote.valid?
+   'Estimated refit: New seats '+currency(quote.seatEquipmentUsd)+
+   ' + removal and installation '+currency(quote.removalAndInstallationUsd)+
+   ' = TOTAL '+currency(quote.totalUsd)+
+   ' · Game estimate only. Replacement work included once. No payment.':
+   'No refit cost quote until the design fits within available space.';
   if(chosen&&result.valid){
-   statusLabel.textContent='Refit preview at '+chosen.provider+' ('+chosen.airportCode+
-    '). Indicative '+result.refitHours+' hours downtime. Site labor factor: '+
+   statusLabel.textContent='Selected refit location: '+chosen.provider+' ('+chosen.airportCode+
+    '). Estimated downtime '+result.refitHours+' hours. Site labour factor '+
     chosen.siteMultiplier+'× (game estimate). Not scheduled.';
+  }else if(statusLabel?.textContent?.startsWith('Selected refit location:')){
+   statusLabel.textContent='';
   }
   const save=doc.getElementById('cabin-draft-save');
   if(save)save.disabled=!result.valid||!current.fleetClient?.saveCabinDraft;
