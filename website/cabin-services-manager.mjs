@@ -166,6 +166,30 @@ export function cabinServiceAttractiveness(pkg){
  }
  return Math.min(100,Math.round(appeal+Math.min(8,paidWeight*.25)));
 }
+/** Pricing facts only; does NOT invent passengers, flight duration or demand.
+ * A complimentary item has a one-unit-per-passenger planning allowance.
+ * Physical paid goods can still cost money if stocked but unsold. */
+export function cabinPackageUnitEconomics(pkg){
+ const rows=CABIN_SERVICE_CATALOG.map(item=>{
+  const offer=cleanItem(pkg?.items?.[item.id],item.id);
+  const paid=offer.mode==='onboard',included=offer.mode==='included';
+  return {
+   id:item.id,mode:offer.mode,digital:Boolean(item.digital),
+   airlineUnitCostCents:item.costCents,
+   airlineUnitCostBasis:item.digital?'per access/use':'per item supplied',
+   passengerPriceCents:paid?offer.onboardCents:null,
+   grossMarginPerSaleCents:paid?offer.onboardCents-item.costCents:null,
+   oneUnitIncludedPerPassengerCents:included?item.costCents:0
+  };
+ });
+ return {
+  includedPerPassengerCents:rows.reduce((n,r)=>n+r.oneUnitIncludedPerPassengerCents,0),
+  includedItems:rows.filter(r=>r.mode==='included').length,
+  paidItems:rows.filter(r=>r.mode==='onboard').length,
+  rows,oneServingEach:true,flightTotalsCalculated:false,
+  excludesWastageAndUnsoldStock:true
+ };
+}
 /** Legacy short summary for package directory and compatibility consumers. */
 export function cabinPackageEstimate(pkg){
  const flight=forecastCabinServiceFlight(pkg);
@@ -301,12 +325,17 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
   const bar=element(doc,'div','cabin-score-track');
   const fill=element(doc,'div','cabin-score-fill');fill.id='cabin-score-fill';
   bar.append(fill);score.append(bar);summary.append(score);
+  const included=element(doc,'div','cabin-product-metric cabin-included-cost');
+  included.append(element(doc,'span','','Included-service cost / passenger'));
+  const allowance=element(doc,'strong','','$0.00');
+  allowance.id='cabin-included-unit-cost';included.append(allowance);
+  summary.append(included);
   summary.append(element(doc,'p','hint',
-   'This score compares service policies only. No flight, passengers, sales or cost are estimated here.'));
+   'One unit of each free service per passenger, for planning only. Real flight consumption, paid sales and total costs are calculated later.'));
   editor.append(summary);
   const table=element(doc,'div','cabin-product-table');
   const header=element(doc,'div','cabin-product-row cabin-product-table-head');
-  for(const title of ['Service','Offer to passengers','Passenger selling price (USD)'])
+  for(const title of ['Service','Offer to passengers','Airline unit cost (USD)','Passenger price (USD)'])
    header.append(element(doc,'span','',title));
   table.append(header);
   let lastCategory=null;
@@ -328,24 +357,39 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
    row.append(description);
    const mode=select(doc,CABIN_MODE_OPTIONS,current.mode,basic);
    mode.dataset.cabinField='mode';appendField('Offer to passengers',mode);
+   const airlineCost=element(doc,'div','cabin-product-unit-cost');
+   airlineCost.append(element(doc,'span','cabin-mobile-label','Airline unit cost'));
+   airlineCost.append(element(doc,'strong','',money(item.costCents)));
+   airlineCost.append(element(doc,'small','',
+    item.digital?'Per access / use · estimate':'Per item purchased · estimate'));
+   if(current.mode==='included')airlineCost.append(element(doc,'small','',
+    money(item.costCents)+' / passenger if one unit provided'));
+   row.append(airlineCost);
    if(current.mode==='onboard'){
+    const priceCell=element(doc,'div','cabin-product-price-cell');
+    priceCell.append(element(doc,'span','cabin-mobile-label','Passenger selling price'));
     const onboard=input(doc,{type:'number',
      value:(current.onboardCents/100).toFixed(2),
      min:.01,max:1000,step:.01,disabled:basic});
     onboard.dataset.cabinField='onboardCents';
     onboard.setAttribute('aria-label',item.name+' selling price in USD');
-    appendField('Passenger selling price (USD)',onboard);
+    priceCell.append(onboard);
+    const margin=element(doc,'small','cabin-unit-margin',
+     'Unit margin '+money(current.onboardCents-item.costCents));
+    margin.dataset.cabinMargin=item.id;
+    priceCell.append(margin);row.append(priceCell);
    }else{
     const price=element(doc,'span','cabin-product-price-state',
      current.mode==='included'?'Included in ticket':'—');
-    const priceCell=element(doc,'div','cabin-product-cell');
+    const priceCell=element(doc,'div','cabin-product-price-cell');
+    priceCell.append(element(doc,'span','cabin-mobile-label','Passenger selling price'));
     priceCell.append(price);row.append(priceCell);
    }
    table.append(row);
   }
   editor.append(table);
   editor.append(element(doc,'p','hint',
-   'Choose which services your airline offers. Included means the passenger does not pay separately; Paid onboard means you set the selling price. Actual airline supply cost, quantity consumed and passenger purchases are calculated per real flight, not while creating this package. Equipment and route restrictions still apply.'));
+   'Airline unit costs are provisional game estimates. Free services count as one unit each in the per-passenger allowance; actual use may differ. Physical paid items cost money when stocked, even if unsold. Unit margin means selling price minus supply cost, before waste and other expenses. Flight totals are calculated only from actual flights.'));
   body.append(editor);host.append(body);
   const classBox=element(doc,'section','cabin-assignment-panel');
   classBox.append(element(doc,'h3','','Default package by cabin class'),
@@ -373,6 +417,13 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
   if(rating)rating.textContent=ratingValue+' / 100';
   const fill=host.querySelector('#cabin-score-fill');
   if(fill)fill.style.width=ratingValue+'%';
+  const economics=cabinPackageUnitEconomics(working);
+  const cost=host.querySelector('#cabin-included-unit-cost');
+  if(cost)cost.textContent=money(economics.includedPerPassengerCents);
+  for(const row of economics.rows){
+   const margin=host.querySelector('[data-cabin-margin="'+row.id+'"]');
+   if(margin)margin.textContent='Unit margin '+money(row.grossMarginPerSaleCents);
+  }
  };
  const onChange=event=>{
   const id=event.target?.id;
