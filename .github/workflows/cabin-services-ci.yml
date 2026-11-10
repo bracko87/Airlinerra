@@ -4,6 +4,14 @@ on:
     branches: [main]
     paths:
       - 'website/cabin-services-manager.mjs'
+      - 'website/cabin-services-client.mjs'
+      - 'server/cabin-services-service.mjs'
+      - 'server/cabin-services-edge-entry.ts'
+      - 'server/production-game-api.mjs'
+      - 'website/netlify/functions/airlinerra-game.mjs'
+      - 'website/player-app.mjs'
+      - 'supabase/migrations/20261110174000_airlinerra_cabin_services_owner_settings_v1.sql'
+      - 'tests/test_cabin_services_api.mjs'
       - 'website/airline-workspace.mjs'
       - 'website/player-app.css'
       - 'website/private-player-app.html'
@@ -23,12 +31,15 @@ jobs:
       - name: Check cabin UI syntax
         run: |
           node --check website/cabin-services-manager.mjs
+          node --check website/cabin-services-client.mjs
+          node --check server/cabin-services-service.mjs
+          node --check website/player-app.mjs
           node --check website/airline-workspace.mjs
       - name: Test package selection, price/rating and saved default class assignments
-        run: node --test tests/test_cabin_services_manager.mjs
+        run: node --test tests/test_cabin_services_manager.mjs tests/test_cabin_services_api.mjs
       - name: Build complete protected website
         run: cd website && npm run build
       - name: Confirm protected build bundles cabin UI module
-        run: test -s dist/cabin-services-manager.mjs
+        run: test -s dist/cabin-services-manager.mjs && test -s dist/cabin-services-client.mjs
       - name: Verify complete browser module dependencies
         run: node --test tests/test_player_built_module_graph.mjs
