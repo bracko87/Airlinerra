@@ -5,6 +5,7 @@ import {estimateFivePhaseFuel,PHASE_SETTINGS,
  DEFAULT_FUEL_GAME_PRICE_USD_PER_KG,FUEL_PHASE_MODEL_VERSION}
  from '../website/flight-fuel-phase-engine.mjs';
 import {FLEET_SQL} from '../server/fleet-acquisition-service.mjs';
+import {previewAirportFuelPrice,BENCHMARK_SPOT,AIRPORT_TIER_FACTORS} from '../website/airport-fuel-price-preview.mjs';
 import {routePlannerMarkup} from '../website/route-planner.mjs';
 const read=path=>readFile(new URL('../'+path,import.meta.url),'utf8');
 const A319={cruiseSpeedKmh:840,emptyFuelKgPer100Km:266.6,
@@ -89,8 +90,10 @@ test('only existing owner-verified fleet SQL provides reference data; preview do
   'cruiseFuelKgPerHour','fuelTankCapacityKg','fuelRateStatus'])
   assert.ok(query.includes(field),field);
  assert.match(query,/WHERE i.airline_id=\$1::uuid/);
- assert.match(query,/aircraft_simple_fuel_per_100km_v1/);
+ assert.match(query,/aircraft_fuel_planning_profiles_v1/);
  assert.match(query,/aircraft_catalog_fuel_capacity_game_v1/);
+ assert.match(query,/fuelConfidenceClass/);
+ assert.match(query,/fuelPeerModel/);
  assert.doesNotMatch(query,/UPDATE |DELETE |INSERT INTO /);
  const app=await read('website/airline-workspace.mjs');
  assert.match(app,/getFuelAircraft:aircraftId=>data.connected/);
@@ -109,4 +112,29 @@ test('route planner shows all phases, no dispatch or ledger activation',async()=
  assert.match(src,/getFuelAircraft\(owned.id\)/);
  assert.match(src,/Fuel profile incomplete/);
  assert.doesNotMatch(src,/postFuelCharge|activateFuelPayment|settleFuelFlight/);
+});
+
+test('airport price is a category-balanced game assumption, never supplier or fuel payment',()=>{
+ const mega=previewAirportFuelPrice({key:'OURAIRPORTS:1',category:'Mega Hub',categoryStatus:'approved'});
+ const local=previewAirportFuelPrice({key:'OURAIRPORTS:2',category:'Local',categoryStatus:'approved'});
+ const missing=previewAirportFuelPrice({key:'OURAIRPORTS:3',category:'Unknown'});
+ assert.equal(mega.categoryApproved,true);
+ assert.ok(mega.usdPerKg<local.usdPerKg);
+ assert.equal(mega.fromCurrentSupplier,false);
+ assert.equal(local.currentAirportQuote,false);
+ assert.equal(local.accountingEnabled,false);
+ assert.equal(missing.gameCategory,null);
+ assert.equal(missing.usdPerKg,.95);
+ assert.equal(missing.status,'GENERIC_GAME_BASE');
+ assert.equal(BENCHMARK_SPOT.observedDate,'2026-11-03');
+ assert.ok(BENCHMARK_SPOT.usdPerKg>1);
+ assert.equal(Object.keys(AIRPORT_TIER_FACTORS).length,6);
+});
+test('route fuel uses owner airport profile tier and shows peer provenance without claiming actual charges',async()=>{
+ const code=await read('website/route-planner.mjs');
+ assert.match(code,/previewAirportFuelPrice\(originProfile\)/);
+ assert.match(code,/fuelRateStatus/);
+ assert.match(code,/fuelPeerModel/);
+ assert.match(code,/No confirmed airport fuel price/);
+ assert.match(code,/priceUsdPerKg:price\.usdPerKg/);
 });
