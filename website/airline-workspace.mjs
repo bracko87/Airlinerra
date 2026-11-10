@@ -785,6 +785,40 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    }
    host.append(ul);
   }
+  const quotePanel=doc.createElement('div');quotePanel.className='fleet-maintenance-site-quote';
+  const checkLabel=doc.createElement('label');checkLabel.textContent='Maintenance check';
+  const checkSelect=doc.createElement('select');checkSelect.id='fleet-maintenance-check-choice';
+  for(const check of rows.filter(c=>['a','b','c','d'].includes(c.checkCode))){
+   checkSelect.append(new Option(check.label,check.checkCode));
+  }
+  checkSelect.value='c';checkLabel.append(checkSelect);
+  const siteLabel=doc.createElement('label');siteLabel.textContent='Choose maintenance airport';
+  const siteSelect=doc.createElement('select');siteSelect.id='fleet-maintenance-site-choice';
+  siteLabel.append(siteSelect);
+  const result=doc.createElement('p');result.className='hint';
+  const renderQuote=()=>{
+   const selectedCheck=rows.find(c=>c.checkCode===checkSelect.value);
+   const old=siteSelect.value;siteSelect.replaceChildren(new Option('Choose approved airport',''));
+   for(const site of sites.filter(x=>x.checkCode===checkSelect.value)){
+    const o=new Option(site.airportName+' ('+site.airportCode+') · '+site.provider,
+     site.airportKey+'|'+site.provider);
+    siteSelect.append(o);
+   }
+   if([...siteSelect.options].some(o=>o.value===old))siteSelect.value=old;
+   const chosen=sites.find(x=>x.checkCode===checkSelect.value&&
+    x.airportKey+'|'+x.provider===siteSelect.value);
+   if(!chosen){result.textContent='Select a model-approved maintenance airport to compare costs. Daily and Weekly checks remain available at every approved airport.';return}
+   const base=Number(selectedCheck?.baseEstimateUsd);
+   const multiplier=Number(chosen.siteMultiplier);
+   const quote=Number.isFinite(base)&&Number.isFinite(multiplier)?usd(Math.round(base*multiplier)):'Not available';
+   result.textContent='Estimated '+selectedCheck.label+' at '+chosen.provider+
+    ' · '+quote+' base and location factor included · '+selectedCheck.durationHours+
+    ' hours downtime. Aircraft age and additional repair costs are not included. '+
+    'This is only a game estimate. No maintenance visit is reserved.';
+  };
+  checkSelect.addEventListener('change',renderQuote);
+  siteSelect.addEventListener('change',renderQuote);
+  quotePanel.append(checkLabel,siteLabel,result);host.append(quotePanel);renderQuote();
   const notice=doc.createElement('p');notice.className='hint';
   notice.textContent='A–D checks require flying this aircraft to an eligible facility and returning to its hub on verified flights. Booking, maintenance downtime and payment are not activated yet; no flight is automatically moved.';
   host.append(notice);
