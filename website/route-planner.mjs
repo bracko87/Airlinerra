@@ -326,7 +326,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
   const payload=aircraft.useType==='passenger'&&seats>0&&Number.isSafeInteger(pax)&&pax>=0?
    Math.min(1,pax/seats):.5;
   const originProfile=airportProfiles.from?.key===from.key?airportProfiles.from:null;
-  const price=previewAirportFuelPrice(originProfile);
+  const price=previewAirportFuelPrice(originProfile,{fuelFamily:aircraft.fuelFamily});
   const fuel=estimateFivePhaseFuel({
    distanceKm:km,cruiseSpeedKmh:aircraft.cruiseSpeedKmh,
    cruiseFuelKgPerHour:aircraft.cruiseFuelKgPerHour,
@@ -340,7 +340,8 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    setSummary('Fuel profile incomplete; no reliable estimate for this model.');return;
   }
   const kg=n=>Math.round(n).toLocaleString('en-US')+' kg';
-  const usd=n=>'$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const usd=n=>n===null?'Not priced':
+   '$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
   const heading=doc.createElement('h4');
   heading.textContent='Five-phase flight and fuel forecast';
   const grid=doc.createElement('div');grid.className='route-fuel-phase-grid';
@@ -356,7 +357,8 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    ' · screening reserve '+kg(fuel.screeningReserveFuelKg)+
    ' · tentative fuel load '+kg(fuel.screeningFuelLoadKg)+
    ' · estimated fuel expense '+usd(fuel.estimatedBurnCostUsd)+
-   ' at $'+price.usdPerKg.toFixed(3)+'/kg (modelled departure-airport tier).';
+   (price.usdPerKg===null?' (fuel type or grade not confirmed).':
+    ' at $'+price.usdPerKg.toFixed(3)+'/kg (modelled departure-airport tier).');
   const caveat=doc.createElement('p');caveat.className='hint';
   caveat.textContent=(fuel.source==='CALIBRATED_PROVISIONAL_MISSION_DISTANCE_RATE'?
    'Existing whole-mission fuel estimate redistributed between phases; not double-counted.':
@@ -366,9 +368,12 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    ' · reference fuel tank: '+fuel.referenceTankScreen+
    ' · fuel-rate evidence: '+(aircraft.fuelRateStatus||'unverified')+
    (aircraft.fuelPeerModel?' (estimated from '+aircraft.fuelPeerModel+')':'')+
-   ' · airport price: '+(price.gameCategory||'no tier')+
+   ' · fuel family: '+(aircraft.fuelFamily||'unknown')+
+   ' ('+(aircraft.fuelFamilyEvidence||'not confirmed')+')'+
+   ' · airport price: '+(price.usdPerKg===null?'unavailable':
+     price.gameCategory||'no tier')+
    ' ('+(price.categoryApproved?'approved category':'unverified category')+
-   ', assumed price multiplier). No confirmed airport fuel price, weather, approved dispatch or money movement.';
+   ', assumed price multiplier). No confirmed fuel grade, airport delivered price, weather, dispatch or money movement.';
   holder.append(heading,grid,totals,caveat);
   setSummary(kg(fuel.tripFuelKg)+' · '+usd(fuel.estimatedBurnCostUsd)+' (forecast)');
   message('route-block-time',Math.round(fuel.totalMinutes)+' min (phase estimate)');
