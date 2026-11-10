@@ -7,6 +7,7 @@ on:
       - 'website/**'
       - 'tests/test_player_read_api.mjs'
       - 'tests/test_group2_location_plans.mjs'
+      - 'tests/test_group2_local_gateway.mjs'
       - 'tests/test_real_local_player_gateway.mjs'
       - 'tests/test_player_app_prelaunch.mjs'
       - 'tests/test_route_planner_ui.mjs'
@@ -33,6 +34,7 @@ jobs:
           node --test \
             tests/test_player_read_api.mjs \
             tests/test_group2_location_plans.mjs \
+            tests/test_group2_local_gateway.mjs \
             tests/test_real_local_player_gateway.mjs \
             tests/test_player_app_prelaunch.mjs \
             tests/test_route_planner_ui.mjs \
