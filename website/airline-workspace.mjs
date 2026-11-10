@@ -447,7 +447,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   }
   showRoute();renderSchedule();
  }
- const prettyFleetText=value=>String(value||'—').replace(/[-_]/gu,' ').replace(/\\b\\w/gu,m=>m.toUpperCase());
+ const prettyFleetText=value=>String(value||'—').replace(/[-_]/gu,' ').replace(/\b\w/gu,m=>m.toUpperCase());
  const fleetSeatLabel=a=>a.useType==='cargo'?'—':
   Number.isInteger(Number(a.referenceSeats))&&a.referenceSeats!==null?
    new Intl.NumberFormat('en-US').format(Number(a.referenceSeats))+' ref.':'Not verified';
@@ -731,7 +731,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    if(!aircraft||!data.airline?.id||!data.fleetClient?.updateNickname){
     if(feedback)feedback.textContent='Aircraft nickname editing is unavailable.';return;
    }
-   if(nickname.length>40||/[\\u0000-\\u001F\\u007F]/u.test(nickname)){
+   if(nickname.length>40||/[\u0000-\u001F\u007F]/u.test(nickname)){
     if(feedback)feedback.textContent='Use a nickname of up to 40 characters without control symbols.';return;
    }
    const save=$('fleet-detail-save');
