@@ -54,5 +54,5 @@ createServer(async (req, res) => {
   console.log(`Airlinerra ${isBuilt?'built-site preview':'source development'} server: http://localhost:${port}`);
   if(localApiEnabled)console.log(useLocalDb
     ?'API mode: explicit private PostgreSQL development adapter'
-    :'API mode: production Supabase game data, authenticated READ ONLY. Airline creation is disabled locally.');
+    :'API mode: authenticated Supabase reads and planning-draft saves only. No airline creation, slots, flight activation or payments locally.');
 });
