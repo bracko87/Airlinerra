@@ -173,6 +173,8 @@ const pages=Object.freeze({
 <div class="fleet-detail-row"><span>Cruise speed (reference)</span><strong id="fleet-detail-cruise-speed">—</strong></div>
 <div class="fleet-detail-row"><span>Estimated cruise fuel burn</span><strong id="fleet-detail-fuel-burn">—</strong></div>
 <div class="fleet-detail-row"><span>Fuel tank capacity (game reference)</span><strong id="fleet-detail-fuel-tank">—</strong></div>
+<div class="fleet-detail-row"><span>Fuel consumption evidence</span><strong id="fleet-detail-fuel-evidence">—</strong></div>
+<div class="fleet-detail-row"><span>Fuel type</span><strong id="fleet-detail-fuel-type">—</strong></div>
 <div class="fleet-detail-row"><span>Range (reference)</span><strong id="fleet-detail-range">—</strong></div>
 <div class="fleet-detail-row"><span>Maximum takeoff weight</span><strong id="fleet-detail-mtow">—</strong></div>
 <div class="fleet-detail-row"><span>Maximum landing weight</span><strong id="fleet-detail-mlw">—</strong></div>
@@ -911,6 +913,13 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    'fleet-detail-fuel-burn':fuelReference?.status==='PLANNING_ESTIMATE'?
     fmtAircraftNumber(fuelReference.estimatedCruiseKgPerHour,' kg/h (estimate)'):'Not available',
    'fleet-detail-fuel-tank':fmtAircraftNumber(aircraft?.fuelTankCapacityKg,' kg'),
+   'fleet-detail-fuel-evidence':aircraft?.fuelRateStatus==='DERIVED_PEER_AIRCRAFT_GAME_ESTIMATE'?
+    'Estimated from '+String(aircraft.fuelPeerModel||'comparable model')+' ('+
+    String(aircraft.fuelConfidenceClass||'unverified')+')':
+    aircraft?.fuelRateStatus==='EXISTING_PROVISIONAL_DISTANCE_RATE'?
+     'Existing provisional aircraft model estimate':
+     'Not available',
+   'fleet-detail-fuel-type':'Not verified (fuel type research pending)',
    'fleet-detail-range':fmtAircraftNumber(aircraft?.rangeKm,' km'),
    'fleet-detail-mtow':fmtAircraftNumber(aircraft?.mtowKg,' kg'),
    'fleet-detail-mlw':fmtAircraftNumber(aircraft?.mlwKg,' kg'),
