@@ -63,10 +63,9 @@ SELECT count(*)::int AS group2_count,
  count(*) FILTER(WHERE d.code_kind='SOURCE_GPS_CODE_NOT_ICAO_VERIFIED')::int AS gps_identifiers_pending_icao_check,
  count(*) FILTER(WHERE d.code_kind='EXTERNAL_REPORTED_ICAO_NEEDS_AUTHORITY_CHECK')::int AS external_reported_pending_authority,
  (SELECT count(*) FROM airlinerra_game.airport_location_eligibility_v1 l
-  WHERE l.source_group='GROUP_2' AND l.airport_code=d1.display_code
-  AND l.airport_key=d1.airport_key)::int AS world_rows_correct
-FROM airlinerra_game.airport_group2_aviation_display_codes_v1 d
-JOIN airlinerra_game.airport_group2_aviation_display_codes_v1 d1 ON d1.airport_key=d.airport_key;
+  JOIN airlinerra_game.airport_group2_aviation_display_codes_v1 codes USING(airport_key)
+  WHERE l.source_group='GROUP_2' AND l.airport_code=codes.display_code)::int AS world_rows_correct
+FROM airlinerra_game.airport_group2_aviation_display_codes_v1 d;
 REVOKE ALL ON airlinerra_game.airport_group2_aviation_code_audit_v1 FROM PUBLIC,anon,authenticated;
 
 DO $post$
