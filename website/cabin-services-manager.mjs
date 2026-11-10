@@ -246,7 +246,7 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
   host.replaceChildren();
   const heading=element(doc,'div','cabin-product-header');
   const title=element(doc,'div');
-  title.append(element(doc,'p','hint cabin-product-lead','Choose a package to edit its passenger offers and prices. '+(remote?'Settings are saved to your airline in Supabase; flights and money are not changed.':'Local preview: saved in this browser; no flight or cash effects.')));
+  title.append(element(doc,'p','hint cabin-product-lead','Choose a package to select free or paid services and set passenger prices. '+(remote?'Settings are saved to your airline in Supabase; flights and money are not changed.':'Local preview: saved in this browser; no flight or cash effects.')));
   heading.append(title);
   const addBtn=element(doc,'button','primary cabin-compact-button','+ New package');
   addBtn.type='button';addBtn.dataset.cabinAction='new';
@@ -291,36 +291,22 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
    remove.type='button';remove.dataset.cabinAction='delete';buttons.append(remove);
   }
   controls.append(buttons);editor.append(controls);
-  const assumptions=element(doc,'div','cabin-preview-assumptions');
-  const pax=input(doc,{type:'number',value:previewPassengers,min:1,max:1000,step:1});
-  pax.id='cabin-preview-passengers';
-  textField(assumptions,'Passengers (example flight)',pax);
-  const hours=input(doc,{type:'number',value:previewMinutes/60,min:.25,max:24,step:.25});
-  hours.id='cabin-preview-hours';
-  textField(assumptions,'Flight duration (hours)',hours);
-  assumptions.append(element(doc,'p','hint',
-   'Neutral reputation 50/100 until the real airline rating is connected. Figures are forecasts only.'));
-  editor.append(assumptions);
-  const summary=element(doc,'div','cabin-product-metrics');
+  // The package editor does not know real flights. Keep only a simple
+  // package-quality score; per-flight demand, supply, sales and expenses
+  // belong to the engine after real duration/passenger data is available.
+  const summary=element(doc,'div','cabin-product-metrics cabin-product-policy-summary');
   const score=element(doc,'div','cabin-product-metric');
   score.append(element(doc,'span','','Service attractiveness · 0–100'));
   const rating=element(doc,'strong','','25 / 100');rating.id='cabin-rating';score.append(rating);
   const bar=element(doc,'div','cabin-score-track');
   const fill=element(doc,'div','cabin-score-fill');fill.id='cabin-score-fill';
   bar.append(fill);score.append(bar);summary.append(score);
-  for(const [id,title] of [['cost','Airline cost for example flight'],
-   ['sales','Expected onboard sales · not guaranteed'],
-   ['net','Net service cost for example flight']]){
-   const card=element(doc,'div','cabin-product-metric');
-   card.append(element(doc,'span','',title));
-   const value=element(doc,'strong','','$0.00');value.id='cabin-'+id;card.append(value);
-   summary.append(card);
-  }
+  summary.append(element(doc,'p','hint',
+   'This score compares service policies only. No flight, passengers, sales or cost are estimated here.'));
   editor.append(summary);
   const table=element(doc,'div','cabin-product-table');
   const header=element(doc,'div','cabin-product-row cabin-product-table-head');
-  for(const title of ['Service · airline cost per unit','Offer to passengers',
-   'Units loaded / 100 passengers','Passenger price onboard'])
+  for(const title of ['Service','Offer to passengers','Passenger selling price (USD)'])
    header.append(element(doc,'span','',title));
   table.append(header);
   let lastCategory=null;
@@ -337,29 +323,29 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
     row.append(cell);
    };
    const description=element(doc,'div','cabin-product-item-name');
-   description.append(element(doc,'strong','',item.name),
-    element(doc,'small','cabin-item-unit-cost',money(item.costCents)+' per unit · game cost estimate'));
+   description.append(element(doc,'strong','',item.name));
    if(item.condition)description.append(element(doc,'small','',item.condition));
-   const inventory=element(doc,'small','cabin-item-inventory','');
-   inventory.dataset.cabinInventory=item.id;
-   description.append(inventory);row.append(description);
+   row.append(description);
    const mode=select(doc,CABIN_MODE_OPTIONS,current.mode,basic);
    mode.dataset.cabinField='mode';appendField('Offer to passengers',mode);
-   const paid=current.mode==='onboard',included=current.mode==='included';
-   const stock=input(doc,{type:'number',
-    value:included?100:paid&&!item.digital?current.stockPer100:0,
-    min:0,max:200,step:1,disabled:basic||!paid||item.digital});
-   stock.dataset.cabinField='stockPer100';
-   appendField(item.digital?'Digital on demand':'Units loaded / 100 passengers',stock);
-   const onboard=input(doc,{type:'number',value:(paid?current.onboardCents/100:0).toFixed(2),
-    min:0,max:1000,step:.01,disabled:basic||!paid});
-   onboard.dataset.cabinField='onboardCents';
-   appendField('Passenger price onboard (USD)',onboard);
+   if(current.mode==='onboard'){
+    const onboard=input(doc,{type:'number',
+     value:(current.onboardCents/100).toFixed(2),
+     min:.01,max:1000,step:.01,disabled:basic});
+    onboard.dataset.cabinField='onboardCents';
+    onboard.setAttribute('aria-label',item.name+' selling price in USD');
+    appendField('Passenger selling price (USD)',onboard);
+   }else{
+    const price=element(doc,'span','cabin-product-price-state',
+     current.mode==='included'?'Included in ticket':'—');
+    const priceCell=element(doc,'div','cabin-product-cell');
+    priceCell.append(price);row.append(priceCell);
+   }
    table.append(row);
   }
   editor.append(table);
   editor.append(element(doc,'p','hint',
-   'Included / free: budget one unit for every passenger. Paid onboard: budget each physical unit loaded, including unsold stock. Digital access costs accrue per use. Flight duration, reputation and price affect estimated sales; paid offerings add at most two attractiveness points in total. This is not live revenue or a confirmed aircraft capability.'));
+   'Choose which services your airline offers. Included means the passenger does not pay separately; Paid onboard means you set the selling price. Actual airline supply cost, quantity consumed and passenger purchases are calculated per real flight, not while creating this package. Equipment and route restrictions still apply.'));
   body.append(editor);host.append(body);
   const classBox=element(doc,'section','cabin-assignment-panel');
   classBox.append(element(doc,'h3','','Default package by cabin class'),
@@ -382,39 +368,14 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
   doc.dispatchEvent(new CustomEvent('airlinerra:refresh-game-select-menus'));
  };
  const updateMetrics=()=>{
-  const results=forecastCabinServiceFlight(working,{
-   passengers:previewPassengers,durationMinutes:previewMinutes,reputationScore:previewReputation
-  });
+  const ratingValue=cabinServiceAttractiveness(working);
   const rating=host.querySelector('#cabin-rating');
-  if(rating)rating.textContent=results.attractiveness+' / 100';
+  if(rating)rating.textContent=ratingValue+' / 100';
   const fill=host.querySelector('#cabin-score-fill');
-  if(fill)fill.style.width=results.attractiveness+'%';
-  const cost=host.querySelector('#cabin-cost');
-  if(cost)cost.textContent=money(results.totalCostCents);
-  const sales=host.querySelector('#cabin-sales');
-  if(sales)sales.textContent=money(results.onboardRevenueCents);
-  const net=host.querySelector('#cabin-net');
-  if(net)net.textContent=money(results.netCostCents);
-  for(const row of results.rows){
-   const count=host.querySelector('[data-cabin-inventory="'+row.id+'"]');
-   if(!count)continue;
-   count.textContent=row.mode==='off'?'Not offered':
-    row.mode==='included'?'Included · '+row.costUnits+' units budgeted':
-    row.loadedUnits>0?row.loadedUnits+' loaded · '+row.expectedSales+' expected sold':
-    row.expectedSales+' estimated digital uses';
-  }
+  if(fill)fill.style.width=ratingValue+'%';
  };
  const onChange=event=>{
   const id=event.target?.id;
-  if(id==='cabin-preview-passengers'||id==='cabin-preview-hours'){
-   const value=Number(event.target.value);
-   if(id==='cabin-preview-passengers'&&Number.isSafeInteger(value)&&value>=1&&value<=1000)
-    previewPassengers=value;
-   else if(id==='cabin-preview-hours'&&Number.isFinite(value)&&value>=.25&&value<=24)
-    previewMinutes=Math.round(value*60);
-   else{status('Enter 1–1,000 passengers and a duration of 0.25–24 hours.');return;}
-   updateMetrics();return;
-  }
   if(loading||saving||(remote&&!ready))return;
   const item=event.target.closest?.('[data-cabin-item]');
   const field=event.target.dataset?.cabinField;
@@ -432,17 +393,11 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
      (working.items[rowId].stockPer100||CATALOG.get(rowId).stock)):0;
    render();return;
   }
-  if(field==='stockPer100'){
-   const value=Number(event.target.value);
-   if(!Number.isSafeInteger(value)||value<0||value>200){
-    status('Enter 0–200 loaded units per 100 passengers.');return;
-   }
-   working.items[rowId].stockPer100=value;
-  }else if(field==='onboardCents'){
+  if(field==='onboardCents'){
    const value=Number(event.target.value);
    if(!/^\d{1,4}(?:\.\d{1,2})?$/.test(event.target.value)||
-      !Number.isFinite(value)||value>1000){
-    status('Passenger price must be $0–$1,000 with two decimals.');return;
+      !Number.isFinite(value)||(value<=0||value>1000)){
+    status('Passenger selling price must be $0.01–$1,000 with two decimals.');return;
    }
    working.items[rowId].onboardCents=Math.round(value*100);
    working.items[rowId].onlineCents=working.items[rowId].onboardCents;
@@ -476,18 +431,11 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
    for(const price of host.querySelectorAll('[data-cabin-field="onboardCents"]')){
     if(price.disabled)continue;
     const value=String(price.value||'');
-    if(!/^\d{1,4}(?:\.\d{1,2})?$/.test(value)||Number(value)>1000){
-     status('A paid-item price is invalid. Use $0–$1,000 and up to two decimal places.');
+    if(!/^\d{1,4}(?:\.\d{1,2})?$/.test(value)||(Number(value)<=0||Number(value)>1000)){
+     status('A paid-item price is invalid. Use $0.01–$1,000 and up to two decimal places.');
      price.focus();return;
     }
    }
-   for(const stock of host.querySelectorAll('[data-cabin-field="stockPer100"]')){
-   if(stock.disabled)continue;
-   const units=Number(stock.value);
-   if(!Number.isSafeInteger(units)||units<0||units>200){
-    status('Loaded stock must be 0–200 units per 100 passengers.');stock.focus();return;
-   }
-  }
   working.name=String(host.querySelector('#cabin-package-name')?.value||'').trim();
    const next=cleanCabinPackage(working);
    if(!next){status('Name must have 2–45 characters. Review prices and allowances.');return;}
