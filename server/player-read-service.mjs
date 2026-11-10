@@ -9,11 +9,12 @@ import {AIRPORT_PROFILE_PATH,AIRPORT_PROFILE_SQL,serializeAirportProfile,validAi
 import {countrySqlExpression,GAME_COUNTRY_CODES,GAME_COUNTRY_SET} from './country-policy.mjs';
 const PARENT_ISO=countrySqlExpression('country_iso');
 const MEMBER_CODES=GAME_COUNTRY_CODES.map(code=>"'"+code+"'").join(',');
+export const PREPARED_AIRPORTS_PATH='/api/v1/player/prepared-airports';
 export const LICENSES_LIBRARY_PATH='/api/v1/player/licenses';
 export const HOLDING_STATUS_PATH='/api/v1/player/holding-status';
 
 export const PLAYER_READ_PATHS=Object.freeze([
- '/api/v1/player/overview','/api/v1/player/airports',AIRPORT_PROFILE_PATH,AIRCRAFT_LIBRARY_PATH,LICENSES_LIBRARY_PATH,HOLDING_STATUS_PATH
+ '/api/v1/player/overview','/api/v1/player/airports',PREPARED_AIRPORTS_PATH,AIRPORT_PROFILE_PATH,AIRCRAFT_LIBRARY_PATH,LICENSES_LIBRARY_PATH,HOLDING_STATUS_PATH
 ]);
 export const PLAYER_READ_SQL=Object.freeze({
  worlds:'select id,name,state from public.airlinerra_game_worlds order by id',
@@ -22,6 +23,7 @@ export const PLAYER_READ_SQL=Object.freeze({
  countries:"select "+PARENT_ISO+" as country_iso,count(*)::integer as airport_count from airlinerra_game.approved_game_airports where world_id=1 and "+PARENT_ISO+" in ("+MEMBER_CODES+") group by "+PARENT_ISO+" order by "+PARENT_ISO,
  airlines:"select a.id,a.world_id,a.name,a.home_airport_key,a.cash_usd::text as cash_usd,a.created_at,a.icao_code,a.iata_code,h.airport_name as home_airport_name,h.airport_code as home_airport_code, COALESCE((select jsonb_agg(jsonb_build_object('id',t.id::text,'registration',t.display_registration,'configurationId',c.id,'model',v.model_name,'testOnly',t.test_only,'operationallyAllowed',t.operationally_allowed) order by t.display_registration) from airlinerra_game.airline_aircraft_test_fixtures t join airlinerra.aircraft_configurations c on c.id=t.configuration_id join airlinerra.aircraft_variants v on v.id=c.variant_id where t.airline_id=a.id and t.test_only=true and t.operationally_allowed=false),'[]'::jsonb) as test_aircraft, (e.membership_state='active' and exists(select 1 from airlinerra_game.owner_premium_email_reservations r join auth.users u on r.email=lower(btrim(u.email)) where u.id=a.owner_player_id and u.email_confirmed_at is not null)) as complimentary_premium from airlinerra_game.airlines a left join airlinerra_game.account_entitlements e on e.player_id=a.owner_player_id left join airlinerra_game.approved_game_airports h on h.world_id=a.world_id and h.airport_key=a.home_airport_key where a.owner_player_id=$1::uuid order by a.world_id limit 3",
  ledger:"select entry_kind,amount_usd::text as amount_usd,recorded_at from airlinerra_game.airline_ledger where airline_id=$1::uuid order by recorded_at desc,id desc limit 5",
+ preparedAirports:"select c.airport_key,c.airport_name,c.game_lookup_code as airport_code,c.country_iso,g.game_locality_display as municipality,c.latitude_deg::text as latitude_deg,c.longitude_deg::text as longitude_deg,c.game_category,c.game_data_status,c.commercial_access_scope from airlinerra_game.airport_sections1_8_combined_catalog_v1 c join airlinerra_game.airport_group2_game_profiles_v1 g using(airport_key) where c.world_id=1 and c.source_group='GROUP_2' and c.commercial_access_scope='GROUP2_PREPARED_NOT_ADMITTED' and ($1::text='' or c.country_iso=$1::text) and c.country_iso in ("+MEMBER_CODES+") and ($2::text='' or strpos(lower(c.airport_name),lower($2::text))>0 or strpos(lower(c.game_lookup_code),lower($2::text))>0 or strpos(lower(g.game_locality_display),lower($2::text))>0) order by c.airport_name,c.airport_key limit 51 offset $3::integer",
  airports:"select a.airport_key,a.airport_name,a.airport_code,"+PARENT_ISO+" as country_iso,a.municipality,c.latitude_deg::text as latitude_deg,c.longitude_deg::text as longitude_deg from airlinerra_game.approved_game_airports a left join (select world_number,airport_key,latitude_deg,longitude_deg from airlinerra.airport_game_world1_catalog) c on c.airport_key=a.airport_key and c.world_number=a.world_id where a.world_id=1 and ($1::text='' or "+PARENT_ISO+"=$1::text) and "+PARENT_ISO+" in ("+MEMBER_CODES+") and ($2::text='' or strpos(lower(coalesce(a.airport_name,'')),lower($2::text))>0 or strpos(lower(coalesce(a.airport_code,'')),lower($2::text))>0 or strpos(lower(coalesce(a.municipality,'')),lower($2::text))>0) order by a.airport_name nulls last,a.airport_key limit 51 offset $3::integer"
 });
 const ORIGIN='https://airlinerra.com';
@@ -94,7 +96,7 @@ export function createPlayerReadHandler({enabled=false,verifyUserToken,database,
    if(url.pathname===AIRPORT_PROFILE_PATH&&
       (Object.keys(data).length!==1||!validAirportKey(profileKey)))
      return respond(400,{error:'Invalid airport profile request'});
-   if(url.pathname===PLAYER_READ_PATHS[1]){
+   if(url.pathname===PLAYER_READ_PATHS[1]||url.pathname===PREPARED_AIRPORTS_PATH){
      country=data.countryIso;search=data.search??'';offset=data.offset??0;
      if(Object.keys(data).some(k=>!['countryIso','search','offset'].includes(k))||
        typeof country!=='string'||typeof search!=='string'||!SAFE_SEARCH.test(search)||
@@ -237,6 +239,23 @@ export function createPlayerReadHandler({enabled=false,verifyUserToken,database,
        if(rows.length===0)return respond(404,{error:'Airport not in approved World 1 roster'});
        if(rows.length!==1)return respond(503,{error:'Airport profile is unavailable'});
        return respond(200,{airport:serializeAirportProfile(rows[0])});
+     }
+     if(url.pathname===PREPARED_AIRPORTS_PATH){
+       phase='prepared-airport-search';
+       const rows=expectArray((await client.query(PLAYER_READ_SQL.preparedAirports,[country,search.trim(),offset])).rows);
+       if(rows.length>51)throw Error('Invalid prepared airport page size');
+       const hasMore=rows.length>50;
+       const airports=rows.slice(0,50).map(row=>{
+         if(row.commercial_access_scope!=='GROUP2_PREPARED_NOT_ADMITTED'||row.game_data_status!=='game_complete_estimated')
+           throw Error('Unexpected prepared airport admission');
+         const item=airport(row);
+         if(!GAME_COUNTRY_SET.has(item.countryIso)||(country&&item.countryIso!==country))
+           throw Error('Unexpected prepared airport country');
+         return {...item,category:row.game_category,sourceGroup:'GROUP_2',status:'prepared_only',
+           commercialAccess:false,bookable:false,canActivateFlights:false};
+       });
+       return respond(200,{airports,nextOffset:hasMore?offset+50:null,countryIso:country,
+         scope:'prepared_information_only',bookable:false,canActivateFlights:false});
      }
      phase='airport-search';
      const rows=expectArray((await client.query(PLAYER_READ_SQL.airports,[country,search.trim(),offset])).rows);
