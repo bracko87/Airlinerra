@@ -267,6 +267,54 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
  if(!doc||typeof getData!=='function'||typeof draftWrite!=='function')
   throw Error('Verified route planner data required');
  const $=id=>doc.getElementById(id);
+ let cabinOptionAirlineId=null;
+ const cabinSnapshot=()=>{
+  const value=typeof getCabinState==='function'?getCabinState():null;
+  return {packages:Array.isArray(value?.packages)?value.packages:[createBasicCabinPackage()],
+   ready:value?.ready===true};
+ };
+ const updateCabinEstimate=()=>{
+  const picker=$('route-cabin-package'),note=$('route-cabin-service-note');
+  const passengers=Number($('route-cabin-passengers')?.value);
+  if(!picker||!note)return;
+  const snapshot=cabinSnapshot();
+  if(!snapshot.ready){note.textContent='Cabin packages are loading or unavailable. No charges are made.';return;}
+  const id=picker.value;
+  if(id==='none'){note.textContent='No onboard service · estimated airline cabin cost $0.00 for this flight.';return;}
+  const pkg=snapshot.packages.find(p=>p.id===id);
+  if(!pkg){note.textContent='This package was deleted. Choose another before saving.';return;}
+  if(!Number.isSafeInteger(passengers)||passengers<0||passengers>1000){
+   note.textContent='Enter 0–1,000 assumed passengers for this planning preview.';return;
+  }
+  const estimate=cabinPackageEstimate(pkg),usd=cents=>'$'+(cents/100).toFixed(2);
+  note.textContent=pkg.name+' · airline cost '+usd(estimate.totalCostCents)+
+   ' per passenger; '+usd(estimate.totalCostCents*passengers)+' for '+
+   passengers+' assumed passengers · potential onboard sales '+
+   usd(estimate.paidRevenueCents*passengers)+
+   '. Estimates only: no flight money or bookings changed.';
+ };
+ const refreshCabinPackages=(preferred=null)=>{
+  const picker=$('route-cabin-package');if(!picker)return;
+  const {packages,ready}=cabinSnapshot(),chosen=preferred??picker.value??'basic';
+  picker.replaceChildren(new Option('No onboard service','none'));
+  for(const pkg of packages){
+   if(!pkg?.id||!/^(?:basic|pkg-[1-9][0-9]{0,5})$/.test(pkg.id))continue;
+   picker.add(new Option(pkg.name,pkg.id));
+  }
+  if(![...picker.options].some(x=>x.value==='basic'))
+   picker.add(new Option('Basic Cabin Service','basic'));
+  if(chosen&&![...picker.options].some(x=>x.value===chosen)){
+   const missing=new Option('Deleted package — select another',chosen);
+   missing.disabled=true;picker.add(missing);
+  }
+  picker.value=chosen&&[...picker.options].some(x=>x.value===chosen)?chosen:'basic';
+  picker.disabled=!ready;updateCabinEstimate();
+  doc.dispatchEvent?.(new Event('airlinerra:refresh-game-select-menus'));
+ };
+ doc.addEventListener('airlinerra:cabin-packages-updated',event=>{
+  if(event.detail?.airlineId===getData()?.airline?.id)refreshCabinPackages();
+ });
+
  const days=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
  let homeKey=null,homeLocation=null,currentAirlineId=null,homeTicket=0,detailTicket=0;
  let lastKeys='',airportProfiles={},editingFlightNumber=null,editingLegacyIndex=null,editSerial=0;
