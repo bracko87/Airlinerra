@@ -1,4 +1,5 @@
 import {routePlannerMarkup,createRoutePlanner} from './route-planner.mjs';
+import {estimateFivePhaseFuel} from './flight-fuel-phase-engine.mjs';
 import {aircraftDisplayName} from './aircraft-library.mjs';
 import {buildAirlineWeeklyBoard,renderAirlineWeeklyBoard} from './aircraft-weekly-schedule-board.mjs';
 import {createCabinServiceManager} from './cabin-services-manager.mjs';
@@ -170,6 +171,8 @@ const pages=Object.freeze({
 <div class="fleet-detail-row"><span>Model production years</span><strong id="fleet-detail-production-years">—</strong></div>
 <div class="fleet-detail-row"><span>Reference crew required</span><strong id="fleet-detail-crew">—</strong></div>
 <div class="fleet-detail-row"><span>Cruise speed (reference)</span><strong id="fleet-detail-cruise-speed">—</strong></div>
+<div class="fleet-detail-row"><span>Estimated cruise fuel burn</span><strong id="fleet-detail-fuel-burn">—</strong></div>
+<div class="fleet-detail-row"><span>Fuel tank capacity (game reference)</span><strong id="fleet-detail-fuel-tank">—</strong></div>
 <div class="fleet-detail-row"><span>Range (reference)</span><strong id="fleet-detail-range">—</strong></div>
 <div class="fleet-detail-row"><span>Maximum takeoff weight</span><strong id="fleet-detail-mtow">—</strong></div>
 <div class="fleet-detail-row"><span>Maximum landing weight</span><strong id="fleet-detail-mlw">—</strong></div>
@@ -878,6 +881,14 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   const aircraft=marketSnapshot?.fleet?.find(x=>x.id===selectedFleetAircraftId);
   const detail=$('fleet-detail-name');
   if(!detail)return;
+  const fuelReference=aircraft?estimateFivePhaseFuel({
+   distanceKm:1000,cruiseSpeedKmh:aircraft.cruiseSpeedKmh,
+   cruiseFuelKgPerHour:aircraft.cruiseFuelKgPerHour,
+   emptyFuelKgPer100Km:aircraft.emptyFuelKgPer100Km,
+   halfFuelKgPer100Km:aircraft.halfFuelKgPer100Km,
+   fullFuelKgPer100Km:aircraft.fullFuelKgPer100Km,
+   fuelTankCapacityKg:aircraft.fuelTankCapacityKg,payloadFraction:.5
+  }):null;
   const ids={
    'fleet-detail-name':aircraft?aircraftDisplayName(aircraft.manufacturer,aircraft.model):'Aircraft not available',
    'fleet-detail-subtitle':aircraft?
@@ -897,6 +908,9 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
     String(aircraft.modelProductionStartYear)+'–'+(aircraft.modelProductionEndYear||'present'):'Not recorded',
    'fleet-detail-crew':fmtAircraftNumber(aircraft?.referenceCrewRequired),
    'fleet-detail-cruise-speed':fmtAircraftNumber(aircraft?.cruiseSpeedKmh,' km/h'),
+   'fleet-detail-fuel-burn':fuelReference?.status==='PLANNING_ESTIMATE'?
+    fmtAircraftNumber(fuelReference.estimatedCruiseKgPerHour,' kg/h (estimate)'):'Not available',
+   'fleet-detail-fuel-tank':fmtAircraftNumber(aircraft?.fuelTankCapacityKg,' kg'),
    'fleet-detail-range':fmtAircraftNumber(aircraft?.rangeKm,' km'),
    'fleet-detail-mtow':fmtAircraftNumber(aircraft?.mtowKg,' kg'),
    'fleet-detail-mlw':fmtAircraftNumber(aircraft?.mlwKg,' kg'),
@@ -1218,9 +1232,11 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    if(!result||!Array.isArray(result.fleet)||!Array.isArray(result.offers)||
      result.airlineId!==airlineId)throw Error('Invalid fleet list');
    renderRealFleetMarket(result);
+   doc.dispatchEvent(new CustomEvent('airlinerra:fleet-fuel-updated',{detail:{airlineId}}));
   }catch(error){
    if(version!==marketFetchVersion)return;
    renderRealFleetMarket(null);
+   doc.dispatchEvent(new CustomEvent('airlinerra:fleet-fuel-updated',{detail:{airlineId}}));
    // Expose only a safe status code; never tokens, SQL details or identities.
    const diagnostic=String(error?.message||'');
    const code=/^(?:LOCAL_AIRCRAFT_READ_HTTP_|FLEET_HTTP_)([1-5][0-9]{2})$/.exec(diagnostic)?.[1]||null;
@@ -1612,7 +1628,9 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
  const routePlannerController=createRoutePlanner({
   doc,getData:()=>data,loadDraft:()=>safelyLoad(session,draftKey)||{},draftWrite,
   getCabinState:()=>({packages:cabinManager?.getPackages()||[],
-   ready:cabinManager?.isReady()===true})
+   ready:cabinManager?.isReady()===true}),
+  getFuelAircraft:aircraftId=>data.connected&&marketSnapshot?.airlineId===data.airline?.id?
+   marketSnapshot.fleet?.find(a=>a.id===aircraftId)||null:null
  });
  doc.addEventListener('airlinerra:route-draft-saved',()=>{
   renderSchedule();
