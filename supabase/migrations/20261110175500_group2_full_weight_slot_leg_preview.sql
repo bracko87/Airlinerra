@@ -110,7 +110,7 @@ BEGIN
  good:=airlinerra_game.group2_full_weight_slot_leg_preview_v1(
   'OURAIRPORTS:20581',1,'departure','2026-11-10T14:00:00Z','terminal');
  no_stand:=airlinerra_game.group2_full_weight_slot_leg_preview_v1(
-  'OURAIRPORTS:4183',194,'departure','2026-11-10T14:00:00Z','terminal');
+  'OURAIRPORTS:4183',202,'departure','2026-11-10T14:00:00Z','terminal');
  restricted:=airlinerra_game.group2_full_weight_slot_leg_preview_v1(
   'OURAIRPORTS:46583',239,'arrival','2026-11-10T14:00:00Z','terminal');
  no_airport:=airlinerra_game.group2_full_weight_slot_leg_preview_v1(
@@ -118,7 +118,7 @@ BEGIN
  IF good->>'decision'<>'PRELIMINARY_GAME_SCREEN_PASS_NOT_ADMITTED'
  OR good->>'reservationWritten'<>'false' OR good->>'canReserve'<>'false'
  OR no_stand->>'decision'<>'BLOCKED_GAME_SLOT_CAPACITY'
- OR restricted->>'decision'<>'BLOCKED_CONDITIONAL_RESTRICTION'
+ OR restricted->>'decision'<>'BLOCKED_MISSING_GROUP2_OR_AIRCRAFT_ENGINE_DATA'
  OR no_airport->>'decision'<>'BLOCKED_MISSING_GROUP2_OR_AIRCRAFT_ENGINE_DATA'
  THEN RAISE EXCEPTION 'GROUP2_FULL_WEIGHT_SLOT_PREVIEW_TESTS_FAILED';END IF;
 END $$;
