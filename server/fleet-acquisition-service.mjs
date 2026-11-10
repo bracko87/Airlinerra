@@ -31,6 +31,17 @@ export function validateFleetAcquisitionRequest(body){
   /^[1-9][0-9]{2,11}(?:\.[0-9]{1,2})?$/u.test(body.bidUsd) &&
   typeof body.registration==='string' &&
   REGISTRATION.test(body.registration.trim().toUpperCase());
+ if(body.action==='cabin-overview')return Object.keys(body).length===2 &&
+  Object.keys(body).every(k=>['action','airlineId'].includes(k));
+ if(body.action==='cabin-save-draft')return Object.keys(body).length===11 &&
+  Object.keys(body).every(k=>['action','airlineId','aircraftInventoryId',
+   'economy','premium','business','first','economyType','premiumType','businessType','firstType'].includes(k)) &&
+  uuid(body.aircraftInventoryId)&&
+  ['economy','premium','business','first'].every(k=>
+   Number.isInteger(body[k])&&body[k]>=0&&body[k]<=850) &&
+  ['economyType','premiumType','businessType','firstType'].every(k=>
+   typeof body[k]==='string'&&/^[a-z][a-z0-9_]{2,39}$/u.test(body[k])) &&
+  body.economy+body.premium+body.business+body.first>0;
  if(body.action==='maintenance-preview')return Object.keys(body).length===3 &&
   Object.keys(body).every(k=>['action','airlineId','aircraftInventoryId'].includes(k)) &&
   uuid(body.aircraftInventoryId);
@@ -211,7 +222,7 @@ export const FLEET_SQL=Object.freeze({
   "WHEN 'a' THEN 3 WHEN 'b' THEN 4 WHEN 'c' THEN 5 ELSE 6 END",
  maintenanceSites:"SELECT c.check_code AS \"checkCode\",a.airport_key AS \"airportKey\", "+
   "a.airport_code AS \"airportCode\",a.airport_name AS \"airportName\", "+
-  "f.provider_name AS provider "+
+  "f.provider_name AS provider,f.continent,f.game_cost_multiplier::text AS \"siteMultiplier\" "+
   "FROM airlinerra_game.maintenance_airport_capabilities_v1 c "+
   "JOIN airlinerra_game.maintenance_facility_locations_v1 f "+
   "ON f.world_id=c.world_id AND f.airport_key=c.airport_key AND f.provider_key=c.provider_key "+
@@ -221,6 +232,71 @@ export const FLEET_SQL=Object.freeze({
   "AND c.configuration_id=(SELECT i.configuration_id FROM airlinerra_game.airline_aircraft_inventory i "+
   "WHERE i.airline_id=$1::uuid AND i.id=$2::uuid) "+
   "ORDER BY a.airport_code,c.check_code LIMIT 100",
+ cabinTypes:"SELECT seat_code AS \"code\",cabin_class AS \"cabinClass\",label, "+
+  "seat_pitch_inches::text AS \"pitchInches\", "+
+  "seat_width_inches::text AS \"widthInches\", "+
+  "equivalent_economy_units::text AS \"spaceUnits\", "+
+  "indicative_install_usd AS \"installUsd\" "+
+  "FROM airlinerra_game.cabin_seat_types_v1 "+
+  "ORDER BY CASE cabin_class WHEN 'economy' THEN 1 WHEN 'premium' THEN 2 "+
+  "WHEN 'business' THEN 3 ELSE 4 END,equivalent_economy_units,seat_code",
+ cabinAircraft:"SELECT i.id::text AS \"aircraftInventoryId\",i.configuration_id::int AS \"configurationId\", "+
+  "i.registration,i.ownership_type AS \"ownershipType\", "+
+  "c.manufacturer_name AS manufacturer,c.family_name AS family,c.model_name AS model, "+
+  "c.use_type AS \"useType\",s.reference_seat_units::text AS \"referenceUnits\", "+
+  "s.standard_economy_seats AS \"standardEconomy\", "+
+  "installed.installed_economy AS \"installedEconomy\", "+
+  "installed.installed_premium AS \"installedPremium\", "+
+  "installed.installed_business AS \"installedBusiness\", "+
+  "installed.installed_first AS \"installedFirst\", "+
+  "draft.economy_seats AS \"draftEconomy\",draft.premium_seats AS \"draftPremium\", "+
+  "draft.business_seats AS \"draftBusiness\",draft.first_seats AS \"draftFirst\", "+
+  "draft.economy_type AS \"draftEconomyType\", "+
+  "draft.premium_type AS \"draftPremiumType\", "+
+  "draft.business_type AS \"draftBusinessType\", "+
+  "draft.first_type AS \"draftFirstType\",draft.updated_at AS \"draftUpdatedAt\" "+
+  "FROM airlinerra_game.airline_aircraft_inventory i "+
+  "JOIN airlinerra.aircraft_catalog_configuration_inventory c ON c.configuration_id=i.configuration_id "+
+  "JOIN airlinerra_game.cabin_model_standard_v1 s ON s.configuration_id=i.configuration_id "+
+  "LEFT JOIN airlinerra_game.aircraft_installed_cabins_v1 installed ON installed.aircraft_inventory_id=i.id "+
+  "LEFT JOIN airlinerra_game.aircraft_cabin_drafts_v1 draft ON draft.aircraft_inventory_id=i.id "+
+  "WHERE i.airline_id=$1::uuid ORDER BY i.registration LIMIT 250",
+ cabinDirectory:"SELECT f.continent,a.airport_code AS \"airportCode\",a.airport_key AS \"airportKey\", "+
+  "a.airport_name AS \"airportName\",f.provider_key AS \"providerKey\", "+
+  "f.provider_name AS provider,f.research_status AS \"researchStatus\", "+
+  "f.source_url AS \"sourceUrl\",f.game_cost_multiplier::text AS \"siteMultiplier\" "+
+  "FROM airlinerra_game.maintenance_facility_locations_v1 f "+
+  "JOIN airlinerra_game.approved_game_airports a "+
+  "ON a.world_id=f.world_id AND a.airport_key=f.airport_key "+
+  "WHERE f.world_id=1 ORDER BY f.continent,a.airport_code,f.provider_name LIMIT 150",
+ cabinRefitSites:"SELECT i.id::text AS \"aircraftInventoryId\",a.airport_code AS \"airportCode\", "+
+  "a.airport_name AS \"airportName\",a.airport_key AS \"airportKey\", "+
+  "f.provider_name AS provider,f.continent,f.game_cost_multiplier::text AS \"siteMultiplier\" "+
+  "FROM airlinerra_game.airline_aircraft_inventory i "+
+  "JOIN airlinerra_game.cabin_refit_facility_types_v1 r ON r.configuration_id=i.configuration_id "+
+  "JOIN airlinerra_game.maintenance_facility_locations_v1 f "+
+  "ON f.world_id=r.world_id AND f.airport_key=r.airport_key AND f.provider_key=r.provider_key "+
+  "JOIN airlinerra_game.approved_game_airports a "+
+  "ON a.world_id=r.world_id AND a.airport_key=r.airport_key "+
+  "WHERE i.airline_id=$1::uuid AND r.planning_status='game_planning_approved' "+
+  "ORDER BY i.registration,a.airport_code LIMIT 500",
+ cabinOwnerAircraft:"SELECT s.reference_seat_units::text AS \"referenceUnits\", "+
+  "c.use_type AS \"useType\",i.configuration_id::int AS \"configurationId\" "+
+  "FROM airlinerra_game.airline_aircraft_inventory i "+
+  "JOIN airlinerra_game.cabin_model_standard_v1 s ON s.configuration_id=i.configuration_id "+
+  "JOIN airlinerra.aircraft_catalog_configuration_inventory c ON c.configuration_id=i.configuration_id "+
+  "WHERE i.airline_id=$1::uuid AND i.id=$2::uuid",
+ cabinSave:"INSERT INTO airlinerra_game.aircraft_cabin_drafts_v1 "+
+  "(aircraft_inventory_id,airline_id,economy_seats,premium_seats,business_seats,first_seats, "+
+  "economy_type,premium_type,business_type,first_type) "+
+  "VALUES($2::uuid,$1::uuid,$3::int,$4::int,$5::int,$6::int,$7::text,$8::text,$9::text,$10::text) "+
+  "ON CONFLICT(aircraft_inventory_id) DO UPDATE "+
+  "SET economy_seats=EXCLUDED.economy_seats,premium_seats=EXCLUDED.premium_seats, "+
+  "business_seats=EXCLUDED.business_seats,first_seats=EXCLUDED.first_seats, "+
+  "economy_type=EXCLUDED.economy_type,premium_type=EXCLUDED.premium_type, "+
+  "business_type=EXCLUDED.business_type,first_type=EXCLUDED.first_type,updated_at=now() "+
+  "WHERE airlinerra_game.aircraft_cabin_drafts_v1.airline_id=EXCLUDED.airline_id "+
+  "RETURNING aircraft_inventory_id::text AS \"aircraftInventoryId\",updated_at AS \"savedAt\"",
  delivery:"SELECT airlinerra_game.check_owned_aircraft_delivery_v1($1::uuid,$2::uuid,$3::uuid) AS result",
  nickname:"UPDATE airlinerra_game.airline_aircraft_inventory i "+
   "SET nickname=NULLIF(btrim($3::text),''),updated_at=now() "+
@@ -300,6 +376,56 @@ export function createFleetAcquisitionHandler({verifyUserToken,database}={}){
     if(result.rowCount!==1||!result.rows?.[0]?.result)
      return respond(503,{error:'Auction bid could not be confirmed'});
     return respond(200,result.rows[0].result);
+   }
+   if(body.action==='cabin-overview'){
+    const owner=await client.query(FLEET_SQL.owner,[body.airlineId,playerId]);
+    if(owner.rowCount!==1)return respond(403,{error:'Airline not owned by this account'});
+    const [types,aircraft,directory,refitSites]=await Promise.all([
+     client.query(FLEET_SQL.cabinTypes),
+     client.query(FLEET_SQL.cabinAircraft,[body.airlineId]),
+     client.query(FLEET_SQL.cabinDirectory),
+     client.query(FLEET_SQL.cabinRefitSites,[body.airlineId])
+    ]);
+    return respond(200,{airlineId:body.airlineId,seatTypes:types.rows,aircraft:aircraft.rows,
+     directory:directory.rows,refitSites:refitSites.rows,
+     previewOnly:true,installedLayoutsImmutable:true,canActivateRefit:false});
+   }
+   if(body.action==='cabin-save-draft'){
+    const owner=await client.query(FLEET_SQL.owner,[body.airlineId,playerId]);
+    if(owner.rowCount!==1)return respond(403,{error:'Airline not owned by this account'});
+    const aircraft=await client.query(FLEET_SQL.cabinOwnerAircraft,[body.airlineId,body.aircraftInventoryId]);
+    const airframe=aircraft.rows?.[0];
+    if(!airframe)return respond(404,{error:'Aircraft not found in your airline'});
+    if(airframe.useType==='cargo')return respond(409,{reason:'CARGO_AIRCRAFT_NO_PASSENGER_CABIN'});
+    const choices=[['economy',body.economyType,body.economy],
+     ['premium',body.premiumType,body.premium],
+     ['business',body.businessType,body.business],
+     ['first',body.firstType,body.first]];
+    const defs=await client.query(FLEET_SQL.cabinTypes);
+    const types=new Map(defs.rows.map(t=>[t.code,t]));
+    let used=0,installUsd=0;
+    for(const [group,type,count] of choices){
+     const seat=types.get(type);
+     if(!seat||seat.cabinClass!==group)
+      return respond(400,{reason:'INVALID_CABIN_SEAT_TYPE'});
+     used+=count*Number(seat.spaceUnits);
+     installUsd+=count*Number(seat.installUsd);
+    }
+    const capacity=Number(airframe.referenceUnits);
+    if(!Number.isFinite(capacity)||capacity<=0||used>capacity+1e-8)
+      return respond(409,{reason:'CABIN_LAYOUT_EXCEEDS_REFERENCE_SPACE',spaceUsed:Math.round(used*100)/100,
+       availableSpace:capacity});
+    const stored=await client.query(FLEET_SQL.cabinSave,[
+     body.airlineId,body.aircraftInventoryId,body.economy,body.premium,
+     body.business,body.first,body.economyType,body.premiumType,body.businessType,body.firstType]);
+    if(stored.rowCount!==1)return respond(409,{reason:'CABIN_DRAFT_CANNOT_BE_SAVED'});
+    return respond(200,{...stored.rows[0],airlineId:body.airlineId,
+     totalSeats:body.economy+body.premium+body.business+body.first,
+     usedSpace:Math.round(used*100)/100,availableSpace:capacity,
+     estimatedSeatEquipmentUsd:Math.round(installUsd),
+     indicativeDowntimeHours:body.premium+body.business+body.first>0?48:24,
+     status:'draft_saved_not_installed',canScheduleRefit:false,
+     aircraftLocationUnchanged:true,liveSeatsUnchanged:true,cashDebited:false});
    }
    if(body.action==='maintenance-preview'){
     const owner=await client.query(FLEET_SQL.owner,[body.airlineId,playerId]);
