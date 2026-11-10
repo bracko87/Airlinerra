@@ -7,10 +7,10 @@ import {validateAirportOfficeProposal} from './airport-office-domain.mjs';
 
 export const AIRPORT_OFFICE_SQL=Object.freeze({
  airline:'select id,world_id,home_airport_key from airlinerra_game.airlines where owner_player_id=$1::uuid and world_id=$2::smallint for update',
- approved:'select world_id,airport_key from airlinerra_game.approved_game_airports where world_id=$1::smallint and airport_key=$2::text',
+ approved:'select world_id,airport_key from airlinerra_game.airport_location_eligibility_v1 where world_id=$1::smallint and airport_key=$2::text and office_selectable=true',
  existing:'select airport_key,office_type,office_status from airlinerra_game.airport_offices where airline_id=$1::uuid for update',
  insert:"insert into airlinerra_game.airport_offices (world_id,airline_id,airport_key,office_type) values ($1::smallint,$2::uuid,$3::text,$4::text) returning airport_key,office_type,office_status",
- list:"select o.airport_key,o.office_type,o.office_status,p.airport_name,p.airport_code,p.country_iso,p.municipality from airlinerra_game.airport_offices o join airlinerra_game.airlines a on a.id=o.airline_id and a.world_id=o.world_id join airlinerra_game.approved_game_airports p on p.world_id=o.world_id and p.airport_key=o.airport_key where a.owner_player_id=$1::uuid and a.world_id=$2::smallint order by o.created_at,o.id limit 21",
+ list:"select o.airport_key,o.office_type,o.office_status,p.airport_name,p.airport_code,p.country_iso,p.municipality from airlinerra_game.airport_offices o join airlinerra_game.airlines a on a.id=o.airline_id and a.world_id=o.world_id join airlinerra_game.airport_location_eligibility_v1 p on p.world_id=o.world_id and p.airport_key=o.airport_key where a.owner_player_id=$1::uuid and a.world_id=$2::smallint order by o.created_at,o.id limit 21",
  remove:"delete from airlinerra_game.airport_offices o using airlinerra_game.airlines a where o.airline_id=a.id and o.world_id=a.world_id and a.owner_player_id=$1::uuid and a.world_id=$2::smallint and o.airport_key=$3::text and o.office_status='draft' returning o.airport_key"
 });
 const VALID_KEY=/^(?:OURAIRPORTS:[1-9]\d{0,18}|FICTIONAL:fictional:[A-Z]{2}:[A-Z0-9]{2,8})$/;
