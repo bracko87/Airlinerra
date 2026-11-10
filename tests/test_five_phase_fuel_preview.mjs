@@ -173,7 +173,8 @@ test('model family evidence never means installed engine, certified fuel or game
  const migration=await read('supabase/migrations/20261110235900_source_linked_aircraft_fuel_family_models_v2.sql');
  assert.match(migration,/security_invoker = true/);
  assert.match(migration,/refueling|refuelling/i);
- assert.match(migration,/false/); // inherited approval flags from prior private view
+ assert.match(migration,/b\.refuelling_approved/);
+ assert.match(migration,/b\.fuel_financial_settlement_approved/);
  assert.match(migration,/revoke all on airlinerra_game\.aircraft_fuel_family_reference_v2/);
  const profile=await read('website/airline-workspace.mjs');
  assert.match(profile,/AVGAS_PISTON/);
