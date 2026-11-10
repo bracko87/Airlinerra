@@ -924,6 +924,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    // new owner's asynchronous authenticated reads are still in progress.
    marketSnapshot=null;scheduleSnapshot=null;
    maintenanceLast=null;maintenanceFetchVersion++;
+   aircraftPhotoId=null;aircraftPhotoToken++;resetPhotoDraft();
    selectedFleetAircraftId=/^#fleet-aircraft\/([0-9a-f-]{36})$/iu.exec(doc.defaultView?.location?.hash||'')?.[1]||null;
   }
   const connected=data.connected===true;
@@ -945,6 +946,28 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   void loadRealFleetMarket();
   void loadAirlineSchedule();
  }
+ doc.getElementById('player-main')?.addEventListener('change',async event=>{
+  if(event.target?.id!=='fleet-aircraft-image-file')return;
+  const aircraft=marketSnapshot?.fleet?.find(a=>a.id===selectedFleetAircraftId);
+  const file=event.target.files?.[0];
+  if(!aircraft||!data.airline?.id||!data.aircraftMedia?.uploadAircraftImage||!file)return;
+  const request=++aircraftPhotoToken;
+  resetPhotoDraft();
+  const status=$('fleet-aircraft-image-status');
+  if(status)status.textContent='Preparing this aircraft picture…';
+  try{
+   const converted=await processAircraftPhoto(file);
+   if(request!==aircraftPhotoToken||selectedFleetAircraftId!==aircraft.id)return;
+   photoBlob=converted;photoPendingId=aircraft.id;
+   photoPreviewUrl=URL.createObjectURL(converted);
+   setAircraftPhoto(photoPreviewUrl);
+   const save=$('fleet-aircraft-image-save');if(save)save.disabled=false;
+   if(status)status.textContent='Preview only. Click Save this aircraft image to store it privately.';
+  }catch(error){
+   if(request!==aircraftPhotoToken)return;
+   if(status)status.textContent=String(error?.message||'Unable to process the image.');
+  }
+ });
  doc.getElementById('player-main')?.addEventListener('click',async event=>{
   const openAircraft=event.target.closest('[data-fleet-aircraft-open]');
   if(openAircraft){
@@ -1046,6 +1069,42 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
       'This offer is no longer available. Refresh the market.':
       'The order was not confirmed. Check the offer and try again.';
    }finally{button.disabled=!(marketSnapshot?.offers?.length>0);}
+   return;
+  }
+  if(id==='fleet-aircraft-image-save'){
+   const aircraft=marketSnapshot?.fleet?.find(a=>a.id===selectedFleetAircraftId);
+   const status=$('fleet-aircraft-image-status'),save=$('fleet-aircraft-image-save');
+   if(!aircraft||!photoBlob||photoPendingId!==aircraft.id||
+      !data.airline?.id||!data.aircraftMedia?.uploadAircraftImage){
+    if(status)status.textContent='Choose an image for this owned aircraft first.';return;
+   }
+   const airlineId=data.airline.id,aircraftId=aircraft.id;
+   if(save)save.disabled=true;if(status)status.textContent='Saving this individual aircraft picture…';
+   try{
+    await data.aircraftMedia.uploadAircraftImage({airlineId,aircraftInventoryId:aircraftId,blob:photoBlob});
+    if(data.airline?.id!==airlineId||selectedFleetAircraftId!==aircraftId)return;
+    await refreshAircraftPhoto(aircraft,true);
+    if(status)status.textContent='Aircraft picture saved. Other aircraft and catalog images were not changed.';
+   }catch{
+    if(status)status.textContent='Picture upload failed. No existing aircraft image was replaced.';
+    if(save)save.disabled=!photoBlob;
+   }
+   return;
+  }
+  if(id==='fleet-aircraft-image-reset'){
+   const aircraft=marketSnapshot?.fleet?.find(a=>a.id===selectedFleetAircraftId);
+   const status=$('fleet-aircraft-image-status');
+   if(!aircraft||!data.airline?.id||!data.aircraftMedia?.removeAircraftImage)return;
+   if(doc.defaultView?.confirm?.('Remove the custom picture for this aircraft and show its standard model image?')===false)return;
+   const airlineId=data.airline.id,id=aircraft.id;
+   try{
+    await data.aircraftMedia.removeAircraftImage({airlineId,aircraftInventoryId:id});
+    if(data.airline?.id!==airlineId||selectedFleetAircraftId!==id)return;
+    await refreshAircraftPhoto(aircraft,true);
+    if(status)status.textContent='Standard model picture restored for this aircraft only.';
+   }catch{
+    if(status)status.textContent='Custom picture could not be removed. No other aircraft changed.';
+   }
    return;
   }
   if(id==='fleet-detail-save'){
