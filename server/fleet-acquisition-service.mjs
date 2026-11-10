@@ -121,7 +121,7 @@ export const FLEET_SQL=Object.freeze({
   "WHERE l.world_id=1 AND l.status IN('available','bidding') "+
   "AND ($2::text='all' OR l.offering_type=$2::text) "+
   "AND ($3::text='' OR position(lower($3::text) in lower("+
-  "c.manufacturer_name||' '||c.model_name||' '||coalesce(c.family_name,'')))>0) "+
+  "c.manufacturer_name||' '||c.model_name||' '||coalesce(c.family_name,'')||' '||seller.display_name))>0) "+
   "AND ($5::text='' OR c.manufacturer_name=$5::text) "+
   "AND ($6::text='' OR c.family_name=$6::text) "+
   "AND ($7::text='' OR c.model_name=$7::text) "+
@@ -133,11 +133,12 @@ export const FLEET_SQL=Object.freeze({
  usedCount:"SELECT count(*)::int AS total "+
   "FROM airlinerra_game.used_aircraft_auction_lots_v1 l "+
   "JOIN airlinerra.aircraft_catalog_configuration_inventory c "+
-  "ON c.configuration_id=l.configuration_id "+
+  "ON c.configuration_id=l.configuration_id "+  "JOIN airlinerra_game.aircraft_market_sellers_v1 seller ON seller.seller_id=l.seller_id "+
+
   "WHERE l.world_id=1 AND l.status IN('available','bidding') "+
   "AND ($1::text='all' OR l.offering_type=$1::text) "+
   "AND ($2::text='' OR position(lower($2::text) in lower("+
-  "c.manufacturer_name||' '||c.model_name||' '||coalesce(c.family_name,'')))>0) "+
+  "c.manufacturer_name||' '||c.model_name||' '||coalesce(c.family_name,'')||' '||seller.display_name))>0) "+
   "AND ($3::text='' OR c.manufacturer_name=$3::text) "+
   "AND ($4::text='' OR c.family_name=$4::text) "+
   "AND ($5::text='' OR c.model_name=$5::text) "+
