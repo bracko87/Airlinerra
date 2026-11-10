@@ -13,13 +13,14 @@ CREATE TABLE IF NOT EXISTS airlinerra_game.initial_aircraft_allocations_v1 (
  owner_player_id uuid NOT NULL,
  configuration_id bigint NOT NULL REFERENCES airlinerra.aircraft_configurations(id),
  registration text NOT NULL UNIQUE,
+ world_id smallint NOT NULL DEFAULT 1 CHECK(world_id=1),
  initial_home_airport_key text NOT NULL,
  source_kind text NOT NULL DEFAULT 'original_airline_starter_allocation'
   CHECK (source_kind='original_airline_starter_allocation'),
  assigned_at timestamptz NOT NULL DEFAULT clock_timestamp(),
  allocation_note text NOT NULL,
- CONSTRAINT starter_home_fk FOREIGN KEY (initial_home_airport_key)
-  REFERENCES airlinerra_game.approved_game_airports(airport_key)
+ CONSTRAINT starter_home_fk FOREIGN KEY (world_id, initial_home_airport_key)
+  REFERENCES airlinerra_game.approved_game_airports(world_id, airport_key)
   DEFERRABLE INITIALLY DEFERRED
 );
 ALTER TABLE airlinerra_game.initial_aircraft_allocations_v1 ENABLE ROW LEVEL SECURITY;
