@@ -59,10 +59,13 @@ export function createFleetAcquisitionHandler({verifyUserToken,database}={}){
  return async function handleFleetAcquisition(request){
   if(!(request instanceof Request))return respond(400,{error:'Invalid request'});
   if(request.method!=='POST')return respond(405,{error:'POST required'});
+  // The function is mounted at the fleet-acquisition slug by Supabase.
+  // The Edge runtime may internally rewrite Request.url. Do not treat that
+  // internal URL as a browser-origin security signal. Like the already-working
+  // schedule service, require the pinned external origin and route header.
+  // Auth, company ownership and every action are still checked below.
   const url=new URL(request.url);
-  if(url.origin!=='https://hwllkabgzaynalahvkpz.supabase.co'||
-     url.pathname!=='/functions/v1/airlinerra-fleet-acquisition'||
-     url.search||url.hash||request.headers.get('origin')!==ORIGIN||
+  if(url.search||url.hash||request.headers.get('origin')!==ORIGIN||
      request.headers.get('x-airlinerra-route')!==FLEET_ACQUISITION_API_ROUTE)
     return respond(403,{error:'Forbidden'});
   if(request.headers.get('content-type')!=='application/json')
