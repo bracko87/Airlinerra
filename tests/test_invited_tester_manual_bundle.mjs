@@ -25,7 +25,9 @@ test('ordinary main build includes invite-only account, without registering play
   // Explicit homepage navigation is visible on the sign-in, invite and recovery views.
   assert.match(html,/<nav class="header-actions" aria-label="Account page navigation">/);
   assert.match(html,/<a class="public-home-link" href="\/">Home page<\/a>/);
-  assert.match(html,/<a class="public-home-link" href="\/register.html">Register<\/a>/);
+  assert.match(html,/<a class="public-home-link" href="\/register.html">Registration closed<\/a>/);
+  assert.match(html,/New account registration is closed; existing approved testers can sign in/);
+  assert.doesNotMatch(html,/Create an account<\/a>/);
 
   assert.doesNotMatch(html,/id="register"|id="airline-onboarding"/);
   assert.match(configuration,/operatorPrelaunchApproved":true/);
@@ -33,6 +35,9 @@ test('ordinary main build includes invite-only account, without registering play
   assert.doesNotMatch(configuration,/sb_secret_|service_role|postgres:|postgresql:/);
   assert.match(js,/Sign in with your confirmed Airlinerra account/);
   assert.match(js,/config\?\.operatorPrelaunchApproved!==true/);
+  assert.match(js,/const cleanSignInHref=TESTER_ORIGIN\+'\/account\.html\?screen=sign-in'/);
+  assert.match(js,/invalidAccountLink=true/);
+  assert.match(js,/showPanel\('sign-in','That account link is invalid or expired/);
   assert.doesNotMatch(js,/\.signUp\(/);
   assert.match(publicRules,/export const PUBLIC_AUTH_ENABLED = false;/);
   const [dashboardHtml,dashboardScript,accountPage]=await Promise.all([
