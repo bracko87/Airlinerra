@@ -133,7 +133,18 @@ const add=(doc,parent,tag,text,cls)=>{
  return el;
 };
 const meta=(doc,el,label)=>el.setAttribute('aria-label',label);
-export function renderAirlineWeeklyBoard(doc,host,board){
+const fullWeekDays=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+const scaleTicks=Object.freeze(['00:00','03:00','06:00','09:00','12:00',
+ '15:00','18:00','21:00','24:00']);
+const pct=minute=>100*minute/1440;
+const endClock=minute=>minute===1440?'24:00':minuteToClock(minute);
+/**
+ * Display exactly ONE weekday, with all real company aircraft as rows.
+ * Each lane keeps the entire 24-hour scale. One flight's blue interval
+ * is exactly its verified air-time, never a fixed-width card.
+ * Orange markers denote unreserved, unverified planning departures.
+ */
+export function renderAirlineWeeklyBoard(doc,host,board,{day=0}={}){
  if(!host)return;
  host.replaceChildren();
  if(!board||board.status==='unavailable'){
@@ -144,17 +155,16 @@ export function renderAirlineWeeklyBoard(doc,host,board){
   add(doc,host,'p','This airline has no verified owned or leased aircraft in its connected fleet.','schedule-board-empty');
   return;
  }
+ const selectedDay=Number.isInteger(day)&&day>=0&&day<7?day:0;
  const scroll=add(doc,host,'div',null,'schedule-board-scroll');
- const table=add(doc,scroll,'table',null,'schedule-board-table');
+ const table=add(doc,scroll,'table',null,'schedule-board-table schedule-board-single-day');
  const head=add(doc,table,'thead'),heading=add(doc,head,'tr');
  const aircraftHeader=add(doc,heading,'th','Company aircraft');
  aircraftHeader.scope='col';aircraftHeader.className='schedule-board-aircraft-col';
- for(const name of WEEK_DAYS){
-  const cell=add(doc,heading,'th');cell.scope='col';
-  add(doc,cell,'strong',name);
-  const ticks=add(doc,cell,'div',null,'schedule-board-hour-labels');
-  for(const tick of ['00:00','06:00','12:00','18:00','24:00'])add(doc,ticks,'span',tick);
- }
+ const dayHeader=add(doc,heading,'th');dayHeader.scope='col';
+ add(doc,dayHeader,'strong',fullWeekDays[selectedDay]+' · 24 hours (UTC)');
+ const ticks=add(doc,dayHeader,'div',null,'schedule-board-hour-labels');
+ for(const tick of scaleTicks)add(doc,ticks,'span',tick);
  const tbody=add(doc,table,'tbody');
  for(const aircraft of board.rows){
   const tr=add(doc,tbody,'tr');
@@ -162,51 +172,58 @@ export function renderAirlineWeeklyBoard(doc,host,board){
   add(doc,label,'strong',aircraft.registration);
   add(doc,label,'span',aircraft.name,'schedule-board-name');
   add(doc,label,'small',aircraft.ownership+' · '+aircraft.fleetStatus);
-  for(const cell of aircraft.days){
-   const td=add(doc,tr,'td');
-   const track=add(doc,td,'div',null,'schedule-board-track');
-   meta(doc,track,WEEK_DAYS[cell.day]+' UTC, 00:00 to 24:00');
-   for(const band of cell.bands){
-    const el=add(doc,track,'div',null,'schedule-board-held-band');
-    el.style.left=100*band.start/1440+'%';
-    el.style.width=Math.max(0,100*(band.end-band.start)/1440)+'%';
-    el.title=band.flightNumber+' · confirmed airport-slot flight window '+
-     minuteToClock(band.start)+'–'+(band.end===1440?'24:00':minuteToClock(band.end))+
-     ' UTC · no flight activation';
-   }
-   const used=new Set();
-   for(const event of cell.events){
-    if(used.has(event.minute))continue;used.add(event.minute);
-    const pin=add(doc,track,'span',null,'schedule-board-time-marker');
-    pin.style.left=100*event.minute/1440+'%';
-    pin.title='Planned departure '+event.time+' UTC';
-   }
-   const list=add(doc,td,'div',null,'schedule-board-flights');
-   for(const event of cell.events){
-    const item=add(doc,list,'div',null,'schedule-board-flight '+event.status);
-    add(doc,item,'strong',event.time+' · '+event.flightNumber);
-    if(event.from||event.to)
-     add(doc,item,'span',(event.from||'Origin')+' → '+(event.to||'Destination'));
-    let text;
-    if(event.status==='slot-held'&&event.durationMinutes!==null){
-     const end=event.minute+event.durationMinutes;
-     const dayOffset=Math.floor(end/1440);
-     text='UTC window '+event.time+'–'+minuteToClock(end)+
-      (dayOffset?' (+'+dayOffset+' day'+(dayOffset===1?'':'s')+')':'')+
-      ' · '+event.durationMinutes+' min · airport slots held; turnaround not verified';
-    }else if(event.sampleDurationMinutes!==null){
-     text='Example flight duration '+event.sampleDurationMinutes+
-      ' min · not verified or booked';
-    }else{
-     text='Flight duration pending · time not reserved';
-    }
-    add(doc,item,'small',text);
-    meta(doc,item,event.flightNumber+', '+event.time+' UTC, '+event.statusLabel+'. '+text);
-   }
-   if(!cell.events.length&&!cell.bands.length)
-    add(doc,list,'span','No departures · availability unverified','schedule-board-no-departures');
-   for(const warning of cell.warnings)
-    add(doc,list,'p',warning,'schedule-board-warning');
+  const td=add(doc,tr,'td');
+  const cell=aircraft.days[selectedDay];
+  const track=add(doc,td,'div',null,'schedule-board-day-track');
+  meta(doc,track,fullWeekDays[selectedDay]+', 00:00–24:00 UTC for '+aircraft.registration);
+  // Separate lanes prevent a pair of close departures from obscuring
+  // each other. Every lane still covers exactly one 24-hour day.
+  const bands=cell.bands.map(b=>({
+   ...b,event:cell.events.find(e=>e.flightNumber===b.flightNumber)||
+    null
+  }));
+  const renderedFlights=new Set(bands.map(b=>b.flightNumber));
+  const lanes=[...bands.map(b=>({band:b,event:b.event})),
+   ...cell.events.filter(e=>!renderedFlights.has(e.flightNumber)).
+    map(e=>({event:e,band:null}))];
+  if(!lanes.length){
+   const empty=add(doc,track,'div',null,'schedule-board-track-lane is-empty');
+   add(doc,empty,'span','No departures · aircraft availability not verified','schedule-board-no-departures');
   }
+  for(const {event,band} of lanes){
+   const lane=add(doc,track,'div',null,'schedule-board-track-lane');
+   const flightNumber=event?.flightNumber||band?.flightNumber||'Flight';
+   const start=band?.start??event?.minute??0;
+   const slotHeld=Boolean(band&&band.kind==='slot-held');
+   const duration=event?.durationMinutes??null;
+   const tooltip=slotHeld?
+    flightNumber+' · verified slot-held flight window '+
+    minuteToClock(band.start)+'–'+endClock(band.end)+
+    ' UTC; actual turnaround and flight activation not verified':
+    flightNumber+' · '+(event?.time||'Continuing flight')+
+    ' UTC · planned departure; flight duration and aircraft reservation unverified';
+   if(slotHeld){
+    const filled=add(doc,lane,'div',null,'schedule-board-held-band');
+    filled.style.left=pct(band.start)+'%';
+    filled.style.width=pct(band.end-band.start)+'%';
+    filled.title=tooltip;
+    meta(doc,filled,tooltip);
+   }else{
+    const marker=add(doc,lane,'span',null,'schedule-board-time-marker');
+    marker.style.left=pct(start)+'%';
+    marker.title=tooltip;
+   }
+   const text=add(doc,lane,'span',
+    flightNumber+(event?' · '+event.time:' · continues')+
+    (slotHeld&&duration!==null?' · '+duration+' min':''),
+    'schedule-board-inline-flight'+(slotHeld?' is-slot-held':' is-planning'));
+   // A short flight interval must remain short; move its *label* to the
+   // side when necessary without changing the occupied interval width.
+   text.style.left=Math.min(pct(start),87)+'%';
+   text.title=tooltip;
+   meta(doc,text,tooltip);
+  }
+  for(const warning of cell.warnings)
+   add(doc,td,'p',warning,'schedule-board-warning');
  }
 }
