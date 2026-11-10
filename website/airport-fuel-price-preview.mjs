@@ -39,7 +39,7 @@ export function previewAirportFuelPrice(airportProfile){
   categoryApproved:sourceVerified,
   usdPerKg,
   factor,
-  fuelType:'GENERIC_UNVERIFIED_JET_FUEL_BASIS',
+  fuelType:'GENERIC_UNVERIFIED_FUEL_BASIS',
   source:'GAME_BALANCING_ASSUMPTION',
   fromCurrentSupplier:false,
   currentAirportQuote:false,
