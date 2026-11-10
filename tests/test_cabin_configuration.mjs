@@ -183,7 +183,7 @@ test('extra centimetres consume cabin space, render no-space placeholder, and pr
  const fakeDoc={createElementNS(_ns,type){return {type,attrs:{},setAttribute(k,v){this.attrs[k]=v},textContent:''}}};
  renderCabinFloorplan(fakeDoc,fakeSvg,base,two,156,g);
  assert.ok(tags.some(tag=>tag.textContent==='NO SPACE'));
- assert.ok(tags.some(tag=>tag.type==='rect'&&tag.attrs.rx===0));
+ assert.ok(tags.some(tag=>tag.type==='rect'&&tag.attrs.rx==='0'));
  assert.equal(tags.filter(tag=>tag.type==='rect').length,3);
 });
 test('cabin quote combines equipment and removal/installation only once; booking effect stays small',()=>{
