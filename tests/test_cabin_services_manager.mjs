@@ -66,30 +66,30 @@ test('saved state restores only valid packages and does not accept forged defaul
   assignments:{economy:'basic',premium:'pkg-2',business:'pkg-2',first:'missing'}};
  const saved=cleanCabinState(input);
  assert.deepEqual(saved.packages.map(x=>x.id),['basic','pkg-2']);
- assert.equal(saved.packages[0].name,'Basic Cabin Service');
+ assert.equal(saved.packages[0].name,'Basic Flight Services');
  assert.equal(saved.packages[0].items.hotmeal.mode,'off');
  assert.deepEqual(saved.assignments,{
   economy:'basic',premium:'pkg-2',business:'pkg-2',first:'basic'
  });
  assert.deepEqual(cleanCabinState({version:999,packages:[]}),initialCabinState());
 });
-test('cabin services UI is wired into real Operations page and protected website build',async()=>{
+test('flight services UI is wired into real Operations page and protected website build',async()=>{
  const read=name=>readFile(new URL('../website/'+name,import.meta.url),'utf8');
  const [workspace,html,bundle,css,manager]=await Promise.all([
   read('airline-workspace.mjs'),read('private-player-app.html'),
   read('dev-scripts/invited-overlay.mjs'),read('player-app.css'),
   read('cabin-services-manager.mjs')
  ]);
- assert.match(html,/<h1>Cabin Services<\/h1>/);
- assert.match(html,/data-view-link="service">Cabin services/);
+ assert.match(html,/<h1>Flight services<\/h1>/);
+ assert.match(html,/data-view-link="service">Flight services/);
  assert.match(workspace,/id="cabin-services-manager"/);
  assert.match(workspace,/createCabinServiceManager/);
  assert.match(workspace,/cabinManager\?\.updateData\(data\)/);
- assert.match(workspace,/Save seat-layout brief/);
- assert.match(workspace,/\['economy','Economy'\]/);
+ assert.match(workspace,/cabin-configuration-manager/);
+ assert.match(workspace,/cabinConfigurationManager/);
  assert.match(bundle,/'cabin-services-manager\.mjs'/);
  assert.match(css,/\.cabin-product-layout/);
- assert.match(css,/\.cabin-product-metrics/);
+ assert.match(css,/\.cabin-product-policy-summary/);
  assert.match(css,/\.cabin-assignment-grid/);
  assert.match(manager,/getPackages:/);
  assert.match(manager,/getAssignments:/);
@@ -98,7 +98,7 @@ test('cabin services UI is wired into real Operations page and protected website
  assert.doesNotMatch(manager,/\.auth\.signUp|service_role|sb_secret_|fetch\(|airline_cash|INSERT INTO/i);
 });
 
-test('Cabin Services follows My routes page layout with one shared white panel and readable mobile fields',async()=>{
+test('Flight Services follows My routes page layout with one shared white panel and readable mobile fields',async()=>{
  const readWeb=name=>readFile(new URL('../website/'+name,import.meta.url),'utf8');
  const [workspace,operations,manager,css]=await Promise.all([
   readWeb('airline-workspace.mjs'),readWeb('airline-operations-center.mjs'),
@@ -106,9 +106,9 @@ test('Cabin Services follows My routes page layout with one shared white panel a
  ]);
  assert.match(workspace,/const card=\(title,content,kicker='WORKSPACE'\)=>'<article class="panel workspace-panel">/);
  assert.match(operations,/const card=\(title,body,kicker='OPERATIONS PLANNING'\)=>'<article class="panel workspace-panel">/);
- assert.match(workspace,/'service':\(\)=>card\('Cabin service packages'/);
+ assert.match(workspace,/'service':\(\)=>card\('Flight services'/);
  assert.match(operations,/card\('My routes'/);
- assert.match(workspace,/'SERVICE DIRECTORY'/);
+ assert.match(workspace,/'FLIGHT SERVICES'/);
  assert.doesNotMatch(manager,/element\(doc,'h2','', 'Cabin Services Management'\)/);
  assert.match(manager,/className='cabin-product-cell'|element\(doc,'label','cabin-product-cell'\)/);
  assert.match(manager,/cabin-mobile-label/);
