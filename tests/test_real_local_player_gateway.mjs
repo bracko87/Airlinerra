@@ -281,3 +281,12 @@ test('normal localhost preview returns the previously registered owner airline f
  assert.equal((await handler(request({},'/api/v1/airlines'))).status,403);
  assert.equal(forwarded,1,'No write may be forwarded through the local read-only preview');
 });
+
+test('normal localhost Edge proxy does not forward undeployed prepared-airport route',async()=>{
+ let forwarded=0;
+ const proxy=createLiveReadOnlyPreviewHandler({fetchImpl:async()=>{forwarded++;throw Error('Must not forward');}});
+ const result=await proxy(request({countryIso:'US'},'/api/v1/player/prepared-airports'));
+ assert.equal(result.status,403);
+ assert.equal(forwarded,0);
+ assert.ok(LOCAL_PLAYER_API_PATHS.includes('/api/v1/player/prepared-airports'));
+});
