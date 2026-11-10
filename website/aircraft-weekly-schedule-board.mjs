@@ -65,7 +65,10 @@ export function buildAirlineWeeklyBoard({fleet,serverFleet,plans=[],drafts=[],lo
   if(!schedule.length)return;
   // Server planning takes precedence over browser duplicates. A reserved
   // server schedule has priority over planning data with the same number.
-  const key=aircraftId+'|'+flightNumber;
+  // Flight number belongs to the airline, not to a particular aircraft.
+  // A stale browser draft must not reappear on the previous aircraft after
+  // the server has reassigned the same flight to another tail.
+  const key=flightNumber;
   if(seen.has(key))return;
   seen.add(key);
   const status=statusOf(flight,source);
