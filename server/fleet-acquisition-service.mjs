@@ -191,6 +191,10 @@ export const FLEET_SQL=Object.freeze({
   "fuelplans.reference_peer_model AS \"fuelPeerModel\", "+
   "fuelplans.reference_peer_configuration_id::text AS \"fuelPeerConfigurationId\", "+
   "fuelplans.fuel_type_status AS \"fuelTypeStatus\", "+
+  "fueltype.fuel_family AS \"fuelFamily\", "+
+  "fueltype.fuel_evidence_class AS \"fuelFamilyEvidence\", "+
+  "fueltype.evidence_source_url AS \"fuelFamilySourceUrl\", "+
+  "fueltype.verified_aircraft_fuel_grade AS \"verifiedFuelGrade\", "+
   "fuelcap.fuel_tank_capacity_kg::text AS \"fuelTankCapacityKg\", "+
   "fuelcap.capacity_source_quality AS \"fuelTankEvidence\", "+
   "c.mtow_kg::text AS \"mtowKg\",c.mlw_kg::text AS \"mlwKg\", "+
@@ -205,6 +209,8 @@ export const FLEET_SQL=Object.freeze({
   "LEFT JOIN airlinerra.aircraft_catalog_configuration_inventory c ON c.configuration_id=i.configuration_id "+
   "LEFT JOIN airlinerra_game.aircraft_fuel_planning_profiles_v1 fuelplans "+
   "ON fuelplans.configuration_id=i.configuration_id "+
+  "LEFT JOIN airlinerra_game.aircraft_fuel_family_reference_v1 fueltype "+
+  "ON fueltype.configuration_id=i.configuration_id "+
   "LEFT JOIN airlinerra.aircraft_catalog_fuel_capacity_game_v1 fuelcap "+
   "ON fuelcap.configuration_id=i.configuration_id "+
   "LEFT JOIN LATERAL (SELECT m.storage_bucket_id,m.storage_object_path "+
