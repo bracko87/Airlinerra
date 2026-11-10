@@ -1,0 +1,35 @@
+name: Airlinerra five-phase fuel preview (isolated)
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'website/flight-fuel-phase-engine.mjs'
+      - 'website/route-planner.mjs'
+      - 'website/airline-workspace.mjs'
+      - 'website/player-app.css'
+      - 'website/dev-scripts/invited-overlay.mjs'
+      - 'server/fleet-acquisition-service.mjs'
+      - 'tests/test_five_phase_fuel_preview.mjs'
+      - '.github/workflows/fuel-phase-preview-ci.yml'
+  workflow_dispatch:
+jobs:
+  fuel-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check fuel, owner service and browser syntax
+        run: |
+          node --check website/flight-fuel-phase-engine.mjs
+          node --check website/route-planner.mjs
+          node --check website/airline-workspace.mjs
+          node --check server/fleet-acquisition-service.mjs
+      - name: Test five-phase physics, pricing, owner data and route screen
+        run: node --test tests/test_five_phase_fuel_preview.mjs
+      - name: Build complete protected website
+        run: cd website && npm run build
+      - name: Verify complete browser module graph
+        run: node --test tests/test_player_built_module_graph.mjs
