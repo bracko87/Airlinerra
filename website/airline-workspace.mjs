@@ -1240,7 +1240,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    }
    const minimum=Number(offer.highestBidUsd===null||offer.highestBidUsd===undefined?
     offer.openingBidUsd:Number(offer.highestBidUsd)+Number(offer.minIncrementUsd));
-   if(!/^[1-9][0-9]{2,11}(?:\\.[0-9]{1,2})?$/.test(amount)||
+   if(!/^[1-9][0-9]{2,11}(?:\.[0-9]{1,2})?$/.test(amount)||
       !Number.isFinite(minimum)||Number(amount)<minimum){
     if(feedback)feedback.textContent='Bid must be at least '+usd(minimum)+' with no more than two decimal places.';
     return;
