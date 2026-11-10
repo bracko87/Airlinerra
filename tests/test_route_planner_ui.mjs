@@ -243,9 +243,9 @@ test('route aircraft dropdown lists only owner-scoped operational fleet, not tes
  assert.match(route,/testAircraft:false/);
  assert.match(route,/status:'draft',operationallyVerified:false/);
  assert.match(route,/cannot use the route|cannot be used on this route/);
- assert.match(office,/id="fleet-test-count"/);
- assert.match(office,/id="fleet-test-aircraft"/);
- assert.match(office,/testOnly===true&&a\.operationallyAllowed===false/);
+ assert.match(office,/fleet-owned-aircraft/);
+ assert.match(office,/fleet-inventory-table/);
+ assert.doesNotMatch(office,/fleet-test-count/);
  assert.match(styles,/#workspace-routes>\.route-planner-first-step\+\.route-planner-panel\{/);
  assert.match(styles,/margin-top:28px/);
  assert.match(styles,/\.fleet-test-aircraft-row\{display:flex/);
@@ -345,9 +345,9 @@ test('Step 2 inherits departure stand and keeps arrival stand selector, includin
  assert.match(source,/arrivalStand:\$\('route-arrival-stand'\)\?\.value/);
  assert.match(source,/renderAircraftWeeklyTimeline\(doc,\$\('route-aircraft-timeline-content'\),timeline\)/);
  const office=await read('../website/airline-workspace.mjs');
- assert.match(office,/fleet-aircraft-timeline-content/);
- assert.match(office,/data-fleet-aircraft-timeline/);
- assert.match(office,/buildAircraftWeeklyTimeline\(\{aircraftId,routes,/);
+ assert.match(office,/fleet-detail-name/);
+ assert.match(office,/fleet-detail-location/);
+ assert.match(office,/buildAirlineWeeklyBoard/);
 });
 
 
