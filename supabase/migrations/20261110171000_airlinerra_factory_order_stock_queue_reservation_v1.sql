@@ -108,7 +108,7 @@ BEGIN
    CASE WHEN using_stock THEN 'stock' ELSE 'factory_queue' END,
   'manufacturerDailyCapacity',maker.aircraft_per_day);
 END;
-$function$
+$function$;
 
 REVOKE EXECUTE ON FUNCTION
  airlinerra_game.order_new_factory_aircraft_v2(uuid,uuid,uuid,text,uuid)
