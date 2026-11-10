@@ -89,7 +89,7 @@ export function installGameTimePickers({doc,root}={}){
    popup.style.left=Math.max(8,Math.min(rect.left,window.innerWidth-304))+'px';
    const required=370;
    const above=window.innerHeight-rect.bottom<required&&rect.top>required;
-   popup.style.top=(above?Math.max(8,rect.top-required):Math.min(window.innerHeight-required-8,rect.bottom+5))+'px';
+   popup.style.top=Math.max(8,above?rect.top-required:Math.min(window.innerHeight-required-8,rect.bottom+5))+'px';
    trigger.setAttribute('aria-expanded','true');
    opened={input,popup,trigger,wrap};
    popup.querySelector('.game-time-option[aria-pressed="true"]')?.focus();
@@ -128,8 +128,8 @@ export function installGameTimePickers({doc,root}={}){
  });
  observer.observe(root,{subtree:true,childList:true,attributes:true,attributeFilter:['disabled']});
  const onClick=event=>{if(opened&&!opened.wrap.contains(event.target))close()};
- const onKey=event=>{if(opened&&event.key==='Escape'){close();opened?.trigger?.focus()}};
- const onScroll=()=>{if(opened)close()};
+ const onKey=event=>{if(opened&&event.key==='Escape'){const active=opened;close();active.trigger.focus()}};
+ const onScroll=event=>{if(opened&&!opened.popup.contains(event.target))close()};
  doc.addEventListener('click',onClick);
  doc.addEventListener('keydown',onKey);
  doc.addEventListener('scroll',onScroll,true);
