@@ -1,0 +1,36 @@
+name: Airlinerra aircraft profile redesign (isolated)
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'website/airline-workspace.mjs'
+      - 'website/player-app.css'
+      - 'website/player-app.mjs'
+      - 'website/invited-tester-auth.mjs'
+      - 'server/fleet-acquisition-service.mjs'
+      - 'supabase/migrations/20261110185000_aircraft_per_tail_private_images.sql'
+      - 'tests/test_aircraft_profile_redesign.mjs'
+      - 'tests/test_airline_workspace.mjs'
+      - '.github/workflows/aircraft-profile-redesign-ci.yml'
+  workflow_dispatch:
+jobs:
+  aircraft-profile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check aircraft profile, storage and fleet service
+        run: |
+          node --check website/airline-workspace.mjs
+          node --check website/invited-tester-auth.mjs
+          node --check website/player-app.mjs
+          node --check server/fleet-acquisition-service.mjs
+      - name: Verify owned-aircraft image and flat row profile
+        run: node --test tests/test_aircraft_profile_redesign.mjs
+      - name: Build production invited-account website
+        run: cd website && npm run build
+      - name: Validate complete browser module graph
+        run: node --test tests/test_player_built_module_graph.mjs
