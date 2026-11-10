@@ -17,6 +17,11 @@ on:
       - 'website/private-player-app.html'
       - 'website/dev-scripts/invited-overlay.mjs'
       - 'tests/test_cabin_services_manager.mjs'
+      - 'tests/test_cabin_onboard_route_packages.mjs'
+      - 'website/route-planner.mjs'
+      - 'server/flight-schedule-service.mjs'
+      - 'website/flight-schedule-client.mjs'
+      - 'tests/test_route_planner_ui.mjs'
       - '.github/workflows/cabin-services-ci.yml'
   workflow_dispatch:
 jobs:
@@ -33,10 +38,12 @@ jobs:
           node --check website/cabin-services-manager.mjs
           node --check website/cabin-services-client.mjs
           node --check server/cabin-services-service.mjs
+          node --check server/flight-schedule-service.mjs
+          node --check website/route-planner.mjs
           node --check website/player-app.mjs
           node --check website/airline-workspace.mjs
       - name: Test package selection, price/rating and saved default class assignments
-        run: node --test tests/test_cabin_services_manager.mjs tests/test_cabin_services_api.mjs
+        run: node --test tests/test_cabin_services_manager.mjs tests/test_cabin_services_api.mjs tests/test_cabin_onboard_route_packages.mjs
       - name: Build complete protected website
         run: cd website && npm run build
       - name: Confirm protected build bundles cabin UI module
