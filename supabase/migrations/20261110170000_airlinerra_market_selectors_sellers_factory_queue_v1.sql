@@ -152,7 +152,7 @@ SELECT c.configuration_id,
    THEN 'manufacturer_list_2018' ELSE 'game_estimate_mtow_2026' END,
  CASE WHEN c.manufacturer_name='Airbus' AND c.model_name IN
      ('A319neo','A320neo','A321neo','A330-900neo','A350-900','A350-1000')
-   THEN 'https://www.airbus.com/sites/g/files/jlcbta136/files/2021-07/new-airbus-list-prices-2017.pdf'
+   THEN 'https://www.marketscreener.com/quote/stock/AIRBUS-SE-4637/news/Airbus-2018-Price-List-Press--25807080/'
   WHEN c.manufacturer_name='Boeing' AND c.model_name IN
    ('737 MAX 8','737 MAX 9','737 MAX 10','787-8','787-9','787-10')
    THEN 'https://finance.yahoo.com/news/boeing-raises-2018-commercial-jet-132016203.html'
