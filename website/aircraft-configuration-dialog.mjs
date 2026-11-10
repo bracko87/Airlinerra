@@ -14,8 +14,9 @@ export function createAircraftConfigurationDialog({
  const $=id=>doc.getElementById(id),dialog=$('fleet-configuration-dialog');
  if(!dialog)return Object.freeze({open:async()=>false,close:()=>{},destroy:()=>{}});
  const choice=$('fleet-configuration-choice'),site=$('fleet-configuration-facility'),
-  save=$('fleet-configuration-save-draft');
+  save=$('fleet-configuration-save-draft'),quoteButton=$('fleet-configuration-prepare-quote');
  let sequence=0,context=null,ownerId=null,aircraftId=null,busy=false;
+ let savedLayoutJson=null,quoteRequest=null;
  const say=(id,message)=>{const target=$(id);if(target)target.textContent=message;};
  const listOption=(root,value,text,disabled=false)=>{
   const item=doc.createElement('option');item.value=value;item.textContent=text;
@@ -25,7 +26,8 @@ export function createAircraftConfigurationDialog({
   aircraftId===getAircraft()?.id&&dialog.open;
  const reset=()=>{
   ++sequence;context=null;ownerId=null;aircraftId=null;busy=false;
-  if(save)save.disabled=true;
+  savedLayoutJson=null;quoteRequest=null;
+  if(save)save.disabled=true;if(quoteButton)quoteButton.disabled=true;
  };
  const close=()=>{if(dialog.open)dialog.close();reset();};
  const row=(label,value)=>{
@@ -37,9 +39,11 @@ export function createAircraftConfigurationDialog({
  const preview=()=>{
   const holder=$('fleet-configuration-preview');if(!holder)return;
   holder.replaceChildren();if(save)save.disabled=true;
+  if(quoteButton)quoteButton.disabled=true;
   if(!context||!isSame())return;
   const selected=context.choices.find(c=>c.key===choice?.value);
-  const selectedSite=context.sites.find(s=>s.airportKey===site?.value);
+  const selectedSite=context.sites.find(s=>
+   s.airportKey+'|'+(s.providerKey||'')===site?.value);
   const installedSeats=['economy','premium','business','first'].reduce((n,key)=>
    n+Number(context.installed?.[key]||0),0);
   const quote=configurationCostPreview(selected,selectedSite,installedSeats);
@@ -65,6 +69,9 @@ export function createAircraftConfigurationDialog({
    'No facility selected. Refit appointment slots are not connected.');
   if(save)save.disabled=busy||currentDefault||!selected.available||
    typeof getFleetClient()?.saveCabinDraft!=='function';
+  if(quoteButton)quoteButton.disabled=busy||currentDefault||!selected.available||
+   !selectedSite?.providerKey||savedLayoutJson!==JSON.stringify(selected.plan)||
+   typeof getFleetClient()?.prepareCabinRefitQuote!=='function';
  };
  const open=async()=>{
   const airframe=getAircraft(),airline=getAirline(),client=getFleetClient();
@@ -93,9 +100,9 @@ export function createAircraftConfigurationDialog({
    listOption(site,'','Choose approved refit facility');
    const unique=new Set();
    for(const refit of found.sites){
-    const key=refit.airportKey+'|'+refit.provider;
+    const key=refit.airportKey+'|'+(refit.providerKey||'');
     if(unique.has(key))continue;unique.add(key);
-    listOption(site,refit.airportKey,
+    listOption(site,key,
      (refit.airportCode||refit.airportKey)+' · '+refit.provider);
    }
    site.disabled=!unique.size;
@@ -124,8 +131,10 @@ export function createAircraftConfigurationDialog({
    if(ticket!==sequence||!isSame())return;
    if(result?.aircraftInventoryId!==tail||result?.status!=='draft_saved_not_installed')
     throw Error('Unverified draft');
+   savedLayoutJson=JSON.stringify(current.plan);
+   quoteRequest=null;
    say('fleet-configuration-feedback',
-    'Configuration proposal saved. The installed cabin, flights and airline cash remain unchanged. Slot booking is not yet active.');
+    'Configuration proposal saved. Select a refit facility and choose Prepare refit quote. No seat installation or payment has occurred.');
    onSaved?.();
   }catch{
    if(ticket===sequence&&isSame())
@@ -135,6 +144,45 @@ export function createAircraftConfigurationDialog({
    if(ticket===sequence){busy=false;preview();}
   }
  };
+ const prepareQuote=async()=>{
+  if(busy||!context||!isSame()||quoteButton?.disabled)return;
+  const selected=context.choices.find(c=>c.key===choice?.value);
+  const chosenSite=context.sites.find(s=>s.airportKey+'|'+(s.providerKey||'')===site?.value);
+  const client=getFleetClient();
+  if(!selected?.available||!chosenSite?.providerKey||
+   savedLayoutJson!==JSON.stringify(selected.plan)||
+   typeof client?.prepareCabinRefitQuote!=='function')return;
+  const token=sequence,company=ownerId,airframe=aircraftId;
+  const key=company+'|'+airframe+'|'+site.value+'|'+savedLayoutJson;
+  const requestId=quoteRequest?.key===key?quoteRequest.id:globalThis.crypto?.randomUUID?.();
+  if(!requestId){
+   say('fleet-configuration-feedback','Secure quote request ID unavailable. No booking was made.');
+   return;
+  }
+  quoteRequest={key,id:requestId};
+  busy=true;preview();
+  say('fleet-configuration-feedback','Preparing a verified estimate only. No payment or appointment…');
+  try{
+   const result=await client.prepareCabinRefitQuote({
+    airlineId:company,aircraftInventoryId:airframe,
+    airportKey:chosenSite.airportKey,providerKey:chosenSite.providerKey,requestId
+   });
+   if(token!==sequence||!isSame())return;
+   if(result?.status!=='prepared_not_booked'||
+    result.airlineId!==company||result.aircraftInventoryId!==airframe||
+    result.moneyCharged!==false||result.appointmentBooked!==false||
+    result.installedSeatsChanged!==false||result.aircraftGrounded!==false)
+    throw Error('Unsafe quote response');
+   say('fleet-configuration-feedback',
+    'Non-binding quote saved: '+dollars(Number(result.estimatedTotalUsd))+
+    '. Estimated work: '+result.estimatedDowntimeHours+
+    ' hours. No appointment, aircraft grounding, seat installation or payment.');
+  }catch{
+   if(token===sequence&&isSame())
+    say('fleet-configuration-feedback',
+     'Quote could not be prepared. Check the saved design and approved facility. No booking, seat installation or payment occurred.');
+  }finally{if(token===sequence){busy=false;preview();}}
+ };
  const changed=()=>preview();
  const closeClicked=()=>close();
  const designClicked=()=>{const tail=aircraftId;if(!tail)return;close();onDesign?.(tail)};
@@ -142,6 +190,7 @@ export function createAircraftConfigurationDialog({
  choice?.addEventListener('change',changed);
  site?.addEventListener('change',changed);
  save?.addEventListener('click',saveDraft);
+ quoteButton?.addEventListener('click',prepareQuote);
  $('fleet-configuration-close')?.addEventListener('click',closeClicked);
  $('fleet-configuration-create')?.addEventListener('click',designClicked);
  dialog.addEventListener('close',dialogClosed);
@@ -151,6 +200,7 @@ export function createAircraftConfigurationDialog({
    close();choice?.removeEventListener('change',changed);
    site?.removeEventListener('change',changed);
    save?.removeEventListener('click',saveDraft);
+   quoteButton?.removeEventListener('click',prepareQuote);
    $('fleet-configuration-close')?.removeEventListener('click',closeClicked);
    $('fleet-configuration-create')?.removeEventListener('click',designClicked);
    dialog.removeEventListener('close',dialogClosed);
