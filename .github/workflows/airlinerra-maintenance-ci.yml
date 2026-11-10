@@ -1,0 +1,40 @@
+name: Airlinerra maintenance policy (isolated)
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'server/airlinerra-maintenance-policy.mjs'
+      - 'server/fleet-acquisition-service.mjs'
+      - 'website/airline-workspace.mjs'
+      - 'website/fleet-acquisition-client.mjs'
+      - 'website/local-owner-fleet-reader.mjs'
+      - 'website/dev-scripts/real-player-read-gateway.mjs'
+      - 'website/dev-scripts/invited-overlay.mjs'
+      - 'website/player-app.css'
+      - 'tests/test_airlinerra_maintenance_policy.mjs'
+      - 'tests/test_fleet_acquisition_api.mjs'
+      - 'supabase/migrations/*maintenance*'
+      - '.github/workflows/airlinerra-maintenance-ci.yml'
+  workflow_dispatch:
+jobs:
+  safe-maintenance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check service and browser syntax
+        run: |
+          node --check server/airlinerra-maintenance-policy.mjs
+          node --check server/fleet-acquisition-service.mjs
+          node --check website/airline-workspace.mjs
+          node --check website/fleet-acquisition-client.mjs
+          node --check website/local-owner-fleet-reader.mjs
+      - name: Check real aircraft ownership and maintenance rules
+        run: node --test tests/test_airlinerra_maintenance_policy.mjs tests/test_fleet_acquisition_api.mjs
+      - name: Build full invitation-only player website
+        run: |
+          cd website
+          npm run build
