@@ -179,7 +179,7 @@ test('market selectors are owner-verified and all financing drafts fail closed',
  for(const id of ['new-maker','new-family','new-model','new-configuration','new-payment',
    'used-maker','used-family','used-model','used-configuration','used-market-payment'])
   assert.ok(app.includes('id=\\"'+id+'\\"')||app.includes('id="'+id+'"'),id);
- assert.match(app,/newAircraftChoice.payment==='cash'/);
+ assert.match(app,/payment==='cash'&&isReleasedFactoryOffer\(offer\)/);
  assert.match(app,/usedMarketChoice.payment==='cash'/);
  assert.match(app,/currentFactoryOffer/);
  assert.match(app,/sellerName/);
