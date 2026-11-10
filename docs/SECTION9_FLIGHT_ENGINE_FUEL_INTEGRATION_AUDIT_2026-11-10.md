@@ -141,3 +141,57 @@ production flight operator:
 - This is **not** a production executed flight. Do not claim that production
   trusted flight-execution signers or background operation workers are
   connected. The live readiness audit still reports those release gates OFF.
+
+## 2026-11-10 private queue worker deployment (next integration step)
+
+New GitHub `main` components:
+- `server/section9-aircraft-operations-job-handler.mjs` — private
+  POST-only, parameterless job handler with constant-time token comparison;
+  refuses to claim *any* aircraft job unless the World 1 readiness view
+  confirms an authoritative game clock, enabled producer, active verified
+  schedule(s), operational certificates and explicit trusted-flight release.
+  Runs at most 20 already queued jobs per invocation. It cannot enqueue
+  arbitrary jobs from an HTTP request.
+- `server/section9-aircraft-operations-edge-entry.ts` — the private
+  assembly of the existing leased aircraft-day worker, verified flight
+  dispatcher, independent signed-attestation reader + verifier, and signed
+  operated-flight movement ingress. Uses separate HMAC secrets for
+  independent flight attestation and movement events.
+- `tests/test_section9_private_operations_job_handler.mjs` — covers
+  negative release states, no clock, no schedules, wrong token, user body
+  rejection, bounded batches and unsafe-count responses.
+
+**Deployed** Supabase Edge function:
+`airlinerra-flight-operations-worker` version **1**, ACTIVE hosting state,
+`verify_jwt=true` (not a player-facing endpoint), deployed with **no
+cron job**. Runtime remains **dormant** unless explicitly enabled using
+`AIRLINERRA_FLIGHT_OPERATIONS_DEPLOYMENT_APPROVED=true`, independent
+runtime DB/secret values, a separate private job token, and an official
+DB release. No such release was granted this turn.
+
+CI `Airlinerra flight phase execution (isolated)` run **42871683663**
+passed, including private job authorization tests and protected website
+build. Deployed function metadata and database readiness were checked
+after deployment. **No authenticated live job invocation** was performed.
+
+Post-deploy World 1 DB verification: active world, **clock not connected**,
+producer not configured, 0 active flight schedules, 0 certified operating
+approvals, 0 aircraft-operation jobs, 0 recorded movements, 0 settled
+flight finances, 0 stored independent-flight proofs, fuel release disabled.
+`cron.job` had **no flight/clock/operation schedule**.
+
+Remaining to become a live engine (do not skip):
+1. Choose/approve the game's starting in-game date and clock release
+   reference, configure the official producer, and install a protected
+   scheduler. The game's world opening timestamp alone does NOT define
+   the desired in-game starting date.
+2. Implement/configure six independent operational clearances and real
+   schedule activation. Verify aircraft whereabouts and capacity.
+3. Implement the **independent flight execution producer** that advances
+   phases using an *authoritative* game time and writes immutable, signed
+   independent evidence; the verifier intentionally cannot manufacture it.
+4. Enable the private worker only after evidence and release conditions
+   have passed a true test-flight run. The readiness view's release status
+   is intentionally `NOT_ACTIVATED`, so production calls cannot pass today.
+5. Fuel inventory, uplift and single-posting airline expenses must be
+   implemented and validated separately before enabling money movement.
