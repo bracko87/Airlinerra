@@ -97,7 +97,7 @@ test('settings and local hypothetical briefs remain separate from owner-scoped p
  assert.match(workspace,/getLandingView:\(\)=>preferences.landing/);
  assert.match(workspace,/No aircraft was ordered/);
  assert.match(workspace,/No live route was created/);
- assert.match(workspace,/Planning drafts do not reserve an aircraft or airport slot/);
+ assert.match(workspace,/Planning departures without duration are markers, not aircraft bookings/);
  assert.match(workspace,/No aircraft layout was changed/);
  assert.match(workspace,/id="fleet-owned-aircraft"/);
  assert.match(workspace,/id="market-acquire"/);
