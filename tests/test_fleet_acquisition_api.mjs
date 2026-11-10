@@ -48,6 +48,30 @@ test('fleet request validator accepts exact payloads; rejects spoofed identities
  assert.equal(validateFleetAcquisitionRequest({...base,action:'deliver'}),false);
  assert.equal(validateFleetAcquisitionRequest({...base,action:'activate'}),false);
 });
+test('only valid owner-scoped nickname changes are accepted',async()=>{
+ const rename={action:'update-nickname',airlineId:airline,aircraftInventoryId:aircraft,nickname:'Cloud Rider'};
+ assert.equal(validateFleetAcquisitionRequest(rename),true);
+ assert.equal(validateFleetAcquisitionRequest({...rename,nickname:''}),true);
+ assert.equal(validateFleetAcquisitionRequest({...rename,nickname:'X'.repeat(41)}),false);
+ assert.equal(validateFleetAcquisitionRequest({...rename,nickname:'Bad\\nName'}),false);
+ assert.equal(validateFleetAcquisitionRequest({...rename,playerId:user}),false);
+ const queryCalls=[];
+ const owned=setup((sql,args)=>{
+  queryCalls.push({sql,args});
+  if(sql===FLEET_SQL.owner)return {rowCount:1,rows:[{id:airline}]};
+  if(sql===FLEET_SQL.nickname)return {rowCount:1,rows:[{id:aircraft,nickname:'Cloud Rider'}]};
+  throw Error('Unexpected nickname query');
+ });
+ const response=await owned.handler(request(rename));
+ assert.equal(response.status,200);
+ assert.deepEqual(await response.json(),{id:aircraft,nickname:'Cloud Rider'});
+ assert.deepEqual(queryCalls[1].args,[airline,aircraft,'Cloud Rider']);
+ const denied=setup((sql)=>{
+  if(sql===FLEET_SQL.owner)return {rowCount:0,rows:[]};
+  throw Error('Foreign nickname write must not execute');
+ });
+ assert.equal((await denied.handler(request(rename))).status,403);
+});
 test('auth, same-origin route, and safe payload validation run before opening a database connection',async()=>{
  let used=false;
  const {handler}=setup(()=>{used=true;throw Error('Unexpected query')},
