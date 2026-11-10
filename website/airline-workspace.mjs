@@ -1,6 +1,7 @@
 import {routePlannerMarkup,createRoutePlanner} from './route-planner.mjs';
 import {aircraftDisplayName} from './aircraft-library.mjs';
 import {buildAirlineWeeklyBoard,renderAirlineWeeklyBoard} from './aircraft-weekly-schedule-board.mjs';
+import {createCabinServiceManager} from './cabin-services-manager.mjs';
 /** Airlinerra airline-management workspace.
  * Real server read models stay separate from local-only planning. All page
  * structure in this module is constant markup authored by the application.
@@ -185,26 +186,20 @@ const pages=Object.freeze({
    '<div><strong>Customer satisfaction</strong><span>Passenger service and reputation</span></div></div>'+
    status('No verified competitor rankings are available. Nothing in this view is an invented live leaderboard.'),
    'MULTIPLAYER'),
- 'service':()=>card('Cabin and passenger service',
-   '<p>Plan a four-class cabin and choose your product positioning. The final seat layout must be checked against the exact aircraft variant before activation.</p>'+
+ 'service':()=>card('Cabin Services Management',
+   '<p class="hint">Every airline starts with a protected Basic package. Create and price your own complimentary or paid services and assign default packages to Economy, Premium Economy, Business and First Class.</p>'+
+   '<div id="cabin-services-manager" aria-label="Cabin service packages and passenger offers"></div>',
+   'CABIN SERVICE PACKAGES')+
+  card('Aircraft cabin configuration',
+   '<p class="hint">This is a separate seat-layout planning brief. It does not alter the installed seats on an individual aircraft.</p>'+
    '<div class="workspace-money-grid">'+
    [['economy','Economy'],['premium','Premium economy'],['business','Business'],['first','First']].map(([id,label])=>
     field('cabin-'+id,label,'<input id="cabin-'+id+'" type="number" min="0" max="1000" value="0">')).join('')+
    '</div>'+
-   field('cabin-service','Passenger service level',optionSelect('cabin-service',[
-    ['basic','Basic'],['standard','Standard'],['premium','Premium']]))+
-   '<div class="workspace-actions"><button type="button" class="primary" id="cabin-save">Save local cabin brief</button></div>'+
+   '<div class="workspace-actions"><button type="button" class="secondary" id="cabin-save">Save seat-layout brief</button></div>'+
    '<p id="cabin-feedback" class="hint" role="status"></p>'+
-   small('No seat reservations, fare rules, service purchases or cabin modifications are sent to the game server.'),
-   'CABIN PRODUCT')+
-  card('Cargo and customer experience',
-   '<div class="workspace-task-list">'+
-   '<div><strong>Passenger services</strong><span>Check-in, baggage, catering, amenities and connections</span></div>'+
-   '<div><strong>Cargo services</strong><span>Belly capacity, dedicated freighters and handling</span></div>'+
-   '<div><strong>Service quality</strong><span>Fare/service competitiveness and passenger satisfaction</span></div>'+
-   '<div><strong>Sales and distribution</strong><span>Booking availability, route pricing and ancillary income</span></div></div>'+
-   status('Cargo capacity and passenger demand remain pending until the aircraft and demand engines are connected.'),
-   'SERVICE STRATEGY'),
+   small('Service-package cost/rating previews are not real passenger choices, onboard sales, aircraft equipment checks or airline financial settlements.'),
+   'SEPARATE AIRCRAFT PLANNING'),
  'worlds':()=>card('World structure',
    '<div class="workspace-task-list">'+
    '<div><strong>Horizon - World 1</strong><span>Private owner testing, real-time world, independent airline ledger</span></div>'+
@@ -291,6 +286,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
  let scheduleSnapshot=null;
  let scheduleFetchVersion=0;
  let scheduleReadError=false;
+ const cabinManager=createCabinServiceManager({doc,host:$('cabin-services-manager'),storage,identity});
  let scheduleSelectedDay=0;
  const scheduleDays=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
  for(const [name,render] of Object.entries(pages)){
@@ -439,7 +435,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   }
  }
  function loadDraftForms(){
-  for(const key of ['economy','premium','business','first','service']){
+  for(const key of ['economy','premium','business','first']){
    if($('cabin-'+key)&&draft.cabin?.[key]!==undefined)$('cabin-'+key).value=draft.cabin[key];
   }
   for(const key of ['revenue','leases','crew','fuel','maintenance','airportFees','services','marketing']){
@@ -598,6 +594,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   const oldAirlineId=data.airline?.id||null;
   data={...data,...next};
   const airline=data.airline;
+  cabinManager.updateData(data);
   if((airline?.id||null)!==oldAirlineId){
    // Never present an earlier airline's inventory or bookings while the
    // new owner's asynchronous authenticated reads are still in progress.
@@ -752,14 +749,14 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    return;
   }
   if(id==='cabin-save'){
-   const cabin={service:$('cabin-service').value};let valid=true,total=0;
+   const cabin={};let valid=true,total=0;
    for(const key of ['economy','premium','business','first']){
     const n=Number($('cabin-'+key).value);if(!Number.isInteger(n)||n<0||n>1000)valid=false;
     cabin[key]=n;total+=n;
    }
    if(!valid||total>1000){$('cabin-feedback').textContent='Enter a valid seat count for every class (up to 1,000 seats total).';return;}
    draftWrite('cabin',cabin);
-   $('cabin-feedback').textContent='Cabin brief saved locally: '+total+' planned seats. No aircraft layout was changed.';
+   $('cabin-feedback').textContent='Seat-layout brief saved locally: '+total+' planned seats. No aircraft configuration was changed.';
   }
   if(id==='budget-calc'){
    const budget={};for(const key of ['revenue','leases','crew','fuel','maintenance','airportFees','services','marketing']){
