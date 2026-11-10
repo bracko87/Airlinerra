@@ -279,6 +279,13 @@ test('Group 2 prepared airport information is separately authenticated and canno
   {countryIso:'',search:'',offset:0}));
  assert.equal(wholePage.status,200);
  assert.deepEqual(browseAll.counts().queries[0].params,['','',0]);
+ const territory=make({rows:{...baseRows,preparedAirports:[{
+  ...baseRows.preparedAirports[0],country_iso:'GL',airport_name:'Greenland Airport'
+ }]}});
+ const territoryResult=await territory.handler(request('/api/v1/player/prepared-airports',
+  {countryIso:'GL',search:'',offset:0}));
+ assert.equal(territoryResult.status,200);
+ assert.equal((await territoryResult.json()).airports[0].countryIso,'GL');
  const approvedBlank=make();
  assert.equal((await approvedBlank.handler(request('/api/v1/player/airports',
   {countryIso:'',search:'',offset:0}))).status,400);
