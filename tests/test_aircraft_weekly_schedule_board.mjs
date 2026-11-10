@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {buildAirlineWeeklyBoard,WEEK_DAYS} from '../website/aircraft-weekly-schedule-board.mjs';
+import {buildAirlineWeeklyBoard,renderAirlineWeeklyBoard,WEEK_DAYS} from '../website/aircraft-weekly-schedule-board.mjs';
 import {SCHEDULE_SQL} from '../server/flight-schedule-service.mjs';
 
 const A='a4547aef-e5a6-4362-8b2b-fbdf96d21907';
@@ -99,6 +99,60 @@ test('unverified API fleet and invalid time are not mistaken for empty availabil
  assert.equal(result.rows[0].days[0].events.length,1);
  assert.equal(result.rows[0].days[0].bands.length,0);
 });
+test('only selected weekday is rendered at full 24-hour width with aircraft rows',()=>{
+ const createElement=tag=>({
+  tagName:tag.toUpperCase(),children:[],style:{},attributes:{},textContent:'',
+  append(...items){this.children.push(...items)},
+  replaceChildren(...items){this.children=[...items]},
+  setAttribute(key,value){this.attributes[key]=value}
+ });
+ const doc={createElement},host=createElement('main');
+ const board=buildAirlineWeeklyBoard({fleet,plans:[planned({flightNumber:'PA444',
+  schedule:[{day:0,time:'09:00'},{day:1,time:'16:30'}]})]});
+ renderAirlineWeeklyBoard(doc,host,board,{day:0});
+ const table=host.children[0].children[0];
+ assert.match(table.className,/schedule-board-single-day/);
+ const header=table.children[0].children[0].children;
+ assert.equal(header.length,2,'one aircraft column and ONE selected day, never a week of columns');
+ assert.equal(header[1].children[0].textContent,'Monday · 24 hours (UTC)');
+ assert.deepEqual(header[1].children[1].children.map(x=>x.textContent),
+  ['00:00','03:00','06:00','09:00','12:00','15:00','18:00','21:00','24:00']);
+ const body=table.children[1];
+ assert.equal(body.children.length,2,'each verified airline aircraft has one row');
+ const mon=body.children[0].children[1];
+ const lane=mon.children[0].children[0];
+ assert.equal(lane.className,'schedule-board-track-lane');
+ assert.equal(lane.children.some(x=>x.className==='schedule-board-held-band'),false);
+ assert.equal(lane.children[0].className,'schedule-board-time-marker');
+ assert.equal(lane.children[0].style.left,'37.5%','09:00 appears 9/24 across one full-day grid');
+ assert.match(lane.children[1].textContent,/PA444 · 09:00/);
+ assert.equal(mon.children.some(x=>x.className==='schedule-board-flights'),false,
+  'large flight details cards must no longer appear below timeline');
+ renderAirlineWeeklyBoard(doc,host,board,{day:1});
+ const tueTable=host.children[0].children[0];
+ assert.match(tueTable.children[0].children[0].children[1].children[0].textContent,/Tuesday/);
+ const tueLane=tueTable.children[1].children[0].children[1].children[0].children[0];
+ assert.match(tueLane.children[1].textContent,/PA444 · 16:30/);
+});
+test('verified flight booking bar is exactly proportional to actual duration, not fixed-size card',()=>{
+ const createElement=tag=>({
+  tagName:tag.toUpperCase(),children:[],style:{},textContent:'',
+  append(...items){this.children.push(...items)},
+  replaceChildren(...items){this.children=[...items]},
+  setAttribute(){}
+ });
+ const doc={createElement},host=createElement('main');
+ const board=buildAirlineWeeklyBoard({fleet,drafts:[scheduled({
+  weeklySchedule:[{day:0,time:'09:00'}]
+ })]});
+ renderAirlineWeeklyBoard(doc,host,board,{day:0});
+ const lane=host.children[0].children[0].children[1].children[0].children[1].children[0].children[0];
+ const band=lane.children[0];
+ assert.equal(band.className,'schedule-board-held-band');
+ assert.equal(band.style.left,'37.5%');
+ assert.equal(band.style.width,'6.25%','90 minutes must occupy exactly 90/1440 of daily timeline');
+ assert.match(lane.children[1].textContent,/PA444 · 09:00 · 90 min/);
+});
 test('schedule page loads owner fleet and planning/schedule records, not fabricated hour-by-hour local departures',async()=>{
  const root=new URL('../website/',import.meta.url);
  const [view,css,bundle,planner]=await Promise.all([
@@ -108,6 +162,12 @@ test('schedule page loads owner fleet and planning/schedule records, not fabrica
   readFile(new URL('aircraft-weekly-schedule-board.mjs',root),'utf8')
  ]);
  assert.match(view,/id="schedule-aircraft-board"/);
+ assert.match(view,/id="schedule-day-prev"/);
+ assert.match(view,/id="schedule-day-next"/);
+ assert.match(view,/renderAirlineWeeklyBoard\(doc,host,board,\{day:scheduleSelectedDay\}\)/);
+ assert.match(view,/scheduleSelectedDay=\(scheduleSelectedDay\+/);
+ assert.match(view,/AIRCRAFT × ONE DAY × 24 HOURS/);
+ assert.doesNotMatch(view,/AIRCRAFT × 7 DAYS × 24 HOURS/);
  assert.match(view,/buildAirlineWeeklyBoard\(/);
  assert.match(view,/void loadAirlineSchedule\(\)/);
  assert.match(view,/fleet:marketSnapshot\?\.fleet,serverFleet:scheduleSnapshot\?\.fleet/);
