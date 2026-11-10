@@ -353,6 +353,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
  let marketFetchVersion=0;
  let maintenanceFetchVersion=0;
  let maintenanceLast=null;
+ let aircraftPhotoToken=0,aircraftPhotoId=null,aircraftCustomPhoto=false,photoBlob=null,photoPreviewUrl=null,photoPendingId=null;
  let scheduleSnapshot=null;
  let scheduleFetchVersion=0;
  let scheduleReadError=false;
@@ -546,6 +547,95 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',
     maximumFractionDigits:0}).format(amount);
  };
+ function resetPhotoDraft(){
+  if(photoPreviewUrl){URL.revokeObjectURL(photoPreviewUrl);photoPreviewUrl=null;}
+  photoBlob=null;photoPendingId=null;
+  const field=$('fleet-aircraft-image-file');if(field)field.value='';
+  const save=$('fleet-aircraft-image-save');if(save)save.disabled=true;
+ }
+ function catalogPhotoUrl(a){
+  const p=a?.catalogImagePath;
+  if(a?.catalogImageBucket!=='Admin'||typeof p!=='string'||
+     p.length>300||p.includes('..')||/[?#\\\\]/.test(p))return null;
+  return 'https://hwllkabgzaynalahvkpz.supabase.co/storage/v1/object/public/Admin/'+
+   p.split('/').map(encodeURIComponent).join('/');
+ }
+ function setAircraftPhoto(url){
+  const img=$('fleet-aircraft-image'),empty=$('fleet-aircraft-image-empty');
+  if(!img||!empty)return;
+  if(url){img.src=url;img.hidden=false;empty.hidden=true;}
+  else{img.hidden=true;img.removeAttribute('src');empty.hidden=false;}
+ }
+ async function refreshAircraftPhoto(a,force=false){
+  const id=a?.id||null,airlineId=data.airline?.id;
+  if(!force&&aircraftPhotoId===id)return;
+  const token=++aircraftPhotoToken;
+  resetPhotoDraft();aircraftPhotoId=id;aircraftCustomPhoto=false;
+  setAircraftPhoto(catalogPhotoUrl(a));
+  const media=data.aircraftMedia,field=$('fleet-aircraft-image-file');
+  const reset=$('fleet-aircraft-image-reset'),status=$('fleet-aircraft-image-status');
+  if(status)status.textContent='';
+  if(field)field.disabled=!id||!airlineId||typeof media?.uploadAircraftImage!=='function';
+  if(reset)reset.disabled=true;
+  if(!id||!airlineId||typeof media?.getAircraftImageUrl!=='function')return;
+  try{
+   const url=await media.getAircraftImageUrl({airlineId,aircraftInventoryId:id});
+   if(token!==aircraftPhotoToken||selectedFleetAircraftId!==id||data.airline?.id!==airlineId)return;
+   if(url){setAircraftPhoto(url);aircraftCustomPhoto=true;if(reset)reset.disabled=false;}
+  }catch{
+   if(token===aircraftPhotoToken&&status)status.textContent='Custom picture unavailable. The catalog picture is displayed.';
+  }
+ }
+ async function processAircraftPhoto(file){
+  if(!file||!['image/png','image/jpeg','image/webp'].includes(file.type)||
+     file.size<1||file.size>6000000)throw Error('Select PNG, JPG or WebP up to 6 MB.');
+  const source=URL.createObjectURL(file);
+  try{
+   const Img=doc.defaultView?.Image||Image,img=new Img();
+   await new Promise((resolve,reject)=>{
+    img.onload=resolve;img.onerror=()=>reject(Error('The image could not be read.'));
+    img.src=source;
+   });
+   if(!img.naturalWidth||!img.naturalHeight||
+      img.naturalWidth>10000||img.naturalHeight>10000)throw Error('Invalid image dimensions.');
+   for(const [size,quality] of [[1700,.9],[1400,.84],[1050,.78]]){
+    const ratio=Math.min(1,size/Math.max(img.naturalWidth,img.naturalHeight));
+    const canvas=doc.createElement('canvas');
+    canvas.width=Math.max(1,Math.round(img.naturalWidth*ratio));
+    canvas.height=Math.max(1,Math.round(img.naturalHeight*ratio));
+    const ctx=canvas.getContext('2d');
+    if(!ctx)throw Error('Image processing is unavailable.');
+    ctx.drawImage(img,0,0,canvas.width,canvas.height);
+    const result=await new Promise(resolve=>canvas.toBlob(resolve,'image/webp',quality));
+    if(result?.type==='image/webp'&&result.size>0&&result.size<=1048576)return result;
+   }
+   throw Error('The picture could not be compressed below 1 MB.');
+  }finally{URL.revokeObjectURL(source);}
+ }
+ function fmtAircraftNumber(value,unit=''){
+  if(value===null||value===undefined||value==='')return 'Not recorded';
+  const n=Number(value);
+  return Number.isFinite(n)&&n>=0?
+   new Intl.NumberFormat('en-US',{maximumFractionDigits:2}).format(n)+unit:'Not recorded';
+ }
+ function fmtAircraftDate(v){
+  if(!v)return 'Not recorded';
+  const d=new Date(v);return Number.isNaN(d.getTime())?'Not recorded':d.toLocaleDateString('en-GB');
+ }
+ function updateAirframeDetails(entry){
+  const year=Number(entry?.manufactureYear);
+  const known=entry?.manufactureYear!==null&&entry?.manufactureYear!==undefined&&
+   Number.isInteger(year)&&year>=1900&&year<=new Date().getFullYear();
+  const values={
+   'fleet-detail-manufacture-year':known?String(year):'Not recorded',
+   'fleet-detail-aircraft-age':known?String(new Date().getFullYear()-year)+' years':'Not recorded',
+   'fleet-detail-condition':fmtAircraftNumber(entry?.conditionPct,'%'),
+   'fleet-detail-flight-hours':fmtAircraftNumber(entry?.trackedFlightHours,' h'),
+   'fleet-detail-flight-cycles':fmtAircraftNumber(entry?.trackedFlightCycles),
+   'fleet-detail-tracking-start':fmtAircraftDate(entry?.verifiedTrackingStartedUtc)
+  };
+  for(const [id,value] of Object.entries(values))if($(id))$(id).textContent=value;
+ }
  function renderMaintenancePreview(){
   const host=$('fleet-maintenance-preview');
   if(!host)return;
@@ -562,7 +652,8 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    const msg=doc.createElement('p');msg.textContent='Maintenance cycle information is incomplete.';
    host.append(msg);return;
   }
-  const details=doc.createElement('p');details.className='hint';
+  updateAirframeDetails(rows[0]);
+   const details=doc.createElement('p');details.className='hint';
   const condition=rows[0].conditionPct;
   const year=rows[0].manufactureYear;
   details.textContent='Category: '+String(rows[0].groupName||'Unassigned')+
