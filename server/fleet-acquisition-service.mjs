@@ -183,10 +183,14 @@ export const FLEET_SQL=Object.freeze({
   "c.engine_option AS \"engineOption\",c.crew_required AS \"referenceCrewRequired\", "+
   "c.range_km::text AS \"rangeKm\",c.cruise_speed_kmh::text AS \"cruiseSpeedKmh\", "+
   "c.fuel_burn_full_kg_per_hour::text AS \"cruiseFuelKgPerHour\", "+
-  "fuelrates.empty_kg_per_100km::text AS \"emptyFuelKgPer100Km\", "+
-  "fuelrates.half_kg_per_100km::text AS \"halfFuelKgPer100Km\", "+
-  "fuelrates.full_kg_per_100km::text AS \"fullFuelKgPer100Km\", "+
-  "fuelrates.rate_status AS \"fuelRateStatus\", "+
+  "fuelplans.empty_kg_per_100km::text AS \"emptyFuelKgPer100Km\", "+
+  "fuelplans.half_kg_per_100km::text AS \"halfFuelKgPer100Km\", "+
+  "fuelplans.full_kg_per_100km::text AS \"fullFuelKgPer100Km\", "+
+  "fuelplans.rate_evidence AS \"fuelRateStatus\", "+
+  "fuelplans.confidence_class AS \"fuelConfidenceClass\", "+
+  "fuelplans.reference_peer_model AS \"fuelPeerModel\", "+
+  "fuelplans.reference_peer_configuration_id::text AS \"fuelPeerConfigurationId\", "+
+  "fuelplans.fuel_type_status AS \"fuelTypeStatus\", "+
   "fuelcap.fuel_tank_capacity_kg::text AS \"fuelTankCapacityKg\", "+
   "fuelcap.capacity_source_quality AS \"fuelTankEvidence\", "+
   "c.mtow_kg::text AS \"mtowKg\",c.mlw_kg::text AS \"mlwKg\", "+
@@ -199,8 +203,8 @@ export const FLEET_SQL=Object.freeze({
   "LEFT JOIN airlinerra_game.aircraft_acquisition_orders_v1 o "+
   "ON o.aircraft_inventory_id=i.id AND o.airline_id=i.airline_id "+
   "LEFT JOIN airlinerra.aircraft_catalog_configuration_inventory c ON c.configuration_id=i.configuration_id "+
-  "LEFT JOIN airlinerra.aircraft_simple_fuel_per_100km_v1 fuelrates "+
-  "ON fuelrates.configuration_id=i.configuration_id "+
+  "LEFT JOIN airlinerra_game.aircraft_fuel_planning_profiles_v1 fuelplans "+
+  "ON fuelplans.configuration_id=i.configuration_id "+
   "LEFT JOIN airlinerra.aircraft_catalog_fuel_capacity_game_v1 fuelcap "+
   "ON fuelcap.configuration_id=i.configuration_id "+
   "LEFT JOIN LATERAL (SELECT m.storage_bucket_id,m.storage_object_path "+
