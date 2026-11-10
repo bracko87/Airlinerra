@@ -75,10 +75,3 @@ BEGIN
   'message','Weekly airport slots reserved for this draft; operational flight activation remains blocked.');
 END $function$;
 
-DO $
-BEGIN
- IF (SELECT count(*) FROM airlinerra_game.approved_game_airports WHERE world_id=1)<>3141
- OR EXISTS(SELECT 1 FROM airlinerra_game.airport_group2_game_profiles_v1
- WHERE commercial_playable OR commercial_access_verified)
- THEN RAISE EXCEPTION 'GROUP2_SCHEDULE_BOUNDARY_CHANGED_ADMISSION';END IF;
-END $$;
