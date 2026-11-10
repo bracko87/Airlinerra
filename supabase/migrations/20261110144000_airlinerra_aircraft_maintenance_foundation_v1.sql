@@ -249,7 +249,17 @@ ALTER TABLE airlinerra_game.aircraft_maintenance_state_v1 ENABLE ROW LEVEL SECUR
 ALTER TABLE airlinerra_game.aircraft_maintenance_completions_v1 ENABLE ROW LEVEL SECURITY;
 ALTER TABLE airlinerra_game.maintenance_facility_locations_v1 ENABLE ROW LEVEL SECURITY;
 ALTER TABLE airlinerra_game.maintenance_airport_capabilities_v1 ENABLE ROW LEVEL SECURITY;
-REVOKE ALL ON ALL TABLES IN SCHEMA airlinerra_game FROM PUBLIC;
--- Specific grants to existing application roles are managed separately by the platform.
+REVOKE ALL ON
+ airlinerra_game.maintenance_check_policy_v1,
+ airlinerra_game.maintenance_cost_groups_v1,
+ airlinerra_game.maintenance_age_tiers_v1,
+ airlinerra_game.maintenance_model_group_v1,
+ airlinerra_game.aircraft_maintenance_state_v1,
+ airlinerra_game.aircraft_maintenance_completions_v1,
+ airlinerra_game.maintenance_facility_locations_v1,
+ airlinerra_game.maintenance_airport_capabilities_v1,
+ airlinerra_game.aircraft_maintenance_check_overview_v1
+ FROM PUBLIC, anon, authenticated;
+-- No permissions on any pre-existing game tables are changed.
 COMMENT ON VIEW airlinerra_game.aircraft_maintenance_check_overview_v1 IS
  'Private, read-only GAME maintenance planning. Baseline history and actual aircraft condition remain unverified unless sourced; no check is marked completed by assumption.';
