@@ -1471,3 +1471,64 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
 :root[data-ui-theme="dark"] #player-main .game-select-menu .down-menu-option[aria-selected="true"]{
  background:#443426;color:#ffb16e
 }
+
+
+/* Shared Airlinerra time selector: no native browser clock dropdowns. */
+#player-main .game-time-wrap{position:relative;display:flex;align-items:center;width:100%;min-width:0;max-width:125px;min-height:31px;box-sizing:border-box}
+#player-main .game-time-wrap input.game-time-input{
+ width:100%;min-width:0;max-width:none;min-height:31px;
+ box-sizing:border-box;padding:5px 31px 5px 10px;
+ border:1px solid #cbd9e7;border-radius:6px;
+ background:#fff;color:var(--navy);font-size:12px;
+ font-variant-numeric:tabular-nums;text-align:left;cursor:pointer
+}
+#player-main .game-time-wrap input.game-time-input:disabled{cursor:not-allowed;opacity:.6}
+#player-main .game-time-wrap .game-time-trigger{
+ position:absolute;right:2px;top:1px;bottom:1px;display:flex;align-items:center;justify-content:center;
+ min-width:28px;width:28px;min-height:0;padding:0;margin:0;
+ background:transparent;border:none;box-shadow:none;color:#435e79;font-size:19px;line-height:1
+}
+#player-main .game-time-wrap .game-time-trigger:hover:not(:disabled){background:#eaf1f8;border-radius:5px}
+#player-main .game-time-popup{
+ position:fixed;z-index:5000;width:296px;height:365px;max-height:calc(100vh - 16px);
+ overflow:hidden;padding:10px;box-sizing:border-box;
+ border:1px solid #afc5db;border-radius:10px;
+ background:#fff;box-shadow:0 14px 36px rgba(10,38,68,.23);text-align:left
+}
+#player-main .game-time-popup[hidden]{display:none!important}
+#player-main .game-time-heading{font-size:13px;font-weight:750;color:var(--navy);padding:2px 2px 9px}
+#player-main .game-time-columns{display:grid;grid-template-columns:1fr 1fr;gap:8px;height:265px}
+#player-main .game-time-list{display:grid;grid-auto-rows:34px;align-content:start;gap:3px;min-height:0;
+ overflow-y:auto;border:1px solid #dae5ee;border-radius:7px;background:#f8fafc;padding:3px}
+#player-main .game-time-option{min-height:32px;padding:5px;border:none;border-radius:5px;box-shadow:none;background:transparent;
+ font-size:12px;font-variant-numeric:tabular-nums;color:var(--navy);text-align:center}
+#player-main .game-time-option:hover,#player-main .game-time-option:focus-visible{background:#dfeaf7}
+#player-main .game-time-option[aria-pressed="true"]{background:#e8f2fc;color:#143d66;font-weight:800;outline:1px solid #8eb6dc}
+#player-main .game-time-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;padding-top:12px}
+#player-main .game-time-actions button{min-height:30px;padding:5px 11px;border-radius:6px;font-size:11px}
+#workspace-routes .route-apply-actions{gap:8px}
+#workspace-routes .route-apply-actions .primary,#workspace-routes .route-apply-actions .secondary{
+ min-height:35px;padding:7px 13px;font-size:12px;border-radius:7px;line-height:1.25
+}
+#workspace-routes #route-plan-status.is-success{
+ margin:12px 0 0;padding:11px 12px;border:1px solid #c9e3d5;
+ border-radius:8px;background:#f4faf6;color:#245943;
+ font-size:12px;font-weight:600;line-height:1.55
+}
+.operations-route-directory{min-width:1110px}
+.operations-route-directory-row{
+ grid-template-columns:85px minmax(170px,1.3fr) 76px 76px minmax(155px,1fr) 200px 160px 96px;
+ gap:11px
+}
+.operations-route-save-type{font-size:11px;color:var(--muted)!important;white-space:normal!important}
+:root[data-ui-theme="dark"] #player-main .game-time-wrap input.game-time-input,
+:root[data-ui-theme="dark"] #player-main .game-time-popup{
+ background:#192f45;color:#eaf3ff;border-color:#45617d
+}
+:root[data-ui-theme="dark"] #player-main .game-time-heading,
+:root[data-ui-theme="dark"] #player-main .game-time-option{color:#eaf3ff}
+:root[data-ui-theme="dark"] #player-main .game-time-list{background:#223951;border-color:#45617d}
+:root[data-ui-theme="dark"] #player-main .game-time-option[aria-pressed="true"]{background:#35577d;color:#fff}
+:root[data-ui-theme="dark"] #workspace-routes #route-plan-status.is-success{
+ background:#223b35;color:#c7f5e0;border-color:#356852
+}
