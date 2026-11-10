@@ -4,6 +4,7 @@
  * credentials in the server environment; never expose either to the browser.
  */
 import {createCanonicalGameApi,CANONICAL_GAME_API_PATHS} from '../../server/canonical-game-api.mjs';
+import {validateFlightSchedulePayload} from '../../server/flight-schedule-service.mjs';
 import {AIRLINERRA_INVITED_TESTER_PUBLIC_SETTINGS} from '../invited-tester-public-settings.mjs';
 export const REAL_PLAYER_PATHS=CANONICAL_GAME_API_PATHS;
 const REF='hwllkabgzaynalahvkpz';
@@ -18,7 +19,7 @@ const SCHEDULE_READ_PATH='/api/v1/player/flight-schedule-drafts';
 export const LOCAL_PLAYER_API_PATHS=Object.freeze([
  ...CANONICAL_GAME_API_PATHS,FLEET_READ_PATH,SCHEDULE_READ_PATH
 ]);
-/** The local gateway never forwards a transaction, schedule reservation,
+/** The local gateway never forwards payment, schedule reservation,
  * delivery update or other state-changing command.
  */
 export function allowedLocalOwnerRead(pathname,payload){
@@ -28,6 +29,12 @@ export function allowedLocalOwnerRead(pathname,payload){
  if(payload.action==='list')
   return Object.keys(payload).length===2 &&
    Object.keys(payload).every(x=>x==='action'||x==='airlineId');
+ // Explicitly allow ONLY an authenticated, owner-checked, pre-operational
+ // planning-draft save. The deployed Edge function revalidates everything.
+ // Slot reservations, normal schedule writes and commercial operations
+ // remain forbidden through localhost.
+ if(pathname===SCHEDULE_READ_PATH&&payload.action==='plan-save')
+  return validateFlightSchedulePayload(payload);
  if(pathname===SCHEDULE_READ_PATH&&payload.action==='slot-check'){
   // Server input is validated again. The only non-list action allowed here
   // uses a STABLE, read-only database preflight function.
@@ -54,8 +61,8 @@ export function validConnectionUrl(value){
      u.username.endsWith('.'+REF);
  }catch{return false;}
 }
-// Opt-in localhost-only, read-only proxy to the existing authenticated
-// Supabase Edge game service. No DB password, local fake catalog, or writes.
+// Opt-in localhost-only proxy to authenticated Edge readers and planning drafts.
+// No DB password, fake catalog, payment or operational activation.
 export function createLiveReadOnlyPreviewHandler({fetchImpl=globalThis.fetch}={}){
  const allowed=new Set([
   '/api/v1/player/overview',
@@ -70,7 +77,7 @@ export function createLiveReadOnlyPreviewHandler({fetchImpl=globalThis.fetch}={}
   '/api/v1/onboarding/context'
  ]);
  const error=(status,why)=>{
-  console.warn('Airlinerra local read-only gateway:',status,why);
+  console.warn('Airlinerra local protected gateway:',status,why);
   return new Response(JSON.stringify({error:why}),{
    status,headers:{'content-type':'application/json','cache-control':'no-store'}
   });
@@ -81,7 +88,7 @@ export function createLiveReadOnlyPreviewHandler({fetchImpl=globalThis.fetch}={}
   if(url.origin!==ORIGIN||request.headers.get('origin')!==ORIGIN)
    return error(403,'Local browser required');
   if(!allowed.has(url.pathname)||url.search||request.method!=='POST')
-   return error(403,'Local preview is read-only');
+   return error(403,'Local preview operation not allowed');
   const token=request.headers.get('authorization')||'';
   if(!/^Bearer [A-Za-z0-9._~-]{16,8192}$/.test(token))
    return error(401,'Verified session required');
@@ -96,7 +103,7 @@ export function createLiveReadOnlyPreviewHandler({fetchImpl=globalThis.fetch}={}
    let payload;
    try{payload=JSON.parse(body);}catch{return error(400,'Invalid JSON body')}
    if(!allowedLocalOwnerRead(url.pathname,payload))
-    return error(403,'Local preview allows company fleet and schedule reads only');
+    return error(403,'Local preview only allows verified reads and pre-operational planning drafts');
    body=JSON.stringify(payload);
   }
   try{
