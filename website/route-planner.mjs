@@ -264,7 +264,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
  let lastKeys='',airportProfiles={},editingFlightNumber=null,editingLegacyIndex=null,editSerial=0;
  let preflightCatalogFor=null,preflightLoadToken=0,preflightRequest=0;
  let catalogAircraft=[],preflightCache=null,preflightPromise=null;
- let ownedFleet=[],serverDrafts=[],fleetTicket=0,fleetReadState='unavailable';
+ let ownedFleet=[],serverDrafts=[],serverPlans=[],fleetTicket=0,fleetReadState='unavailable';
  const pickers={},selected=side=>pickers[side]?.selected()||null;
  // The country-picker constructor calls onSelect synchronously. Defer route
  // rendering until all planner callbacks, including preflight, are initialized.
@@ -423,6 +423,19 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
     schedule:Array.isArray(d.weeklySchedule)?d.weeklySchedule:[],
     operation:{departureStand:d.departureStand,arrivalStand:d.arrivalStand},
     referenceDepartureUtc:d.referenceDepartureUtc,referenceArrivalUtc:d.referenceArrivalUtc});
+  }
+  for(const p of serverPlans){
+   if(p?.status!=='planning'||p.aircraftInventoryId!==inventoryId||
+      !p.originAirportKey||!p.destinationAirportKey||
+      typeof p.flightNumber!=='string'||seen.has(p.flightNumber))continue;
+   seen.add(p.flightNumber);
+   server.push({flightNumber:p.flightNumber,aircraftId,
+    from:p.from||resolveAirport(p.originAirportKey),
+    to:p.to||resolveAirport(p.destinationAirportKey),
+    schedule:Array.isArray(p.schedule)?p.schedule:[],
+    operation:p.operation||{},
+    referenceDepartureUtc:p.referenceDepartureUtc,
+    referenceArrivalUtc:p.referenceArrivalUtc});
   }
   return [...local,...server];
  };
@@ -608,25 +621,26 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
  const loadOwnedScheduleData=async airlineId=>{
   const ticket=++fleetTicket,scheduler=getData()?.scheduler;
   fleetReadState=airlineId&&typeof scheduler?.list==='function'?'loading':'unavailable';
-  ownedFleet=[];serverDrafts=[];refreshCatalogOptions();renderServerScheduleList();
+  ownedFleet=[];serverDrafts=[];serverPlans=[];refreshCatalogOptions();renderServerScheduleList();
   if(!airlineId||typeof scheduler?.list!=='function')return;
   message('route-server-draft-status','Loading your registered operational aircraft and server drafts...');
   try{
    const response=await scheduler.list(airlineId);
    if(ticket!==fleetTicket)return;
-   if(!Array.isArray(response?.fleet)||!Array.isArray(response?.drafts))
+   if(!Array.isArray(response?.fleet)||!Array.isArray(response?.drafts)||!Array.isArray(response?.plans))
     throw Error('Unverified company fleet response');
    fleetReadState='verified';
    ownedFleet=Array.isArray(response?.fleet)?response.fleet.filter(a=>
     typeof a?.id==='string'&&Number.isSafeInteger(a.configurationId)&&a.configurationId>0):[];
-   serverDrafts=Array.isArray(response?.drafts)?response.drafts:[];
+   serverDrafts=response.drafts;
+   serverPlans=response.plans;
    refreshCatalogOptions();renderServerScheduleList();refreshAircraftTimeline();
    message('route-server-draft-status',ownedFleet.length?
     ownedFleet.length+' operational aircraft connected. Server schedule drafts are separate from live flight activation.':
     'No company aircraft are in service. Purchase or lease one, complete delivery and inspection, then create a route.');
   }catch{
    if(ticket===fleetTicket){
-    fleetReadState='unavailable';ownedFleet=[];serverDrafts=[];refreshCatalogOptions();renderServerScheduleList();
+    fleetReadState='unavailable';ownedFleet=[];serverDrafts=[];serverPlans=[];refreshCatalogOptions();renderServerScheduleList();
     message('route-server-draft-status','Server fleet/schedule service unavailable. No flight was activated.');
    }
   }
@@ -1321,6 +1335,14 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
      throw Error('UNVERIFIED_PLAN_SAVE_CONFIRMATION');
     draft.serverPlanningId=result.planId;
     draft.storage='server-planning';
+    serverPlans=[{
+     planId:result.planId,status:'planning',flightNumber,
+     aircraftInventoryId:ownedChoice.id,
+     originAirportKey:from.key,destinationAirportKey:to.key,
+     from,to,schedule,operation,
+     referenceDepartureUtc:draft.referenceDepartureUtc,
+     referenceArrivalUtc:draft.referenceArrivalUtc
+    },...serverPlans.filter(p=>p.flightNumber!==flightNumber)];
    }catch(error){
     const reason=String(error?.message||'');
     message('route-plan-status',reason.includes('409')||reason.includes('CONFLICT_')?
