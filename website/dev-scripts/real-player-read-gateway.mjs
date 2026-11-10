@@ -78,6 +78,7 @@ export function createLiveReadOnlyPreviewHandler({fetchImpl=globalThis.fetch}={}
  const allowed=new Set([
   '/api/v1/player/overview',
   '/api/v1/player/airports',
+  '/api/v1/player/prepared-airports',
   '/api/v1/player/airport-profile',
   '/api/v1/player/aircraft-library',
   '/api/v1/player/noise-curfew-check',
