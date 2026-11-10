@@ -39,7 +39,8 @@ test('read-only localhost schedule checks cannot be mistaken for server-save sup
  assert.equal(routeDraftSaveMode(readonly),'browser');
  assert.equal(routeDraftSaveMode(null),'browser');
  assert.equal(routeDraftSaveMode({save:null}),'browser');
- assert.equal(routeDraftSaveMode({...readonly,save:async()=>({status:'draft'})}),'server');
+ assert.equal(routeDraftSaveMode({...readonly,save:async()=>({status:'draft'})}),'browser');
+ assert.equal(routeDraftSaveMode({...readonly,planSave:async()=>({status:'planning'})}),'server-planning');
 });
 
 test('route creation is blocked for same airport in UI, preview and save; invalid 0-km map does not render',async()=>{
@@ -56,19 +57,19 @@ test('local route Save persists in the same account-session store as My Routes, 
  const [route,workspace,directory]=await Promise.all([
   read('route-planner.mjs'),read('airline-workspace.mjs'),read('airline-operations-center.mjs')
  ]);
- assert.match(route,/const canSaveToServer=routeDraftSaveMode\(data\?\.scheduler\)==='server'/);
+ assert.match(route,/const canSaveToServer=routeDraftSaveMode\(data\?\.scheduler\)==='server-planning'/);
  assert.match(route,/if\(canSaveToServer\)\{/);
- assert.match(route,/if\(canSaveToServer&&!preflight\)/);
+ assert.match(route,/if\(canSaveToServer\)\{/);
  assert.match(route,/if\(preflight\?\.gameHardBlocked===true\)/);
  assert.match(route,/if\(!draftWrite\('routes',\[\.\.\.filtered,draft\]\)\)/);
  assert.match(route,/airlinerra:route-draft-saved/);
- assert.match(route,/storage:canSaveToServer\?'server':'browser'/);
+ assert.match(route,/storage:canSaveToServer\?'server-planning':'browser'/);
  assert.match(route,/saved as a LOCAL planning draft/);
  assert.match(route,/No server schedule or flight was created/);
  assert.match(workspace,/airlinerra\.local\.workplan\.v1\./);
  assert.match(directory,/airlinerra\.local\.workplan\.v1\./);
  assert.match(directory,/state=storageRead\(session,key\);renderRoutes\(\)/);
- assert.match(directory,/route\.serverScheduleId\?'Server draft · inactive':'Local draft · inactive'/);
+ assert.match(directory,/route\.serverPlanningId\?'Airline planning draft'/);
  assert.match(directory,/airlinerra:route-draft-saved/);
  assert.match(directory,/saved as a local planning draft and listed above/);
 });

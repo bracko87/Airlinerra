@@ -1,5 +1,5 @@
 /** Full route planning workspace, not commercial flight activation.
- * Only approved authenticated airport reads and account-local draft writes.
+ * Authenticated airport reads and owner-verified planning drafts; never activates flights.
  */
 import {createAirportCountryPicker,populateAirportCountries,airportFlag,airportCountryName} from './airport-country-picker.mjs';
 import {renderRouteMap} from './route-map.mjs';
@@ -132,8 +132,8 @@ export function routePlannerMarkup(){
    '<button type="button" class="route-text-action" data-workspace-go="route-list">My routes</button></div>'+
   '<p id="route-plan-status" class="hint" role="status" aria-live="polite"></p>'+
   '<div id="route-plan-review" class="workspace-detail"></div>')+
- section('SERVER-OWNED SCHEDULE DRAFTS','Schedules saved to your airline',
-  '<p class="hint">Only aircraft actually owned or leased by your airline can be saved on the protected server. These schedules are drafts, not active flights.</p>'+
+ section('OPERATIONAL SCHEDULE CHECKS','Schedules with verified airport slot reservations',
+  '<p class="hint">Planning routes saved to your airline appear in My Routes. This separate section shows schedules that have passed the airport slot checks. These are not active flights.</p>'+
   '<div id="route-server-draft-list" class="workspace-detail"></div>'+
   '<p id="route-server-draft-status" class="hint" role="status" aria-live="polite"></p>')+
  '';
@@ -583,7 +583,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    return;
   }
   if(!serverDrafts.length){
-   holder.textContent='No saved server-owned flight schedule drafts yet.';
+   holder.textContent='No slot-reserved operational schedules yet. Your airline planning routes appear in My Routes.';
    return;
   }
   for(const draft of serverDrafts.slice(0,50)){
@@ -823,11 +823,12 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   if(serial!==editSerial)return false;
   return pickers[side].choose(airport.key);
  };
- const editRouteDraft=async index=>{
+ const editRouteDraft=async ref=>{
   const stored=loadDraft?.()||{};
   const routes=Array.isArray(stored.routes)&&stored.routes.length?stored.routes:
    stored.route?[stored.route]:[];
-  const route=routes[index];
+  const index=Number.isInteger(ref)?ref:null;
+  const route=index!==null?routes[index]:ref;
   if(!route?.from||!route?.to)return;
   const serial=++editSerial;editingFlightNumber=route.flightNumber||null;
   editingLegacyIndex=route.flightNumber?null:index;
@@ -873,12 +874,13 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   }
   show();
   message('route-plan-status',route.flightNumber?
-   'Editing '+route.flightNumber+' · changes will update this local draft only.':
+   'Editing '+route.flightNumber+' · Create new route will save the updated planning draft to your airline where connected.':
    'Previous route idea loaded. Enter a flight number and choose days to save it as a draft.');
  };
  doc.addEventListener('airlinerra:edit-route-draft',event=>{
-  const index=event.detail?.index;
-  if(Number.isInteger(index)&&index>=0&&index<25)void editRouteDraft(index);
+  const ref=event.detail?.route||event.detail?.index;
+  if(ref&&typeof ref==='object'&&ref.from&&ref.to)void editRouteDraft(ref);
+  else if(Number.isInteger(ref)&&ref>=0&&ref<100)void editRouteDraft(ref);
  });
  const main=$('player-main');
  main?.addEventListener('change',async event=>{

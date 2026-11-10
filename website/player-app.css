@@ -1541,3 +1541,44 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
 :root[data-ui-theme="dark"] #workspace-routes #route-plan-status.is-success{
  background:#223b35;color:#c7f5e0;border-color:#356852
 }
+
+/* Route Details unified layout — follows Ticket Price Analysis white-panel system. */
+.operations-route-detail-content{display:grid;gap:18px;min-width:0}
+.operations-route-detail-content>h3{font-size:19px;color:var(--navy);margin:0}
+.operations-route-detail-content .route-details-state{font-size:12px;color:#667c90;margin:-7px 0 3px}
+.operations-route-detail-content .route-details-top{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(300px,1fr);gap:16px;align-items:stretch}
+.operations-route-detail-content .route-detail-section{
+ min-width:0;padding:20px;border:1px solid #dce6ef;border-radius:12px;background:#fff
+}
+.operations-route-detail-content .route-detail-section h4{margin:5px 0 14px;color:var(--navy);font-size:16px}
+.operations-route-detail-content .route-detail-map{width:100%;height:300px;min-height:260px;border-radius:9px;overflow:hidden;background:#f1f5f8}
+.operations-route-detail-content .route-detail-map svg{width:100%;height:100%;display:block}
+.operations-route-detail-content .route-detail-map-feedback{line-height:1.55;font-size:11px;margin:8px 0 0}
+.operations-route-detail-content .route-detail-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:7px;margin-bottom:15px}
+.operations-route-detail-content .route-detail-day{display:grid;gap:4px;padding:12px 5px;text-align:center;
+ border:1px solid #d9e4ee;border-radius:8px;background:#f5f8fb;color:#647a91;font-size:11px}
+.operations-route-detail-content .route-detail-day.is-active{border-color:#ffbb92;background:#fff4e9;color:#163c62}
+.operations-route-detail-content .route-detail-day strong{font-size:11px}
+.operations-route-detail-content .route-detail-day span{font-variant-numeric:tabular-nums;font-weight:650}
+.operations-route-detail-content .route-detail-fact-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 18px}
+.operations-route-detail-content .detail-row{min-width:0;gap:12px}
+.operations-route-detail-content .detail-row strong{min-width:0;overflow-wrap:anywhere;text-align:right}
+.operations-route-detail-content #section9-route-month{margin:8px 0 14px;max-width:320px}
+.operations-route-detail-content .section9-route-results h4{font-size:14px;color:var(--navy);margin:18px 0 8px}
+.operations-route-detail-content .section9-route-results li{font-size:12px;line-height:1.6}
+.operations-route-detail-content .section9-commercial-plan,
+.operations-route-detail-content .section9-route-finances,
+.operations-route-detail-content .section9-aircraft-rotation{min-width:0}
+.operations-route-detail-content .route-detail-economics .hint{line-height:1.55}
+#operations-route-publish-plan{min-height:36px;padding:8px 14px;font-size:12px}
+@media(max-width:950px){.operations-route-detail-content .route-details-top{grid-template-columns:1fr}}
+@media(max-width:620px){
+ .operations-route-detail-content .route-detail-section{padding:14px}
+ .operations-route-detail-content .route-detail-days{grid-template-columns:repeat(4,minmax(0,1fr))}
+ .operations-route-detail-content .route-detail-fact-grid{grid-template-columns:1fr}
+ .operations-route-detail-content .route-detail-map{height:245px;min-height:225px}
+}
+:root[data-ui-theme="dark"] .operations-route-detail-content .route-detail-section{
+ background:#192f45;border-color:#405971}
+:root[data-ui-theme="dark"] .operations-route-detail-content .route-detail-day{background:#223a54;color:#c8d9e8;border-color:#45617d}
+:root[data-ui-theme="dark"] .operations-route-detail-content .route-detail-day.is-active{background:#433325;color:#ffb274}

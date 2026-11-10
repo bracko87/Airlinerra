@@ -196,8 +196,8 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
     cell.textContent=String(text??'—');row.append(cell);return cell;
    };
    add(route.flightNumber||'—');
-   add((route.from.municipality||route.from.name||'—')+' → '+
-    (route.to.municipality||route.to.name||'—'));
+   add((route.from.name||route.from.municipality||'—')+' → '+
+    (route.to.name||route.to.municipality||'—'));
    const schedule=Array.isArray(route.schedule)?route.schedule.filter(x=>
     Number.isInteger(x?.day)&&x.day>=0&&x.day<=6&&/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(x.time)):[];
    const times=[...new Set(schedule.map(x=>x.time))];

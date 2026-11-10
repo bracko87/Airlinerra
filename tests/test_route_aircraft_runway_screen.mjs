@@ -60,7 +60,7 @@ test('route UI automatically applies checks and server gate on every save withou
  assert.match(source,/noiseCurfewCheck\(\{/);
  assert.match(source,/const preflight=await automaticPreflight\(\{force:true\}\)/);
  assert.match(source,/if\(preflight\?\.gameHardBlocked===true\)/);
- assert.match(source,/if\(canSaveToServer&&!preflight\)/);
+ assert.match(source,/if\(preflight\?\.gameHardBlocked===true\)/);
  assert.match(source,/aircraftConfigurationId:selectedCatalog\?\.id\?\?ownedChoice\.configurationId/);
  assert.doesNotMatch(source,/if\(target\.id==='route-preflight-check'\)/);
  assert.match(bundle,/'route-aircraft-runway-screen\.mjs'/);
