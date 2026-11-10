@@ -8,7 +8,8 @@ const read=p=>readFile(new URL('../'+p,import.meta.url),'utf8');
 const types=[
  ['eco_standard','economy',1,850],['premium_standard','premium',1.5,1700],
  ['business_standard','business',2,3000],['first_standard','first',3,5000]
-].map(([code,cabinClass,spaceUnits,installUsd])=>({code,cabinClass,spaceUnits,installUsd}));
+].map(([code,cabinClass,spaceUnits,installUsd])=>({code,cabinClass,spaceUnits,installUsd,
+ pitchInches:cabinClass==='economy'?30:cabinClass==='premium'?38:cabinClass==='business'?44:60}));
 const uuid=n=>'00000000-0000-4000-8000-'+String(n).padStart(12,'0');
 const base={aircraftInventoryId:uuid(1),manufacturer:'Airbus',model:'A319-100',
  useType:'passenger',referenceUnits:'156',standardEconomy:156,
@@ -39,7 +40,7 @@ test('same airline but incompatible cabin capacity cannot be selected',()=>{
  draftEconomy:150,draftBusiness:50};
  const x=companyCabinChoices(source([base,big]),base.aircraftInventoryId);
  assert.equal(x.choices[1].available,false);
- assert.match(x.choices[1].quote.reason,/exceed/);
+ assert.match(x.choices[1].quote.reason,/NO SPACE/);
 });
 test('unverified owner data is never rendered, no foreign-airline injection path',()=>{
  assert.equal(companyCabinChoices({...source(),previewOnly:false},base.aircraftInventoryId),null);
@@ -47,16 +48,18 @@ test('unverified owner data is never rendered, no foreign-airline injection path
  assert.equal(companyCabinChoices(source(),uuid(999)),null);
  assert.equal(companyCabinChoices(source([base,differentModel]),base.aircraftInventoryId).choices.length,1);
 });
-test('quote uses explicit equipment price only, never invents total cost or slot',()=>{
+test('quote shows game estimated total equipment and refit labour, never a confirmed cost or slot',()=>{
  const site={aircraftInventoryId:base.aircraftInventoryId,airportKey:'airport:1',
   airportCode:'HAM',provider:'Approved game MRO',siteMultiplier:'1.2'};
  const x=companyCabinChoices(source([base,saved], [site]),base.aircraftInventoryId);
- const quote=configurationCostPreview(x.choices[1],x.sites[0]);
+ const quote=configurationCostPreview(x.choices[1],x.sites[0],156);
  assert.equal(quote.valid,true);
  assert.equal(quote.equipmentUsd,112*850+22*3000);
  assert.equal(quote.downtimeHours,48);
  assert.equal(quote.totalFinalCostUsd,null);
- assert.equal(quote.labourCostUsd,null);
+ assert.equal(quote.labourCostUsd,Math.round((5000+134*150+156*75)*1.2));
+ assert.equal(quote.indicativeTotalUsd,quote.equipmentUsd+quote.labourCostUsd);
+ assert.equal(quote.chargeTriggered,undefined);
  assert.equal(quote.firstAvailableSlot,null);
  assert.equal(quote.canBook,false);
  assert.match(quote.siteName,/HAM/);
