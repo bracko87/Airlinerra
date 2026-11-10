@@ -55,11 +55,30 @@ export const FLEET_SQL=Object.freeze({
   "ap.airport_name AS \"locationAirportName\",ap.airport_code AS \"locationAirportCode\", "+
   "p.current_flight_occurrence_id AS \"currentFlightOccurrenceId\", "+
   "o.order_id::text AS \"orderId\",o.order_status AS \"deliveryStatus\",o.delivery_due_at AS \"deliveryDueAt\", "+
-  "o.delivery_home_airport_key AS \"deliveryAirportKey\",o.transaction_type AS \"acquisitionType\" "+
+  "o.delivery_home_airport_key AS \"deliveryAirportKey\",o.transaction_type AS \"acquisitionType\", "+
+  "o.paid_upfront_usd::text AS \"paidUpfrontUsd\", "+
+  "o.recurring_monthly_usd::text AS \"recurringMonthlyUsd\", "+
+  "o.contract_months AS \"contractMonths\",o.created_at AS \"acquisitionDate\", "+
+  "i.created_at AS \"fleetAddedAt\", "+
+  "c.production_start_year AS \"modelProductionStartYear\", "+
+  "c.production_end_year AS \"modelProductionEndYear\", "+
+  "c.technical_review_status AS \"technicalReviewStatus\", "+
+  "c.engine_option AS \"engineOption\",c.crew_required AS \"referenceCrewRequired\", "+
+  "c.range_km::text AS \"rangeKm\",c.cruise_speed_kmh::text AS \"cruiseSpeedKmh\", "+
+  "c.mtow_kg::text AS \"mtowKg\",c.mlw_kg::text AS \"mlwKg\", "+
+  "c.wingspan_m::text AS \"wingspanM\",c.length_m::text AS \"lengthM\", "+
+  "c.height_m::text AS \"heightM\",c.takeoff_runway_m::text AS \"takeoffRunwayM\", "+
+  "c.landing_runway_m::text AS \"landingRunwayM\", "+
+  "media.storage_bucket_id AS \"catalogImageBucket\", "+
+  "media.storage_object_path AS \"catalogImagePath\" "+
   "FROM airlinerra_game.airline_aircraft_inventory i "+
   "LEFT JOIN airlinerra_game.aircraft_acquisition_orders_v1 o "+
   "ON o.aircraft_inventory_id=i.id AND o.airline_id=i.airline_id "+
   "LEFT JOIN airlinerra.aircraft_catalog_configuration_inventory c ON c.configuration_id=i.configuration_id "+
+  "LEFT JOIN LATERAL (SELECT m.storage_bucket_id,m.storage_object_path "+
+  "FROM airlinerra.aircraft_configuration_media m "+
+  "WHERE m.configuration_id=i.configuration_id AND m.is_approved=true "+
+  "ORDER BY CASE WHEN m.image_role='hero' THEN 0 ELSE 1 END,m.storage_object_path LIMIT 1) media ON true "+
   "LEFT JOIN airlinerra_game.section9_aircraft_current_position_v1 p "+
   "ON p.aircraft_inventory_id=i.id AND p.airline_id=i.airline_id "+
   "LEFT JOIN airlinerra_game.approved_game_airports ap "+
