@@ -22,7 +22,7 @@ test('each airline automatically has a protected Basic package and all four clas
  const estimate=cabinPackageEstimate(basic);
  assert.equal(estimate.attractiveness,25);
  assert.equal(estimate.relativeToBasic,0);
- assert.equal(estimate.includedCents,15);
+ assert.equal(estimate.includedCents,65);
  assert.equal(estimate.indicativeMarginCents,0);
 });
 test('complimentary and paid product levels affect preview rating and cost differently',()=>{
@@ -30,8 +30,8 @@ test('complimentary and paid product levels affect preview rating and cost diffe
  const pkg={...basic,id:'pkg-1',name:'Comfort Service',locked:false,
   items:structuredClone(basic.items)};
  pkg.items.coffee={mode:'included',freeQty:1,onlineCents:200,onboardCents:300};
- pkg.items.snack={mode:'hybrid',freeQty:1,onlineCents:300,onboardCents:450};
- pkg.items.wifi={mode:'both',freeQty:0,onlineCents:500,onboardCents:800};
+ pkg.items.snack={mode:'included',freeQty:1,stockPer100:100,onlineCents:500,onboardCents:500};
+ pkg.items.wifi={mode:'onboard',freeQty:0,stockPer100:0,onlineCents:800,onboardCents:800};
  const result=cabinPackageEstimate(pkg);
  assert.ok(result.attractiveness>25);
  assert.ok(result.includedCents>15);
@@ -53,7 +53,7 @@ test('all offered services have valid mode and prices; arbitrary names and amoun
  assert.equal(cleanCabinPackage({...custom,name:'<script>'}),null);
  assert.equal(cleanCabinPackage({...custom,id:'bad-id'}),null);
  assert.equal(cleanCabinPackage({...custom,name:'a'}),null);
- assert.equal(CABIN_MODE_OPTIONS.length,4);
+ assert.equal(CABIN_MODE_OPTIONS.length,3);
  assert.equal(CABIN_CLASSES.length,4);
 });
 test('saved state restores only valid packages and does not accept forged default package',()=>{
