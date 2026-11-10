@@ -2040,6 +2040,27 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
 :root[data-ui-theme="dark"] #workspace-service .cabin-package-remove{color:#ffad80}
 :root[data-ui-theme="dark"] #workspace-service .cabin-row-cost{color:#eaf3ff}
 
+/* Airline cabin package on route planning: same standard form/panel system. */
+#workspace-routes .route-cabin-cost-preview{
+ display:flex;align-items:center;flex-wrap:wrap;column-gap:14px;row-gap:7px;
+ margin:16px 0 0;padding:12px 15px;border:1px solid var(--line);
+ border-radius:9px;background:#f7f9fc;color:var(--navy);font-size:12px
+}
+#workspace-routes .route-cabin-cost-preview>span{font-weight:650}
+#workspace-routes #route-cabin-passengers{
+ width:90px;min-height:36px;max-width:90px;padding:7px 9px;
+ border:1px solid #c7d7e9;border-radius:7px;background:white;color:var(--navy)
+}
+#workspace-routes .route-cabin-cost-preview .hint{
+ width:100%;margin:2px 0 0;font-size:12px
+}
+:root[data-ui-theme="dark"] #workspace-routes .route-cabin-cost-preview{
+ background:#1b3047;color:#e8f3ff;border-color:#3b526b
+}
+:root[data-ui-theme="dark"] #workspace-routes #route-cabin-passengers{
+ background:#192f45;color:#e8f3ff;border-color:#3b526b
+}
+
 /* Per-aircraft maintenance preview: compact rows, no fabricated condition. */
 .fleet-maintenance-preview{border-top:1px solid var(--line);margin-top:22px;padding-top:16px;color:var(--navy);font-size:12px}
 .fleet-maintenance-preview h3{margin:0 0 10px;font-size:16px}
