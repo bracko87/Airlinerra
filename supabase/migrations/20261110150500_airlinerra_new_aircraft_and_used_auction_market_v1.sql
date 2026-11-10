@@ -85,7 +85,9 @@ ALTER TABLE airlinerra_game.airline_ledger ADD CONSTRAINT valid_entry_kind CHECK
  entry_kind IN('STARTING_CAPITAL','AIRCRAFT_PURCHASE','AIRCRAFT_LEASE',
  'REVENUE','EXPENSE','ADJUSTMENT','AIRCRAFT_AUCTION_HOLD','AIRCRAFT_AUCTION_REFUND'));
 
--- Seed *new production* offers using currently usable, non-experimental models.
+-- Seed *new production* offers as DRAFT until protected order function is installed.
+-- Never expose a payable offer to the legacy acquisition function during migration.
+-- Only currently usable, non-experimental models are included.
 -- Manufacturer prices are modelled game estimates; not official list prices.
 INSERT INTO airlinerra_game.aircraft_acquisition_offers_v1
  (world_id,configuration_id,transaction_type,upfront_price_usd,recurring_monthly_usd,
@@ -97,7 +99,7 @@ SELECT 1,c.configuration_id,v.transaction_type,
  CASE WHEN v.transaction_type='lease' THEN 60 ELSE NULL END,
  CASE WHEN c.mtow_kg>=160000 THEN 300 WHEN c.mtow_kg>=80000 THEN 220
  WHEN c.mtow_kg>=30000 THEN 180 ELSE 120 END,
- 'published','AIRLINERRA_NEW_FACTORY_GAME_ESTIMATE_V2'
+ 'draft','AIRLINERRA_NEW_FACTORY_GAME_ESTIMATE_V2'
 FROM airlinerra.aircraft_catalog_configuration_inventory c
 CROSS JOIN (VALUES ('purchase'),('lease')) v(transaction_type)
 CROSS JOIN LATERAL
