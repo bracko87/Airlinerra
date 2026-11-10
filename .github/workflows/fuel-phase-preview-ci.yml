@@ -6,6 +6,8 @@ on:
       - 'website/flight-fuel-phase-engine.mjs'
       - 'website/airport-fuel-price-preview.mjs'
       - 'supabase/migrations/20261110235500_fuel_planning_peer_estimates_readonly.sql'
+      - 'supabase/migrations/20261110235800_aircraft_fuel_family_model_reference_readonly.sql'
+      - 'supabase/migrations/20261110235900_source_linked_aircraft_fuel_family_models_v2.sql'
       - 'website/route-planner.mjs'
       - 'website/airline-workspace.mjs'
       - 'website/player-app.css'
