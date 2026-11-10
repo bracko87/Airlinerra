@@ -6,6 +6,7 @@
 import {createCanonicalGameApi,CANONICAL_GAME_API_PATHS} from '../../server/canonical-game-api.mjs';
 import {validateFlightSchedulePayload} from '../../server/flight-schedule-service.mjs';
 import {validateFleetAcquisitionRequest} from '../../server/fleet-acquisition-service.mjs';
+import {parseOfficeRequest,AIRPORT_OFFICE_API_PATH} from '../../server/airport-office-http-handler.mjs';
 import {AIRLINERRA_INVITED_TESTER_PUBLIC_SETTINGS} from '../invited-tester-public-settings.mjs';
 export const REAL_PLAYER_PATHS=CANONICAL_GAME_API_PATHS;
 const REF='hwllkabgzaynalahvkpz';
@@ -83,6 +84,13 @@ export function validGroup2LocationPlanRequest(payload){
  return keys.length===4 && keys.every(k=>['action','worldId','airportKey','type'].includes(k))&&
   ['future_hq','hub','station'].includes(payload.type);
 }
+export function validLocalAirportOfficeRequest(payload){
+ try{
+  if(!payload||typeof payload!=='object'||Array.isArray(payload))return false;
+  const value=parseOfficeRequest(JSON.stringify(payload));
+  return value.worldId===1&&Object.keys(value).length===Object.keys(payload).length;
+ }catch{return false;}
+}
 export function validConnectionUrl(value){
  try{
   const u=new URL(value);
@@ -101,6 +109,7 @@ export function createLiveReadOnlyPreviewHandler({fetchImpl=globalThis.fetch}={}
   '/api/v1/player/airports',
   '/api/v1/player/prepared-airports',
   GROUP2_LOCATION_PATH,
+  AIRPORT_OFFICE_API_PATH,
   '/api/v1/player/airport-profile',
   '/api/v1/player/aircraft-library',
   '/api/v1/player/noise-curfew-check',
@@ -133,10 +142,12 @@ export function createLiveReadOnlyPreviewHandler({fetchImpl=globalThis.fetch}={}
    body=await request.text();
    if(new TextEncoder().encode(body).length>2048)return error(413,'Request too large');
   }catch{return error(400,'Invalid body')}
-  if(url.pathname===FLEET_READ_PATH||url.pathname===SCHEDULE_READ_PATH||url.pathname===GROUP2_LOCATION_PATH){
+  if(url.pathname===FLEET_READ_PATH||url.pathname===SCHEDULE_READ_PATH||url.pathname===GROUP2_LOCATION_PATH||url.pathname===AIRPORT_OFFICE_API_PATH){
    let payload;
    try{payload=JSON.parse(body);}catch{return error(400,'Invalid JSON body')}
-   if(!(url.pathname===GROUP2_LOCATION_PATH?validGroup2LocationPlanRequest(payload):allowedLocalOwnerRead(url.pathname,payload)))
+   if(!(url.pathname===GROUP2_LOCATION_PATH?validGroup2LocationPlanRequest(payload):
+     url.pathname===AIRPORT_OFFICE_API_PATH?validLocalAirportOfficeRequest(payload):
+     allowedLocalOwnerRead(url.pathname,payload)))
     return error(403,'Local preview only allows verified reads and pre-operational planning drafts');
    body=JSON.stringify(payload);
   }
