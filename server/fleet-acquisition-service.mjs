@@ -16,6 +16,9 @@ export function validateFleetAcquisitionRequest(body){
     typeof body.action!=='string'||!uuid(body.airlineId))return false;
  if(body.action==='list')return Object.keys(body).length===2 &&
   Object.keys(body).every(k=>['action','airlineId'].includes(k));
+ if(body.action==='maintenance-preview')return Object.keys(body).length===3 &&
+  Object.keys(body).every(k=>['action','airlineId','aircraftInventoryId'].includes(k)) &&
+  uuid(body.aircraftInventoryId);
  if(body.action==='check-delivery')return Object.keys(body).length===3 &&
   Object.keys(body).every(k=>['action','airlineId','orderId'].includes(k)) && uuid(body.orderId);
  if(body.action==='update-nickname')return Object.keys(body).length===4 &&
@@ -62,6 +65,32 @@ export const FLEET_SQL=Object.freeze({
   "LEFT JOIN airlinerra_game.approved_game_airports ap "+
   "ON ap.world_id=p.world_id AND ap.airport_key=p.airport_key "+
   "WHERE i.airline_id=$1::uuid ORDER BY i.created_at DESC,i.id LIMIT 250",
+ maintenance:"SELECT check_code AS \"checkCode\",display_name AS label, "+
+  "downtime_hours AS \"durationHours\",airport_scope AS \"airportScope\", "+
+  "group_id AS \"groupId\",group_name AS \"groupName\", "+
+  "manufacture_year AS \"manufactureYear\",condition_pct::text AS \"conditionPct\", "+
+  "tracked_flight_hours::text AS \"trackedFlightHours\", "+
+  "tracked_flight_cycles::text AS \"trackedFlightCycles\", "+
+  "last_completed_utc AS \"lastCompletedUtc\", "+
+  "last_completed_at_flight_hours::text AS \"lastCompletedFlightHours\", "+
+  "base_estimate_usd::text AS \"baseEstimateUsd\", "+
+  "cost_evidence AS \"costEvidence\" "+
+  "FROM airlinerra_game.aircraft_maintenance_check_overview_v1 "+
+  "WHERE airline_id=$1::uuid AND aircraft_inventory_id=$2::uuid "+
+  "ORDER BY CASE check_code WHEN 'daily' THEN 1 WHEN 'weekly' THEN 2 "+
+  "WHEN 'a' THEN 3 WHEN 'b' THEN 4 WHEN 'c' THEN 5 ELSE 6 END",
+ maintenanceSites:"SELECT c.check_code AS \"checkCode\",a.airport_key AS \"airportKey\", "+
+  "a.airport_code AS \"airportCode\",a.airport_name AS \"airportName\", "+
+  "f.provider_name AS provider "+
+  "FROM airlinerra_game.maintenance_airport_capabilities_v1 c "+
+  "JOIN airlinerra_game.maintenance_facility_locations_v1 f "+
+  "ON f.world_id=c.world_id AND f.airport_key=c.airport_key AND f.provider_key=c.provider_key "+
+  "JOIN airlinerra_game.approved_game_airports a "+
+  "ON a.world_id=c.world_id AND a.airport_key=c.airport_key "+
+  "WHERE c.approval_status='game_approved' "+
+  "AND c.configuration_id=(SELECT i.configuration_id FROM airlinerra_game.airline_aircraft_inventory i "+
+  "WHERE i.airline_id=$1::uuid AND i.id=$2::uuid) "+
+  "ORDER BY a.airport_code,c.check_code LIMIT 100",
  delivery:"SELECT airlinerra_game.check_owned_aircraft_delivery_v1($1::uuid,$2::uuid,$3::uuid) AS result",
  nickname:"UPDATE airlinerra_game.airline_aircraft_inventory i "+
   "SET nickname=NULLIF(btrim($3::text),''),updated_at=now() "+
@@ -112,6 +141,21 @@ export function createFleetAcquisitionHandler({verifyUserToken,database}={}){
     ]);
     return respond(200,{airlineId:body.airlineId,cashUsd:owner.rows[0].cashUsd,
      offers:offers.rows,fleet:fleet.rows,liveFlightActivation:false});
+   }
+   if(body.action==='maintenance-preview'){
+    const owner=await client.query(FLEET_SQL.owner,[body.airlineId,playerId]);
+    if(owner.rowCount!==1)return respond(403,{error:'Airline not owned by this account'});
+    const [checks,sites]=await Promise.all([
+     client.query(FLEET_SQL.maintenance,[body.airlineId,body.aircraftInventoryId]),
+     client.query(FLEET_SQL.maintenanceSites,[body.airlineId,body.aircraftInventoryId])
+    ]);
+    if(!checks.rows.length)return respond(404,{error:'No maintenance profile for this owned aircraft'});
+    return respond(200,{
+     airlineId:body.airlineId,aircraftInventoryId:body.aircraftInventoryId,
+     checks:checks.rows,maintenanceSites:sites.rows,
+     previewOnly:true,canScheduleMaintenance:false,canBookFerryFlight:false,
+     status:'planning_not_activated'
+    });
    }
    if(body.action==='check-delivery'){
     const result=await client.query(FLEET_SQL.delivery,[playerId,body.airlineId,body.orderId]);
