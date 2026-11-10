@@ -81,8 +81,9 @@ COMMENT ON TABLE airlinerra_game.airport_group2_game_profiles_v1 IS
  'All 1,118 owner-preapproved Group 2 airports, modeled as separate game-data cohort; NOT in 3,141 World 1 commercial roster. Do not mistake source unknowns or game estimates for verified aviation data.';
 
 CREATE TABLE airlinerra_game.airport_group2_source_runways_v1 (
+ observation_id bigint PRIMARY KEY,
  airport_key text NOT NULL REFERENCES airlinerra_game.airport_group2_game_profiles_v1(airport_key),
- source_runway_id text NOT NULL,
+ source_runway_id text,
  runway_ident text,
  source_length_m numeric,
  source_width_m numeric,
@@ -90,8 +91,7 @@ CREATE TABLE airlinerra_game.airport_group2_source_runways_v1 (
  reported_operational_status text,
  evidence_origin text,
  source_url text,
- source_effective_date date,
- PRIMARY KEY(airport_key,source_runway_id)
+ source_effective_date date
 );
 ALTER TABLE airlinerra_game.airport_group2_source_runways_v1 ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON airlinerra_game.airport_group2_source_runways_v1
@@ -231,11 +231,11 @@ SELECT
 FROM source;
 
 INSERT INTO airlinerra_game.airport_group2_source_runways_v1 (
- airport_key,source_runway_id,runway_ident,source_length_m,
+ observation_id,airport_key,source_runway_id,runway_ident,source_length_m,
  source_width_m,surface_reported,reported_operational_status,
  evidence_origin,source_url,source_effective_date
 )
-SELECT ro.airport_key,ro.source_runway_id,ro.runway_ident,ro.length_m,
+SELECT ro.id,ro.airport_key,ro.source_runway_id,ro.runway_ident,ro.length_m,
  ro.width_m,ro.surface,ro.reported_operational_status,ro.evidence_origin,
  ro.source_url,ro.source_effective_date
 FROM airlinerra.airport_runway_observations ro
