@@ -134,7 +134,7 @@ export function forecastCabinServiceFlight(pkg,{passengers=100,durationMinutes=1
   const onboardRevenueCents=paid?expectedSales*selection.onboardCents:0;
   const cannotServeShortMeal=food&&durationMinutes<80;
   if(included&&!cannotServeShortMeal)includedScore+=item.weight;
-  if(paid)paidOfferCount++;
+  if(paid&&expectedSales>0)paidOfferCount++;
   return {
    id:item.id,mode:selection.mode,unitCostCents:unitCost,
    loadedUnits,costUnits,expectedSales,purchaseRate,
