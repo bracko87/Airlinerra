@@ -325,3 +325,24 @@ test('merged Serbian route selector returns fifth Group 2 Ponikve location witho
  assert.equal(ponikve.canActivateFlights,false);
  assert.equal(ponikve.latitude,43.898899);
 });
+
+test('Group 2 airport selection displays sourced aviation codes, never G2 internal lookup codes',async()=>{
+ const rows={...baseRows,
+  airports:[{airport_key:'OURAIRPORTS:1649',airport_name:'Ponikve Airport',
+   airport_code:'LYUZ',country_iso:'RS',source_group:'GROUP_2',
+   latitude_deg:'43.898899',longitude_deg:'19.697701'}],
+  preparedAirports:[{...baseRows.preparedAirports[0],airport_key:'OURAIRPORTS:1649',
+   airport_name:'Ponikve Airport',airport_code:'LYUZ',country_iso:'RS'}]};
+ const s=make({rows});
+ const route=await s.handler(request('/api/v1/player/airports',{countryIso:'RS',search:'',offset:0}));
+ assert.equal(route.status,200);
+ const routeAirport=(await route.json()).airports[0];
+ assert.equal(routeAirport.code,'LYUZ');
+ assert.equal(routeAirport.bookable,false);
+ const prepared=await s.handler(request('/api/v1/player/prepared-airports',{countryIso:'RS',search:'',offset:0}));
+ assert.equal(prepared.status,200);
+ assert.equal((await prepared.json()).airports[0].code,'LYUZ');
+ assert.match(PLAYER_READ_SQL.airports,/airport_location_eligibility_v1/);
+ assert.match(PLAYER_READ_SQL.preparedAirports,/l\.airport_code as airport_code/);
+ assert.doesNotMatch(PLAYER_READ_SQL.preparedAirports,/c\.game_lookup_code as airport_code/);
+});
