@@ -14,6 +14,7 @@ on:
       - 'tests/test_fleet_acquisition_api.mjs'
       - 'tests/test_airline_workspace.mjs'
       - 'tests/test_player_app_prelaunch.mjs'
+      - 'tests/test_operations_center_navigation.mjs'
       - 'supabase/migrations/*aircraft*market*'
       - '.github/workflows/airlinerra-aircraft-market-ci.yml'
   workflow_dispatch:
