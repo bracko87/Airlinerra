@@ -2195,3 +2195,7 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
 :root[data-ui-theme="dark"] .aircraft-market-search-row select{
  background:#192f45;color:#e8f2fb;border-color:#3b526b
 }
+
+#prepared-airports-panel .prepared-airport-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:5px}
+#prepared-airports-panel .prepared-airport-actions button{margin:0;padding:7px 11px;font-size:12px}
+#prepared-airports-feedback{margin:12px 0}
