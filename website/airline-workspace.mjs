@@ -802,24 +802,87 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
  function marketIsOpen(){
   return usedMarketSnapshot?.marketOpen===true;
  }
+ const newAircraftChoice={maker:'',family:'',model:'',configuration:'',payment:'cash'};
  const isReleasedFactoryOffer=offer=>offer?.offerStatus==='published'&&
-  offer.transactionType==='purchase'&&
-  offer.configurationReviewStatus==='verified';
+  offer.transactionType==='purchase'&&offer.configurationReviewStatus==='verified';
+ function fillMarketSelect(id,options,chosen,placeholder){
+  const select=$(id);
+  if(!select)return '';
+  const values=[...new Set(options.filter(x=>typeof x==='string'&&x.trim()))].sort((a,b)=>a.localeCompare(b));
+  select.replaceChildren(new Option(placeholder,''));
+  for(const value of values)select.append(new Option(value,value));
+  const current=values.includes(chosen)?chosen:'';
+  select.value=current;select.disabled=!values.length;
+  return current;
+ }
+ function currentFactoryOffer(){
+  const offers=Array.isArray(marketSnapshot?.offers)?marketSnapshot.offers:[];
+  if(!newAircraftChoice.maker||!newAircraftChoice.family||
+    !newAircraftChoice.model||!newAircraftChoice.configuration)return null;
+  const available=offers.filter(o=>
+   o.manufacturer===newAircraftChoice.maker&&o.family===newAircraftChoice.family&&
+   o.model===newAircraftChoice.model&&o.configuration===newAircraftChoice.configuration);
+  const payment=newAircraftChoice.payment==='lease'?'lease':'purchase';
+  return available.find(o=>o.transactionType===payment&&isReleasedFactoryOffer(o))||
+   available.find(o=>o.transactionType===payment)||null;
+ }
+ function renderFactorySelectors(){
+  const offers=Array.isArray(marketSnapshot?.offers)?marketSnapshot.offers:[];
+  const maker=newAircraftChoice.maker=fillMarketSelect('new-maker',
+   offers.map(o=>o.manufacturer),newAircraftChoice.maker,'Choose manufacturer');
+  const families=offers.filter(o=>o.manufacturer===maker);
+  const family=newAircraftChoice.family=fillMarketSelect('new-family',
+   families.map(o=>o.family),newAircraftChoice.family,'Choose family');
+  const models=families.filter(o=>o.family===family);
+  const model=newAircraftChoice.model=fillMarketSelect('new-model',
+   models.map(o=>o.model),newAircraftChoice.model,'Choose model');
+  const configs=models.filter(o=>o.model===model);
+  newAircraftChoice.configuration=fillMarketSelect('new-configuration',
+   configs.map(o=>o.configuration),newAircraftChoice.configuration,'Choose configuration');
+  const payment=$('new-payment');
+  if(payment)payment.value=newAircraftChoice.payment;
+ }
  function updateNewOrderAvailability(){
   const offers=Array.isArray(marketSnapshot?.offers)?marketSnapshot.offers:[];
   const approved=offers.filter(isReleasedFactoryOffer);
-  const selected=offers.find(x=>x.offerId===$('market-offer-select')?.value);
-  const enabled=marketIsOpen()&&typeof data.fleetClient?.acquire==='function';
-  const buy=$('market-acquire');
-  if(buy)buy.disabled=!enabled||!isReleasedFactoryOffer(selected);
+  const offer=currentFactoryOffer();
+  const payment=newAircraftChoice.payment;
+  const enabled=marketIsOpen()&&payment==='cash'&&isReleasedFactoryOffer(offer)&&
+   typeof data.fleetClient?.acquire==='function';
+  const select=$('market-offer-select'),buy=$('market-acquire'),quote=$('new-aircraft-quote');
+  if(select)select.value=offer?.offerId||'';
+  if(buy)buy.disabled=!enabled;
+  if(quote){
+   if(!offer)quote.textContent='Choose manufacturer, family, model and configuration to view a factory price.';
+   else {
+    const historical=offer.referencePriceUsd&&offer.priceEvidence==='manufacturer_list_2018'?
+     ' · Historical '+offer.referencePriceYear+' list price '+usd(offer.referencePriceUsd):
+     ' · Historical sale price not verified (model comparison uses an estimated reference value)';
+    const stock=Number(offer.stockUnits||0);
+    const date=offer.estimatedDeliveryUtc?new Date(offer.estimatedDeliveryUtc):null;
+    const dateLabel=date&&!Number.isNaN(date.getTime())?
+     date.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'Not available';
+    const price=payment==='lease'?
+     usd(offer.recurringMonthlyUsd)+'/month, deposit '+usd(offer.upfrontPriceUsd):
+     usd(offer.upfrontPriceUsd)+' cash game price';
+    const readiness=payment==='credit'?
+     'Credit financing is not available until loan repayments and ownership accounting are implemented.':
+     payment==='lease'?'Lease contract and recurring billing are not available yet.':
+     isReleasedFactoryOffer(offer)?'Approved cash purchase offer.':'Catalog preview only; this configuration cannot be ordered yet.';
+    quote.textContent=offer.manufacturer+' '+offer.model+' · '+prettyFleetText(offer.configuration)+
+     ' · '+price+historical+' · '+(stock>0?'In factory stock ('+stock+' available)':
+     'Made to order ('+String(offer.manufacturerDailyCapacity||'—')+' aircraft/day manufacturer capacity)')+
+     ' · Indicative delivery '+dateLabel+' · '+readiness;
+   }
+  }
   const info=$('market-state');
   if(info){
-   if(!marketSnapshot)info.textContent='New-aircraft orders unavailable until the verified fleet connection loads.';
-   else if(!offers.length)info.textContent='No current-production factory offers found.';
-   else info.textContent=String(approved.length)+' purchase offers approved · '+
-    String(offers.length-approved.length)+' catalog-only estimates · '+
-    (enabled?'Select an approved purchase offer; draft and lease offers cannot be ordered.':
-     'Catalog preview only. World 1 aircraft trading is not open; no payment can be made.');
+   if(!marketSnapshot)info.textContent='New-aircraft catalog unavailable until your verified airline is connected.';
+   else if(!offers.length)info.textContent='No current-production aircraft offers found.';
+   else info.textContent=String(new Set(offers.map(o=>o.configurationId)).size)+
+    ' configurations · '+approved.length+' approved cash offers · '+
+    (marketIsOpen()?'Market open for approved cash orders.':
+     'World 1 market not yet open; all selections are preview only.');
   }
  }
  function showUsedBidPanel(offer){
@@ -986,37 +1049,13 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   if(selectedFleetAircraftId&&fleet.some(x=>x.id===selectedFleetAircraftId)){
    void loadMaintenancePreview(selectedFleetAircraftId);
   }
-  const marketState=$('market-state'),offerList=$('market-offers'),select=$('market-offer-select');
-  if(offerList){
-   offerList.replaceChildren();
-   for(const offer of offers){
-    const row=doc.createElement('div');row.className='fleet-test-aircraft-row';
-    const name=doc.createElement('strong');
-    name.textContent=aircraftDisplayName(offer.manufacturer,offer.model)+' · '+
-      String(offer.transactionType||'order');
-    const price=doc.createElement('span');
-    price.textContent='Upfront '+currency(offer.upfrontPriceUsd)+
-      (offer.transactionType==='lease'
-       ?' · '+currency(offer.recurringMonthlyUsd)+'/month × '+String(offer.contractMonths)+' months'
-       :'')+' · delivery '+String(offer.deliveryDays||0)+' days';
-    row.append(name,price);offerList.append(row);
-   }
-  }
+  const offerList=$('market-offers'),select=$('market-offer-select');
+  if(offerList)offerList.replaceChildren();
   if(select){
-   const prior=select.value;
-   select.replaceChildren(new Option(offers.length?'Choose an aircraft offer':'No published offers',''));
-   for(const offer of offers){
-    const approved=isReleasedFactoryOffer(offer);
-    const label=aircraftDisplayName(offer.manufacturer,offer.model)+
-      ' · '+String(offer.transactionType)+' · '+currency(offer.upfrontPriceUsd)+' upfront'+
-      (approved?' · Approved purchase':' · Preview only — cannot order');
-    const option=new Option(label,String(offer.offerId||''));
-    option.disabled=!approved;
-    select.append(option);
-   }
-   if(offers.some(x=>x.offerId===prior&&isReleasedFactoryOffer(x)))select.value=prior;
-   select.disabled=!offers.some(isReleasedFactoryOffer);
+   select.replaceChildren(new Option('Server-selected offer',''));
+   for(const offer of offers)select.append(new Option(String(offer.offerId),String(offer.offerId)));
   }
+  renderFactorySelectors();
   updateNewOrderAvailability();
  }
  async function loadRealFleetMarket(){
@@ -1102,7 +1141,17 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    if(status)status.textContent=String(error?.message||'Unable to process the image.');
   }
  });
- $('market-offer-select')?.addEventListener('change',updateNewOrderAvailability);
+ for(const id of ['maker','family','model','configuration','payment']){
+  $('new-'+id)?.addEventListener('change',()=>{
+   if(id==='payment')newAircraftChoice.payment=$('new-payment').value;
+   else {
+    newAircraftChoice[id]=$('new-'+id).value;
+    const steps=['maker','family','model','configuration'];
+    for(const following of steps.slice(steps.indexOf(id)+1))newAircraftChoice[following]='';
+   }
+   renderFactorySelectors();updateNewOrderAvailability();
+  });
+ }
  doc.getElementById('player-main')?.addEventListener('click',async event=>{
   const openAircraft=event.target.closest('[data-fleet-aircraft-open]');
   if(openAircraft){
@@ -1258,7 +1307,9 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    const feedback=$('market-feedback'),button=$('market-acquire');
    const offer=marketSnapshot?.offers?.find(item=>item.offerId===select?.value);
    const registration=String(entry?.value||'').trim().toUpperCase();
-   if(!isReleasedFactoryOffer(offer)||!data.airline?.id||!data.fleetClient?.acquire||!marketIsOpen()){
+   if(newAircraftChoice.payment!=='cash'||!isReleasedFactoryOffer(offer)||
+    offer?.offerId!==currentFactoryOffer()?.offerId||
+    !data.airline?.id||!data.fleetClient?.acquire||!marketIsOpen()){
     if(feedback)feedback.textContent='Factory orders are not open yet. No funds were charged.';
     return;
    }
