@@ -3,6 +3,7 @@ import {aircraftDisplayName} from './aircraft-library.mjs';
 import {buildAirlineWeeklyBoard,renderAirlineWeeklyBoard} from './aircraft-weekly-schedule-board.mjs';
 import {createCabinServiceManager} from './cabin-services-manager.mjs';
 import {createCabinConfigurationManager} from './cabin-configuration-manager.mjs';
+import {companyCabinChoices,configurationCostPreview} from './aircraft-configuration-options.mjs';
 /** Airlinerra airline-management workspace.
  * Real server read models stay separate from local-only planning. All page
  * structure in this module is constant markup authored by the application.
@@ -356,6 +357,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
  const usedMarketChoice={maker:'',family:'',model:'',configuration:'',payment:'cash'};
  let selectedUsedListingId=null;
  let selectedFleetAircraftId=null;
+ let configurationDialogContext=null,configurationDialogVersion=0;
  let marketFetchVersion=0;
  let maintenanceFetchVersion=0;
  let maintenanceLast=null;
@@ -546,7 +548,12 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
  const fleetSeatLabel=a=>a.useType==='cargo'?'—':
   Number.isInteger(Number(a.referenceSeats))&&a.referenceSeats!==null?
    new Intl.NumberFormat('en-US').format(Number(a.referenceSeats))+' ref.':'Not verified';
- const fleetConfigurationLabel=a=>a.configuration?prettyFleetText(a.configuration):'Not recorded';
+ const fleetConfigurationLabel=a=>{
+  if(!a)return '—';
+  const code=String(a.configuration||'').trim();
+  return /^(?:PASSENGER|CARGO)[- _]BASE$/i.test(code)?'Default':
+   code?prettyFleetText(code):'Not recorded';
+ };
  const fleetCargoLabel=a=>a.cargoKg!==null&&a.cargoKg!==undefined&&
   Number.isFinite(Number(a.cargoKg))&&Number(a.cargoKg)>0?
   new Intl.NumberFormat('en-US').format(Number(a.cargoKg))+' kg max':'Not verified';
@@ -862,8 +869,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    'fleet-detail-configuration':aircraft?fleetConfigurationLabel(aircraft):'—',
    'fleet-detail-cargo':aircraft?fleetCargoLabel(aircraft):'—',
    'fleet-detail-location':aircraft?fleetLocationLabel(aircraft):'—',
-   'fleet-detail-status':aircraft?prettyFleetText(aircraft.fleetStatus)+' · '+
-    prettyFleetText(aircraft.deliveryStatus||'Delivery not recorded'):'—',
+
    'fleet-detail-fleet-added':fmtAircraftDate(aircraft?.fleetAddedAt),
    'fleet-detail-engine':aircraft?.engineOption||'Not recorded',
    'fleet-detail-production-years':aircraft?.modelProductionStartYear?
@@ -891,6 +897,8 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   const input=$('fleet-detail-nickname'),save=$('fleet-detail-save');
   if(input){input.value=aircraft?.nickname||'';input.disabled=!aircraft;}
   if(save)save.disabled=!aircraft||typeof data.fleetClient?.updateNickname!=='function';
+  const change=$('fleet-configuration-change');
+  if(change)change.disabled=!aircraft||!data.fleetClient?.cabinOverview;
   const currentMaintenance=maintenanceLast?.aircraftInventoryId===aircraft?.id?
    maintenanceLast?.checks?.[0]:null;
   updateAirframeDetails(currentMaintenance);
