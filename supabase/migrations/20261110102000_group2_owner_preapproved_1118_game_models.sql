@@ -47,7 +47,7 @@ CREATE TABLE airlinerra_game.airport_group2_game_profiles_v1 (
  game_cargo_slot_per_10m integer NOT NULL CHECK(game_cargo_slot_per_10m>=0),
  game_nighttime_ban boolean,
  game_noise_restrictions boolean,
- game_restriction_basis text NOT NULL
+ game_restriction_basis text NOT NULL DEFAULT 'UNSOURCED_NO_OPERATIONAL_CLEARANCE'
     CHECK(game_restriction_basis='UNSOURCED_NO_OPERATIONAL_CLEARANCE'),
  game_daily_outbound_passengers integer NOT NULL CHECK(game_daily_outbound_passengers>=0),
  game_daily_outbound_cargo_tonnes numeric(12,3) NOT NULL CHECK(game_daily_outbound_cargo_tonnes>=0),
