@@ -100,7 +100,7 @@ export function createPlayerReadHandler({enabled=false,verifyUserToken,database,
      country=data.countryIso;search=data.search??'';offset=data.offset??0;
      if(Object.keys(data).some(k=>!['countryIso','search','offset'].includes(k))||
        typeof country!=='string'||typeof search!=='string'||!SAFE_SEARCH.test(search)||
-       !(GAME_COUNTRY_SET.has(country)||(country===''&&search.trim().length>=2))||
+       !(GAME_COUNTRY_SET.has(country)||(country===''&&(search.trim().length>=2||url.pathname===PREPARED_AIRPORTS_PATH&&search.trim().length===0)))||
        !Number.isInteger(offset)||offset<0||offset>3100)return respond(400,{error:'Invalid airport search'});
    }
    let playerId;
