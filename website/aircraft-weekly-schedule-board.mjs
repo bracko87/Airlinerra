@@ -18,7 +18,7 @@ const validDuration=(a,b)=>{
  if(!a||!b)return null;
  const start=Date.parse(a),end=Date.parse(b);
  const minutes=(end-start)/60000;
- return Number.isFinite(minutes)&&minutes>0&&minutes<=72*60?minutes:null;
+ return Number.isInteger(minutes)&&minutes>0&&minutes<=72*60?minutes:null;
 };
 const orderedStops=stops=>Array.isArray(stops)?stops.filter(
  x=>Number.isInteger(x?.day)&&x.day>=0&&x.day<7&&clockToMinute(x.time)!==null
@@ -153,7 +153,7 @@ export function renderAirlineWeeklyBoard(doc,host,board){
   const cell=add(doc,heading,'th');cell.scope='col';
   add(doc,cell,'strong',name);
   const ticks=add(doc,cell,'div',null,'schedule-board-hour-labels');
-  for(const tick of ['00','06','12','18','24'])add(doc,ticks,'span',tick);
+  for(const tick of ['00:00','06:00','12:00','18:00','24:00'])add(doc,ticks,'span',tick);
  }
  const tbody=add(doc,table,'tbody');
  for(const aircraft of board.rows){
