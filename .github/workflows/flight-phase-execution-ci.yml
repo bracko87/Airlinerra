@@ -1,0 +1,35 @@
+name: Airlinerra flight phase execution (isolated)
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'server/section9-flight-phase-timeline.mjs'
+      - 'server/section9-independent-flight-operation-authorizer.mjs'
+      - 'server/section9-verified-flight-operations-dispatcher.mjs'
+      - 'server/section9-verified-flight-fuel-bridge.mjs'
+      - 'website/flight-fuel-phase-engine.mjs'
+      - 'tests/test_section9_flight_phase_timeline.mjs'
+      - 'tests/test_section9_independent_operation_authorizer.mjs'
+      - 'tests/test_section9_fuel_arrival_bridge.mjs'
+      - '.github/workflows/flight-phase-execution-ci.yml'
+  workflow_dispatch:
+jobs:
+  flight-phase:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax of independent engine contracts
+        run: |
+          node --check server/section9-flight-phase-timeline.mjs
+          node --check server/section9-independent-flight-operation-authorizer.mjs
+          node --check server/section9-verified-flight-operations-dispatcher.mjs
+          node --check server/section9-verified-flight-fuel-bridge.mjs
+      - name: Verify five flight phases and trusted movement decisions (no real movements)
+        run: |
+          node --test tests/test_section9_flight_phase_timeline.mjs tests/test_section9_independent_operation_authorizer.mjs tests/test_section9_fuel_arrival_bridge.mjs
+      - name: Protected website build
+        run: cd website && npm run build
