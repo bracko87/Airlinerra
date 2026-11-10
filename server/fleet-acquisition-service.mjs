@@ -48,13 +48,15 @@ export const FLEET_SQL=Object.freeze({
   "JOIN airlinerra_game.world_memberships w ON w.world_id=a.world_id AND w.player_id=a.owner_player_id "+
   "WHERE a.id=$1::uuid AND a.owner_player_id=$2::uuid AND a.world_id=1 AND w.state='active'",
  offers:"SELECT o.offer_id::text AS \"offerId\",o.configuration_id::int AS \"configurationId\", "+
-  "o.transaction_type AS \"transactionType\",o.upfront_price_usd::text AS \"upfrontPriceUsd\", "+
+  "o.transaction_type AS \"transactionType\",o.offer_status AS \"offerStatus\", "+
+  "c.configuration_review_status AS \"configurationReviewStatus\", "+
+  "o.upfront_price_usd::text AS \"upfrontPriceUsd\", "+
   "o.recurring_monthly_usd::text AS \"recurringMonthlyUsd\",o.contract_months AS \"contractMonths\", "+
   "o.delivery_days AS \"deliveryDays\",c.manufacturer_name AS manufacturer,c.model_name AS model, "+
   "c.use_type AS \"useType\",c.reference_passenger_capacity AS \"referenceSeats\" "+
   "FROM airlinerra_game.aircraft_acquisition_offers_v1 o "+
   "JOIN airlinerra.aircraft_catalog_configuration_inventory c ON c.configuration_id=o.configuration_id "+
-  "WHERE o.world_id=1 AND o.offer_status='published' "+
+  "WHERE o.world_id=1 AND o.offer_status IN('published','draft') "+
   "AND o.pricing_basis='AIRLINERRA_NEW_FACTORY_GAME_ESTIMATE_V2' "+
   "AND c.production_status='in_production' "+
   "AND c.production_start_year<=extract(year from now()) "+
