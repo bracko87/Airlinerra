@@ -119,14 +119,17 @@ test('digital services incur use cost without fictitious physical stocking',()=>
 });
 test('route plan stores selected package and has separate projected duration, not real settlement',async()=>{
  const ui=routePlannerMarkup(),source=await read('website/route-planner.mjs');
- for(const name of ['route-cabin-package','route-cabin-service-note','route-cabin-passengers','route-cabin-hours'])
-  assert.ok(ui.includes(name),name);
+ assert.ok(ui.includes('route-cabin-package'));
+ for(const removed of ['route-cabin-service-note','route-cabin-passengers','route-cabin-hours','Estimated passengers (preview only)'])
+  assert.ok(!ui.includes(removed),removed);
  assert.ok(!ui.includes('route-onboard-service'));
  assert.ok(ui.includes('No onboard service'));
  assert.ok(source.includes('cabinPackageId'));
  assert.ok(source.includes('getCabinState'));
  assert.ok(source.includes('airlinerra:cabin-packages-updated'));
- assert.ok(source.includes('forecastCabinServiceFlight'));
+ assert.ok(!source.includes('forecastCabinServiceFlight'));
+ assert.ok(source.includes('cabinPackageId'));
+ assert.ok(source.includes('const payload=.5;'));
  const options={departureStand:'terminal',arrivalStand:'terminal',turnaroundMinutes:60,
   fares:{economy:100,premium:null,business:null,first:null},
   onboard:'basic',baggage:'standard',cargo:'none',cabinPackageId:'pkg-2'};
@@ -155,5 +158,6 @@ test('custom packages can be deleted but protected Basic cannot',async()=>{
  assert.match(ui,/state.packages=state.packages.filter\(p=>p.id!==deleteId\)/);
  const css=await read('website/player-app.css');
  assert.match(css,/\.cabin-package-remove/);
- assert.match(css,/\.route-cabin-cost-preview/);
+ assert.doesNotMatch(css,/\.route-cabin-cost-preview/);
+ assert.match(css,/\.cabin-package-saved-toast/);
 });
