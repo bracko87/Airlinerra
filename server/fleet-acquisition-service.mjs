@@ -33,9 +33,14 @@ export function validateFleetAcquisitionRequest(body){
   REGISTRATION.test(body.registration.trim().toUpperCase());
  if(body.action==='cabin-overview')return Object.keys(body).length===2 &&
   Object.keys(body).every(k=>['action','airlineId'].includes(k));
- if(body.action==='cabin-save-draft')return Object.keys(body).length===11 &&
+ if(body.action==='cabin-save-draft')return Object.keys(body).length>=11 &&
+  Object.keys(body).length<=12 &&
   Object.keys(body).every(k=>['action','airlineId','aircraftInventoryId',
-   'economy','premium','business','first','economyType','premiumType','businessType','firstType'].includes(k)) &&
+   'economy','premium','business','first','economyType','premiumType','businessType','firstType','extraLegroomCm'].includes(k)) &&
+  (body.extraLegroomCm===undefined||
+   (typeof body.extraLegroomCm==='number'&&Number.isFinite(body.extraLegroomCm)&&
+    body.extraLegroomCm>=0&&body.extraLegroomCm<=20&&
+    Math.abs(body.extraLegroomCm*10-Math.round(body.extraLegroomCm*10))<1e-8)) &&
   uuid(body.aircraftInventoryId)&&
   ['economy','premium','business','first'].every(k=>
    Number.isInteger(body[k])&&body[k]>=0&&body[k]<=850) &&
@@ -288,7 +293,9 @@ export const FLEET_SQL=Object.freeze({
   "draft.economy_type AS \"draftEconomyType\", "+
   "draft.premium_type AS \"draftPremiumType\", "+
   "draft.business_type AS \"draftBusinessType\", "+
-  "draft.first_type AS \"draftFirstType\",draft.updated_at AS \"draftUpdatedAt\" "+
+  "draft.first_type AS \"draftFirstType\", "+
+  "draft.extra_legroom_cm::text AS \"draftExtraLegroomCm\", "+
+  "draft.updated_at AS \"draftUpdatedAt\" "+
   "FROM airlinerra_game.airline_aircraft_inventory i "+
   "JOIN airlinerra.aircraft_catalog_configuration_inventory c ON c.configuration_id=i.configuration_id "+
   "JOIN airlinerra_game.cabin_model_standard_v1 s ON s.configuration_id=i.configuration_id "+
@@ -315,20 +322,25 @@ export const FLEET_SQL=Object.freeze({
   "WHERE i.airline_id=$1::uuid AND r.planning_status='game_planning_approved' "+
   "ORDER BY i.registration,a.airport_code LIMIT 500",
  cabinOwnerAircraft:"SELECT s.reference_seat_units::text AS \"referenceUnits\", "+
-  "c.use_type AS \"useType\",i.configuration_id::int AS \"configurationId\" "+
+  "c.use_type AS \"useType\",i.configuration_id::int AS \"configurationId\", "+
+  "COALESCE(installed.installed_economy,0)+COALESCE(installed.installed_premium,0)+ "+
+  "COALESCE(installed.installed_business,0)+COALESCE(installed.installed_first,0) "+
+  "AS \"installedSeatCount\" "+
   "FROM airlinerra_game.airline_aircraft_inventory i "+
   "JOIN airlinerra_game.cabin_model_standard_v1 s ON s.configuration_id=i.configuration_id "+
   "JOIN airlinerra.aircraft_catalog_configuration_inventory c ON c.configuration_id=i.configuration_id "+
+  "LEFT JOIN airlinerra_game.aircraft_installed_cabins_v1 installed ON installed.aircraft_inventory_id=i.id "+
   "WHERE i.airline_id=$1::uuid AND i.id=$2::uuid",
  cabinSave:"INSERT INTO airlinerra_game.aircraft_cabin_drafts_v1 "+
   "(aircraft_inventory_id,airline_id,economy_seats,premium_seats,business_seats,first_seats, "+
-  "economy_type,premium_type,business_type,first_type) "+
-  "VALUES($2::uuid,$1::uuid,$3::int,$4::int,$5::int,$6::int,$7::text,$8::text,$9::text,$10::text) "+
+  "economy_type,premium_type,business_type,first_type,extra_legroom_cm) "+
+  "VALUES($2::uuid,$1::uuid,$3::int,$4::int,$5::int,$6::int,$7::text,$8::text,$9::text,$10::text,$11::numeric) "+
   "ON CONFLICT(aircraft_inventory_id) DO UPDATE "+
   "SET economy_seats=EXCLUDED.economy_seats,premium_seats=EXCLUDED.premium_seats, "+
   "business_seats=EXCLUDED.business_seats,first_seats=EXCLUDED.first_seats, "+
   "economy_type=EXCLUDED.economy_type,premium_type=EXCLUDED.premium_type, "+
-  "business_type=EXCLUDED.business_type,first_type=EXCLUDED.first_type,updated_at=now() "+
+  "business_type=EXCLUDED.business_type,first_type=EXCLUDED.first_type, "+
+  "extra_legroom_cm=EXCLUDED.extra_legroom_cm,updated_at=now() "+
   "WHERE airlinerra_game.aircraft_cabin_drafts_v1.airline_id=EXCLUDED.airline_id "+
   "RETURNING aircraft_inventory_id::text AS \"aircraftInventoryId\",updated_at AS \"savedAt\"",
  delivery:"SELECT airlinerra_game.check_owned_aircraft_delivery_v1($1::uuid,$2::uuid,$3::uuid) AS result",
@@ -439,11 +451,15 @@ export function createFleetAcquisitionHandler({verifyUserToken,database}={}){
     const defs=await client.query(FLEET_SQL.cabinTypes);
     const types=new Map(defs.rows.map(t=>[t.code,t]));
     let used=0,installUsd=0;
+    const extraCm=body.extraLegroomCm??0;
     for(const [group,type,count] of choices){
      const seat=types.get(type);
      if(!seat||seat.cabinClass!==group)
       return respond(400,{reason:'INVALID_CABIN_SEAT_TYPE'});
-     used+=count*Number(seat.spaceUnits);
+     const pitch=Number(seat.pitchInches);
+     if(!Number.isFinite(pitch)||pitch<=0)
+      return respond(503,{reason:'SEAT_PITCH_REFERENCE_UNAVAILABLE'});
+     used+=count*Number(seat.spaceUnits)*(1+extraCm/(pitch*2.54));
      installUsd+=count*Number(seat.installUsd);
     }
     const capacity=Number(airframe.referenceUnits);
@@ -452,12 +468,19 @@ export function createFleetAcquisitionHandler({verifyUserToken,database}={}){
        availableSpace:capacity});
     const stored=await client.query(FLEET_SQL.cabinSave,[
      body.airlineId,body.aircraftInventoryId,body.economy,body.premium,
-     body.business,body.first,body.economyType,body.premiumType,body.businessType,body.firstType]);
+     body.business,body.first,body.economyType,body.premiumType,body.businessType,body.firstType,extraCm]);
     if(stored.rowCount!==1)return respond(409,{reason:'CABIN_DRAFT_CANNOT_BE_SAVED'});
+    const nextSeatCount=body.economy+body.premium+body.business+body.first;
+    const existing=Number(airframe.installedSeatCount||0);
+    const laborUsd=5000+nextSeatCount*150+existing*75;
     return respond(200,{...stored.rows[0],airlineId:body.airlineId,
-     totalSeats:body.economy+body.premium+body.business+body.first,
+     totalSeats:nextSeatCount,extraLegroomCm:extraCm,
      usedSpace:Math.round(used*100)/100,availableSpace:capacity,
+     spacePct:Math.round(used/capacity*1000)/10,
      estimatedSeatEquipmentUsd:Math.round(installUsd),
+     estimatedRemovalAndInstallationUsd:Math.round(laborUsd),
+     estimatedRefitTotalUsd:Math.round(installUsd+laborUsd),
+     quoteOnly:true,chargedUsd:0,
      indicativeDowntimeHours:body.premium+body.business+body.first>0?48:24,
      status:'draft_saved_not_installed',canScheduleRefit:false,
      aircraftLocationUnchanged:true,liveSeatsUnchanged:true,cashDebited:false});
