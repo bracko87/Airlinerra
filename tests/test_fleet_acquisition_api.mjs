@@ -42,7 +42,7 @@ test('only server-approved published factory purchases can enable ordering',asyn
  assert.match(page,/offer\?\.offerStatus==='published'/);
  assert.match(page,/offer\.transactionType==='purchase'/);
  assert.match(page,/offer\.configurationReviewStatus==='verified'/);
- assert.match(page,/option\.disabled=!approved/);
+ assert.match(page,/payment==='cash'&&isReleasedFactoryOffer\(offer\)/);
  assert.match(page,/!isReleasedFactoryOffer\(offer\)/);
  assert.match(page,/Catalog preview only/);
 });
@@ -172,7 +172,7 @@ test('market selectors are owner-verified and all financing drafts fail closed',
  const filter={action:'list-used',airlineId:airline,page:0,filterMode:'purchase',
   search:'',manufacturer:'Boeing',family:'737',model:'737 MAX 8',configuration:'PASSENGER-BASE'};
  assert.equal(validateFleetAcquisitionRequest(filter),true);
- for(const invalid of [{manufacturer:'X'.repeat(101)},{family:'Bad\\nFamily'},
+ for(const invalid of [{manufacturer:'X'.repeat(101)},{family:'Bad\nFamily'},
   {configuration:5},{extraField:'ignore'}])
    assert.equal(validateFleetAcquisitionRequest({...filter,...invalid}),false);
  const app=await readFile(new URL('../website/airline-workspace.mjs',import.meta.url),'utf8');
