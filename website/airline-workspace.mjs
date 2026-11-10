@@ -645,12 +645,10 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
     const row=doc.createElement('div');row.className='fleet-inventory-row';row.setAttribute('role','row');
     const identity=doc.createElement('div');identity.className='fleet-identity';identity.setAttribute('role','cell');
     const title=doc.createElement('strong');
-    title.textContent=aircraftDisplayName(aircraft.manufacturer,aircraft.model)||'Aircraft';
-    const sub=doc.createElement('small');
-    sub.textContent=[aircraft.family?('Family '+aircraft.family):'Family not recorded',
-     aircraft.registration||'Registration not available'].join(' · ')+
+    title.textContent=(aircraftDisplayName(aircraft.manufacturer,aircraft.model)||'Aircraft')+
+     ' · '+String(aircraft.registration||'Registration not available')+
      (aircraft.nickname?' ('+aircraft.nickname+')':'');
-    identity.append(title,sub);
+    identity.append(title);
     const cell=(value,css='')=>{
      const el=doc.createElement('span');el.setAttribute('role','cell');
      if(css)el.className=css;
