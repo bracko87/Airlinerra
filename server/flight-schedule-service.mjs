@@ -225,6 +225,9 @@ export const SCHEDULE_SQL=Object.freeze({
    s.reference_departure_utc AS "referenceDepartureUtc",
    s.reference_arrival_utc AS "referenceArrivalUtc",
    s.weekly_schedule AS "weeklySchedule",
+   (SELECT count(*) = 2*jsonb_array_length(s.weekly_schedule)
+     FROM airlinerra_game.section6_weekly_airport_slot_reservations_v1 slot
+     WHERE slot.schedule_id=s.id) AS "slotsReserved",
    s.departure_stand_type AS "departureStand",s.arrival_stand_type AS "arrivalStand",s.status,
    s.version,s.updated_at AS "updatedAt"
    FROM airlinerra_game.airline_flight_schedule_drafts_v1 s
