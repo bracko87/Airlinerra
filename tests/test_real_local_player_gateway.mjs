@@ -186,6 +186,8 @@ test('release preflight reports ready only when the real database says so',async
 test('one canonical real API composes the same protected services for localhost and future official host',async()=>{
  assert.ok(CANONICAL_GAME_API_PATHS.includes('/api/v1/airlines'));
  assert.ok(CANONICAL_GAME_API_PATHS.includes('/api/v1/player/overview'));
+ assert.ok(CANONICAL_GAME_API_PATHS.includes('/api/v1/player/prepared-airports'));
+ assert.ok(LOCAL_PLAYER_API_PATHS.includes('/api/v1/player/prepared-airports'));
  assert.ok(CANONICAL_GAME_API_PATHS.includes('/api/v1/registration/readiness'));
  assert.equal((await createCanonicalGameApi({enabled:false})(request())).status,503);
  const db={connect:async()=>({
