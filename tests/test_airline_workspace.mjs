@@ -7,7 +7,7 @@ const read=path=>readFile(new URL(path,import.meta.url),'utf8');
 
 test('expanded management pages and operations/settings navigation stay linked',async()=>{
  const html=await read('../website/private-player-app.html');
- assert.equal(PLAYER_VIEWS.length,46);
+ assert.equal(PLAYER_VIEWS.length,47);
  assert.equal(new Set(PLAYER_VIEWS).size,PLAYER_VIEWS.length);
  for(const page of PLAYER_VIEWS)
   assert.match(html,new RegExp('data-player-view="'+page+'"'));
