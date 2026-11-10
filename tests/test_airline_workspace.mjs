@@ -49,6 +49,24 @@ test('real connected views remain while 16 richer section mounts render',async()
  assert.doesNotMatch(workspace,/\.auth\.signUp|service_role|sb_secret_|fetch\(/);
 });
 
+test('cabin service startup mounts its host before manager initialization and cannot block account access',async()=>{
+ const [workspace,html,overlay]=await Promise.all([
+  read('../website/airline-workspace.mjs'),
+  read('../website/private-player-app.html'),
+  read('../website/dev-scripts/invited-overlay.mjs')
+ ]);
+ const render=workspace.indexOf('for(const [name,render] of Object.entries(pages))');
+ const cabin=workspace.indexOf('cabinManager=createCabinServiceManager(');
+ assert.ok(render>=0&&cabin>render,'Cabin manager must start AFTER workspace markup renders');
+ assert.match(workspace,/const cabinHost=\$\('cabin-services-manager'\)/);
+ assert.match(workspace,/if\(cabinHost\)\{/);
+ assert.match(workspace,/cabinManager\?\.updateData\(data\)/);
+ assert.match(workspace,/Airlinerra cabin service interface unavailable/);
+ assert.match(workspace,/id="cabin-services-manager"/);
+ assert.match(html,/id="workspace-service"/);
+ assert.match(overlay,/'cabin-services-manager\.mjs'/);
+});
+
 test('settings validate choices and refuse unimplemented language and notification control',()=>{
  assert.deepEqual(cleanUiPreferences(null),AIRLINE_UI_DEFAULTS);
  const pref=cleanUiPreferences({units:'mi',time:'12',landing:'routes',density:'compact',
