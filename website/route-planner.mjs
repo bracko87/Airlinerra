@@ -823,11 +823,12 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   if(serial!==editSerial)return false;
   return pickers[side].choose(airport.key);
  };
- const editRouteDraft=async index=>{
+ const editRouteDraft=async ref=>{
   const stored=loadDraft?.()||{};
   const routes=Array.isArray(stored.routes)&&stored.routes.length?stored.routes:
    stored.route?[stored.route]:[];
-  const route=routes[index];
+  const index=Number.isInteger(ref)?ref:null;
+  const route=index!==null?routes[index]:ref;
   if(!route?.from||!route?.to)return;
   const serial=++editSerial;editingFlightNumber=route.flightNumber||null;
   editingLegacyIndex=route.flightNumber?null:index;
@@ -873,12 +874,13 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
   }
   show();
   message('route-plan-status',route.flightNumber?
-   'Editing '+route.flightNumber+' · changes will update this local draft only.':
+   'Editing '+route.flightNumber+' · Create new route will save the updated planning draft to your airline where connected.':
    'Previous route idea loaded. Enter a flight number and choose days to save it as a draft.');
  };
  doc.addEventListener('airlinerra:edit-route-draft',event=>{
-  const index=event.detail?.index;
-  if(Number.isInteger(index)&&index>=0&&index<25)void editRouteDraft(index);
+  const ref=event.detail?.route||event.detail?.index;
+  if(ref&&typeof ref==='object'&&ref.from&&ref.to)void editRouteDraft(ref);
+  else if(Number.isInteger(ref)&&ref>=0&&ref<100)void editRouteDraft(ref);
  });
  const main=$('player-main');
  main?.addEventListener('change',async event=>{
