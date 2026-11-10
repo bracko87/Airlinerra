@@ -773,12 +773,38 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    'fleet-detail-cargo':aircraft?fleetCargoLabel(aircraft):'—',
    'fleet-detail-location':aircraft?fleetLocationLabel(aircraft):'—',
    'fleet-detail-status':aircraft?prettyFleetText(aircraft.fleetStatus)+' · '+
-    prettyFleetText(aircraft.deliveryStatus||'Delivery not recorded'):'—'
+    prettyFleetText(aircraft.deliveryStatus||'Delivery not recorded'):'—',
+   'fleet-detail-fleet-added':fmtAircraftDate(aircraft?.fleetAddedAt),
+   'fleet-detail-engine':aircraft?.engineOption||'Not recorded',
+   'fleet-detail-production-years':aircraft?.modelProductionStartYear?
+    String(aircraft.modelProductionStartYear)+'–'+(aircraft.modelProductionEndYear||'present'):'Not recorded',
+   'fleet-detail-crew':fmtAircraftNumber(aircraft?.referenceCrewRequired),
+   'fleet-detail-cruise-speed':fmtAircraftNumber(aircraft?.cruiseSpeedKmh,' km/h'),
+   'fleet-detail-range':fmtAircraftNumber(aircraft?.rangeKm,' km'),
+   'fleet-detail-mtow':fmtAircraftNumber(aircraft?.mtowKg,' kg'),
+   'fleet-detail-mlw':fmtAircraftNumber(aircraft?.mlwKg,' kg'),
+   'fleet-detail-wingspan':fmtAircraftNumber(aircraft?.wingspanM,' m'),
+   'fleet-detail-length':fmtAircraftNumber(aircraft?.lengthM,' m'),
+   'fleet-detail-height':fmtAircraftNumber(aircraft?.heightM,' m'),
+   'fleet-detail-takeoff-runway':fmtAircraftNumber(aircraft?.takeoffRunwayM,' m'),
+   'fleet-detail-landing-runway':fmtAircraftNumber(aircraft?.landingRunwayM,' m'),
+   'fleet-detail-tech-evidence':aircraft?.technicalReviewStatus?prettyFleetText(aircraft.technicalReviewStatus):'Not recorded',
+   'fleet-detail-acquisition-type':aircraft?.acquisitionType?prettyFleetText(aircraft.acquisitionType):'Not recorded',
+   'fleet-detail-acquisition-date':fmtAircraftDate(aircraft?.acquisitionDate),
+   'fleet-detail-upfront':aircraft?.paidUpfrontUsd===null||aircraft?.paidUpfrontUsd===undefined?'Not recorded':usd(aircraft.paidUpfrontUsd),
+   'fleet-detail-monthly-lease':aircraft?.recurringMonthlyUsd===null||aircraft?.recurringMonthlyUsd===undefined?'Not recorded':usd(aircraft.recurringMonthlyUsd),
+   'fleet-detail-contract-months':fmtAircraftNumber(aircraft?.contractMonths,' months'),
+   'fleet-detail-market-value':'Not available — no verified tail valuation',
+   'fleet-detail-operating-cost':'Not calculated — no operated flights'
   };
   for(const [id,value] of Object.entries(ids))if($(id))$(id).textContent=value;
   const input=$('fleet-detail-nickname'),save=$('fleet-detail-save');
   if(input){input.value=aircraft?.nickname||'';input.disabled=!aircraft;}
   if(save)save.disabled=!aircraft||typeof data.fleetClient?.updateNickname!=='function';
+  const currentMaintenance=maintenanceLast?.aircraftInventoryId===aircraft?.id?
+   maintenanceLast?.checks?.[0]:null;
+  updateAirframeDetails(currentMaintenance);
+  if(aircraftPhotoId!==aircraft?.id)void refreshAircraftPhoto(aircraft);
  }
  function renderRealFleetMarket(snapshot){
   marketSnapshot=snapshot;
