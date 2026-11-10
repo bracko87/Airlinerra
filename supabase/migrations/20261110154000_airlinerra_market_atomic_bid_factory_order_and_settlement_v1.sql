@@ -58,6 +58,10 @@ BEGIN
    WHERE world_id=1) THEN
   RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='AIRCRAFT_LEASE_BILLING_NOT_ACTIVE';
  END IF;
+ IF EXISTS(SELECT 1 FROM airlinerra_game.aircraft_acquisition_orders_v1
+   WHERE airline_id=p_airline_id AND request_id=p_request_id) THEN
+  RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='AUCTION_REQUEST_ID_ALREADY_USED';
+ END IF;
  IF lot.status NOT IN ('available','bidding') THEN
   RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='USED_AIRCRAFT_OFFER_NOT_AVAILABLE';
  END IF;
@@ -112,7 +116,7 @@ BEGIN
  INSERT INTO airlinerra_game.airline_ledger(airline_id,entry_kind,amount_usd)
  VALUES(p_airline_id,'AIRCRAFT_AUCTION_HOLD',-required_hold);
  -- Refund the former leader exactly once, in the SAME transaction.
- IF prior.bid_id IS NOT NULL THEN
+ IF lot.status='bidding' THEN
   UPDATE airlinerra_game.airlines SET cash_usd=cash_usd+prior.held_usd
    WHERE id=prior.airline_id;
   INSERT INTO airlinerra_game.airline_ledger(airline_id,entry_kind,amount_usd)
@@ -219,7 +223,7 @@ BEGIN
  IF market_allowed IS DISTINCT FROM true THEN RETURN 0; END IF;
  FOR lot IN SELECT * FROM airlinerra_game.used_aircraft_auction_lots_v1
   WHERE world_id=1 AND status='bidding' AND close_after_utc<=now_utc
-  ORDER BY close_after_utc,listing_id FOR UPDATE SKIP LOCKED LIMIT p_limit
+  ORDER BY close_after_utc,listing_id LIMIT p_limit FOR UPDATE SKIP LOCKED
  LOOP
   SELECT * INTO bid FROM airlinerra_game.used_aircraft_auction_bids_v1
   WHERE bid_id=lot.winning_bid_id AND listing_id=lot.listing_id
