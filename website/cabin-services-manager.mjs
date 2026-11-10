@@ -136,7 +136,7 @@ const select=(doc,options,value,disabled=false)=>{
 export function createCabinServiceManager({doc,host,storage,identity}={}){
  if(!doc?.createElement||!host||typeof identity!=='string'||
     !/^[\w-]{3,128}$/.test(identity))throw Error('Verified manager required');
- let airlineId=null,state=initialCabinState(),activeId='basic',working=null,savedKey=null;
+ let airlineId=undefined,state=initialCabinState(),activeId='basic',working=null,savedKey=null;
  const status=text=>{const box=host.querySelector('#cabin-package-status');
   if(box)box.textContent=text;};
  const find=id=>state.packages.find(p=>p.id===id);
