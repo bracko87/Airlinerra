@@ -2217,3 +2217,85 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
 #prepared-airports-panel .prepared-airport-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:5px}
 #prepared-airports-panel .prepared-airport-actions button{margin:0;padding:7px 11px;font-size:12px}
 #prepared-airports-feedback{margin:12px 0}
+
+/* Airlinerra cabin floor plan: same flat manager panel and route planner controls. */
+#workspace-cabin-configurations .cabin-choose{display:flex;flex-direction:column;gap:5px;max-width:370px;
+ font-size:11px;color:var(--muted);margin:13px 0}
+#workspace-cabin-configurations .cabin-choose select{
+ border:1px solid var(--line);border-radius:7px;padding:8px 10px;min-height:34px;
+ background:var(--card,#fff);color:var(--navy);font-size:12px;width:100%;min-width:0
+}
+#workspace-cabin-configurations .cabin-installed-note{
+ padding:11px 0;margin:8px 0 13px;border-bottom:1px solid var(--line);
+ font-size:12px;color:var(--navy)
+}
+.cabin-designer-grid{display:grid;grid-template-columns:minmax(380px,1.4fr) minmax(245px,.8fr);
+ gap:20px;align-items:start;margin:14px 0 12px}
+.cabin-designer-controls,.cabin-designer-visual{min-width:0}
+.cabin-designer-row{
+ display:grid;grid-template-columns:110px minmax(150px,1fr) 85px 80px;
+ gap:10px;align-items:center;padding:11px 2px;border-bottom:1px solid var(--line);
+ font-size:12px;color:var(--navy)
+}
+.cabin-designer-row strong{font-size:12px}
+.cabin-designer-head{padding-top:5px;font-size:11px;font-weight:650;color:var(--muted)}
+#player-main .cabin-designer-row select,#player-main .cabin-designer-row input{
+ border:1px solid #cbd9e7;border-radius:6px;background:var(--card,#fff);
+ color:var(--navy);font-size:12px;padding:6px 9px;min-height:32px;max-height:34px;
+ width:100%;min-width:0;box-sizing:border-box
+}
+.cabin-designer-unit{text-align:right;tabular-nums:inherit;font-size:11px}
+.cabin-designer-status{font-size:12px;line-height:1.5;color:var(--navy);padding:12px 0;margin:0}
+.cabin-designer-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}
+#player-main .cabin-compact-action{min-height:32px;padding:7px 12px;margin:0;border-radius:7px;font-size:11px}
+.cabin-designer-visual{
+ display:flex;flex-direction:column;align-items:center;
+ border-left:1px solid var(--line);padding-left:15px;
+}
+.cabin-designer-visual svg{display:block;width:100%;max-width:350px;height:auto;
+ max-height:610px;overflow-y:auto;min-height:185px}
+.cabin-designer-visual .hint{font-size:11px;line-height:1.55;margin-top:8px}
+#workspace-cabin-configurations h3{font-size:16px;color:var(--navy);margin:12px 0}
+#workspace-cabin-configurations h4{font-size:14px;color:var(--navy);margin:20px 0 6px}
+#workspace-cabin-configurations .hint{font-size:11px;line-height:1.5}
+#workspace-aircraft-new-orders .factory-cabin-customizer{
+ border-top:1px solid var(--line);padding-top:12px;margin-top:15px
+}
+#workspace-aircraft-new-orders .factory-cabin-customizer h4{font-size:14px;margin:6px 0 8px;color:var(--navy)}
+#workspace-aircraft-new-orders .factory-cabin-customizer>.hint{font-size:11px;line-height:1.5}
+#workspace-aircraft-new-orders .factory-cabin-customizer .cabin-designer-visual svg{max-height:440px}
+#workspace-aircraft-new-orders .factory-cabin-customizer .cabin-designer-grid{
+ grid-template-columns:minmax(380px,1.4fr) minmax(210px,.7fr)}
+.fleet-maintenance-site-quote{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:12px;align-items:end;border-top:1px solid var(--line);margin-top:15px;padding-top:12px}
+.fleet-maintenance-site-quote label{display:flex;flex-direction:column;gap:5px;font-size:11px;color:var(--muted)}
+#player-main .fleet-maintenance-site-quote select{
+ min-height:32px;padding:6px 9px;border-radius:7px;background:var(--card,#fff);
+ border:1px solid #cbd9e7;color:var(--navy);font-size:12px;width:100%
+}
+.fleet-maintenance-site-quote .hint{grid-column:1 / -1}
+.mro-directory-controls{display:flex;gap:10px;align-items:end;margin:12px 0 18px;flex-wrap:wrap}
+.mro-directory-controls label{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--muted)}
+.mro-directory-controls select{min-height:32px;padding:6px 10px;background:var(--card,#fff);
+ color:var(--navy);border:1px solid var(--line);border-radius:7px;font-size:12px}
+.mro-directory-list{width:100%;border-top:1px solid var(--line)}
+.mro-directory-line{display:grid;grid-template-columns:minmax(170px,1.2fr) minmax(160px,1.2fr)
+ minmax(170px,1.6fr) minmax(130px,1fr);gap:12px;padding:10px 5px;
+ font-size:12px;border-bottom:1px solid var(--line);color:var(--navy)}
+.mro-directory-line small{font-size:11px;color:var(--muted)}
+.mro-directory-line a{font-size:11px;text-decoration:underline;overflow-wrap:anywhere}
+@media(max-width:980px){.cabin-designer-grid,
+ #workspace-aircraft-new-orders .factory-cabin-customizer .cabin-designer-grid{grid-template-columns:1fr}
+ .cabin-designer-visual{border-left:0;border-top:1px solid var(--line);
+  padding-left:0;padding-top:10px}.cabin-designer-visual svg{max-width:310px}}
+@media(max-width:630px){.cabin-designer-row{grid-template-columns:1fr minmax(130px,1.2fr) 68px 48px;gap:5px;font-size:11px}
+ .cabin-designer-head{font-size:10px}.cabin-designer-row strong{font-size:11px}
+ .fleet-maintenance-site-quote{grid-template-columns:1fr}
+ .mro-directory-line{grid-template-columns:1fr 1fr;gap:5px}.mro-directory-line>*{min-width:0}}
+:root[data-ui-theme="dark"] .cabin-designer-row select,
+:root[data-ui-theme="dark"] .cabin-designer-row input,
+:root[data-ui-theme="dark"] .cabin-choose select,
+:root[data-ui-theme="dark"] .mro-directory-controls select,
+:root[data-ui-theme="dark"] .fleet-maintenance-site-quote select{
+ background:#192f45;color:#e8f2fb;border-color:#3b526b
+}
