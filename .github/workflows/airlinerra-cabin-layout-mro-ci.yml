@@ -14,10 +14,12 @@ on:
       - 'website/dev-scripts/invited-overlay.mjs'
       - 'website/dev-scripts/real-player-read-gateway.mjs'
       - 'server/fleet-acquisition-service.mjs'
+      - 'server/cabin-refit-readiness.mjs'
       - 'server/section9-demand-allocation.mjs'
       - 'server/section9-network-demand-engine.mjs'
       - 'tests/test_section9_demand_allocation.mjs'
       - 'tests/test_section9_network_engine.mjs'
+      - 'tests/test_cabin_refit_readiness.mjs'
       - 'tests/test_cabin_configuration.mjs'
       - 'tests/test_aircraft_configuration_modal.mjs'
       - 'tests/test_airline_workspace.mjs'
@@ -47,6 +49,8 @@ jobs:
         run: node --test tests/test_cabin_configuration.mjs tests/test_aircraft_configuration_modal.mjs tests/test_fleet_acquisition_api.mjs tests/test_airline_workspace.mjs
       - name: Verify passenger-only installed cabin demand with no draft or cargo effect
         run: node --test tests/test_section9_demand_allocation.mjs tests/test_section9_network_engine.mjs
+      - name: Verify dormant cabin refit gates (no charges or installation)
+        run: node --test tests/test_cabin_refit_readiness.mjs
       - name: Verify full built invitation-only website
         run: |
           cd website
