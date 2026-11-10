@@ -143,6 +143,9 @@ export function routeAirportPairStatus(origin,destination){
  if(!origin?.key||!destination?.key)return 'INCOMPLETE';
  return origin.key===destination.key?'SAME_AIRPORT':'VALID';
 }
+/** Real schedule mutation is never implied by read-only list or slot checks. */
+export const routeDraftSaveMode=scheduler=>
+ typeof scheduler?.save==='function'?'server':'browser';
 export const flightPrefixFor=airline=>{
  const code=String(airline?.iataCode||'').trim().toUpperCase();
  if(/^[A-Z0-9]{2}$/.test(code)&&/[A-Z]/.test(code))
@@ -1240,7 +1243,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite}={}){
    message('route-plan-status','Select an in-service aircraft owned or leased by this company. Test and catalogue aircraft cannot be scheduled.');
    return;
   }
-  const canSaveToServer=typeof data?.scheduler?.save==='function';
+  const canSaveToServer=routeDraftSaveMode(data?.scheduler)==='server';
   // The localhost gateway is deliberately read-only for server schedules.
   // Allow an explicit LOCAL planning draft rather than silently losing work
   // or claiming that an operational flight was registered.
