@@ -304,7 +304,7 @@ let currentAirline=null,manageLogoBlob=null,manageLogoPreviewUrl=null,manageLogo
 let initialManagerLanding=false;
 let nextAirportOffset=null;
 let nextPreparedAirportOffset=null,preparedAirportLookupSerial=0,preparedAirportPageLoaded=false;
-let group2Plans=[];
+let group2Plans=[],group2OfficeDrafts=[];
 let setupAirportRequest=0,logoBlob=null,logoObjectUrl=null;
 const countryNameOf=code=>typeof Intl.DisplayNames==='function'
  ?new Intl.DisplayNames(['en'],{type:'region'}).of(code):code;
@@ -446,17 +446,40 @@ async function loadGroup2Plans(){
   return true;
  }catch{return false;}
 }
+async function loadGroup2Offices(){
+ group2OfficeDrafts=[];
+ if(!currentAirline?.id||!playerData?.airportOffices)return false;
+ try{
+  const data=await playerData.airportOffices();
+  if(!Array.isArray(data?.offices)||data.offices.length>20||
+   data.offices.some(x=>!['hub','station'].includes(x?.type)||
+    x.status!=='draft'||typeof x.key!=='string'))
+   throw Error('Unexpected office draft data');
+  group2OfficeDrafts=data.offices;
+  return true;
+ }catch{return false;}
+}
 async function changeGroup2Plan(airportKey,type,remove=false){
  const result=doc.getElementById('prepared-airports-feedback');
  if(result)result.textContent='Saving planned location…';
  try{
   if(!currentAirline?.id)throw Error('Register an airline before planning a location.');
-  const data=remove?await playerData.removeGroup2Location(airportKey):
-   await playerData.saveGroup2Location({airportKey,type});
-  if(data?.commercialAccess!==false||data.flightsEnabled!==false||
+  const office=['hub','station'].includes(type);
+  const data=office?
+    (remove?await playerData.removeAirportOffice(airportKey):
+     await playerData.saveAirportOffice({airportKey,type})):
+    (remove?await playerData.removeGroup2Location(airportKey):
+     await playerData.saveGroup2Location({airportKey,type}));
+  if(office){
+   if(remove?data?.removed!==true:
+     data?.office?.status!=='draft'||data.office?.key!==airportKey||data.office?.type!==type)
+    throw Error('Office draft did not persist');
+  }else if(data?.commercialAccess!==false||data.flightsEnabled!==false||
     (remove?data.removed!==true:data.location?.status!=='planned_only'))
     throw Error('Unverified planning response.');
-  if(result)result.textContent=remove?'Planned location removed.':'Location saved as a plan only. Flights remain unavailable.';
+  if(result)result.textContent=remove?'Location removed.':
+    office?'Real '+type+' office draft saved. Flights remain disabled.':
+     'Future HQ preference saved. Current HQ unchanged.';
   await searchPreparedAirports();
  }catch{
   if(result)result.textContent='Could not save this location. Check your airline account and try again.';
@@ -477,7 +500,7 @@ async function searchPreparedAirports({offset=0}={}){
  if(offset===0){output.replaceChildren();output.textContent='Loading prepared airports…';}
  more.disabled=true;
  try{
-  const plansAvailable=await loadGroup2Plans();
+  const [plansAvailable,officesAvailable]=await Promise.all([loadGroup2Plans(),loadGroup2Offices()]);
   const response=await playerData.preparedAirports({countryIso:'',search:query,offset});
   if(serial!==preparedAirportLookupSerial)return;
   if(response?.scope!=='prepared_information_only'||response.bookable!==false||
@@ -495,20 +518,23 @@ async function searchPreparedAirports({offset=0}={}){
    const label=doc.createElement('span');label.className='hint';
    label.textContent='Prepared only — not available for routes or flights';
    row.append(header,place,label);
-   const chosen=group2Plans.find(x=>x.key===airport.key);
+   const chosenOffice=group2OfficeDrafts.find(x=>x.key===airport.key);
+   const chosen=chosenOffice||group2Plans.find(x=>x.key===airport.key);
    if(chosen){
     const note=doc.createElement('span');note.className='hint';
-    note.textContent=(chosen.type==='future_hq'?'Future HQ':chosen.type==='hub'?'Hub':'Station')+' saved as plan — not active';
+    note.textContent=(chosen.type==='future_hq'?'Future HQ preference':chosen.type==='hub'?'Hub office':'Station office')+
+     (chosen.status==='draft'?' saved as a real office draft — not active':' saved as a future plan — not active');
     row.append(note);
-    if(plansAvailable){
+    if(chosen.status==='draft'?officesAvailable:plansAvailable){
      const remove=doc.createElement('button');remove.type='button';remove.className='secondary';
-     remove.textContent='Remove plan';
+     remove.textContent='Remove selection';
      remove.addEventListener('click',()=>{remove.disabled=true;void changeGroup2Plan(airport.key,chosen.type,true);});
      row.append(remove);
     }
-   }else if(plansAvailable){
+   }else if(plansAvailable||officesAvailable){
     const actions=doc.createElement('div');actions.className='prepared-airport-actions';
-    for(const [type,title] of [['future_hq','Plan future HQ'],['hub','Plan hub'],['station','Plan station']]){
+    for(const [type,title] of [['future_hq','Plan future HQ'],['hub','Create hub draft'],['station','Create station draft']]){
+     if(type==='future_hq'&&!plansAvailable||type!=='future_hq'&&!officesAvailable)continue;
      const action=doc.createElement('button');action.type='button';action.className='secondary';
      action.textContent=title;
      action.addEventListener('click',()=>{
