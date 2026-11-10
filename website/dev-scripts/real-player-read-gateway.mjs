@@ -33,6 +33,10 @@ export function allowedLocalOwnerRead(pathname,payload){
  // New and used marketplace discovery is read-only.
  if(pathname===FLEET_READ_PATH&&payload.action==='list-used')
   return validateFleetAcquisitionRequest(payload);
+ // Cabin layouts are either owner-only reads or planning drafts.
+ // Neither can install seats, change an aircraft, book a ferry flight, or debit funds.
+ if(pathname===FLEET_READ_PATH&&['cabin-overview','cabin-save-draft'].includes(payload.action))
+  return validateFleetAcquisitionRequest(payload);
  // Maintenance preview is read-only. Never accept a client-selected cost or site.
  if(pathname===FLEET_READ_PATH&&payload.action==='maintenance-preview')
   return validateFleetAcquisitionRequest(payload);
