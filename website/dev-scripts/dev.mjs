@@ -2,7 +2,7 @@ import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import {REAL_PLAYER_PATHS,makeRealLocalPlayerHandler} from './real-player-read-gateway.mjs';
+import {LOCAL_PLAYER_API_PATHS,makeRealLocalPlayerHandler} from './real-player-read-gateway.mjs';
 
 const sourceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const root = process.argv.includes('--built') ? path.resolve(sourceRoot,'../dist') : sourceRoot;
@@ -20,7 +20,7 @@ createServer(async (req, res) => {
     let pathname = decodeURIComponent(new URL(req.url || '/', 'http://localhost').pathname);
     if (pathname === '/') pathname = '/index.html';
     if (pathname === '/health') pathname = '/health.html';
-    if(REAL_PLAYER_PATHS.includes(pathname)){
+    if(LOCAL_PLAYER_API_PATHS.includes(pathname)){
       if(!realPlayerHandler||port!==5188||
         req.headers.host!=='localhost:5188'){
         res.writeHead(403).end('Local-only API');return;
