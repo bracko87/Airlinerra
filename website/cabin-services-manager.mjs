@@ -302,10 +302,6 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
    working.items[id].freeQty=v;
   }else{
    const value=Number(event.target.value);
-   if(!Number.isFinite(value)||value<0||value>1000||
-      !Number.isInteger(Math.round(value*100)*100/value*0+Math.round(value*100))){
-    // Parse deterministically and require at most two decimal places.
-   }
    if(!/^\d{1,4}(?:\.\d{1,2})?$/.test(event.target.value)||
       !Number.isFinite(value)||value>1000){
     status('Enter a valid USD price between $0 and $1,000, with up to two decimals.');return;
