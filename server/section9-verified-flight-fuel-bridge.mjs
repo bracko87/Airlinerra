@@ -11,6 +11,7 @@
  * a provisional game-tier price as an invoice.
  */
 import {estimateFivePhaseFuel} from '../website/flight-fuel-phase-engine.mjs';
+import {planSection9FivePhaseFlight} from './section9-flight-phase-timeline.mjs';
 import {previewAirportFuelPrice} from '../website/airport-fuel-price-preview.mjs';
 
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -78,12 +79,31 @@ export function inspectVerifiedArrivalForFuel({
  });
  if(fuel.status!=='PLANNING_ESTIMATE')
   return unavailable('AIRCRAFT_FUEL_REFERENCE_INCOMPLETE');
+ // An optional, server-owned schedule timestamp enriches the arrival audit
+ // with a five-phase reference. It cannot certify an actual operation.
+ let projectedTimeline=null;
+ if(Object.hasOwn(route,'scheduledDepartureUtc')){
+  const projection=planSection9FivePhaseFlight({
+   airlineId:movementEvent.airlineId,
+   aircraftInventoryId:aircraft.id,scheduleId:movementEvent.scheduleId,
+   flightLocalDate:movementEvent.flightLocalDate,
+   weeklyEntry:movementEvent.weeklyEntry,
+   scheduledDepartureUtc:route.scheduledDepartureUtc,
+   originAirportKey:route.originAirportKey,
+   destinationAirportKey:route.destinationAirportKey,
+   distanceKm:route.distanceKm,aircraft,payloadFraction,
+   fuelPriceUsdPerKg:price.usdPerKg
+  });
+  if(projection.status!=='FLIGHT_PHASE_DRY_RUN_PLAN')
+   return unavailable('PHASE_TIMELINE_SOURCE_INVALID');
+  projectedTimeline=projection;
+ }
  return Object.freeze({
   status:'ARRIVAL_FUEL_DRY_RUN_READY',
   flightOccurrenceId:occurrence,
   worldId:1,airlineId:movementEvent.airlineId,
   aircraftInventoryId:aircraft.id,scheduleId:movementEvent.scheduleId,
-  fuel,price,
+  fuel,price,projectedTimeline,
   source:'VERIFIED_SIGNED_MOVEMENT_ARRIVAL_REQUIRED',
   idempotencyCandidate:'fuel:'+occurrence,
   flightActivated:false,ledgerPosted:false,refuellingPosted:false,
