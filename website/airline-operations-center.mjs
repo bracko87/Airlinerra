@@ -81,7 +81,7 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
   'staff':$('workspace-staff')
  };
  if(root['route-list'])root['route-list'].innerHTML=card('My routes',
-  '<p class="hint">Saved route ideas in this browser tab. Live network routes will appear only when the protected route engine is connected.</p>'+
+  '<p class="hint">Planning drafts saved in this browser tab are listed below. They are not active flights. Protected server schedules require a separately confirmed save.</p>'+
   '<div id="operations-route-list" class="operations-route-table"></div>'+
   '<div class="workspace-actions"><button type="button" class="secondary" data-ops-page="routes">Create a route</button></div>'+
   '<p id="operations-routes-feedback" class="hint" role="status"></p>'+
@@ -146,7 +146,7 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
    root.append(p);return;
   }
   const grid=doc.createElement('div');grid.className='operations-route-directory';
-  const headings=['Flight','City to city','Departure','Arrival','Aircraft','Weekly days','More'];
+  const headings=['Flight','City to city','Departure','Arrival','Aircraft','Weekly days','Saved as','More'];
   const head=doc.createElement('div');head.className='operations-route-directory-row is-heading';
   for(const label of headings){
    const col=doc.createElement('span');col.textContent=label;head.append(col);
@@ -178,6 +178,10 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
     cell.textContent=days[day];weekdays.append(cell);
    }
    row.append(weekdays);
+   const state=doc.createElement('span');
+   state.className='operations-route-save-type';
+   state.textContent=route.serverScheduleId?'Server draft · inactive':'Local draft · inactive';
+   row.append(state);
    const link=doc.createElement('button');link.type='button';
    link.className='operations-route-open-text';
    link.dataset.opsRouteEdit=String(index);link.textContent='More information';
@@ -381,8 +385,12 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
    updateStaffTotals();message('ops-staff-feedback','Staffing plan cleared.');return;
   }
  });
- doc.addEventListener('airlinerra:route-draft-saved',()=>{
+ doc.addEventListener('airlinerra:route-draft-saved',event=>{
   state=storageRead(session,key);renderRoutes();void details.refresh();
+  const flight=typeof event?.detail?.flightNumber==='string'?event.detail.flightNumber:'Route';
+  message('operations-routes-feedback',event?.detail?.serverSaved?
+   flight+' saved as a protected server schedule draft — not an active flight.':
+   flight+' saved as a local planning draft and listed above. No server flight was created.');
  });
  const prices=state.ticketPrice;
  if(prices&&typeof prices==='object'){
