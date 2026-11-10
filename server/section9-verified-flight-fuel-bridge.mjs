@@ -16,6 +16,8 @@ import {previewAirportFuelPrice} from '../website/airport-fuel-price-preview.mjs
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const DAY=/^\d{4}-\d{2}-\d{2}$/;
 const expectedOccurrence=e=>e.scheduleId+':'+e.flightLocalDate+':'+e.weeklyEntry;
+const expectedEventId=e=>'operate-v1.'+e.scheduleId.replaceAll('-','').toLowerCase()+'.'+
+ e.flightLocalDate.replaceAll('-','')+'.'+e.weeklyEntry+'.arrived';
 const unavailable=reason=>Object.freeze({status:'FUEL_BRIDGE_BLOCKED',
  reason,flightActivated:false,ledgerPosted:false,refuellingPosted:false,
  flightFuelWritten:false,financialSettlementAuthorized:false});
@@ -29,7 +31,7 @@ export function inspectVerifiedArrivalForFuel({
   !Number.isInteger(movementEvent.weeklyEntry)||
   movementEvent.weeklyEntry<1||movementEvent.weeklyEntry>7||
   movementEvent.worldId!==1||movementEvent.phase!=='arrived'||
-  typeof movementEvent.eventId!=='string'||movementEvent.eventId.length<12)
+  movementEvent.eventId!==expectedEventId(movementEvent))
   return unavailable('NO_TRUSTED_ARRIVAL_EVENT');
  const occurrence=expectedOccurrence(movementEvent);
  if(!movementReceipt||
@@ -39,6 +41,7 @@ export function inspectVerifiedArrivalForFuel({
   movementReceipt.movementRecorded!==true||
   movementReceipt.replayed!==false||
   movementReceipt.locationStatus!=='grounded'||
+  movementReceipt.canActivateNormalFlight!==false||
   movementReceipt.flightActivated!==false||
   movementReceipt.ledgerPosted!==false||
   movementReceipt.bookingsCreated!==false)
@@ -50,8 +53,13 @@ export function inspectVerifiedArrivalForFuel({
   !route||route.scheduleId!==movementEvent.scheduleId||
   route.airlineId!==movementEvent.airlineId||
   route.aircraftInventoryId!==aircraft.id||
+  typeof route.originAirportKey!=='string'||
+  typeof route.destinationAirportKey!=='string'||
+  route.originAirportKey===route.destinationAirportKey||
   typeof route.distanceKm!=='number'||route.distanceKm<=0)
   return unavailable('SCHEDULE_AIRCRAFT_OR_AIRLINE_MISMATCH');
+ if(movementReceipt.lastVerifiedAirport!==route.destinationAirportKey)
+  return unavailable('AIRCRAFT_DESTINATION_NOT_CONFIRMED');
  if(!departureAirport||departureAirport.key!==route.originAirportKey)
   return unavailable('DEPARTURE_FUEL_AIRPORT_NOT_VERIFIED');
  const price=previewAirportFuelPrice(departureAirport,{
