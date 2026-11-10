@@ -37,6 +37,15 @@ const receipt={orderId:requestId,aircraftInventoryId:aircraft,
  remainingCashUsd:'4750000.00',deliveryStatus:'awaiting_delivery',
  fleetStatus:'stored',canScheduleFlight:false,canActivateFlight:false};
 
+test('only server-approved published factory purchases can enable ordering',async()=>{
+ const page=await readFile(new URL('../website/airline-workspace.mjs',import.meta.url),'utf8');
+ assert.match(page,/offer\?\.offerStatus==='published'/);
+ assert.match(page,/offer\.transactionType==='purchase'/);
+ assert.match(page,/offer\.configurationReviewStatus==='verified'/);
+ assert.match(page,/option\.disabled=!approved/);
+ assert.match(page,/!isReleasedFactoryOffer\(offer\)/);
+ assert.match(page,/Catalog preview only/);
+});
 test('fleet request validator accepts exact payloads; rejects spoofed identities and client-supplied prices',()=>{
  assert.equal(validateFleetAcquisitionRequest(base),true);
  assert.equal(validateFleetAcquisitionRequest({action:'list',airlineId:airline}),true);
