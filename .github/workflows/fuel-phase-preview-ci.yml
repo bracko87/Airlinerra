@@ -4,6 +4,8 @@ on:
     branches: [main]
     paths:
       - 'website/flight-fuel-phase-engine.mjs'
+      - 'website/airport-fuel-price-preview.mjs'
+      - 'supabase/migrations/20261110235500_fuel_planning_peer_estimates_readonly.sql'
       - 'website/route-planner.mjs'
       - 'website/airline-workspace.mjs'
       - 'website/player-app.css'
@@ -24,6 +26,7 @@ jobs:
       - name: Check fuel, owner service and browser syntax
         run: |
           node --check website/flight-fuel-phase-engine.mjs
+          node --check website/airport-fuel-price-preview.mjs
           node --check website/route-planner.mjs
           node --check website/airline-workspace.mjs
           node --check server/fleet-acquisition-service.mjs
