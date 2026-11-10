@@ -130,7 +130,7 @@ test('settings and local hypothetical briefs remain separate from owner-scoped p
  assert.match(workspace,/Planning departures without duration are markers, not aircraft bookings/);
  assert.match(workspace,/No aircraft configuration was changed/);
  assert.match(workspace,/fleet-owned-aircraft/);
- assert.match(workspace,/id="market-acquire"/);
+ assert.match(workspace,/id=\\?"market-acquire\\?"/);
  assert.match(workspace,/role="status"/);
  assert.match(workspace,/id="schedule-aircraft-board"/);
  assert.match(workspace,/buildAirlineWeeklyBoard/);
