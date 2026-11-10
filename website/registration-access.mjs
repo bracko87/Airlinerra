@@ -5,6 +5,10 @@
  * airlinerra_game.owner_premium_email_reservations before provider signup
  * can safely be enabled. Never grant access on the basis of this module.
  */
+/** Explicit prelaunch browser kill-switch. This is NOT a Supabase Auth security
+ * control: the provider and server-side signup hook remain authoritative. */
+export const REGISTRATION_UI_PAUSED = true;
+
 export function evaluateRegistrationAccess({provider,readiness,terms,privacy}={}) {
   if(provider?.signupEnabled!==true ||
      provider?.emailConfirmedRequired!==true ||
