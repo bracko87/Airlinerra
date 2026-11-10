@@ -601,7 +601,8 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   if((airline?.id||null)!==oldAirlineId){
    // Never present an earlier airline's inventory or bookings while the
    // new owner's asynchronous authenticated reads are still in progress.
-   marketSnapshot=null;scheduleSnapshot=null;selectedFleetAircraftId=null;
+   marketSnapshot=null;scheduleSnapshot=null;
+   selectedFleetAircraftId=/^#fleet-aircraft\/([0-9a-f-]{36})$/iu.exec(doc.defaultView?.location?.hash||'')?.[1]||null;
   }
   const connected=data.connected===true;
   const unknown='Game data not loaded';
@@ -629,7 +630,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    if(!marketSnapshot?.fleet?.some(a=>a.id===aircraftId))return;
    selectedFleetAircraftId=aircraftId;
    renderAircraftDetail();
-   if(typeof goTo==='function')goTo('fleet-aircraft');
+   if(typeof goTo==='function')goTo('fleet-aircraft/'+aircraftId);
    return;
   }
   const deliveryButton=event.target.closest('[data-aircraft-delivery]');
@@ -796,6 +797,11 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   void loadAirlineSchedule();
  });
  applyPreferences();loadDraftForms();
- return Object.freeze({updateData,getLandingView:()=>preferences.landing,formatDistance:km=>
+ return Object.freeze({updateData,
+  openFleetAircraft:hash=>{
+   const id=/^#fleet-aircraft\/([0-9a-f-]{36})$/iu.exec(String(hash||''))?.[1]||null;
+   selectedFleetAircraftId=id;renderAircraftDetail();
+  },
+  getLandingView:()=>preferences.landing,formatDistance:km=>
   preferences.units==='mi'?(Number(km)*0.621371).toFixed(0)+' mi':Number(km).toFixed(0)+' km'});
 }
