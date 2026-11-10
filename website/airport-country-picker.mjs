@@ -1,5 +1,5 @@
-/** Shared, owner-authenticated World 1 airport selector.
- * Reads ONLY approved airport pages via the existing verified player API.
+/** Shared, owner-authenticated airport-location selector.
+ * Reads both Group 1 and prepared Group 2 locations via the verified player API.
  * Never mixes locations across countries; never runs a server-side write.
  */
 export const airportFlag=code=>/^[A-Z]{2}$/.test(code||'')?
@@ -38,9 +38,10 @@ export function createAirportCountryPicker({country,search,airport,getReader,onS
   const words=search.value.toLocaleLowerCase('en').trim();
   const filtered=words?entries.filter(a=>
    [a.name,a.code,a.municipality].some(s=>String(s||'').toLocaleLowerCase('en').includes(words))):entries;
-  airport.replaceChildren(new Option(loading?'Loading airports...':'Select approved airport',''));
+  airport.replaceChildren(new Option(loading?'Loading airports...':'Select airport',''));
   for(const a of filtered){
-   const label=a.name+' ('+(a.code||'Code pending')+')'+(a.municipality?' - '+a.municipality:'');
+   const label=a.name+' ('+(a.code||'Code pending')+')'+(a.municipality?' - '+a.municipality:'')+
+    (a.sourceGroup==='GROUP_2'?' · Group 2 (planning only; no flights)':'');
    const option=new Option(label,a.key);
    option.dataset.airportName=a.name;option.dataset.code=a.code||'';
    airport.add(option);
@@ -50,7 +51,7 @@ export function createAirportCountryPicker({country,search,airport,getReader,onS
   else{selected='';airport.value='';}
   onSelect(current());
   onResults(filtered.slice(0,30),!loading);
-  if(!loading)onStatus(filtered.length+' of '+entries.length+' approved airports shown'+
+  if(!loading)onStatus(filtered.length+' of '+entries.length+' airports shown'+
     (words?' - filtered by search.':'.'));
  };
  const load=async()=>{
@@ -59,12 +60,12 @@ export function createAirportCountryPicker({country,search,airport,getReader,onS
   reset('Choose country or type an airport name');
   const global=iso===''&&search.value.trim().length>=2;
   if(!/^[A-Z]{2}$/.test(iso)&&!global){
-   onStatus('Type at least 2 characters to search all approved airports, or choose a country.');
+   onStatus('Type at least 2 characters to search all airports, or choose a country.');
    return;
   }
-  if(!reader?.airports){reset('Approved airport directory unavailable');onStatus('Airport directory unavailable.');return;}
-  loading=true;reset('Loading approved airports...');
-  onStatus(global?'Searching all approved airports...':'Loading approved airports in '+airportCountryName(iso)+'...');
+  if(!reader?.airports){reset('Airport directory unavailable');onStatus('Airport directory unavailable.');return;}
+  loading=true;reset('Loading airports...');
+  onStatus(global?'Searching all airports...':'Loading airports in '+airportCountryName(iso)+'...');
   try{
    const all=[],seen=new Set();let offset=0;
    for(let pageIndex=0;pageIndex<65;pageIndex++){
