@@ -34,8 +34,8 @@ const picker=(side,title)=>'<fieldset class="route-planner-airport"><legend>'+ti
   '<div id="route-'+side+'-suggestions" class="route-airport-suggestions" '+
   'role="listbox" aria-label="'+title+' airports" hidden></div></div>')+
  '<select id="route-'+side+'-airport" class="route-native-airport" '+
- 'aria-hidden="true" tabindex="-1" disabled><option value="">Select approved airport</option></select>'+
- '<p id="route-'+side+'-count" class="hint" role="status">Choose a country or search all approved airports.</p>'+
+ 'aria-hidden="true" tabindex="-1" disabled><option value="">Select airport</option></select>'+
+ '<p id="route-'+side+'-count" class="hint" role="status">Choose a country or search all airports, including Group 2 planning locations.</p>'+
  '<div id="route-'+side+'-summary" class="route-selection-summary">Select an airport.</div></fieldset>';
 const dayNames=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 const dayShort=['Mo','Tu','We','Th','Fr','Sa','Su'];
@@ -508,7 +508,8 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    flag.alt='';flag.width=20;flag.height=13;flag.className='route-summary-flag';
    button.append(flag);
    const name=doc.createElement('span');
-   name.textContent=a.name+(a.code?' ('+a.code+')':'')+(a.municipality?' · '+a.municipality:'');
+   name.textContent=a.name+(a.code?' ('+a.code+')':'')+(a.municipality?' · '+a.municipality:'')+
+     (a.sourceGroup==='GROUP_2'?' · Group 2: planning only':'');
    button.append(name);list.append(button);
   }
   list.hidden=false;input.setAttribute('aria-expanded','true');
@@ -675,11 +676,12 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
   const node=$('route-'+side+'-summary');
   if(!node)return;
   node.replaceChildren();
-  if(!airport){node.textContent='Select an approved airport.';return;}
+  if(!airport){node.textContent='Select an airport.';return;}
   const flag=flagNode(airport.countryIso);
   if(flag)node.append(flag);
   const title=doc.createElement('span');
-  title.textContent=airport.name+(airport.code?' ('+airport.code+')':'');
+  title.textContent=airport.name+(airport.code?' ('+airport.code+')':'')+
+    (airport.sourceGroup==='GROUP_2'?' · Group 2 (not flight-approved)':'');
   node.append(title);
  };
  const shortRestrictions=airportRouteRestrictionSummary;
@@ -859,7 +861,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
   message('route-status',pairStatus==='SAME_AIRPORT'?'Restricted — same airport':'Draft only');
   message('route-check-message',pairStatus==='SAME_AIRPORT'?
    'BLOCKED — a flight cannot depart from and arrive at the same airport. Choose another destination.':
-   !validPair?'Choose two different approved airports.':
+   !validPair?'Choose two different airports.':
    !validOrigin?'Draft only: origin is not a confirmed active hub. Only your main hub is currently verified.':
    'Route geography available. Aircraft, crew, airport slots and traffic rights require verification before activation.');
   const keys=[from?.key||'',to?.key||''].join('|');
@@ -1364,7 +1366,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
   if(target.id==='route-plan-preview'){
    const from=selected('from'),to=selected('to');
    if(!from||!to||from.key===to.key){
-    message('route-feedback','Choose two different approved airports before previewing.');return;
+    message('route-feedback','Choose two different airports before previewing.');return;
    }
    show();
    message('route-feedback','Route preview ready. Select an aircraft and weekday departures below.');
@@ -1384,7 +1386,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    message('route-plan-status','Sign in with a verified airline before saving a draft.');return;
   }
   if(routeAirportPairStatus(from,to)!=='VALID'){
-   message('route-plan-status','BLOCKED — choose two different approved airports.');return;
+   message('route-plan-status','BLOCKED — choose two different airports.');return;
   }
   if(!flightNumber){
    message('route-plan-status','Enter 1–4 digits after a valid airline flight prefix.');return;
