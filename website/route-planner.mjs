@@ -315,6 +315,8 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
   if(event.detail?.airlineId===getData()?.airline?.id)refreshCabinPackages();
  });
 
+ $('route-cabin-package')?.addEventListener('change',updateCabinEstimate);
+ $('route-cabin-passengers')?.addEventListener('input',updateCabinEstimate);
  const days=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
  let homeKey=null,homeLocation=null,currentAirlineId=null,homeTicket=0,detailTicket=0;
  let lastKeys='',airportProfiles={},editingFlightNumber=null,editingLegacyIndex=null,editSerial=0;
@@ -942,6 +944,9 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    const value=route.operation?.service?.[field];
    $(id).value=values.includes(value)?value:def;
   }
+  if($('route-cabin-passengers'))$('route-cabin-passengers').value=
+   String(Number.isSafeInteger(route.cabinCostPreviewPassengers)?
+    route.cabinCostPreviewPassengers:100);
   refreshCabinPackages(route.operation?.service?.cabinPackageId||'basic');
   show();
   message('route-plan-status',route.flightNumber?
