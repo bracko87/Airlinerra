@@ -1,5 +1,4 @@
 import {routePlannerMarkup,createRoutePlanner} from './route-planner.mjs';
-import {buildAircraftWeeklyTimeline,renderAircraftWeeklyTimeline} from './aircraft-weekly-timeline.mjs';
 import {aircraftDisplayName} from './aircraft-library.mjs';
 import {buildAirlineWeeklyBoard,renderAirlineWeeklyBoard} from './aircraft-weekly-schedule-board.mjs';
 /** Airlinerra airline-management workspace.
@@ -13,7 +12,7 @@ export const AIRLINE_UI_DEFAULTS=Object.freeze({
  hints:true
 });
 export const AIRLINE_UI_VIEWS=Object.freeze([
- 'overview','airline','fleet','routes','route-details','schedule','finances','worlds',
+ 'overview','airline','fleet','fleet-aircraft','routes','route-details','schedule','finances','worlds',
  'airports','staff','rankings','service','aircraft-market','maintenance',
  'settings','interface','notifications','help'
 ]);
@@ -93,31 +92,8 @@ const pages=Object.freeze({
     '<div><strong>Optional gallery</strong><span>Aircraft photos managed by the airline owner</span></div></div>'+
     '<p class="hint">The public page will use actual game data. Manager hometown, email and other personal account information remain private.</p>',
     'FUTURE FEATURE'),
-  'fleet':()=>card('Fleet inventory',
-   '<div class="workspace-kpis"><div><span>Owned aircraft</span><strong id="fleet-owned-count">0</strong></div>'+
-   '<div><span>Leased aircraft</span><strong id="fleet-leased-count">0</strong></div>'+
-   '<div><span>Fleet status</span><strong id="fleet-real-status">Not loaded</strong></div>'+
-   '<div><span>Simulation aircraft</span><strong id="fleet-test-count">0</strong></div></div>'+
-   '<div id="fleet-owned-aircraft" class="fleet-test-aircraft" aria-live="polite">Loading your actual aircraft fleet...</div>'+ 
-   '<p id="fleet-delivery-feedback" class="hint" role="status" aria-live="polite"></p>'+ 
-   '<div id="fleet-test-aircraft" class="fleet-test-aircraft"></div>'+
-   '<section id="fleet-aircraft-timeline" class="fleet-aircraft-timeline" hidden><h3 id="fleet-aircraft-timeline-heading">Aircraft weekly timeline</h3><p class="route-subtle-note">Local draft assignments are not live flights.</p><div id="fleet-aircraft-timeline-content"></div></section>'+
-   status('Purchased and leased aircraft appear above once delivered by a server-verified acquisition. An aircraft awaiting delivery remains stored and cannot be scheduled.')+
-   button('aircraft-market','View market offers')+button('maintenance','Maintenance planning'),
-   'AIRCRAFT FLEET')+
-  card('Fleet acquisition brief',
-   '<p>Prepare aircraft requirements before the real marketplace is connected.</p>'+
-   field('fleet-family','Aircraft type',optionSelect('fleet-family',[
-    ['turboprop','Turboprop'],['regional','Regional jet'],['narrow','Narrow-body jet'],
-    ['wide','Wide-body jet'],['cargo','Dedicated freighter']]))+
-   field('fleet-seats','Target passenger seats','<input id="fleet-seats" type="number" min="0" max="1000" value="120">')+
-   field('fleet-range','Minimum range (km)','<input id="fleet-range" type="number" min="0" max="30000" value="2000">')+
-   field('fleet-acquisition','Preferred financing',optionSelect('fleet-acquisition',[
-    ['lease','Lease'],['purchase','Purchase'],['compare','Compare both']]))+
-   '<div class="workspace-actions"><button type="button" id="fleet-plan-save" class="primary">Save local fleet brief</button></div>'+
-   '<p id="fleet-plan-status" class="hint" role="status"></p>'+
-   small('A fleet brief is personal planning only. It does not purchase, lease, reserve or price an aircraft.'),
-   'YOUR PROCUREMENT PLAN'),
+  'fleet':()=>card('Fleet inventory',"<div class=\"workspace-kpis fleet-summary-kpis\">\n<div><span>Owned aircraft</span><strong id=\"fleet-owned-count\">—</strong></div>\n<div><span>Leased aircraft</span><strong id=\"fleet-leased-count\">—</strong></div>\n<div><span>Fleet status</span><strong id=\"fleet-real-status\">Not loaded</strong></div></div>\n<div class=\"fleet-table-scroll\">\n<div class=\"fleet-inventory-table\" role=\"table\" aria-label=\"Owned and leased aircraft\">\n<div class=\"fleet-inventory-row fleet-inventory-head\" role=\"row\"><span role=\"columnheader\">Aircraft / registration</span><span role=\"columnheader\">Passenger seats</span><span role=\"columnheader\">Configuration</span><span role=\"columnheader\">Cargo</span><span role=\"columnheader\">Current location</span><span role=\"columnheader\">Status</span><span role=\"columnheader\">View</span></div>\n<div id=\"fleet-owned-aircraft\" class=\"fleet-inventory-body\" role=\"rowgroup\" aria-live=\"polite\">Loading verified fleet...</div>\n</div></div><p id=\"fleet-delivery-feedback\" class=\"hint\" role=\"status\" aria-live=\"polite\"></p>\n<div class=\"fleet-toolbar\"><button type=\"button\" class=\"secondary\" data-workspace-go=\"aircraft-market\">View market offers</button><button type=\"button\" class=\"secondary\" data-workspace-go=\"maintenance\">Maintenance planning</button></div>",'AIRCRAFT FLEET'),
+ 'fleet-aircraft':()=>card('Aircraft details',"<div class=\"fleet-detail-back\"><button type=\"button\" class=\"secondary\" data-workspace-go=\"fleet\">← Back to my fleet</button></div>\n<h3 id=\"fleet-detail-name\">Select an aircraft</h3><p id=\"fleet-detail-subtitle\" class=\"hint\"></p>\n<div class=\"fleet-detail-grid\">\n<div><span>Aircraft family</span><strong id=\"fleet-detail-family\">—</strong></div>\n<div><span>Registration</span><strong id=\"fleet-detail-registration\">—</strong></div>\n<div><span>Ownership</span><strong id=\"fleet-detail-ownership\">—</strong></div>\n<div><span>Passenger seats (reference)</span><strong id=\"fleet-detail-seats\">—</strong></div>\n<div><span>Configuration</span><strong id=\"fleet-detail-configuration\">—</strong></div>\n<div><span>Cargo capacity</span><strong id=\"fleet-detail-cargo\">—</strong></div>\n<div><span>Current verified position</span><strong id=\"fleet-detail-location\">—</strong></div>\n<div><span>Fleet / delivery status</span><strong id=\"fleet-detail-status\">—</strong></div>\n</div>\n<div class=\"fleet-nickname-editor\"><label class=\"workspace-label\" for=\"fleet-detail-nickname\">Aircraft nickname (optional)</label>\n<div class=\"fleet-nickname-controls\"><input id=\"fleet-detail-nickname\" type=\"text\" maxlength=\"40\" autocomplete=\"off\" placeholder=\"Give this aircraft a nickname\"><button id=\"fleet-detail-save\" type=\"button\" class=\"primary\">Save nickname</button></div>\n<p class=\"hint\">This name is saved for this individual aircraft. Leave blank to remove it. Official registration and model never change.</p>\n<p class=\"hint\" id=\"fleet-detail-feedback\" role=\"status\" aria-live=\"polite\"></p></div>\n<p class=\"hint\">Only server-confirmed aircraft positions are displayed. Reference passenger seats and maximum cargo values are not proof of an installed cabin or usable flight payload. Live flight activation is handled separately.</p>",'AIRCRAFT PROFILE'),
  'aircraft-market':()=>card('Aircraft marketplace',
    '<p>Purchase or lease an individual aircraft from a published game-market offer. Only the airline owner can confirm an order.</p>'+
    '<p id="market-state" class="workspace-state" role="status">Loading approved offers...</p>'+
@@ -310,6 +286,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
  let data={connected:false,airline:null,countries:[],worlds:[],reader:null},draft=safelyLoad(session,draftKey)||{};
  const $=id=>doc.getElementById(id);
  let marketSnapshot=null;
+ let selectedFleetAircraftId=null;
  let marketFetchVersion=0;
  let scheduleSnapshot=null;
  let scheduleFetchVersion=0;
@@ -462,9 +439,6 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   }
  }
  function loadDraftForms(){
-  for(const [field,key] of [['fleet-family','family'],['fleet-seats','seats'],['fleet-range','range'],['fleet-acquisition','acquisition']]){
-   if($(field)&&draft.fleet?.[key]!==undefined)$(field).value=draft.fleet[key];
-  }
   for(const key of ['economy','premium','business','first','service']){
    if($('cabin-'+key)&&draft.cabin?.[key]!==undefined)$('cabin-'+key).value=draft.cabin[key];
   }
@@ -472,6 +446,46 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    if($('budget-'+key)&&draft.budget?.[key]!==undefined)$('budget-'+key).value=draft.budget[key];
   }
   showRoute();renderSchedule();
+ }
+ const prettyFleetText=value=>String(value||'—').replace(/[-_]/gu,' ').replace(/\\b\\w/gu,m=>m.toUpperCase());
+ const fleetSeatLabel=a=>a.useType==='cargo'?'—':
+  Number.isInteger(Number(a.referenceSeats))&&a.referenceSeats!==null?
+   new Intl.NumberFormat('en-US').format(Number(a.referenceSeats))+' ref.':'Not verified';
+ const fleetConfigurationLabel=a=>a.configuration?prettyFleetText(a.configuration):'Not recorded';
+ const fleetCargoLabel=a=>a.cargoKg!==null&&a.cargoKg!==undefined&&
+  Number.isFinite(Number(a.cargoKg))&&Number(a.cargoKg)>0?
+  new Intl.NumberFormat('en-US').format(Number(a.cargoKg))+' kg max':'Not verified';
+ const fleetLocationLabel=a=>{
+  if(a.locationStatus==='in_flight')return 'In flight';
+  if(a.locationStatus==='grounded'&&a.locationAirportKey)
+   return (a.locationAirportCode||a.locationAirportName||a.locationAirportKey)+' · At airport';
+  return 'Location not verified';
+ };
+ const fleetStateLabel=a=>prettyFleetText(a.fleetStatus||'Unknown')+' · '+
+  prettyFleetText(a.ownershipType||'Fleet');
+ function renderAircraftDetail(){
+  const aircraft=marketSnapshot?.fleet?.find(x=>x.id===selectedFleetAircraftId);
+  const detail=$('fleet-detail-name');
+  if(!detail)return;
+  const ids={
+   'fleet-detail-name':aircraft?aircraftDisplayName(aircraft.manufacturer,aircraft.model):'Aircraft not available',
+   'fleet-detail-subtitle':aircraft?
+    String(aircraft.registration||'—')+(aircraft.nickname?' ('+aircraft.nickname+')':''):
+    'Return to your fleet and choose an aircraft.',
+   'fleet-detail-family':aircraft?.family||'Not recorded',
+   'fleet-detail-registration':aircraft?.registration||'—',
+   'fleet-detail-ownership':aircraft?prettyFleetText(aircraft.ownershipType):'—',
+   'fleet-detail-seats':aircraft?fleetSeatLabel(aircraft):'—',
+   'fleet-detail-configuration':aircraft?fleetConfigurationLabel(aircraft):'—',
+   'fleet-detail-cargo':aircraft?fleetCargoLabel(aircraft):'—',
+   'fleet-detail-location':aircraft?fleetLocationLabel(aircraft):'—',
+   'fleet-detail-status':aircraft?prettyFleetText(aircraft.fleetStatus)+' · '+
+    prettyFleetText(aircraft.deliveryStatus||'Delivery not recorded'):'—'
+  };
+  for(const [id,value] of Object.entries(ids))if($(id))$(id).textContent=value;
+  const input=$('fleet-detail-nickname'),save=$('fleet-detail-save');
+  if(input){input.value=aircraft?.nickname||'';input.disabled=!aircraft;}
+  if(save)save.disabled=!aircraft||typeof data.fleetClient?.updateNickname!=='function';
  }
  function renderRealFleetMarket(snapshot){
   marketSnapshot=snapshot;
@@ -489,34 +503,39 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   if(fleetList){
    fleetList.replaceChildren();
    if(!fleet.length){
-    const msg=doc.createElement('p');
-    msg.textContent=snapshot?'No purchased or leased aircraft in your airline fleet.':'Fleet data unavailable.';
+    const msg=doc.createElement('p');msg.className='fleet-empty';
+    msg.textContent=snapshot?'No owned or leased aircraft in this airline yet.':'Verified fleet data unavailable.';
     fleetList.append(msg);
    }
    for(const aircraft of fleet){
-    const row=doc.createElement('div');row.className='fleet-test-aircraft-row';
+    const row=doc.createElement('div');row.className='fleet-inventory-row';row.setAttribute('role','row');
+    const identity=doc.createElement('div');identity.className='fleet-identity';identity.setAttribute('role','cell');
     const title=doc.createElement('strong');
     title.textContent=aircraftDisplayName(aircraft.manufacturer,aircraft.model)||'Aircraft';
-    const registration=doc.createElement('span');
-    registration.textContent=String(aircraft.registration||'—')+' · '+
-      String(aircraft.ownershipType||'fleet')+' · '+String(aircraft.fleetStatus||'unknown');
-    const note=doc.createElement('small');
-    note.textContent=aircraft.deliveryStatus==='awaiting_delivery'
-     ?'Delivery pending · not available for flight scheduling'
-     :aircraft.deliveryStatus==='delivered_pending_inspection'
-      ?'Delivered · inspection required before service'
-      :aircraft.fleetStatus==='in_service'
-       ?'In-service aircraft; actual flight activation still disabled'
-       :'Not available for operational flight activation';
-    row.append(title,registration,note);
-    if(aircraft.orderId&&aircraft.deliveryStatus==='awaiting_delivery'){
-     const check=doc.createElement('button');check.type='button';
-     check.className='secondary';check.dataset.aircraftDelivery=aircraft.orderId;
-     check.textContent='Check delivery';row.append(check);
-    }
+    const sub=doc.createElement('small');
+    sub.textContent=[aircraft.family?('Family '+aircraft.family):'Family not recorded',
+     aircraft.registration||'Registration not available'].join(' · ')+
+     (aircraft.nickname?' ('+aircraft.nickname+')':'');
+    identity.append(title,sub);
+    const cell=(value,css='')=>{
+     const el=doc.createElement('span');el.setAttribute('role','cell');
+     if(css)el.className=css;
+     el.textContent=value;return el;
+    };
+    const seat=cell(fleetSeatLabel(aircraft));
+    const configuration=cell(fleetConfigurationLabel(aircraft));
+    const cargo=cell(fleetCargoLabel(aircraft));
+    const location=cell(fleetLocationLabel(aircraft));
+    const state=cell(fleetStateLabel(aircraft),'fleet-status-text');
+    const action=doc.createElement('div');action.className='fleet-row-action';action.setAttribute('role','cell');
+    const open=doc.createElement('button');open.type='button';open.className='secondary fleet-view-button';
+    open.dataset.fleetAircraftOpen=String(aircraft.id||'');open.textContent='View';
+    action.append(open);
+    row.append(identity,seat,configuration,cargo,location,state,action);
     fleetList.append(row);
    }
   }
+  renderAircraftDetail();
   const marketState=$('market-state'),offerList=$('market-offers'),select=$('market-offer-select');
   if(offerList){
    offerList.replaceChildren();
@@ -582,7 +601,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   if((airline?.id||null)!==oldAirlineId){
    // Never present an earlier airline's inventory or bookings while the
    // new owner's asynchronous authenticated reads are still in progress.
-   marketSnapshot=null;scheduleSnapshot=null;
+   marketSnapshot=null;scheduleSnapshot=null;selectedFleetAircraftId=null;
   }
   const connected=data.connected===true;
   const unknown='Game data not loaded';
@@ -599,49 +618,18 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    'finance-live-cash':connected&&airline?.cashUsd!==undefined?currency(airline.cashUsd):'-'
   };
   for(const [id,value] of Object.entries(values)){if($(id))$(id).textContent=value;}
-  const testAircraft=connected&&Array.isArray(airline?.testAircraft)?
-   airline.testAircraft.filter(a=>a?.testOnly===true&&a.operationallyAllowed===false):[];
-  if($('fleet-test-count'))$('fleet-test-count').textContent=String(testAircraft.length);
-  const timelinePanel=$('fleet-aircraft-timeline');
-  if(timelinePanel)timelinePanel.hidden=true;
-  const holder=$('fleet-test-aircraft');
-  if(holder){
-   holder.replaceChildren();
-   for(const aircraft of testAircraft){
-    const row=doc.createElement('div');row.className='fleet-test-aircraft-row';
-    const title=doc.createElement('strong');
-    title.textContent='Airbus '+String(aircraft.model||'Aircraft');
-    const registration=doc.createElement('span');
-    registration.textContent=String(aircraft.registration||'TEST');
-    const state=doc.createElement('small');
-    state.textContent='Simulation only · not owned · cannot operate flights';
-    const openTimeline=doc.createElement('button');
-    openTimeline.type='button';openTimeline.className='fleet-aircraft-timeline-link';
-    openTimeline.dataset.fleetAircraftTimeline=String(aircraft.id);
-    openTimeline.textContent='Schedule timeline';
-    row.append(title,registration,state,openTimeline);holder.append(row);
-   }
-  }
   routePlannerController.updateData(data);
   void loadRealFleetMarket();
   void loadAirlineSchedule();
  }
  doc.getElementById('player-main')?.addEventListener('click',async event=>{
-  const timelineLink=event.target.closest('[data-fleet-aircraft-timeline]');
-  if(timelineLink){
-   const aircraftId=timelineLink.dataset.fleetAircraftTimeline;
-   const allowed=Array.isArray(data.airline?.testAircraft)&&data.airline.testAircraft.some(
-    a=>a?.id===aircraftId&&a.testOnly===true&&a.operationallyAllowed===false);
-   const holder=$('fleet-aircraft-timeline'),heading=$('fleet-aircraft-timeline-heading');
-   if(!allowed||!holder)return;
-   const newest=safelyLoad(session,draftKey)||{};
-   const routes=Array.isArray(newest.routes)?newest.routes:[];
-   const timeline=buildAircraftWeeklyTimeline({aircraftId,routes,
-    homeAirportKey:data.airline?.homeAirportKey||null});
-   const record=data.airline.testAircraft.find(a=>a.id===aircraftId);
-   if(heading)heading.textContent='Airbus '+String(record.model)+' · '+String(record.registration)+' — weekly timeline';
-   renderAircraftWeeklyTimeline(doc,$('fleet-aircraft-timeline-content'),timeline);
-   holder.hidden=false;
+  const openAircraft=event.target.closest('[data-fleet-aircraft-open]');
+  if(openAircraft){
+   const aircraftId=openAircraft.dataset.fleetAircraftOpen;
+   if(!marketSnapshot?.fleet?.some(a=>a.id===aircraftId))return;
+   selectedFleetAircraftId=aircraftId;
+   renderAircraftDetail();
+   if(typeof goTo==='function')goTo('fleet-aircraft');
    return;
   }
   const deliveryButton=event.target.closest('[data-aircraft-delivery]');
@@ -736,15 +724,31 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    }finally{button.disabled=!(marketSnapshot?.offers?.length>0);}
    return;
   }
-  if(id==='fleet-plan-save'){
-   const fleet={family:$('fleet-family').value,seats:Number($('fleet-seats').value),
-    range:Number($('fleet-range').value),acquisition:$('fleet-acquisition').value};
-   if(!Number.isInteger(fleet.seats)||fleet.seats<0||fleet.seats>1000||
-     !Number.isFinite(fleet.range)||fleet.range<0||fleet.range>30000){
-     $('fleet-plan-status').textContent='Enter valid seat and range requirements.';return;
+  if(id==='fleet-detail-save'){
+   const aircraft=marketSnapshot?.fleet?.find(a=>a.id===selectedFleetAircraftId);
+   const input=$('fleet-detail-nickname'),feedback=$('fleet-detail-feedback');
+   const nickname=String(input?.value||'').trim();
+   if(!aircraft||!data.airline?.id||!data.fleetClient?.updateNickname){
+    if(feedback)feedback.textContent='Aircraft nickname editing is unavailable.';return;
    }
-   draftWrite('fleet',fleet);
-   $('fleet-plan-status').textContent='Fleet brief saved locally. No aircraft was ordered.';
+   if(nickname.length>40||/[\\u0000-\\u001F\\u007F]/u.test(nickname)){
+    if(feedback)feedback.textContent='Use a nickname of up to 40 characters without control symbols.';return;
+   }
+   const save=$('fleet-detail-save');
+   save.disabled=true;if(feedback)feedback.textContent='Saving aircraft nickname…';
+   try{
+    const updated=await data.fleetClient.updateNickname({
+     airlineId:data.airline.id,aircraftInventoryId:aircraft.id,nickname
+    });
+    if(updated?.id!==aircraft.id)throw Error('Nickname response mismatch');
+    marketSnapshot={...marketSnapshot,fleet:marketSnapshot.fleet.map(a=>
+     a.id===aircraft.id?{...a,nickname:updated.nickname||null}:a)};
+    renderRealFleetMarket(marketSnapshot);
+    if(feedback)feedback.textContent='Aircraft nickname saved.';
+   }catch{
+    if(feedback)feedback.textContent='Could not save the nickname. Please try again.';
+   }finally{save.disabled=false;}
+   return;
   }
   if(id==='cabin-save'){
    const cabin={service:$('cabin-service').value};let valid=true,total=0;
