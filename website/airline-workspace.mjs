@@ -840,17 +840,23 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
  function marketIsOpen(){
   return usedMarketSnapshot?.marketOpen===true;
  }
+ const isReleasedFactoryOffer=offer=>offer?.offerStatus==='published'&&
+  offer.transactionType==='purchase'&&
+  offer.configurationReviewStatus==='verified';
  function updateNewOrderAvailability(){
   const offers=Array.isArray(marketSnapshot?.offers)?marketSnapshot.offers:[];
+  const approved=offers.filter(isReleasedFactoryOffer);
+  const selected=offers.find(x=>x.offerId===$('market-offer-select')?.value);
   const enabled=marketIsOpen()&&typeof data.fleetClient?.acquire==='function';
   const buy=$('market-acquire');
-  if(buy)buy.disabled=!enabled||!offers.length;
+  if(buy)buy.disabled=!enabled||!isReleasedFactoryOffer(selected);
   const info=$('market-state');
   if(info){
    if(!marketSnapshot)info.textContent='New-aircraft orders unavailable until the verified fleet connection loads.';
-   else if(!offers.length)info.textContent='No approved current-production factory offers found.';
-   else info.textContent=String(offers.length)+' approved factory price offers · '+
-    (enabled?'Orders open — the displayed amount is debited only after owner-verified confirmation.':
+   else if(!offers.length)info.textContent='No current-production factory offers found.';
+   else info.textContent=String(approved.length)+' purchase offers approved · '+
+    String(offers.length-approved.length)+' catalog-only estimates · '+
+    (enabled?'Select an approved purchase offer; draft and lease offers cannot be ordered.':
      'Catalog preview only. World 1 aircraft trading is not open; no payment can be made.');
   }
  }
@@ -1038,12 +1044,16 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    const prior=select.value;
    select.replaceChildren(new Option(offers.length?'Choose an aircraft offer':'No published offers',''));
    for(const offer of offers){
+    const approved=isReleasedFactoryOffer(offer);
     const label=aircraftDisplayName(offer.manufacturer,offer.model)+
-      ' · '+String(offer.transactionType)+' · '+currency(offer.upfrontPriceUsd)+' upfront';
-    select.append(new Option(label,String(offer.offerId||'')));
+      ' · '+String(offer.transactionType)+' · '+currency(offer.upfrontPriceUsd)+' upfront'+
+      (approved?' · Approved purchase':' · Preview only — cannot order');
+    const option=new Option(label,String(offer.offerId||''));
+    option.disabled=!approved;
+    select.append(option);
    }
-   if(offers.some(x=>x.offerId===prior))select.value=prior;
-   select.disabled=offers.length===0;
+   if(offers.some(x=>x.offerId===prior&&isReleasedFactoryOffer(x)))select.value=prior;
+   select.disabled=!offers.some(isReleasedFactoryOffer);
   }
   updateNewOrderAvailability();
  }
@@ -1130,6 +1140,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    if(status)status.textContent=String(error?.message||'Unable to process the image.');
   }
  });
+ $('market-offer-select')?.addEventListener('change',updateNewOrderAvailability);
  doc.getElementById('player-main')?.addEventListener('click',async event=>{
   const openAircraft=event.target.closest('[data-fleet-aircraft-open]');
   if(openAircraft){
@@ -1285,7 +1296,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    const feedback=$('market-feedback'),button=$('market-acquire');
    const offer=marketSnapshot?.offers?.find(item=>item.offerId===select?.value);
    const registration=String(entry?.value||'').trim().toUpperCase();
-   if(!offer||!data.airline?.id||!data.fleetClient?.acquire||!marketIsOpen()){
+   if(!isReleasedFactoryOffer(offer)||!data.airline?.id||!data.fleetClient?.acquire||!marketIsOpen()){
     if(feedback)feedback.textContent='Factory orders are not open yet. No funds were charged.';
     return;
    }
@@ -1316,7 +1327,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
       reason.includes('AIRCRAFT_OFFER_NOT_AVAILABLE')?
       'This offer is no longer available. Refresh the market.':
       'The order was not confirmed. Check the offer and try again.';
-   }finally{button.disabled=!(marketSnapshot?.offers?.length>0);}
+   }finally{updateNewOrderAvailability();}
    return;
   }
   if(id==='fleet-aircraft-image-save'){
