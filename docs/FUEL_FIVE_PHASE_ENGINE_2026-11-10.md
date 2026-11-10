@@ -63,3 +63,26 @@ is an assumed planning input, not a verified aircraft weight or payload manifest
 Sources for phase-aware methodology: EUROCONTROL Standard Inputs for Economic Analyses,
 ICAO engine emissions / LTO model; UNFCCC national inventories' five-plus-phase methodology.
 For implementation we use simpler, explicitly disclosed balancing factors rather than claiming OEM fidelity.
+
+## 2026-11-10 fuel-family follow-up — model-level completeness
+
+- Private, read-only reference views:
+  - `airlinerra_game.aircraft_fuel_family_reference_v1`: conservative fuel-family classification from catalog engine option.
+  - `airlinerra_game.aircraft_fuel_family_reference_v2`: source-linked research for **18 aircraft with missing engine_option**.
+- Verified DB result: **271 total configurations**, **270 turbine/kerosene-family model assumptions**, **1 piston/aviation gasoline family** (DC-6 with R-2800), **0 unknown model fuel families**.
+- The 18 researched aircraft include A220, E195/E195-E2, A340-600, 767/777/787, Dash 8-300, EMB-120, Dornier 328-110, Beechcraft 1900C, A300-600R and A310-300.
+- Model family data and source URLs are NOT confirmation of any individual aircraft's installed engine or approved fuel grade. **0 exact installed fuel grades verified**. `refuelling_approved` and `fuel_financial_settlement_approved` remain FALSE for every model.
+- Aviation gasoline must NOT use the generic Jet A game price. `previewAirportFuelPrice` returns no USD value for `AVGAS_PISTON` or `UNKNOWN_ENGINE`. The five-phase calculator still shows trip kilograms, reserve and tank screening with `estimatedBurnCostUsd=null`, not a fabricated $0 or wrong-fuel price.
+- Source guidance: FAA https://www.faa.gov/newsroom/leaded-aviation-fuel-and-environment; manufacturer's model-level source links are in `supabase/migrations/20261110235900_source_linked_aircraft_fuel_family_models_v2.sql`.
+- Fuel rates are **still provisional**: 132 legacy distance/hourly references and 139 comparison-derived peer estimates, not OEM-confirmed fuel flow.
+- Protected airline fleet API deployed at `airlinerra-fleet-acquisition` **v12** and includes `fuelFamily`, `fuelFamilyEvidence`, `fuelFamilySourceUrl`, `fuelModelWithoutEngine`; both fuel views are private (not directly SELECT-granted to anon or authenticated).
+- Isolated fuel CI and protected website build passed. No authenticated browser or production frontend deployment verification has been performed for this update.
+- Database gates checked: 0 catalog `simple_fuel_gameplay_enabled` flags, 0 fuel family records approved for refuelling/accounting, 0 settled flight financials.
+
+### Remaining operational release gates
+
+1. Source-check manufacturer/engine-specific fuel burn against the 132 provisional references and improve the 139 peer estimates. Record measurement conditions and uncertainty.
+2. Confirm each physical aircraft's installed engine and fuel grade (where the game models such specificity).
+3. Obtain fuel price/availability evidence at airports by fuel family, supplier, date, and local taxes. Six airport game-tier multipliers remain deliberately **non-quoted game estimates**.
+4. Make the future server-owned aircraft fuel stock/tank, per-phase burn, reserve/alternate policy, airport uplift and accounting processor idempotent; do not activate until real trusted movements and safety gates pass.
+5. Visually verify signed-in routes, edge-function authentication and the deployed frontend before claiming game-readiness.
