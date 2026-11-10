@@ -37,8 +37,9 @@ const attest=(c=candidate(),edit=null)=>{
   evidenceSource:'independent_trusted_flight_engine'
  };
  edit?.(obj);
- obj.signature=createHmac('sha256',secret)
-  .update(independentOperationAttestationPayload(obj),'utf8').digest('hex');
+ if(!Object.hasOwn(obj,'signature'))
+  obj.signature=createHmac('sha256',secret)
+   .update(independentOperationAttestationPayload(obj),'utf8').digest('hex');
  return obj;
 };
 const authorizer=(attestation)=>createSection9IndependentOperationAuthorizer({
