@@ -1,17 +1,21 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {readFile} from 'node:fs/promises';
 const read=p=>readFile(new URL(p,import.meta.url),'utf8');
-test('public homepage exposes accessible sign-in and prelaunch registration links',async()=>{
+test('homepage announces development and blocks public registration while existing testers retain sign-in',async()=>{
  const [index,register,css,build]=await Promise.all([read('../website/index.html'),read('../website/register.html'),read('../website/styles.css'),read('../website/dev-scripts/build.mjs')]);
  assert.match(index,/<a class="header-signin" href="\/account\.html\?screen=sign-in">Sign in<\/a>/);
- assert.doesNotMatch(index,/class="header-register"/);
- assert.match(index,/<a class="button button-primary button-small desktop-cta" href="\/register\.html">7-Day Free Trial/);
- assert.match(index,/<a class="button button-primary button-large" href="\/register\.html">Explore the 7-Day Trial/);
+ assert.match(index,/role="note" aria-label="Important development notice"/);
+ assert.match(index,/Airlinerra is still in development/);
+ assert.match(index,/public registration is currently closed/i);
+ assert.match(index,/Existing approved testers can still sign in/);
+ assert.doesNotMatch(index,/<a[^>]+href="\/register\.html"[^>]*>\s*(?:Explore the 7-Day Trial|7-Day Free Trial|Trial registration details)/);
+ assert.match(index,/registration-closed-button/);
  assert.doesNotMatch(index,/data-action="trial"/);
+ assert.match(css,/\.development-notice\{/);
+ assert.match(css,/\.button\.registration-closed-button\{/);
  assert.match(css,/header-signin/);
- assert.doesNotMatch(css,/header-register/);
- assert.match(register,/7-DAY TRIAL & REGISTRATION/);
- assert.match(register,/Use the registration form below to create your own manager account/);
- assert.doesNotMatch(register,/No public registration form is available yet/);
+ assert.match(register,/UNDER DEVELOPMENT/);
+ assert.match(register,/Registration is currently closed/);
+ assert.match(register,/New account creation is paused/);
  assert.match(register,/href="\/account\.html\?screen=sign-in"/);
  assert.match(register,/id="real-registration-form" hidden/);
  assert.doesNotMatch(register,/service_role|sb_secret_/i);
@@ -22,6 +26,20 @@ test('public homepage exposes accessible sign-in and prelaunch registration link
  assert.match(regCss,/1220px/);
  assert.match(regCss,/registration-layout/);
 });
+test('registration UI remains closed regardless of future backend readiness and no signup can run from form submission',async()=>{
+ const [page,access,script]=await Promise.all([
+  read('../website/register.html'),read('../website/registration-access.mjs'),
+  read('../website/real-registration.mjs')
+ ]);
+ assert.match(access,/export const REGISTRATION_UI_PAUSED = true;/);
+ assert.match(script,/if\(REGISTRATION_UI_PAUSED\)\{/);
+ assert.match(script,/blocked\('Public registration is currently closed/);
+ assert.match(script,/New registrations are not available/);
+ assert.match(page,/id="registration-readiness" data-status="blocked"/);
+ const {REGISTRATION_UI_PAUSED}=await import('../website/registration-access.mjs');
+ assert.equal(REGISTRATION_UI_PAUSED,true);
+});
+
 test('real signup requires hosted signup enabled and approved legal pages',async()=>{
  const {readFile}=await import('node:fs/promises');
  const site=new URL('../website/',import.meta.url);
