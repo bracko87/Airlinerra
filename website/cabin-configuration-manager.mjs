@@ -215,6 +215,23 @@ function appendRow(doc,table,c,typeList,plan,onEdit){
  row.append(label,styleField,input,indicator);table.append(row);
  return {indicator,input,select};
 }
+/** Editable planning input shared by owned-aircraft and factory previews. */
+function appendLegroomControl(doc,container,plan,onEdit,scope){
+ const field=create(doc,'label','cabin-legroom-field','Additional space between seat rows (cm)');
+ const input=create(doc,'input');
+ input.type='number';input.id=scope+'-extra-legroom';input.min='0';input.max='20';
+ input.step='0.1';input.value=String(plan.extraLegroomCm??0);
+ input.setAttribute('aria-label','Additional legroom in centimetres');
+ input.addEventListener('input',()=>{
+  const value=Number(input.value);
+  plan.extraLegroomCm=Number.isFinite(value)&&input.value.trim()?value:NaN;
+  onEdit();
+ });
+ const note=create(doc,'small','',
+  'Added to each seat style’s standard pitch. More legroom reduces available space (0–20 cm).');
+ field.append(input,note);container.append(field);
+ return input;
+}
 export function createCabinConfigurationManager({doc,host,factoryHost,onDirectoryUpdate,onFactoryLayoutChange}={}){
  if(!doc||!host)throw Error('Cabin planner needs an existing page host');
  let current={connected:false,airline:null,fleetClient:null};
@@ -223,6 +240,7 @@ export function createCabinConfigurationManager({doc,host,factoryHost,onDirector
  let version=0;let renderedRows=[],factoryRows=[];
  let installedDisplay=null,usageLabel=null,statusLabel=null,previewSvg=null,siteSelect=null;
  let factoryUsage=null,factorySvg=null,factoryMessage=null;
+ let comfortSummary=null,costSummary=null,factoryComfort=null,factoryCost=null;
  const currency=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n);
  function selectedAircraft(){return loaded?.aircraft?.find(a=>a.aircraftInventoryId===selectedId)||null}
  function modelGeometry(configurationId){
@@ -244,7 +262,8 @@ export function createCabinConfigurationManager({doc,host,factoryHost,onDirector
   if(a.draftEconomy!==null&&a.draftEconomy!==undefined)
    return {economy:a.draftEconomy,premium:a.draftPremium,business:a.draftBusiness,first:a.draftFirst,
     economyType:a.draftEconomyType,premiumType:a.draftPremiumType,
-    businessType:a.draftBusinessType,firstType:a.draftFirstType};
+    businessType:a.draftBusinessType,firstType:a.draftFirstType,
+    extraLegroomCm:Number(a.draftExtraLegroomCm||0)};
   return standardCabinPlan(a.standardEconomy);
  }
  function renderFactory(){
@@ -261,16 +280,19 @@ export function createCabinConfigurationManager({doc,host,factoryHost,onDirector
   factoryHost.append(create(doc,'p','hint','Standard Economy seats are included. Customize a layout below to preview space. A nonstandard factory interior is not attached to an order yet.'));
   const main=create(doc,'div','cabin-designer-grid'),controls=create(doc,'div','cabin-designer-controls');
   const header=create(doc,'div','cabin-designer-row cabin-designer-head');
-  ['Class','Seat style','Seats','Units used'].forEach(x=>header.append(create(doc,'span','',x)));
+  ['Class','Seat style','Seats','Space %'].forEach(x=>header.append(create(doc,'span','',x)));
   controls.append(header);
   factoryRows=[];
   for(const c of CLASSES)factoryRows.push(appendRow(doc,controls,c,loaded.seatTypes,factoryPlan,updateFactory));
+  appendLegroomControl(doc,controls,factoryPlan,updateFactory,'factory');
   factoryUsage=create(doc,'p','cabin-designer-status','');
+  factoryComfort=create(doc,'p','cabin-designer-status','');
+  factoryCost=create(doc,'p','cabin-designer-status','');
   const standard=create(doc,'button','secondary cabin-compact-action','Use standard layout');
   standard.type='button';standard.addEventListener('click',()=>{
    factoryPlan=standardCabinPlan(factory.referenceSeats);renderFactory();
   });
-  controls.append(factoryUsage,standard);
+  controls.append(factoryUsage,factoryComfort,factoryCost,standard);
   const visual=create(doc,'div','cabin-designer-visual');
   factorySvg=svgNode(doc,'svg',{});visual.append(factorySvg);
   main.append(controls,visual);factoryHost.append(main);
@@ -283,7 +305,8 @@ export function createCabinConfigurationManager({doc,host,factoryHost,onDirector
   const evaluation=evaluateCabinPlan(factoryPlan,loaded.seatTypes,f.referenceSeats);
   const standard=factoryPlan.economy===Number(f.referenceSeats)&&
    factoryPlan.economyType==='eco_standard'&&
-   factoryPlan.premium===0&&factoryPlan.business===0&&factoryPlan.first===0;
+   factoryPlan.premium===0&&factoryPlan.business===0&&factoryPlan.first===0&&
+   factoryPlan.extraLegroomCm===0;
   factoryUsage.textContent=evaluation.valid?
    evaluation.count+' seats · '+evaluation.used+'/'+evaluation.available+
     ' cabin units · '+(standard?'Standard factory cabin':'Custom factory draft'):
@@ -306,7 +329,8 @@ export function createCabinConfigurationManager({doc,host,factoryHost,onDirector
   const val=evaluateCabinPlan(factoryPlan,loaded.seatTypes,f.referenceSeats);
   return {...val,standard:val.valid&&factoryPlan.economy===Number(f.referenceSeats)&&
    factoryPlan.economyType==='eco_standard'&&
-   factoryPlan.premium===0&&factoryPlan.business===0&&factoryPlan.first===0};
+   factoryPlan.premium===0&&factoryPlan.business===0&&factoryPlan.first===0&&
+   factoryPlan.extraLegroomCm===0};
  }
  function render(){
   host.replaceChildren();
@@ -338,10 +362,13 @@ export function createCabinConfigurationManager({doc,host,factoryHost,onDirector
   if(!plan)plan=modelPlan(aircraft);
   const grid=create(doc,'div','cabin-designer-grid'),controls=create(doc,'div','cabin-designer-controls');
   const head=create(doc,'div','cabin-designer-row cabin-designer-head');
-  ['Class','Seat style','Seats','Units used'].forEach(x=>head.append(create(doc,'span','',x)));
+  ['Class','Seat style','Seats','Space %'].forEach(x=>head.append(create(doc,'span','',x)));
   controls.append(head);renderedRows=[];
   for(const c of CLASSES)renderedRows.push(appendRow(doc,controls,c,loaded.seatTypes,plan,updateLayout));
+  appendLegroomControl(doc,controls,plan,updateLayout,'owned');
   usageLabel=create(doc,'p','cabin-designer-status','');
+  comfortSummary=create(doc,'p','cabin-designer-status','');
+  costSummary=create(doc,'p','cabin-designer-status cabin-cost-breakdown','');
   const buttons=create(doc,'div','cabin-designer-actions');
   const standard=create(doc,'button','secondary cabin-compact-action','Use standard');
   standard.type='button';standard.addEventListener('click',()=>{
@@ -361,13 +388,14 @@ export function createCabinConfigurationManager({doc,host,factoryHost,onDirector
     Object.assign(aircraft,{draftEconomy:plan.economy,draftPremium:plan.premium,
      draftBusiness:plan.business,draftFirst:plan.first,
      draftEconomyType:plan.economyType,draftPremiumType:plan.premiumType,
-     draftBusinessType:plan.businessType,draftFirstType:plan.firstType});
+     draftBusinessType:plan.businessType,draftFirstType:plan.firstType,
+     draftExtraLegroomCm:String(plan.extraLegroomCm)});
     statusLabel.textContent='Cabin design saved to your airline. The installed cabin has NOT changed. Estimated refit '+result.indicativeDowntimeHours+' hours. No payment or aircraft grounding.';
    }catch{
     statusLabel.textContent='Could not save this cabin draft. Installed seats remain unchanged.';
    }finally{save.disabled=false}
   });
-  buttons.append(standard,save);controls.append(usageLabel,buttons);
+  buttons.append(standard,save);controls.append(usageLabel,comfortSummary,costSummary,buttons);
   const visual=create(doc,'div','cabin-designer-visual'),legend=create(doc,'p','hint',
    'Seats use the selected aircraft family row arrangement and fill the usable cabin width. Galleys/lavatories are indicative; exit positions and certification are not yet verified.');
   previewSvg=svgNode(doc,'svg');
