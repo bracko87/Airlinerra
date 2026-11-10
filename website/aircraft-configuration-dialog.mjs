@@ -40,19 +40,25 @@ export function createAircraftConfigurationDialog({
   if(!context||!isSame())return;
   const selected=context.choices.find(c=>c.key===choice?.value);
   const selectedSite=context.sites.find(s=>s.airportKey===site?.value);
-  const quote=configurationCostPreview(selected,selectedSite);
+  const installedSeats=['economy','premium','business','first'].reduce((n,key)=>
+   n+Number(context.installed?.[key]||0),0);
+  const quote=configurationCostPreview(selected,selectedSite,installedSeats);
   if(!quote.valid){
    holder.append(row('Layout',quote.message));return;
   }
   const currentDefault=selected?.key==='default'&&
    context.installed.economy===selected.plan.economy &&
-   ['premium','business','first'].every(key=>context.installed[key]===0);
+   ['premium','business','first'].every(key=>context.installed[key]===0) &&
+   (selected.plan.extraLegroomCm??0)===0;
   holder.append(row('Total passenger seats',String(quote.seatCount)),
-   row('Cabin space',quote.spaceUsed+' / '+quote.spaceAvailable+' units'),
-   row('Indicative seat equipment cost',currentDefault?'$0 — already installed':dollars(quote.equipmentUsd)),
+   row('Cabin space used',quote.spacePct+'%'),
+   row('Extra row legroom',quote.extraLegroomCm+' cm'),
+   row('Cabin comfort (game preview)',quote.comfortRating+'/100'),
+   row('New seat equipment',currentDefault?'$0 — already installed':dollars(quote.equipmentUsd)),
+   row('Removal + installation',currentDefault?'$0':dollars(quote.labourCostUsd)),
+   row('Indicative refit total',currentDefault?'$0':dollars(quote.indicativeTotalUsd)),
    row('Indicative refit downtime',currentDefault?'None':quote.downtimeHours+' hours'),
-   row('Provider labour and additional work','Not quoted'),
-   row('Final total cost','Not confirmed'),
+   row('Final provider quote','Not confirmed · no payment'),
    row('Available refit slot / installation date','Not available yet'));
   say('fleet-configuration-slot-status',quote.siteName?
    'Compatible facility: '+quote.siteName+'. Availability not confirmed. No booking is created.':
