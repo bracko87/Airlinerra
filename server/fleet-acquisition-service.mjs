@@ -259,10 +259,21 @@ export const FLEET_SQL=Object.freeze({
   "seat_pitch_inches::text AS \"pitchInches\", "+
   "seat_width_inches::text AS \"widthInches\", "+
   "equivalent_economy_units::text AS \"spaceUnits\", "+
-  "indicative_install_usd AS \"installUsd\" "+
+  "indicative_install_usd AS \"installUsd\", "+
+  "real_product_reference AS \"realProduct\",source_url AS \"sourceUrl\", "+
+  "geometry_basis AS \"geometryBasis\" "+
   "FROM airlinerra_game.cabin_seat_types_v1 "+
   "ORDER BY CASE cabin_class WHEN 'economy' THEN 1 WHEN 'premium' THEN 2 "+
   "WHEN 'business' THEN 3 ELSE 4 END,equivalent_economy_units,seat_code",
+ cabinGeometry:"SELECT configuration_id::int AS \"configurationId\", "+
+  "to_jsonb(economy_columns) AS \"economyColumns\", "+
+  "to_jsonb(premium_columns) AS \"premiumColumns\", "+
+  "to_jsonb(business_columns) AS \"businessColumns\", "+
+  "to_jsonb(first_columns) AS \"firstColumns\", "+
+  "review_status AS \"reviewStatus\",source_url AS \"sourceUrl\", "+
+  "manually_verified AS \"manuallyVerified\" "+
+  "FROM airlinerra_game.cabin_model_row_geometry_v1 "+
+  "ORDER BY configuration_id LIMIT 400",
  cabinAircraft:"SELECT i.id::text AS \"aircraftInventoryId\",i.configuration_id::int AS \"configurationId\", "+
   "i.registration,i.ownership_type AS \"ownershipType\", "+
   "c.manufacturer_name AS manufacturer,c.family_name AS family,c.model_name AS model, "+
@@ -403,14 +414,15 @@ export function createFleetAcquisitionHandler({verifyUserToken,database}={}){
    if(body.action==='cabin-overview'){
     const owner=await client.query(FLEET_SQL.owner,[body.airlineId,playerId]);
     if(owner.rowCount!==1)return respond(403,{error:'Airline not owned by this account'});
-    const [types,aircraft,directory,refitSites]=await Promise.all([
+    const [types,aircraft,directory,refitSites,geometry]=await Promise.all([
      client.query(FLEET_SQL.cabinTypes),
      client.query(FLEET_SQL.cabinAircraft,[body.airlineId]),
      client.query(FLEET_SQL.cabinDirectory),
-     client.query(FLEET_SQL.cabinRefitSites,[body.airlineId])
+     client.query(FLEET_SQL.cabinRefitSites,[body.airlineId]),
+     client.query(FLEET_SQL.cabinGeometry)
     ]);
     return respond(200,{airlineId:body.airlineId,seatTypes:types.rows,aircraft:aircraft.rows,
-     directory:directory.rows,refitSites:refitSites.rows,
+     directory:directory.rows,refitSites:refitSites.rows,geometries:geometry.rows,
      previewOnly:true,installedLayoutsImmutable:true,canActivateRefit:false});
    }
    if(body.action==='cabin-save-draft'){
