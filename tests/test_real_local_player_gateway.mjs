@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {makeRealLocalPlayerHandler,validConnectionUrl,createLiveReadOnlyPreviewHandler} from '../website/dev-scripts/real-player-read-gateway.mjs';
+import {makeRealLocalPlayerHandler,validConnectionUrl,createLiveReadOnlyPreviewHandler,LOCAL_PLAYER_API_PATHS} from '../website/dev-scripts/real-player-read-gateway.mjs';
 import {PLAYER_READ_SQL} from '../server/player-read-service.mjs';
 import {createCanonicalGameApi,CANONICAL_GAME_API_PATHS} from '../server/canonical-game-api.mjs';
 import {createRegistrationReadinessHandler,REGISTRATION_READINESS_SQL} from '../server/registration-readiness.mjs';
