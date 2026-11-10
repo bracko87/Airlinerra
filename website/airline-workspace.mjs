@@ -186,10 +186,10 @@ const pages=Object.freeze({
    '<div><strong>Customer satisfaction</strong><span>Passenger service and reputation</span></div></div>'+
    status('No verified competitor rankings are available. Nothing in this view is an invented live leaderboard.'),
    'MULTIPLAYER'),
- 'service':()=>card('Cabin Services Management',
-   '<p class="hint">Every airline starts with a protected Basic package. Create and price your own complimentary or paid services and assign default packages to Economy, Premium Economy, Business and First Class.</p>'+
+ 'service':()=>card('Cabin service packages',
+   '<p class="hint">Create and manage your airline’s complimentary and paid onboard services. Assign a default package to each cabin class. The Basic package is always available.</p>'+
    '<div id="cabin-services-manager" aria-label="Cabin service packages and passenger offers"></div>',
-   'CABIN SERVICE PACKAGES')+
+   'SERVICE DIRECTORY')+
   card('Aircraft cabin configuration',
    '<p class="hint">This is a separate seat-layout planning brief. It does not alter the installed seats on an individual aircraft.</p>'+
    '<div class="workspace-money-grid">'+
