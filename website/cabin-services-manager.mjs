@@ -371,7 +371,9 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
   doc.dispatchEvent(new CustomEvent('airlinerra:refresh-game-select-menus'));
  };
  const updateMetrics=()=>{
-  const results=cabinPackageEstimate(working);
+  const results=forecastCabinServiceFlight(working,{
+   passengers:previewPassengers,durationMinutes:previewMinutes,reputationScore:previewReputation
+  });
   const rating=host.querySelector('#cabin-rating');
   if(rating)rating.textContent=results.attractiveness+' / 100';
   const fill=host.querySelector('#cabin-score-fill');
@@ -379,44 +381,60 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
   const cost=host.querySelector('#cabin-cost');
   if(cost)cost.textContent=money(results.totalCostCents);
   const sales=host.querySelector('#cabin-sales');
-  if(sales)sales.textContent=money(results.paidRevenueCents);
+  if(sales)sales.textContent=money(results.onboardRevenueCents);
   const net=host.querySelector('#cabin-net');
   if(net)net.textContent=money(results.netCostCents);
   for(const row of results.rows){
-   const cell=host.querySelector('[data-cabin-cost-row="'+row.id+'"]');
-   if(cell)cell.textContent=money(row.costCents);
+   const count=host.querySelector('[data-cabin-inventory="'+row.id+'"]');
+   if(!count)continue;
+   count.textContent=row.mode==='off'?'Not offered':
+    row.mode==='included'?'Included · '+row.costUnits+' units budgeted':
+    row.loadedUnits>0?row.loadedUnits+' loaded · '+row.expectedSales+' expected sold':
+    row.expectedSales+' estimated digital uses';
   }
  };
  const onChange=event=>{
+  const id=event.target?.id;
+  if(id==='cabin-preview-passengers'||id==='cabin-preview-hours'){
+   const value=Number(event.target.value);
+   if(id==='cabin-preview-passengers'&&Number.isSafeInteger(value)&&value>=1&&value<=1000)
+    previewPassengers=value;
+   else if(id==='cabin-preview-hours'&&Number.isFinite(value)&&value>=.25&&value<=24)
+    previewMinutes=Math.round(value*60);
+   else{status('Enter 1–1,000 passengers and a duration of 0.25–24 hours.');return;}
+   updateMetrics();return;
+  }
   if(loading||saving||(remote&&!ready))return;
-  const className=event.target.dataset?.cabinClass;
-  if(className){return;}
   const item=event.target.closest?.('[data-cabin-item]');
   const field=event.target.dataset?.cabinField;
   if(!item||!field||activeId==='basic')return;
-  const id=item.dataset.cabinItem;
-  if(!CATALOG.has(id)||!working.items[id])return;
+  const rowId=item.dataset.cabinItem;
+  if(!CATALOG.has(rowId)||!working.items[rowId])return;
   if(field==='mode'){
    working.name=String(host.querySelector('#cabin-package-name')?.value||working.name);
    const mode=event.target.value;
    if(!MODES.has(mode))return;
-   working.items[id].mode=mode;
-   if(['included','hybrid'].includes(mode)&&working.items[id].freeQty===0)
-    working.items[id].freeQty=1;
+   working.items[rowId].mode=mode;
+   working.items[rowId].freeQty=mode==='included'?1:0;
+   working.items[rowId].stockPer100=mode==='included'?100:
+    mode==='onboard'?(CATALOG.get(rowId).digital?0:
+     (working.items[rowId].stockPer100||CATALOG.get(rowId).stock)):0;
    render();return;
   }
-  if(field==='freeQty'){
-   const v=Number(event.target.value);
-   if(!Number.isInteger(v)||v<1||v>3){status('Free units must be between 1 and 3.');return;}
-   working.items[id].freeQty=v;
-  }else{
+  if(field==='stockPer100'){
+   const value=Number(event.target.value);
+   if(!Number.isSafeInteger(value)||value<0||value>200){
+    status('Enter 0–200 loaded units per 100 passengers.');return;
+   }
+   working.items[rowId].stockPer100=value;
+  }else if(field==='onboardCents'){
    const value=Number(event.target.value);
    if(!/^\d{1,4}(?:\.\d{1,2})?$/.test(event.target.value)||
       !Number.isFinite(value)||value>1000){
-    status('Enter a valid USD price between $0 and $1,000, with up to two decimals.');return;
+    status('Passenger price must be $0–$1,000 with two decimals.');return;
    }
-   working.items[id][field]=Math.round(value*100);
-    if(field==='onboardCents')working.items[id].onlineCents=working.items[id].onboardCents;
+   working.items[rowId].onboardCents=Math.round(value*100);
+   working.items[rowId].onlineCents=working.items[rowId].onboardCents;
   }
   updateMetrics();
  };
@@ -452,15 +470,14 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
      price.focus();return;
     }
    }
-   for(const allowance of host.querySelectorAll('[data-cabin-field="freeQty"]')){
-    if(allowance.disabled)continue;
-    const n=Number(allowance.value);
-    if(!Number.isInteger(n)||n<1||n>3){
-     status('Free allowance must be 1–3 units for each included service.');
-     allowance.focus();return;
-    }
+   for(const stock of host.querySelectorAll('[data-cabin-field="stockPer100"]')){
+   if(stock.disabled)continue;
+   const units=Number(stock.value);
+   if(!Number.isSafeInteger(units)||units<0||units>200){
+    status('Loaded stock must be 0–200 units per 100 passengers.');stock.focus();return;
    }
-   working.name=String(host.querySelector('#cabin-package-name')?.value||'').trim();
+  }
+  working.name=String(host.querySelector('#cabin-package-name')?.value||'').trim();
    const next=cleanCabinPackage(working);
    if(!next){status('Name must have 2–45 characters. Review prices and allowances.');return;}
    const i=state.packages.findIndex(p=>p.id===activeId);
