@@ -9,6 +9,35 @@ export const REAL_PLAYER_PATHS=CANONICAL_GAME_API_PATHS;
 const REF='hwllkabgzaynalahvkpz';
 const ORIGIN='http://localhost:5188';
 const AUTH_URL='https://'+REF+'.supabase.co';
+const AIRLINE_ID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const FLEET_READ_PATH='/api/v1/player/fleet-acquisition';
+const SCHEDULE_READ_PATH='/api/v1/player/flight-schedule-drafts';
+/** The local gateway never forwards a transaction, schedule reservation,
+ * delivery update or other state-changing command.
+ */
+export function allowedLocalOwnerRead(pathname,payload){
+ if(pathname!==FLEET_READ_PATH&&pathname!==SCHEDULE_READ_PATH)return false;
+ if(!payload||typeof payload!=='object'||Array.isArray(payload)||
+    typeof payload.action!=='string'||!AIRLINE_ID.test(payload.airlineId||''))return false;
+ if(payload.action==='list')
+  return Object.keys(payload).length===2 &&
+   Object.keys(payload).every(x=>x==='action'||x==='airlineId');
+ if(pathname===SCHEDULE_READ_PATH&&payload.action==='slot-check'){
+  // Server input is validated again. The only non-list action allowed here
+  // uses a STABLE, read-only database preflight function.
+  const names=['action','airlineId','aircraftInventoryId','originAirportKey',
+   'destinationAirportKey','referenceDepartureUtc','referenceArrivalUtc',
+   'weeklySchedule','departureStand','arrivalStand','existingId'];
+  return Object.keys(payload).every(k=>names.includes(k)) &&
+   AIRLINE_ID.test(payload.aircraftInventoryId||'') &&
+   Array.isArray(payload.weeklySchedule) && payload.weeklySchedule.length<=7 &&
+   typeof payload.originAirportKey==='string' &&
+   typeof payload.destinationAirportKey==='string' &&
+   typeof payload.referenceDepartureUtc==='string' &&
+   typeof payload.referenceArrivalUtc==='string';
+ }
+ return false;
+}
 export function validConnectionUrl(value){
  try{
   const u=new URL(value);
@@ -30,6 +59,8 @@ export function createLiveReadOnlyPreviewHandler({fetchImpl=globalThis.fetch}={}
   '/api/v1/player/noise-curfew-check',
   '/api/v1/player/licenses',
   '/api/v1/player/holding-status',
+  FLEET_READ_PATH,
+  SCHEDULE_READ_PATH,
   '/api/v1/onboarding/context'
  ]);
  const error=(status,why)=>{
@@ -51,12 +82,23 @@ export function createLiveReadOnlyPreviewHandler({fetchImpl=globalThis.fetch}={}
   if(request.headers.get('content-type')!=='application/json')
    return error(415,'JSON only');
   let body;
-  try{body=await request.text();if(new TextEncoder().encode(body).length>2048)
-   return error(413,'Request too large');}catch{return error(400,'Invalid body')}
+  try{
+   body=await request.text();
+   if(new TextEncoder().encode(body).length>2048)return error(413,'Request too large');
+  }catch{return error(400,'Invalid body')}
+  if(url.pathname===FLEET_READ_PATH||url.pathname===SCHEDULE_READ_PATH){
+   let payload;
+   try{payload=JSON.parse(body);}catch{return error(400,'Invalid JSON body')}
+   if(!allowedLocalOwnerRead(url.pathname,payload))
+    return error(403,'Local preview allows company fleet and schedule reads only');
+   body=JSON.stringify(payload);
+  }
   try{
    const edge=url.pathname==='/api/v1/player/airport-profile'?'airlinerra-airport-profile':
      url.pathname==='/api/v1/player/aircraft-library'?'airlinerra-aircraft-library':
-     url.pathname==='/api/v1/player/noise-curfew-check'?'airlinerra-noise-curfew-check':'airlinerra-game';
+     url.pathname==='/api/v1/player/noise-curfew-check'?'airlinerra-noise-curfew-check':
+     url.pathname===FLEET_READ_PATH?'airlinerra-fleet-acquisition':
+     url.pathname===SCHEDULE_READ_PATH?'airlinerra-flight-schedule-drafts':'airlinerra-game';
    const response=await fetchImpl(AUTH_URL+'/functions/v1/'+edge,{
     method:'POST',headers:{
      apikey:AIRLINERRA_INVITED_TESTER_PUBLIC_SETTINGS.publishableKey,
