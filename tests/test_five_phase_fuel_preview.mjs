@@ -91,7 +91,8 @@ test('only existing owner-verified fleet SQL provides reference data; preview do
   assert.ok(query.includes(field),field);
  assert.match(query,/WHERE i.airline_id=\$1::uuid/);
  assert.match(query,/aircraft_fuel_planning_profiles_v1/);
- assert.match(query,/aircraft_fuel_family_reference_v2/);
+ assert.match(query,/aircraft_game_fuel_family_v1/);
+ assert.match(query,/historicalModelFuelFamily/);
  assert.match(query,/fuelFamilyEvidence/);
  assert.match(query,/aircraft_catalog_fuel_capacity_game_v1/);
  assert.match(query,/fuelConfidenceClass/);
@@ -177,7 +178,34 @@ test('model family evidence never means installed engine, certified fuel or game
  assert.match(migration,/b\.fuel_financial_settlement_approved/);
  assert.match(migration,/revoke all on airlinerra_game\.aircraft_fuel_family_reference_v2/);
  const profile=await read('website/airline-workspace.mjs');
- assert.match(profile,/AVGAS_PISTON/);
- assert.match(profile,/approved grade not verified/);
- assert.match(profile,/TURBINE_KEROSENE_ASSUMED/);
+ assert.match(profile,/Turbine\/kerosene — model-level game assumption/);
+ assert.doesNotMatch(profile,/Aviation gasoline \(piston model/);
+});
+
+test('all catalog aircraft use a single turbine/kerosene GAME fuel family without rewriting real-world evidence',async()=>{
+ const sql=await read('supabase/migrations/20261110235930_universal_kerosene_game_fuel_family_v1.sql');
+ const query=FLEET_SQL.fleet;
+ assert.match(sql,/aircraft_game_fuel_family_v1/);
+ assert.match(sql,/TURBINE_KEROSENE_ASSUMED/);
+ assert.match(sql,/UNIVERSAL_GAMEPLAY_ASSUMPTION/);
+ assert.match(sql,/research\.fuel_family as research_fuel_family/);
+ assert.match(sql,/aircraft_fuel_family_reference_v2 research/);
+ assert.match(sql,/research\.refuelling_approved|false::boolean as refuelling_approved/);
+ assert.match(sql,/false::boolean as fuel_financial_settlement_approved/);
+ assert.match(sql,/security_invoker = true/);
+ assert.match(sql,/revoke all on airlinerra_game\.aircraft_game_fuel_family_v1/);
+ assert.match(query,/aircraft_game_fuel_family_v1 fueltype/);
+ assert.match(query,/historicalModelFuelFamily/);
+ const profile=await read('website/airline-workspace.mjs');
+ assert.match(profile,/Turbine\/kerosene — model-level game assumption/);
+});
+test('all GAME aircraft can use the single kerosene tier pricing model, historical source remains separate',()=>{
+ for(const category of ['Local','Regional','Medium','Large','Major Hub','Mega Hub']){
+  const quote=previewAirportFuelPrice({key:'OURAIRPORTS:1',category},
+    {fuelFamily:'TURBINE_KEROSENE_ASSUMED'});
+  assert.ok(quote.usdPerKg>0);
+  assert.equal(quote.fuelType,'TURBINE_KEROSENE_ASSUMED');
+  assert.equal(quote.accountingEnabled,false);
+  assert.equal(quote.fromCurrentSupplier,false);
+ }
 });
