@@ -5,11 +5,15 @@ on:
     paths:
       - 'server/section9-flight-phase-timeline.mjs'
       - 'server/section9-independent-flight-operation-authorizer.mjs'
+      - 'server/section9-independent-operation-evidence-reader.mjs'
+      - 'supabase/migrations/20261110235950_section9_flight_engine_readiness_audit_v1.sql'
+      - 'supabase/migrations/20261110235955_section9_independent_operated_flight_evidence_v1.sql'
       - 'server/section9-verified-flight-operations-dispatcher.mjs'
       - 'server/section9-verified-flight-fuel-bridge.mjs'
       - 'website/flight-fuel-phase-engine.mjs'
       - 'tests/test_section9_flight_phase_timeline.mjs'
       - 'tests/test_section9_independent_operation_authorizer.mjs'
+      - 'tests/test_section9_independent_operation_evidence_reader.mjs'
       - 'tests/test_section9_fuel_arrival_bridge.mjs'
       - '.github/workflows/flight-phase-execution-ci.yml'
   workflow_dispatch:
@@ -26,10 +30,11 @@ jobs:
         run: |
           node --check server/section9-flight-phase-timeline.mjs
           node --check server/section9-independent-flight-operation-authorizer.mjs
+          node --check server/section9-independent-operation-evidence-reader.mjs
           node --check server/section9-verified-flight-operations-dispatcher.mjs
           node --check server/section9-verified-flight-fuel-bridge.mjs
       - name: Verify five flight phases and trusted movement decisions (no real movements)
         run: |
-          node --test tests/test_section9_flight_phase_timeline.mjs tests/test_section9_independent_operation_authorizer.mjs tests/test_section9_fuel_arrival_bridge.mjs
+          node --test tests/test_section9_flight_phase_timeline.mjs tests/test_section9_independent_operation_authorizer.mjs tests/test_section9_independent_operation_evidence_reader.mjs tests/test_section9_fuel_arrival_bridge.mjs
       - name: Protected website build
         run: cd website && npm run build
