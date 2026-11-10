@@ -163,21 +163,46 @@ const pages=Object.freeze({
 <div class="fleet-detail-row"><span>Verified operating cost per flight</span><strong id="fleet-detail-operating-cost">—</strong></div></div></section>
 <p class="hint fleet-detail-disclaimer">Individual aircraft condition, build year, lifecycle and price stay “Not recorded” until verified values are available. Model specifications are reference data, not proof of an individual installed configuration. No invented age, valuation, flight hours or maintenance dates are displayed.</p>
 <section id="fleet-maintenance-preview" class="fleet-maintenance-preview" aria-label="Aircraft maintenance cycle" aria-live="polite">Maintenance information loads when you open this aircraft.</section>`,'AIRCRAFT PROFILE'),
- 'aircraft-market':()=>card('Aircraft marketplace',
-   '<p>Purchase or lease an individual aircraft from a published game-market offer. Only the airline owner can confirm an order.</p>'+
+ 'aircraft-new-orders':()=>card('New factory aircraft orders',
+   '<p>Order a new factory aircraft: current-production models only. Purchase and monthly lease offers have game-estimated prices.</p>'+
    '<p id="market-state" class="workspace-state" role="status">Loading approved offers...</p>'+
    '<div id="market-offers" class="fleet-test-aircraft"></div>'+
    field('market-offer-select','Published offer','<select id="market-offer-select" disabled><option value="">No offers loaded</option></select>')+
    field('market-aircraft-registration','Aircraft registration',
     '<input id="market-aircraft-registration" maxlength="20" autocomplete="off" placeholder="e.g. D-ABCD" aria-describedby="market-feedback">')+
-   '<button type="button" class="primary" id="market-acquire" disabled>Confirm aircraft order</button>'+
+   '<button type="button" class="primary" id="market-acquire" disabled>Place factory order</button>'+
    '<p id="market-feedback" class="hint" role="status" aria-live="polite"></p>'+
-   small('The published upfront amount is deducted from your in-game airline cash when you confirm. Lease payments and delivery are tracked separately; aircraft cannot operate until delivery, inspection, and flight systems are ready. No transaction is possible without a published offer.')+
-   button('fleet','Open my fleet'),'BUY AND LEASE')+
+   small('The published upfront amount is deducted from your in-game airline cash when you confirm. Lease payments and delivery are tracked separately; aircraft cannot operate until delivery, inspection, and flight systems are ready. No money is charged before World 1 and the market release gate are activated.')+
+   button('fleet','Open my fleet')+button('aircraft-market','Browse used auctions'),'NEW AIRCRAFT')+
   card('Purchase readiness',
    '<p>Before ordering, confirm runway compatibility, technical range, seat demand, cash reserve and crew coverage. No aircraft can be dispatched without a real acquired airframe.</p>'+
    button('routes','Evaluate destinations')+button('finances','Check financing scenarios'),
    'OPERATING REQUIREMENTS'),
+ 'aircraft-market':()=>card('Used aircraft auctions',
+   '<p class="hint">Each listing is a separate game-generated aircraft, built within its model production years. There are two purchase lots and one lease lot per available configuration. Unsold offers remain listed without an expiry date.</p>'+
+   '<p class="hint">The first accepted bid starts a 15-minute timer. Every valid higher bid resets the timer to 15 minutes. The highest bidder receives the aircraft when the timer expires. Cash is reserved when bidding, and the previous bidder is refunded.</p>'+
+   '<div id="used-market-state" class="workspace-state" role="status" aria-live="polite">Loading used-aircraft listings...</div>'+
+   '<div class="used-market-filters">'+
+   '<label>Find aircraft<input id="used-market-search" type="search" maxlength="60" autocomplete="off" placeholder="Model or manufacturer"></label>'+
+   '<label>Offer type<select id="used-market-mode"><option value="all">Purchase and lease</option><option value="purchase">Purchase</option><option value="lease">Lease</option></select></label>'+
+   '<button id="used-market-find" type="button" class="secondary">Search</button>'+
+   '<button id="used-market-refresh" type="button" class="secondary">Refresh bids</button>'+
+   '</div>'+
+   '<div id="used-market-lots" class="used-market-list" role="list" aria-live="polite"></div>'+
+   '<div class="used-market-pagination">'+
+   '<button id="used-market-prev" type="button" class="secondary" disabled>Previous</button>'+
+   '<span id="used-market-page">Page 1</span>'+
+   '<button id="used-market-next" type="button" class="secondary" disabled>Next</button></div>'+
+   '<section id="used-market-bid-panel" class="used-market-bid-panel" hidden>'+
+   '<h3 id="used-market-bid-title">Bid on aircraft</h3>'+
+   '<p id="used-market-bid-info" class="hint"></p>'+
+   field('used-market-bid-amount','Your bid (USD)','<input id="used-market-bid-amount" type="number" min="100" step="0.01" autocomplete="off" inputmode="decimal">')+
+   field('used-market-bid-registration','Aircraft registration','<input id="used-market-bid-registration" type="text" maxlength="20" autocomplete="off" placeholder="e.g. D-ABCD">')+
+   '<div class="workspace-actions"><button id="used-market-bid-confirm" type="button" class="primary" disabled>Confirm bid and reserve funds</button><button id="used-market-bid-cancel" type="button" class="secondary">Cancel</button></div>'+
+   '<p id="used-market-bid-feedback" class="hint" role="status" aria-live="polite"></p></section>'+
+   '<p class="hint">Lease bids are monthly rent with a separate fixed deposit. Lease billing is locked until the recurring-payment engine is ready. Listings are fictional in-game stock, not real-world sales.</p>'+
+   button('aircraft-new-orders','Order new aircraft')+button('fleet','My fleet'),
+   'SECOND-HAND AVIATION MARKET'),
  'maintenance':()=>card('Maintenance control',
    '<div class="workspace-task-list">'+
    '<div><strong>Aircraft condition</strong><span>Hours, cycles and component status</span></div>'+
