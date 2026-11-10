@@ -431,3 +431,59 @@ test('refit SQL only prepares snapshots; cannot post payments or install seats',
  assert.doesNotMatch(sql,/UPDATE airlinerra_game.aircraft_installed_cabins_v1/i);
  assert.doesNotMatch(sql,/INSERT INTO airlinerra_game.airline_ledger/i);
 });
+
+test('saved refit quote status is owner-only and never claims a live booking',async()=>{
+ const body={action:'cabin-quote-status',airlineId:airline,aircraftInventoryId:aircraft};
+ assert.equal(validateFleetAcquisitionRequest(body),true);
+ for(const bad of [{quoteId:requestId},{priceUsd:0},{playerId:user},
+  {aircraftInventoryId:'invalid'},{approve:true}])
+  assert.equal(validateFleetAcquisitionRequest({...body,...bad}),false);
+ const oldQuote={quoteId:requestId,status:'prepared_not_booked',
+  estimatedTotalUsd:'125900.00',equipmentUsd:'85800.00',
+  removalInstallationUsd:'40100.00',estimatedDowntimeHours:48,
+  airportKey:'AIRPORT:1',providerKey:'lht-sofia',
+  preparedAt:'2026-11-10T18:00:00Z',matchesCurrentDraft:false,
+  providerStillEligible:true,confirmedAtRefitSite:false,
+  clockConnected:false,flightEngineReleased:false,financialSystemReleased:false};
+ const query=setup((sql,args)=>{
+  if(sql===FLEET_SQL.owner)return {rowCount:1,rows:[{id:airline}]};
+  if(sql===FLEET_SQL.cabinLatestQuote){
+   assert.deepEqual(args,[airline,aircraft]);
+   return {rowCount:1,rows:[oldQuote]};
+  }
+  throw Error('Unexpected quote SQL');
+ });
+ const response=await query.handler(request(body));
+ assert.equal(response.status,200);
+ const data=await response.json();
+ assert.equal(data.quoteId,requestId);
+ assert.equal(data.canBookRefit,false);
+ assert.equal(data.moneyCharged,false);
+ assert.equal(data.appointmentBooked,false);
+ assert.ok(data.blockers.includes('GAME_DAY_CLOCK_NOT_CONNECTED'));
+ assert.ok(data.blockers.includes('SAVED_DESIGN_CHANGED'));
+ assert.ok(data.blockers.includes('AIRCRAFT_NOT_CONFIRMED_AT_FACILITY'));
+ const foreign=setup(sql=>{
+  if(sql===FLEET_SQL.owner)return {rowCount:0,rows:[]};
+  throw Error('Cannot read refit quote for foreign airline');
+ });
+ assert.equal((await foreign.handler(request(body))).status,403);
+ const empty=setup(sql=>{
+  if(sql===FLEET_SQL.owner)return {rowCount:1,rows:[{}]};
+  if(sql===FLEET_SQL.cabinLatestQuote)return {rowCount:0,rows:[]};
+  throw Error('Unexpected query');
+ });
+ const blank=await empty.handler(request(body));
+ assert.equal(blank.status,200);
+ assert.equal((await blank.json()).status,'no_quote');
+});
+test('browser restores nonbinding prepared quote after dialog reopens',async()=>{
+ const client=await readFile(new URL('../website/fleet-acquisition-client.mjs',import.meta.url),'utf8');
+ const ui=await readFile(new URL('../website/aircraft-configuration-dialog.mjs',import.meta.url),'utf8');
+ assert.match(client,/cabinRefitQuoteStatus/);
+ assert.match(ui,/client\.cabinRefitQuoteStatus\(/);
+ assert.match(ui,/Last saved refit estimate:/);
+ assert.match(ui,/savedLayoutJson=ownSaved\?JSON\.stringify/);
+ assert.doesNotMatch(ui,/scheduleRefit\(/);
+ assert.doesNotMatch(ui,/bookRefit\(/);
+});
