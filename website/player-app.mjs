@@ -7,6 +7,7 @@ import {openPrivateTesterDashboard,PrivateTesterAccessDenied} from './tester-das
 import {createPlayerReadClient,PLAYER_READ_API_ENABLED} from './player-read-client.mjs';
 import {createFlightScheduleClient} from './flight-schedule-client.mjs';
 import {createFleetAcquisitionClient} from './fleet-acquisition-client.mjs';
+import {createLocalOwnerFleetReaders} from './local-owner-fleet-reader.mjs';
 import {createAircraftLibrary} from './aircraft-library.mjs';
 import {createLicensingPlanner} from './licensing-planner.mjs';
 import {createGamePermissionApplicationsClient} from './game-permission-applications-client.mjs';
@@ -469,10 +470,15 @@ async function loadPlayerReadData({local=false}={}){
  // like "no airline" and concealed their actual cause.
  try{
   playerData=createPlayerReadClient({auth,origin:window.location.origin,enabled:true,local});
-  const scheduler=!local&&window.location.origin==='https://airlinerra.com'?
-   createFlightScheduleClient({auth,origin:window.location.origin}):null;
-  const fleetClient=!local&&window.location.origin==='https://airlinerra.com'?
-   createFleetAcquisitionClient({auth,origin:window.location.origin}):null;
+  const localReaders=local?createLocalOwnerFleetReaders({
+   auth,origin:window.location.origin
+  }):null;
+  const scheduler=localReaders?.scheduler||
+   (window.location.origin==='https://airlinerra.com'?
+    createFlightScheduleClient({auth,origin:window.location.origin}):null);
+  const fleetClient=localReaders?.fleetClient||
+   (window.location.origin==='https://airlinerra.com'?
+    createFleetAcquisitionClient({auth,origin:window.location.origin}):null);
   const data=await playerData.overview();
   readStage='display';
   if(!Array.isArray(data.worlds)||!Array.isArray(data.countries)||!Array.isArray(data.airlines))
