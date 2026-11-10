@@ -23,10 +23,8 @@ export const CABIN_SERVICE_CATALOG=Object.freeze([
 export const CABIN_MODE_OPTIONS=Object.freeze([
  ['off','Not offered'],
  ['included','Included / free'],
- ['online','Paid online before flight'],
  ['onboard','Paid onboard'],
- ['both','Paid online and onboard'],
- ['hybrid','1–3 free, extras paid']
+ ['hybrid','Free allowance + paid onboard extras']
 ]);
 export const CABIN_CLASSES=Object.freeze([
  ['economy','Economy'],['premium','Premium Economy'],
@@ -39,18 +37,20 @@ const cents=num=>Number.isInteger(num)&&num>=0&&num<=100000?num:null;
 const money=n=>'$'+(n/100).toFixed(2);
 export const cabinDefaultItems=()=>Object.fromEntries(CABIN_SERVICE_CATALOG.map(item=>[
  item.id,{mode:item.id==='water'?'included':'off',freeQty:item.id==='water'?1:0,
-  onlineCents:Math.round(item.costCents*3),onboardCents:Math.round(item.costCents*4)}
+  onlineCents:Math.round(item.costCents*4),onboardCents:Math.round(item.costCents*4)}
 ]));
 export const createBasicCabinPackage=()=>({
  id:'basic',name:'Basic Cabin Service',locked:true,items:cabinDefaultItems()
 });
 const cleanItem=(value,id)=>{
  const v=value&&typeof value==='object'&&!Array.isArray(value)?value:{};
- const mode=MODES.has(v.mode)?v.mode:(id==='water'?'included':'off');
+ const mode=MODES.has(v.mode)?v.mode:['online','both'].includes(v.mode)?
+  'onboard':(id==='water'?'included':'off');
  return {
   mode,freeQty:mode==='included'||mode==='hybrid'?
    Math.max(1,Math.min(3,Number.isInteger(v.freeQty)?v.freeQty:1)):0,
-  onlineCents:cents(v.onlineCents)??Math.round(CATALOG.get(id).costCents*3),
+  // The v1 field stays for backwards compatibility, but online purchases are disabled.
+  onlineCents:cents(v.onboardCents)??Math.round(CATALOG.get(id).costCents*4),
   onboardCents:cents(v.onboardCents)??Math.round(CATALOG.get(id).costCents*4)
  };
 };
@@ -87,29 +87,30 @@ export function cleanCabinState(value){
  return state;
 }
 /** GAME DESIGN estimate only; does not calculate or change real demand. */
+/** Transparent illustrative costs; no actual passenger bookings or cash entries. */
 export function cabinPackageEstimate(pkg){
  const rows=CABIN_SERVICE_CATALOG.map(item=>{
   const config=cleanItem(pkg?.items?.[item.id],item.id);
-  // Standard assumptions: optional included services have 55% take-up;
-  // drinking water is budgeted once for every passenger; paid take-up 20%.
   const included=config.mode==='included'||config.mode==='hybrid';
-  const paid=['online','onboard','both','hybrid'].includes(config.mode);
-  const uptake=item.id==='water'?1:.55;
-  const cost=included?Math.round(item.costCents*uptake*config.freeQty):0;
-  const avgPrice=config.mode==='online'?config.onlineCents:
-   config.mode==='onboard'?config.onboardCents:
-   Math.round((config.onlineCents+config.onboardCents)/2);
-  const estimatedPaidMargin=paid?Math.round(.2*(avgPrice-item.costCents)):0;
+  const paid=config.mode==='onboard'||config.mode==='hybrid';
+  const freeTakeup=item.id==='water'?1:.55;
+  const includedCents=included?Math.round(item.costCents*freeTakeup*config.freeQty):0;
+  const paidCostCents=paid?Math.round(.2*item.costCents):0;
+  const paidRevenueCents=paid?Math.round(.2*config.onboardCents):0;
   const satisfaction=config.mode==='included'?item.weight:
    config.mode==='hybrid'?Math.round(item.weight*.75):
    paid?Math.round(item.weight*.35):0;
-  return {id:item.id,costCents:cost,paidMarginCents:estimatedPaidMargin,
-   contribution:satisfaction};
+  return {id:item.id,costCents:includedCents+paidCostCents,
+   includedCents,paidCostCents,paidRevenueCents,
+   paidMarginCents:paidRevenueCents-paidCostCents,contribution:satisfaction};
  });
- const attractiveness=Math.min(100,25+rows.reduce((s,r)=>s+r.contribution,0));
+ const totalCostCents=rows.reduce((sum,row)=>sum+row.costCents,0);
+ const paidRevenueCents=rows.reduce((sum,row)=>sum+row.paidRevenueCents,0);
+ const attractiveness=Math.min(100,25+rows.reduce((sum,row)=>sum+row.contribution,0));
  return {attractiveness,relativeToBasic:attractiveness-25,
-  includedCents:rows.reduce((s,r)=>s+r.costCents,0),
-  indicativeMarginCents:rows.reduce((s,r)=>s+r.paidMarginCents,0),
+  includedCents:rows.reduce((sum,row)=>sum+row.includedCents,0),
+  totalCostCents,paidRevenueCents,netCostCents:totalCostCents-paidRevenueCents,
+  indicativeMarginCents:paidRevenueCents-rows.reduce((sum,row)=>sum+row.paidCostCents,0),
   rows};
 }
 const label=(doc,text,cls)=>{const node=doc.createElement('span');node.textContent=text;
@@ -142,6 +143,9 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
   if(box)box.textContent=text;};
  const find=id=>state.packages.find(p=>p.id===id);
  const read=key=>{try{return storage?.getItem(key)}catch{return null}};
+ const notifyRoutes=()=>{
+  if(airlineId)doc.dispatchEvent(new CustomEvent('airlinerra:cabin-packages-updated',{detail:{airlineId}}));
+ };
  const persist=async()=>{
   if(!savedKey||loading||saving)return false;
   if(remote){
@@ -151,7 +155,7 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
    try{
     const result=await api.save({airlineId:currentId,state,expectedVersion});
     if(currentId!==airlineId||api!==remote)return false;
-    state=cleanCabinState(result.state);revision=result.version;return true;
+    state=cleanCabinState(result.state);revision=result.version;notifyRoutes();return true;
    }catch(error){
     ready=false;
     status(error?.message==='CABIN_VERSION_CONFLICT'?
@@ -160,7 +164,7 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
     return false;
    }finally{saving=false}
   }
-  try{storage?.setItem(savedKey,JSON.stringify(state));return true}catch{return false}
+  try{storage?.setItem(savedKey,JSON.stringify(state));notifyRoutes();return true}catch{return false}
  };
  const locationLabel=()=>remote?'Supabase for this airline':'this browser';
  const choose=id=>{const found=find(id);if(!found)return;
@@ -184,12 +188,19 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
   const sidebar=element(doc,'aside','cabin-product-sidebar');
   sidebar.append(element(doc,'h3','','Your packages'));
   for(const pkg of state.packages){
+   const entry=element(doc,'div','cabin-package-entry');
    const line=element(doc,'button','cabin-package-choice'+(pkg.id===activeId?' is-active':''));
    line.type='button';line.dataset.cabinChoose=pkg.id;
    line.append(element(doc,'strong','',pkg.name));
    const score=cabinPackageEstimate(pkg).attractiveness;
    line.append(element(doc,'small','',score+'/100 · '+(pkg.id==='basic'?'Default / protected':'Custom package')));
-   sidebar.append(line);
+   entry.append(line);
+   if(pkg.id!=='basic'){
+    const remove=element(doc,'button','cabin-package-remove','Delete');
+    remove.type='button';remove.dataset.cabinAction='delete';remove.dataset.cabinId=pkg.id;
+    remove.setAttribute('aria-label','Delete '+pkg.name);entry.append(remove);
+   }
+   sidebar.append(entry);
   }
   sidebar.append(element(doc,'p','hint','The Basic package is always available and cannot be deleted.'));
   body.append(sidebar);
@@ -220,7 +231,8 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
   const fill=element(doc,'div','cabin-score-fill');fill.id='cabin-score-fill';
   bar.append(fill);score.append(bar);
   summary.append(score);
-  for(const [id,title] of [['cost','Included-service cost / passenger'],['margin','Indicative paid-item margin / passenger']]){
+  for(const [id,title] of [['cost','Estimated airline cost / passenger'],
+   ['sales','Estimated onboard sales / passenger'],['net','Estimated net cost / passenger']]){
    const card=element(doc,'div','cabin-product-metric');
    card.append(element(doc,'span','',title));
    const v=element(doc,'strong','','$0.00');v.id='cabin-'+id;card.append(v);
@@ -229,7 +241,7 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
   editor.append(summary);
   const table=element(doc,'div','cabin-product-table');
   const header=element(doc,'div','cabin-product-row cabin-product-table-head');
-  for(const t of ['Service / airline cost','Offer to passengers','Free units','Online price (USD)','Onboard price (USD)'])
+  for(const t of ['Service / airline unit cost','Offer to passengers','Free units','Passenger price onboard','Est. airline cost / passenger'])
    header.append(element(doc,'span','',t));
   table.append(header);
   let lastCategory=null;
@@ -254,22 +266,25 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
    const mode=select(doc,CABIN_MODE_OPTIONS,current.mode,basic);
    mode.dataset.cabinField='mode';appendField('Offer to passengers',mode);
    const included=['included','hybrid'].includes(current.mode);
-   const priceOnline=['online','both','hybrid'].includes(current.mode);
-   const priceOnboard=['onboard','both','hybrid'].includes(current.mode);
+   // All sales are onboard only.
+   const priceOnboard=['onboard','hybrid'].includes(current.mode);
    const free=input(doc,{type:'number',value:current.freeQty,min:1,max:3,step:1,
     disabled:basic||!included});
    free.dataset.cabinField='freeQty';appendField('Free units',free);
-   const online=input(doc,{type:'number',value:(current.onlineCents/100).toFixed(2),
-    min:0,max:1000,step:.01,disabled:basic||!priceOnline});
-   online.dataset.cabinField='onlineCents';appendField('Online price (USD)',online);
    const onboard=input(doc,{type:'number',value:(current.onboardCents/100).toFixed(2),
     min:0,max:1000,step:.01,disabled:basic||!priceOnboard});
-   onboard.dataset.cabinField='onboardCents';appendField('Onboard price (USD)',onboard);
+   onboard.dataset.cabinField='onboardCents';appendField('Passenger price onboard (USD)',onboard);
+   const estimated=element(doc,'span','cabin-row-cost',
+    money(cabinPackageEstimate({items:{[item.id]:current}}).rows.find(r=>r.id===item.id).costCents));
+   estimated.dataset.cabinCostRow=item.id;
+   const costCell=element(doc,'div','cabin-product-cell');
+   costCell.append(element(doc,'span','cabin-mobile-label','Estimated airline cost / passenger'),estimated);
+   row.append(costCell);
    table.append(row);
   }
   editor.append(table);
   editor.append(element(doc,'p','hint',
-   'Rating and costs are illustrative game-design figures. Free services assume 55% optional take-up; paid services assume 20% take-up. Aircraft equipment, route rules and catering availability must be checked before operational use.'));
+   'Estimates sum the cost of all offered rows per passenger. Free services assume 55% optional take-up (water 100%) and paid services 20%. Actual costs and income depend on the passengers and equipment; no money is charged here.'));
   body.append(editor);host.append(body);
   const classBox=element(doc,'section','cabin-assignment-panel');
   classBox.append(element(doc,'h3','','Default package by cabin class'),
@@ -298,9 +313,15 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
   const fill=host.querySelector('#cabin-score-fill');
   if(fill)fill.style.width=results.attractiveness+'%';
   const cost=host.querySelector('#cabin-cost');
-  if(cost)cost.textContent=money(results.includedCents);
-  const margin=host.querySelector('#cabin-margin');
-  if(margin)margin.textContent=money(results.indicativeMarginCents);
+  if(cost)cost.textContent=money(results.totalCostCents);
+  const sales=host.querySelector('#cabin-sales');
+  if(sales)sales.textContent=money(results.paidRevenueCents);
+  const net=host.querySelector('#cabin-net');
+  if(net)net.textContent=money(results.netCostCents);
+  for(const row of results.rows){
+   const cell=host.querySelector('[data-cabin-cost-row="'+row.id+'"]');
+   if(cell)cell.textContent=money(row.costCents);
+  }
  };
  const onChange=event=>{
   if(loading||saving||(remote&&!ready))return;
@@ -330,6 +351,7 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
     status('Enter a valid USD price between $0 and $1,000, with up to two decimals.');return;
    }
    working.items[id][field]=Math.round(value*100);
+    if(field==='onboardCents')working.items[id].onlineCents=working.items[id].onboardCents;
   }
   updateMetrics();
  };
@@ -357,7 +379,7 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
   }
   if(action==='save'){
    if(activeId==='basic')return;
-   for(const price of host.querySelectorAll('[data-cabin-field="onlineCents"],[data-cabin-field="onboardCents"]')){
+   for(const price of host.querySelectorAll('[data-cabin-field="onboardCents"]')){
     if(price.disabled)continue;
     const value=String(price.value||'');
     if(!/^\d{1,4}(?:\.\d{1,2})?$/.test(value)||Number(value)>1000){
@@ -384,13 +406,16 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
    return;
   }
   if(action==='delete'){
-   if(activeId==='basic')return;
-   if(typeof window!=='undefined'&&!window.confirm('Delete this custom cabin service package?'))return;
+   const deleteId=button.dataset.cabinId||activeId;
+   if(deleteId==='basic'||!find(deleteId))return;
+   if(typeof window!=='undefined'&&!window.confirm(
+    'Delete this custom cabin service package? Existing planning routes retain their saved selection until edited.'))return;
    const oldState=structuredClone(state);
-   state.packages=state.packages.filter(p=>p.id!==activeId);
-   for(const key of CLASSES)if(state.assignments[key]===activeId)state.assignments[key]='basic';
-   if(!await persist()){state=oldState;return;}
-   choose('basic');status('Package deleted. Cabin class assignments reverted to Basic where necessary.');
+   state.packages=state.packages.filter(p=>p.id!==deleteId);
+   for(const key of CLASSES)if(state.assignments[key]===deleteId)state.assignments[key]='basic';
+   if(!await persist()){state=oldState;render();return;}
+   choose(activeId===deleteId?'basic':activeId);
+   status('Custom package deleted. Cabin class defaults returned to Basic where necessary.');
    return;
   }
   if(action==='assign'){
@@ -421,14 +446,14 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
    state=cleanCabinState(parsed);activeId='basic';
    working=structuredClone(state.packages[0]);render();
    if(!id){status('Sign in to an airline to save cabin-service designs.');return;}
-   if(!remote)return;
+   if(!remote){notifyRoutes();return;}
    status('Loading cabin packages from Supabase…');
    void remote.read(id).then(result=>{
     if(ticket!==loadTicket||airlineId!==id)return;
     state=cleanCabinState(result.state);revision=result.version;
     ready=true;loading=false;activeId='basic';
     working=structuredClone(state.packages[0]);render();
-    status('Cabin packages loaded from Supabase for this airline.');
+    status('Cabin packages loaded from Supabase for this airline.');notifyRoutes();
    }).catch(()=>{
     if(ticket!==loadTicket||airlineId!==id)return;
     loading=false;ready=false;render();
@@ -440,6 +465,7 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
   updateData,
   getPackages:()=>structuredClone(state.packages),
   getAssignments:()=>({...state.assignments}),
+   isReady:()=>Boolean(airlineId)&&!loading&&ready,
   destroy:()=>{host.removeEventListener('change',onChange);host.removeEventListener('click',onClick)}
  });
 }
