@@ -8,11 +8,12 @@ const reply=(status,payload)=>new Response(JSON.stringify(payload),{status,heade
 const fail=(code,status=409)=>{const e=new Error(code);e.httpStatus=status;return e;};
 const TYPES=new Set(['future_hq','hub','station']);
 const listSql=`select i.airport_key as "key",g.game_airport_name as "name",
- g.game_lookup_code as "code",g.country_iso as "countryIso",
+ l.airport_code as "code",g.country_iso as "countryIso",
  g.owner_category as "category",i.intent_type as "type",i.intent_status as "status"
  from airlinerra_game.airport_group2_location_intents_v1 i
  join airlinerra_game.airlines a on a.id=i.airline_id and a.world_id=i.world_id
  join airlinerra_game.airport_group2_game_profiles_v1 g on g.airport_key=i.airport_key
+ join airlinerra_game.airport_location_eligibility_v1 l on l.world_id=i.world_id and l.airport_key=i.airport_key
  where a.owner_player_id=$1::uuid and a.world_id=1
  order by i.created_at,i.id limit 22`;
 const airlineSql=`select id from airlinerra_game.airlines where owner_player_id=$1::uuid and world_id=1 for update`;
