@@ -7,7 +7,7 @@
 import {normalizedEmail,validatedPassword,validatedDisplayName,passwordStrength} from './auth-rules.mjs';
 import {inspectInvitedTesterProvider,TESTER_AUTH_URL} from './invited-tester-entry.mjs';
 import {SUPABASE_SDK_IMPORT} from './auth-client.mjs';
-import {evaluateRegistrationAccess} from './registration-access.mjs';
+import {evaluateRegistrationAccess,REGISTRATION_UI_PAUSED} from './registration-access.mjs';
 const allowed=new Set(['http://localhost:5188','https://airlinerra.com']);
 const form=document.getElementById('real-registration-form');
 const status=document.getElementById('registration-readiness');
@@ -58,6 +58,10 @@ async function officialDocument(path){
  return 'missing';
 }
 async function initialize(){
+ if(REGISTRATION_UI_PAUSED){
+  blocked('Public registration is currently closed while Airlinerra is in development. Existing approved testers can sign in.');
+  return;
+ }
  if(!allowed.has(origin)){blocked('Registration is not available on this domain.');return}
  const conf=window.__AIRLINERRA_INVITED_TESTER_CONFIG__;
  if(conf?.operatorPrelaunchApproved!==true||conf?.supabaseUrl!==TESTER_AUTH_URL||
@@ -115,6 +119,11 @@ async function initialize(){
 }
 form.addEventListener('submit',async event=>{
  event.preventDefault();
+ if(REGISTRATION_UI_PAUSED){
+  blocked('Registration is currently closed while Airlinerra is in development.');
+  registrationFeedback('error','New registrations are not available. Existing approved testers may sign in.');
+  return;
+ }
  updatePasswords();
  if(!sdkClient){
   registrationFeedback('error','Registration failed. The registration service is unavailable. Please refresh the page.');
