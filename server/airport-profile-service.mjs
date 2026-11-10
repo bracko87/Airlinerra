@@ -192,6 +192,39 @@ export const AIRPORT_PROFILE_SQL=`
  ) traffic ON traffic.world_id=a.world_id AND traffic.airport_key=a.airport_key
  WHERE a.world_id=1 AND a.airport_key=$1::text
  LIMIT 1`;
+export const GROUP2_AIRPORT_PROFILE_SQL=`
+SELECT c.airport_key,c.airport_name,l.airport_code,c.country_iso,
+ l.municipality AS roster_municipality,
+ c.latitude_deg::text AS latitude_deg,c.longitude_deg::text AS longitude_deg,
+ 'game_estimate'::text AS coordinates_verification,
+ 'merged_sections1_8'::text AS coordinates_source_type,
+ c.game_category AS provisional_category,
+ c.timezone_iana,c.game_elevation_ft::text AS game_elevation_ft,
+ 'group2_game_estimate'::text AS game_elevation_provenance,
+ 'real'::text AS airport_kind,
+ c.game_terminal_stands AS slot_terminal_stands,
+ c.game_remote_stands AS slot_remote_stands,
+ c.game_cargo_stands AS slot_cargo_stands,
+ c.game_terminal_slot_per_10m AS slot_terminal_per_direction_10m,
+ c.game_remote_slot_per_10m AS slot_remote_per_direction_10m,
+ c.game_cargo_slot_per_10m AS slot_cargo_per_direction_10m,
+ c.game_nighttime_ban AS simple_game_nighttime_ban,
+ c.game_noise_restrictions AS simple_game_noise_restrictions,
+ 'GROUP2_GAME_ESTIMATE_NOT_FLIGHT_APPROVED'::text AS simple_game_source_status,
+ 'GROUP2_PREPARED_NOT_ADMITTED'::text AS game_restriction_status,
+ '[]'::jsonb AS icao_airport_noise_rules,
+ jsonb_build_array(jsonb_build_object('name','Game runway reference',
+ 'lengthM',c.game_runway_length_m,'widthM',NULL,'surface',NULL,
+ 'operationalStatus','planning_only','verification','game_estimate')) AS runways
+FROM airlinerra_game.airport_sections1_8_combined_catalog_v1 c
+JOIN airlinerra_game.airport_location_eligibility_v1 l
+ ON l.world_id=1 AND l.airport_key=c.airport_key
+WHERE c.world_id=1 AND c.airport_key=$1::text
+ AND c.source_group='GROUP_2'
+ AND c.commercial_access_scope='GROUP2_PREPARED_NOT_ADMITTED'
+ AND l.source_group='GROUP_2' AND NOT l.commercial_airport_admitted
+LIMIT 1`;
+
 const nullableString=x=>typeof x==='string'&&x.trim()?x.trim():null;
 const numberOrNull=x=>{
  if(x===null||x===undefined||x==='')return null;
