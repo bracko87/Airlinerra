@@ -80,6 +80,7 @@ function navigateTo(view){
     void loadGamePermissionApplications();
   }
   if(name==='holding')void loadHoldingStatus();
+  if(name==='airports'&&!preparedAirportPageLoaded)void searchPreparedAirports();
 }
 // The holding page is read-only. The game clock and first settled flight must
 // come from the protected server; never infer them from the browser clock.
@@ -302,6 +303,7 @@ let currentAirline=null,manageLogoBlob=null,manageLogoPreviewUrl=null,manageLogo
 // Initial verified login is redirected; explicit later navigation is respected.
 let initialManagerLanding=false;
 let nextAirportOffset=null;
+let nextPreparedAirportOffset=null,preparedAirportLookupSerial=0,preparedAirportPageLoaded=false;
 let setupAirportRequest=0,logoBlob=null,logoObjectUrl=null;
 const countryNameOf=code=>typeof Intl.DisplayNames==='function'
  ?new Intl.DisplayNames(['en'],{type:'region'}).of(code):code;
@@ -428,6 +430,49 @@ function drawRealWorlds(worlds){
     card.append(header,title,status);root.append(card);
   }
 }
+async function searchPreparedAirports({offset=0}={}){
+ const output=doc.getElementById('prepared-airports-results');
+ const more=doc.getElementById('prepared-airports-more');
+ const query=doc.getElementById('prepared-airports-query')?.value.trim()||'';
+ if(!output||!more)return;
+ const serial=++preparedAirportLookupSerial;
+ if(!playerData?.preparedAirports){
+  output.textContent='Prepared airport data is not connected.';
+  return;
+ }
+ if(query.length===1){output.textContent='Enter at least two characters, or clear the search to browse all prepared airports.';more.hidden=true;more.disabled=true;return;}
+ if(offset===0){output.replaceChildren();output.textContent='Loading prepared airports…';}
+ more.disabled=true;
+ try{
+  const response=await playerData.preparedAirports({countryIso:'',search:query,offset});
+  if(serial!==preparedAirportLookupSerial)return;
+  if(response?.scope!=='prepared_information_only'||response.bookable!==false||
+    response.canActivateFlights!==false||!Array.isArray(response.airports)||response.airports.length>50||
+    response.airports.some(a=>a?.sourceGroup!=='GROUP_2'||a.status!=='prepared_only'||
+     a.bookable!==false||a.canActivateFlights!==false||a.commercialAccess!==false))
+    throw Error('Invalid prepared airport response');
+  if(offset===0)output.replaceChildren();
+  for(const airport of response.airports){
+   const row=doc.createElement('div');row.className='airport-result prepared-airport-result';
+   const header=doc.createElement('strong');header.textContent=airport.name+' ('+(airport.code||'-')+')';
+   const place=doc.createElement('span');place.textContent=airport.countryIso+
+    (airport.municipality?' · '+airport.municipality:'')+
+    (airport.category?' · '+airport.category:'');
+   const label=doc.createElement('span');label.className='hint';
+   label.textContent='Prepared only — not available for routes or flights';
+   row.append(header,place,label);output.append(row);
+  }
+  if(!output.children.length)output.textContent='No prepared airports match this search.';
+  nextPreparedAirportOffset=Number.isInteger(response.nextOffset)?response.nextOffset:null;
+  more.hidden=nextPreparedAirportOffset===null;more.disabled=more.hidden;
+  preparedAirportPageLoaded=true;
+ }catch{
+  if(serial!==preparedAirportLookupSerial)return;
+  if(offset===0)output.textContent='Prepared airport information is currently unavailable.';
+  nextPreparedAirportOffset=null;more.hidden=true;more.disabled=true;
+ }
+}
+
 async function airportSearch({setup=false,offset=0}={}){
   if(!playerData)return;
   const select=doc.getElementById(setup?'setup-country':'airports-country');
@@ -943,6 +988,9 @@ for(const id of ['setup-airline-icao','setup-airline-iata']){
 }
 doc.getElementById('setup-airport-search').addEventListener('click',()=>{void airportSearch({setup:true});});
 doc.getElementById('airports-search').addEventListener('click',()=>{nextAirportOffset=null;void airportSearch();});
+doc.getElementById('prepared-airports-search').addEventListener('click',()=>{nextPreparedAirportOffset=null;void searchPreparedAirports();});
+doc.getElementById('prepared-airports-more').addEventListener('click',()=>{if(nextPreparedAirportOffset!==null)void searchPreparedAirports({offset:nextPreparedAirportOffset});});
+doc.getElementById('prepared-airports-query').addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();nextPreparedAirportOffset=null;void searchPreparedAirports();}});
 doc.getElementById('airports-more').addEventListener('click',()=>{if(nextAirportOffset!==null)void airportSearch({offset:nextAirportOffset});});
 doc.getElementById('player-data-retry').addEventListener('click',async()=>{
  const button=doc.getElementById('player-data-retry');
