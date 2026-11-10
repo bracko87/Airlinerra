@@ -2,6 +2,7 @@
 import {createSection9CommercialPlanEditor} from './section9-commercial-plan-editor.mjs';
 import {createSection9RotationReview} from './section9-rotation-review.mjs';
 import {createSection9RouteFinancePanel} from './section9-route-finance-panel.mjs';
+import {renderRouteMap,routeDistanceKm} from './route-map.mjs';
 const MONTHS=['January','February','March','April','May','June','July','August',
  'September','October','November','December'];
 const DAYS=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
@@ -38,23 +39,112 @@ export function createSection9RouteDetails({doc,host,getRoutes,getServer}={}){
   host.append(text(doc,'h3',(route.flightNumber||'Draft')+' · '+
    (route.from.name||route.from.code||'Origin')+' → '+
    (route.to.name||route.to.code||'Destination')));
-  fact(doc,host,'Aircraft',route.aircraftLabel||'Not assigned');
-  const weekly=Array.isArray(route.schedule)?route.schedule.map(x=>
-   DAYS[x?.day]&&/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(x.time)?
-    DAYS[x.day]+' '+x.time:'').filter(Boolean).join(', '):'';
-  fact(doc,host,'Weekly departures',weekly||'Not configured');
-  fact(doc,host,'Departure stand',route.operation?.departureStand||'Unspecified');
-  fact(doc,host,'Arrival stand',route.operation?.arrivalStand||'Unspecified');
-  fact(doc,host,'Status','Schedule draft · no active commercial flight');
+  const subtitle=text(doc,'p',
+   route.serverScheduleId?'Protected schedule draft · not an active flight':
+   route.serverPlanningId?'Saved airline planning route · no slots or active flights':
+   'Local planning draft · not yet saved to airline database','route-details-state');
+  host.append(subtitle);
+  const top=doc.createElement('div');top.className='route-details-top';
+  const mapPanel=doc.createElement('section');mapPanel.className='route-detail-section route-detail-map-panel';
+  mapPanel.append(text(doc,'span','ROUTE GEOGRAPHY','panel-kicker'),
+   text(doc,'h4','Route map'));
+  const mapRoot=doc.createElement('div');mapRoot.className='route-map-canvas route-detail-map';
+  mapPanel.append(mapRoot);
+  const mapFeedback=text(doc,'p','Map uses verified geographic airport positions. No flight path is approved.',
+   'hint route-detail-map-feedback');
+  mapPanel.append(mapFeedback);
+  const renderMap=(from,to)=>{
+   const distance=renderRouteMap(mapRoot,from,to,{doc});
+   const km=routeDistanceKm(from,to);
+   mapFeedback.textContent=distance&&km!==null?
+    km.toLocaleString('en-US')+' km · straight-line distance; not an operational flight path.':
+    'Geographic map pending verified coordinates for both airports.';
+  };
+  renderMap(route.from,route.to);
+  const overview=doc.createElement('section');overview.className='route-detail-section';
+  overview.append(text(doc,'span','ROUTE OVERVIEW','panel-kicker'),
+   text(doc,'h4','Aircraft and service'));
+  fact(doc,overview,'Flight number',route.flightNumber||'Draft');
+  fact(doc,overview,'Aircraft',route.aircraftLabel||'Not assigned');
+  fact(doc,overview,'Origin',(route.from.name||route.from.key||'—')+
+   (route.from.code?' ('+route.from.code+')':''));
+  fact(doc,overview,'Destination',(route.to.name||route.to.key||'—')+
+   (route.to.code?' ('+route.to.code+')':''));
+  fact(doc,overview,'Flight status','Planning only · not activated');
+  top.append(mapPanel,overview);
+  host.append(top);
+
+  const schedulePanel=doc.createElement('section');
+  schedulePanel.className='route-detail-section route-detail-schedule-panel';
+  schedulePanel.append(text(doc,'span','FLIGHT SCHEDULE','panel-kicker'),
+   text(doc,'h4','Weekly timetable and aircraft position'));
+  const weekly=Array.isArray(route.schedule)?route.schedule.filter(x=>
+   DAYS[x?.day]&&/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(x.time)):[];
+  const days=doc.createElement('div');days.className='route-detail-days';
+  for(let day=0;day<7;day++){
+   const node=doc.createElement('div');
+   const departure=weekly.find(w=>w.day===day);
+   node.className='route-detail-day'+(departure?' is-active':'');
+   node.append(text(doc,'strong',DAYS[day].slice(0,3)),
+    text(doc,'span',departure?.time||'—'));
+   days.append(node);
+  }
+  schedulePanel.append(days);
+  const schedInfo=doc.createElement('div');schedInfo.className='route-detail-fact-grid';
+  fact(doc,schedInfo,'Departure stand',route.operation?.departureStand||
+   'Initial stand not verified');
+  fact(doc,schedInfo,'Arrival stand',route.operation?.arrivalStand||'Unspecified');
+  fact(doc,schedInfo,'Target turnaround',Number.isInteger(route.operation?.turnaroundMinutes)?
+   route.operation.turnaroundMinutes+' minutes':'Not configured');
+  fact(doc,schedInfo,'Estimated arrival',
+   route.referenceArrivalUtc?'UTC example only · '+route.referenceArrivalUtc:
+   'Pending verified aircraft performance');
+  fact(doc,schedInfo,'Next possible departure',
+   route.referenceArrivalUtc&&Number.isInteger(route.operation?.turnaroundMinutes)?
+    new Date(Date.parse(route.referenceArrivalUtc)+route.operation.turnaroundMinutes*60000).toISOString().slice(11,16)+' UTC (example)':
+    'Not calculated until arrival time is verified');
+  fact(doc,schedInfo,'Airport slots','Not reserved for planning routes');
+  schedulePanel.append(schedInfo);
+  host.append(schedulePanel);
+
+  const marketPanel=doc.createElement('section');
+  marketPanel.className='route-detail-section';
+  marketPanel.append(text(doc,'span','PASSENGER & CARGO MARKET','panel-kicker'),
+   text(doc,'h4','Demand and connecting flights'));
   const monthLabel=text(doc,'label','Market forecast month','workspace-label');
   monthLabel.htmlFor='section9-route-month';
   const select=doc.createElement('select');select.id='section9-route-month';
   MONTHS.forEach((m,i)=>{const option=doc.createElement('option');
    option.value=String(i+1);option.textContent=m;select.append(option);});
-  select.value=String(selectedMonth);host.append(monthLabel,select);
-  const mct=doc.createElement('div');host.append(mct);
+  select.value=String(selectedMonth);marketPanel.append(monthLabel,select);
+  const mct=doc.createElement('div');mct.className='route-detail-fact-grid';marketPanel.append(mct);
   const results=doc.createElement('div');results.className='section9-route-results';
-  host.append(results);
+  marketPanel.append(results);host.append(marketPanel);
+
+  const servicePanel=doc.createElement('section');
+  servicePanel.className='route-detail-section';
+  servicePanel.append(text(doc,'span','TICKETS & SERVICES','panel-kicker'),
+   text(doc,'h4','Saved pricing and onboard options'));
+  const fares=route.operation?.fares||{};
+  const savedFares=doc.createElement('div');savedFares.className='route-detail-fact-grid';
+  for(const [code,label] of [['economy','Economy'],['premium','Premium Economy'],
+    ['business','Business'],['first','First Class']]){
+   const v=fares[code];
+   fact(doc,savedFares,label+' fare',typeof v==='number'&&Number.isFinite(v)?
+    '$'+v.toLocaleString('en-US'):'Not set');
+  }
+  const service=route.operation?.service||{};
+  fact(doc,savedFares,'Onboard service',service.onboard||'Not configured');
+  fact(doc,savedFares,'Baggage',service.baggage||'Not configured');
+  fact(doc,savedFares,'Cargo',service.cargo||'Not configured');
+  servicePanel.append(savedFares);host.append(servicePanel);
+
+  const economicHeading=doc.createElement('section');
+  economicHeading.className='route-detail-section route-detail-economics';
+  economicHeading.append(text(doc,'span','ROUTE FINANCES','panel-kicker'),
+   text(doc,'h4','Projected costs and actual profitability'));
+  hint(doc,economicHeading,'Estimated income and itemized airport, ground handling, security and ATC costs are separate from verified settled flights. The last seven settled flights and older cumulative totals appear only when genuine ledger data exists.');
+  host.append(economicHeading);
   const server=getServer?.()||{};
   const planHost=doc.createElement('section');
   planHost.className='section9-commercial-plan';
@@ -81,6 +171,9 @@ export function createSection9RouteDetails({doc,host,getRoutes,getServer}={}){
      server.reader.airportProfile(route.from.key),server.reader.airportProfile(route.to.key)
     ]);
     if(mySerial!==serial)return;
+    if(a?.airport?.key===route.from.key&&b?.airport?.key===route.to.key)
+     renderMap({...route.from,latitude:a.airport.latitude,longitude:a.airport.longitude},
+      {...route.to,latitude:b.airport.latitude,longitude:b.airport.longitude});
     const start=a?.airport?.connectionPolicy,end=b?.airport?.connectionPolicy;
     fact(doc,mct,'Origin minimum transfer',Number.isInteger(start?.minimumMinutes)?
      start.minimumMinutes+' minutes':'Unknown');
@@ -94,7 +187,7 @@ export function createSection9RouteDetails({doc,host,getRoutes,getServer}={}){
   if(mySerial!==serial)return;
   if(!route.serverScheduleId||!server.airline?.id||
      typeof server.scheduler?.demandPreview!=='function'){
-   hint(doc,results,'Market and connecting-flight previews require a protected, owned-aircraft schedule. Local route drafts are not bookable.');
+   hint(doc,results,'Demand estimates and inbound/outbound connections (minimum airport transfer through 12 hours) become available only after verified scheduling. A planning route is not bookable.');
    return;
   }
   const state=hint(doc,results,'Loading protected market estimate...');
