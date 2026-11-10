@@ -94,7 +94,75 @@ const pages=Object.freeze({
     '<p class="hint">The public page will use actual game data. Manager hometown, email and other personal account information remain private.</p>',
     'FUTURE FEATURE'),
   'fleet':()=>card('Fleet inventory',"<div class=\"workspace-kpis fleet-summary-kpis\">\n<div><span>Owned aircraft</span><strong id=\"fleet-owned-count\">—</strong></div>\n<div><span>Leased aircraft</span><strong id=\"fleet-leased-count\">—</strong></div>\n<div><span>Fleet status</span><strong id=\"fleet-real-status\">Not loaded</strong></div></div>\n<div class=\"fleet-table-scroll\">\n<div class=\"fleet-inventory-table\" role=\"table\" aria-label=\"Owned and leased aircraft\">\n<div class=\"fleet-inventory-row fleet-inventory-head\" role=\"row\"><span role=\"columnheader\">Aircraft / registration</span><span role=\"columnheader\">Passenger seats</span><span role=\"columnheader\">Configuration</span><span role=\"columnheader\">Cargo</span><span role=\"columnheader\">Current location</span><span role=\"columnheader\">Status</span><span role=\"columnheader\">View</span></div>\n<div id=\"fleet-owned-aircraft\" class=\"fleet-inventory-body\" role=\"rowgroup\" aria-live=\"polite\">Loading verified fleet...</div>\n</div></div><p id=\"fleet-delivery-feedback\" class=\"hint\" role=\"status\" aria-live=\"polite\"></p>\n<div class=\"fleet-toolbar\"><button type=\"button\" class=\"secondary\" data-workspace-go=\"aircraft-market\">View market offers</button><button type=\"button\" class=\"secondary\" data-workspace-go=\"maintenance\">Maintenance planning</button></div>",'AIRCRAFT FLEET'),
- 'fleet-aircraft':()=>card('Aircraft details',"<div class=\"fleet-detail-back\"><button type=\"button\" class=\"secondary\" data-workspace-go=\"fleet\">← Back to my fleet</button></div>\n<h3 id=\"fleet-detail-name\">Select an aircraft</h3><p id=\"fleet-detail-subtitle\" class=\"hint\"></p>\n<div class=\"fleet-detail-grid\">\n<div><span>Aircraft family</span><strong id=\"fleet-detail-family\">—</strong></div>\n<div><span>Registration</span><strong id=\"fleet-detail-registration\">—</strong></div>\n<div><span>Ownership</span><strong id=\"fleet-detail-ownership\">—</strong></div>\n<div><span>Passenger seats (reference)</span><strong id=\"fleet-detail-seats\">—</strong></div>\n<div><span>Configuration</span><strong id=\"fleet-detail-configuration\">—</strong></div>\n<div><span>Cargo capacity</span><strong id=\"fleet-detail-cargo\">—</strong></div>\n<div><span>Current verified position</span><strong id=\"fleet-detail-location\">—</strong></div>\n<div><span>Fleet / delivery status</span><strong id=\"fleet-detail-status\">—</strong></div>\n</div>\n<div class=\"fleet-nickname-editor\"><label class=\"workspace-label\" for=\"fleet-detail-nickname\">Aircraft nickname (optional)</label>\n<div class=\"fleet-nickname-controls\"><input id=\"fleet-detail-nickname\" type=\"text\" maxlength=\"40\" autocomplete=\"off\" placeholder=\"Give this aircraft a nickname\"><button id=\"fleet-detail-save\" type=\"button\" class=\"primary\">Save nickname</button></div>\n<p class=\"hint\">This name is saved for this individual aircraft. Leave blank to remove it. Official registration and model never change.</p>\n<p class=\"hint\" id=\"fleet-detail-feedback\" role=\"status\" aria-live=\"polite\"></p></div>\n<p class=\"hint\">Only server-confirmed aircraft positions are displayed. Reference passenger seats and maximum cargo values are not proof of an installed cabin or usable flight payload. Live flight activation is handled separately.</p>\n<section id=\"fleet-maintenance-preview\" class=\"fleet-maintenance-preview\" aria-label=\"Aircraft maintenance cycle\" aria-live=\"polite\">Maintenance details load when you open this aircraft.</section>",'AIRCRAFT PROFILE'),
+ 'fleet-aircraft':()=>card('Aircraft details',`<div class="fleet-detail-back"><button type="button" class="secondary" data-workspace-go="fleet">← Back to my fleet</button></div>
+<div class="fleet-aircraft-profile-top">
+  <section class="fleet-aircraft-image-panel" aria-label="Aircraft photo or livery">
+    <div class="fleet-aircraft-image-frame">
+      <img id="fleet-aircraft-image" alt="Current aircraft photo or custom livery" hidden>
+      <p id="fleet-aircraft-image-empty" class="hint">Aircraft image unavailable</p>
+    </div>
+    <div class="fleet-aircraft-image-actions">
+      <label class="workspace-label" for="fleet-aircraft-image-file">Aircraft picture or livery (only this airplane)</label>
+      <input id="fleet-aircraft-image-file" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="fleet-aircraft-image-help">
+      <div class="fleet-aircraft-image-buttons">
+        <button id="fleet-aircraft-image-save" type="button" class="primary" disabled>Save this aircraft image</button>
+        <button id="fleet-aircraft-image-reset" type="button" class="secondary" disabled>Use standard picture</button>
+      </div>
+      <p id="fleet-aircraft-image-help" class="hint">PNG, JPG or WebP up to 6 MB. Your uploaded image is private and applies only to this registered aircraft.</p>
+      <p id="fleet-aircraft-image-status" class="hint" role="status" aria-live="polite"></p>
+    </div>
+  </section>
+  <div class="fleet-aircraft-identity-panel">
+    <h3 id="fleet-detail-name">Select an aircraft</h3>
+    <p id="fleet-detail-subtitle" class="hint"></p>
+    <section class="fleet-detail-section"><h4>Registration and status</h4><div class="fleet-detail-grid"><div class="fleet-detail-row"><span>Aircraft registration</span><strong id="fleet-detail-registration">—</strong></div>
+<div class="fleet-detail-row"><span>Ownership</span><strong id="fleet-detail-ownership">—</strong></div>
+<div class="fleet-detail-row"><span>Configuration</span><strong id="fleet-detail-configuration">—</strong></div>
+<div class="fleet-detail-row"><span>Passenger seats (model reference)</span><strong id="fleet-detail-seats">—</strong></div>
+<div class="fleet-detail-row"><span>Cargo capacity (model reference)</span><strong id="fleet-detail-cargo">—</strong></div>
+<div class="fleet-detail-row"><span>Current verified location</span><strong id="fleet-detail-location">—</strong></div>
+<div class="fleet-detail-row"><span>Fleet and delivery status</span><strong id="fleet-detail-status">—</strong></div></div></section>
+    <div class="fleet-nickname-editor">
+      <label class="workspace-label" for="fleet-detail-nickname">Aircraft nickname (optional)</label>
+      <div class="fleet-nickname-controls">
+        <input id="fleet-detail-nickname" type="text" maxlength="40" autocomplete="off" placeholder="Give this aircraft a nickname">
+        <button id="fleet-detail-save" type="button" class="primary">Save nickname</button>
+      </div>
+      <p class="hint">Nickname and image belong only to this aircraft. Its official model and registration do not change.</p>
+      <p id="fleet-detail-feedback" class="hint" role="status" aria-live="polite"></p>
+    </div>
+  </div>
+</div>
+<section class="fleet-detail-section"><h4>Airframe condition and usage</h4><div class="fleet-detail-grid"><div class="fleet-detail-row"><span>Individual aircraft manufacture year</span><strong id="fleet-detail-manufacture-year">—</strong></div>
+<div class="fleet-detail-row"><span>Individual aircraft age</span><strong id="fleet-detail-aircraft-age">—</strong></div>
+<div class="fleet-detail-row"><span>Verified condition</span><strong id="fleet-detail-condition">—</strong></div>
+<div class="fleet-detail-row"><span>Tracked flight hours</span><strong id="fleet-detail-flight-hours">—</strong></div>
+<div class="fleet-detail-row"><span>Tracked flight cycles</span><strong id="fleet-detail-flight-cycles">—</strong></div>
+<div class="fleet-detail-row"><span>Tracking started</span><strong id="fleet-detail-tracking-start">—</strong></div>
+<div class="fleet-detail-row"><span>Added to fleet</span><strong id="fleet-detail-fleet-added">—</strong></div></div></section>
+<section class="fleet-detail-section"><h4>Aircraft technical specifications</h4><div class="fleet-detail-grid"><div class="fleet-detail-row"><span>Model family</span><strong id="fleet-detail-family">—</strong></div>
+<div class="fleet-detail-row"><span>Model engine option</span><strong id="fleet-detail-engine">—</strong></div>
+<div class="fleet-detail-row"><span>Model production years</span><strong id="fleet-detail-production-years">—</strong></div>
+<div class="fleet-detail-row"><span>Reference crew required</span><strong id="fleet-detail-crew">—</strong></div>
+<div class="fleet-detail-row"><span>Cruise speed (reference)</span><strong id="fleet-detail-cruise-speed">—</strong></div>
+<div class="fleet-detail-row"><span>Range (reference)</span><strong id="fleet-detail-range">—</strong></div>
+<div class="fleet-detail-row"><span>Maximum takeoff weight</span><strong id="fleet-detail-mtow">—</strong></div>
+<div class="fleet-detail-row"><span>Maximum landing weight</span><strong id="fleet-detail-mlw">—</strong></div>
+<div class="fleet-detail-row"><span>Wingspan</span><strong id="fleet-detail-wingspan">—</strong></div>
+<div class="fleet-detail-row"><span>Aircraft length</span><strong id="fleet-detail-length">—</strong></div>
+<div class="fleet-detail-row"><span>Aircraft height</span><strong id="fleet-detail-height">—</strong></div>
+<div class="fleet-detail-row"><span>Takeoff runway (reference)</span><strong id="fleet-detail-takeoff-runway">—</strong></div>
+<div class="fleet-detail-row"><span>Landing runway (reference)</span><strong id="fleet-detail-landing-runway">—</strong></div>
+<div class="fleet-detail-row"><span>Technical evidence status</span><strong id="fleet-detail-tech-evidence">—</strong></div></div></section>
+<section class="fleet-detail-section"><h4>Aircraft acquisition and operating costs</h4><div class="fleet-detail-grid"><div class="fleet-detail-row"><span>Acquisition type</span><strong id="fleet-detail-acquisition-type">—</strong></div>
+<div class="fleet-detail-row"><span>Recorded acquisition date</span><strong id="fleet-detail-acquisition-date">—</strong></div>
+<div class="fleet-detail-row"><span>Recorded upfront payment</span><strong id="fleet-detail-upfront">—</strong></div>
+<div class="fleet-detail-row"><span>Recorded monthly lease amount</span><strong id="fleet-detail-monthly-lease">—</strong></div>
+<div class="fleet-detail-row"><span>Recorded lease contract</span><strong id="fleet-detail-contract-months">—</strong></div>
+<div class="fleet-detail-row"><span>Current individual aircraft market value</span><strong id="fleet-detail-market-value">—</strong></div>
+<div class="fleet-detail-row"><span>Verified operating cost per flight</span><strong id="fleet-detail-operating-cost">—</strong></div></div></section>
+<p class="hint fleet-detail-disclaimer">Individual aircraft condition, build year, lifecycle and price stay “Not recorded” until verified values are available. Model specifications are reference data, not proof of an individual installed configuration. No invented age, valuation, flight hours or maintenance dates are displayed.</p>
+<section id="fleet-maintenance-preview" class="fleet-maintenance-preview" aria-label="Aircraft maintenance cycle" aria-live="polite">Maintenance information loads when you open this aircraft.</section>`,'AIRCRAFT PROFILE'),
  'aircraft-market':()=>card('Aircraft marketplace',
    '<p>Purchase or lease an individual aircraft from a published game-market offer. Only the airline owner can confirm an order.</p>'+
    '<p id="market-state" class="workspace-state" role="status">Loading approved offers...</p>'+
