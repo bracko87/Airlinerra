@@ -128,7 +128,9 @@ test('settings and local hypothetical briefs remain separate from owner-scoped p
  assert.match(html,/data-player-view="fleet-aircraft"/);
  assert.match(workspace,/No live route was created/);
  assert.match(workspace,/Planning departures without duration are markers, not aircraft bookings/);
- assert.match(workspace,/No aircraft configuration was changed/);
+ assert.match(workspace,/cabinConfigurationManager\?\.updateData\(data\)/);
+ assert.match(workspace,/factory-cabin-customizer/);
+ assert.match(workspace,/Maintenance cycle/);
  assert.match(workspace,/fleet-owned-aircraft/);
  assert.match(workspace,/id=\\?"market-acquire\\?"/);
  assert.match(workspace,/role="status"/);
@@ -137,10 +139,9 @@ test('settings and local hypothetical briefs remain separate from owner-scoped p
  assert.match(workspace,/renderAirlineWeeklyBoard/);
  assert.match(workspace,/scheduleSnapshot\?\.plans/);
  assert.match(workspace,/scheduleSnapshot\?\.drafts/);
- assert.match(workspace,/\['economy','Economy'\]/);
- assert.match(workspace,/\['premium','Premium economy'\]/);
- assert.match(workspace,/\['business','Business'\]/);
- assert.match(workspace,/\['first','First'\]/);
+ assert.match(workspace,/cabin-configuration-manager/);
+ assert.match(workspace,/mro-directory/);
+ assert.match(html,/data-player-view="cabin-configurations"/);
  assert.match(workspace,/Account verification and recovery/);
  assert.match(html,/settings-timezone/);
  assert.match(model,/AIRLINE_CREATION_ENABLED=false/);
