@@ -343,20 +343,9 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    (price.usdPerKg===null?' (fuel type or grade not confirmed).':
     ' at $'+price.usdPerKg.toFixed(3)+'/kg (modelled departure-airport tier).');
   const caveat=doc.createElement('p');caveat.className='hint';
-  caveat.textContent=(fuel.source==='CALIBRATED_PROVISIONAL_MISSION_DISTANCE_RATE'?
-   'Existing whole-mission fuel estimate redistributed between phases; not double-counted.':
-   'Reference hourly consumption converted to phase estimates.')+
-   ' Payload '+Math.round(payload*100)+'%'+
-   (aircraft.useType==='cargo'?' (unverified cargo load assumption)':' (assumed occupancy)')+
-   ' · reference fuel tank: '+fuel.referenceTankScreen+
-   ' · fuel-rate evidence: '+(aircraft.fuelRateStatus||'unverified')+
-   (aircraft.fuelPeerModel?' (estimated from '+aircraft.fuelPeerModel+')':'')+
-   ' · fuel family: '+(aircraft.fuelFamily||'unknown')+
-   ' ('+(aircraft.fuelFamilyEvidence||'not confirmed')+')'+
-   ' · airport price: '+(price.usdPerKg===null?'unavailable':
-     price.gameCategory||'no tier')+
-   ' ('+(price.categoryApproved?'approved category':'unverified category')+
-   ', assumed price multiplier). No confirmed fuel grade, airport delivered price, weather, dispatch or money movement.';
+  caveat.textContent='Planning estimate using a neutral 50% load and a modelled fuel price. '+
+   'Actual fuel, cost and flight duration depend on the operated flight. '+
+   'No booking or fuel payment has occurred.';
   holder.append(heading,grid,totals,caveat);
   setSummary(kg(fuel.tripFuelKg)+' · '+usd(fuel.estimatedBurnCostUsd)+' (forecast)');
   message('route-block-time',Math.round(fuel.totalMinutes)+' min (phase estimate)');
