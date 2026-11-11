@@ -53,6 +53,10 @@ export function createFlightScheduleClient({auth,origin,fetchImpl=(...args)=>fet
     post({action:'demand-preview',airlineId,scheduleId,month}),
   commercialRead:({airlineId,scheduleId})=>
     post({action:'commercial-read',airlineId,scheduleId}),
+  feePreview:({airlineId,aircraftInventoryId,originAirportKey,destinationAirportKey,
+   departureStand='terminal',arrivalStand='terminal',parkingMinutes=60})=>
+    post({action:'fee-preview',airlineId,aircraftInventoryId,originAirportKey,
+     destinationAirportKey,departureStand,arrivalStand,parkingMinutes}),
   routeFinancials:({airlineId,scheduleId,loadPercent=100,parkingMinutes=180})=>
     post({action:'route-financials',airlineId,scheduleId,loadPercent,parkingMinutes}),
   commercialSave:({airlineId,scheduleId,economyFareUsd,
