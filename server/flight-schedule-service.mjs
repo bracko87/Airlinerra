@@ -128,7 +128,7 @@ export function validateFlightSchedulePayload(body){
   return withinFields(body,CHECK_FIELDS)&&uuid(body.scheduleId);
  if(body.action==='fee-preview')
   return withinFields(body,FEE_PREVIEW_FIELDS)&&
-   Object.keys(body).length===7&&uuid(body.aircraftInventoryId)&&
+   Object.keys(body).length===8&&uuid(body.aircraftInventoryId)&&
    AIRPORT.test(body.originAirportKey||'')&&AIRPORT.test(body.destinationAirportKey||'')&&
    body.originAirportKey!==body.destinationAirportKey&&
    ['terminal','remote','cargo'].includes(body.departureStand)&&
