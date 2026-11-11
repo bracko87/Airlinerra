@@ -40,7 +40,7 @@ let preview=false;
 let aircraftLibraryController=null;
 let worldGameClock=null;
 function showRealBerlinGameTime(){
- const node=doc.getElementById('top-game-time');
+ const node=doc.getElementById('game-footer-time');
  if(!worldGameClock&&node)
   worldGameClock=startBerlinGameClock({element:node,doc});
 }
