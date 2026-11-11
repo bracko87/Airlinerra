@@ -476,6 +476,28 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
    updateStaffTotals();message('ops-staff-feedback','Staffing plan cleared.');return;
   }
  });
+ // The schedule timetable links to the existing route-details page,
+ // not to an unactivated live-flight simulator.
+ doc.addEventListener('airlinerra:schedule-open-flight',event=>{
+  const flightNumber=event.detail?.flightNumber;
+  if(!/^[A-Z0-9]{2}[0-9]{1,4}$/.test(flightNumber||''))return;
+  const routes=allRoutes();
+  const index=routes.findIndex(x=>x.flightNumber===flightNumber);
+  if(index<0){
+   goTo?.('route-list');
+   message('operations-routes-feedback',
+    flightNumber+' has no matching saved route details here yet. Flight operation is not activated.');
+   return;
+  }
+  goTo?.('route-details');
+  void details.open(index);
+  const plan=routes[index],saveButton=$('operations-route-publish-plan');
+  if(saveButton){
+   saveButton.hidden=Boolean(plan?.serverPlanningId||plan?.serverScheduleId)||
+    typeof server.scheduler?.planSave!=='function';
+   saveButton.disabled=false;
+  }
+ });
  doc.addEventListener('airlinerra:route-draft-saved',event=>{
   state=storageRead(session,key);renderRoutes();void details.refresh();
   const flight=typeof event?.detail?.flightNumber==='string'?event.detail.flightNumber:'Route';
