@@ -40,7 +40,52 @@ test('unverified rights remain amber, never orange or grant-ready',()=>{
  assert.equal(legend.children.length,9);
  assert.equal(strip.children[2].className,'route-right-icon is-unverified');
  assert.equal(strip.children.filter(x=>x.className.includes('is-approved')).length,0);
- assert.ok(strip.children.every(x=>x.attributes['aria-label'].includes('Freedom')));
+ assert.ok(strip.children.every((x,i)=>x.textContent===TRAFFIC_RIGHTS[i].symbol),
+  'show standalone symbols only, no number beside each symbol');
+ assert.ok(strip.children.every((x,i)=>x.title===TRAFFIC_RIGHTS[i].name),
+  'hover label is only the name, not Freedom plus a number');
+ assert.ok(strip.children.every(x=>!x.title.includes('Freedom')));
+ assert.ok(strip.children.every(x=>x.attributes['aria-label'].includes('grant not verified')||
+  x.attributes['aria-label'].includes('Not identified')));
+ assert.equal(strip.children[2].textContent,'⇗');
+ assert.equal(strip.children[2].title,'Outbound international');
+});
+test('traffic-right icon states respond to route geography without fabricating an approved grant',()=>{
+ const element=tag=>({tag,children:[],attributes:{},className:'',textContent:'',
+  append(...els){this.children.push(...els)},
+  replaceChildren(...els){this.children=els},
+  setAttribute(k,v){this.attributes[k]=v}
+ });
+ const doc={createElement:element},strip=element('div'),legend=element('div');
+ const cases=[
+  [{homeIso:'RS',originIso:'RS',destinationIso:'DE'},3],
+  [{homeIso:'RS',originIso:'DE',destinationIso:'RS'},4],
+  [{homeIso:'RS',originIso:'DE',destinationIso:'FR'},7],
+  [{homeIso:'RS',originIso:'DE',destinationIso:'DE'},9]
+ ];
+ for(const [countries,number] of cases){
+  renderTrafficRightIndicators(doc,strip,legend,countries);
+  assert.equal(strip.children[number-1].className,'route-right-icon is-unverified');
+  assert.equal(strip.children.filter(x=>x.className.includes('is-unverified')).length,1);
+  assert.equal(strip.children.filter(x=>x.className.includes('is-approved')).length,0);
+ }
+ renderTrafficRightIndicators(doc,strip,legend,{
+  homeIso:'RS',originIso:'RS',destinationIso:'RS'});
+ assert.ok(strip.children.every(x=>x.className==='route-right-icon is-inapplicable'));
+});
+test('traffic-rights UI has plain colored icons and no below-icon instructions or incomplete-route text',async()=>{
+ const [ui,css]=await Promise.all([
+  read('website/route-planner.mjs'),read('website/player-app.css')
+ ]);
+ const markup=routePlannerMarkup();
+ assert.match(markup,/id="route-rights-icons"/);
+ assert.match(markup,/id="route-rights-info"/);
+ assert.doesNotMatch(markup,/id="route-traffic-rights"|id="route-check-message"/);
+ assert.doesNotMatch(markup,/class="route-rights-key"/);
+ assert.doesNotMatch(ui,/Select both airports to assess possible rights|Choose two different airports\./);
+ assert.match(css,/\.route-right-icon\.is-unverified\{color:/);
+ assert.match(css,/\.route-right-icon\.is-inapplicable\{color:/);
+ assert.match(css,/padding:0;margin:0;border:0;border-radius:0/);
 });
 test('taxi estimates depend on airport tier and are stable for identical route inputs',()=>{
  const local=estimateFlightPhaseTiming({
