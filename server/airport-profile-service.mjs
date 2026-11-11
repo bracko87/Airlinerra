@@ -128,6 +128,9 @@ export const AIRPORT_PROFILE_SQL=`
           WHERE ao.world_id=a.world_id AND ao.airport_key=a.airport_key
           AND ao.office_type='station' AND ao.office_status='active')
           AS active_airline_stations_count,
+        fd.runway_design_length_m AS game_design_runway_length_m,
+        fd.runway_design_surface AS game_design_runway_surface,
+        fd.data_status AS game_design_runway_status,
         fw.longest_paved_runway_m AS full_weight_longest_paved_runway_m,
         fw.airport_elevation_ft AS full_weight_airport_elevation_ft,
         fw.total_configurations_screened AS full_weight_aircraft_screened,
@@ -154,6 +157,9 @@ export const AIRPORT_PROFILE_SQL=`
     ON p.world_id=a.world_id AND p.airport_key=a.airport_key
  LEFT JOIN airlinerra_game.airport_facilities f
     ON f.world_id=a.world_id AND f.airport_key=a.airport_key
+ LEFT JOIN airlinerra_game.airport_fictional_runway_design fd
+    ON fd.world_id=a.world_id AND fd.airport_key=a.airport_key
+    AND a.airport_key LIKE 'FICTIONAL:%'
  LEFT JOIN airlinerra_game.section9_airport_transfer_policy_v1 transfer
     ON transfer.world_id=a.world_id AND transfer.airport_key=a.airport_key
  LEFT JOIN airlinerra_game.section6_airport_slot_capacity_v1 cap
@@ -281,6 +287,14 @@ export function serializeAirportProfile(row){
   elevationStatus:nullableString(row.game_elevation_provenance),
   airportKind:nullableString(row.airport_kind),
   runways,
+  // A fictional model airport may have a stored GAME design but no real
+  // observed runway. Expose it separately, never as an official runway.
+  gameRunwayDesign:row.airport_key.startsWith('FICTIONAL:')&&
+   row.game_design_runway_status==='fictional_game_only'&&
+   numberOrNull(row.game_design_runway_length_m)>0?
+   {lengthM:numberOrNull(row.game_design_runway_length_m),
+    surface:nullableString(row.game_design_runway_surface),
+    status:'fictional_game_only'}:null,
   facilities:{
    terminals:countOrNull(row.terminal_count),
    gates:countOrNull(row.passenger_gate_count),
