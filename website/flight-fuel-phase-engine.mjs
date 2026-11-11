@@ -4,7 +4,8 @@
  * 1,000-km reference flight, not blindly added to five more fuel burns.
  * Research: EUROCONTROL Standard Inputs edition 10; ICAO LTO reference.
  */
-export const FUEL_PHASE_MODEL_VERSION='airlinerra_fuel_phases_preview_v1';
+import {estimateFlightPhaseTiming} from './airport-flight-phase-timing.mjs';
+export const FUEL_PHASE_MODEL_VERSION='airlinerra_fuel_phases_preview_v2_airport_timing';
 export const DEFAULT_FUEL_GAME_PRICE_USD_PER_KG=0.95; // Group 3 historical game assumption, NOT a quote
 export const PHASE_SETTINGS=Object.freeze({
  taxiOut:{minutes:15,factor:.25},climb:{minutes:20,factor:1.35,speedFactor:.65},
@@ -19,21 +20,22 @@ const bounded=(x,min,max)=>Math.min(max,Math.max(min,x));
 const rounded=x=>Math.round(x*100)/100;
 const CODES=[['taxiOut','Taxi out'],['climb','Takeoff and climb'],['cruise','Cruise'],
  ['descent','Descent and landing'],['taxiIn','Taxi in']];
-const flightProfile=(distanceKm,speedKmh)=>{
- const climbKm=(PHASE_SETTINGS.climb.minutes/60)*speedKmh*PHASE_SETTINGS.climb.speedFactor;
- const descentKm=(PHASE_SETTINGS.descent.minutes/60)*speedKmh*PHASE_SETTINGS.descent.speedFactor;
+const flightProfile=(distanceKm,speedKmh,timing)=>{
+ const climbTime=timing.climbMinutes,descentTime=timing.descentMinutes;
+ const climbKm=(climbTime/60)*speedKmh*PHASE_SETTINGS.climb.speedFactor;
+ const descentKm=(descentTime/60)*speedKmh*PHASE_SETTINGS.descent.speedFactor;
  // No negative cruise on short flights. Compress both climb/descent equally.
  const scale=Math.min(1,distanceKm/(climbKm+descentKm));
- const climb=PHASE_SETTINGS.climb.minutes*scale;
- const descent=PHASE_SETTINGS.descent.minutes*scale;
+ const climb=climbTime*scale;
+ const descent=descentTime*scale;
  const cruiseKm=Math.max(0,distanceKm-(climbKm+descentKm)*scale);
  const cruise=cruiseKm/speedKmh*60;
  return [
-  {key:'taxiOut',minutes:15,distanceKm:0},
+  {key:'taxiOut',minutes:timing.taxiOutMinutes,distanceKm:0},
   {key:'climb',minutes:climb,distanceKm:climbKm*scale},
   {key:'cruise',minutes:cruise,distanceKm:cruiseKm},
   {key:'descent',minutes:descent,distanceKm:descentKm*scale},
-  {key:'taxiIn',minutes:10,distanceKm:0}
+  {key:'taxiIn',minutes:timing.taxiInMinutes,distanceKm:0}
  ];
 };
 const rateForLoad=(data,loadFraction)=>{
@@ -57,7 +59,9 @@ export function estimateFivePhaseFuel({
  emptyFuelKgPer100Km=null,halfFuelKgPer100Km=null,fullFuelKgPer100Km=null,
  fuelTankCapacityKg=null,payloadFraction=.5,
  priceUsdPerKg=DEFAULT_FUEL_GAME_PRICE_USD_PER_KG,
- routingMultiplier=1,referenceMissionKm=1000
+ routingMultiplier=1,referenceMissionKm=1000,
+ originAirportCategory=null,destinationAirportCategory=null,
+ originAirportKey=null,destinationAirportKey=null
 }={}){
  const distance=finitePositive(distanceKm),speed=finitePositive(cruiseSpeedKmh);
  const tank=finitePositive(fuelTankCapacityKg),hourly=finitePositive(cruiseFuelKgPerHour);
@@ -70,7 +74,11 @@ export function estimateFivePhaseFuel({
   return {status:'UNAVAILABLE',reason:'Invalid route, aircraft, payload or price inputs',
    previewOnly:true,dispatchApproved:false,ledgerPosted:false};
  const normalizedDistance=distance*routingMultiplier;
- const profile=flightProfile(normalizedDistance,speed);
+ const timing=estimateFlightPhaseTiming({
+  originAirportCategory,destinationAirportCategory,
+  originAirportKey,destinationAirportKey,distanceKm:normalizedDistance
+ });
+ const profile=flightProfile(normalizedDistance,speed,timing);
  const weightedHours=stages=>stages.reduce((sum,stage)=>
   sum+stage.minutes/60*PHASE_SETTINGS[stage.key].factor,0);
  // Use existing distance estimate as a WHOLE TRIP benchmark so phase costs
@@ -79,7 +87,7 @@ export function estimateFivePhaseFuel({
  const rate=rateForLoad(data,loaded);
  let kgPerHour=null,source=null;
  if(rate!==null){
-  const ref=flightProfile(referenceMissionKm*routingMultiplier,speed);
+  const ref=flightProfile(referenceMissionKm*routingMultiplier,speed,timing);
   kgPerHour=(rate*referenceMissionKm/100)/weightedHours(ref);
   source='CALIBRATED_PROVISIONAL_MISSION_DISTANCE_RATE';
  }else if(hourly!==null){
@@ -107,7 +115,10 @@ export function estimateFivePhaseFuel({
   status:'PLANNING_ESTIMATE',modelVersion:FUEL_PHASE_MODEL_VERSION,source,
   routeDistanceKm:rounded(distance),modelFlightDistanceKm:rounded(normalizedDistance),
   payloadFraction:loaded,cruiseSpeedKmh:speed,estimatedCruiseKgPerHour:rounded(kgPerHour),
-  totalMinutes:rounded(flightMinutes),tripFuelKg:rounded(burned),
+  totalMinutes:rounded(flightMinutes),
+  airborneMinutes:rounded(profile.slice(1,4).reduce((n,p)=>n+p.minutes,0)),
+  taxiMinutes:rounded(profile[0].minutes+profile[4].minutes),
+  phaseTiming:timing,tripFuelKg:rounded(burned),
   screeningReserveFuelKg:rounded(reserve),screeningFuelLoadKg:rounded(uplift),
   fuelPriceUsdPerKg:price,estimatedBurnCostUsd:price===null?null:rounded(burned*price),
   fuelTankCapacityKg:tank,referenceTankScreen:tank===null?'UNKNOWN':
