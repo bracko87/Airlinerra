@@ -17,6 +17,7 @@
  * Crew payroll and passenger/flight settlements are NOT triggered here.
  */
 import {createHmac,timingSafeEqual} from 'node:crypto';
+import {Buffer} from 'node:buffer';
 
 export const SECTION9_CLOCK_SQL=Object.freeze({
  accept:`SELECT airlinerra_game.section9_accept_verified_game_tick_v1(
