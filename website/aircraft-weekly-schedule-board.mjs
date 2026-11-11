@@ -155,11 +155,11 @@ export function buildAirlineWeeklyBoard({fleet,serverFleet,plans=[],drafts=[],lo
   const fromCode=airportCode(flight?.from?.code)||
    airportCode(flight?.originAirportCode)||
    airportCode(companion?.from?.code)||
-   airportCode(calculation?.originAirportCode);
+   airportCode(ownerEstimate!==null?calculation?.originAirportCode:null);
   const toCode=airportCode(flight?.to?.code)||
    airportCode(flight?.destinationAirportCode)||
    airportCode(companion?.to?.code)||
-   airportCode(calculation?.destinationAirportCode);
+   airportCode(ownerEstimate!==null?calculation?.destinationAirportCode:null);
   const unique=new Set();
   for(const stop of schedule){
    const minute=clockToMinute(stop.time),eventKey=stop.day+'|'+minute;
@@ -212,7 +212,7 @@ export function buildAirlineWeeklyBoard({fleet,serverFleet,plans=[],drafts=[],lo
   for(let i=1;i<cell.bands.length;i++)if(cell.bands[i-1].end>cell.bands[i].start)
    cell.warnings.push('Overlapping flight/rotation planning windows; verify aircraft availability before activation.');
  }
- const held=rows.flatMap(r=>r.days).reduce((n,c)=>n+c.bands.filter(b=>!b.continues).length,0);
+ const held=rows.flatMap(r=>r.days).reduce((n,c)=>n+c.bands.filter(b=>!b.continues&&b.kind==='slot-held').length,0);
  const flights=rows.reduce((n,r)=>n+r.flights,0);
  return Object.freeze({status:rows.length?'ready':'empty',rows,counts:{flights,held}});
 }
