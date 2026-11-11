@@ -659,27 +659,52 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
   title.textContent=airport.name+(airport.code?' ('+airport.code+')':'');
   node.append(title);
  };
+ const airportIataOrIcao=(side,profile)=>{
+  const choice=selected(side==='origin'?'from':'to');
+  const candidates=[profile?.iata,profile?.iataCode,profile?.iata_code,
+   choice?.iata,choice?.iataCode,choice?.code,profile?.icao];
+  // Belgrade's published IATA identifier is BEG; LYBE is its ICAO code.
+  if(candidates.some(value=>String(value||'').toUpperCase()==='LYBE'))return 'BEG';
+  const iata=candidates.find(value=>/^[A-Z]{3}$/.test(String(value||'').toUpperCase()));
+  if(iata)return String(iata).toUpperCase();
+  const icao=candidates.find(value=>/^[A-Z]{4}$/.test(String(value||'').toUpperCase()));
+  return icao?String(icao).toUpperCase():null;
+ };
  const airportRules=(side,profile)=>{
-  const host=$('route-'+side+'-restrictions');if(!host)return;
+  const host=$('route-'+side+'-restrictions');
+  const heading=$('route-'+side+'-title');
+  if(!host)return;
   host.replaceChildren();
+  const code=airportIataOrIcao(side,profile);
+  if(heading)heading.textContent=(side==='origin'?'Origin airport':'Destination airport')+
+   (code?': '+code:'');
   if(!profile){host.textContent='Airport data pending';return;}
+  const isBelgrade=code==='BEG';
   const longest=Array.isArray(profile.runways)?
    profile.runways.filter(r=>Number.isFinite(r?.lengthM)&&r.lengthM>0)
     .reduce((m,r)=>Math.max(m,r.lengthM),0):0;
   const simple=profile.operations?.simpleNightNoise||{};
+  const gameDefault=['AIRLINESIM_NOT_FOUND','GAME_DEFAULT_NOT_CHECKED'].includes(simple.sourceStatus);
   const yesNo=value=>typeof value==='boolean'?(value?'Yes':'No'):'Unverified';
   const window=typeof simple.nighttimeWindow==='string'&&
    simple.nighttimeWindow.trim()?simple.nighttimeWindow.trim().replace(/-/g,'–'):null;
   const chapters=Array.isArray(simple.permittedChapters)?
    simple.permittedChapters.filter(x=>Number.isInteger(x)&&x>0):[];
+  const curfew=isBelgrade?'No general curfew · open 24 h':
+   simple.nighttimeBan===true?'Yes'+(window?' · '+window+' local':''):
+   gameDefault?'Not source-verified':
+   simple.nighttimeBan===false?'No general ban recorded':'Unverified';
+  const noise=isBelgrade?'Published departure noise procedures':
+   simple.noiseRestrictions===true?
+    'Aircraft-specific restrictions recorded'+(chapters.length?' · Chapters '+chapters.join(', '):''):
+   gameDefault?'Not source-verified':
+   simple.noiseRestrictions===false?
+    'No specific ban recorded; procedures may still apply':'Unverified';
   const rules=[
    ['Longest runway',longest?
     Math.round(longest).toLocaleString('en-US')+' m':'Unverified'],
-   ['Night curfew',yesNo(simple.nighttimeBan)+
-    (simple.nighttimeBan===true&&window?' · '+window+' local':'')],
-   ['Noise restrictions',yesNo(simple.noiseRestrictions)+
-    (simple.noiseRestrictions===true&&chapters.length?
-      ' · Chapters '+chapters.join(', '):'')]
+   ['Night curfew',curfew],
+   ['Noise rules / procedures',noise]
   ];
   for(const [label,value] of rules){
    const row=doc.createElement('div');row.className='route-airport-rule';
@@ -687,9 +712,16 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    const result=doc.createElement('strong');result.textContent=value;
    row.append(name,result);host.append(row);
   }
-  if(['AIRLINESIM_NOT_FOUND','GAME_DEFAULT_NOT_CHECKED'].includes(simple.sourceStatus)){
+  if(isBelgrade){
+   const a=doc.createElement('a');
+   a.className='route-airport-source route-airport-aip';
+   a.href='https://smatsa.rs/upload/aip/published/06-Aug-2026-A/2026-08-06-AIRAC/html/eAIP/LY-AD-2.LYBE-en-GB.html';
+   a.target='_blank';a.rel='noopener noreferrer';
+   a.textContent='Official Serbia AIP: LYBE AD 2.3 (24 h) and AD 2.21 (noise procedures)';
+   host.append(a);
+  }else if(gameDefault){
    const source=doc.createElement('small');source.className='route-airport-source';
-   source.textContent='Neutral game assumption — restrictions not independently verified';
+   source.textContent='Neutral game assumption — not independently verified';
    host.append(source);
   }
  };
@@ -887,7 +919,12 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
     a.testOnly===true&&a.operationallyAllowed===false);
   syncAircraftCompatibility();
   message('route-slot-check','Select aircraft and flight times to check slots');
-  message('route-traffic-rights','Not connected — rights not verified');
+  renderTrafficRightIndicators(doc,$('route-rights-icons'),$('route-rights-legend'),{
+   homeIso:homeLocation?.countryIso,
+   originIso:from?.countryIso,destinationIso:to?.countryIso
+  });
+  message('route-traffic-rights',from&&to?
+   'No independently verified game traffic-rights grant': 'Select both airports to assess possible rights');
   message('route-status',pairStatus==='SAME_AIRPORT'?'Restricted — same airport':'Draft only');
   message('route-check-message',pairStatus==='SAME_AIRPORT'?
    'BLOCKED — a flight cannot depart from and arrive at the same airport. Choose another destination.':
