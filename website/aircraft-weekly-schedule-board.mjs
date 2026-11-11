@@ -83,6 +83,7 @@ export function buildAirlineWeeklyBoard({fleet,serverFleet,plans=[],drafts=[],lo
   flights:0
  }));
  const byAircraft=new Map(rows.map(row=>[row.id,row]));
+ const seen=new Set();
  const readFlight=(flight,source)=>{
   // Slots must be independently confirmed by the owner-scoped server query.
   // Never display plans, local routes or unreserved schedule drafts.
