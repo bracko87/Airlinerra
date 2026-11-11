@@ -37,20 +37,20 @@ export function renderTrafficRightIndicators(doc,strip,legend,{
  strip.replaceChildren();legend.replaceChildren();
  const candidate=new Set(candidateTrafficFreedoms({homeIso,originIso,destinationIso}));
  for(const right of TRAFFIC_RIGHTS){
-  // No verified grant is connected. Orange is RESERVED for an independently
-  // confirmed permission; candidate rights remain unverified (amber dashed).
+  // No independently verified grants are connected. Color only indicates
+  // route relevance, not whether a commercial traffic right has been granted.
   const relevant=candidate.has(right.number);
   const button=doc.createElement('span');
   button.className='route-right-icon'+(relevant?' is-unverified':' is-inapplicable');
-  button.textContent=right.symbol+' '+right.number;
+  button.textContent=right.symbol;
   const status=relevant?'Potentially relevant; grant not verified':
    'Not identified as relevant from this direct airport pair';
-  button.title='Freedom '+right.number+': '+right.name+' — '+status;
-  button.setAttribute('aria-label',button.title);
+  button.title=right.name;
+  button.setAttribute('aria-label',right.name+' — '+status);
   strip.append(button);
   const row=doc.createElement('div');row.className='route-right-explanation';
   const symbol=doc.createElement('strong');
-  symbol.textContent=right.symbol+' '+right.number+' · '+right.name;
+  symbol.textContent=right.symbol+' · '+right.name;
   const description=doc.createElement('p');
   description.textContent=right.detail+' '+(relevant?'This route may require it; not yet verified.':'No route-specific approval recorded.');
   row.append(symbol,description);legend.append(row);
