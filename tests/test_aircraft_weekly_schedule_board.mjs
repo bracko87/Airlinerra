@@ -42,10 +42,14 @@ const element=tag=>({
  replaceChildren(...items){this.children=[...items]},
  setAttribute(key,value){this.attributes[key]=value}
 });
-const render=(board,day=0,dateLabel='Monday, 9 Nov 2026')=>{
- const host=element('main');renderAirlineWeeklyBoard({createElement:element},host,board,{day,dateLabel});
+const render=(board,day=0,dateLabel='Monday, 9 Nov 2026',bookingsAvailable=true)=>{
+ const host=element('main');renderAirlineWeeklyBoard({createElement:element},host,board,{
+  day,dateLabel,bookingsAvailable
+ });
  return host;
 };
+const getAll=(root,selector)=>[root,...(root.children||[]).flatMap(x=>getAll(x,selector))]
+ .filter(selector);
 
 test('timetable uses real owned/leased aircraft but nothing is booked by default',()=>{
  const board=buildAirlineWeeklyBoard({fleet});
@@ -54,7 +58,11 @@ test('timetable uses real owned/leased aircraft but nothing is booked by default
  assert.equal(board.counts.flights,0);
  assert.equal(board.counts.held,0);
  assert.deepEqual(WEEK_DAYS,['Mon','Tue','Wed','Thu','Fri','Sat','Sun']);
- assert.match(render(board).children[0].textContent,/No booked flights/);
+ const host=render(board);
+ assert.equal(getAll(host,x=>x.tagName==='TR').length,3,
+  'aircraft stay listed even without flight bookings');
+ assert.equal(getAll(host,x=>x.className==='schedule-board-no-departures').length,2);
+ assert.equal(getAll(host,x=>x.className==='schedule-board-rotation-band is-slot-held').length,0);
 });
 test('no local draft, planning route, duration estimate or unreserved schedule is visible',()=>{
  const board=buildAirlineWeeklyBoard({
@@ -95,8 +103,8 @@ test('booked server schedule is the ONLY displayed flight, with one solid flight
   'Only the reserved flight duration is rendered; turnaround is not an extra booking');
  const host=render(board);
  const table=host.children[0].children[0];
- assert.equal(table.children[1].children.length,1,
-  'Only aircraft with booked flights on the chosen date are visible');
+ assert.equal(table.children[1].children.length,2,
+  'Both verified aircraft remain visible; only booked flights receive a bar');
  const lane=table.children[1].children[0].children[1].children[0].children[0];
  assert.equal(lane.children.length,2,'One single bar and a flight-number link; no other markers');
  assert.equal(lane.children[0].className,'schedule-board-rotation-band is-slot-held');
@@ -139,7 +147,7 @@ test('invalid or unavailable fleet never creates a fake booking',()=>{
   weeklySchedule:[{day:0,time:'25:90'}]
  })]});
  assert.equal(bad.counts.flights,0);
- assert.match(render(bad).children[0].textContent,/No booked flights/);
+ assert.equal(getAll(render(bad),x=>x.className==='schedule-board-no-departures').length,2);
 });
 test('only the selected calendar day appears; other days have no hidden draft markers',()=>{
  const board=buildAirlineWeeklyBoard({fleet,drafts:[booked()]});
@@ -157,8 +165,9 @@ test('no booked flight on a different day, even if the aircraft has a booking el
  const board=buildAirlineWeeklyBoard({fleet,drafts:[booked({
   weeklySchedule:[{day:0,time:'09:00'}]
  })]});
- assert.match(render(board,2,'Wednesday, 11 Nov 2026').children[0].textContent,
- /No booked flights/);
+ const host=render(board,2,'Wednesday, 11 Nov 2026');
+ assert.equal(getAll(host,x=>x.className==='schedule-board-no-departures').length,2);
+ assert.equal(getAll(host,x=>x.className==='schedule-board-rotation-band is-slot-held').length,0);
 });
 test('plannedRotationTiming keeps correct arrival and available-from maths',()=>{
  assert.deepEqual(plannedRotationTiming(540,90,45),{
@@ -189,4 +198,19 @@ test('schedule page reads only server drafts and omits all planning legends',asy
  assert.match(css,/\.schedule-board-rotation-band\.is-slot-held/);
  assert.match(bundle,/'aircraft-weekly-schedule-board\.mjs'/);
  assert.match(SCHEDULE_SQL.drafts,/count\(\*\) = 2\*jsonb_array_length\(s.weekly_schedule\)/);
+});
+
+test('schedule does not claim no booked flights when the schedule API is unavailable',()=>{
+ const host=render(buildAirlineWeeklyBoard({fleet}),0,'Monday, 9 Nov 2026',false);
+ const rows=getAll(host,x=>x.className==='schedule-board-aircraft-identity');
+ assert.deepEqual(rows.map(x=>x.children[0].textContent),['YU-PAN01','YU-PAN02']);
+ assert.equal(getAll(host,x=>x.textContent==='Booking records unavailable').length,2);
+ assert.equal(getAll(host,x=>x.className==='schedule-board-rotation-band is-slot-held').length,0);
+});
+test('schedule workspace differentiates verified fleet, booked routes and local drafts',async()=>{
+ const source=await readFile(new URL('../website/airline-workspace.mjs',import.meta.url),'utf8');
+ assert.match(source,/bookingsAvailable:bookingDataAvailable/);
+ assert.match(source,/Booking data unavailable: check the schedule API connection/);
+ assert.match(source,/saved route plan\(s\) are not booked flights/);
+ assert.doesNotMatch(source,/localRoutes:local|plans:scheduleSnapshot\?\.plans/);
 });
