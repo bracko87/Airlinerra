@@ -1,0 +1,31 @@
+name: Airlinerra flight rotation timeline (isolated)
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'website/aircraft-weekly-schedule-board.mjs'
+      - 'website/airline-workspace.mjs'
+      - 'website/player-app.css'
+      - 'tests/test_aircraft_weekly_schedule_board.mjs'
+      - 'tests/test_server_flight_schedule_api.mjs'
+      - '.github/workflows/airlinerra-flight-rotation-ui-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  timeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check protected schedule UI syntax
+        run: |
+          node --check website/aircraft-weekly-schedule-board.mjs
+          node --check website/airline-workspace.mjs
+      - name: Test aircraft schedule, rotation calculations, and authenticated schedule API
+        run: node --test tests/test_aircraft_weekly_schedule_board.mjs tests/test_server_flight_schedule_api.mjs
+      - name: Build invitation-only website
+        run: cd website && npm run build
