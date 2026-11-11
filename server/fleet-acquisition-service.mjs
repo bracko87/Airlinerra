@@ -348,20 +348,20 @@ export const FLEET_SQL=Object.freeze({
   "ON a.world_id=r.world_id AND a.airport_key=r.airport_key "+
   "WHERE i.airline_id=$1::uuid AND r.planning_status='game_planning_approved' "+
   "ORDER BY i.registration,a.airport_code LIMIT 500",
- cabinModelDesigns:"SELECT d.design_id::text AS \\"designId\\",d.configuration_id::int AS \\"configurationId\\", "+
-  "d.name,d.economy_seats AS \\"economy\\",d.premium_seats AS \\"premium\\", "+
-  "d.business_seats AS \\"business\\",d.first_seats AS \\"first\\", "+
-  "d.economy_type AS \\"economyType\\",d.premium_type AS \\"premiumType\\", "+
-  "d.business_type AS \\"businessType\\",d.first_type AS \\"firstType\\", "+
-  "d.extra_legroom_cm::text AS \\"extraLegroomCm\\" "+
+ cabinModelDesigns:"SELECT d.design_id::text AS \"designId\",d.configuration_id::int AS \"configurationId\", "+
+  "d.name,d.economy_seats AS \"economy\",d.premium_seats AS \"premium\", "+
+  "d.business_seats AS \"business\",d.first_seats AS \"first\", "+
+  "d.economy_type AS \"economyType\",d.premium_type AS \"premiumType\", "+
+  "d.business_type AS \"businessType\",d.first_type AS \"firstType\", "+
+  "d.extra_legroom_cm::text AS \"extraLegroomCm\" "+
   "FROM airlinerra_game.airline_cabin_model_designs_v1 d "+
   "WHERE d.airline_id=$1::uuid ORDER BY d.updated_at DESC LIMIT 250",
- cabinModelOwner:"SELECT s.reference_seat_units::text AS \\"referenceUnits\\", "+
-  "c.use_type AS \\"useType\\", "+
-  "to_jsonb(g.economy_columns) AS \\"economyColumns\\", "+
-  "to_jsonb(g.premium_columns) AS \\"premiumColumns\\", "+
-  "to_jsonb(g.business_columns) AS \\"businessColumns\\", "+
-  "to_jsonb(g.first_columns) AS \\"firstColumns\\" "+
+ cabinModelOwner:"SELECT s.reference_seat_units::text AS \"referenceUnits\", "+
+  "c.use_type AS \"useType\", "+
+  "to_jsonb(g.economy_columns) AS \"economyColumns\", "+
+  "to_jsonb(g.premium_columns) AS \"premiumColumns\", "+
+  "to_jsonb(g.business_columns) AS \"businessColumns\", "+
+  "to_jsonb(g.first_columns) AS \"firstColumns\" "+
   "FROM airlinerra_game.airline_aircraft_inventory i "+
   "JOIN airlinerra_game.cabin_model_standard_v1 s ON s.configuration_id=i.configuration_id "+
   "JOIN airlinerra.aircraft_catalog_configuration_inventory c ON c.configuration_id=i.configuration_id "+
@@ -377,7 +377,7 @@ export const FLEET_SQL=Object.freeze({
   "economy_type=EXCLUDED.economy_type,premium_type=EXCLUDED.premium_type, "+
   "business_type=EXCLUDED.business_type,first_type=EXCLUDED.first_type, "+
   "extra_legroom_cm=EXCLUDED.extra_legroom_cm,updated_at=now() "+
-  "RETURNING design_id::text AS \\"designId\\",configuration_id::int AS \\"configurationId\\",name",
+  "RETURNING design_id::text AS \"designId\",configuration_id::int AS \"configurationId\",name",
  cabinOwnerAircraft:"SELECT s.reference_seat_units::text AS \"referenceUnits\", "+
   "c.use_type AS \"useType\",i.configuration_id::int AS \"configurationId\", "+
   "COALESCE(installed.installed_economy,0)+COALESCE(installed.installed_premium,0)+ "+
