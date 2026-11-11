@@ -47,6 +47,10 @@ export function createLocalOwnerFleetReaders({auth,origin,fetchImpl=globalThis.f
      flightNumber,originAirportKey,destinationAirportKey,weeklySchedule,
      departureStand,arrivalStand,turnaroundMinutes,fares,service,
      referenceDepartureUtc,referenceArrivalUtc}),
+  feePreview:({airlineId,aircraftInventoryId,originAirportKey,destinationAirportKey,
+   departureStand='terminal',arrivalStand='terminal',parkingMinutes=60})=>
+    read(SCHEDULE_PATH,{action:'fee-preview',airlineId,aircraftInventoryId,
+     originAirportKey,destinationAirportKey,departureStand,arrivalStand,parkingMinutes}),
   slotCheck:args=>read(SCHEDULE_PATH,{action:'slot-check',
    airlineId:args?.airlineId,aircraftInventoryId:args?.aircraftInventoryId,
    originAirportKey:args?.originAirportKey,
