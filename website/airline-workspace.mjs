@@ -1,5 +1,6 @@
 import {routePlannerMarkup,createRoutePlanner} from './route-planner.mjs';
 import {estimateFivePhaseFuel} from './flight-fuel-phase-engine.mjs';
+import {routeDistanceKm} from './route-map.mjs';
 import {aircraftDisplayName} from './aircraft-library.mjs';
 import {buildAirlineWeeklyBoard,renderAirlineWeeklyBoard} from './aircraft-weekly-schedule-board.mjs';
 import {berlinSevenDayWindow} from './rolling-flight-calendar.mjs';
@@ -373,6 +374,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
  let scheduleSnapshot=null;
  let scheduleFetchVersion=0;
  let scheduleReadError=false;
+ let scheduleEstimatedDurations=[],scheduleEstimateTicket=0;
  let cabinManager=null;
  let cabinConfigurationManager=null;
  let aircraftConfigurationDialog=null;
@@ -543,6 +545,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   const last=safelyLoad(session,draftKey)||{};
   const local=Array.isArray(last.routes)?last.routes:last.route?[last.route]:[];
   const board=buildAirlineWeeklyBoard({
+   estimatedDurations:scheduleEstimatedDurations,
    // Fleet-market inventory includes all real owned/leased aircraft, even
    // those not yet in service. A schedule-only read includes in-service ones.
    fleet:marketSnapshot?.fleet,serverFleet:scheduleSnapshot?.fleet,
@@ -581,10 +584,87 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
     (scheduleReadError?' Some server routes could not be loaded; this timetable is incomplete.':'');
   }
  }
+ async function refreshScheduleEstimates(){
+  // Estimate existing route drafts from owner-verified aircraft fuel reference
+  // and both server-recorded airport positions. Read-only and deliberately
+  // distinct from slot-reserved/operated flight duration.
+  const ticket=++scheduleEstimateTicket,airlineId=data.airline?.id;
+  scheduleEstimatedDurations=[];
+  const reader=data.reader;
+  if(!data.connected||!airlineId||
+   marketSnapshot?.airlineId!==airlineId||
+   !Array.isArray(marketSnapshot?.fleet)||
+   !scheduleSnapshot||typeof reader?.airportProfile!=='function')return;
+  const verifiedFleet=new Map(marketSnapshot.fleet
+   .filter(a=>['owned','leased'].includes(a.ownershipType)&&
+    typeof a.id==='string'&&Number.isSafeInteger(a.configurationId))
+   .map(a=>[a.id,a]));
+  const current=safelyLoad(session,draftKey)||{};
+  const local=Array.isArray(current.routes)?current.routes:[];
+  const routes=[...scheduleSnapshot.drafts,...scheduleSnapshot.plans,...local];
+  const unique=new Set(),candidates=[];
+  for(const flight of routes){
+   const aircraftId=flight.aircraftInventoryId||
+    (typeof flight.aircraftId==='string'&&flight.aircraftId.startsWith('owned:')?
+     flight.aircraftId.slice(6):null);
+   const from=flight.originAirportKey||flight.from?.key;
+   const to=flight.destinationAirportKey||flight.to?.key;
+   const number=flight.flightNumber;
+   if(!/^[A-Z0-9]{2}[0-9]{1,4}$/.test(number||'')||
+    !verifiedFleet.has(aircraftId)||!from||!to||from===to||
+    unique.has(number))continue;
+   unique.add(number);
+   candidates.push({aircraftId,from,to,number});
+  }
+  const cache=new Map();
+  const profile=async key=>{
+   if(!cache.has(key))cache.set(key,(async()=>{
+    try{
+     const response=await reader.airportProfile(key);
+     return response?.airport?.key===key?response.airport:null;
+    }catch{return null;}
+   })());
+   return cache.get(key);
+  };
+  const estimates=[];
+  // Bounded parallelism: do not issue unlimited airport requests.
+  for(let start=0;start<Math.min(candidates.length,25);start+=4){
+   if(ticket!==scheduleEstimateTicket||airlineId!==data.airline?.id)return;
+   const batch=await Promise.all(candidates.slice(start,start+4).map(async route=>{
+    const aircraft=verifiedFleet.get(route.aircraftId);
+    const [origin,destination]=await Promise.all([
+     profile(route.from),profile(route.to)
+    ]);
+    const distanceKm=routeDistanceKm(origin,destination);
+    if(!Number.isFinite(distanceKm)||distanceKm<=0)return null;
+    const preview=estimateFivePhaseFuel({
+     distanceKm,cruiseSpeedKmh:aircraft.cruiseSpeedKmh,
+     cruiseFuelKgPerHour:aircraft.cruiseFuelKgPerHour,
+     emptyFuelKgPer100Km:aircraft.emptyFuelKgPer100Km,
+     halfFuelKgPer100Km:aircraft.halfFuelKgPer100Km,
+     fullFuelKgPer100Km:aircraft.fullFuelKgPer100Km,
+     fuelTankCapacityKg:aircraft.fuelTankCapacityKg,
+     payloadFraction:.5,priceUsdPerKg:null
+    });
+    const minutes=Math.round(preview.totalMinutes);
+    if(preview.status!=='PLANNING_ESTIMATE'||!Number.isInteger(minutes)||
+     minutes<25||minutes>72*60)return null;
+    return {flightNumber:route.number,aircraftInventoryId:route.aircraftId,
+     originAirportKey:route.from,destinationAirportKey:route.to,minutes,
+     source:'aircraft_five_phase_estimate'};
+   }));
+   estimates.push(...batch.filter(Boolean));
+  }
+  if(ticket===scheduleEstimateTicket&&airlineId===data.airline?.id){
+   scheduleEstimatedDurations=estimates;
+   renderSchedule();
+  }
+ }
  async function loadAirlineSchedule(){
   const ticket=++scheduleFetchVersion;
   const airlineId=data.airline?.id,scheduler=data.scheduler;
   scheduleSnapshot=null;scheduleReadError=false;
+  scheduleEstimatedDurations=[];++scheduleEstimateTicket;
   renderSchedule();
   if(!data.connected||!airlineId||typeof scheduler?.list!=='function'){
    scheduleReadError=true;renderSchedule();return;
@@ -595,6 +675,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    if(!Array.isArray(result?.fleet)||!Array.isArray(result?.plans)||
       !Array.isArray(result?.drafts))throw Error('Invalid schedule response');
    scheduleSnapshot=result;scheduleReadError=false;renderSchedule();
+   void refreshScheduleEstimates();
   }catch{
    if(ticket!==scheduleFetchVersion)return;
    scheduleSnapshot=null;scheduleReadError=true;renderSchedule();
@@ -1214,6 +1295,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
  function renderRealFleetMarket(snapshot){
   marketSnapshot=snapshot;
   renderSchedule();
+  void refreshScheduleEstimates();
   const fleet=Array.isArray(snapshot?.fleet)?snapshot.fleet:[];
   const offers=Array.isArray(snapshot?.offers)?snapshot.offers:[];
   const owned=fleet.filter(x=>x?.ownershipType==='owned');
@@ -1311,6 +1393,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    // Never present an earlier airline's inventory or bookings while the
    // new owner's asynchronous authenticated reads are still in progress.
    marketSnapshot=null;scheduleSnapshot=null;
+   scheduleEstimatedDurations=[];++scheduleEstimateTicket;
    usedMarketSnapshot=null;usedMarketFetchVersion++;usedMarketPage=0;
    selectedUsedListingId=null;
    maintenanceLast=null;maintenanceFetchVersion++;
