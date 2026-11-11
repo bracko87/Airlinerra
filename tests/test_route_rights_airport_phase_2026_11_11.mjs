@@ -6,7 +6,8 @@ import {TRAFFIC_RIGHTS,candidateTrafficFreedoms,renderTrafficRightIndicators}
 import {TAXI_CATEGORY_MINUTES,estimateFlightPhaseTiming}
  from '../website/airport-flight-phase-timing.mjs';
 import {estimateFivePhaseFuel} from '../website/flight-fuel-phase-engine.mjs';
-import {routePlannerMarkup} from '../website/route-planner.mjs';
+import {routePlannerMarkup,routeAirportIcaoCode,routeAirportGameRules}
+ from '../website/route-planner.mjs';
 const read=path=>readFile(new URL('../'+path,import.meta.url),'utf8');
 
 test('nine freedoms are distinct and never equal a licence, slot or implied grant',()=>{
@@ -149,4 +150,54 @@ test('origin first, Belgrade AIP nuance, and no fake total or debug paragraphs',
  assert.match(ui,/aircraft\?\.cruiseSpeedKmh/);
  assert.match(ui,/NOT the complete flight cost/);
  assert.doesNotMatch(ui,/const caveat=doc.createElement\('p'\)/);
+});
+
+test('ICAO airport headings are consistent on origin and destination, never IATA BEG',()=>{
+ const belgrade={iata:'BEG',icao:'LYBE',code:'LYBE'};
+ const aleksandrovo={iata:null,icao:null,code:'LYAL'};
+ assert.equal(routeAirportIcaoCode(belgrade,{code:'LYBE'}),'LYBE');
+ assert.equal(routeAirportIcaoCode(aleksandrovo,{code:'LYAL'}),'LYAL');
+ assert.equal(routeAirportIcaoCode({iata:'BEG',code:'LYBE'}),'LYBE');
+ assert.equal(routeAirportIcaoCode({iata:'BEG'}),null,
+  'do not display three-letter IATA code in an ICAO-only heading');
+});
+test('game default curfew and chapter flags display stored values without inventing chapter numbers',()=>{
+ const game={operations:{simpleNightNoise:{
+  nighttimeBan:false,noiseRestrictions:false,permittedChapters:[],
+  sourceStatus:'AIRLINESIM_NOT_FOUND'
+ },icaoNoiseRules:{prohibitedChapters:[],rules:[]}}};
+ assert.deepEqual(routeAirportGameRules(game),{
+  curfew:'No',noise:'No Chapter restriction'
+ });
+ const belgrade={operations:{simpleNightNoise:{
+  nighttimeBan:false,noiseRestrictions:false,permittedChapters:[],
+  sourceStatus:'AIRLINESIM_PAGE_OBSERVED'
+ },icaoNoiseRules:{prohibitedChapters:[],rules:[]}}};
+ assert.deepEqual(routeAirportGameRules(belgrade),{
+  curfew:'No',noise:'No Chapter restriction'
+ });
+ const chapter={operations:{simpleNightNoise:{
+  nighttimeBan:true,nighttimeWindow:'23:00-06:00',
+  noiseRestrictions:true,permittedChapters:[3,14]
+ },icaoNoiseRules:{prohibitedChapters:[2]}}};
+ assert.deepEqual(routeAirportGameRules(chapter),{
+  curfew:'Yes · 23:00–06:00',noise:'No Chapter 2'
+ });
+ const minimum={operations:{simpleNightNoise:{nighttimeBan:false,
+  noiseRestrictions:false},icaoNoiseRules:{nationalCivilJetMinimumChapter:14}}};
+ assert.equal(routeAirportGameRules(minimum).noise,'Chapter 14 minimum',
+  'documented chapter overrides simplified false flag');
+});
+test('the player no longer sees origin warning, duplicate AIP footer or demand disclaimer',async()=>{
+ const ui=await read('website/route-planner.mjs');
+ const markup=routePlannerMarkup();
+ assert.doesNotMatch(ui,/Published departure noise procedures|Official Serbia AIP: LYBE/);
+ assert.doesNotMatch(ui,/Indicative game demand rating; not actual passenger/);
+ assert.doesNotMatch(ui,/not source-verified/);
+ assert.doesNotMatch(markup,/Departure stand follows previous arrival/);
+ assert.match(markup,/id="route-departure-stand-derived"/,
+  'retain hidden programmatic stand readout');
+ assert.match(ui,/runwayAssessment\(aircraft\)/);
+ assert.match(ui,/noiseCurfewCheck\(\{/);
+ assert.match(ui,/gameHardBlocked===true/);
 });
