@@ -8,6 +8,13 @@ on:
       - 'server/section9-clock-job-edge-entry.ts'
       - 'server/section9-scheduled-game-day-producer.mjs'
       - 'server/section9-verified-game-clock-ingress.mjs'
+      - 'server/section9-world-time-edge-entry.ts'
+      - 'website/world-time-client.mjs'
+      - 'website/player-app.mjs'
+      - 'website/private-player-app.html'
+      - 'website/dev-scripts/invited-overlay.mjs'
+      - 'supabase/migrations/20261111093000_section9_berlin_realtime_clock.sql'
+      - 'tests/test_berlin_world_clock.mjs'
       - 'server/section9-aircraft-operations-worker.mjs'
       - 'server/section9-independent-flight-operation-authorizer.mjs'
       - 'server/section9-aircraft-operations-job-handler.mjs'
@@ -49,6 +56,7 @@ jobs:
           node --check server/section9-clock-job-handler.mjs
           node --check server/section9-scheduled-game-day-producer.mjs
           node --check server/section9-verified-game-clock-ingress.mjs
+          node --check website/world-time-client.mjs
           node --check server/section9-aircraft-operations-worker.mjs
           node --check server/section9-independent-flight-operation-authorizer.mjs
           node --check server/section9-aircraft-operations-job-handler.mjs
@@ -57,6 +65,6 @@ jobs:
           node --check server/section9-verified-flight-fuel-bridge.mjs
       - name: Verify five flight phases and trusted movement decisions (no real movements)
         run: |
-          node --test tests/test_section9_flight_phase_timeline.mjs tests/test_section9_independent_operation_authorizer.mjs tests/test_section9_independent_operation_evidence_reader.mjs tests/test_section9_fuel_arrival_bridge.mjs tests/test_section9_full_flight_dry_run.mjs tests/test_section9_private_operations_job_handler.mjs tests/test_section9_scheduled_game_day_producer.mjs tests/test_section9_verified_game_clock_ingress.mjs tests/test_section9_aircraft_operations_worker.mjs tests/test_section9_verified_flight_operations_dispatcher.mjs tests/test_section9_operated_flight_movement_ingress.mjs
+          node --test tests/test_berlin_world_clock.mjs tests/test_section9_flight_phase_timeline.mjs tests/test_section9_independent_operation_authorizer.mjs tests/test_section9_independent_operation_evidence_reader.mjs tests/test_section9_fuel_arrival_bridge.mjs tests/test_section9_full_flight_dry_run.mjs tests/test_section9_private_operations_job_handler.mjs tests/test_section9_scheduled_game_day_producer.mjs tests/test_section9_verified_game_clock_ingress.mjs tests/test_section9_aircraft_operations_worker.mjs tests/test_section9_verified_flight_operations_dispatcher.mjs tests/test_section9_operated_flight_movement_ingress.mjs
       - name: Protected website build
         run: cd website && npm run build
