@@ -138,7 +138,7 @@ test('settings and local hypothetical briefs remain separate from owner-scoped p
  assert.match(workspace,/id="schedule-aircraft-board"/);
  assert.match(workspace,/buildAirlineWeeklyBoard/);
  assert.match(workspace,/renderAirlineWeeklyBoard/);
- assert.match(workspace,/scheduleSnapshot\?\.plans/);
+ assert.doesNotMatch(workspace,/plans:scheduleSnapshot\?\.plans/);
  assert.match(workspace,/scheduleSnapshot\?\.drafts/);
  assert.match(workspace,/cabin-configuration-manager/);
  assert.match(workspace,/mro-directory/);
