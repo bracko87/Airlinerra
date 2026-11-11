@@ -6,6 +6,8 @@ on:
       - 'website/aircraft-weekly-schedule-board.mjs'
       - 'website/airline-workspace.mjs'
       - 'website/player-app.css'
+      - 'website/dev-scripts/invited-overlay.mjs'
+      - 'website/route-fee-preview.mjs'
       - 'tests/test_aircraft_weekly_schedule_board.mjs'
       - 'tests/test_server_flight_schedule_api.mjs'
       - '.github/workflows/airlinerra-flight-rotation-ui-ci.yml'
