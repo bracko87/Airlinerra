@@ -145,7 +145,7 @@ test('route planning has two steps, stacked airport lookup, real flag indicators
   'route-from-hub','route-to-hub','route-from-country-flag','route-to-country-flag',
   'route-from-search','route-to-search','route-from-airport','route-to-airport',
   'route-plan-preview','route-map-canvas','route-aircraft','route-flights',
-  'route-slot-check','route-traffic-rights','route-origin-demand','route-destination-demand',
+  'route-slot-check','route-rights-icons','route-origin-demand','route-destination-demand',
   'route-origin-restrictions','route-destination-restrictions','route-plan-save']){
   assert.ok(view.includes('id="'+id+'"'),id);
  }
