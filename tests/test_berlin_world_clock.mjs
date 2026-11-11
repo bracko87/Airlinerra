@@ -68,7 +68,22 @@ test('Server World 1 time is strictly read-only and private game operations rema
  assert.doesNotMatch(migration,/INSERT INTO airlinerra_game\.airline_ledger/i);
  assert.match(edge,/SELECT airlinerra_game\.section9_live_berlin_clock_v1/);
  assert.doesNotMatch(edge,/service_role|SERVICE_ROLE/i);
- assert.match(html,/id="top-game-time"/);
+ assert.match(html,/<footer class="footer">[^\n]*id="game-footer-time"/);
+ assert.doesNotMatch(html,/id="top-game-time"/);
+ assert.match(app,/getElementById\('game-footer-time'\)/);
  assert.match(app,/showRealBerlinGameTime\(\)/);
  assert.match(overlay,/'world-time-client\.mjs'/);
+});
+
+test('Game clock appears only as unboxed player footer text',async()=>{
+ const [footerScript,footerCss,gameCss,html]=await Promise.all([
+  '../website/studio-footer.js','../website/studio-footer.css',
+  '../website/player-app.css','../website/private-player-app.html'
+ ].map(path=>readFile(new URL(path,import.meta.url),'utf8')));
+ assert.match(footerScript,/const gameFooterTime=footer\.querySelector/);
+ assert.match(footerScript,/staticBottomNote\.replaceWith\(gameFooterTime\)/);
+ assert.match(footerCss,/footer\.studio-footer #game-footer-time/);
+ assert.match(footerCss,/background:transparent;border:0;box-shadow:none/);
+ assert.doesNotMatch(gameCss,/\.header-game-time/);
+ assert.doesNotMatch(html.split('<footer')[0],/game-footer-time/);
 });
