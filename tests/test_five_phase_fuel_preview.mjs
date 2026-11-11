@@ -136,13 +136,13 @@ test('airport price is a category-balanced game assumption, never supplier or fu
  assert.ok(BENCHMARK_SPOT.usdPerKg>1);
  assert.equal(Object.keys(AIRPORT_TIER_FACTORS).length,6);
 });
-test('route fuel uses owner airport profile tier and shows peer provenance without claiming actual charges',async()=>{
+test('route fuel uses owner airport price estimate but hides raw internal model provenance',async()=>{
  const code=await read('website/route-planner.mjs');
  assert.match(code,/previewAirportFuelPrice\(originProfile,\{fuelFamily:aircraft.fuelFamily\}\)/);
- assert.match(code,/fuelRateStatus/);
- assert.match(code,/fuelPeerModel/);
- assert.match(code,/No confirmed fuel grade, airport delivered price/);
  assert.match(code,/priceUsdPerKg:price\.usdPerKg/);
+ assert.match(code,/Planning estimate using a neutral 50% load/);
+ assert.doesNotMatch(code,/fuelPeerModel\?\s*\(/);
+ assert.match(code,/No booking or fuel payment has occurred/);
 });
 
 test('unverified engine and piston AVGAS never receive a kerosene game price',()=>{
