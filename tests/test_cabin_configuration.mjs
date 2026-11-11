@@ -267,7 +267,7 @@ test('A319 named templates require full 3–3 / 3–3 / 2–2 / 1–1 rows',()=>
 
 test('model designs are owner verified, named and saved independently of installed aircraft',async()=>{
  const req={action:'cabin-save-model-design',airlineId:airline,configurationId:16,
-  name:'A319 Comfort 156',economy:132,premium:12,business:4,first:2,
+  name:'A319 Comfort 156',economy:120,premium:12,business:4,first:2,
   economyType:'eco_standard',premiumType:'premium_standard',
   businessType:'business_standard',firstType:'first_standard',extraLegroomCm:0};
  assert.equal(validateFleetAcquisitionRequest(req),true);
