@@ -217,13 +217,14 @@ const pages=Object.freeze({
      '<button type="button" class="secondary" id="schedule-refresh">Refresh timetable</button>'+
      button('routes','Create a route')+'</div>'+
    '</div>'+
-   '<div class="schedule-board-legend" aria-label="Schedule status legend">'+
-    '<span><i class="schedule-board-legend-marker" aria-hidden="true"></i> Draft departure — no booked time</span>'+
-    '<span><i class="schedule-board-legend-band" aria-hidden="true"></i> Verified airport-slot flight window</span>'+
-    '</div>'+
    '<p id="schedule-status" role="status" class="hint">Loading the verified airline fleet and routes…</p>'+
    '<div id="schedule-aircraft-board" class="schedule-aircraft-board" aria-label="Airline aircraft 24-hour daily flight timetable"></div>'+
-   small('Time bars match verified flight duration only. Planning departures without duration are markers, not aircraft bookings. Real flight activation and turnaround clearance are still separate.'),
+   '<div class="schedule-board-legend" aria-label="Flight schedule legend">'+
+    '<span><i class="schedule-board-legend-marker" aria-hidden="true"></i> Departure only: flying time not yet known</span>'+
+    '<span><i class="schedule-board-legend-planned" aria-hidden="true"></i> Estimated flight + turnaround: planning, not reserved</span>'+
+    '<span><i class="schedule-board-legend-band" aria-hidden="true"></i> Verified airport-slot flight window; turnaround may still be estimated</span>'+
+    '</div>'+
+   small('Estimated available-from times are based on recorded or calculated flight duration plus saved turnaround minutes. These planning windows do not activate flights, reserve aircraft time, or prove operational clearance.'),
    'AIRCRAFT × ONE DAY × 24 HOURS'),
  'finances':()=>card('Financial position',
    '<div class="workspace-kpis"><div><span>Available cash</span><strong id="finance-live-cash">-</strong></div>'+
@@ -579,8 +580,8 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
     String(board.rows.reduce((n,row)=>n+row.days[selectedDate.weekday].events.length,0))+
     ' departures on '+selectedDate.label+' · '+
     String(board.rows.reduce((n,row)=>n+row.days[selectedDate.weekday].bands
-     .filter(b=>!b.continues).length,0))+
-    ' verified flight windows that day.'+
+     .filter(b=>!b.continues&&b.kind==='slot-held').length,0))+
+    ' verified airport-slot flight windows that day.'+
     (scheduleReadError?' Some server routes could not be loaded; this timetable is incomplete.':'');
   }
  }
@@ -651,6 +652,8 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
      minutes<25||minutes>72*60)return null;
     return {flightNumber:route.number,aircraftInventoryId:route.aircraftId,
      originAirportKey:route.from,destinationAirportKey:route.to,minutes,
+     originAirportCode:/^[A-Z0-9]{3,5}$/.test(origin.code||'')?origin.code:null,
+     destinationAirportCode:/^[A-Z0-9]{3,5}$/.test(destination.code||'')?destination.code:null,
      source:'aircraft_five_phase_estimate'};
    }));
    estimates.push(...batch.filter(Boolean));
