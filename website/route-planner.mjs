@@ -323,9 +323,7 @@ export const routeWeekdays=schedule=>{
 /** Brief game flags in the route planner; a simple 'No' never cancels precise rules. */
 export function airportRouteRestrictionSummary(profile){
  if(!profile)return 'Data pending';
- const runways=Array.isArray(profile.runways)?profile.runways.filter(
-  r=>Number.isFinite(r?.lengthM)&&r.lengthM>0).map(r=>r.lengthM):[];
- const longest=runways.length?Math.max(...runways).toLocaleString('en-US')+' m runway':'Runway unverified';
+ const longest=routeLongestRunwayLabel(profile);
  const ops=profile.operations||{},simple=ops.simpleNightNoise||{};
  const flag=value=>typeof value==='boolean'?(value?'Yes':'No'):'Not loaded';
  const nightWindow=typeof simple.nighttimeWindow==='string'&&simple.nighttimeWindow.trim()?
@@ -339,8 +337,6 @@ export function airportRouteRestrictionSummary(profile){
    (chapters.length?' (permitted Chapters '+chapters.join(', ')+')':
     ' (Chapters not specified)'):'');
  const extra=[];
- if(['AIRLINESIM_NOT_FOUND','GAME_DEFAULT_NOT_CHECKED'].includes(simple.sourceStatus))
-  extra.push('Game default, not source-verified');
  const research=ops.restrictionResearch||{};
  if(Number(research.enforcedTimeRules||0)+Number(research.enforcedRunwayRules||0)>0)
   extra.push('Other mandatory airport rules recorded');
