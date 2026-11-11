@@ -1,0 +1,37 @@
+name: Airlinerra rolling schedule and route layout (isolated)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'website/aircraft-weekly-schedule-board.mjs'
+      - 'website/airline-workspace.mjs'
+      - 'website/airline-operations-center.mjs'
+      - 'website/rolling-flight-calendar.mjs'
+      - 'website/route-planner.mjs'
+      - 'website/player-app.css'
+      - 'website/dev-scripts/invited-overlay.mjs'
+      - 'tests/test_rolling_flight_calendar.mjs'
+      - 'tests/test_aircraft_weekly_schedule_board.mjs'
+      - 'tests/test_five_phase_fuel_preview.mjs'
+      - '.github/workflows/airlinerra-schedule-route-layout-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rolling-schedule:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify date logic, routing and schedule layout
+        run: node --test tests/test_rolling_flight_calendar.mjs tests/test_aircraft_weekly_schedule_board.mjs
+      - name: Verify user-facing flight and fuel preview
+        run: node --test tests/test_five_phase_fuel_preview.mjs
+      - name: Build protected invitation-only website
+        run: cd website && npm run build
