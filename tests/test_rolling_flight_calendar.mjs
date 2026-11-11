@@ -74,5 +74,5 @@ test('route map shows general, origin and destination data before Step 2',async(
  assert.match(src,/estimatedDurationSource:'five_phase_game_estimate'/);
  assert.match(css,/route-demand-bar\.is-filled/);
  assert.match(css,/route-right-icon.is-approved/);
- assert.match(src,/Full estimated operating cost: Not available/);
+ assert.match(src,/NOT the complete flight cost/);
 });
