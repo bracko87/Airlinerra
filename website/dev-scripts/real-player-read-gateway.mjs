@@ -51,6 +51,8 @@ export function allowedLocalOwnerRead(pathname,payload){
  // planning-draft save. The deployed Edge function revalidates everything.
  // Slot reservations, normal schedule writes and commercial operations
  // remain forbidden through localhost.
+ if(pathname===SCHEDULE_READ_PATH&&payload.action==='fee-preview')
+  return validateFlightSchedulePayload(payload);
  if(pathname===SCHEDULE_READ_PATH&&payload.action==='plan-save')
   return validateFlightSchedulePayload(payload);
  if(pathname===SCHEDULE_READ_PATH&&payload.action==='slot-check'){
