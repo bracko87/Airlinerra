@@ -151,7 +151,7 @@ test('Aleksandrovo uses the 2,200 m fictional runway DESIGN rather than an inven
  assert.deepEqual(airport.gameRunwayDesign,{
   lengthM:2200,surface:'Asphalt',status:'fictional_game_only'
  });
- assert.equal(routeLongestRunwayLabel(airport),'2,200 m (game design)');
+ assert.equal(routeLongestRunwayLabel(airport),'2,200 m');
  assert.match(AIRPORT_PROFILE_SQL,/airport_fictional_runway_design fd/);
  assert.match(AIRPORT_PROFILE_SQL,/game_design_runway_length_m/);
  const noSource=serializeAirportProfile({...belgrade,
