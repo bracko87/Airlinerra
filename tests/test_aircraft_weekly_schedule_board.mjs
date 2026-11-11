@@ -74,8 +74,9 @@ test('only schedules with independently verified slot reservations show an occup
  assert.equal(fri.bands[0].start,735);
  assert.equal(fri.bands[0].end,825);
  assert.equal(wed.events[0].status,'schedule-unverified');
- assert.equal(wed.bands.length,0);
- assert.equal(rows.counts.held,2);
+ assert.equal(wed.bands.length,1,'unreserved draft with a duration gets a provisional visual window');
+ assert.equal(wed.bands[0].kind,'planned-rotation');
+ assert.equal(rows.counts.held,2,'only two reserved occurrences count as held');
 });
 test('cross-midnight slot-held flight time continues on next day, including Sunday into Monday',()=>{
  const result=buildAirlineWeeklyBoard({fleet,drafts:[
