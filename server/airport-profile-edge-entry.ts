@@ -3,7 +3,7 @@
  * production airline-office logic. No writes, public Data API tables, or account records.
  */
 import {Pool} from 'npm:pg@8.16.3';
-import {AIRPORT_PROFILE_SQL,serializeAirportProfile,validAirportKey} from './airport-profile-service.mjs';
+import {AIRPORT_PROFILE_SQL,GROUP2_AIRPORT_PROFILE_SQL,serializeAirportProfile,validAirportKey} from './airport-profile-service.mjs';
 import {createHostedAuthVerifier} from './hosted-auth-verifier.mjs';
 import {AIRLINERRA_INVITED_TESTER_PUBLIC_SETTINGS as settings} from '../website/invited-tester-public-settings.mjs';
 const AUTH_ORIGIN='https://airlinerra.com';
@@ -23,7 +23,13 @@ async function queryProfile(key){
  try{
   const result=await client.query(AIRPORT_PROFILE_SQL,[key]);
   if(!Array.isArray(result.rows)||result.rows.length>1)throw Error('Invalid airport record');
-  return result.rows[0]||null;
+  if(result.rows.length===1)return {row:result.rows[0],group2:false};
+  // Group 2 is published in the airport directory but is not yet admitted
+  // for commercial flying. This read-only fallback must NOT grant access.
+  const prepared=await client.query(GROUP2_AIRPORT_PROFILE_SQL,[key]);
+  if(!Array.isArray(prepared.rows)||prepared.rows.length>1)
+   throw Error('Invalid prepared airport record');
+  return prepared.rows.length===1?{row:prepared.rows[0],group2:true}:null;
  }finally{client.release();}
 }
 Deno.serve(async request=>{
@@ -46,7 +52,10 @@ Deno.serve(async request=>{
  if(verified?.error||!verified?.user?.id)return respond(401,{error:'Verified session required'});
  try{
   const row=await queryProfile(body.airportKey);
-  if(!row)return respond(404,{error:'Airport is not in approved World 1'});
-  return respond(200,{airport:serializeAirportProfile(row)});
+  if(!row)return respond(404,{error:'Airport is not available in World 1'});
+  const airport=serializeAirportProfile(row.row);
+  return respond(200,{airport:row.group2?
+   {...airport,sourceGroup:'GROUP_2',locationSelectable:true,
+    bookable:false,commercialAccess:false,canActivateFlights:false}:airport});
  }catch{return respond(503,{error:'Airport profile temporarily unavailable'});}
 });
