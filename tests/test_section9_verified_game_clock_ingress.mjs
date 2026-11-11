@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHmac} from 'node:crypto';
+import {readFile} from 'node:fs/promises';
 import {
  createSection9VerifiedGameClockIngress,SECTION9_CLOCK_SQL
 } from '../server/section9-verified-game-clock-ingress.mjs';
@@ -160,4 +161,15 @@ test('Supabase Edge can initialize clock ingress without global Buffer',()=>{
   });
   assert.equal(typeof ingress.acceptScheduledEngineTick,'function');
  }finally{globalThis.Buffer=original;}
+});
+
+test('successful SQL tick receipts include engine event ID for worker confirmation',async()=>{
+ const migration=await readFile(new URL(
+  '../supabase/migrations/20261111082500_section9_clock_tick_success_receipt_event_id.sql',
+  import.meta.url),'utf8');
+ assert.match(migration,/CREATE OR REPLACE FUNCTION airlinerra_game\.section9_accept_verified_game_tick_v1/);
+ assert.match(migration,/'status','verified_tick_accepted'/);
+ assert.match(migration,/'engineEventId',p_engine_event_id/);
+ assert.match(migration,/'clockAdvanced',true/);
+ assert.match(migration,/'payrollPosted',false,'bookingsCreated',false/);
 });
