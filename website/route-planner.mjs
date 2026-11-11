@@ -161,7 +161,7 @@ export function routePlannerMarkup(){
   '<p id="route-plan-status" class="hint" role="status" aria-live="polite"></p>'+
   '<div id="route-plan-review" class="workspace-detail"></div>')+
  section('FLIGHT COSTS','Estimated operating costs per flight',
-  '<p class="hint">Planning estimates only. No flight charges are made here. The full total remains unavailable until all required cost rates can be verified.</p>'+
+  '<p class="hint">Estimated game rates only. When no verified origin stand exists, a terminal stand (cargo stand for cargo aircraft) is used for pricing only; it is not reserved. Passenger/cargo quantities are unknown. No airline charges are made.</p>'+
   '<div id="route-cost-breakdown" class="route-cost-breakdown" aria-live="polite"></div>')+
  section('OPERATIONAL SCHEDULE CHECKS','Schedules with verified airport slot reservations',
   '<p class="hint">Planning routes saved to your airline appear in My Routes. This separate section shows schedules that have passed the airport slot checks. These are not active flights.</p>'+
@@ -406,7 +406,10 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
   const parkingMinutes=Number($('route-turnaround')?.value);
   // The origin stand may follow a previous flight. Never invent its position
   // or imply that an unsaved route has a verified stand reservation.
-  const departureStand=owned?departureStandFromTimeline(selectedAircraftTimeline()):null;
+  const actualDepartureStand=owned?
+   departureStandFromTimeline(selectedAircraftTimeline()):null;
+  const departureStand=actualDepartureStand||
+   (arrivalStand==='cargo'?'cargo':'terminal');
   const scheduler=data?.scheduler;
   const valid=data?.connected&&data?.airline?.id&&from?.key&&to?.key&&
    from.key!==to.key&&owned&&['terminal','remote','cargo'].includes(departureStand)&&
