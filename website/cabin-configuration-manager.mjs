@@ -9,11 +9,87 @@ const CLASSES=[
  {key:'first',label:'First Class',defaultCode:'first_standard',color:'#a06bb8'}
 ];
 export const cabinClasses=Object.freeze(CLASSES.map(c=>Object.freeze({...c})));
-export function standardCabinPlan(seats){
+/** Fictional display brands and model numbers for the Airlinerra game.
+ * Stored seat_code values are stable internal identifiers and remain unchanged.
+ * Do not surface real-world commercial product labels or links in this UI.
+ */
+export const CABIN_SEAT_GAME_NAMES=Object.freeze({
+ "eco_standard": "Aervio E100",
+ "eco_safran_z85": "Veloran E110",
+ "eco_recaro_r1": "Nuvella E120",
+ "eco_recaro_r2": "Nuvella E130",
+ "eco_extra": "Aervio E140",
+ "eco_safran_z200": "Veloran E150",
+ "eco_recaro_r3": "Nuvella E160",
+ "eco_comfort": "Aervio E170",
+ "eco_safran_z300": "Veloran E180",
+ "eco_safran_z400": "Veloran E190",
+ "premium_standard": "Aervio P100",
+ "premium_recaro_pl3530": "Nuvella P120",
+ "premium_recliner": "Aervio P130",
+ "premium_zim_zp450": "Orvessa P140",
+ "premium_safran_z535i": "Veloran P150",
+ "premium_recaro_r4": "Nuvella P160",
+ "premium_collins_miq": "Selyra P170",
+ "premium_safran_airgo": "Veloran P180",
+ "premium_zim_zp610": "Orvessa P190",
+ "premium_geven_comoda": "Aeressa P200",
+ "business_standard": "Aervio B100",
+ "business_safran_z600": "Veloran B110",
+ "business_recaro_r5": "Nuvella B120",
+ "business_collins_miq": "Selyra B130",
+ "business_flat": "Aervio B140",
+ "business_suite": "Aervio B150",
+ "business_collins_diamond": "Selyra B160",
+ "business_recaro_r7": "Nuvella B170",
+ "business_zim_luxury": "Orvessa B180",
+ "business_safran_fusio": "Veloran B190",
+ "first_standard": "Aervio F100",
+ "first_suite": "Aervio F120",
+ "first_private": "Aervio F130",
+ "first_emirates_a380": "Orvessa F140",
+ "first_ana_square": "Selyra F150",
+ "first_ana_suite": "Selyra F160",
+ "first_emirates_777": "Orvessa F170",
+ "first_singapore_a380": "Aeressa F180",
+ "first_lufthansa_allegris": "Nuvella F190",
+ "first_airfrance_premiere": "Veloran F200"
+});
+export function cabinSeatDisplayName(seat){
+ return CABIN_SEAT_GAME_NAMES[seat?.code]||
+  (typeof seat?.code==='string'&&/^[a-z][a-z0-9_]*$/u.test(seat.code)?
+   'Aervio '+seat.code.replace(/[^a-z0-9]/gu,'').slice(-10).toUpperCase():'Aervio seat');
+}
+const numericSeatPrice=seat=>{
+ const raw=Number(seat?.installUsd);
+ return Number.isSafeInteger(raw)&&raw>=0?raw:null;
+};
+export function cheapestCabinSeat(seatTypes,cabinClass,codeFallback){
+ const available=(seatTypes||[]).filter(s=>s?.cabinClass===cabinClass&&
+  numericSeatPrice(s)!==null).sort((a,b)=>
+  numericSeatPrice(a)-numericSeatPrice(b)||String(a.code).localeCompare(String(b.code)));
+ return available[0]?.code||codeFallback;
+}
+const seatValueBounds=(catalog,key)=>{
+ const prices=(catalog||[]).filter(s=>s.cabinClass===key).map(numericSeatPrice)
+  .filter(v=>v!==null);
+ return {min:prices.length?Math.min(...prices):0,max:prices.length?Math.max(...prices):0};
+}
+export function seatQualityBonus(seat,seatTypes){
+ const cost=numericSeatPrice(seat),range=seatValueBounds(seatTypes,seat?.cabinClass);
+ if(cost===null||range.max<=range.min)return 0;
+ // Pricing is the game's seat-tier proxy, not a manufacturer's actual rating.
+ // Maximum incremental impact of moving from cheapest to most expensive: +6/100.
+ return Math.round(60*Math.max(0,Math.min(1,
+  (cost-range.min)/(range.max-range.min))))/10;
+}
+export function standardCabinPlan(seats,seatTypes=[]){
  const count=Math.max(0,Math.min(850,Math.floor(Number(seats)||0)));
  return {economy:count,premium:0,business:0,first:0,
-  economyType:'eco_standard',premiumType:'premium_standard',
-  businessType:'business_standard',firstType:'first_standard',extraLegroomCm:0};
+  economyType:cheapestCabinSeat(seatTypes,'economy','eco_standard'),
+  premiumType:cheapestCabinSeat(seatTypes,'premium','premium_standard'),
+  businessType:cheapestCabinSeat(seatTypes,'business','business_standard'),
+  firstType:cheapestCabinSeat(seatTypes,'first','first_standard'),extraLegroomCm:0};
 }
 const ROUND2=n=>Math.round(n*100)/100;
 const cabinRatingBase=Object.freeze({economy:49,premium:61,business:72,first:80});
@@ -41,10 +117,12 @@ export function evaluateCabinPlan(plan,seatTypes,referenceUnits){
   const space=n*perSeat;
   used+=space;equipment+=n*seatCost;count+=n;
   const quality= Math.max(15,Math.min(96,
-   cabinRatingBase[c.key]+(seatSpace-1)*3+extraCm*1.35));
+   cabinRatingBase[c.key]+(seatSpace-1)*3+extraCm*1.35+
+   seatQualityBonus(type,seatTypes)));
   scoreSum+=n*quality;
   classes.push({key:c.key,label:c.label,color:c.color,seats:n,code,
-   pitch:pitch+extraCm/2.54,space,perSeat,style:type.label});
+   pitch:pitch+extraCm/2.54,space,perSeat,style:cabinSeatDisplayName(type),
+   unitPriceUsd:seatCost});
  }
  const rating=count>0?Math.round(scoreSum/count):0;
  const base={count,used:ROUND2(used),available:cap,
@@ -202,23 +280,26 @@ function appendRow(doc,table,c,typeList,plan,onEdit){
  const label=create(doc,'strong','',c.label);
  const select=create(doc,'select');
  select.setAttribute('aria-label',c.label+' seat style');
- for(const seat of typeList.filter(s=>s.cabinClass===c.key)){
+ const options=typeList.filter(s=>s.cabinClass===c.key).sort((a,b)=>
+  (numericSeatPrice(a)??Infinity)-(numericSeatPrice(b)??Infinity)||
+   String(a.code).localeCompare(String(b.code)));
+ for(const seat of options){
   const option=doc.createElement('option');option.value=seat.code;
-  option.textContent=seat.label+' · '+seat.pitchInches+'″ pitch · '+
-   seat.widthInches+'″ wide · '+seat.spaceUnits+'× space';
+  option.textContent=cabinSeatDisplayName(seat);
+  option.title=seat.pitchInches+'″ pitch · '+seat.widthInches+'″ wide';
   select.append(option);
  }
  const styleField=create(doc,'div','cabin-seat-reference');
- const sourceLink=create(doc,'a','cabin-seat-source','Seat product source');
- sourceLink.target='_blank';sourceLink.rel='noopener noreferrer';
- const updateSource=()=>{
-  const seat=typeList.find(s=>s.code===select.value);
-  sourceLink.hidden=!(seat?.realProduct&&/^https:\/\//u.test(seat?.sourceUrl||''));
-  if(!sourceLink.hidden)sourceLink.href=seat.sourceUrl;
-  else sourceLink.removeAttribute('href');
+ const unitPrice=create(doc,'strong','cabin-seat-price','—');
+ const updatePrice=()=>{
+  const seat=options.find(s=>s.code===select.value);
+  unitPrice.textContent=seat&&numericSeatPrice(seat)!==null?
+   currency(numericSeatPrice(seat)):'—';
  };
- select.value=plan[c.key+'Type'];styleField.append(select,sourceLink);updateSource();
- select.addEventListener('change',()=>{plan[c.key+'Type']=select.value;updateSource();onEdit()});
+ select.value=plan[c.key+'Type'];styleField.append(select);updatePrice();
+ select.addEventListener('change',()=>{
+  plan[c.key+'Type']=select.value;updatePrice();onEdit();
+ });
  const input=create(doc,'input');input.type='number';input.min='0';input.max='850';input.step='1';
  input.value=String(plan[c.key]);input.setAttribute('aria-label',c.label+' seat count');
  input.addEventListener('input',()=>{
@@ -226,8 +307,8 @@ function appendRow(doc,table,c,typeList,plan,onEdit){
   plan[c.key]=Number.isInteger(n)&&n>=0&&n<=850?n:-1;onEdit();
  });
  const indicator=create(doc,'span','cabin-designer-unit','—');
- row.append(label,styleField,input,indicator);table.append(row);
- return {indicator,input,select};
+ row.append(label,styleField,input,indicator,unitPrice);table.append(row);
+ return {indicator,input,select,unitPrice};
 }
 /** Model-design passenger appeal is a game estimate, not real passenger feedback. */
 export function passengerRatingView(evaluation){
@@ -325,7 +406,7 @@ export function createCabinConfigurationManager({doc,host,factoryHost,onDirector
     economyType:a.draftEconomyType,premiumType:a.draftPremiumType,
     businessType:a.draftBusinessType,firstType:a.draftFirstType,
     extraLegroomCm:Number(a.draftExtraLegroomCm||0)};
-  return standardCabinPlan(a.standardEconomy);
+  return standardCabinPlan(a.standardEconomy,loaded?.seatTypes);
  }
  function renderFactory(){
   if(!factoryHost)return;
@@ -334,14 +415,14 @@ export function createCabinConfigurationManager({doc,host,factoryHost,onDirector
   if(factory.useType==='cargo'){factoryHost.textContent='Cargo aircraft: passenger cabin customization is not applicable.';return}
   if(!loaded?.seatTypes?.length){factoryHost.textContent='Loading seat catalog…';return}
   if(factoryConfigurationId!==factory.configurationId||!factoryPlan){
-   factoryConfigurationId=factory.configurationId;factoryPlan=standardCabinPlan(factory.referenceSeats);
+   factoryConfigurationId=factory.configurationId;factoryPlan=standardCabinPlan(factory.referenceSeats,loaded.seatTypes);
   }
   factoryHost.replaceChildren();
   factoryHost.append(create(doc,'h4','','Factory passenger cabin'));
   factoryHost.append(create(doc,'p','hint','Standard Economy seats are included. Customize a layout below to preview space. A nonstandard factory interior is not attached to an order yet.'));
   const main=create(doc,'div','cabin-designer-grid'),controls=create(doc,'div','cabin-designer-controls');
   const header=create(doc,'div','cabin-designer-row cabin-designer-head');
-  ['Class','Seat style','Seats','Space %'].forEach(x=>header.append(create(doc,'span','',x)));
+  ['Class','Seat style','Seats','Space %','Price / seat'].forEach(x=>header.append(create(doc,'span','',x)));
   controls.append(header);
   factoryRows=[];
   for(const c of CLASSES)factoryRows.push(appendRow(doc,controls,c,loaded.seatTypes,factoryPlan,updateFactory));
@@ -351,7 +432,7 @@ export function createCabinConfigurationManager({doc,host,factoryHost,onDirector
   factoryCost=create(doc,'p','cabin-designer-status','');
   const standard=create(doc,'button','secondary cabin-compact-action','Use standard layout');
   standard.type='button';standard.addEventListener('click',()=>{
-   factoryPlan=standardCabinPlan(factory.referenceSeats);renderFactory();
+   factoryPlan=standardCabinPlan(factory.referenceSeats,loaded.seatTypes);renderFactory();
   });
   controls.append(factoryUsage,factoryComfort,factoryCost,standard);
   const visual=create(doc,'div','cabin-designer-visual');
@@ -365,7 +446,7 @@ export function createCabinConfigurationManager({doc,host,factoryHost,onDirector
   const geometry=modelGeometry(f.configurationId);
   const evaluation=evaluateCabinPlan(factoryPlan,loaded.seatTypes,f.referenceSeats);
   const standard=factoryPlan.economy===Number(f.referenceSeats)&&
-   factoryPlan.economyType==='eco_standard'&&
+   factoryPlan.economyType===cheapestCabinSeat(loaded?.seatTypes,'economy','eco_standard')&&
    factoryPlan.premium===0&&factoryPlan.business===0&&factoryPlan.first===0&&
    factoryPlan.extraLegroomCm===0;
   factoryUsage.textContent=evaluation.valid?
@@ -400,7 +481,7 @@ export function createCabinConfigurationManager({doc,host,factoryHost,onDirector
   if(!loaded||!factoryPlan)return {standard:false,valid:false,reason:'Cabin preview not yet loaded'};
   const val=evaluateCabinPlan(factoryPlan,loaded.seatTypes,f.referenceSeats);
   return {...val,standard:val.valid&&factoryPlan.economy===Number(f.referenceSeats)&&
-   factoryPlan.economyType==='eco_standard'&&
+   factoryPlan.economyType===cheapestCabinSeat(loaded?.seatTypes,'economy','eco_standard')&&
    factoryPlan.premium===0&&factoryPlan.business===0&&factoryPlan.first===0&&
    factoryPlan.extraLegroomCm===0};
  }
@@ -464,15 +545,15 @@ export function createCabinConfigurationManager({doc,host,factoryHost,onDirector
   savedSelect.addEventListener('change',()=>{
    selectedDesignId=savedSelect.value;
    const existing=designs.find(d=>d.designId===selectedDesignId);
-   plan=existing?designPlan(existing):standardCabinPlan(Number(aircraft.standardEconomy));
+   plan=existing?designPlan(existing):standardCabinPlan(Number(aircraft.standardEconomy),loaded.seatTypes);
    designName=existing?.name||'';render();
   });
   savedLabel.append(savedSelect);host.append(savedLabel);
-  if(!plan)plan=standardCabinPlan(Number(aircraft.standardEconomy));
+  if(!plan)plan=standardCabinPlan(Number(aircraft.standardEconomy),loaded.seatTypes);
   const grid=create(doc,'div','cabin-designer-grid');
   const controls=create(doc,'div','cabin-designer-controls');
   const head=create(doc,'div','cabin-designer-row cabin-designer-head');
-  ['Class','Seat style','Seats','Space %'].forEach(x=>head.append(create(doc,'span','',x)));
+  ['Class','Seat style','Seats','Space %','Price / seat'].forEach(x=>head.append(create(doc,'span','',x)));
   controls.append(head);renderedRows=[];
   for(const c of CLASSES){
    const row=appendRow(doc,controls,c,loaded.seatTypes,plan,updateLayout);
@@ -497,7 +578,7 @@ export function createCabinConfigurationManager({doc,host,factoryHost,onDirector
   const actions=create(doc,'div','cabin-designer-actions');
   const standard=create(doc,'button','secondary cabin-compact-action','Use standard');
   standard.type='button';standard.addEventListener('click',()=>{
-   plan=standardCabinPlan(Number(aircraft.standardEconomy));render();
+   plan=standardCabinPlan(Number(aircraft.standardEconomy),loaded.seatTypes);render();
   });
   const nameField=create(doc,'label','cabin-model-name','Configuration name');
   const nameInput=create(doc,'input');nameInput.type='text';nameInput.maxLength=80;
