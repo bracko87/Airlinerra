@@ -124,7 +124,7 @@ export function routePlannerMarkup(){
   weekTable()+
   '<details class="route-inline-restrictions route-operation-checks"><summary>Advanced airport schedule checks</summary>'+
    '<p id="route-preflight-status" class="hint" role="status" aria-live="polite">Automatic runway, curfew and noise checks are pending.</p>'+
-   '<p class="hint">Use exact UTC example times for extra operational screening. These do not book a flight.</p>'+
+   '<p class="hint">Airport restrictions are checked automatically using selected weekly departure times. Exact UTC example times add optional screening; neither step books a flight.</p>'+
    '<div class="route-step2-top">'+
    routeSetupField('route-preflight-departure-utc','Example departure (UTC)', '<input id="route-preflight-departure-utc" type="datetime-local" step="60">')+
    routeSetupField('route-preflight-arrival-utc','Example arrival (UTC)', '<input id="route-preflight-arrival-utc" type="datetime-local" step="60">')+
