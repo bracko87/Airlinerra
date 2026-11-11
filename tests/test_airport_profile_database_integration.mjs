@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {AIRPORT_PROFILE_SQL,AIRPORT_PROFILE_PATH,serializeAirportProfile,validAirportKey,passengerTrafficGroup,cargoTrafficGroup} from '../server/airport-profile-service.mjs';
+import {AIRPORT_PROFILE_SQL,GROUP2_AIRPORT_PROFILE_SQL,AIRPORT_PROFILE_PATH,serializeAirportProfile,validAirportKey,passengerTrafficGroup,cargoTrafficGroup} from '../server/airport-profile-service.mjs';
 import {createPlayerReadHandler,PLAYER_READ_PATHS} from '../server/player-read-service.mjs';
 import {routeLongestRunwayLabel} from '../website/route-planner.mjs';
 const source=path=>readFile(new URL(path,import.meta.url),'utf8');
@@ -169,4 +169,37 @@ test('route cards omit the neutral default note but keep honest restriction stat
  assert.doesNotMatch(sourceCode,/gameDefault\?'Not source-verified'/);
  assert.match(sourceCode,/routeAirportGameRules\(profile\)/);
  assert.match(sourceCode,/routeLongestRunwayLabel\(profile\)/);
+});
+
+test('hosted airport profile supports Group 2 prepared data without approving commercial flights',async()=>{
+ const edge=await source('../server/airport-profile-edge-entry.ts');
+ assert.match(edge,/GROUP2_AIRPORT_PROFILE_SQL/);
+ assert.match(edge,/client\.query\(GROUP2_AIRPORT_PROFILE_SQL,\[key\]\)/);
+ assert.match(edge,/group2:true/);
+ assert.match(edge,/commercialAccess:false,canActivateFlights:false/);
+ assert.match(GROUP2_AIRPORT_PROFILE_SQL,/airport_sections1_8_combined_catalog_v1/);
+ assert.match(GROUP2_AIRPORT_PROFILE_SQL,/commercial_access_scope='GROUP2_PREPARED_NOT_ADMITTED'/);
+ assert.match(GROUP2_AIRPORT_PROFILE_SQL,/game_daily_outbound_passengers AS daily_outbound_passengers/);
+ assert.match(GROUP2_AIRPORT_PROFILE_SQL,/game_daily_outbound_cargo_tonnes AS daily_outbound_cargo_tonnes/);
+ for(const [key,code,runway,passengers,cargo] of [
+  ['OURAIRPORTS:31795','LAKU',2197.9,120,0],
+  ['OURAIRPORTS:5071','OAJL',2213.5,0,0.056],
+  ['OURAIRPORTS:2935','FNBG',1620,77,0]
+ ]){
+  const profile=serializeAirportProfile({
+   airport_key:key,airport_name:'Group 2 airport',
+   airport_code:code,country_iso:code==='FNBG'?'AO':code==='OAJL'?'AF':'AL',
+   provisional_category:'Regional',
+   simple_game_nighttime_ban:false,simple_game_noise_restrictions:false,
+   daily_outbound_passengers:passengers,daily_outbound_cargo_tonnes:cargo,
+   runways:[{name:'Game runway reference',lengthM:runway,
+    surface:null,verification:'game_estimate',operationalStatus:'planning_only'}]
+  });
+  assert.equal(profile.code,code);
+  assert.equal(profile.runways[0].lengthM,runway);
+  assert.equal(profile.demand.passengerGroup,1);
+  assert.equal(profile.demand.cargoGroup,1);
+  assert.equal(profile.operations.simpleNightNoise.nighttimeBan,false);
+  assert.equal(profile.operations.simpleNightNoise.noiseRestrictions,false);
+ }
 });
