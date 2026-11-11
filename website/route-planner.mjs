@@ -307,7 +307,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    ['Trip fuel',fuel?.estimatedBurnCostUsd??null,
     fuel?.tripFuelKg&&price?.usdPerKg?
      Math.round(fuel.tripFuelKg).toLocaleString('en-US')+' kg × modelled $'+
-     price.usdPerKg.toFixed(3)+'/kg':'Fuel price or aircraft data pending'],
+     price.usdPerKg.toFixed(3)+'/kg · neutral 50% load assumption':'Fuel price or aircraft data pending'],
    ['Origin airport departure / handling',null,'Airport handling tariff not connected'],
    ['Destination landing / handling',null,'Airport fee and stand tariff not connected'],
    ['Air navigation and en-route fees',null,'Route and airspace charges not verified'],
