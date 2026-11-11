@@ -50,7 +50,7 @@ export function flightScheduleTooltip(event,band=null){
   'Turnaround '+(ground===null?'unknown':ground+' min')+' | '+
   'Total flight + turnaround '+(timing?.totalMinutes===null||!timing?
    'unknown':timing.totalMinutes+' min')+' | '+
-  'Estimated available from '+available+' UTC;
+  'Estimated available from '+available+' UTC';
 }
 const validDuration=(a,b)=>{
  if(!a||!b)return null;
