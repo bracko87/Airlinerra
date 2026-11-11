@@ -94,3 +94,21 @@ test('Aircraft Profile swaps columns, moves seats/cargo to lower specs, and neve
  assert.match(bundle,/'aircraft-configuration-options\.mjs'/);
  assert.match(bundle,/'aircraft-configuration-dialog\.mjs'/);
 });
+
+test('a named A319 model design is reusable from the matching aircraft profile',()=>{
+ const named={designId:uuid(88),configurationId:16,name:'A319 Business Light',
+  economy:132,premium:0,business:8,first:0,
+  economyType:'eco_standard',premiumType:'premium_standard',
+  businessType:'business_standard',firstType:'first_standard',
+  extraLegroomCm:'0'};
+ const target={...base,configurationId:16};
+ const other={...differentModel,configurationId:32};
+ const overview={...source([target,other]),modelDesigns:[named]};
+ const x=companyCabinChoices(overview,target.aircraftInventoryId);
+ assert.deepEqual(x.choices.map(x=>x.label),['Default','A319 Business Light']);
+ assert.equal(x.choices[1].source,'Saved named model configuration');
+ assert.equal(x.choices[1].available,true);
+ assert.equal(x.choices[1].quote.count,140);
+ const wrong=companyCabinChoices(overview,other.aircraftInventoryId);
+ assert.deepEqual(wrong.choices.map(x=>x.label),['Default']);
+});
