@@ -115,7 +115,8 @@ test('manager route page is coded and bundled, with valid map and no invented op
  assert.doesNotMatch(office,/id="office-find"/);
  assert.match(builder,/'route-planner.mjs'/);
  assert.match(builder,/'world-outlines.mjs'/);
- assert.match(readModel,/left join \(select world_number,airport_key,latitude_deg,longitude_deg from airlinerra\.airport_game_world1_catalog\) c on c\.airport_key=a\.airport_key/);
+ assert.match(readModel,/left join lateral \\(select latitude_deg,longitude_deg from airlinerra_game\\.airport_sections1_8_combined_catalog_v1 c/);
+ assert.match(readModel,/c\\.world_id=1 and c\\.airport_key=a\\.airport_key limit 1/);
  assert.match(css,/route-planner-grid/);
  assert.doesNotMatch(view,/298 km|0h 47m|3,400 m|slot capacity.*high/i);
 });
