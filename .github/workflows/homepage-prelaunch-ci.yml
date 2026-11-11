@@ -4,6 +4,9 @@ on:
     branches: [main]
     paths:
       - 'website/index.html'
+      - 'website/studio-footer.js'
+      - 'website/studio-footer.css'
+      - 'tests/test_financial_charts_and_studio_footer.mjs'
       - 'website/styles.css'
       - 'website/register.html'
       - 'website/real-registration.mjs'
@@ -23,6 +26,8 @@ jobs:
           node-version: '22'
       - name: Verify public registration stays closed and existing sign-in remains linked
         run: node --test tests/test_homepage_account_entries.mjs tests/test_registration_access.mjs
+      - name: Verify shared footer excludes duplicate current-time line
+        run: node --test tests/test_financial_charts_and_studio_footer.mjs
       - name: Build protected Airlinerra website
         run: cd website && npm run build
       - name: Validate complete player bundle imports
