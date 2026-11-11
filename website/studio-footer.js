@@ -1,20 +1,8 @@
 /** Shared site-wide Airlinerra / Next Quest Studio footer.
- * No network calls, cookies or account data are required. The clock represents
- * real civil time in Germany, matching the real-time Airlinerra world clock.
+ * No network calls, cookies or account data are required.
  */
 (function initStudioFooter(){
  'use strict';
- function updateClock(){
-  const label=document.querySelector('[data-berlin-clock]');
-  if(!label)return;
-  const now=new Date();
-  const formatter=new Intl.DateTimeFormat('en-GB',{
-   timeZone:'Europe/Berlin',year:'numeric',month:'short',day:'2-digit',
-   weekday:'short',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'
-  });
-  label.textContent=formatter.format(now)+' (Germany / Game time)';
-  label.dateTime=now.toISOString();
- }
  function mount(){
   const footer=document.querySelector('footer');
   if(!footer || footer.dataset.studioFooter==='ready')return;
@@ -31,7 +19,6 @@
         <div class="studio-footer-column studio-footer-brand">
           <a class="studio-footer-studio" href="https://nextqueststudio.net/" target="_blank" rel="noopener noreferrer">Next Quest Studio</a>
           <span>Independent simulation and management games.</span>
-          <p class="studio-footer-time"><span class="studio-footer-clock-dot" aria-hidden="true"></span> Current time: <time data-berlin-clock>Germany / Game time</time></p>
         </div>
         <nav class="studio-footer-column" aria-label="Airlinerra pages">
           <strong>Airlinerra</strong>
@@ -64,8 +51,6 @@
   }
   const year=footer.querySelector('[data-studio-year]');
   if(year)year.textContent=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Berlin',year:'numeric'}).format(new Date());
-  updateClock();
-  window.setInterval(updateClock,1000);
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});
  else mount();
