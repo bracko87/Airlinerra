@@ -365,7 +365,11 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    halfFuelKgPer100Km:aircraft.halfFuelKgPer100Km,
    fullFuelKgPer100Km:aircraft.fullFuelKgPer100Km,
    fuelTankCapacityKg:aircraft.fuelTankCapacityKg,payloadFraction:payload,
-   priceUsdPerKg:price.usdPerKg
+   priceUsdPerKg:price.usdPerKg,
+   originAirportCategory:originProfile?.category||null,
+   destinationAirportCategory:airportProfiles.to?.key===to.key?
+    airportProfiles.to.category:null,
+   originAirportKey:from.key,destinationAirportKey:to.key
   });
   if(fuel.status!=='PLANNING_ESTIMATE'){
    setSummary('Fuel profile incomplete; no reliable estimate for this model.');return;
@@ -380,7 +384,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
   const grid=doc.createElement('div');grid.className='route-fuel-phase-grid';
   for(const phase of fuel.phases){
    const line=doc.createElement('div');line.className='route-fuel-phase-row';
-   for(const value of [phase.label,phase.minutes.toFixed(1)+' min',kg(phase.fuelKg)]){
+   for(const value of [phase.label,Math.round(phase.minutes)+' min',kg(phase.fuelKg)]){
     const span=doc.createElement('span');span.textContent=value;line.append(span);
    }
    grid.append(line);
