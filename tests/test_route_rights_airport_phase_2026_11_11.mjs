@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {TRAFFIC_RIGHTS,candidateTrafficFreedoms,renderTrafficRightIndicators}
+import {TRAFFIC_RIGHTS,candidateTrafficFreedoms,renderTrafficRightIndicators,trafficRightDisplayState}
  from '../website/route-traffic-rights.mjs';
 import {TAXI_CATEGORY_MINUTES,estimateFlightPhaseTiming}
  from '../website/airport-flight-phase-timing.mjs';
@@ -27,7 +27,7 @@ test('nine freedoms are distinct and never equal a licence, slot or implied gran
  assert.deepEqual(candidateTrafficFreedoms({
   homeIso:null,originIso:'RS',destinationIso:'CZ'}),[]);
 });
-test('unverified rights remain amber, never orange or grant-ready',()=>{
+test('relevant rights remain unverified and no approval check is invented',()=>{
  const element=tag=>({tag,children:[],attributes:{},className:'',textContent:'',
   append(...els){this.children.push(...els)},
   replaceChildren(...els){this.children=els},
@@ -46,8 +46,8 @@ test('unverified rights remain amber, never orange or grant-ready',()=>{
  assert.ok(strip.children.every((x,i)=>x.title===TRAFFIC_RIGHTS[i].name),
   'hover label is only the name, not Freedom plus a number');
  assert.ok(strip.children.every(x=>!x.title.includes('Freedom')));
- assert.ok(strip.children.every(x=>x.attributes['aria-label'].includes('grant not verified')||
-  x.attributes['aria-label'].includes('Not identified')));
+ assert.ok(strip.children.every(x=>x.attributes['aria-label'].includes('permission not yet confirmed')||
+  x.attributes['aria-label'].includes('Not needed')));
  assert.equal(strip.children[2].textContent,'⇗');
  assert.equal(strip.children[2].title,'Outbound international');
 });
@@ -84,10 +84,13 @@ test('traffic-rights UI has plain colored icons and no below-icon instructions o
  assert.doesNotMatch(markup,/id="route-traffic-rights"|id="route-check-message"/);
  assert.doesNotMatch(markup,/class="route-rights-key"/);
  assert.doesNotMatch(ui,/Select both airports to assess possible rights|Choose two different airports\./);
- assert.match(css,/\.route-right-icon\.is-inapplicable,/);
  assert.match(css,/\.route-right-icon\.is-unverified,/);
+ assert.match(css,/\.route-right-icon\.is-route-blocked,/);
  assert.match(css,/width:25px;height:25px;min-width:25px/);
- assert.match(css,/border:1px solid #e0782d;border-radius:50%/);
+ assert.match(css,/border:1px solid #aab8c8;border-radius:50%/);
+ assert.match(css,/\.route-right-icon\.is-unverified::after\{content:'\?'/);
+ assert.match(css,/\.route-right-icon\.is-approved::after\{content:'✓'/);
+ assert.match(css,/\.route-right-icon\.is-route-blocked::after\{content:'✕'/);
 });
 test('taxi estimates depend on airport tier and are stable for identical route inputs',()=>{
  const local=estimateFlightPhaseTiming({
@@ -200,4 +203,48 @@ test('the player no longer sees origin warning, duplicate AIP footer or demand d
  assert.match(ui,/runwayAssessment\(aircraft\)/);
  assert.match(ui,/noiseCurfewCheck\(\{/);
  assert.match(ui,/gameHardBlocked===true/);
+});
+
+test('rights start grey and only applicable rights turn orange with unknown status',()=>{
+ const make=tag=>({tag,className:'',textContent:'',title:'',attributes:{},children:[],
+  append(...items){this.children.push(...items)},
+  replaceChildren(...items){this.children=[...items]},
+  setAttribute(k,v){this.attributes[k]=v}});
+ const doc={createElement:make},strip=make('div'),info=make('div');
+ renderTrafficRightIndicators(doc,strip,info);
+ assert.equal(strip.children.length,9);
+ assert.ok(strip.children.every(x=>x.className==='route-right-icon is-inapplicable'));
+ assert.ok(strip.children.every(x=>x.attributes['data-right-status']==='inapplicable'));
+ renderTrafficRightIndicators(doc,strip,info,{
+  homeIso:'RS',originIso:'RS',destinationIso:'AL'});
+ assert.equal(strip.children[2].className,'route-right-icon is-unverified');
+ assert.ok(strip.children.filter(x=>x.className==='route-right-icon is-unverified').length===1);
+ assert.ok(strip.children.every((x,i)=>x.title===TRAFFIC_RIGHTS[i].name));
+ assert.ok(strip.children.every(x=>x.className!=='route-right-icon is-approved'));
+});
+test('✓ and ✕ depend on proven decisions or real airport admission blocks',()=>{
+ const route={homeIso:'RS',originIso:'RS',destinationIso:'AL'};
+ assert.equal(trafficRightDisplayState(3,route),'unverified');
+ assert.equal(trafficRightDisplayState(4,route),'inapplicable');
+ assert.equal(trafficRightDisplayState(3,{...route,verifiedDecisions:[
+  {number:3,status:'granted'}]}),'unverified',
+  'unsupported approval is not sufficient');
+ assert.equal(trafficRightDisplayState(3,{...route,verifiedDecisions:[
+  {number:3,status:'granted',sourceVerified:true}]}),'approved');
+ assert.equal(trafficRightDisplayState(3,{...route,verifiedDecisions:[
+  {number:3,status:'denied',sourceVerified:true}]}),'denied');
+ assert.equal(trafficRightDisplayState(3,{...route,
+  routeBlockReason:'Group 2 airport not admitted for commercial flights'}),'route-blocked');
+ assert.equal(trafficRightDisplayState(4,{...route,
+  routeBlockReason:'Group 2 airport not admitted for commercial flights'}),'inapplicable');
+ const make=tag=>({tag,className:'',textContent:'',title:'',attributes:{},children:[],
+  append(...items){this.children.push(...items)},
+  replaceChildren(...items){this.children=[...items]},
+  setAttribute(k,v){this.attributes[k]=v}});
+ const doc={createElement:make},strip=make('div'),info=make('div');
+ renderTrafficRightIndicators(doc,strip,info,{...route,
+  routeBlockReason:'Group 2 airport not admitted for commercial flights'});
+ assert.equal(strip.children[2].className,'route-right-icon is-route-blocked');
+ assert.match(strip.children[2].attributes['aria-label'],/Route blocked/);
+ assert.match(strip.children[2].attributes['aria-label'],/Traffic-right permission has not been decided/);
 });
