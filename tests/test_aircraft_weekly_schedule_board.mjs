@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {buildAirlineWeeklyBoard,renderAirlineWeeklyBoard,WEEK_DAYS} from '../website/aircraft-weekly-schedule-board.mjs';
+import {buildAirlineWeeklyBoard,renderAirlineWeeklyBoard,plannedRotationTiming,flightScheduleTooltip,WEEK_DAYS} from '../website/aircraft-weekly-schedule-board.mjs';
 import {SCHEDULE_SQL} from '../server/flight-schedule-service.mjs';
 
 const A='a4547aef-e5a6-4362-8b2b-fbdf96d21907';
@@ -49,7 +49,10 @@ test('owner planning routes show departure time and number without falsely booki
  assert.equal(tue.events[0].sampleDurationMinutes,90);
  assert.equal(tue.events[0].durationMinutes,null);
  assert.equal(tue.events[0].status,'airline-plan');
- assert.deepEqual(tue.bands,[]);
+ assert.equal(tue.bands.length,1);
+ assert.equal(tue.bands[0].kind,'planned-rotation');
+ assert.equal(tue.bands[0].end-tue.bands[0].start,135,
+  '90-minute estimated flying plus 45-minute turnaround takes 135 planning minutes');
  assert.equal(result.counts.held,0);
 });
 test('only schedules with independently verified slot reservations show an occupied flight window',()=>{
@@ -62,9 +65,12 @@ test('only schedules with independently verified slot reservations show an occup
  assert.equal(mon.events.length,1,'server schedule wins over duplicate planning/local route');
  assert.equal(mon.events[0].status,'slot-held');
  assert.equal(mon.events[0].durationMinutes,90);
- assert.deepEqual(mon.bands,[{
-  start:540,end:630,flightNumber:'PA444',kind:'slot-held',sourceDay:0,continues:false
- }]);
+ assert.equal(mon.bands.length,1);
+ assert.equal(mon.bands[0].start,540);
+ assert.equal(mon.bands[0].end,630);
+ assert.equal(mon.bands[0].kind,'slot-held');
+ assert.equal(mon.bands[0].totalMinutes,null,
+  'airport reservation alone does not certify any turnaround time');
  assert.equal(fri.bands[0].start,735);
  assert.equal(fri.bands[0].end,825);
  assert.equal(wed.events[0].status,'schedule-unverified');
@@ -125,14 +131,16 @@ test('only selected weekday is rendered at full 24-hour width with aircraft rows
  assert.equal(lane.children.some(x=>x.className==='schedule-board-held-band'),false);
  assert.equal(lane.children[0].className,'schedule-board-time-marker');
  assert.equal(lane.children[0].style.left,'37.5%','09:00 appears 9/24 across one full-day grid');
- assert.match(lane.children[1].textContent,/PA444 · 09:00/);
+ assert.equal(lane.children[1].textContent,'PA444 · LYBE → LYAL');
+ assert.match(lane.children[1].title,/Departure 09:00 UTC/);
  assert.equal(mon.children.some(x=>x.className==='schedule-board-flights'),false,
   'large flight details cards must no longer appear below timeline');
  renderAirlineWeeklyBoard(doc,host,board,{day:1});
  const tueTable=host.children[0].children[0];
  assert.match(tueTable.children[0].children[0].children[1].children[0].textContent,/Tuesday/);
  const tueLane=tueTable.children[1].children[0].children[1].children[0].children[0];
- assert.match(tueLane.children[1].textContent,/PA444 · 16:30/);
+ assert.equal(tueLane.children[1].textContent,'PA444 · LYBE → LYAL');
+ assert.match(tueLane.children[1].title,/Departure 16:30 UTC/);
 });
 test('verified flight booking bar is exactly proportional to actual duration, not fixed-size card',()=>{
  const createElement=tag=>({
@@ -148,10 +156,12 @@ test('verified flight booking bar is exactly proportional to actual duration, no
  renderAirlineWeeklyBoard(doc,host,board,{day:0});
  const lane=host.children[0].children[0].children[1].children[0].children[1].children[0].children[0];
  const band=lane.children[0];
- assert.equal(band.className,'schedule-board-held-band');
+ assert.equal(band.className,'schedule-board-rotation-band is-slot-held');
  assert.equal(band.style.left,'37.5%');
  assert.equal(band.style.width,'6.25%','90 minutes must occupy exactly 90/1440 of daily timeline');
- assert.match(lane.children[1].textContent,/PA444 · 09:00 · 90 min/);
+ assert.equal(lane.children[1].textContent,'PA444');
+ assert.match(lane.children[1].title,/Flight 90 min/);
+ assert.match(lane.children[1].title,/Turnaround unknown/);
 });
 test('schedule page loads owner fleet and planning/schedule records, not fabricated hour-by-hour local departures',async()=>{
  const root=new URL('../website/',import.meta.url);
@@ -198,13 +208,17 @@ test('verified date label and estimated-only timeline are never presented as a b
  assert.equal(table.children[0].children[0].children[1].children[0].textContent,
   'Wednesday, 11 Nov 2026 · 24 hours (UTC)');
  const lane=table.children[1].children[0].children[1].children[0].children[0];
- const estimated=lane.children.find(x=>x.className==='schedule-board-estimated-band');
+ const estimated=lane.children.find(x=>x.className==='schedule-board-rotation-band is-planning');
  assert.ok(estimated);
- assert.equal(estimated.style.width,66/1440*100+'%');
- assert.ok(!lane.children.some(x=>x.className==='schedule-board-held-band'));
+ assert.equal(estimated.style.width,111/1440*100+'%',
+  '66 min estimated flight plus saved 45 min turnaround');
+ assert.ok(!lane.children.some(x=>x.className?.includes('is-slot-held')));
+ assert.ok(!lane.children.some(x=>x.className==='schedule-board-estimated-band'));
  const button=lane.children.find(x=>x.attributes?.['data-schedule-flight']==='PA445');
  assert.ok(button);
- assert.match(button.textContent,/66 min est/);
+ assert.equal(button.textContent,'PA445 · LYBE → LYAL');
+ assert.match(button.title,/Estimated available from 10:51 UTC/);
+ assert.match(button.title,/Planning only; time not reserved/);
  assert.equal(result.counts.held,0);
 });
 
@@ -219,6 +233,7 @@ test('existing server route gets a non-booked estimate only from exactly matchin
  assert.equal(result.rows[0].days[2].events[0].sampleDurationMinutes,66);
  assert.equal(result.rows[0].days[2].events[0].durationMinutes,null);
  assert.equal(result.counts.held,0);
+ assert.equal(result.rows[0].days[2].bands[0].kind,'planned-rotation');
  for(const wrong of [
   {...estimate,aircraftInventoryId:B},{...estimate,minutes:0},
   {...estimate,source:'caller_override'},
@@ -228,4 +243,67 @@ test('existing server route gets a non-booked estimate only from exactly matchin
    estimatedDurations:[wrong]});
   assert.equal(blocked.rows[0].days[2].events[0].sampleDurationMinutes,null);
  }
+});
+
+test('rotation scale reserves no server time: 60-minute flight plus 45-minute turnaround previews 105 minutes',()=>{
+ const computed=plannedRotationTiming(9*60,60,45);
+ assert.deepEqual(computed,{
+  flightMinutes:60,turnaroundMinutes:45,totalMinutes:105,
+  arrivalMinute:600,availableMinute:645,
+  arrivalDayOffset:0,availableDayOffset:0
+ });
+ const event={flightNumber:'PA444',fromCode:'LYBE',toCode:'LYAL',
+  time:'09:00',minute:540,durationMinutes:null,sampleDurationMinutes:60,
+  turnaroundMinutes:45,status:'airline-plan',timing:computed};
+ const tooltip=flightScheduleTooltip(event);
+ assert.match(tooltip,/PA444 · LYBE → LYAL/);
+ assert.match(tooltip,/Departure 09:00 UTC/);
+ assert.match(tooltip,/Estimated arrival 10:00 UTC/);
+ assert.match(tooltip,/Flight 60 min/);
+ assert.match(tooltip,/Turnaround 45 min/);
+ assert.match(tooltip,/Total planning window 105 min/);
+ assert.match(tooltip,/Estimated available from 10:45 UTC/);
+ assert.match(tooltip,/Planning only; time not reserved/);
+ const nextDay=plannedRotationTiming(23*60+30,60,45);
+ assert.equal(nextDay.availableMinute,75);
+ assert.equal(nextDay.availableDayOffset,1);
+ assert.match(flightScheduleTooltip({...event,time:'23:30',minute:1410,timing:nextDay}),
+  /Estimated available from 01:15 \(\+1 day\) UTC/);
+});
+
+test('schedule aircraft row includes nickname, without ownership/service clutter',()=>{
+ const make=tag=>({tagName:tag.toUpperCase(),className:'',textContent:'',style:{},
+  children:[],attributes:{},append(...items){this.children.push(...items)},
+  replaceChildren(...items){this.children=[...items]},
+  setAttribute(key,value){this.attributes[key]=value}});
+ const doc={createElement:make},host=make('main');
+ const board=buildAirlineWeeklyBoard({fleet:[{...fleet[0],nickname:'Belgrade Star'}]});
+ renderAirlineWeeklyBoard(doc,host,board,{day:0});
+ const label=host.children[0].children[0].children[1].children[0].children[0];
+ const identity=label.children[0];
+ assert.equal(identity.className,'schedule-board-aircraft-identity');
+ assert.equal(identity.children[0].textContent,'YU-PAN01');
+ assert.equal(identity.children[1].textContent,'Belgrade Star');
+ assert.equal(label.children[1].textContent,'Airbus A319-100');
+ assert.equal(label.children.length,2,'no owned/in_service status row');
+});
+
+test('known duration without turnaround never invents an available-from time',()=>{
+ const board=buildAirlineWeeklyBoard({fleet,drafts:[scheduled({slotsReserved:false,
+  referenceDepartureUtc:null,referenceArrivalUtc:null,
+  weeklySchedule:[{day:2,time:'09:00'}]})],estimatedDurations:[{
+  flightNumber:'PA444',aircraftInventoryId:A,
+  originAirportKey:'OURAIRPORTS:4610',
+  destinationAirportKey:'FICTIONAL:fictional:RS:LYAL',
+  originAirportCode:'LYBE',destinationAirportCode:'LYAL',
+  minutes:60,source:'aircraft_five_phase_estimate'
+ }]});
+ const event=board.rows[0].days[2].events[0];
+ assert.equal(event.fromCode,'LYBE');
+ assert.equal(event.toCode,'LYAL');
+ assert.equal(event.timing.totalMinutes,null);
+ assert.match(flightScheduleTooltip(event),/Estimated available from not verified/);
+ assert.equal(board.rows[0].days[2].bands[0].kind,'planned-rotation');
+ assert.equal(board.rows[0].days[2].bands[0].totalMinutes,null);
+ assert.equal(board.counts.held,0);
 });
