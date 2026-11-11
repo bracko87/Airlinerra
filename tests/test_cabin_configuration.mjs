@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {standardCabinPlan,evaluateCabinPlan,estimateCabinRefit,cabinClasses,cabinRowLayout,createCabinFloorplanModel,renderCabinFloorplan,validateCabinModelRows,
- passengerRatingView,createPassengerRatingGauge,updatePassengerRatingGauge}
+ passengerRatingView,createPassengerRatingGauge,updatePassengerRatingGauge,
+ cheapestCabinSeat,seatQualityBonus,cabinSeatDisplayName,CABIN_SEAT_GAME_NAMES,appendRow}
  from '../website/cabin-configuration-manager.mjs';
 import {FLEET_SQL,validateFleetAcquisitionRequest,createFleetAcquisitionHandler,
  FLEET_ACQUISITION_API_ROUTE} from '../server/fleet-acquisition-service.mjs';
@@ -344,4 +345,81 @@ test('model editor displays a concise usage summary and a read-only 0–100 pass
  assert.equal(gauge.value.textContent,'— / 100');
  assert.match(gauge.root.className,/cabin-rating-unavailable/);
  assert.match(gauge.track.attrs['aria-valuetext'],/unavailable/);
+});
+
+test('all forty catalog seats have original fictional game brands and preserve stable IDs',()=>{
+ assert.equal(Object.keys(CABIN_SEAT_GAME_NAMES).length,40);
+ assert.equal(new Set(Object.values(CABIN_SEAT_GAME_NAMES)).size,40,
+  'every seat type has a distinguishable fictional brand and model');
+ for(const [code,name] of Object.entries(CABIN_SEAT_GAME_NAMES)){
+  assert.ok(/^(Aervio|Veloran|Nuvella|Orvessa|Selyra|Aeressa) [EPBF][0-9]{3}$/.test(name),
+   'seat '+code+' has a game-specific product name');
+  assert.ok(!/Safran|Recaro|Collins|ZIM|ANA|Emirates|Lufthansa|Geven|Air France|Singapore/i.test(name));
+ }
+ assert.equal(cabinSeatDisplayName({code:'eco_safran_z300',label:'Safran Z300'}),'Veloran E180');
+ assert.equal(cabinSeatDisplayName({code:'eco_standard',label:'Standard economy'}),'Aervio E100');
+});
+test('factory and new model designs choose the least expensive available seat per class',()=>{
+ assert.equal(cheapestCabinSeat(seatTypes,'economy','eco_standard'),'eco_standard');
+ assert.deepEqual(standardCabinPlan(156,seatTypes),standardCabinPlan(156));
+ const changed=[...seatTypes,{
+  code:'eco_trial_cheap',cabinClass:'economy',installUsd:300,
+  spaceUnits:'1.00',pitchInches:'30',widthInches:'17.5'}];
+ const cheapest=standardCabinPlan(156,changed);
+ assert.equal(cheapest.economyType,'eco_trial_cheap');
+ assert.equal(cheapest.premiumType,'premium_standard');
+ assert.equal(cheapest.businessType,'business_standard');
+ assert.equal(cheapest.firstType,'first_standard');
+ assert.equal(evaluateCabinPlan(cheapest,changed,156).equipmentUsd,46800);
+ assert.equal(standardCabinPlan(156).economyType,'eco_standard',
+  'existing saved plans and fallback IDs stay compatible');
+});
+test('selecting a higher priced seat increases estimated quality slightly and increases seat costs',()=>{
+ const cat=[...seatTypes,{code:'eco_safran_z300',cabinClass:'economy',
+  spaceUnits:'1.12',installUsd:1050,pitchInches:'32',widthInches:'18.0'}];
+ const cheap=evaluateCabinPlan(standardCabinPlan(120,cat),cat,156);
+ const premium=evaluateCabinPlan({...standardCabinPlan(120,cat),
+  economyType:'eco_safran_z300'},cat,156);
+ assert.equal(cheap.valid,true);
+ assert.equal(premium.valid,true);
+ assert.ok(premium.equipmentUsd>cheap.equipmentUsd,'new seats change the total estimate');
+ assert.ok(premium.comfortRating>cheap.comfortRating,
+  'better tier makes passenger score visibly higher');
+ assert.ok(premium.comfortRating-cheap.comfortRating<=7,
+  'price upgrade provides a limited effect, not a huge bonus');
+ assert.equal(seatQualityBonus(cat[0],cat),0);
+ assert.equal(seatQualityBonus(cat[cat.length-1],cat),6);
+ assert.equal(premium.classes[0].style,'Veloran E180');
+ assert.equal(premium.classes[0].unitPriceUsd,1050);
+});
+test('cabin model and factory rows show seat price per unit and no product source links',async()=>{
+ const source=await readFile(new URL('../website/cabin-configuration-manager.mjs',import.meta.url),'utf8');
+ const css=await readFile(new URL('../website/player-app.css',import.meta.url),'utf8');
+ assert.doesNotMatch(source,/Seat product source|sourceLink/);
+ assert.match(source,/Price \/ seat/);
+ assert.match(css,/\.cabin-seat-price/);
+ const el=tag=>({tag,children:[],handlers:{},attrs:{},textContent:'',className:'',
+  append(...children){this.children.push(...children)},
+  setAttribute(k,v){this.attrs[k]=v},
+  addEventListener(k,fn){this.handlers[k]=fn}
+ });
+ const doc={createElement:el};
+ const host=el('div');
+ const plan=standardCabinPlan(120,seatTypes);
+ let updated=0;
+ const row=appendRow(doc,host,cabinClasses[0],seatTypes,plan,()=>updated++);
+ assert.equal(host.children.length,1);
+ assert.equal(host.children[0].children.length,5,'new price is last column');
+ assert.equal(row.unitPrice.textContent,'$450');
+ assert.equal(row.select.children[0].textContent,'Aervio E100');
+ assert.ok(row.select.children.every(o=>!o.textContent.includes('Standard economy')&&
+  !o.textContent.includes('Extra legroom economy')));
+ assert.ok(row.select.children.every(o=>!o.textContent.includes('Safran')));
+ assert.ok(row.select.children.every(o=>!o.textContent.includes('$')),
+  'pricing is in its own clear per-seat column, not hidden in seat labels');
+ row.select.value='eco_extra';
+ row.select.handlers.change();
+ assert.equal(row.unitPrice.textContent,'$700');
+ assert.equal(plan.economyType,'eco_extra');
+ assert.equal(updated,1);
 });
