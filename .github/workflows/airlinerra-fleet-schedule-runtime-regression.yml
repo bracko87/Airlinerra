@@ -1,0 +1,31 @@
+name: Airlinerra fleet and schedule runtime regression
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'website/airline-workspace.mjs'
+      - 'website/flight-fuel-phase-engine.mjs'
+      - 'website/aircraft-weekly-schedule-board.mjs'
+      - 'tests/test_airline_workspace.mjs'
+      - 'tests/test_aircraft_weekly_schedule_board.mjs'
+      - '.github/workflows/airlinerra-fleet-schedule-runtime-regression.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  fleet-schedule:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check aircraft workspace and fuel engine imports
+        run: |
+          node --check website/airline-workspace.mjs
+          node --check website/flight-fuel-phase-engine.mjs
+      - name: Test fleet details, booked-flights-only schedule, and render resilience
+        run: node --test tests/test_airline_workspace.mjs tests/test_aircraft_weekly_schedule_board.mjs
+      - name: Build invitation-only website
+        run: npm run build --prefix website
