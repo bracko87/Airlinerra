@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {AIRPORT_PROFILE_SQL,AIRPORT_PROFILE_PATH,serializeAirportProfile,validAirportKey,passengerTrafficGroup,cargoTrafficGroup} from '../server/airport-profile-service.mjs';
 import {createPlayerReadHandler,PLAYER_READ_PATHS} from '../server/player-read-service.mjs';
+import {routeLongestRunwayLabel} from '../website/route-planner.mjs';
 const source=path=>readFile(new URL(path,import.meta.url),'utf8');
 const belgrade={
  airport_key:'OURAIRPORTS:4610',airport_name:'Belgrade Nikola Tesla Airport',
@@ -136,4 +137,35 @@ test('nearby-airport read is bounded to approved nearby locations and excludes t
   key:'FICTIONAL:fictional:RS:LYAL',name:'Aleksandrovo Airport',
   distanceKm:94.3,iata:null,fictional:true
  }]);
+});
+
+test('Aleksandrovo uses the 2,200 m fictional runway DESIGN rather than an invented official inventory',()=>{
+ const airport=serializeAirportProfile({...belgrade,
+  airport_key:'FICTIONAL:fictional:RS:LYAL',
+  airport_name:'Aleksandrovo Airport',runways:null,
+  game_design_runway_length_m:'2200',
+  game_design_runway_surface:'Asphalt',
+  game_design_runway_status:'fictional_game_only'
+ });
+ assert.equal(airport.runways.length,0,'fictional design must not become an observed runway');
+ assert.deepEqual(airport.gameRunwayDesign,{
+  lengthM:2200,surface:'Asphalt',status:'fictional_game_only'
+ });
+ assert.equal(routeLongestRunwayLabel(airport),'2,200 m (game design)');
+ assert.match(AIRPORT_PROFILE_SQL,/airport_fictional_runway_design fd/);
+ assert.match(AIRPORT_PROFILE_SQL,/game_design_runway_length_m/);
+ const noSource=serializeAirportProfile({...belgrade,
+  airport_key:'FICTIONAL:fictional:RS:LYAL',runways:null,
+  game_design_runway_length_m:'2200',game_design_runway_status:'unverified'});
+ assert.equal(noSource.gameRunwayDesign,null);
+ assert.equal(routeLongestRunwayLabel(noSource),'Unverified');
+ assert.equal(routeLongestRunwayLabel(serializeAirportProfile(belgrade)),'3,500 m');
+ const noData=serializeAirportProfile({...belgrade,runways:[]});
+ assert.equal(routeLongestRunwayLabel(noData),'Unverified');
+});
+test('route cards omit the neutral default note but keep honest restriction statuses',async()=>{
+ const sourceCode=await source('../website/route-planner.mjs');
+ assert.doesNotMatch(sourceCode,/Neutral game assumption — not independently verified/);
+ assert.match(sourceCode,/gameDefault\?'Not source-verified'/);
+ assert.match(sourceCode,/routeLongestRunwayLabel\(profile\)/);
 });
