@@ -1,9 +1,9 @@
 /**
- * Seven-day aircraft rota for an airline's real owned/leased fleet.
- * All times are shown on the 00:00–24:00 UTC scale for each weekday.
- * Airport slots, estimated flight time, and aircraft turnaround are separate.
- * Estimated occupation windows are visual planning guidance, never a live
- * flight, confirmed refit, operational clearance, or server-side reservation.
+ * Seven-day booked-flight timetable for real owned/leased aircraft.
+ * Only server schedules with independently verified airport-slot reservations
+ * and reference duration are displayed. Unsaved local routes, unreserved
+ * planning drafts, estimated-flight overlays and departure-only markers
+ * must never appear as booked flights. This does not activate flights.
  */
 export const WEEK_DAYS=Object.freeze(['Mon','Tue','Wed','Thu','Fri','Sat','Sun']);
 const HHMM=/^(?:[01]\d|2[0-3]):[0-5]\d$/;
@@ -44,15 +44,13 @@ export function flightScheduleTooltip(event,band=null){
  const available=timing?.totalMinutes!==null&&timing?
   clockOnDay(timing.availableMinute,timing.availableDayOffset):'not verified';
  const ground=timing?.turnaroundMinutes??null;
- const status=event?.status==='slot-held'?'Airport slots reserved; not activated':
-  'Planning only; time not reserved';
  return flightNumber+code+' | Departure '+departure+' UTC | '+
   'Estimated arrival '+arrival+' UTC | '+
   'Flight '+(duration===null?'unknown':duration+' min')+' | '+
   'Turnaround '+(ground===null?'unknown':ground+' min')+' | '+
-  'Total planning window '+(timing?.totalMinutes===null||!timing?
+  'Total flight + turnaround '+(timing?.totalMinutes===null||!timing?
    'unknown':timing.totalMinutes+' min')+' | '+
-  'Estimated available from '+available+' UTC | '+status;
+  'Estimated available from '+available+' UTC;
 }
 const validDuration=(a,b)=>{
  if(!a||!b)return null;
@@ -68,18 +66,6 @@ const asAircraftId=route=>{
  if(typeof route?.aircraftId==='string'&&route.aircraftId.startsWith('owned:'))
   return route.aircraftId.slice(6);
  return null;
-};
-const statusOf=(flight,source)=>{
- if(source==='schedule'&&flight?.slotsReserved===true)return 'slot-held';
- if(source==='schedule')return 'schedule-unverified';
- if(source==='plan')return 'airline-plan';
- return 'local-plan';
-};
-const slotStatusLabel={
- 'slot-held':'Airport slots reserved · not activated',
- 'schedule-unverified':'Server schedule draft · slots unverified',
- 'airline-plan':'Airline planning route · no slots',
- 'local-plan':'Local planning draft · no slots'
 };
 /** Pure data model. Never creates a booking or assumes a route is airborne. */
 export function buildAirlineWeeklyBoard({fleet,serverFleet,plans=[],drafts=[],localRoutes=[],estimatedDurations=[]}={}){
@@ -97,31 +83,17 @@ export function buildAirlineWeeklyBoard({fleet,serverFleet,plans=[],drafts=[],lo
   flights:0
  }));
  const byAircraft=new Map(rows.map(row=>[row.id,row]));
- const calculatedEstimates=new Map((Array.isArray(estimatedDurations)?estimatedDurations:[])
-  .filter(x=>typeof x?.flightNumber==='string'&&
-   Number.isInteger(x.minutes)&&x.minutes>=25&&x.minutes<=72*60 &&
-   typeof x.aircraftInventoryId==='string'&&
-   typeof x.originAirportKey==='string'&&
-   typeof x.destinationAirportKey==='string'&&
-   x.source==='aircraft_five_phase_estimate')
-  .map(x=>[x.flightNumber,x]));
- const matchingPlans=[...(Array.isArray(plans)?plans:[]),
-  ...(Array.isArray(localRoutes)?localRoutes:[])];
- const seen=new Set();
- // A saved local route can carry an estimate from the owner's real aircraft
- // fuel model. It does NOT authorize a slot or prove actual flight duration.
- const estimatedLocal=new Map((Array.isArray(localRoutes)?localRoutes:[])
-  .filter(x=>typeof x?.flightNumber==='string' &&
-   Number.isInteger(x.estimatedDurationMinutes) &&
-   x.estimatedDurationMinutes>=25&&x.estimatedDurationMinutes<=72*60 &&
-   x.estimatedDurationSource==='five_phase_game_estimate')
-  .map(x=>[x.flightNumber,x]));
  const readFlight=(flight,source)=>{
+  // Slots must be independently confirmed by the owner-scoped server query.
+  // Never display plans, local routes or unreserved schedule drafts.
+  if(source!=='schedule'||flight?.slotsReserved!==true)return;
   const aircraftId=asAircraftId(flight),row=byAircraft.get(aircraftId);
   const flightNumber=String(flight?.flightNumber||'');
   if(!row||!/^[A-Z0-9]{2}[0-9]{1,4}$/.test(flightNumber))return;
-  const schedule=orderedStops(source==='schedule'?flight.weeklySchedule:flight.schedule);
-  if(!schedule.length)return;
+  const schedule=orderedStops(flight.weeklySchedule);
+  const verifiedDuration=validDuration(flight.referenceDepartureUtc,flight.referenceArrivalUtc);
+  // A departure-only marker cannot represent a booked flight window.
+  if(!schedule.length||verifiedDuration===null)return;
   // Server planning takes precedence over browser duplicates. A reserved
   // server schedule has priority over planning data with the same number.
   // Flight number belongs to the airline, not to a particular aircraft.
@@ -130,36 +102,13 @@ export function buildAirlineWeeklyBoard({fleet,serverFleet,plans=[],drafts=[],lo
   const key=flightNumber;
   if(seen.has(key))return;
   seen.add(key);
-  const status=statusOf(flight,source);
-  const verifiedDuration=source==='schedule'&&status==='slot-held'?
-   validDuration(flight.referenceDepartureUtc,flight.referenceArrivalUtc):null;
-  const sampleDuration=validDuration(
-   flight.referenceDepartureUtc,flight.referenceArrivalUtc);
-  const local=estimatedLocal.get(flightNumber);
-  const localEstimate=local&&asAircraftId(local)===aircraftId &&
-   (local.from?.key||local.originAirportKey)===(flight.from?.key||flight.originAirportKey) &&
-   (local.to?.key||local.destinationAirportKey)===(flight.to?.key||flight.destinationAirportKey)?
-    local.estimatedDurationMinutes:null;
-  const calculation=calculatedEstimates.get(flightNumber);
-  const ownerEstimate=calculation&&
-   calculation.aircraftInventoryId===aircraftId&&
-   calculation.originAirportKey===(flight.from?.key||flight.originAirportKey)&&
-   calculation.destinationAirportKey===(flight.to?.key||flight.destinationAirportKey)?
-    calculation.minutes:null;
-  const planningDuration=sampleDuration??localEstimate??ownerEstimate;
-  const companion=matchingPlans.find(p=>p.flightNumber===flightNumber&&sameRoute(p,flight));
+  const status='slot-held';
   const turnaroundMinutes=turnaroundValue(flight.operation?.turnaroundMinutes)??
-   turnaroundValue(flight.turnaroundMinutes)??
-   turnaroundValue(companion?.operation?.turnaroundMinutes)??
-   turnaroundValue(companion?.turnaroundMinutes);
+   turnaroundValue(flight.turnaroundMinutes);
   const fromCode=airportCode(flight?.from?.code)||
-   airportCode(flight?.originAirportCode)||
-   airportCode(companion?.from?.code)||
-   airportCode(ownerEstimate!==null?calculation?.originAirportCode:null);
+   airportCode(flight?.originAirportCode);
   const toCode=airportCode(flight?.to?.code)||
-   airportCode(flight?.destinationAirportCode)||
-   airportCode(companion?.to?.code)||
-   airportCode(ownerEstimate!==null?calculation?.destinationAirportCode:null);
+   airportCode(flight?.destinationAirportCode);
   const unique=new Set();
   for(const stop of schedule){
    const minute=clockToMinute(stop.time),eventKey=stop.day+'|'+minute;
@@ -168,49 +117,39 @@ export function buildAirlineWeeklyBoard({fleet,serverFleet,plans=[],drafts=[],lo
    const event={
     day:stop.day,minute,time:stop.time,flightNumber,
     from:fromCode||'',to:toCode||'',fromCode,toCode,
-    status,statusLabel:slotStatusLabel[status],
-    durationMinutes:verifiedDuration,
-    sampleDurationMinutes:planningDuration,
+    status,durationMinutes:verifiedDuration,
+    sampleDurationMinutes:verifiedDuration,
     turnaroundMinutes,
-    timing:plannedRotationTiming(minute,planningDuration,turnaroundMinutes)
+    timing:plannedRotationTiming(minute,verifiedDuration,turnaroundMinutes)
    };
    row.days[stop.day].events.push(event);
    row.flights++;
-   // Render the entire aircraft rotation (flight + turnaround), if both
-   // trusted route inputs exist. A planning band never books a slot.
-   const flightMinutes=verifiedDuration??planningDuration;
-   const hasFlight=Number.isInteger(flightMinutes)&&flightMinutes>0;
-   const total=hasFlight?flightMinutes+(turnaroundMinutes??0):0;
-   if(hasFlight){
-    let pos=minute,left=total,index=stop.day,elapsed=0;
-    while(left>0){
-     const length=Math.min(left,1440-pos);
-     row.days[index].bands.push({
-      start:pos,end:pos+length,flightNumber,
-      kind:verifiedDuration!==null?'slot-held':'planned-rotation',
-      sourceDay:stop.day,continues:index!==stop.day,
-      flightMinutes,turnaroundMinutes,totalMinutes:turnaroundMinutes===null?null:total,
-      elapsedMinutes:elapsed,
-      event
-     });
-     left-=length;elapsed+=length;index=(index+1)%7;pos=0;
-    }
+   // A single bar represents booked flight time only, not estimated
+   // turnaround or a non-reserved aircraft-availability forecast.
+   let pos=minute,left=verifiedDuration,index=stop.day;
+   while(left>0){
+    const length=Math.min(left,1440-pos);
+    row.days[index].bands.push({
+     start:pos,end:pos+length,flightNumber,
+     kind:'slot-held',sourceDay:stop.day,continues:index!==stop.day,
+     flightMinutes:verifiedDuration,turnaroundMinutes,
+     totalMinutes:verifiedDuration, event
+    });
+    left-=length;index=(index+1)%7;pos=0;
    }
   }
  };
- // Server-backed schedule wins when the same flight appears in multiple
- // sources. Never double-count a server-backed route and its browser copy.
+ // Only owner-scoped server records with verified slot reservations.
+ // Never merge plans or browser-local estimates into this timetable.
  for(const f of Array.isArray(drafts)?drafts:[])readFlight(f,'schedule');
- for(const f of Array.isArray(plans)?plans:[])readFlight(f,'plan');
- for(const f of Array.isArray(localRoutes)?localRoutes:[])readFlight(f,'local');
  for(const row of rows)for(const cell of row.days){
   cell.events.sort((a,b)=>a.minute-b.minute||a.flightNumber.localeCompare(b.flightNumber));
   cell.bands.sort((a,b)=>a.start-b.start);
   const events=cell.events;
   for(let i=1;i<events.length;i++)if(events[i-1].minute===events[i].minute)
-   cell.warnings.push('Multiple departures at '+events[i].time+'; aircraft rotation not verified.');
+   cell.warnings.push('Conflicting booked departures at '+events[i].time+'.');
   for(let i=1;i<cell.bands.length;i++)if(cell.bands[i-1].end>cell.bands[i].start)
-   cell.warnings.push('Overlapping flight/rotation planning windows; verify aircraft availability before activation.');
+   cell.warnings.push('Overlapping booked flight windows.');
  }
  const held=rows.flatMap(r=>r.days).reduce((n,c)=>n+c.bands.filter(b=>!b.continues&&b.kind==='slot-held').length,0);
  const flights=rows.reduce((n,r)=>n+r.flights,0);
@@ -230,10 +169,8 @@ const scaleTicks=Object.freeze(['00:00','03:00','06:00','09:00','12:00',
 const pct=minute=>100*minute/1440;
 const endClock=minute=>minute===1440?'24:00':minuteToClock(minute);
 /**
- * Display exactly ONE weekday, with all real company aircraft as rows.
- * Each lane keeps the entire 24-hour scale. A planned rotation is shown
- * only when its flight duration is grounded in route data; unknown duration
- * remains a departure-only label, without invented availability.
+ * Display ONE selected day, with a single booked-flight bar per departure.
+ * No draft, projection, legend or departure-only marker is rendered.
  */
 export function renderAirlineWeeklyBoard(doc,host,board,{day=0,dateLabel=null}={}){
  if(!host)return;
@@ -270,59 +207,34 @@ export function renderAirlineWeeklyBoard(doc,host,board,{day=0,dateLabel=null}={
   meta(doc,track,(dateLabel||fullWeekDays[selectedDay])+', 00:00–24:00 UTC for '+aircraft.registration);
   // Separate lanes prevent a pair of close departures from obscuring
   // each other. Every lane still covers exactly one 24-hour day.
-  const bands=cell.bands.map(b=>({
-   ...b,event:b.event||cell.events.find(e=>e.flightNumber===b.flightNumber)||null
+  const lanes=cell.bands.map(b=>({
+   band:b,event:b.event||cell.events.find(e=>e.flightNumber===b.flightNumber)||null
   }));
-  const renderedFlights=new Set(bands.map(b=>b.flightNumber));
-  const lanes=[...bands.map(b=>({band:b,event:b.event})),
-   ...cell.events.filter(e=>!renderedFlights.has(e.flightNumber)).
-    map(e=>({event:e,band:null}))];
   if(!lanes.length){
    const empty=add(doc,track,'div',null,'schedule-board-track-lane is-empty');
-   add(doc,empty,'span','No departures · aircraft availability not verified','schedule-board-no-departures');
+   add(doc,empty,'span','No booked flights','schedule-board-no-departures');
   }
   for(const {event,band} of lanes){
    const lane=add(doc,track,'div',null,'schedule-board-track-lane');
-   const flightNumber=event?.flightNumber||band?.flightNumber||'Flight';
-   const start=band?.start??event?.minute??0;
-   const slotHeld=band?.kind==='slot-held';
-   const planningBand=band?.kind==='planned-rotation';
-   const duration=event?.durationMinutes??event?.sampleDurationMinutes??null;
+   const flightNumber=event?.flightNumber||band.flightNumber;
    const tooltip=flightScheduleTooltip(event,band);
-   if(band){
-    const filled=add(doc,lane,'div',null,
-     'schedule-board-rotation-band'+(slotHeld?' is-slot-held':' is-planning'));
-    filled.style.left=pct(band.start)+'%';
-    filled.style.width=pct(band.end-band.start)+'%';
-    filled.title=tooltip;
-    meta(doc,filled,tooltip);
-    // A small inner strip depicts the actual flight component; the remainder
-    // is turnaround, not another flight or confirmed airport-slot allocation.
-    const flightPart=Math.max(0,Math.min(band.end-band.start,
-     band.flightMinutes-band.elapsedMinutes));
-    if(flightPart>0){
-     const segment=add(doc,filled,'span',null,'schedule-board-flight-segment');
-     segment.style.width=100*flightPart/(band.end-band.start)+'%';
-    }
-   }else{
-    const marker=add(doc,lane,'span',null,'schedule-board-time-marker');
-    marker.style.left=pct(start)+'%';
-    marker.title=tooltip;
-   }
+   const filled=add(doc,lane,'div',null,'schedule-board-rotation-band is-slot-held');
+   filled.style.left=pct(band.start)+'%';
+   filled.style.width=pct(band.end-band.start)+'%';
+   filled.title=tooltip;
+   meta(doc,filled,tooltip);
    const route=(event?.fromCode&&event?.toCode)?
     ' · '+event.fromCode+' → '+event.toCode:'';
-   const text=add(doc,lane,event?'button':'span',
-    flightNumber+route,
-    'schedule-board-inline-flight'+(slotHeld?' is-slot-held':' is-planning'));
+   const label=add(doc,lane,event?'button':'span',flightNumber+route,
+    'schedule-board-inline-flight is-slot-held');
    if(event){
-    text.type='button';
-    text.setAttribute('data-schedule-flight',flightNumber);
-    text.setAttribute('aria-label','Open '+flightNumber+route+' in My Routes. '+tooltip);
+    label.type='button';
+    label.setAttribute('data-schedule-flight',flightNumber);
+    label.setAttribute('aria-label','Open '+flightNumber+route+' in My Routes. '+tooltip);
    }
-   // Labels remain readable even when the time band is shorter than its text.
-   text.style.left=Math.min(pct(start),78)+'%';
-   text.title=tooltip;
-   meta(doc,text,tooltip);
+   label.style.left=Math.min(pct(band.start),78)+'%';
+   label.title=tooltip;
+   meta(doc,label,tooltip);
   }
   for(const warning of cell.warnings)
    add(doc,td,'p',warning,'schedule-board-warning');
