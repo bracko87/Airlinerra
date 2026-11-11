@@ -2,6 +2,8 @@ import {routePlannerMarkup,createRoutePlanner} from './route-planner.mjs';
 import {estimateFivePhaseFuel} from './flight-fuel-phase-engine.mjs';
 import {aircraftDisplayName} from './aircraft-library.mjs';
 import {buildAirlineWeeklyBoard,renderAirlineWeeklyBoard} from './aircraft-weekly-schedule-board.mjs';
+import {berlinSevenDayWindow} from './rolling-flight-calendar.mjs';
+import {WORLD_TIME_URL,verifyWorldTimeResponse} from './world-time-client.mjs';
 import {createCabinServiceManager} from './cabin-services-manager.mjs';
 import {createCabinConfigurationManager} from './cabin-configuration-manager.mjs';
 import {createAircraftConfigurationDialog} from './aircraft-configuration-dialog.mjs';
@@ -203,11 +205,11 @@ const pages=Object.freeze({
    button('fleet','Return to my fleet'),'MAINTENANCE NETWORK'),
  'routes':()=>routePlannerMarkup(),
  'schedule':()=>card('Aircraft daily flight schedule',
-   '<p class="hint">Choose one weekday. The full width shows that day only, from 00:00 to 24:00 UTC. Each row is a real aircraft owned or leased by your airline.</p>'+
+   '<p class="hint">Today and the following six calendar days (Berlin date). Choose a date to see the 00:00–24:00 UTC planning timeline for each company aircraft.</p>'+ 
    '<div class="schedule-board-toolbar">'+
-    '<div class="schedule-day-switch" role="group" aria-label="Choose timetable weekday">'+
+    '<div class="schedule-day-switch" role="group" aria-label="Choose a date in the next seven days">'+
      '<button type="button" class="secondary" id="schedule-day-prev" aria-label="Previous day">◀</button>'+
-     '<strong id="schedule-selected-day" aria-live="polite">Monday</strong>'+
+     '<strong id="schedule-selected-day" aria-live="polite">Loading Berlin date…</strong>'+ 
      '<button type="button" class="secondary" id="schedule-day-next" aria-label="Next day">▶</button>'+
     '</div>'+
     '<div class="workspace-actions schedule-board-actions">'+
@@ -374,8 +376,30 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
  let cabinManager=null;
  let cabinConfigurationManager=null;
  let aircraftConfigurationDialog=null;
- let scheduleSelectedDay=0;
- const scheduleDays=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+ let scheduleSelectedOffset=0;
+ let scheduleCalendar=[],scheduleDateLoading=false;
+ async function syncScheduleCalendar(){
+  if(scheduleDateLoading)return;
+  scheduleDateLoading=true;
+  try{
+   const fetcher=doc.defaultView?.fetch?.bind(doc.defaultView)||globalThis.fetch;
+   const response=await fetcher(WORLD_TIME_URL,{
+    method:'GET',headers:{Accept:'application/json'},cache:'no-store',
+    credentials:'omit',redirect:'error',referrerPolicy:'no-referrer'
+   });
+   if(!response?.ok)throw Error('Berlin game date unavailable');
+   const epoch=verifyWorldTimeResponse(await response.json());
+   if(epoch===null)throw Error('Invalid game date response');
+   const days=berlinSevenDayWindow(epoch);
+   if(days.length!==7)throw Error('Invalid calendar');
+   if(days[0].iso!==scheduleCalendar[0]?.iso)scheduleSelectedOffset=0;
+   scheduleCalendar=days;
+  }catch{
+   scheduleCalendar=[];scheduleSelectedOffset=0;
+  }finally{scheduleDateLoading=false;renderSchedule();}
+ }
+ // Recheck the trusted time source, including at the next Berlin midnight.
+ doc.defaultView?.setInterval?.(()=>{void syncScheduleCalendar();},60000);
  for(const [name,render] of Object.entries(pages)){
   const el=$('workspace-'+name);if(el)el.innerHTML=render();
  }
