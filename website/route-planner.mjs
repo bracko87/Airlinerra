@@ -66,7 +66,7 @@ export function routeLongestRunwayLabel(profile){
  if(typeof profile?.key==='string'&&profile.key.startsWith('FICTIONAL:')&&
   designed?.status==='fictional_game_only'&&
   Number.isFinite(designed.lengthM)&&designed.lengthM>0)
-  return Math.round(designed.lengthM).toLocaleString('en-US')+' m (game design)';
+  return Math.round(designed.lengthM).toLocaleString('en-US')+' m';
  return 'Unverified';
 }
 const routeAirportBlock=(side,title)=>
@@ -95,15 +95,12 @@ const routeCheckDetails =
     '<div id="route-rights-legend"></div>'+
     '<p>Domestic home-country flights have domestic operating requirements. Passenger and cargo grants may differ.</p>'+
    '</div></details></div>'+
-  '<span id="route-traffic-rights">Permission not verified</span>'+
-  '<div id="route-rights-icons" class="route-rights-icons" aria-label="Nine international aviation rights"></div>'+
-  '<p class="route-rights-key">Gray: not identified · Amber: potentially relevant but unverified · Orange: independently verified permission</p></div>'+
+  '<div id="route-rights-icons" class="route-rights-icons" aria-label="Nine international aviation rights"></div></div>'+
  '<div class="route-hidden-readouts" hidden aria-hidden="true">'+
   '<span id="route-status">Draft only</span>'+
   '<span id="route-weather-check"></span>'+
   '<span id="route-slot-check"></span>'+
- '</div>'+
- '<p id="route-check-message" class="route-check-message" role="status">Select airports to review the route.</p>';
+ '</div>';
 const aircraftPerformanceDetails=
  '<div hidden aria-hidden="true"><span id="route-aircraft-check"></span><span id="route-fuel-summary"></span><span id="route-rotation-check"></span></div>'+
  '<div class="route-flight-calculations">'+
@@ -1104,14 +1101,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    homeIso:homeLocation?.countryIso,
    originIso:from?.countryIso,destinationIso:to?.countryIso
   });
-  message('route-traffic-rights',from&&to?
-   'No independently verified game traffic-rights grant': 'Select both airports to assess possible rights');
   message('route-status',pairStatus==='SAME_AIRPORT'?'Restricted — same airport':'Draft only');
-  message('route-check-message',pairStatus==='SAME_AIRPORT'?
-   'BLOCKED — a flight cannot depart from and arrive at the same airport. Choose another destination.':
-   !validPair?'Choose two different airports.':
-   !validOrigin?'Draft only: origin is not a confirmed active hub. Only your main hub is currently verified.':
-   'Route geography available. Aircraft, crew, airport slots and traffic rights require verification before activation.');
   const keys=[from?.key||'',to?.key||''].join('|');
   if(keys!==lastKeys){lastKeys=keys;clearPreflight();void loadAirportDetails(from,to);}
   updateWeek();
