@@ -147,3 +147,17 @@ test('Database failure always releases private connection',async()=>{
   /SECTION9_GAME_CLOCK_SOURCE_DB_UNAVAILABLE/);
  assert.deepEqual(d.counts(),{opened:1,released:1});
 });
+
+test('Supabase Edge can initialize clock ingress without global Buffer',()=>{
+ // Supabase's Deno Edge runtime does not expose Node Buffer globally.
+ // The module must import it explicitly from node:buffer.
+ const original=globalThis.Buffer;
+ try{
+  globalThis.Buffer=undefined;
+  const ingress=createSection9VerifiedGameClockIngress({
+   database:{connect:async()=>{throw Error('should not connect')}},
+   gameEngineHmacSecret:SECRET
+  });
+  assert.equal(typeof ingress.acceptScheduledEngineTick,'function');
+ }finally{globalThis.Buffer=original;}
+});
