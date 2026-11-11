@@ -60,6 +60,7 @@ export function cabinSeatDisplayName(seat){
   (typeof seat?.code==='string'&&/^[a-z][a-z0-9_]*$/u.test(seat.code)?
    'Aervio '+seat.code.replace(/[^a-z0-9]/gu,'').slice(-10).toUpperCase():'Aervio seat');
 }
+const formatSeatUnitPrice=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n);
 const numericSeatPrice=seat=>{
  const raw=Number(seat?.installUsd);
  return Number.isSafeInteger(raw)&&raw>=0?raw:null;
@@ -294,7 +295,7 @@ function appendRow(doc,table,c,typeList,plan,onEdit){
  const updatePrice=()=>{
   const seat=options.find(s=>s.code===select.value);
   unitPrice.textContent=seat&&numericSeatPrice(seat)!==null?
-   currency(numericSeatPrice(seat)):'—';
+   formatSeatUnitPrice(numericSeatPrice(seat)):'—';
  };
  select.value=plan[c.key+'Type'];styleField.append(select);updatePrice();
  select.addEventListener('change',()=>{
