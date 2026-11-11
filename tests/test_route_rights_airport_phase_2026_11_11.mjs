@@ -83,9 +83,10 @@ test('traffic-rights UI has plain colored icons and no below-icon instructions o
  assert.doesNotMatch(markup,/id="route-traffic-rights"|id="route-check-message"/);
  assert.doesNotMatch(markup,/class="route-rights-key"/);
  assert.doesNotMatch(ui,/Select both airports to assess possible rights|Choose two different airports\./);
- assert.match(css,/\.route-right-icon\.is-unverified\{color:/);
- assert.match(css,/\.route-right-icon\.is-inapplicable\{color:/);
- assert.match(css,/padding:0;margin:0;border:0;border-radius:0/);
+ assert.match(css,/\.route-right-icon\.is-inapplicable,/);
+ assert.match(css,/\.route-right-icon\.is-unverified,/);
+ assert.match(css,/width:25px;height:25px;min-width:25px/);
+ assert.match(css,/border:1px solid #e0782d;border-radius:50%/);
 });
 test('taxi estimates depend on airport tier and are stable for identical route inputs',()=>{
  const local=estimateFlightPhaseTiming({
@@ -140,10 +141,10 @@ test('origin first, Belgrade AIP nuance, and no fake total or debug paragraphs',
  assert.ok(markup.indexOf('Estimated operating costs per flight')>
   markup.indexOf('Ticket prices and onboard services'));
  assert.doesNotMatch(markup,/route-aircraft-performance-grid/);
- assert.match(ui,/No general curfew · open 24 h/);
- assert.match(ui,/Published departure noise procedures/);
- assert.match(ui,/LYBE AD 2.3/);
- assert.match(ui,/return 'BEG'/);
+ assert.match(ui,/routeAirportGameRules\(profile\)/);
+ assert.match(ui,/routeAirportIcaoCode\(profile,selected/);
+ assert.doesNotMatch(ui,/Published departure noise procedures/);
+ assert.doesNotMatch(ui,/return 'BEG'/);
  assert.match(ui,/Math.round\(fuel.airborneMinutes\)/);
  assert.match(ui,/aircraft\?\.cruiseSpeedKmh/);
  assert.match(ui,/NOT the complete flight cost/);
