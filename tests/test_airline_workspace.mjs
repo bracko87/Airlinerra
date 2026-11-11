@@ -198,3 +198,15 @@ test('Manage account uses a full-width editable private profile with secure pass
  assert.match(app,/auth\.requestPasswordReset\(user\.email\)/);
  assert.match(css,/#player-main \.manager-account-panel\{width:100%;max-width:none\}/);
 });
+
+test('owned-aircraft details import the defined five-phase fuel estimator and cannot wipe the verified fleet',async()=>{
+ const workspace=await read('../website/airline-workspace.mjs');
+ const fuelEngine=await read('../website/flight-fuel-phase-engine.mjs');
+ assert.match(fuelEngine,/export function estimateFivePhaseFuel\(/);
+ assert.match(workspace,/import \{estimateFivePhaseFuel\} from '\.\/flight-fuel-phase-engine\.mjs';/);
+ assert.match(workspace,/const fuelReference=aircraft\?estimateFivePhaseFuel\(\{/);
+ assert.match(workspace,/try\{renderAircraftDetail\(\);\}\s*catch\{/);
+ assert.match(workspace,/try\{renderFactorySelectors\(\);updateNewOrderAvailability\(\);\}/);
+ assert.match(workspace,/if\(!result\|\|!Array\.isArray\(result\.fleet\)/,
+  'owner-scoped fleet responses are validated before rendering');
+});
