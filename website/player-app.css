@@ -12,6 +12,12 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{ou
 .top-label{font-size:10px;letter-spacing:.13em;font-weight:850;color:var(--navy);white-space:nowrap}
 .top-subtitle{font-size:12px;color:var(--muted);white-space:nowrap}
 .header-tools{display:flex;align-items:center;gap:13px;justify-content:flex-end;min-width:0}
+.header-game-time{font-size:12px;font-weight:750;color:var(--navy);
+ white-space:nowrap;font-variant-numeric:tabular-nums;
+ padding:7px 10px;border:1px solid #dce6f1;border-radius:7px;background:#f5f8fc}
+@media(max-width:820px){.app-header-inner{flex-wrap:wrap;gap:9px}
+ .header-world{padding-left:9px}.header-tools{flex-wrap:wrap}
+ .header-game-time{order:-1}}
 .header-tools #top-email{font-size:12px;color:#556b82;overflow-wrap:anywhere;max-width:280px}
 .header-tools button{white-space:nowrap;background:#fff;border:1px solid #cbd9e7;padding:10px 14px;border-radius:8px;color:var(--navy);font-weight:750}
 .header-tools button:hover{background:#f2f7fd}
