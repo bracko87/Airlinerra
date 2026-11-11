@@ -170,10 +170,13 @@ const scaleTicks=Object.freeze(['00:00','03:00','06:00','09:00','12:00',
 const pct=minute=>100*minute/1440;
 const endClock=minute=>minute===1440?'24:00':minuteToClock(minute);
 /**
- * Display ONE selected day, with a single booked-flight bar per departure.
- * No draft, projection, legend or departure-only marker is rendered.
+ * Display ONE selected day and keep the registered aircraft visible.
+ * Only verified booked departures create flight bars. Empty rows are not flights.
+ * If booking records were not received, show "unavailable", never "zero".
  */
-export function renderAirlineWeeklyBoard(doc,host,board,{day=0,dateLabel=null}={}){
+export function renderAirlineWeeklyBoard(doc,host,board,{
+ day=0,dateLabel=null,bookingsAvailable=true
+}={}){
  if(!host)return;
  host.replaceChildren();
  if(!board||board.status==='unavailable'){
@@ -185,12 +188,9 @@ export function renderAirlineWeeklyBoard(doc,host,board,{day=0,dateLabel=null}={
   return;
  }
  const selectedDay=Number.isInteger(day)&&day>=0&&day<7?day:0;
- const visibleRows=board.rows.filter(row=>row.days[selectedDay].bands.length>0);
- if(!visibleRows.length){
-  add(doc,host,'p','No booked flights on '+(dateLabel||fullWeekDays[selectedDay])+'.',
-   'schedule-board-empty');
-  return;
- }
+ // Show all verified owned/leased aircraft so missing bookings cannot hide
+ // a real airplane. Do not draw any unreserved route or fake departure.
+ const visibleRows=board.rows;
  const scroll=add(doc,host,'div',null,'schedule-board-scroll');
  const table=add(doc,scroll,'table',null,'schedule-board-table schedule-board-single-day');
  const head=add(doc,table,'thead'),heading=add(doc,head,'tr');
@@ -219,7 +219,9 @@ export function renderAirlineWeeklyBoard(doc,host,board,{day=0,dateLabel=null}={
   }));
   if(!lanes.length){
    const empty=add(doc,track,'div',null,'schedule-board-track-lane is-empty');
-   add(doc,empty,'span','No booked flights','schedule-board-no-departures');
+   add(doc,empty,'span',
+    bookingsAvailable?'No booked flights on this date':'Booking records unavailable',
+    'schedule-board-no-departures');
   }
   for(const {event,band} of lanes){
    const lane=add(doc,track,'div',null,'schedule-board-track-lane');
