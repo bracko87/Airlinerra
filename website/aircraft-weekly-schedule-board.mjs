@@ -243,7 +243,5 @@ export function renderAirlineWeeklyBoard(doc,host,board,{day=0,dateLabel=null}={
    label.title=tooltip;
    meta(doc,label,tooltip);
   }
-  for(const warning of cell.warnings)
-   add(doc,td,'p',warning,'schedule-board-warning');
  }
 }
