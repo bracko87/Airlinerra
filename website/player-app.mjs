@@ -17,6 +17,7 @@ import {createRealOnboardingClient} from './real-onboarding-client.mjs';
 import {createDownwardMenu} from './setup-choice-menu.mjs';
 import {installGameSelectMenus} from './game-select-menus.mjs';
 import {installGameTimePickers} from './game-time-pickers.mjs';
+import {startBerlinGameClock} from './world-time-client.mjs';
 
 import {createAirlineWorkspace} from './airline-workspace.mjs';
 import {createOperationsCenter} from './airline-operations-center.mjs';
@@ -37,6 +38,12 @@ const signOut=doc.getElementById('player-sign-out');
 let auth=null;
 let preview=false;
 let aircraftLibraryController=null;
+let worldGameClock=null;
+function showRealBerlinGameTime(){
+ const node=doc.getElementById('top-game-time');
+ if(!worldGameClock&&node)
+  worldGameClock=startBerlinGameClock({element:node,doc});
+}
 function enablePublicAircraftImageCache(){
  // Cache only public aircraft artwork; never Auth, game data, private pages or API responses.
  if(!window.isSecureContext||!('serviceWorker' in navigator))return;
@@ -1148,6 +1155,7 @@ async function initialize(){
       }
       doc.getElementById('local-preview-note').hidden=true;
       visible('app');
+      showRealBerlinGameTime();
       await loadPlayerReadData({local:true});
     }catch(error){
       // Do not send a signed-in manager back to the account page on every
@@ -1176,6 +1184,7 @@ async function initialize(){
       navigateTo('onboarding');
     }
     visible('app');
+    showRealBerlinGameTime();
     await loadPlayerReadData();
   }catch(err){
     if(err instanceof PrivateTesterAccessDenied){
