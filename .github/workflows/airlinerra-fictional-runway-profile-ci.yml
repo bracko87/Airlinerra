@@ -1,0 +1,29 @@
+name: Airlinerra runway profile display (isolated)
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'server/airport-profile-service.mjs'
+      - 'website/route-planner.mjs'
+      - 'tests/test_airport_profile_database_integration.mjs'
+      - '.github/workflows/airlinerra-fictional-runway-profile-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  runway-profile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check API and website syntax
+        run: |
+          node --check server/airport-profile-service.mjs
+          node --check website/route-planner.mjs
+      - name: Test verified runway preservation and fictional game design fallback
+        run: node --test tests/test_airport_profile_database_integration.mjs tests/test_route_aircraft_runway_screen.mjs
+      - name: Build invitation-only website
+        run: cd website && npm run build
