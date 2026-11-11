@@ -37,7 +37,7 @@ export function allowedLocalOwnerRead(pathname,payload){
   return validateFleetAcquisitionRequest(payload);
  // Cabin layouts are owner-only reads, saved planning drafts or non-binding
  // refit quotes; none can install seats, book maintenance or debit funds.
- if(pathname===FLEET_READ_PATH&&['cabin-overview','cabin-save-draft',
+ if(pathname===FLEET_READ_PATH&&['cabin-overview','cabin-save-draft','cabin-save-model-design',
   'cabin-prepare-quote','cabin-quote-status'].includes(payload.action))
   return validateFleetAcquisitionRequest(payload);
  // Maintenance preview is read-only. Never accept a client-selected cost or site.
