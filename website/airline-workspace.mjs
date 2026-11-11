@@ -6,6 +6,7 @@ import {WORLD_TIME_URL,verifyWorldTimeResponse} from './world-time-client.mjs';
 import {createCabinServiceManager} from './cabin-services-manager.mjs';
 import {createCabinConfigurationManager} from './cabin-configuration-manager.mjs';
 import {createAircraftConfigurationDialog} from './aircraft-configuration-dialog.mjs';
+import {estimateFivePhaseFuel} from './flight-fuel-phase-engine.mjs';
 /** Airlinerra airline-management workspace.
  * Real server read models stay separate from local-only planning. All page
  * structure in this module is constant markup authored by the application.
