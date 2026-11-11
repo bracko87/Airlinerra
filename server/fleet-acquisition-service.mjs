@@ -41,7 +41,7 @@ export function validateFleetAcquisitionRequest(body){
   Number.isSafeInteger(body.configurationId)&&body.configurationId>0 &&
   typeof body.name==='string'&&body.name===body.name.trim() &&
   body.name.length>=2&&body.name.length<=80 &&
-  !/[\\u0000-\\u001F\\u007F]/u.test(body.name) &&
+  !/[\u0000-\u001F\u007F]/u.test(body.name) &&
   (body.extraLegroomCm===undefined||
    (typeof body.extraLegroomCm==='number'&&Number.isFinite(body.extraLegroomCm)&&
     body.extraLegroomCm>=0&&body.extraLegroomCm<=20&&
