@@ -98,6 +98,18 @@ export function cabinRowLayout(geometry,cabinClass,referenceUnits=0){
  if(n>40)return cabinClass==='economy'?[2,2]:[1,1];
  return [1,1];
 }
+/** Whole-row rule for named model templates; no stray single seats. */
+export function validateCabinModelRows(plan,geometry,referenceUnits){
+ for(const c of CLASSES){
+  const n=plan?.[c.key];
+  const row=cabinRowLayout(geometry,c.key,referenceUnits);
+  const perRow=row.reduce((sum,x)=>sum+x,0);
+  if(Number.isInteger(n)&&n>0&&n%perRow!==0)
+   return {valid:false,reason:c.label+' uses '+perRow+' seats per row ('+
+    row.join('–')+'). Choose a multiple of '+perRow+'; '+n+' would leave a partial row.'};
+ }
+ return {valid:true};
+}
 /** Straight-cut cabin cross-section. FRONT is at the top; passenger rows
  * always run First -> Business -> Premium -> Economy toward the rear. */
 export function createCabinFloorplanModel(evaluation,referenceUnits,geometry){
@@ -136,8 +148,10 @@ export function createCabinFloorplanModel(evaluation,referenceUnits,geometry){
   }
   y+=9;
  }
- const defaultHeight=Math.ceil(Number(referenceUnits)/Math.max(1,across))*22+150;
- const height=Math.max(245,defaultHeight,y+58);
+ // Seat rows fill the usable length at 100% occupancy; spare space grows only
+ // when the weighted game-space model says that cabin space remains.
+ const occupancy=Math.max(.07,Math.min(1,Number(evaluation.spacePct||0)/100));
+ const height=Math.max(245,Math.ceil(59+(y-59)/occupancy+48));
  return {seats,sections,center,left,right,interiorWidth,height,
   basePattern:defaultLayout,totalSeats:seats.length};
 }
@@ -236,6 +250,7 @@ export function createCabinConfigurationManager({doc,host,factoryHost,onDirector
  if(!doc||!host)throw Error('Cabin planner needs an existing page host');
  let current={connected:false,airline:null,fleetClient:null};
  let loaded=null,selectedId=null,plan=null,factoryPlan=null,factoryConfigurationId=null;
+ let designName='',selectedDesignId='';
  let pendingFactoryOffer=null;
  let version=0;let renderedRows=[],factoryRows=[];
  let installedDisplay=null,usageLabel=null,statusLabel=null,previewSvg=null,siteSelect=null;
@@ -343,134 +358,197 @@ export function createCabinConfigurationManager({doc,host,factoryHost,onDirector
    factoryPlan.premium===0&&factoryPlan.business===0&&factoryPlan.first===0&&
    factoryPlan.extraLegroomCm===0};
  }
+ function currentModelDesigns(aircraft){
+  return (loaded?.modelDesigns||[]).filter(d=>
+   Number(d.configurationId)===Number(aircraft?.configurationId));
+ }
+ function designPlan(d){
+  return {economy:d.economy,premium:d.premium,business:d.business,first:d.first,
+   economyType:d.economyType,premiumType:d.premiumType,
+   businessType:d.businessType,firstType:d.firstType,
+   extraLegroomCm:Number(d.extraLegroomCm||0)};
+ }
  function render(){
   host.replaceChildren();
   if(!current.connected||!current.airline?.id){
-   host.textContent='Connect an airline to view its actual cabin configurations.';return}
+   host.textContent='Connect an airline to design cabin configurations.';return}
   if(!loaded){host.textContent='Loading cabin configuration database…';return}
-  const list=loaded.aircraft||[];
-  const heading=create(doc,'h3','','Your aircraft cabins');host.append(heading);
-  const choose=create(doc,'label','cabin-choose','Aircraft');
+  const aircraftList=(loaded.aircraft||[]).filter(a=>a.useType!=='cargo');
+  const models=new Map();
+  for(const a of aircraftList){
+   const key=a.manufacturer+'|'+a.model;
+   if(!models.has(key))models.set(key,a);
+  }
+  host.append(create(doc,'h3','','Your cabin configurations'));
+  if(!models.size){
+   host.append(create(doc,'p','hint','No passenger aircraft models are available in your fleet.'));return;
+  }
+  if(!aircraftList.some(a=>a.aircraftInventoryId===selectedId))
+   selectedId=models.values().next().value.aircraftInventoryId;
+  const aircraft=aircraftList.find(a=>a.aircraftInventoryId===selectedId);
+  const choose=create(doc,'label','cabin-choose','Aircraft model');
   const chooseSelect=create(doc,'select');chooseSelect.id='cabin-owned-selector';
-  for(const aircraft of list){
-   const option=doc.createElement('option');option.value=aircraft.aircraftInventoryId;
-   option.textContent=aircraft.manufacturer+' '+aircraft.model+' · '+aircraft.registration;
+  for(const [key,representative] of models){
+   const option=doc.createElement('option');option.value=key;
+   option.textContent=representative.manufacturer+' '+representative.model;
    chooseSelect.append(option);
   }
-  if(!list.length){host.append(create(doc,'p','hint','No registered aircraft yet.'));return}
-  if(!list.some(a=>a.aircraftInventoryId===selectedId))selectedId=list[0].aircraftInventoryId;
-  chooseSelect.value=selectedId;
+  chooseSelect.value=aircraft.manufacturer+'|'+aircraft.model;
   chooseSelect.addEventListener('change',()=>{
-   selectedId=chooseSelect.value;plan=modelPlan(selectedAircraft());render()
+   selectedId=models.get(chooseSelect.value).aircraftInventoryId;
+   selectedDesignId='';designName='';plan=null;render();
   });
   choose.append(chooseSelect);host.append(choose);
-  const aircraft=selectedAircraft();
-  installedDisplay=create(doc,'p','cabin-installed-note','');
+  installedDisplay=create(doc,'p','cabin-installed-note',
+   'Model reference: '+aircraft.referenceUnits+' game cabin-space units. '+
+   'Designs can be reused for this model; no particular aircraft is changed.');
   host.append(installedDisplay);
-  if(aircraft.useType==='cargo'){
-   host.append(create(doc,'p','hint','Cargo airframe: no passenger seating layout.'));return;
+  const geometry=modelGeometry(aircraft.configurationId);
+  const designs=currentModelDesigns(aircraft);
+  const savedLabel=create(doc,'label','cabin-choose','Saved model configurations');
+  const savedSelect=create(doc,'select');savedSelect.id='cabin-saved-model-design';
+  const newOption=doc.createElement('option');newOption.value='';
+  newOption.textContent='Create a new configuration';savedSelect.append(newOption);
+  for(const d of designs){
+   const o=doc.createElement('option');o.value=d.designId;o.textContent=d.name;
+   savedSelect.append(o);
   }
-  if(!plan)plan=modelPlan(aircraft);
-  const grid=create(doc,'div','cabin-designer-grid'),controls=create(doc,'div','cabin-designer-controls');
+  if(!designs.some(d=>d.designId===selectedDesignId))selectedDesignId='';
+  savedSelect.value=selectedDesignId;
+  savedSelect.addEventListener('change',()=>{
+   selectedDesignId=savedSelect.value;
+   const existing=designs.find(d=>d.designId===selectedDesignId);
+   plan=existing?designPlan(existing):standardCabinPlan(Number(aircraft.standardEconomy));
+   designName=existing?.name||'';render();
+  });
+  savedLabel.append(savedSelect);host.append(savedLabel);
+  if(!plan)plan=standardCabinPlan(Number(aircraft.standardEconomy));
+  const grid=create(doc,'div','cabin-designer-grid');
+  const controls=create(doc,'div','cabin-designer-controls');
   const head=create(doc,'div','cabin-designer-row cabin-designer-head');
   ['Class','Seat style','Seats','Space %'].forEach(x=>head.append(create(doc,'span','',x)));
   controls.append(head);renderedRows=[];
-  for(const c of CLASSES)renderedRows.push(appendRow(doc,controls,c,loaded.seatTypes,plan,updateLayout));
+  for(const c of CLASSES){
+   const row=appendRow(doc,controls,c,loaded.seatTypes,plan,updateLayout);
+   const perRow=cabinRowLayout(geometry,c.key,aircraft.referenceUnits).reduce((n,x)=>n+x,0);
+   row.input.step=String(perRow);
+   row.input.title='Complete rows of '+perRow+' seats';
+   renderedRows.push(row);
+  }
   appendLegroomControl(doc,controls,plan,updateLayout,'owned');
   usageLabel=create(doc,'p','cabin-designer-status','');
   comfortSummary=create(doc,'p','cabin-designer-status','');
-  costSummary=create(doc,'p','cabin-designer-status cabin-cost-breakdown','');
-  const buttons=create(doc,'div','cabin-designer-actions');
+  controls.append(usageLabel,comfortSummary);
+  const costBox=create(doc,'section','cabin-model-cost');
+  costBox.append(create(doc,'h4','','Estimated configuration cost'));
+  costSummary=create(doc,'div','cabin-cost-breakdown','');
+  costBox.append(costSummary);
+  costBox.append(create(doc,'p','hint',
+   'Game estimate using the model-standard seat count for replacement labour. '+
+   'A real aircraft quote depends on its installed cabin and chosen MRO facility. '+
+   'Saving a model design does not charge your airline.'));
+  controls.append(costBox);
+  const actions=create(doc,'div','cabin-designer-actions');
   const standard=create(doc,'button','secondary cabin-compact-action','Use standard');
   standard.type='button';standard.addEventListener('click',()=>{
-   plan=standardCabinPlan(aircraft.standardEconomy);render();
+   plan=standardCabinPlan(Number(aircraft.standardEconomy));render();
   });
-  const save=create(doc,'button','primary cabin-compact-action','Save cabin design');
+  const nameField=create(doc,'label','cabin-model-name','Configuration name');
+  const nameInput=create(doc,'input');nameInput.type='text';nameInput.maxLength=80;
+  nameInput.placeholder='e.g. A319 Comfort 156';
+  nameInput.id='cabin-configuration-name';
+  nameInput.value=designName;
+  nameInput.setAttribute('aria-label','Configuration name');
+  nameInput.addEventListener('input',()=>{designName=nameInput.value;updateLayout()});
+  nameField.append(nameInput);
+  const save=create(doc,'button','primary cabin-compact-action','Save configuration');
   save.id='cabin-draft-save';save.type='button';
   save.addEventListener('click',async()=>{
    const value=evaluateCabinPlan(plan,loaded.seatTypes,aircraft.referenceUnits);
-   if(!value.valid||!current.fleetClient?.saveCabinDraft)return;
-   save.disabled=true;statusLabel.textContent='Saving approved-space cabin draft…';
-   const payload={airlineId:current.airline.id,aircraftInventoryId:aircraft.aircraftInventoryId,...plan};
+   const rows=validateCabinModelRows(plan,geometry,aircraft.referenceUnits);
+   const name=designName.trim();
+   if(!value.valid||!rows.valid||name.length<2||name.length>80||
+    !current.fleetClient?.saveCabinModelDesign)return;
+   save.disabled=true;statusLabel.textContent='Saving named model configuration…';
    try{
-    const result=await current.fleetClient.saveCabinDraft(payload);
-    if(result?.status!=='draft_saved_not_installed'||result?.aircraftInventoryId!==aircraft.aircraftInventoryId)
-     throw Error('Cabin draft was not confirmed');
-    Object.assign(aircraft,{draftEconomy:plan.economy,draftPremium:plan.premium,
-     draftBusiness:plan.business,draftFirst:plan.first,
-     draftEconomyType:plan.economyType,draftPremiumType:plan.premiumType,
-     draftBusinessType:plan.businessType,draftFirstType:plan.firstType,
-     draftExtraLegroomCm:String(plan.extraLegroomCm)});
-    statusLabel.textContent='Cabin design saved to your airline. The installed cabin has NOT changed. Estimated refit '+result.indicativeDowntimeHours+' hours. No payment or aircraft grounding.';
+    const result=await current.fleetClient.saveCabinModelDesign({
+     airlineId:current.airline.id,configurationId:aircraft.configurationId,
+     name,...plan
+    });
+    if(result?.status!=='model_design_saved_not_installed'||
+     Number(result.configurationId)!==Number(aircraft.configurationId)||!result.designId)
+     throw Error('Named model design was not confirmed');
+    const design={...plan,configurationId:aircraft.configurationId,
+     designId:result.designId,name};
+    loaded.modelDesigns=(loaded.modelDesigns||[]).filter(d=>d.designId!==design.designId);
+    loaded.modelDesigns.unshift(design);
+    selectedDesignId=design.designId;designName=name;
+    statusLabel.textContent='Configuration "'+name+
+     '" saved for '+aircraft.manufacturer+' '+aircraft.model+
+     '. No aircraft seats, flights or airline funds changed.';
+    // Keep the editor and confirmation visible while refreshing the saved list.
+    const opt=doc.createElement('option');opt.value=design.designId;
+    opt.textContent=name;savedSelect.append(opt);savedSelect.value=design.designId;
    }catch{
-    statusLabel.textContent='Could not save this cabin draft. Installed seats remain unchanged.';
-   }finally{save.disabled=false}
+    statusLabel.textContent='Could not save this model configuration. No aircraft has changed.';
+   }finally{updateLayout()}
   });
-  buttons.append(standard,save);controls.append(usageLabel,comfortSummary,costSummary,buttons);
-  const visual=create(doc,'div','cabin-designer-visual'),legend=create(doc,'p','hint',
-   'Seats use the selected aircraft family row arrangement and fill the usable cabin width. Galleys/lavatories are indicative; exit positions and certification are not yet verified.');
-  previewSvg=svgNode(doc,'svg');
-  visual.append(previewSvg,legend);grid.append(controls,visual);host.append(grid);
+  actions.append(standard);controls.append(actions,nameField,save);
+  const visual=create(doc,'div','cabin-designer-visual');
+  const legend=create(doc,'p','hint',
+   'Seats follow the model row pattern. Unused cabin length is shown proportionally. '+
+   'Galleys/lavatories are indicative; exit positions and certification are not yet verified.');
+  previewSvg=svgNode(doc,'svg');visual.append(previewSvg,legend);
+  grid.append(controls,visual);host.append(grid);
   statusLabel=create(doc,'p','hint','');statusLabel.setAttribute('role','status');
   host.append(statusLabel);
-  const siteTitle=create(doc,'h4','','Where a cabin refit can be planned');
-  host.append(siteTitle);
-  const approved=(loaded.refitSites||[]).filter(s=>s.aircraftInventoryId===selectedId);
-  const refitLabel=create(doc,'label','cabin-choose','Maintenance / cabin refit facility');
-  siteSelect=create(doc,'select');siteSelect.id='cabin-refit-site';
-  siteSelect.append(new Option('Choose an aircraft-type-matched facility',''));
-  for(const site of approved){
-   const o=new Option(site.airportName+' ('+site.airportCode+') · '+site.provider,site.airportKey);
-   siteSelect.append(o);
-  }
-  siteSelect.addEventListener('change',updateLayout);
-  refitLabel.append(siteSelect);host.append(refitLabel);
-  host.append(create(doc,'p','hint','Saving a design does not book a refit. A future operation will require a suitable airport, an actual flight to that airport, a 24–48 hour grounded refit and a booked return flight to the hub.'));
+  host.append(create(doc,'p','hint',
+   'To apply a saved model design to a specific aircraft, use Change configuration '+
+   'in that aircraft’s profile. Refit installation and payment are not active.'));
   updateLayout();
  }
  function updateLayout(){
   const a=selectedAircraft();if(!a||!plan||!usageLabel)return;
+  const geometry=modelGeometry(a.configurationId);
   const result=evaluateCabinPlan(plan,loaded.seatTypes,a.referenceUnits);
-  installedDisplay.textContent='Installed: '+a.installedEconomy+' Economy, '+
-   a.installedPremium+' Premium Economy, '+a.installedBusiness+
-   ' Business, '+a.installedFirst+' First · Source: game standard until verified refit.';
-  usageLabel.textContent=result.valid?
+  const rowCheck=validateCabinModelRows(plan,geometry,a.referenceUnits);
+  const valid=result.valid&&rowCheck.valid;
+  usageLabel.textContent=!result.valid?
+   (result.reason||'Invalid layout')+
+   (Number.isFinite(result.spacePct)?' · '+result.spacePct+'% requested':''):
+   !rowCheck.valid?rowCheck.reason:
    result.count+' seats · '+result.spacePct+'% of available cabin space used · '+
    (100-result.spacePct).toFixed(1)+'% remaining · '+
-   describeCabinPatterns(modelGeometry(a.configurationId),a.referenceUnits):
-   (result.reason||'Invalid layout')+
-   (Number.isFinite(result.spacePct)?' · '+result.spacePct+'% of cabin space requested':'');
+   describeCabinPatterns(geometry,a.referenceUnits);
   for(let i=0;i<renderedRows.length;i++){
    const c=CLASSES[i],section=result.classes?.find(row=>row.key===c.key);
    renderedRows[i].indicator.textContent=section&&result.available>0?
     (section.space/result.available*100).toFixed(1)+'%':'—';
   }
-  renderCabinFloorplan(doc,previewSvg,plan,result,a.referenceUnits,modelGeometry(a.configurationId));
-  const chosen=(loaded.refitSites||[]).find(x=>x.aircraftInventoryId===selectedId&&
-   x.airportKey===siteSelect?.value);
+  renderCabinFloorplan(doc,previewSvg,plan,result,a.referenceUnits,geometry);
   if(comfortSummary)comfortSummary.textContent=result.valid?
    'Passenger cabin comfort: '+result.comfortRating+'/100 · Potential future booking '+
     'preference adjustment '+(result.bookingPreferencePreviewPct>=0?'+':'')+
     result.bookingPreferencePreviewPct+'% (game-design preview only; not active).':
-   'Passenger comfort rating unavailable until the proposed layout fits.';
-  const installedCount=['Economy','Premium','Business','First'].reduce((n,key)=>
-   n+Number(a['installed'+key]||0),0);
-  const quote=estimateCabinRefit(result,installedCount,Number(chosen?.siteMultiplier||1));
-  if(costSummary)costSummary.textContent=quote.valid?
-   'Estimated refit: New seats '+currency(quote.seatEquipmentUsd)+
-   ' + removal and installation '+currency(quote.removalAndInstallationUsd)+
-   ' = TOTAL '+currency(quote.totalUsd)+
-   ' · Game estimate only. Replacement work included once. No payment.':
-   'No refit cost quote until the design fits within available space.';
-  if(chosen&&result.valid){
-   statusLabel.textContent='Selected refit location: '+chosen.provider+' ('+chosen.airportCode+
-    '). Estimated downtime '+result.refitHours+' hours. Site labour factor '+
-    chosen.siteMultiplier+'× (game estimate). Not scheduled.';
-  }else if(statusLabel?.textContent?.startsWith('Selected refit location:')){
-   statusLabel.textContent='';
+   'Passenger comfort rating unavailable until the layout fits.';
+  const quote=estimateCabinRefit(result,Number(a.standardEconomy||0));
+  if(costSummary){
+   costSummary.replaceChildren();
+   if(quote.valid){
+    for(const [label,amount,major] of [
+     ['New seats',quote.seatEquipmentUsd,false],
+     ['Removal and installation',quote.removalAndInstallationUsd,false],
+     ['Estimated total',quote.totalUsd,true]]){
+     const line=create(doc,'div',major?'cabin-cost-total':'cabin-cost-line');
+     line.append(create(doc,'span','',label),create(doc,'strong','',currency(amount)));
+     costSummary.append(line);
+    }
+   }else costSummary.append(create(doc,'p','','No quote until the design fits.'));
   }
   const save=doc.getElementById('cabin-draft-save');
-  if(save)save.disabled=!result.valid||!current.fleetClient?.saveCabinDraft;
+  const validName=designName.trim().length>=2&&designName.trim().length<=80&&
+   !/[\u0000-\u001F\u007F]/u.test(designName);
+  if(save)save.disabled=!valid||!validName||!current.fleetClient?.saveCabinModelDesign;
  }
  async function reload(){
   const ticket=++version;
@@ -500,7 +578,7 @@ export function createCabinConfigurationManager({doc,host,factoryHost,onDirector
    const currentId=current.airline?.id||null;
    // Game clock/data refresh must not erase a manager's unsaved cabin design.
    if(old===currentId&&loaded)return;
-   if(old!==currentId)selectedId=null;
+   if(old!==currentId){selectedId=null;designName='';selectedDesignId='';}
    void reload();
   },
   selectAircraft(id){if(!loaded?.aircraft?.some(a=>a.aircraftInventoryId===id))return;
