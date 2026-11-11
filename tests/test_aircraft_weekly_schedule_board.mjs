@@ -207,3 +207,25 @@ test('verified date label and estimated-only timeline are never presented as a b
  assert.match(button.textContent,/66 min est/);
  assert.equal(result.counts.held,0);
 });
+
+test('existing server route gets a non-booked estimate only from exactly matching trusted aircraft and airports',()=>{
+ const flight=scheduled({slotsReserved:false,weeklySchedule:[{day:2,time:'09:00'}],
+  referenceDepartureUtc:null,referenceArrivalUtc:null});
+ const estimate={flightNumber:'PA444',aircraftInventoryId:A,
+  originAirportKey:'OURAIRPORTS:4610',destinationAirportKey:'FICTIONAL:fictional:RS:LYAL',
+  minutes:66,source:'aircraft_five_phase_estimate'};
+ const result=buildAirlineWeeklyBoard({fleet,drafts:[flight],
+  estimatedDurations:[estimate]});
+ assert.equal(result.rows[0].days[2].events[0].sampleDurationMinutes,66);
+ assert.equal(result.rows[0].days[2].events[0].durationMinutes,null);
+ assert.equal(result.counts.held,0);
+ for(const wrong of [
+  {...estimate,aircraftInventoryId:B},{...estimate,minutes:0},
+  {...estimate,source:'caller_override'},
+  {...estimate,destinationAirportKey:'OURAIRPORTS:incorrect'}
+ ]){
+  const blocked=buildAirlineWeeklyBoard({fleet,drafts:[flight],
+   estimatedDurations:[wrong]});
+  assert.equal(blocked.rows[0].days[2].events[0].sampleDurationMinutes,null);
+ }
+});
