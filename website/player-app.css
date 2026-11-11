@@ -2556,6 +2556,59 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
  background:#192f45;color:#e8f2fb;border-color:#3b526b
 }
 
+/* Read-only estimated passenger appeal (never a selectable or payable score). */
+#workspace-cabin-configurations .cabin-passenger-rating{
+ display:grid;grid-template-columns:minmax(180px,.8fr) minmax(220px,1.2fr);
+ align-items:center;gap:16px;padding:16px 2px 18px;
+ border-bottom:1px solid var(--line);color:var(--navy)
+}
+#workspace-cabin-configurations .cabin-passenger-rating-description{
+ display:flex;flex-direction:column;gap:3px;min-width:0
+}
+#workspace-cabin-configurations .cabin-passenger-rating-description strong{
+ font-size:13px;font-weight:750
+}
+#workspace-cabin-configurations .cabin-passenger-rating-description small{
+ color:var(--muted);font-size:11px;line-height:1.45
+}
+#workspace-cabin-configurations .cabin-passenger-rating-scale{
+ min-width:0;padding-top:23px
+}
+#workspace-cabin-configurations .cabin-passenger-rating-track{
+ position:relative;height:9px;border-radius:999px;background:#dbe4ef;
+ overflow:visible;margin:0 10px
+}
+#workspace-cabin-configurations .cabin-passenger-rating-fill{
+ height:100%;width:0;background:#3a81c6;border-radius:999px
+}
+#workspace-cabin-configurations .cabin-passenger-rating-thumb{
+ position:absolute;left:0;top:50%;height:16px;width:16px;
+ border-radius:50%;border:2px solid #245f9d;background:#fff;
+ transform:translate(-50%,-50%);pointer-events:none
+}
+#workspace-cabin-configurations .cabin-passenger-rating-value{
+ position:absolute;left:0;bottom:21px;transform:translateX(-50%);
+ background:#0b3567;color:#fff;padding:4px 10px;border-radius:5px;
+ font-size:11px;line-height:1.2;white-space:nowrap;font-weight:750
+}
+#workspace-cabin-configurations .cabin-passenger-rating-ends{
+ display:flex;justify-content:space-between;color:var(--muted);
+ padding-top:8px;font-size:11px
+}
+#workspace-cabin-configurations .cabin-rating-unavailable .cabin-passenger-rating-fill,
+#workspace-cabin-configurations .cabin-rating-unavailable .cabin-passenger-rating-thumb{
+ display:none
+}
+@media(max-width:700px){
+ #workspace-cabin-configurations .cabin-passenger-rating{
+  grid-template-columns:1fr;gap:13px
+ }
+ #workspace-cabin-configurations .cabin-passenger-rating-scale{padding-top:25px}
+}
+:root[data-ui-theme="dark"] #workspace-cabin-configurations .cabin-passenger-rating-track{
+ background:#34506e
+}
+
 /* Seven-day rolling dated schedule, one selected UTC timeline at a time. */
 #workspace-schedule #schedule-selected-day{min-width:225px;text-align:center;font-variant-numeric:tabular-nums}
 #workspace-schedule .schedule-day-switch button:disabled{opacity:.45}
