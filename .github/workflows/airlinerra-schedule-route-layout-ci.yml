@@ -9,6 +9,12 @@ on:
       - 'website/airline-operations-center.mjs'
       - 'website/rolling-flight-calendar.mjs'
       - 'website/route-planner.mjs'
+      - 'website/route-fee-preview.mjs'
+      - 'website/flight-schedule-client.mjs'
+      - 'website/local-owner-fleet-reader.mjs'
+      - 'website/dev-scripts/real-player-read-gateway.mjs'
+      - 'server/flight-schedule-service.mjs'
+      - 'tests/test_route_fee_preview.mjs'
       - 'website/route-traffic-rights.mjs'
       - 'website/airport-flight-phase-timing.mjs'
       - 'website/flight-fuel-phase-engine.mjs'
@@ -34,7 +40,7 @@ jobs:
         with:
           node-version: '22'
       - name: Verify date logic, routing and schedule layout
-        run: node --test tests/test_rolling_flight_calendar.mjs tests/test_aircraft_weekly_schedule_board.mjs tests/test_route_rights_airport_phase_2026_11_11.mjs
+        run: node --test tests/test_rolling_flight_calendar.mjs tests/test_aircraft_weekly_schedule_board.mjs tests/test_route_rights_airport_phase_2026_11_11.mjs tests/test_route_fee_preview.mjs tests/test_server_flight_schedule_api.mjs
       - name: Verify user-facing flight and fuel preview
         run: node --test tests/test_five_phase_fuel_preview.mjs
       - name: Build protected invitation-only website
