@@ -69,6 +69,39 @@ export function routeLongestRunwayLabel(profile){
   return Math.round(designed.lengthM).toLocaleString('en-US')+' m';
  return 'Unverified';
 }
+/** Match airport titles to ICAO-style codes used throughout route selection. */
+export function routeAirportIcaoCode(profile,choice){
+ const choices=[profile?.icao,profile?.code,choice?.icao,choice?.code,
+  profile?.airportCode,choice?.airportCode];
+ return choices.find(v=>typeof v==='string'&&/^[A-Z]{4}$/.test(v))||null;
+}
+/** Summarize the GAME rules stored for an airport without treating
+ * missing third-party research as an active ban or inventing an ICAO chapter.
+ * Hard operational restrictions remain enforced by their separate preflight. */
+export function routeAirportGameRules(profile){
+ const simple=profile?.operations?.simpleNightNoise||{};
+ const full=profile?.operations?.icaoNoiseRules||{};
+ const window=typeof simple.nighttimeWindow==='string'&&simple.nighttimeWindow.trim()?
+  ' · '+simple.nighttimeWindow.trim().replace(/-/g,'–'):'';
+ const curfew=simple.nighttimeBan===true?'Yes'+window:
+  simple.nighttimeBan===false?'No':'—';
+ const chapterNumbers=arr=>Array.isArray(arr)?
+  [...new Set(arr.filter(x=>Number.isInteger(x)&&x>0))].sort((a,b)=>a-b):[];
+ const prohibited=chapterNumbers(full.prohibitedChapters);
+ const permitted=chapterNumbers(simple.permittedChapters);
+ const specific=chapterNumbers((full.rules||[]).map(r=>r.chapter));
+ const minimum=Number.isInteger(full.nationalCivilJetMinimumChapter)&&
+  full.nationalCivilJetMinimumChapter>0?full.nationalCivilJetMinimumChapter:null;
+ let noise='—';
+ if(prohibited.length)noise='No Chapter '+prohibited.join(', ');
+ else if(minimum)noise='Chapter '+minimum+' minimum';
+ else if(specific.length)noise='Chapter '+specific.join(', ');
+ else if(simple.noiseRestrictions===true&&permitted.length)
+  noise='Chapter '+permitted.join(', ');
+ else if(simple.noiseRestrictions===false)noise='No Chapter restriction';
+ else if(simple.noiseRestrictions===true)noise='Chapter data pending';
+ return {curfew,noise};
+}
 const routeAirportBlock=(side,title)=>
  '<section class="route-airport-block" aria-label="'+title+' airport facts">'+
   '<h4 id="route-'+side+'-title">'+title+' airport</h4>'+
@@ -135,7 +168,7 @@ export function routePlannerMarkup(){
    routeSetupField('route-turnaround','Target turnaround (minutes)','<input id="route-turnaround" type="number" min="45" max="360" step="15" value="45">')+
   '</div>'+
   '<p class="route-subtle-note" id="route-aircraft-feedback">Aircraft availability is not connected.</p>'+
-  '<div class="route-position-bar"><span>Departure stand follows previous arrival</span><strong id="route-departure-stand-derived">Initial stand not verified</strong></div>'+
+  '<div hidden aria-hidden="true"><strong id="route-departure-stand-derived"></strong></div>'+
   '<p id="route-aircraft-position-status" class="route-position-status" role="status"></p>'+
   '<p class="hint">Aircraft rotation means checking that the airplane lands, is at the right airport and has completed its turnaround before its next departure. The 45-minute minimum is a game planning rule, not proof of available airport slots.</p>'+
   weekTable()+
@@ -820,17 +853,8 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
   title.textContent=airport.name+(airport.code?' ('+airport.code+')':'');
   node.append(title);
  };
- const airportIataOrIcao=(side,profile)=>{
-  const choice=selected(side==='origin'?'from':'to');
-  const candidates=[profile?.iata,profile?.iataCode,profile?.iata_code,
-   choice?.iata,choice?.iataCode,choice?.code,profile?.icao];
-  // Belgrade's published IATA identifier is BEG; LYBE is its ICAO code.
-  if(candidates.some(value=>String(value||'').toUpperCase()==='LYBE'))return 'BEG';
-  const iata=candidates.find(value=>/^[A-Z]{3}$/.test(String(value||'').toUpperCase()));
-  if(iata)return String(iata).toUpperCase();
-  const icao=candidates.find(value=>/^[A-Z]{4}$/.test(String(value||'').toUpperCase()));
-  return icao?String(icao).toUpperCase():null;
- };
+ const airportIataOrIcao=(side,profile)=>
+  routeAirportIcaoCode(profile,selected(side==='origin'?'from':'to'));
  const airportRules=(side,profile)=>{
   const host=$('route-'+side+'-restrictions');
   const heading=$('route-'+side+'-title');
@@ -840,25 +864,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
   if(heading)heading.textContent=(side==='origin'?'Origin airport':'Destination airport')+
    (code?': '+code:'');
   if(!profile){host.textContent='Airport data pending';return;}
-  const isBelgrade=code==='BEG';
-
-  const simple=profile.operations?.simpleNightNoise||{};
-  const gameDefault=['AIRLINESIM_NOT_FOUND','GAME_DEFAULT_NOT_CHECKED'].includes(simple.sourceStatus);
-  const yesNo=value=>typeof value==='boolean'?(value?'Yes':'No'):'Unverified';
-  const window=typeof simple.nighttimeWindow==='string'&&
-   simple.nighttimeWindow.trim()?simple.nighttimeWindow.trim().replace(/-/g,'–'):null;
-  const chapters=Array.isArray(simple.permittedChapters)?
-   simple.permittedChapters.filter(x=>Number.isInteger(x)&&x>0):[];
-  const curfew=isBelgrade?'No general curfew · open 24 h':
-   simple.nighttimeBan===true?'Yes'+(window?' · '+window+' local':''):
-   gameDefault?'Not source-verified':
-   simple.nighttimeBan===false?'No general ban recorded':'Unverified';
-  const noise=isBelgrade?'Published departure noise procedures':
-   simple.noiseRestrictions===true?
-    'Aircraft-specific restrictions recorded'+(chapters.length?' · Chapters '+chapters.join(', '):''):
-   gameDefault?'Not source-verified':
-   simple.noiseRestrictions===false?
-    'No specific ban recorded; procedures may still apply':'Unverified';
+  const {curfew,noise}=routeAirportGameRules(profile);
   const rules=[
    ['Longest runway',routeLongestRunwayLabel(profile)],
    ['Night curfew',curfew],
@@ -870,14 +876,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    const result=doc.createElement('strong');result.textContent=value;
    row.append(name,result);host.append(row);
   }
-  if(isBelgrade){
-   const a=doc.createElement('a');
-   a.className='route-airport-source route-airport-aip';
-   a.href='https://smatsa.rs/upload/aip/published/06-Aug-2026-A/2026-08-06-AIRAC/html/eAIP/LY-AD-2.LYBE-en-GB.html';
-   a.target='_blank';a.rel='noopener noreferrer';
-   a.textContent='Official Serbia AIP: LYBE AD 2.3 (24 h) and AD 2.21 (noise procedures)';
-   host.append(a);
-  }
+
  };
  const airportDemand=(side,profile)=>{
   const host=$('route-'+side+'-demand');if(!host)return;
@@ -901,11 +900,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
     'Unverified':rating+'/5';
    row.append(label,bars,value);host.append(row);
   }
-  if(profile?.demand){
-   const note=doc.createElement('small');note.className='route-airport-source';
-   note.textContent='Indicative game demand rating; not actual passenger or cargo bookings';
-   host.append(note);
-  }
+
  };
  const showDetails=()=>{
   airportRules('origin',airportProfiles.from);
@@ -920,11 +915,10 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
   if(button)button.disabled=assessment?.status==='BLOCKED'||
    routeAirportPairStatus(selected('from'),selected('to'))==='SAME_AIRPORT';
   const reason=assessment?.status==='BLOCKED'?
-   'BLOCKED — This aircraft cannot be used on this route. '+assessment.blockingReasons.join(' '):
+   'BLOCKED — '+assessment.blockingReasons.join(' '):
    assessment?.status==='REVIEW'?'Runway review: '+assessment.reviewReasons.join(' '):
-   assessment?.status==='PASS'?'Runway length suitable for takeoff and landing (game screening only).':
-   selection?'Aircraft configuration loading — not approved for flight.':
-   'Choose an aircraft to check departure and arrival runway lengths.';
+   assessment?.status==='PASS'?'':selection?
+   'Aircraft configuration loading.':'Choose an aircraft.';
   message('route-aircraft-check',reason);
   message('route-aircraft-feedback',reason);
   const el=$('route-aircraft-feedback');
