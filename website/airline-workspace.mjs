@@ -1245,7 +1245,14 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
     fleetList.append(row);
    }
   }
-  renderAircraftDetail();
+  // An optional aircraft-detail widget must never erase a successfully
+  // authenticated fleet list or make the schedule appear disconnected.
+  try{renderAircraftDetail();}
+  catch{
+   const detail=$('fleet-detail-name');
+   if(detail)detail.textContent='Aircraft details are temporarily unavailable';
+   console.warn('Airlinerra aircraft detail rendering unavailable');
+  }
   if(selectedFleetAircraftId&&fleet.some(x=>x.id===selectedFleetAircraftId)){
    void loadMaintenancePreview(selectedFleetAircraftId);
   }
@@ -1255,8 +1262,8 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    select.replaceChildren(new Option('Server-selected offer',''));
    for(const offer of offers)select.append(new Option(String(offer.offerId),String(offer.offerId)));
   }
-  renderFactorySelectors();
-  updateNewOrderAvailability();
+  try{renderFactorySelectors();updateNewOrderAvailability();}
+  catch{console.warn('Airlinerra factory controls temporarily unavailable');}
  }
  async function loadRealFleetMarket(){
   const version=++marketFetchVersion;
