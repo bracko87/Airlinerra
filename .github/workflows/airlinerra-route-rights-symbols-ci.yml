@@ -1,0 +1,31 @@
+name: Airlinerra route rights symbols and runway display
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'website/route-traffic-rights.mjs'
+      - 'website/route-planner.mjs'
+      - 'website/player-app.css'
+      - 'tests/test_route_rights_airport_phase_2026_11_11.mjs'
+      - 'tests/test_airport_profile_database_integration.mjs'
+      - '.github/workflows/airlinerra-route-rights-symbols-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check route planner and icon module syntax
+        run: |
+          node --check website/route-traffic-rights.mjs
+          node --check website/route-planner.mjs
+      - name: Verify airport profile provenance and standalone rights icon behavior
+        run: node --test tests/test_route_rights_airport_phase_2026_11_11.mjs tests/test_airport_profile_database_integration.mjs
+      - name: Build invitation-only website
+        run: npm run build --prefix website
