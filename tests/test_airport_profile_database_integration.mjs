@@ -203,3 +203,54 @@ test('hosted airport profile supports Group 2 prepared data without approving co
   assert.equal(profile.operations.simpleNightNoise.noiseRestrictions,false);
  }
 });
+
+test('authenticated localhost API returns Group 2 planning profiles and cannot grant flight activation',async()=>{
+ const {GROUP2_AIRPORT_PROFILE_SQL}=await import('../server/airport-profile-service.mjs');
+ const selected='OURAIRPORTS:31795';
+ const queried=[];
+ const mock={
+  connect:async()=>({
+   async query(sql,args){
+    queried.push({sql,args});
+    if(sql===AIRPORT_PROFILE_SQL)return {rows:[]};
+    if(sql===GROUP2_AIRPORT_PROFILE_SQL)return {rows:[{
+     airport_key:selected,airport_name:'Kukës International Airport',
+     airport_code:'LAKU',country_iso:'AL',roster_municipality:'Kukës',
+     latitude_deg:'42.035802',longitude_deg:'20.415955',
+     provisional_category:'Regional',timezone_iana:'Europe/Tirane',
+     simple_game_nighttime_ban:false,simple_game_noise_restrictions:false,
+     daily_outbound_passengers:120,daily_outbound_cargo_tonnes:'0.000',
+     game_restriction_status:'GROUP2_PREPARED_NOT_ADMITTED',
+     runways:[{name:'Game runway reference',lengthM:2197.9,
+      verification:'game_estimate',operationalStatus:'planning_only'}]
+    }]};
+    throw Error('Unexpected SQL statement');
+   },
+   release(){}
+  })
+ };
+ const handler=createPlayerReadHandler({enabled:true,origin:'http://localhost:5188',
+  verifyUserToken:async()=>({user:{id:'f49f495b-32e5-4f55-b8ca-6447e327ff78',
+   email_confirmed_at:'2026-10-29T00:00:00Z'}}),
+  database:mock});
+ const request=new Request('http://localhost:5188'+AIRPORT_PROFILE_PATH,{
+  method:'POST',headers:{origin:'http://localhost:5188',
+   'content-type':'application/json',authorization:'Bearer abcdef12345678901234'},
+  body:JSON.stringify({airportKey:selected})
+ });
+ const response=await handler(request);
+ assert.equal(response.status,200);
+ const {airport}=await response.json();
+ assert.equal(airport.key,selected);
+ assert.equal(airport.code,'LAKU');
+ assert.equal(airport.runways[0].lengthM,2197.9);
+ assert.equal(airport.demand.passengerGroup,1);
+ assert.equal(airport.demand.cargoGroup,1);
+ assert.equal(airport.operations.simpleNightNoise.nighttimeBan,false);
+ assert.equal(airport.sourceGroup,'GROUP_2');
+ assert.equal(airport.commercialAccess,false);
+ assert.equal(airport.bookable,false);
+ assert.equal(airport.canActivateFlights,false);
+ assert.equal(queried.length,2);
+ assert.deepEqual(queried.map(q=>q.args),[[selected],[selected]]);
+});
