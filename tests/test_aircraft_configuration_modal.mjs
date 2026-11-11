@@ -110,5 +110,7 @@ test('a named A319 model design is reusable from the matching aircraft profile',
  assert.equal(x.choices[1].available,true);
  assert.equal(x.choices[1].quote.count,140);
  const wrong=companyCabinChoices(overview,other.aircraftInventoryId);
- assert.deepEqual(wrong.choices.map(x=>x.label),['Default']);
+ assert.ok(wrong.choices.every(x=>x.label!=='A319 Business Light'));
+ assert.ok(wrong.choices.some(x=>x.label==='Company layout · YU-A320'));
+
 });
