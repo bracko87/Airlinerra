@@ -274,7 +274,9 @@ test('three-step flight draft screen includes daily aircraft assignments and pri
  assert.match(source,/status:'draft',operationallyVerified:false/);
  assert.match(source,/await resetRouteForm\(\)/);
  assert.match(source,/airlinerra:edit-route-draft/);
- assert.match(ui,/Pending verified performance/);
+ assert.match(ui,/Pending aircraft model/);
+ assert.match(ui,/45 min \(game minimum\)/);
+ assert.match(ui,/Estimated operating costs per flight/);
  assert.doesNotMatch(ui,/Apply schedule settings|Reserve flights/);
 });
 test('route fare and service draft validation limits values without implying live bookings',async()=>{
