@@ -62,7 +62,9 @@ test('shared footer ships on game, public, registration and legal pages',async()
   read('../website/studio-footer.js'),read('../website/studio-footer.css'),
   read('../website/dev-scripts/build.mjs')]);
  assert.match(js,/Europe\/Berlin/);
- assert.match(js,/setInterval\(updateClock,1000\)/);
+ assert.doesNotMatch(js,/Current time:|Germany \/ Game time|data-berlin-clock/);
+ assert.doesNotMatch(js,/updateClock|setInterval/);
+ assert.doesNotMatch(css,/studio-footer-time|studio-footer-clock-dot/);
  for(const url of ['https://nextqueststudio.net/','https://propelotonmanager.com/','https://tennislegacygame.com/'])
   assert.ok(js.includes(url));
  for(const path of ['/terms.html','/privacy.html','/impressum.html','/faq.html','/pricing.html'])
