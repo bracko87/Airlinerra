@@ -24,6 +24,8 @@ const SLOT_FIELDS=new Set([...BASE_FIELDS,'aircraftInventoryId','originAirportKe
 const CHECK_FIELDS=new Set([...BASE_FIELDS,'scheduleId']);
 const DEMAND_FIELDS=new Set([...CHECK_FIELDS,'month']);
 const FINANCIAL_FIELDS=new Set([...CHECK_FIELDS,'loadPercent','parkingMinutes']);
+const FEE_PREVIEW_FIELDS=new Set([...BASE_FIELDS,'aircraftInventoryId','originAirportKey',
+ 'destinationAirportKey','departureStand','arrivalStand','parkingMinutes']);
 const ROTATION_FIELDS=new Set([...CHECK_FIELDS,'startDate','days']);
 const CREW_PLAN_FIELDS=new Set([...CHECK_FIELDS,'crewId','weeklyEntry','decision']);
 const CREW_HIRE_FIELDS=new Set([...CHECK_FIELDS,'candidateSlot']);
@@ -124,6 +126,15 @@ export function validateFlightSchedulePayload(body){
    ['plan','remove'].includes(body.decision);
  if(body.action==='commercial-read')
   return withinFields(body,CHECK_FIELDS)&&uuid(body.scheduleId);
+ if(body.action==='fee-preview')
+  return withinFields(body,FEE_PREVIEW_FIELDS)&&
+   Object.keys(body).length===7&&uuid(body.aircraftInventoryId)&&
+   AIRPORT.test(body.originAirportKey||'')&&AIRPORT.test(body.destinationAirportKey||'')&&
+   body.originAirportKey!==body.destinationAirportKey&&
+   ['terminal','remote','cargo'].includes(body.departureStand)&&
+   ['terminal','remote','cargo'].includes(body.arrivalStand)&&
+   Number.isInteger(body.parkingMinutes)&&body.parkingMinutes>=0&&
+   body.parkingMinutes<=10080;
  if(body.action==='route-financials')
   return withinFields(body,FINANCIAL_FIELDS)&&uuid(body.scheduleId)&&
     Number.isInteger(body.loadPercent)&&body.loadPercent>=0&&body.loadPercent<=100&&
@@ -160,6 +171,19 @@ export function validateFlightSchedulePayload(body){
 }
 export const SCHEDULE_SQL=Object.freeze({
  owner:'SELECT id FROM airlinerra_game.airlines WHERE id=$1::uuid AND owner_player_id=$2::uuid AND world_id=1',
+ feeAircraft:`SELECT i.configuration_id::bigint AS "configurationId",
+ c.use_type AS "useType"
+ FROM airlinerra_game.airlines a
+ JOIN airlinerra_game.world_memberships w ON w.world_id=a.world_id
+   AND w.player_id=a.owner_player_id AND w.state='active'
+ JOIN airlinerra_game.airline_aircraft_inventory i ON i.airline_id=a.id
+ JOIN airlinerra.aircraft_configurations c ON c.id=i.configuration_id
+ WHERE a.world_id=1 AND a.id=$2::uuid AND a.owner_player_id=$1::uuid
+ AND i.id=$3::uuid AND i.fleet_status='in_service'
+ AND i.ownership_type IN ('owned','leased')`,
+ feePreview:`SELECT airlinerra_game.section8_quote_flight_operating_fees_v1(
+  1::smallint,$1::text,$2::text,$3::bigint,$4::text,$5::text,
+  0::integer,0::numeric,$6::integer) AS result`, 
  fleet:`SELECT i.id::text AS id,i.configuration_id::int AS "configurationId",i.registration,
      i.ownership_type AS "ownershipType",i.fleet_status AS "fleetStatus"
    FROM airlinerra_game.airline_aircraft_inventory i
@@ -391,6 +415,54 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
     if(response.rowCount!==1||!response.rows[0]?.result)
      return respond(503,{error:'Commercial plan was not saved'});
     return respond(200,response.rows[0].result);
+   }
+   if(body.action==='fee-preview'){
+    const owned=await client.query(SCHEDULE_SQL.feeAircraft,[
+     userId,body.airlineId,body.aircraftInventoryId
+    ]);
+    if(owned.rowCount!==1||!Number.isSafeInteger(Number(owned.rows?.[0]?.configurationId)))
+     return respond(403,{error:'Owner-verified in-service aircraft is required'});
+    const useType=owned.rows[0].useType;
+    if((useType==='cargo'&&
+        (body.departureStand!=='cargo'||body.arrivalStand!=='cargo'))||
+       (useType==='passenger'&&
+        (body.departureStand==='cargo'||body.arrivalStand==='cargo')))
+     return respond(409,{error:'Stand type incompatible with aircraft'});
+    const result=await client.query(SCHEDULE_SQL.feePreview,[
+     body.originAirportKey,body.destinationAirportKey,
+     owned.rows[0].configurationId,body.departureStand,
+     body.arrivalStand,body.parkingMinutes
+    ]);
+    const q=result.rows?.[0]?.result;
+    const expected=['departureAirportMovementUsd','arrivalLandingUsd',
+     'departureGroundHandlingUsd','arrivalStandParkingUsd',
+     'departureTerminalAirTrafficControlUsd','enrouteAirTrafficControlUsd',
+     'departingPassengerFacilityUsd','departingPassengerSecurityUsd',
+     'internationalPassengerProcessingUsd','originCargoHandlingUsd',
+     'destinationCargoHandlingUsd'];
+    const values=expected.map(k=>q?.fees?.[k]);
+    if(result.rowCount!==1||q?.status!=='game_operating_fee_preview_only'||
+      q.worldId!==1||q.currency!=='USD'||q.costBasis!=='airlinerra_game_model_only'||
+      q.originAirportKey!==body.originAirportKey||
+      q.destinationAirportKey!==body.destinationAirportKey||
+      q.departureStand!==body.departureStand||
+      q.arrivalStand!==body.arrivalStand||
+      q.arrivalParkingMinutes!==body.parkingMinutes||
+      q.passengers!==0||Number(q.cargoTonnes)!==0||
+      q.canPostToLedger!==false||q.cashPosted!==false||
+      q.operationAuthorized!==false||q.fuelIncluded!==false||
+      q.isOfficialAviationTariff!==false||
+      !values.every(x=>typeof x==='number'&&Number.isFinite(x)&&x>=0)||
+      !Number.isFinite(q.totalGameOperatingFeesUsd)||
+      Math.abs(values.reduce((n,x)=>n+x,0)-q.totalGameOperatingFeesUsd)>0.07)
+      return respond(503,{error:'Verified fee preview unavailable'});
+    return respond(200,{
+     status:'owner_verified_fixed_fee_baseline',readOnly:true,
+     airlineId:body.airlineId,aircraftInventoryId:body.aircraftInventoryId,
+     airportFeeQuote:q,passengersAssumed:0,cargoTonnesAssumed:0,
+     canBookFlight:false,cashPosted:false,operationAuthorized:false,
+     estimatedWholeFlightCost:false
+    });
    }
    if(body.action==='route-financials'){
     const response=await client.query(SCHEDULE_SQL.routeFinancials,[
