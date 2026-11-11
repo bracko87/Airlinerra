@@ -65,3 +65,36 @@ test('route UI automatically applies checks and server gate on every save withou
  assert.doesNotMatch(source,/if\(target\.id==='route-preflight-check'\)/);
  assert.match(bundle,/'route-aircraft-runway-screen\.mjs'/);
 });
+
+test('Aleksandrovo 2,200 m asphalt GAME runway is used consistently in model screening',()=>{
+ const fictional={
+  key:'FICTIONAL:fictional:RS:LYAL',runways:[],
+  gameRunwayDesign:{lengthM:2200,surface:'Asphalt',status:'fictional_game_only'}
+ };
+ const inspected=screenAirportRunway({airport:fictional,aircraft:plane,
+  airportLabel:'Origin',operation:'departure'});
+ assert.equal(inspected.status,'PASS');
+ assert.equal(inspected.availableM,2200);
+ assert.equal(inspected.gameDesignReference,true);
+ const roundTrip=assessAircraftRouteRunways({aircraft:plane,origin:fictional,
+  destination:{runways:[runway(3500,'ASPH')]}});
+ assert.equal(roundTrip.status,'PASS');
+ assert.equal(roundTrip.officialDispatchApproved,false,
+  'game runway use must not create a real-world dispatch clearance');
+ const tooLarge=screenAirportRunway({airport:fictional,
+  aircraft:{fullWeightTakeoffReferenceM:2300},operation:'departure'});
+ assert.equal(tooLarge.status,'BLOCKED');
+ assert.equal(tooLarge.deficitM,100);
+ const fakeReal=screenAirportRunway({airport:{runways:[],
+  gameRunwayDesign:{lengthM:4000,surface:'Asphalt',status:'fictional_game_only'}},
+  aircraft:plane,operation:'departure'});
+ assert.equal(fakeReal.status,'REVIEW','game design must never fill missing real runway data');
+ const fakeSurface=screenAirportRunway({airport:{...fictional,
+  gameRunwayDesign:{lengthM:2200,surface:'Grass',status:'fictional_game_only'}},
+  aircraft:plane,operation:'departure'});
+ assert.equal(fakeSurface.status,'REVIEW');
+ const fakeStatus=screenAirportRunway({airport:{...fictional,
+  gameRunwayDesign:{lengthM:2200,surface:'Asphalt',status:'unverified'}},
+  aircraft:plane,operation:'departure'});
+ assert.equal(fakeStatus.status,'REVIEW');
+});
