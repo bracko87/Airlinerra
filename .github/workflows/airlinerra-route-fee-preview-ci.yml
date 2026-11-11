@@ -1,0 +1,34 @@
+name: Airlinerra owner-scoped route fee preview (isolated)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'server/flight-schedule-service.mjs'
+      - 'server/flight-schedule-edge-entry.ts'
+      - 'website/flight-schedule-client.mjs'
+      - 'website/local-owner-fleet-reader.mjs'
+      - 'website/dev-scripts/real-player-read-gateway.mjs'
+      - 'website/route-fee-preview.mjs'
+      - 'website/route-planner.mjs'
+      - 'tests/test_route_fee_preview.mjs'
+      - 'tests/test_server_flight_schedule_api.mjs'
+      - '.github/workflows/airlinerra-route-fee-preview-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  route-fee-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test owner-only read-only fee quote and flight schedule safeguards
+        run: node --test tests/test_route_fee_preview.mjs tests/test_server_flight_schedule_api.mjs
+      - name: Build invitation-only website
+        run: cd website && npm run build
