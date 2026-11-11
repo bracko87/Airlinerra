@@ -205,7 +205,7 @@ const pages=Object.freeze({
    button('fleet','Return to my fleet'),'MAINTENANCE NETWORK'),
  'routes':()=>routePlannerMarkup(),
  'schedule':()=>card('Aircraft daily flight schedule',
-   '<p class="hint">Booked flights only · Today and the following six Berlin calendar days.</p>'+ 
+   '<p class="hint">Booked flights and saved route plans · Today and the following six Berlin calendar days. Solid bars are booked; dashed bars are plans.</p>'+ 
    '<div class="schedule-board-toolbar">'+
     '<div class="schedule-day-switch" role="group" aria-label="Choose a date in the next seven days">'+
      '<button type="button" class="secondary" id="schedule-day-prev" aria-label="Previous day">◀</button>'+
@@ -216,7 +216,7 @@ const pages=Object.freeze({
      '<button type="button" class="secondary" id="schedule-refresh">Refresh timetable</button>'+
      button('routes','Create a route')+'</div>'+
    '</div>'+
-   '<p id="schedule-status" role="status" class="hint">Loading booked flights…</p>'+
+   '<p id="schedule-status" role="status" class="hint">Loading your aircraft and flight plans…</p>'+
    '<div id="schedule-aircraft-board" class="schedule-aircraft-board" aria-label="Airline aircraft 24-hour daily flight timetable"></div>'+
    'AIRCRAFT × ONE DAY × 24 HOURS'),
  'finances':()=>card('Financial position',
@@ -535,11 +535,14 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
  function renderSchedule(){
   const host=$('schedule-aircraft-board');
   if(!host)return;
+  const saved=safelyLoad(session,draftKey)||draft;
+  const localRoutes=Array.isArray(saved.routes)?saved.routes:[];
+  const serverPlans=Array.isArray(scheduleSnapshot?.plans)?scheduleSnapshot.plans:[];
   const board=buildAirlineWeeklyBoard({
    // Fleet-market inventory includes all real owned/leased aircraft, even
    // those not yet in service. A schedule-only read includes in-service ones.
    fleet:marketSnapshot?.fleet,serverFleet:scheduleSnapshot?.fleet,
-   drafts:scheduleSnapshot?.drafts
+   drafts:scheduleSnapshot?.drafts,plans:serverPlans,localRoutes
   });
   const selectedDate=scheduleCalendar[scheduleSelectedOffset];
   const caption=$('schedule-selected-day');
@@ -563,24 +566,20 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   const status=$('schedule-status');
   if(status){
    const airplaneCount=board.rows.length;
-   const local=safelyLoad(session,draftKey)||draft;
-   const localRouteCount=Array.isArray(local.routes)?local.routes.length:0;
-   const serverRouteCount=Array.isArray(scheduleSnapshot?.plans)?
-    scheduleSnapshot.plans.length:0;
    const bookedCount=board.rows.reduce((n,row)=>
-    n+row.days[selectedDate.weekday].events.length,0);
+    n+row.days[selectedDate.weekday].events.filter(e=>e.status==='slot-held').length,0);
+   const plannedCount=board.rows.reduce((n,row)=>
+    n+row.days[selectedDate.weekday].events.filter(e=>e.status==='planning').length,0);
    status.textContent=board.status==='unavailable'?
     'Fleet connection unavailable. Aircraft and bookings cannot be verified.':
     board.status==='empty'?
     'No owned or leased aircraft returned by the airline database.':
     !bookingDataAvailable?
     airplaneCount+' registered aircraft in fleet. Booking data unavailable: check the schedule API connection.':
-    airplaneCount+' registered aircraft in fleet · '+bookedCount+
-    ' booked flights on '+selectedDate.label+'.'+
-    (bookedCount===0&&(localRouteCount>0||serverRouteCount>0)?
-     ' '+(localRouteCount+serverRouteCount)+
-     ' saved route plan(s) are not booked flights. Open My Routes to complete booking.':
-     bookedCount===0?' No booked flights are recorded for this date.':'');
+    airplaneCount+' registered aircraft · '+bookedCount+' booked flights · '+
+    plannedCount+' planned departures on '+selectedDate.label+'.'+
+    (plannedCount>0?' Planned routes are not booked or activated.':
+     bookedCount===0?' No booked or planned departures on this date.':'');
   }
  }
  async function loadAirlineSchedule(){
