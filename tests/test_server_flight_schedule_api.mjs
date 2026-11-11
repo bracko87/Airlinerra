@@ -7,7 +7,7 @@ import {
 } from '../server/flight-schedule-service.mjs';
 import {createFlightScheduleClient} from '../website/flight-schedule-client.mjs';
 import {createProductionGameApi,SCHEDULE_ROUTE,SCHEDULE_EDGE_URL} from '../server/production-game-api.mjs';
-import {routePlannerMarkup} from '../website/route-planner.mjs';
+import {routePlannerMarkup,operationalScheduleFromPlanningRoute} from '../website/route-planner.mjs';
 const read=p=>readFile(new URL(p,import.meta.url),'utf8');
 const USER='11111111-1111-4111-8111-111111111111';
 const AIRLINE='22222222-2222-4222-8222-222222222222';
@@ -50,6 +50,40 @@ test('payload validator rejects cross-airline IDs, fake UTC timestamps, oversize
  assert.equal(validateFlightSchedulePayload({...flight,referenceArrivalUtc:'2026-11-06T09:00:00Z'}),false);
  assert.equal(validateFlightSchedulePayload({...flight,action:'activate'}),false);
 });
+test('only explicit saved planning-route timestamps can be registered operationally',()=>{
+ const plan={planId:'55555555-5555-4555-8555-555555555555',
+  status:'planning',aircraftInventoryId:PLANE,flightNumber:'PA101',
+  originAirportKey:'OURAIRPORTS:2220',
+  destinationAirportKey:'OURAIRPORTS:4001',
+  referenceDepartureUtc:'2026-11-16T09:00:00.000Z',
+  referenceArrivalUtc:'2026-11-16T11:00:00.000Z',
+  schedule:[{day:0,time:'10:00'},{day:4,time:'11:00'}],
+  operation:{departureStand:'terminal',arrivalStand:'remote'}};
+ const operational=operationalScheduleFromPlanningRoute(plan,AIRLINE);
+ assert.deepEqual(operational,{
+  airlineId:AIRLINE,aircraftInventoryId:PLANE,flightNumber:'PA101',
+  originAirportKey:'OURAIRPORTS:2220',
+  destinationAirportKey:'OURAIRPORTS:4001',
+  referenceDepartureUtc:'2026-11-16T09:00:00Z',
+  referenceArrivalUtc:'2026-11-16T11:00:00Z',
+  weeklySchedule:[{day:0,time:'10:00'},{day:4,time:'11:00'}],
+  departureStand:'terminal',arrivalStand:'remote'});
+ assert.equal(validateFlightSchedulePayload({action:'save',...operational}),true);
+ for(const invalid of [
+  {...plan,referenceDepartureUtc:null,referenceArrivalUtc:null},
+  {...plan,referenceDepartureUtc:'2026-11-16T09:00:00Z',referenceArrivalUtc:null},
+  {...plan,referenceArrivalUtc:'2026-11-16T08:00:00Z'},
+  {...plan,referenceDepartureUtc:'2026-11-16T09:00:00+01:00'},
+  {...plan,status:'local'},
+  {...plan,destinationAirportKey:plan.originAirportKey},
+  {...plan,operation:{...plan.operation,departureStand:null}},
+  {...plan,schedule:[{day:0,time:'10:00'},{day:0,time:'11:00'}]},
+  {...plan,planId:null}
+ ]){
+  assert.throws(()=>operationalScheduleFromPlanningRoute(invalid,AIRLINE),/PLANNING_ROUTE_/);
+ }
+});
+
 test('authentication and strict proxy origin are required before any database connection',async()=>{
  let verified=0;
  const {handler,connections}=create(()=>{throw Error('should not query')},
