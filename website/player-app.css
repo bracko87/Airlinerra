@@ -2520,6 +2520,42 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
 }
 
 
+/* Model cabin design: clearly readable totals and named reusable layouts. */
+#workspace-cabin-configurations .cabin-model-cost{
+ border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+ margin:14px 0 16px;padding:12px 0 14px
+}
+#workspace-cabin-configurations .cabin-model-cost h4{
+ margin:0 0 10px;font-size:15px;font-weight:750
+}
+#workspace-cabin-configurations .cabin-model-cost .hint{margin:10px 0 0}
+#workspace-cabin-configurations .cabin-cost-breakdown{
+ display:grid;gap:8px;border:0;padding:0;margin:0
+}
+#workspace-cabin-configurations .cabin-cost-line,
+#workspace-cabin-configurations .cabin-cost-total{
+ display:flex;justify-content:space-between;gap:16px;align-items:center;
+ padding:7px 9px;font-size:13px
+}
+#workspace-cabin-configurations .cabin-cost-total{
+ font-size:18px;font-weight:800;color:var(--navy);
+ border-top:2px solid var(--line);padding-top:14px
+}
+#workspace-cabin-configurations .cabin-cost-total strong{font-size:22px;white-space:nowrap}
+#workspace-cabin-configurations .cabin-model-name{
+ display:flex;flex-direction:column;gap:6px;font-size:12px;
+ font-weight:700;color:var(--navy);margin:15px 0 10px
+}
+#workspace-cabin-configurations .cabin-model-name input{
+ width:100%;max-width:440px;min-height:38px;padding:9px 12px;
+ border:1px solid #bdcde0;border-radius:7px;
+ background:var(--card,#fff);color:var(--navy)
+}
+#workspace-cabin-configurations #cabin-draft-save{min-height:38px;font-size:12px}
+:root[data-ui-theme="dark"] #workspace-cabin-configurations .cabin-model-name input{
+ background:#192f45;color:#e8f2fb;border-color:#3b526b
+}
+
 /* Seven-day rolling dated schedule, one selected UTC timeline at a time. */
 #workspace-schedule #schedule-selected-day{min-width:225px;text-align:center;font-variant-numeric:tabular-nums}
 #workspace-schedule .schedule-day-switch button:disabled{opacity:.45}
