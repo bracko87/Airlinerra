@@ -161,7 +161,7 @@ test('route preview displays nighttime Yes/No and permitted Chapters without hid
  const fallback=airportRouteRestrictionSummary(unknown);
  assert.match(fallback,/Nighttime ban: No/);
  assert.match(fallback,/Noise restrictions: No/);
- assert.match(fallback,/Game default, not source-verified/);
+ assert.doesNotMatch(fallback,/Game default, not source-verified/);
  const withoutSource=airportRouteRestrictionSummary({runways:[],operations:{}});
  assert.match(withoutSource,/Nighttime ban: Not loaded/);
  assert.match(withoutSource,/Noise restrictions: Not loaded/);
