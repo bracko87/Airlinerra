@@ -164,8 +164,8 @@ test('schedule page loads owner fleet and planning/schedule records, not fabrica
  assert.match(view,/id="schedule-aircraft-board"/);
  assert.match(view,/id="schedule-day-prev"/);
  assert.match(view,/id="schedule-day-next"/);
- assert.match(view,/renderAirlineWeeklyBoard\(doc,host,board,\{day:scheduleSelectedDay\}\)/);
- assert.match(view,/scheduleSelectedDay=\(scheduleSelectedDay\+/);
+ assert.match(view,/renderAirlineWeeklyBoard\(doc,host,board,\{/);
+ assert.match(view,/scheduleSelectedOffset=Math.max\(0,Math.min\(6/);
  assert.match(view,/AIRCRAFT × ONE DAY × 24 HOURS/);
  assert.doesNotMatch(view,/AIRCRAFT × 7 DAYS × 24 HOURS/);
  assert.match(view,/buildAirlineWeeklyBoard\(/);
@@ -180,4 +180,30 @@ test('schedule page loads owner fleet and planning/schedule records, not fabrica
  assert.match(bundle,/'aircraft-weekly-schedule-board\.mjs'/);
  assert.match(planner,/slotStatusLabel/);
  assert.match(SCHEDULE_SQL.drafts,/count\(\*\) = 2\*jsonb_array_length\(s.weekly_schedule\)/);
+});
+
+test('verified date label and estimated-only timeline are never presented as a booked slot',()=>{
+ const createElement=tag=>({tagName:tag.toUpperCase(),style:{},children:[],attributes:{},
+  append(...x){this.children.push(...x)},replaceChildren(...x){this.children=[...x]},
+  setAttribute(k,v){this.attributes[k]=v}
+ });
+ const doc={createElement},host=createElement('main');
+ const result=buildAirlineWeeklyBoard({fleet,localRoutes:[planned({
+  flightNumber:'PA445',aircraftId:'owned:'+A,
+  estimatedDurationMinutes:66,estimatedDurationSource:'five_phase_game_estimate',
+  schedule:[{day:2,time:'09:00'}]
+ })]});
+ renderAirlineWeeklyBoard(doc,host,result,{day:2,dateLabel:'Wednesday, 11 Nov 2026'});
+ const table=host.children[0].children[0];
+ assert.equal(table.children[0].children[0].children[1].children[0].textContent,
+  'Wednesday, 11 Nov 2026 · 24 hours (UTC)');
+ const lane=table.children[1].children[0].children[1].children[0].children[0];
+ const estimated=lane.children.find(x=>x.className==='schedule-board-estimated-band');
+ assert.ok(estimated);
+ assert.equal(estimated.style.width,66/1440*100+'%');
+ assert.ok(!lane.children.some(x=>x.className==='schedule-board-held-band'));
+ const button=lane.children.find(x=>x.attributes?.['data-schedule-flight']==='PA445');
+ assert.ok(button);
+ assert.match(button.textContent,/66 min est/);
+ assert.equal(result.counts.held,0);
 });
