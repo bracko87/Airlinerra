@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {standardCabinPlan,evaluateCabinPlan,estimateCabinRefit,cabinClasses,cabinRowLayout,createCabinFloorplanModel,renderCabinFloorplan}
+import {standardCabinPlan,evaluateCabinPlan,estimateCabinRefit,cabinClasses,cabinRowLayout,createCabinFloorplanModel,renderCabinFloorplan,validateCabinModelRows}
  from '../website/cabin-configuration-manager.mjs';
 import {FLEET_SQL,validateFleetAcquisitionRequest,createFleetAcquisitionHandler,
  FLEET_ACQUISITION_API_ROUTE} from '../server/fleet-acquisition-service.mjs';
@@ -99,6 +99,7 @@ test('cabins overview fetches only airline-owned aircraft and source-linked faci
   if(sql===FLEET_SQL.cabinAircraft)return {rowCount:1,rows:[{
    aircraftInventoryId:aircraft,standardEconomy:156,installedEconomy:156,registration:'YU-PAN01'
   }]};
+  if(sql===FLEET_SQL.cabinModelDesigns)return {rowCount:0,rows:[]};
   if(sql===FLEET_SQL.cabinDirectory)return {rowCount:1,rows:[{continent:'Europe',airportCode:'LBSF'}]};
   if(sql===FLEET_SQL.cabinRefitSites)return {rowCount:1,rows:[{aircraftInventoryId:aircraft,airportCode:'LBSF'}]};
   if(sql===FLEET_SQL.cabinGeometry)return {rowCount:1,rows:[{
@@ -125,7 +126,7 @@ test('floorplan and navigation do not claim certified exit positions or live ref
  ]);
  assert.match(ui,/exit positions and certification/);
  assert.match(ui,/renderCabinFloorplan/);
- assert.match(ui,/draft_saved_not_installed/);
+ assert.match(ui,/model_design_saved_not_installed/);
  assert.match(workspace,/data-workspace-go="cabin-configurations"/);
  assert.match(html,/data-view-link="cabin-configurations"/);
  assert.match(html,/>Flight services</);
@@ -238,4 +239,69 @@ test('40 options and all 271 default patterns are represented in migration',asyn
  assert.match(service,/cabinGeometry:/);
  assert.match(service,/client.query\(FLEET_SQL.cabinGeometry\)/);
  assert.match(service,/geometries:geometry.rows/);
+});
+
+test('A319 named templates require full 3–3 / 3–3 / 2–2 / 1–1 rows',()=>{
+ const geometry={economyColumns:[3,3],premiumColumns:[3,3],
+  businessColumns:[2,2],firstColumns:[1,1]};
+ const valid={...standardCabinPlan(132),premium:12,business:4,first:2};
+ assert.equal(validateCabinModelRows(valid,geometry,156).valid,true);
+ for(const [key,n,needed] of [
+  ['economy',145,6],['premium',11,6],['business',3,4],['first',1,2]]){
+  const checked=validateCabinModelRows({...valid,[key]:n},geometry,156);
+  assert.equal(checked.valid,false);
+  assert.match(checked.reason,new RegExp(String(needed)));
+ }
+ const near={...standardCabinPlan(138),premium:12};
+ const quote=evaluateCabinPlan(near,seatTypes,156);
+ assert.equal(quote.valid,true);
+ assert.ok(quote.spacePct>98);
+ const nearFloor=createCabinFloorplanModel(quote,156,geometry);
+ const nearestRear=Math.max(...nearFloor.seats.map(x=>x.y+x.height));
+ assert.ok(nearFloor.height-45-nearestRear<35,'near-full cabin has no oversized rear void');
+ const sparse=evaluateCabinPlan(standardCabinPlan(72),seatTypes,156);
+ const sparseFloor=createCabinFloorplanModel(sparse,156,geometry);
+ const sparseRear=Math.max(...sparseFloor.seats.map(x=>x.y+x.height));
+ assert.ok(sparseFloor.height-45-sparseRear>100,'unused space remains visible');
+});
+
+test('model designs are owner verified, named and saved independently of installed aircraft',async()=>{
+ const req={action:'cabin-save-model-design',airlineId:airline,configurationId:16,
+  name:'A319 Comfort 156',economy:132,premium:12,business:4,first:2,
+  economyType:'eco_standard',premiumType:'premium_standard',
+  businessType:'business_standard',firstType:'first_standard',extraLegroomCm:0};
+ assert.equal(validateFleetAcquisitionRequest(req),true);
+ assert.equal(validateFleetAcquisitionRequest({...req,name:' '}),false);
+ assert.equal(validateFleetAcquisitionRequest({...req,name:'A'.repeat(81)}),false);
+ assert.equal(validateFleetAcquisitionRequest({...req,paidUsd:999}),false);
+ let writes=0;
+ const handler=makeHandler((sql,args)=>{
+  if(sql===FLEET_SQL.owner)return {rowCount:1,rows:[{}]};
+  if(sql===FLEET_SQL.cabinModelOwner)return {rowCount:1,rows:[{
+   referenceUnits:'156',useType:'passenger',
+   economyColumns:[3,3],premiumColumns:[3,3],
+   businessColumns:[2,2],firstColumns:[1,1]
+  }]};
+  if(sql===FLEET_SQL.cabinTypes)return {rowCount:seatTypes.length,rows:seatTypes};
+  if(sql===FLEET_SQL.cabinModelSave){writes++;
+   assert.equal(args[0],airline);assert.equal(args[1],16);
+   assert.equal(args[2],'A319 Comfort 156');
+   return {rowCount:1,rows:[{designId:'66666666-6666-4666-8666-666666666666',
+    configurationId:16,name:req.name}]};}
+  throw Error('Unexpected model-design SQL');
+ });
+ const out=await handler(makeRequest(req));
+ assert.equal(out.status,200);
+ const body=await out.json();
+ assert.equal(body.status,'model_design_saved_not_installed');
+ assert.equal(body.liveSeatsUnchanged,true);
+ assert.equal(body.cashDebited,false);
+ assert.equal(writes,1);
+ assert.equal((await handler(makeRequest({...req,economy:133}))).status,409);
+ assert.equal(writes,1,'partial Economy row cannot be persisted');
+ const foreign=makeHandler(sql=>{
+  if(sql===FLEET_SQL.owner)return {rowCount:0,rows:[]};
+  throw Error('Owner gate bypassed');
+ });
+ assert.equal((await foreign(makeRequest(req))).status,403);
 });
