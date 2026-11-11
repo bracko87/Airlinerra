@@ -166,6 +166,7 @@ test('Aleksandrovo uses the 2,200 m fictional runway DESIGN rather than an inven
 test('route cards omit the neutral default note but keep honest restriction statuses',async()=>{
  const sourceCode=await source('../website/route-planner.mjs');
  assert.doesNotMatch(sourceCode,/Neutral game assumption — not independently verified/);
- assert.match(sourceCode,/gameDefault\?'Not source-verified'/);
+ assert.doesNotMatch(sourceCode,/gameDefault\?'Not source-verified'/);
+ assert.match(sourceCode,/routeAirportGameRules\(profile\)/);
  assert.match(sourceCode,/routeLongestRunwayLabel\(profile\)/);
 });
