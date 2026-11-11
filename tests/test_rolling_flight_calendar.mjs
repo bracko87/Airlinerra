@@ -40,7 +40,9 @@ test('schedule uses server Berlin date, bounds navigation and links to route det
  assert.match(workspace,/scheduleSelectedOffset=0/);
  assert.match(workspace,/dateLabel:selectedDate\.label/);
  assert.match(board,/data-schedule-flight/);
- assert.match(board,/schedule-board-estimated-band/);
+ assert.match(board,/schedule-board-rotation-band/);
+ assert.match(board,/plannedRotationTiming/);
+ assert.doesNotMatch(board,/schedule-board-estimated-band/);
  assert.match(operations,/airlinerra:schedule-open-flight/);
  assert.match(operations,/goTo\?\.\('route-details'\)/);
  assert.match(overlay,/'rolling-flight-calendar\.mjs'/);
