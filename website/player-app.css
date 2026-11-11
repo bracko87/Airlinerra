@@ -1731,6 +1731,15 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
 #workspace-schedule .schedule-board-rotation-band.is-slot-held{
  border:1px solid #d8843c;background:#f4b279
 }
+#workspace-schedule .schedule-board-rotation-band.is-planning{
+ background:rgba(244,108,25,.18);border:1px dashed #ed7c31
+}
+#workspace-schedule .schedule-board-time-marker.is-planning{
+ position:absolute;top:27px;bottom:6px;width:3px;background:#ed7c31
+}
+#workspace-schedule .schedule-board-inline-flight.is-planning{
+ background:#fff8ec;color:#a25014;border:1px dashed #e2a66b
+}
 #workspace-schedule .schedule-board-rotation-band .schedule-board-flight-segment{
  display:block;height:100%;background:#edb176
 }
