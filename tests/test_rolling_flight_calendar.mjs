@@ -45,7 +45,7 @@ test('schedule uses server Berlin date, bounds navigation and links to route det
  assert.match(operations,/goTo\?\.\('route-details'\)/);
  assert.match(overlay,/'rolling-flight-calendar\.mjs'/);
 });
-test('route map shows general, destination and origin data before Step 2',async()=>{
+test('route map shows general, origin and destination data before Step 2',async()=>{
  const markup=routePlannerMarkup();
  const general=markup.indexOf('route-general-summary');
  const destination=markup.indexOf('Destination airport</h4>');
@@ -53,16 +53,16 @@ test('route map shows general, destination and origin data before Step 2',async(
  const step2=markup.indexOf('Aircraft and weekly departures');
  const performance=markup.indexOf('Aircraft performance and fuel estimate');
  const step3=markup.indexOf('Ticket prices and onboard services');
- assert.ok(general>=0&&destination>general&&origin>destination);
- assert.ok(step2>origin&&performance>step2&&step3>performance);
+ assert.ok(general>=0&&origin>general&&destination>origin);
+ assert.ok(step2>destination&&performance>step2&&step3>performance);
  assert.ok(markup.indexOf('id="route-aircraft-check"')>performance);
  assert.ok(markup.indexOf('id="route-fuel-phases"')>performance);
  assert.ok(markup.indexOf('id="route-fuel-summary"')>performance);
  assert.ok(markup.includes('id="route-origin-demand"'));
  assert.ok(markup.includes('id="route-destination-demand"'));
  assert.ok(markup.includes('route-hidden-readouts" hidden'));
- assert.match(markup,/Traffic rights are the commercial permissions/);
- assert.match(markup,/Airlinerra licence and traffic-rights issuance is not active yet/);
+ assert.match(markup,/Nine freedoms of the air/);
+ assert.match(markup,/nine international aviation rights/i);
  assert.doesNotMatch(markup,/Weather forecast \(example times\)|Departure \/ arrival slots<\/span>|<span>Route status<\/span>/);
  const [src,css]=await Promise.all([
   read('website/route-planner.mjs'),read('website/player-app.css')
@@ -71,6 +71,6 @@ test('route map shows general, destination and origin data before Step 2',async(
  assert.match(src,/route-airport-rule/);
  assert.match(src,/estimatedDurationSource:'five_phase_game_estimate'/);
  assert.match(css,/route-demand-bar\.is-filled/);
- assert.match(css,/route-aircraft-performance-grid/);
- assert.match(src,/No booking or fuel payment has occurred/);
+ assert.match(css,/route-right-icon.is-approved/);
+ assert.match(src,/Full estimated operating cost: Not available/);
 });
