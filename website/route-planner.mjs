@@ -56,6 +56,19 @@ const weekTable=()=>'<div class="route-week-scroll"><div class="route-week-grid"
 const routeSetupField=(id,label,input)=>'<label class="route-setup-field" for="'+id+'"><span>'+label+'</span>'+input+'</label>';
 const optionalFare=(id,label)=>routeSetupField(id,label,
  '<div class="route-fare-input"><span>$</span><input id="'+id+'" type="number" min="0" max="100000" step="1" inputmode="decimal" placeholder="Not set"></div>');
+/** Keep game-designed fictional runway lengths separate from observed runways. */
+export function routeLongestRunwayLabel(profile){
+ const longest=Array.isArray(profile?.runways)?
+  profile.runways.filter(r=>Number.isFinite(r?.lengthM)&&r.lengthM>0)
+   .reduce((m,r)=>Math.max(m,r.lengthM),0):0;
+ if(longest>0)return Math.round(longest).toLocaleString('en-US')+' m';
+ const designed=profile?.gameRunwayDesign;
+ if(typeof profile?.key==='string'&&profile.key.startsWith('FICTIONAL:')&&
+  designed?.status==='fictional_game_only'&&
+  Number.isFinite(designed.lengthM)&&designed.lengthM>0)
+  return Math.round(designed.lengthM).toLocaleString('en-US')+' m (game design)';
+ return 'Unverified';
+}
 const routeAirportBlock=(side,title)=>
  '<section class="route-airport-block" aria-label="'+title+' airport facts">'+
   '<h4 id="route-'+side+'-title">'+title+' airport</h4>'+
@@ -831,9 +844,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    (code?': '+code:'');
   if(!profile){host.textContent='Airport data pending';return;}
   const isBelgrade=code==='BEG';
-  const longest=Array.isArray(profile.runways)?
-   profile.runways.filter(r=>Number.isFinite(r?.lengthM)&&r.lengthM>0)
-    .reduce((m,r)=>Math.max(m,r.lengthM),0):0;
+
   const simple=profile.operations?.simpleNightNoise||{};
   const gameDefault=['AIRLINESIM_NOT_FOUND','GAME_DEFAULT_NOT_CHECKED'].includes(simple.sourceStatus);
   const yesNo=value=>typeof value==='boolean'?(value?'Yes':'No'):'Unverified';
@@ -852,8 +863,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    simple.noiseRestrictions===false?
     'No specific ban recorded; procedures may still apply':'Unverified';
   const rules=[
-   ['Longest runway',longest?
-    Math.round(longest).toLocaleString('en-US')+' m':'Unverified'],
+   ['Longest runway',routeLongestRunwayLabel(profile)],
    ['Night curfew',curfew],
    ['Noise rules / procedures',noise]
   ];
@@ -870,10 +880,6 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    a.target='_blank';a.rel='noopener noreferrer';
    a.textContent='Official Serbia AIP: LYBE AD 2.3 (24 h) and AD 2.21 (noise procedures)';
    host.append(a);
-  }else if(gameDefault){
-   const source=doc.createElement('small');source.className='route-airport-source';
-   source.textContent='Neutral game assumption — not independently verified';
-   host.append(source);
   }
  };
  const airportDemand=(side,profile)=>{
