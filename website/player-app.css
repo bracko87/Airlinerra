@@ -2518,3 +2518,102 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
 :root[data-ui-theme="dark"] .cabin-legroom-field input{
  background:#192f45!important;color:#e8f2fb!important;border-color:#3b526b!important
 }
+
+
+/* Seven-day rolling dated schedule, one selected UTC timeline at a time. */
+#workspace-schedule #schedule-selected-day{min-width:225px;text-align:center;font-variant-numeric:tabular-nums}
+#workspace-schedule .schedule-day-switch button:disabled{opacity:.45}
+#workspace-schedule .schedule-board-estimated-band{
+ position:absolute;top:27px;bottom:6px;min-width:2px;
+ background:#c1dff0;border:1px dashed #4689b4;border-radius:3px;
+ opacity:.8;pointer-events:none
+}
+#workspace-schedule button.schedule-board-inline-flight{
+ cursor:pointer;min-width:0;text-align:left;line-height:1.4;
+ text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px;
+ margin:0!important;min-height:0
+}
+#workspace-schedule button.schedule-board-inline-flight:hover{filter:brightness(.96)}
+#workspace-schedule button.schedule-board-inline-flight:focus-visible{
+ outline:2px solid #f46c19;outline-offset:2px
+}
+/* Route preview: general facts followed by destination LEFT and origin RIGHT. */
+#workspace-routes .route-general-summary{
+ display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 16px;margin:12px 0 20px
+}
+#workspace-routes .route-general-summary .route-check-item{display:grid;gap:5px;padding:10px 0}
+#workspace-routes .route-airport-columns{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:12px 0 17px
+}
+#workspace-routes .route-airport-block{
+ min-width:0;padding:14px;border:1px solid #dfe8f2;border-radius:9px;background:#f9fbfe
+}
+#workspace-routes .route-airport-block h4{
+ color:var(--navy);font-size:13px;margin:0 0 10px;font-weight:750
+}
+#workspace-routes .route-airport-rule{
+ display:grid;gap:4px;border-bottom:1px solid #e3ebf3;padding:8px 0;
+ font-size:11px;color:var(--muted)
+}
+#workspace-routes .route-airport-rule strong{
+ color:var(--navy);font-size:12px;font-weight:600;line-height:1.5
+}
+#workspace-routes .route-airport-source{
+ display:block;font-size:10px;color:var(--muted);line-height:1.5;margin-top:9px
+}
+#workspace-routes .route-airport-demand{margin-top:11px}
+#workspace-routes .route-demand-line{
+ display:grid;grid-template-columns:minmax(68px,1fr) minmax(85px,1.6fr) auto;
+ align-items:center;gap:8px;margin:10px 0;color:var(--muted);font-size:11px
+}
+#workspace-routes .route-demand-line strong{
+ color:var(--navy);font-size:11px;font-weight:650;white-space:nowrap
+}
+#workspace-routes .route-demand-bars{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px}
+#workspace-routes .route-demand-bar{height:9px;background:#d5dfeb;border-radius:2px}
+#workspace-routes .route-demand-bar.is-filled{background:#317aaf}
+#workspace-routes .route-rights-note{
+ border-top:1px solid var(--line);padding:13px 0 4px;
+ display:grid;gap:4px
+}
+#workspace-routes .route-rights-note>strong{
+ color:var(--navy);font-size:12px
+}
+#workspace-routes .route-rights-note>span{
+ font-size:12px;font-weight:600;color:#596f84
+}
+#workspace-routes .route-rights-note p{
+ font-size:11px;line-height:1.6;margin:2px 0;color:var(--muted)
+}
+#workspace-routes .route-aircraft-performance-grid{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px;margin:10px 0 17px
+}
+#workspace-routes .route-performance-fact{
+ border:1px solid var(--line);border-radius:9px;background:#f8fafc;
+ padding:14px;display:grid;gap:6px;font-size:11px;color:var(--muted)
+}
+#workspace-routes .route-performance-fact strong{
+ font-size:12px;font-weight:650;color:var(--navy);overflow-wrap:anywhere
+}
+#workspace-routes .route-operation-checks{
+ border:1px solid var(--line);border-radius:8px;padding:10px 13px;
+ margin:12px 0;font-size:12px
+}
+#workspace-routes .route-operation-checks summary{cursor:pointer;color:var(--navy);font-weight:600}
+:root[data-ui-theme="dark"] #workspace-routes .route-airport-block,
+:root[data-ui-theme="dark"] #workspace-routes .route-performance-fact{
+ background:#1a3148;border-color:#38516a
+}
+:root[data-ui-theme="dark"] #workspace-routes .route-airport-block h4,
+:root[data-ui-theme="dark"] #workspace-routes .route-airport-rule strong,
+:root[data-ui-theme="dark"] #workspace-routes .route-demand-line strong,
+:root[data-ui-theme="dark"] #workspace-routes .route-performance-fact strong{color:#ecf5ff}
+@media(max-width:840px){
+ #workspace-routes .route-general-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #workspace-routes .route-airport-columns{grid-template-columns:1fr}
+}
+@media(max-width:520px){
+ #workspace-routes .route-general-summary,
+ #workspace-routes .route-aircraft-performance-grid{grid-template-columns:1fr}
+ #workspace-schedule #schedule-selected-day{min-width:180px}
+}
