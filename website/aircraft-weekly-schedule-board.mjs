@@ -184,6 +184,12 @@ export function renderAirlineWeeklyBoard(doc,host,board,{day=0,dateLabel=null}={
   return;
  }
  const selectedDay=Number.isInteger(day)&&day>=0&&day<7?day:0;
+ const visibleRows=board.rows.filter(row=>row.days[selectedDay].bands.length>0);
+ if(!visibleRows.length){
+  add(doc,host,'p','No booked flights on '+(dateLabel||fullWeekDays[selectedDay])+'.',
+   'schedule-board-empty');
+  return;
+ }
  const scroll=add(doc,host,'div',null,'schedule-board-scroll');
  const table=add(doc,scroll,'table',null,'schedule-board-table schedule-board-single-day');
  const head=add(doc,table,'thead'),heading=add(doc,head,'tr');
@@ -194,7 +200,7 @@ export function renderAirlineWeeklyBoard(doc,host,board,{day=0,dateLabel=null}={
  const ticks=add(doc,dayHeader,'div',null,'schedule-board-hour-labels');
  for(const tick of scaleTicks)add(doc,ticks,'span',tick);
  const tbody=add(doc,table,'tbody');
- for(const aircraft of board.rows){
+ for(const aircraft of visibleRows){
   const tr=add(doc,tbody,'tr');
   const label=add(doc,tr,'th');label.scope='row';label.className='schedule-board-aircraft-col';
   const identity=add(doc,label,'div',null,'schedule-board-aircraft-identity');
