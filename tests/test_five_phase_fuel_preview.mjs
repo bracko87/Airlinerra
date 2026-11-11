@@ -140,9 +140,10 @@ test('route fuel uses owner airport price estimate but hides raw internal model 
  const code=await read('website/route-planner.mjs');
  assert.match(code,/previewAirportFuelPrice\(originProfile,\{fuelFamily:aircraft.fuelFamily\}\)/);
  assert.match(code,/priceUsdPerKg:price\.usdPerKg/);
- assert.match(code,/Planning estimate using a neutral 50% load/);
+ assert.match(code,/Full estimated operating cost: Not available/);
+ assert.match(code,/originAirportCategory:originProfile/);
  assert.doesNotMatch(code,/fuelPeerModel\?\s*\(/);
- assert.match(code,/No booking or fuel payment has occurred/);
+ assert.match(code,/The fuel line is a forecast only, not the total or a charge/);
 });
 
 test('unverified engine and piston AVGAS never receive a kerosene game price',()=>{
