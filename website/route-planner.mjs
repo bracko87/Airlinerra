@@ -898,11 +898,26 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
   }
 
  };
+ const updateRights=()=>{
+  const from=selected('from'),to=selected('to');
+  const fromProfile=airportProfiles.from?.key===from?.key?airportProfiles.from:null;
+  const toProfile=airportProfiles.to?.key===to?.key?airportProfiles.to:null;
+  const group2Blocked=[fromProfile,toProfile].some(profile=>
+   profile?.sourceGroup==='GROUP_2'&&profile.canActivateFlights===false);
+  renderTrafficRightIndicators(doc,$('route-rights-icons'),$('route-rights-legend'),{
+   homeIso:homeLocation?.countryIso,
+   originIso:from?.countryIso,destinationIso:to?.countryIso,
+   // Prepared Group 2 airport data may be inspected but these airports are
+   // not admitted for commercial flight activation. Not a traffic-right denial.
+   routeBlockReason:group2Blocked?'Group 2 airport not admitted for commercial flights':null
+  });
+ };
  const showDetails=()=>{
   airportRules('origin',airportProfiles.from);
   airportRules('destination',airportProfiles.to);
   airportDemand('origin',airportProfiles.from);
   airportDemand('destination',airportProfiles.to);
+  updateRights();
  };
  const syncAircraftCompatibility=()=>{
   const aircraft=catalogChoice(),assessment=aircraft?runwayAssessment(aircraft):null;
@@ -1087,10 +1102,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
     a.testOnly===true&&a.operationallyAllowed===false);
   syncAircraftCompatibility();
   message('route-slot-check','Select aircraft and flight times to check slots');
-  renderTrafficRightIndicators(doc,$('route-rights-icons'),$('route-rights-legend'),{
-   homeIso:homeLocation?.countryIso,
-   originIso:from?.countryIso,destinationIso:to?.countryIso
-  });
+  updateRights();
   message('route-status',pairStatus==='SAME_AIRPORT'?'Restricted — same airport':'Draft only');
   const keys=[from?.key||'',to?.key||''].join('|');
   if(keys!==lastKeys){lastKeys=keys;clearPreflight();void loadAirportDetails(from,to);}
