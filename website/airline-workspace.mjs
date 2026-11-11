@@ -555,18 +555,32 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    if(status)status.textContent='The server date is not verified.';
    return;
   }
+  const bookingDataAvailable=!scheduleReadError&&Array.isArray(scheduleSnapshot?.drafts);
   renderAirlineWeeklyBoard(doc,host,board,{
-   day:selectedDate.weekday,dateLabel:selectedDate.label
+   day:selectedDate.weekday,dateLabel:selectedDate.label,
+   bookingsAvailable:bookingDataAvailable
   });
   const status=$('schedule-status');
   if(status){
+   const airplaneCount=board.rows.length;
+   const local=safelyLoad(session,draftKey)||draft;
+   const localRouteCount=Array.isArray(local.routes)?local.routes.length:0;
+   const serverRouteCount=Array.isArray(scheduleSnapshot?.plans)?
+    scheduleSnapshot.plans.length:0;
+   const bookedCount=board.rows.reduce((n,row)=>
+    n+row.days[selectedDate.weekday].events.length,0);
    status.textContent=board.status==='unavailable'?
-    'Verified aircraft data is not available. Cannot determine airline timetable.':
+    'Fleet connection unavailable. Aircraft and bookings cannot be verified.':
     board.status==='empty'?
-    'No real owned or leased aircraft were returned for this airline.':
-    String(board.rows.reduce((n,row)=>n+row.days[selectedDate.weekday].events.length,0))+
+    'No owned or leased aircraft returned by the airline database.':
+    !bookingDataAvailable?
+    airplaneCount+' registered aircraft in fleet. Booking data unavailable: check the schedule API connection.':
+    airplaneCount+' registered aircraft in fleet · '+bookedCount+
     ' booked flights on '+selectedDate.label+'.'+
-    (scheduleReadError?' Some server flight records could not be loaded.':'');
+    (bookedCount===0&&(localRouteCount>0||serverRouteCount>0)?
+     ' '+(localRouteCount+serverRouteCount)+
+     ' saved route plan(s) are not booked flights. Open My Routes to complete booking.':
+     bookedCount===0?' No booked flights are recorded for this date.':'');
   }
  }
  async function loadAirlineSchedule(){
