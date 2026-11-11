@@ -101,6 +101,6 @@ test('origin first, Belgrade AIP nuance, and no fake total or debug paragraphs',
  assert.match(ui,/return 'BEG'/);
  assert.match(ui,/Math.round\(fuel.airborneMinutes\)/);
  assert.match(ui,/aircraft\?\.cruiseSpeedKmh/);
- assert.match(ui,/Full estimated operating cost: Not available/);
+ assert.match(ui,/NOT the complete flight cost/);
  assert.doesNotMatch(ui,/const caveat=doc.createElement\('p'\)/);
 });
