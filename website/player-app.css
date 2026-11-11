@@ -2762,22 +2762,26 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
 #workspace-routes .route-right-explanation{padding:8px 0;border-top:1px solid #e4ecf5}
 #workspace-routes .route-right-explanation strong{font-size:12px;color:var(--navy)}
 #workspace-routes .route-right-explanation p{margin:3px 0;font-size:11px}
-/* Standalone symbols only; no numbered badges, tiles, borders, or backgrounds.
-   Amber indicates a potentially relevant right, NOT an independently verified grant. */
-#workspace-routes .route-rights-icons{display:flex;align-items:center;flex-wrap:wrap;gap:10px 16px;margin:10px 0 0}
-#workspace-routes .route-right-icon{
+/* The nine small orange circles represent reference categories, not grants.
+   Route-specific candidate state stays available to accessibility/preflight logic. */
+#workspace-routes .route-rights-icons{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:10px 0 0}
+#workspace-routes .route-right-icon,
+#workspace-routes .route-right-icon.is-inapplicable,
+#workspace-routes .route-right-icon.is-unverified,
+#workspace-routes .route-right-icon.is-approved{
  display:inline-flex;align-items:center;justify-content:center;
- min-width:0;padding:0;margin:0;border:0;border-radius:0;
- font-size:22px;line-height:1.25;font-weight:750;
- color:#a8b6c5;background:transparent;
+ width:25px;height:25px;min-width:25px;padding:0;margin:0;
+ border:1px solid #e0782d;border-radius:50%;
+ font-size:15px;line-height:1;font-weight:750;
+ color:#d8660d;background:transparent;
  white-space:nowrap;cursor:help
 }
-#workspace-routes .route-right-icon.is-inapplicable{color:#a8b6c5}
-#workspace-routes .route-right-icon.is-unverified{color:#cc811b}
-#workspace-routes .route-right-icon.is-approved{color:#e16e11}
-:root[data-ui-theme="dark"] #workspace-routes .route-right-icon.is-inapplicable{color:#7890aa}
-:root[data-ui-theme="dark"] #workspace-routes .route-right-icon.is-unverified{color:#f0b15f}
-:root[data-ui-theme="dark"] #workspace-routes .route-right-icon.is-approved{color:#ff9853}
+:root[data-ui-theme="dark"] #workspace-routes .route-right-icon,
+:root[data-ui-theme="dark"] #workspace-routes .route-right-icon.is-inapplicable,
+:root[data-ui-theme="dark"] #workspace-routes .route-right-icon.is-unverified,
+:root[data-ui-theme="dark"] #workspace-routes .route-right-icon.is-approved{
+ color:#ff9b4a;border-color:#ff9b4a
+}
 #workspace-routes .route-airport-aip{color:#1e6094;text-decoration:underline;text-underline-offset:2px}
 #workspace-routes .route-cost-breakdown{border:1px solid #e0e9f2;border-radius:9px;overflow:hidden}
 #workspace-routes .route-cost-line{
