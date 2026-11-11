@@ -1,10 +1,9 @@
 /**
  * Seven-day aircraft rota for an airline's real owned/leased fleet.
  * All times are shown on the 00:00–24:00 UTC scale for each weekday.
- * IMPORTANT: A planning draft is a departure marker, NOT a booked aircraft
- * interval. Only explicitly slot-reserved, verified-duration schedule drafts
- * have a coloured flight window. Those windows are not live flights and do
- * not prove ground-turnaround availability.
+ * Airport slots, estimated flight time, and aircraft turnaround are separate.
+ * Estimated occupation windows are visual planning guidance, never a live
+ * flight, confirmed refit, operational clearance, or server-side reservation.
  */
 export const WEEK_DAYS=Object.freeze(['Mon','Tue','Wed','Thu','Fri','Sat','Sun']);
 const HHMM=/^(?:[01]\d|2[0-3]):[0-5]\d$/;
@@ -14,6 +13,47 @@ const ownership=a=>['owned','leased'].includes(a?.ownershipType);
 const clockToMinute=s=>HHMM.test(s||'')?Number(s.slice(0,2))*60+Number(s.slice(3)):null;
 const minuteToClock=n=>String(Math.floor(n/60)%24).padStart(2,'0')+':'+String(n%60).padStart(2,'0');
 const valueOf=x=>String(x||'').slice(0,96);
+const airportCode=x=>typeof x==='string'&&/^[A-Z0-9]{3,5}$/.test(x)?x:null;
+const turnaroundValue=x=>Number.isInteger(x)&&x>=45&&x<=360?x:null;
+const sameRoute=(a,b)=>asAircraftId(a)===asAircraftId(b)&&
+ (a.originAirportKey||a.from?.key)===(b.originAirportKey||b.from?.key)&&
+ (a.destinationAirportKey||a.to?.key)===(b.destinationAirportKey||b.to?.key);
+export function plannedRotationTiming(startMinute,flightMinutes,turnaroundMinutes){
+ if(!Number.isInteger(startMinute)||startMinute<0||startMinute>=1440||
+  !Number.isInteger(flightMinutes)||flightMinutes<=0||flightMinutes>72*60)return null;
+ const turnaround=turnaroundValue(turnaroundMinutes);
+ const total=flightMinutes+(turnaround??0);
+ return {flightMinutes,turnaroundMinutes:turnaround,
+  totalMinutes:turnaround===null?null:total,
+  arrivalMinute:(startMinute+flightMinutes)%1440,
+  availableMinute:turnaround===null?null:(startMinute+total)%1440,
+  arrivalDayOffset:Math.floor((startMinute+flightMinutes)/1440),
+  availableDayOffset:turnaround===null?null:Math.floor((startMinute+total)/1440)};
+}
+const clockOnDay=(minute,offset)=>minuteToClock(minute)+
+ (offset>0?' (+'+offset+' day'+(offset===1?'':'s')+')':'');
+export function flightScheduleTooltip(event,band=null){
+ const flightNumber=event?.flightNumber||band?.flightNumber||'Flight';
+ const code=(event?.fromCode&&event?.toCode)?
+  ' · '+event.fromCode+' → '+event.toCode:'';
+ const departure=event?.time||'Departure on previous day';
+ const duration=event?.durationMinutes??event?.sampleDurationMinutes??null;
+ const timing=event?.timing||(duration!==null&&event?.minute!==undefined?
+  plannedRotationTiming(event.minute,duration,event?.turnaroundMinutes):null);
+ const arrival=timing?clockOnDay(timing.arrivalMinute,timing.arrivalDayOffset):'unknown';
+ const available=timing?.totalMinutes!==null&&timing?
+  clockOnDay(timing.availableMinute,timing.availableDayOffset):'not verified';
+ const ground=timing?.turnaroundMinutes??null;
+ const status=event?.status==='slot-held'?'Airport slots reserved; not activated':
+  'Planning only; time not reserved';
+ return flightNumber+code+' | Departure '+departure+' UTC | '+
+  'Estimated arrival '+arrival+' UTC | '+
+  'Flight '+(duration===null?'unknown':duration+' min')+' | '+
+  'Turnaround '+(ground===null?'unknown':ground+' min')+' | '+
+  'Total planning window '+(timing?.totalMinutes===null||!timing?
+   'unknown':timing.totalMinutes+' min')+' | '+
+  'Estimated available from '+available+' UTC | '+status;
+}
 const validDuration=(a,b)=>{
  if(!a||!b)return null;
  const start=Date.parse(a),end=Date.parse(b);
@@ -50,6 +90,7 @@ export function buildAirlineWeeklyBoard({fleet,serverFleet,plans=[],drafts=[],lo
  const rows=aircraft.map(a=>({
   id:a.id,registration:valueOf(a.registration)||'Unregistered',
   name:[a.manufacturer,a.model].filter(Boolean).join(' ')||valueOf(a.model)||'Aircraft',
+  nickname:valueOf(a.nickname).trim(),
   ownership:a.ownershipType,
   fleetStatus:valueOf(a.fleetStatus)||'unverified',
   days:WEEK_DAYS.map((_,day)=>({day,events:[],bands:[],warnings:[]})),
@@ -64,6 +105,8 @@ export function buildAirlineWeeklyBoard({fleet,serverFleet,plans=[],drafts=[],lo
    typeof x.destinationAirportKey==='string'&&
    x.source==='aircraft_five_phase_estimate')
   .map(x=>[x.flightNumber,x]));
+ const matchingPlans=[...(Array.isArray(plans)?plans:[]),
+  ...(Array.isArray(localRoutes)?localRoutes:[])];
  const seen=new Set();
  // A saved local route can carry an estimate from the owner's real aircraft
  // fuel model. It does NOT authorize a slot or prove actual flight duration.
@@ -104,6 +147,19 @@ export function buildAirlineWeeklyBoard({fleet,serverFleet,plans=[],drafts=[],lo
    calculation.destinationAirportKey===(flight.to?.key||flight.destinationAirportKey)?
     calculation.minutes:null;
   const planningDuration=sampleDuration??localEstimate??ownerEstimate;
+  const companion=matchingPlans.find(p=>p.flightNumber===flightNumber&&sameRoute(p,flight));
+  const turnaroundMinutes=turnaroundValue(flight.operation?.turnaroundMinutes)??
+   turnaroundValue(flight.turnaroundMinutes)??
+   turnaroundValue(companion?.operation?.turnaroundMinutes)??
+   turnaroundValue(companion?.turnaroundMinutes);
+  const fromCode=airportCode(flight?.from?.code)||
+   airportCode(flight?.originAirportCode)||
+   airportCode(companion?.from?.code)||
+   airportCode(calculation?.originAirportCode);
+  const toCode=airportCode(flight?.to?.code)||
+   airportCode(flight?.destinationAirportCode)||
+   airportCode(companion?.to?.code)||
+   airportCode(calculation?.destinationAirportCode);
   const unique=new Set();
   for(const stop of schedule){
    const minute=clockToMinute(stop.time),eventKey=stop.day+'|'+minute;
@@ -111,26 +167,33 @@ export function buildAirlineWeeklyBoard({fleet,serverFleet,plans=[],drafts=[],lo
    unique.add(eventKey);
    const event={
     day:stop.day,minute,time:stop.time,flightNumber,
-    from:valueOf(flight?.from?.code||flight?.originAirportKey),
-    to:valueOf(flight?.to?.code||flight?.destinationAirportKey),
+    from:fromCode||'',to:toCode||'',fromCode,toCode,
     status,statusLabel:slotStatusLabel[status],
     durationMinutes:verifiedDuration,
-    sampleDurationMinutes:planningDuration
+    sampleDurationMinutes:planningDuration,
+    turnaroundMinutes,
+    timing:plannedRotationTiming(minute,planningDuration,turnaroundMinutes)
    };
    row.days[stop.day].events.push(event);
    row.flights++;
-   // Only verified airport-slot reservations can form booked-style windows.
-   // Wrap flight air-time across midnight and the week boundary if needed.
-   if(verifiedDuration!==null){
-    let pos=minute,left=verifiedDuration,index=stop.day;
+   // Render the entire aircraft rotation (flight + turnaround), if both
+   // trusted route inputs exist. A planning band never books a slot.
+   const flightMinutes=verifiedDuration??planningDuration;
+   const hasFlight=Number.isInteger(flightMinutes)&&flightMinutes>0;
+   const total=hasFlight?flightMinutes+(turnaroundMinutes??0):0;
+   if(hasFlight){
+    let pos=minute,left=total,index=stop.day,elapsed=0;
     while(left>0){
      const length=Math.min(left,1440-pos);
      row.days[index].bands.push({
-      start:pos,end:pos+length,
-      flightNumber,kind:'slot-held',sourceDay:stop.day,
-      continues:index!==stop.day
+      start:pos,end:pos+length,flightNumber,
+      kind:verifiedDuration!==null?'slot-held':'planned-rotation',
+      sourceDay:stop.day,continues:index!==stop.day,
+      flightMinutes,turnaroundMinutes,totalMinutes:turnaroundMinutes===null?null:total,
+      elapsedMinutes:elapsed,
+      event
      });
-     left-=length;index=(index+1)%7;pos=0;
+     left-=length;elapsed+=length;index=(index+1)%7;pos=0;
     }
    }
   }
@@ -147,7 +210,7 @@ export function buildAirlineWeeklyBoard({fleet,serverFleet,plans=[],drafts=[],lo
   for(let i=1;i<events.length;i++)if(events[i-1].minute===events[i].minute)
    cell.warnings.push('Multiple departures at '+events[i].time+'; aircraft rotation not verified.');
   for(let i=1;i<cell.bands.length;i++)if(cell.bands[i-1].end>cell.bands[i].start)
-   cell.warnings.push('Overlapping slot-held flight windows; investigate before activation.');
+   cell.warnings.push('Overlapping flight/rotation planning windows; verify aircraft availability before activation.');
  }
  const held=rows.flatMap(r=>r.days).reduce((n,c)=>n+c.bands.filter(b=>!b.continues).length,0);
  const flights=rows.reduce((n,r)=>n+r.flights,0);
@@ -168,9 +231,9 @@ const pct=minute=>100*minute/1440;
 const endClock=minute=>minute===1440?'24:00':minuteToClock(minute);
 /**
  * Display exactly ONE weekday, with all real company aircraft as rows.
- * Each lane keeps the entire 24-hour scale. One flight's blue interval
- * is exactly its verified air-time, never a fixed-width card.
- * Orange markers denote unreserved, unverified planning departures.
+ * Each lane keeps the entire 24-hour scale. A planned rotation is shown
+ * only when its flight duration is grounded in route data; unknown duration
+ * remains a departure-only label, without invented availability.
  */
 export function renderAirlineWeeklyBoard(doc,host,board,{day=0,dateLabel=null}={}){
  if(!host)return;
@@ -197,9 +260,10 @@ export function renderAirlineWeeklyBoard(doc,host,board,{day=0,dateLabel=null}={
  for(const aircraft of board.rows){
   const tr=add(doc,tbody,'tr');
   const label=add(doc,tr,'th');label.scope='row';label.className='schedule-board-aircraft-col';
-  add(doc,label,'strong',aircraft.registration);
+  const identity=add(doc,label,'div',null,'schedule-board-aircraft-identity');
+  add(doc,identity,'strong',aircraft.registration);
+  if(aircraft.nickname)add(doc,identity,'span',aircraft.nickname,'schedule-board-nickname');
   add(doc,label,'span',aircraft.name,'schedule-board-name');
-  add(doc,label,'small',aircraft.ownership+' · '+aircraft.fleetStatus);
   const td=add(doc,tr,'td');
   const cell=aircraft.days[selectedDay];
   const track=add(doc,td,'div',null,'schedule-board-day-track');
@@ -207,8 +271,7 @@ export function renderAirlineWeeklyBoard(doc,host,board,{day=0,dateLabel=null}={
   // Separate lanes prevent a pair of close departures from obscuring
   // each other. Every lane still covers exactly one 24-hour day.
   const bands=cell.bands.map(b=>({
-   ...b,event:cell.events.find(e=>e.flightNumber===b.flightNumber)||
-    null
+   ...b,event:b.event||cell.events.find(e=>e.flightNumber===b.flightNumber)||null
   }));
   const renderedFlights=new Set(bands.map(b=>b.flightNumber));
   const lanes=[...bands.map(b=>({band:b,event:b.event})),
@@ -222,53 +285,42 @@ export function renderAirlineWeeklyBoard(doc,host,board,{day=0,dateLabel=null}={
    const lane=add(doc,track,'div',null,'schedule-board-track-lane');
    const flightNumber=event?.flightNumber||band?.flightNumber||'Flight';
    const start=band?.start??event?.minute??0;
-   const slotHeld=Boolean(band&&band.kind==='slot-held');
-   const verifiedMinutes=event?.durationMinutes??null;
-   const plannedMinutes=event?.sampleDurationMinutes??null;
-   const duration=verifiedMinutes??plannedMinutes;
-   const estimated=!slotHeld&&duration!==null;
-   const tooltip=slotHeld?
-    flightNumber+' · verified slot-held flight window '+
-    minuteToClock(band.start)+'–'+endClock(band.end)+
-    ' UTC; actual turnaround and flight activation not verified':
-    flightNumber+' · '+(event?.time||'Continuing flight')+
-    ' UTC · '+(estimated?
-     'estimated '+duration+' min (unreserved planning time)':
-     'duration unknown — open route to calculate')+
-    '; no aircraft time booked';
-   if(slotHeld){
-    const filled=add(doc,lane,'div',null,'schedule-board-held-band');
+   const slotHeld=band?.kind==='slot-held';
+   const planningBand=band?.kind==='planned-rotation';
+   const duration=event?.durationMinutes??event?.sampleDurationMinutes??null;
+   const tooltip=flightScheduleTooltip(event,band);
+   if(band){
+    const filled=add(doc,lane,'div',null,
+     'schedule-board-rotation-band'+(slotHeld?' is-slot-held':' is-planning'));
     filled.style.left=pct(band.start)+'%';
     filled.style.width=pct(band.end-band.start)+'%';
     filled.title=tooltip;
     meta(doc,filled,tooltip);
-   }else{
-    // A translucent forecast is a visual guide ONLY: never a booked interval.
-    if(estimated){
-     const projected=add(doc,lane,'div',null,'schedule-board-estimated-band');
-     projected.style.left=pct(start)+'%';
-     projected.style.width=pct(Math.min(duration,1440-start))+'%';
-     projected.title='Estimated flight duration, not a slot reservation';
+    // A small inner strip depicts the actual flight component; the remainder
+    // is turnaround, not another flight or confirmed airport-slot allocation.
+    const flightPart=Math.max(0,Math.min(band.end-band.start,
+     band.flightMinutes-band.elapsedMinutes));
+    if(flightPart>0){
+     const segment=add(doc,filled,'span',null,'schedule-board-flight-segment');
+     segment.style.width=100*flightPart/(band.end-band.start)+'%';
     }
+   }else{
     const marker=add(doc,lane,'span',null,'schedule-board-time-marker');
     marker.style.left=pct(start)+'%';
     marker.title=tooltip;
    }
+   const route=(event?.fromCode&&event?.toCode)?
+    ' · '+event.fromCode+' → '+event.toCode:'';
    const text=add(doc,lane,event?'button':'span',
-    flightNumber+(event?' · '+event.time:' · continues')+
-    (duration!==null?' · '+duration+' min'+(estimated?' est.':''):
-     event?' · duration pending':''),
+    flightNumber+route,
     'schedule-board-inline-flight'+(slotHeld?' is-slot-held':' is-planning'));
-   // A short flight interval must remain short; move its *label* to the
-   // side when necessary without changing the occupied interval width.
    if(event){
     text.type='button';
     text.setAttribute('data-schedule-flight',flightNumber);
-    text.setAttribute('aria-label','Open '+flightNumber+' in My Routes; '+
-      (duration!==null?(estimated?'estimated ':'verified ')+duration+' minutes':
-      'duration not yet estimated'));
+    text.setAttribute('aria-label','Open '+flightNumber+route+' in My Routes. '+tooltip);
    }
-   text.style.left=Math.min(pct(start),87)+'%';
+   // Labels remain readable even when the time band is shorter than its text.
+   text.style.left=Math.min(pct(start),78)+'%';
    text.title=tooltip;
    meta(doc,text,tooltip);
   }
