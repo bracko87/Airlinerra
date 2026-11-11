@@ -8,6 +8,7 @@
   if(!footer || footer.dataset.studioFooter==='ready')return;
   // Preserve the public site's existing live connection-status widget, with
   // its attached retry event listeners and original DOM IDs.
+  const gameFooterTime=footer.querySelector('#game-footer-time');
   const existingHealth=footer.querySelector('.platform-health');
   if(existingHealth)existingHealth.remove();
   footer.className='studio-footer';
@@ -45,6 +46,13 @@
         <span>Airlinerra - one real day = one game day</span>
       </div>
     </div>`;
+  // Only the signed-in player page has this live-time element. Move the
+  // original node (do not recreate it) so the server-synced clock keeps
+  // working before and after this shared footer is mounted.
+  if(gameFooterTime){
+   const staticBottomNote=footer.querySelector('.studio-footer-bottom > span:last-child');
+   if(staticBottomNote)staticBottomNote.replaceWith(gameFooterTime);
+  }
   if(existingHealth){
    const place=footer.querySelector('.studio-footer-bottom');
    place.append(existingHealth);
