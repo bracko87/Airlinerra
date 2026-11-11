@@ -549,9 +549,23 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    plans:scheduleSnapshot?.plans,drafts:scheduleSnapshot?.drafts,
    localRoutes:local
   });
-  renderAirlineWeeklyBoard(doc,host,board,{day:scheduleSelectedDay});
-  const selected=$('schedule-selected-day');
-  if(selected)selected.textContent=scheduleDays[scheduleSelectedDay];
+  const selectedDate=scheduleCalendar[scheduleSelectedOffset];
+  const caption=$('schedule-selected-day');
+  if(caption)caption.textContent=selectedDate?
+   (selectedDate.isToday?'Today · ':'')+selectedDate.label:
+   'Berlin game date unavailable';
+  const back=$('schedule-day-prev'),forward=$('schedule-day-next');
+  if(back)back.disabled=!selectedDate||scheduleSelectedOffset===0;
+  if(forward)forward.disabled=!selectedDate||scheduleSelectedOffset===6;
+  if(!selectedDate){
+   host.textContent='Verifying today’s Berlin date. Refresh the timetable to retry.';
+   const status=$('schedule-status');
+   if(status)status.textContent='The server date is not verified.';
+   return;
+  }
+  renderAirlineWeeklyBoard(doc,host,board,{
+   day:selectedDate.weekday,dateLabel:selectedDate.label
+  });
   const status=$('schedule-status');
   if(status){
    status.textContent=board.status==='unavailable'?
@@ -559,9 +573,9 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
     board.status==='empty'?
     'No real owned or leased aircraft were returned for this airline.':
     String(board.rows.length)+' company aircraft · '+
-    String(board.rows.reduce((n,row)=>n+row.days[scheduleSelectedDay].events.length,0))+
-    ' departures on '+scheduleDays[scheduleSelectedDay]+' · '+
-    String(board.rows.reduce((n,row)=>n+row.days[scheduleSelectedDay].bands
+    String(board.rows.reduce((n,row)=>n+row.days[selectedDate.weekday].events.length,0))+
+    ' departures on '+selectedDate.label+' · '+
+    String(board.rows.reduce((n,row)=>n+row.days[selectedDate.weekday].bands
      .filter(b=>!b.continues).length,0))+
     ' verified flight windows that day.'+
     (scheduleReadError?' Some server routes could not be loaded; this timetable is incomplete.':'');
@@ -1319,6 +1333,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   };
   for(const [id,value] of Object.entries(values)){if($(id))$(id).textContent=value;}
   routePlannerController.updateData(data);
+  void syncScheduleCalendar();
   void loadRealFleetMarket();
   void loadUsedMarket();
   void loadAirlineSchedule();
@@ -1368,6 +1383,16 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   usedMarketChoice.payment=$('used-market-payment').value;renderUsedMarket();
  });
  doc.getElementById('player-main')?.addEventListener('click',async event=>{
+  const scheduledFlight=event.target.closest('[data-schedule-flight]');
+  if(scheduledFlight){
+   const flightNumber=scheduledFlight.getAttribute('data-schedule-flight');
+   if(/^[A-Z0-9]{2}[0-9]{1,4}$/.test(flightNumber||'')){
+    doc.dispatchEvent(new CustomEvent('airlinerra:schedule-open-flight',{
+     detail:{flightNumber}
+    }));
+   }
+   return;
+  }
   const openAircraft=event.target.closest('[data-fleet-aircraft-open]');
   if(openAircraft){
    const aircraftId=openAircraft.dataset.fleetAircraftOpen;
@@ -1649,11 +1674,12 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
     ' | Estimated cash runway: '+months+'. Scenario only - no server changes.';
   }
   if(id==='schedule-day-prev'||id==='schedule-day-next'){
-   scheduleSelectedDay=(scheduleSelectedDay+(id==='schedule-day-next'?1:6))%7;
-   renderSchedule();
-   return;
+   scheduleSelectedOffset=Math.max(0,Math.min(6,scheduleSelectedOffset+
+    (id==='schedule-day-next'?1:-1)));
+   renderSchedule();return;
   }
   if(id==='schedule-refresh'){
+   void syncScheduleCalendar();
    $('schedule-status').textContent='Refreshing company fleet and airline routes…';
    void loadRealFleetMarket();
    void loadAirlineSchedule();
