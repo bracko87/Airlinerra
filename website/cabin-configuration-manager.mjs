@@ -276,7 +276,7 @@ export function renderCabinFloorplan(doc,svg,plan,evaluation,referenceUnits,geom
    height:seat.height,rx:Math.min(4,seat.width/6),fill:seat.color,
    stroke:'#3c5266','stroke-width':.45}));
 }
-function appendRow(doc,table,c,typeList,plan,onEdit){
+export function appendRow(doc,table,c,typeList,plan,onEdit){
  const row=create(doc,'div','cabin-designer-row');
  const label=create(doc,'strong','',c.label);
  const select=create(doc,'select');
