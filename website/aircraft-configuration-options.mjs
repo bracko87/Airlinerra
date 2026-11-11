@@ -38,6 +38,20 @@ export function companyCabinChoices(overview,aircraftId){
   plan:std,quote:basicQuote,available:basicQuote.valid
  });
  const seen=new Set([fingerprint(std)]);
+ for(const design of (overview.modelDesigns||[])){
+  if(Number(design.configurationId)!==Number(target.configurationId))continue;
+  const plan={economy:design.economy,premium:design.premium,
+   business:design.business,first:design.first,
+   economyType:design.economyType,premiumType:design.premiumType,
+   businessType:design.businessType,firstType:design.firstType,
+   extraLegroomCm:Number(design.extraLegroomCm||0)};
+  const quote=evaluateCabinPlan(plan,overview.seatTypes,target.referenceUnits);
+  const finger=fingerprint(plan);
+  if(seen.has(finger))continue;
+  seen.add(finger);
+  choices.push({key:design.designId,label:safeName(design.name),
+   source:'Saved named model configuration',plan,quote,available:quote.valid});
+ }
  for(const source of overview.aircraft){
   if(!sameModel(source,target))continue;
   const plan=savedPlan(source);
