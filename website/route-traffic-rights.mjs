@@ -30,29 +30,55 @@ export function candidateTrafficFreedoms({homeIso,originIso,destinationIso}={}){
  }
  return [];
 }
+/** Traffic-right applicability and commercial activation are distinct facts.
+ * Only source-verified decisions may show a check or a rights-denial cross.
+ * A separate airport-admission block may show a cross over an applicable
+ * right, but its label must identify the AIRPORT block, not deny that right.
+ */
+export function trafficRightDisplayState(number,{homeIso=null,originIso=null,
+ destinationIso=null,verifiedDecisions=[],routeBlockReason=null}={}){
+ const relevant=candidateTrafficFreedoms({
+  homeIso,originIso,destinationIso
+ }).includes(number);
+ if(!relevant)return 'inapplicable';
+ if(typeof routeBlockReason==='string'&&routeBlockReason.trim())
+  return 'route-blocked';
+ const decision=Array.isArray(verifiedDecisions)?
+  verifiedDecisions.find(d=>d?.number===number&&d.sourceVerified===true):null;
+ if(decision?.status==='granted')return 'approved';
+ if(decision?.status==='denied')return 'denied';
+ return 'unverified';
+}
 export function renderTrafficRightIndicators(doc,strip,legend,{
- homeIso=null,originIso=null,destinationIso=null
+ homeIso=null,originIso=null,destinationIso=null,
+ verifiedDecisions=[],routeBlockReason=null
 }={}){
  if(!doc||!strip||!legend)return;
  strip.replaceChildren();legend.replaceChildren();
- const candidate=new Set(candidateTrafficFreedoms({homeIso,originIso,destinationIso}));
  for(const right of TRAFFIC_RIGHTS){
-  // No independently verified grants are connected. Color only indicates
-  // route relevance, not whether a commercial traffic right has been granted.
-  const relevant=candidate.has(right.number);
-  const button=doc.createElement('span');
-  button.className='route-right-icon'+(relevant?' is-unverified':' is-inapplicable');
-  button.textContent=right.symbol;
-  const status=relevant?'Potentially relevant; grant not verified':
-   'Not identified as relevant from this direct airport pair';
-  button.title=right.name;
-  button.setAttribute('aria-label',right.name+' — '+status);
-  strip.append(button);
+  const status=trafficRightDisplayState(right.number,{
+   homeIso,originIso,destinationIso,verifiedDecisions,routeBlockReason
+  });
+  const label={
+   inapplicable:'Not needed for this direct route',
+   unverified:'Relevant; permission not yet confirmed',
+   approved:'Confirmed permission for this route',
+   denied:'Confirmed permission denied for this route',
+   'route-blocked':'Route blocked: '+routeBlockReason+
+    '. Traffic-right permission has not been decided.'
+  }[status];
+  const icon=doc.createElement('span');
+  icon.className='route-right-icon is-'+status;
+  icon.textContent=right.symbol;
+  icon.title=right.name;
+  icon.setAttribute('aria-label',right.name+' — '+label);
+  icon.setAttribute('data-right-status',status);
+  strip.append(icon);
   const row=doc.createElement('div');row.className='route-right-explanation';
   const symbol=doc.createElement('strong');
   symbol.textContent=right.symbol+' · '+right.name;
   const description=doc.createElement('p');
-  description.textContent=right.detail+' '+(relevant?'This route may require it; not yet verified.':'No route-specific approval recorded.');
+  description.textContent=right.detail+' '+label+'.';
   row.append(symbol,description);legend.append(row);
  }
 }
