@@ -174,6 +174,52 @@ export function routeAirportPairStatus(origin,destination){
  return origin.key===destination.key?'SAME_AIRPORT':'VALID';
 }
 /** Real schedule mutation is never implied by read-only list or slot checks. */
+/** Promote only a server-owned planning route with explicit UTC timetable.
+ * Nothing here activates an aircraft, sells a ticket or creates finances.
+ * The owner-verified slot-reservation API independently rechecks all inputs.
+ */
+export function operationalScheduleFromPlanningRoute(plan,airlineId){
+ const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+ if(!plan||plan.status!=='planning'||!uuid.test(plan.planId||'')||
+    !uuid.test(airlineId||'')||!uuid.test(plan.aircraftInventoryId||''))
+  throw Error('PLANNING_ROUTE_NOT_VERIFIED');
+ const dep=plan.referenceDepartureUtc,arr=plan.referenceArrivalUtc;
+ const normalizedUtc=input=>{
+  if(typeof input!=='string'||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(input))
+   return null;
+  const time=Date.parse(input);
+  return Number.isFinite(time)?new Date(time).toISOString().slice(0,19)+'Z':null;
+ };
+ const departure=normalizedUtc(dep),arrival=normalizedUtc(arr);
+ if(!departure||!arrival||Date.parse(arrival)<=Date.parse(departure)||
+    Date.parse(arrival)-Date.parse(departure)>72*60*60*1000)
+  throw Error('PLANNING_ROUTE_EXPLICIT_UTC_TIMES_REQUIRED');
+ if(!/^[A-Z0-9]{2}[0-9]{1,4}$/.test(plan.flightNumber||'')||
+    !/^(OURAIRPORTS:[1-9][0-9]{0,18}|FICTIONAL:fictional:[A-Z]{2}:[A-Z0-9]{2,8})$/.test(plan.originAirportKey||'')||
+    !/^(OURAIRPORTS:[1-9][0-9]{0,18}|FICTIONAL:fictional:[A-Z]{2}:[A-Z0-9]{2,8})$/.test(plan.destinationAirportKey||'')||
+    plan.originAirportKey===plan.destinationAirportKey)
+  throw Error('PLANNING_ROUTE_AIRPORTS_NOT_VALID');
+ const weekly=plan.schedule;
+ if(!Array.isArray(weekly)||weekly.length<1||weekly.length>7||
+    new Set(weekly.map(x=>x?.day)).size!==weekly.length||
+    weekly.some(x=>!x||!Number.isInteger(x.day)||x.day<0||x.day>6||
+     typeof x.time!=='string'||!/^([01]\d|2[0-3]):[0-5]\d$/.test(x.time)))
+  throw Error('PLANNING_ROUTE_WEEKLY_TIMETABLE_NOT_VERIFIED');
+ const out=plan.operation?.departureStand,into=plan.operation?.arrivalStand;
+ if(!['terminal','remote','cargo'].includes(out)||
+    !['terminal','remote','cargo'].includes(into))
+  throw Error('PLANNING_ROUTE_AIRPORT_STANDS_REQUIRED');
+ return Object.freeze({
+  airlineId,aircraftInventoryId:plan.aircraftInventoryId,
+  flightNumber:plan.flightNumber,
+  originAirportKey:plan.originAirportKey,
+  destinationAirportKey:plan.destinationAirportKey,
+  referenceDepartureUtc:departure,referenceArrivalUtc:arrival,
+  weeklySchedule:weekly.map(x=>({day:x.day,time:x.time})),
+  departureStand:out,arrivalStand:into
+ });
+}
+
 export const routeDraftSaveMode=scheduler=>
  typeof scheduler?.planSave==='function'?'server-planning':'browser';
 export const flightPrefixFor=airline=>{
@@ -844,8 +890,32 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    return;
   }
   if(!serverDrafts.length){
-   holder.textContent='No slot-reserved operational schedules yet. Your airline planning routes appear in My Routes.';
-   return;
+   const empty=doc.createElement('p');
+   empty.textContent='No slot-reserved operational schedules yet. Planning routes need a separate slot-registration step before they can be certified.';
+   holder.append(empty);
+  }
+  for(const plan of serverPlans.slice(0,50)){
+   if(plan?.status!=='planning'||typeof plan.planId!=='string'||
+      serverDrafts.some(d=>d.flightNumber===plan.flightNumber))continue;
+   const row=doc.createElement('div');row.className='fleet-test-aircraft-row';
+   const title=doc.createElement('strong');
+   title.textContent=String(plan.flightNumber||'Planning route')+' · '+
+     String(plan.from?.name||plan.originAirportKey||'')+' to '+
+     String(plan.to?.name||plan.destinationAirportKey||'');
+   const description=doc.createElement('small');
+   const hasTimes=Boolean(plan.referenceDepartureUtc&&plan.referenceArrivalUtc);
+   description.textContent=hasTimes?
+     'Saved planning route · not a flight · airport slots not yet reserved':
+     'Planning route only · enter explicit UTC departure and arrival times in Advanced airport schedule checks, then save your route again';
+   row.append(title,description);
+   if(hasTimes){
+    const button=doc.createElement('button');
+    button.type='button';button.className='secondary';
+    button.dataset.routeRegisterPlanId=plan.planId;
+    button.textContent='Reserve slots for operational draft';
+    row.append(button);
+   }
+   holder.append(row);
   }
   for(const draft of serverDrafts.slice(0,50)){
    if(typeof draft?.id!=='string')continue;
@@ -1382,6 +1452,64 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
  main?.addEventListener('click',async event=>{
   const target=event.target?.closest?.('button');
   if(!target)return;
+  if(target.dataset.routeRegisterPlanId){
+   const id=target.dataset.routeRegisterPlanId;
+   const data=getData(),scheduler=data?.scheduler,airlineId=data?.airline?.id;
+   const plan=serverPlans.find(p=>p?.planId===id&&p.status==='planning');
+   if(!plan||!airlineId||typeof scheduler?.slotCheck!=='function'||
+      typeof scheduler?.save!=='function'){
+    message('route-server-draft-status','Planning route or operational schedule service unavailable. Nothing saved.');
+    return;
+   }
+   let draft;
+   try{
+    draft=operationalScheduleFromPlanningRoute(plan,airlineId);
+   }catch(error){
+    const reason=String(error?.message||'');
+    message('route-server-draft-status',reason.includes('TIMES_REQUIRED')?
+     'Enter explicit UTC departure and arrival times in Advanced airport schedule checks, then save the planning route again. No estimate will be substituted.':
+     reason.includes('STANDS_REQUIRED')?
+     'Select valid departure and arrival stands in the route, then save it again.':
+     'Planning route is incomplete. Edit and save it before reserving slots.');
+    return;
+   }
+   target.disabled=true;
+   message('route-server-draft-status','Checking airport slots for '+draft.flightNumber+'...');
+   try{
+    const check=await scheduler.slotCheck(draft);
+    if(check?.available!==true){
+     message('route-server-draft-status','NOT REGISTERED — required airport slots are unavailable. Choose a different schedule or stands.');
+     return;
+    }
+    const result=await scheduler.save(draft);
+    if(result?.status!=='draft'||result.slotsReserved!==true||
+       typeof result.scheduleId!=='string'||
+       result.canActivateNormalFlight!==false||
+       result.ledgerPosted===true||result.gameHardBlocked===true)
+     throw Error('UNVERIFIED_OPERATIONAL_DRAFT_CONFIRMATION');
+    // A successful write is confirmed by a fresh owner-scoped list.
+    await loadOwnedScheduleData(airlineId);
+    if(!serverDrafts.some(s=>s.id===result.scheduleId&&
+       s.flightNumber===draft.flightNumber&&s.slotsReserved===true)){
+     message('route-server-draft-status','Schedule submitted but list confirmation failed. Refresh the page before trying again; do not create duplicates.');
+     return;
+    }
+    const local=loadDraft?.()||{};
+    const updateRoute=r=>r?.flightNumber===draft.flightNumber?
+      {...r,serverScheduleId:result.scheduleId,slotsReserved:true}:r;
+    if(Array.isArray(local.routes))
+     draftWrite('routes',local.routes.map(updateRoute));
+    if(local.route?.flightNumber===draft.flightNumber)
+     draftWrite('route',updateRoute(local.route));
+    doc.dispatchEvent(new CustomEvent('airlinerra:route-draft-saved'));
+    message('route-server-draft-status',
+      draft.flightNumber+' registered as an operational DRAFT with airport slots reserved. It is NOT active: crew, route rights and independent approvals are still required. No flight or charge was created.');
+   }catch{
+    message('route-server-draft-status',
+      'Operational schedule registration was not confirmed. Refresh the server list before retrying. No flight was activated.');
+   }finally{target.disabled=false;}
+   return;
+  }
   if(target.dataset.routeServerDeleteId){
    const id=target.dataset.routeServerDeleteId;
    const airlineId=getData()?.airline?.id,scheduler=getData()?.scheduler;
