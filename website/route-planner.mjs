@@ -661,18 +661,73 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
   title.textContent=airport.name+(airport.code?' ('+airport.code+')':'');
   node.append(title);
  };
- const shortRestrictions=airportRouteRestrictionSummary;
- const shortDemand=profile=>{
-  if(!profile)return 'Data pending';
-  const p=profile.demand?.passengerGroup,c=profile.demand?.cargoGroup;
-  return 'Passengers '+(Number.isInteger(p)?p+'/5':'unknown')+
-   ' · Cargo '+(Number.isInteger(c)?c+'/5':'unknown');
+ const airportRules=(side,profile)=>{
+  const host=$('route-'+side+'-restrictions');if(!host)return;
+  host.replaceChildren();
+  if(!profile){host.textContent='Airport data pending';return;}
+  const longest=Array.isArray(profile.runways)?
+   profile.runways.filter(r=>Number.isFinite(r?.lengthM)&&r.lengthM>0)
+    .reduce((m,r)=>Math.max(m,r.lengthM),0):0;
+  const simple=profile.operations?.simpleNightNoise||{};
+  const yesNo=value=>typeof value==='boolean'?(value?'Yes':'No'):'Unverified';
+  const window=typeof simple.nighttimeWindow==='string'&&
+   simple.nighttimeWindow.trim()?simple.nighttimeWindow.trim().replace(/-/g,'–'):null;
+  const chapters=Array.isArray(simple.permittedChapters)?
+   simple.permittedChapters.filter(x=>Number.isInteger(x)&&x>0):[];
+  const rules=[
+   ['Longest runway',longest?
+    Math.round(longest).toLocaleString('en-US')+' m':'Unverified'],
+   ['Night curfew',yesNo(simple.nighttimeBan)+
+    (simple.nighttimeBan===true&&window?' · '+window+' local':'')],
+   ['Noise restrictions',yesNo(simple.noiseRestrictions)+
+    (simple.noiseRestrictions===true&&chapters.length?
+      ' · Chapters '+chapters.join(', '):'')]
+  ];
+  for(const [label,value] of rules){
+   const row=doc.createElement('div');row.className='route-airport-rule';
+   const name=doc.createElement('span');name.textContent=label;
+   const result=doc.createElement('strong');result.textContent=value;
+   row.append(name,result);host.append(row);
+  }
+  if(['AIRLINESIM_NOT_FOUND','GAME_DEFAULT_NOT_CHECKED'].includes(simple.sourceStatus)){
+   const source=doc.createElement('small');source.className='route-airport-source';
+   source.textContent='Neutral game assumption — restrictions not independently verified';
+   host.append(source);
+  }
+ };
+ const airportDemand=(side,profile)=>{
+  const host=$('route-'+side+'-demand');if(!host)return;
+  host.replaceChildren();
+  for(const [title,key] of [['Passengers','passengerGroup'],['Cargo','cargoGroup']]){
+   const raw=profile?.demand?.[key];
+   const rating=Number.isInteger(raw)&&raw>=1&&raw<=5?raw:null;
+   const row=doc.createElement('div');row.className='route-demand-line';
+   const label=doc.createElement('span');label.textContent=title;
+   const bars=doc.createElement('div');bars.className='route-demand-bars';
+   bars.setAttribute('role','img');
+   bars.setAttribute('aria-label',title+' demand: '+
+    (rating===null?'not available':rating+' of 5')+
+    '; game demand estimate, not booked passengers');
+   for(let n=1;n<=5;n++){
+    const bar=doc.createElement('span');
+    bar.className='route-demand-bar'+(rating!==null&&n<=rating?' is-filled':'');
+    bar.setAttribute('aria-hidden','true');bars.append(bar);
+   }
+   const value=doc.createElement('strong');value.textContent=rating===null?
+    'Unverified':rating+'/5';
+   row.append(label,bars,value);host.append(row);
+  }
+  if(profile?.demand){
+   const note=doc.createElement('small');note.className='route-airport-source';
+   note.textContent='Indicative game demand rating; not actual passenger or cargo bookings';
+   host.append(note);
+  }
  };
  const showDetails=()=>{
-  message('route-origin-restrictions',shortRestrictions(airportProfiles.from));
-  message('route-destination-restrictions',shortRestrictions(airportProfiles.to));
-  message('route-origin-demand',shortDemand(airportProfiles.from));
-  message('route-destination-demand',shortDemand(airportProfiles.to));
+  airportRules('origin',airportProfiles.from);
+  airportRules('destination',airportProfiles.to);
+  airportDemand('origin',airportProfiles.from);
+  airportDemand('destination',airportProfiles.to);
  };
  const syncAircraftCompatibility=()=>{
   const aircraft=catalogChoice(),assessment=aircraft?runwayAssessment(aircraft):null;
