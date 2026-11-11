@@ -73,3 +73,10 @@ footer.studio-footer .studio-footer-column{gap:6px}
 footer.studio-footer .studio-footer-column>strong{font-weight:650}
 footer.studio-footer .studio-footer-studio{font-weight:700}
 footer.studio-footer .studio-footer-bottom{margin-top:18px;padding-top:13px}
+
+/* Only the in-game footer shows Berlin time. Keep it as ordinary text. */
+footer.studio-footer #game-footer-time{
+ display:inline;background:transparent;border:0;box-shadow:none;border-radius:0;
+ padding:0;margin:0;color:inherit;font-size:inherit;font-weight:inherit;
+ font-variant-numeric:tabular-nums
+}
