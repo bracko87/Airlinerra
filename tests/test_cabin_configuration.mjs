@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {standardCabinPlan,evaluateCabinPlan,estimateCabinRefit,cabinClasses,cabinRowLayout,createCabinFloorplanModel,renderCabinFloorplan,validateCabinModelRows}
+import {standardCabinPlan,evaluateCabinPlan,estimateCabinRefit,cabinClasses,cabinRowLayout,createCabinFloorplanModel,renderCabinFloorplan,validateCabinModelRows,
+ passengerRatingView,createPassengerRatingGauge,updatePassengerRatingGauge}
  from '../website/cabin-configuration-manager.mjs';
 import {FLEET_SQL,validateFleetAcquisitionRequest,createFleetAcquisitionHandler,
  FLEET_ACQUISITION_API_ROUTE} from '../server/fleet-acquisition-service.mjs';
@@ -304,4 +305,43 @@ test('model designs are owner verified, named and saved independently of install
   throw Error('Owner gate bypassed');
  });
  assert.equal((await foreign(makeRequest(req))).status,403);
+});
+
+test('model editor displays a concise usage summary and a read-only 0–100 passenger rating',async()=>{
+ const ui=await readFile(new URL('../website/cabin-configuration-manager.mjs',import.meta.url),'utf8');
+ const css=await readFile(new URL('../website/player-app.css',import.meta.url),'utf8');
+ const ownerUpdate=ui.split(' function updateLayout(){')[1].split(' async function reload(){')[0];
+ assert.match(ownerUpdate,/% of available cabin space used/);
+ assert.match(ownerUpdate,/% remaining/);
+ assert.doesNotMatch(ownerUpdate,/describeCabinPatterns|bookingPreferencePreviewPct|game-design preview/i);
+ assert.match(ownerUpdate,/updatePassengerRatingGauge\(ratingGauge,valid\?result:null\)/);
+ assert.match(css,/\.cabin-passenger-rating-track/);
+ assert.match(css,/\.cabin-passenger-rating-value/);
+ const elements=[];
+ const doc={createElement(tag){
+  const item={tag,className:'',textContent:'',style:{},attrs:{},children:[],
+   append(...children){this.children.push(...children)},
+   setAttribute(name,value){this.attrs[name]=String(value)}};
+  elements.push(item);return item;
+ }};
+ const gauge=createPassengerRatingGauge(doc);
+ assert.equal(gauge.track.attrs.role,'meter');
+ assert.equal(gauge.track.attrs['aria-valuemin'],'0');
+ assert.equal(gauge.track.attrs['aria-valuemax'],'100');
+ assert.equal(gauge.root.children.length,2);
+ assert.equal(passengerRatingView({valid:true,comfortRating:52}).value,52);
+ updatePassengerRatingGauge(gauge,{valid:true,comfortRating:52});
+ assert.equal(gauge.value.textContent,'52 / 100');
+ assert.equal(gauge.fill.style.width,'52%');
+ assert.equal(gauge.thumb.style.left,'52%');
+ assert.equal(gauge.track.attrs['aria-valuenow'],'52');
+ assert.match(gauge.note.textContent,/game rating, not real feedback/);
+ updatePassengerRatingGauge(gauge,{valid:true,comfortRating:101});
+ assert.equal(gauge.fill.style.width,'100%','display is capped to 100');
+ updatePassengerRatingGauge(gauge,{valid:true,comfortRating:-5});
+ assert.equal(gauge.fill.style.width,'0%','display is never negative');
+ updatePassengerRatingGauge(gauge,null);
+ assert.equal(gauge.value.textContent,'— / 100');
+ assert.match(gauge.root.className,/cabin-rating-unavailable/);
+ assert.match(gauge.track.attrs['aria-valuetext'],/unavailable/);
 });
