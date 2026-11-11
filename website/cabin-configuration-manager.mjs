@@ -229,6 +229,52 @@ function appendRow(doc,table,c,typeList,plan,onEdit){
  row.append(label,styleField,input,indicator);table.append(row);
  return {indicator,input,select};
 }
+/** Model-design passenger appeal is a game estimate, not real passenger feedback. */
+export function passengerRatingView(evaluation){
+ const raw=Number(evaluation?.comfortRating);
+ if(evaluation?.valid!==true||!Number.isFinite(raw))
+  return {available:false,value:0,label:'— / 100'};
+ const value=Math.max(0,Math.min(100,Math.round(raw)));
+ return {available:true,value,label:value+' / 100'};
+}
+/** A read-only 0–100 indicator, updated when seats or legroom change. */
+export function createPassengerRatingGauge(doc){
+ const root=create(doc,'section','cabin-passenger-rating');
+ const description=create(doc,'div','cabin-passenger-rating-description');
+ description.append(create(doc,'strong','','Passenger rating'));
+ const note=create(doc,'small','',
+  'Estimated passenger appeal for this configuration (game rating, not real feedback).');
+ description.append(note);
+ const scale=create(doc,'div','cabin-passenger-rating-scale');
+ const track=create(doc,'div','cabin-passenger-rating-track');
+ track.setAttribute('role','meter');
+ track.setAttribute('aria-label','Estimated passenger rating');
+ track.setAttribute('aria-valuemin','0');
+ track.setAttribute('aria-valuemax','100');
+ const fill=create(doc,'div','cabin-passenger-rating-fill');
+ const thumb=create(doc,'span','cabin-passenger-rating-thumb');
+ const value=create(doc,'strong','cabin-passenger-rating-value','— / 100');
+ track.append(fill,thumb,value);
+ const endpoints=create(doc,'div','cabin-passenger-rating-ends');
+ endpoints.append(create(doc,'span','','0'),create(doc,'span','','100'));
+ scale.append(track,endpoints);root.append(description,scale);
+ return {root,track,fill,thumb,value,note};
+}
+export function updatePassengerRatingGauge(gauge,evaluation){
+ if(!gauge)return;
+ const rating=passengerRatingView(evaluation);
+ gauge.value.textContent=rating.label;
+ gauge.fill.style.width=rating.value+'%';
+ gauge.thumb.style.left=rating.value+'%';
+ gauge.value.style.left=rating.value+'%';
+ gauge.track.setAttribute('aria-valuenow',String(rating.value));
+ gauge.track.setAttribute('aria-valuetext',
+  rating.available?rating.label+' estimated game rating':'Rating unavailable until the layout fits');
+ gauge.root.className='cabin-passenger-rating'+(rating.available?'':' cabin-rating-unavailable');
+ gauge.note.textContent=rating.available?
+  'Estimated passenger appeal for this configuration (game rating, not real feedback).':
+  'Rating unavailable until the cabin layout fits.';
+}
 /** Editable planning input shared by owned-aircraft and factory previews. */
 function appendLegroomControl(doc,container,plan,onEdit,scope){
  const field=create(doc,'label','cabin-legroom-field','Additional space between seat rows (cm)');
@@ -255,7 +301,7 @@ export function createCabinConfigurationManager({doc,host,factoryHost,onDirector
  let version=0;let renderedRows=[],factoryRows=[];
  let installedDisplay=null,usageLabel=null,statusLabel=null,previewSvg=null,siteSelect=null;
  let factoryUsage=null,factorySvg=null,factoryMessage=null;
- let comfortSummary=null,costSummary=null,factoryComfort=null,factoryCost=null;
+ let ratingGauge=null,costSummary=null,factoryComfort=null,factoryCost=null;
  const currency=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n);
  function selectedAircraft(){return loaded?.aircraft?.find(a=>a.aircraftInventoryId===selectedId)||null}
  function modelGeometry(configurationId){
@@ -437,8 +483,8 @@ export function createCabinConfigurationManager({doc,host,factoryHost,onDirector
   }
   appendLegroomControl(doc,controls,plan,updateLayout,'owned');
   usageLabel=create(doc,'p','cabin-designer-status','');
-  comfortSummary=create(doc,'p','cabin-designer-status','');
-  controls.append(usageLabel,comfortSummary);
+  ratingGauge=createPassengerRatingGauge(doc);
+  controls.append(usageLabel,ratingGauge.root);
   const costBox=create(doc,'section','cabin-model-cost');
   costBox.append(create(doc,'h4','','Estimated configuration cost'));
   costSummary=create(doc,'div','cabin-cost-breakdown','');
@@ -518,19 +564,14 @@ export function createCabinConfigurationManager({doc,host,factoryHost,onDirector
    (Number.isFinite(result.spacePct)?' · '+result.spacePct+'% requested':''):
    !rowCheck.valid?rowCheck.reason:
    result.count+' seats · '+result.spacePct+'% of available cabin space used · '+
-   (100-result.spacePct).toFixed(1)+'% remaining · '+
-   describeCabinPatterns(geometry,a.referenceUnits);
+   (100-result.spacePct).toFixed(1)+'% remaining';
   for(let i=0;i<renderedRows.length;i++){
    const c=CLASSES[i],section=result.classes?.find(row=>row.key===c.key);
    renderedRows[i].indicator.textContent=section&&result.available>0?
     (section.space/result.available*100).toFixed(1)+'%':'—';
   }
   renderCabinFloorplan(doc,previewSvg,plan,result,a.referenceUnits,geometry);
-  if(comfortSummary)comfortSummary.textContent=result.valid?
-   'Passenger cabin comfort: '+result.comfortRating+'/100 · Potential future booking '+
-    'preference adjustment '+(result.bookingPreferencePreviewPct>=0?'+':'')+
-    result.bookingPreferencePreviewPct+'% (game-design preview only; not active).':
-   'Passenger comfort rating unavailable until the layout fits.';
+  updatePassengerRatingGauge(ratingGauge,valid?result:null);
   const quote=estimateCabinRefit(result,Number(a.standardEconomy||0));
   if(costSummary){
    costSummary.replaceChildren();
