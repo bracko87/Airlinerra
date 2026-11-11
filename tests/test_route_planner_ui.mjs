@@ -167,7 +167,8 @@ test('route planning has two steps, stacked airport lookup, real flag indicators
  assert.match(ui,/aircraftId:flightAircraft,/);
  assert.match(ui,/testAircraft:false/);
  assert.match(ui,/status:'draft',operationallyVerified:false/);
- assert.match(ui,/Aircraft, crew, airport slots and traffic rights require verification/);
+ assert.match(ui,/if\(preflight\?\.gameHardBlocked===true\)/);
+ assert.match(ui,/noiseCurfewCheck\(\{/);
  assert.match(work,/createRoutePlanner/);
 });
 
