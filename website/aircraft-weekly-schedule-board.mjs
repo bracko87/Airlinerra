@@ -42,7 +42,7 @@ const slotStatusLabel={
  'local-plan':'Local planning draft · no slots'
 };
 /** Pure data model. Never creates a booking or assumes a route is airborne. */
-export function buildAirlineWeeklyBoard({fleet,serverFleet,plans=[],drafts=[],localRoutes=[]}={}){
+export function buildAirlineWeeklyBoard({fleet,serverFleet,plans=[],drafts=[],localRoutes=[],estimatedDurations=[]}={}){
  const verifiedFleet=Array.isArray(fleet)?fleet:Array.isArray(serverFleet)?serverFleet:null;
  if(verifiedFleet===null)return Object.freeze({status:'unavailable',rows:[],counts:{flights:0,held:0}});
  const aircraft=[...new Map(verifiedFleet.filter(a=>idOf(a)&&ownership(a)).map(a=>[a.id,a])).values()]
@@ -56,6 +56,14 @@ export function buildAirlineWeeklyBoard({fleet,serverFleet,plans=[],drafts=[],lo
   flights:0
  }));
  const byAircraft=new Map(rows.map(row=>[row.id,row]));
+ const calculatedEstimates=new Map((Array.isArray(estimatedDurations)?estimatedDurations:[])
+  .filter(x=>typeof x?.flightNumber==='string'&&
+   Number.isInteger(x.minutes)&&x.minutes>=25&&x.minutes<=72*60 &&
+   typeof x.aircraftInventoryId==='string'&&
+   typeof x.originAirportKey==='string'&&
+   typeof x.destinationAirportKey==='string'&&
+   x.source==='aircraft_five_phase_estimate')
+  .map(x=>[x.flightNumber,x]));
  const seen=new Set();
  // A saved local route can carry an estimate from the owner's real aircraft
  // fuel model. It does NOT authorize a slot or prove actual flight duration.
@@ -89,7 +97,13 @@ export function buildAirlineWeeklyBoard({fleet,serverFleet,plans=[],drafts=[],lo
    (local.from?.key||local.originAirportKey)===(flight.from?.key||flight.originAirportKey) &&
    (local.to?.key||local.destinationAirportKey)===(flight.to?.key||flight.destinationAirportKey)?
     local.estimatedDurationMinutes:null;
-  const planningDuration=sampleDuration??localEstimate;
+  const calculation=calculatedEstimates.get(flightNumber);
+  const ownerEstimate=calculation&&
+   calculation.aircraftInventoryId===aircraftId&&
+   calculation.originAirportKey===(flight.from?.key||flight.originAirportKey)&&
+   calculation.destinationAirportKey===(flight.to?.key||flight.destinationAirportKey)?
+    calculation.minutes:null;
+  const planningDuration=sampleDuration??localEstimate??ownerEstimate;
   const unique=new Set();
   for(const stop of schedule){
    const minute=clockToMinute(stop.time),eventKey=stop.day+'|'+minute;
