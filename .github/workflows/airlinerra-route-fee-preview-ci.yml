@@ -10,6 +10,7 @@ on:
       - 'website/local-owner-fleet-reader.mjs'
       - 'website/dev-scripts/real-player-read-gateway.mjs'
       - 'website/route-fee-preview.mjs'
+      - 'website/dev-scripts/invited-overlay.mjs'
       - 'website/route-planner.mjs'
       - 'tests/test_route_fee_preview.mjs'
       - 'tests/test_server_flight_schedule_api.mjs'
