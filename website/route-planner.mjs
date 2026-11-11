@@ -54,25 +54,45 @@ const weekTable=()=>'<div class="route-week-scroll"><div class="route-week-grid"
 const routeSetupField=(id,label,input)=>'<label class="route-setup-field" for="'+id+'"><span>'+label+'</span>'+input+'</label>';
 const optionalFare=(id,label)=>routeSetupField(id,label,
  '<div class="route-fare-input"><span>$</span><input id="'+id+'" type="number" min="0" max="100000" step="1" inputmode="decimal" placeholder="Not set"></div>');
+const routeAirportBlock=(side,title)=>
+ '<section class="route-airport-block" aria-label="'+title+' airport facts">'+
+  '<h4>'+title+' airport</h4>'+
+  '<div id="route-'+side+'-restrictions" class="route-airport-rule-list" aria-live="polite">Airport rules loading…</div>'+
+  '<div id="route-'+side+'-demand" class="route-airport-demand" aria-live="polite">Demand data pending</div>'+
+ '</section>';
 const routeCheckDetails =
-  '<p class="hint">This is a factual preview, not a departure authorization. Unknown or unconnected checks never count as passed.</p>'+
-  '<div class="route-check-grid">'+
-   '<div class="route-check-item"><span>Distance</span><strong id="route-distance">Select airports</strong></div>'+
-   '<div class="route-check-item"><span>Estimated flight duration</span><strong id="route-block-time">Aircraft required</strong></div>'+
-   '<div class="route-check-item"><span>Market</span><strong id="route-market">Select airports</strong></div>'+
-   '<div class="route-check-item"><span>Route status</span><strong id="route-status">Draft only</strong></div>'+
-   '<div class="route-check-item"><span>Weather forecast (example times)</span><strong id="route-weather-check">Select times to check forecast</strong></div>'+
-   '<div class="route-check-item"><span>Origin runway / noise / curfew</span><strong id="route-origin-restrictions">Data pending</strong></div>'+
-   '<div class="route-check-item"><span>Destination runway / noise / curfew</span><strong id="route-destination-restrictions">Data pending</strong></div>'+
-   '<div class="route-check-item"><span>Origin passenger / cargo demand</span><strong id="route-origin-demand">Data pending</strong></div>'+
-   '<div class="route-check-item"><span>Destination passenger / cargo demand</span><strong id="route-destination-demand">Data pending</strong></div>'+
-   '<div class="route-check-item"><span>Departure / arrival slots</span><strong id="route-slot-check">Not yet connected</strong></div>'+
-   '<div class="route-check-item"><span>Aircraft / runway suitability</span><strong id="route-aircraft-check">No aircraft assigned</strong></div>'+ 
-   '<div class="route-check-item"><span>Fuel / estimated flight cost</span><strong id="route-fuel-summary">Select airports and owned aircraft</strong></div>'+
-   '<div class="route-check-item"><span>Passenger / cargo traffic rights</span><strong id="route-traffic-rights">Not yet connected</strong></div>'+
-  '</div>'+
-  '<div id="route-fuel-phases" class="route-fuel-phases" aria-live="polite"></div>'+ 
-  '<p id="route-check-message" class="route-check-message" role="status">Select a route and aircraft to begin checking feasibility.</p>';
+ '<p class="hint">Airport facts and demand are planning references, not operating permission. Unknown or estimated values are not verified approvals.</p>'+
+ '<div class="route-general-summary" aria-label="General route information">'+
+  '<div class="route-check-item"><span>Distance</span><strong id="route-distance">Select airports</strong></div>'+
+  '<div class="route-check-item"><span>Estimated flight duration</span><strong id="route-block-time">Aircraft required</strong></div>'+
+  '<div class="route-check-item"><span>Market</span><strong id="route-market">Select airports</strong></div>'+
+ '</div>'+
+ '<div class="route-airport-columns">'+
+  routeAirportBlock('destination','Destination')+
+  routeAirportBlock('origin','Origin')+
+ '</div>'+
+ '<div class="route-rights-note"><strong>Passenger / cargo traffic rights</strong>'+
+  '<span id="route-traffic-rights">Not verified</span>'+
+  '<p>Traffic rights are the commercial permissions needed to carry passengers or cargo on a route, especially between countries. They are separate from runway clearance and airport slots. “Not verified” means permission has not been confirmed, not that the route was rejected. Airlinerra licence and traffic-rights issuance is not active yet.</p></div>'+
+ '<div class="route-hidden-readouts" hidden aria-hidden="true">'+
+  '<span id="route-status">Draft only</span>'+
+  '<span id="route-weather-check"></span>'+
+  '<span id="route-slot-check"></span>'+
+ '</div>'+
+ '<p id="route-check-message" class="route-check-message" role="status">Select airports to review the route.</p>';
+const aircraftPerformanceDetails=
+ '<p class="hint">Aircraft-specific forecasts use your selected airline aircraft and available reference data. These estimates are not flight approvals or booked fuel purchases.</p>'+
+ '<div class="route-aircraft-performance-grid">'+
+  '<div class="route-performance-fact"><span>Aircraft / runway suitability</span><strong id="route-aircraft-check">No aircraft assigned</strong></div>'+
+  '<div class="route-performance-fact"><span>Estimated fuel / flight cost</span><strong id="route-fuel-summary">Select two airports and an aircraft</strong></div>'+
+ '</div>'+
+ '<div class="route-flight-calculations">'+
+  '<div><span>Aircraft cruise speed</span><strong id="route-cruise-speed">Pending verified data</strong></div>'+
+  '<div><span>Estimated airborne time</span><strong id="route-airborne-time">Pending verified performance</strong></div>'+
+  '<div><span>Required minimum turnaround</span><strong id="route-min-turnaround">Unverified · 45 min planning floor</strong></div>'+
+  '<div><span>Arrival / rotation checks</span><strong id="route-rotation-check">Pending aircraft and slot rules</strong></div>'+
+ '</div>'+
+ '<div id="route-fuel-phases" class="route-fuel-phases" aria-live="polite"></div>';
 export function routePlannerMarkup(){
  return '<div class="route-planner-grid route-planner-first-step">'+
   section('STEP 1','Define your flight',
@@ -90,14 +110,7 @@ export function routePlannerMarkup(){
    '<h3 id="route-map-heading" class="route-map-heading">Select two airports</h3>'+
    '<div id="route-map-canvas" class="route-map-canvas"></div>'+
    '<p id="route-map-feedback" class="hint">The map uses verified airport coordinates where available.</p>'+
-   '<div class="route-map-facts"><h3>Route information and limitations</h3>'+routeCheckDetails+
-   '<div class="route-inline-restrictions"><strong>Airport restrictions</strong><p id="route-preflight-status" class="hint" role="status" aria-live="polite">Not verified. Select an aircraft and planned times.</p>'+ 
-   '<details class="route-restriction-details"><summary>Exact UTC times for automatic airport checks</summary>'+ 
-   '<p class="hint">Restrictions are checked automatically using these example UTC times. Weekly local times and flight duration still require verification.</p>'+ 
-   '<div class="route-step2-top">'+ 
-   routeSetupField('route-preflight-departure-utc','Example departure (UTC)', '<input id="route-preflight-departure-utc" type="datetime-local" step="60">')+ 
-   routeSetupField('route-preflight-arrival-utc','Example arrival (UTC)', '<input id="route-preflight-arrival-utc" type="datetime-local" step="60">')+ 
-   '</div></details></div></div>')+
+   '<div class="route-map-facts"><h3>Route information and limitations</h3>'+routeCheckDetails+'</div>')+
  '</div>'+
  section('STEP 2','Aircraft and weekly departures',
   '<div class="route-step2-top">'+
@@ -109,15 +122,18 @@ export function routePlannerMarkup(){
   '<div class="route-position-bar"><span>Departure stand follows previous arrival</span><strong id="route-departure-stand-derived">Initial stand not verified</strong></div>'+
   '<p id="route-aircraft-position-status" class="route-position-status" role="status"></p>'+
   weekTable()+
+  '<details class="route-inline-restrictions route-operation-checks"><summary>Advanced airport schedule checks</summary>'+
+   '<p id="route-preflight-status" class="hint" role="status" aria-live="polite">Automatic runway, curfew and noise checks are pending.</p>'+
+   '<p class="hint">Use exact UTC example times for extra operational screening. These do not book a flight.</p>'+
+   '<div class="route-step2-top">'+
+   routeSetupField('route-preflight-departure-utc','Example departure (UTC)', '<input id="route-preflight-departure-utc" type="datetime-local" step="60">')+
+   routeSetupField('route-preflight-arrival-utc','Example arrival (UTC)', '<input id="route-preflight-arrival-utc" type="datetime-local" step="60">')+
+   '</div></details>'+
   '<details class="route-aircraft-timeline-panel" id="route-aircraft-timeline"><summary>Aircraft weekly timeline and locations</summary><div id="route-aircraft-timeline-content"></div></details>'+
   '<div class="route-week-footer"><span id="route-flights" class="route-week-count">0 departures/week</span>'+
   '<span>Example next departures use entered UTC times; actual local arrival, slots and aircraft position are not yet verified.</span></div>'+
-  '<div class="route-flight-calculations">'+
-   '<div><span>Aircraft cruise speed</span><strong id="route-cruise-speed">Pending verified data</strong></div>'+
-   '<div><span>Estimated airborne time</span><strong id="route-airborne-time">Pending verified performance</strong></div>'+
-   '<div><span>Required minimum turnaround</span><strong id="route-min-turnaround">Unverified · 45 min planning floor</strong></div>'+
-   '<div><span>Arrival / rotation checks</span><strong id="route-rotation-check">Pending aircraft and slot rules</strong></div>'+
-  '</div>')+
+  '')+
+ section('AIRCRAFT PERFORMANCE','Aircraft performance and fuel estimate',aircraftPerformanceDetails)+
  section('STEP 3','Ticket prices and onboard services',
   '<div class="route-pricing-grid">'+
    optionalFare('route-fare-economy','Economy fare')+
