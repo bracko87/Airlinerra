@@ -64,31 +64,35 @@ test('timetable uses real owned/leased aircraft but nothing is booked by default
  assert.equal(getAll(host,x=>x.className==='schedule-board-no-departures').length,2);
  assert.equal(getAll(host,x=>x.className==='schedule-board-rotation-band is-slot-held').length,0);
 });
-test('no local draft, planning route, duration estimate or unreserved schedule is visible',()=>{
+test('saved local and server plans show on timetable but do not become booked flights',()=>{
  const board=buildAirlineWeeklyBoard({
-  fleet,plans:[local()],localRoutes:[local()],
-  drafts:[booked({slotsReserved:false})],
-  estimatedDurations:[{flightNumber:'PA444',aircraftInventoryId:A,
-   originAirportKey:'OURAIRPORTS:4610',
-   destinationAirportKey:'FICTIONAL:fictional:RS:LYAL',
-   minutes:70,source:'aircraft_five_phase_estimate'}]
+  fleet,plans:[local({flightNumber:'PA445'})],
+  localRoutes:[local({flightNumber:'PA445'})],
+  drafts:[booked({slotsReserved:false,flightNumber:'PA447'})]
  });
- assert.equal(board.rows[0].days[0].events.length,0);
- assert.equal(board.rows[0].days[0].bands.length,0);
+ const cell=board.rows[0].days[0];
+ assert.equal(cell.events.length,1,'server plan overrides duplicate local route');
+ assert.equal(cell.events[0].status,'planning');
+ assert.equal(cell.events[0].flightNumber,'PA445');
+ assert.equal(cell.bands[0].kind,'planned-rotation');
+ assert.equal(cell.bands[0].start,540);
+ assert.equal(cell.bands[0].end,605,'65 minute estimated flight without a recorded turnaround');
  assert.equal(board.counts.flights,0);
  assert.equal(board.counts.held,0);
- assert.equal(render(board).children[0].className,'schedule-board-empty');
+ assert.equal(board.counts.planned,1);
+ const visible=render(board);
+ assert.equal(getAll(visible,x=>x.className==='schedule-board-rotation-band is-planning').length,1);
+ assert.equal(getAll(visible,x=>x.className==='schedule-board-inline-flight is-planning').length,1);
+ assert.equal(getAll(visible,x=>x.className==='schedule-board-rotation-band is-slot-held').length,0);
 });
-test('booked server schedule is the ONLY displayed flight, with one solid flight-time bar',()=>{
+test('booked server schedule uses a solid flight-time bar and no invented turnover',()=>{
  const board=buildAirlineWeeklyBoard({
   fleet,drafts:[
    booked(),
    booked({flightNumber:'PA446',slotsReserved:false}),
    booked({flightNumber:'PA447',referenceDepartureUtc:null}),
    booked({flightNumber:'PA448',weeklySchedule:[]})
-  ],
-  plans:[local({flightNumber:'PA445'})],
-  localRoutes:[local({flightNumber:'PA449'})]
+  ]
  });
  assert.equal(board.counts.flights,2);
  assert.equal(board.counts.held,2);
@@ -187,15 +191,16 @@ test('schedule page reads only server drafts and omits all planning legends',asy
  assert.match(view,/id="schedule-aircraft-board"/);
  assert.match(view,/id="schedule-day-prev"/);
  assert.match(view,/id="schedule-day-next"/);
- assert.match(view,/Booked flights only/);
+ assert.match(view,/Booked flights and saved route plans/);
  assert.match(view,/drafts:scheduleSnapshot\?\.drafts/);
- assert.doesNotMatch(view,/plans:scheduleSnapshot\?\.plans|localRoutes:local/);
+ assert.match(view,/plans:serverPlans,localRoutes/);
  assert.doesNotMatch(view,/schedule-board-legend|Departure only:|planning, not reserved|verified airport-slot flight windows/i);
  assert.doesNotMatch(view,/refreshScheduleEstimates/);
  assert.match(boardSource,/slotsReserved!==true/);
  assert.doesNotMatch(boardSource,/Planning only; time not reserved/);
- assert.doesNotMatch(boardSource,/kind:'planned-rotation'/);
+ assert.match(boardSource,/kind:'planned-rotation'/);
  assert.match(css,/\.schedule-board-rotation-band\.is-slot-held/);
+ assert.match(css,/\.schedule-board-rotation-band\.is-planning/);
  assert.match(bundle,/'aircraft-weekly-schedule-board\.mjs'/);
  assert.match(SCHEDULE_SQL.drafts,/count\(\*\) = 2\*jsonb_array_length\(s.weekly_schedule\)/);
 });
@@ -212,5 +217,50 @@ test('schedule workspace differentiates verified fleet, booked routes and local 
  assert.match(source,/bookingsAvailable:bookingDataAvailable/);
  assert.match(source,/Booking data unavailable: check the schedule API connection/);
  assert.match(source,/saved route plan\(s\) are not booked flights/);
- assert.doesNotMatch(source,/localRoutes:local|plans:scheduleSnapshot\?\.plans/);
+ assert.match(source,/plans:serverPlans,localRoutes/);
+});
+
+test('local planning route uses flight time plus turnaround, unlike booked-flight bars',()=>{
+ const board=buildAirlineWeeklyBoard({fleet,localRoutes:[local({
+  flightNumber:'PA450',
+  estimatedDurationMinutes:60,
+  operation:{turnaroundMinutes:45}
+ })]});
+ const band=board.rows[0].days[0].bands[0];
+ assert.equal(band.kind,'planned-rotation');
+ assert.equal(band.end-band.start,105);
+ const event=board.rows[0].days[0].events[0];
+ assert.equal(event.timing.availableMinute,645);
+ assert.equal(event.timing.totalMinutes,105);
+ assert.match(flightScheduleTooltip(event),/Estimated available from 10:45 UTC/);
+ assert.equal(board.counts.held,0,'estimated window is not an airport booking');
+});
+test('plans lacking a duration show only a departure marker, never an invented block',()=>{
+ const board=buildAirlineWeeklyBoard({fleet,localRoutes:[local({
+  flightNumber:'PA451',estimatedDurationMinutes:null,
+  operation:{turnaroundMinutes:45}
+ })]});
+ assert.equal(board.rows[0].days[0].bands[0].kind,'planned-departure');
+ const host=render(board);
+ assert.equal(getAll(host,x=>x.className==='schedule-board-time-marker is-planning').length,1);
+ assert.equal(getAll(host,x=>x.className==='schedule-board-rotation-band is-planning').length,0);
+ assert.equal(board.counts.flights,0);
+});
+test('booked schedule takes priority over local planning duplicate, even with different aircraft',()=>{
+ const board=buildAirlineWeeklyBoard({fleet,drafts:[booked()],
+  localRoutes:[local({flightNumber:'PA444',aircraftInventoryId:B})]});
+ assert.equal(board.rows[0].days[0].events[0].status,'slot-held');
+ assert.equal(board.rows[1].days[0].events.length,0);
+ assert.equal(board.counts.flights,2);
+ assert.equal(board.counts.planned,0);
+});
+test('unbooked route crossing midnight has a visible next-day continuation without changing booking count',()=>{
+ const board=buildAirlineWeeklyBoard({fleet,localRoutes:[local({
+  flightNumber:'PA452',schedule:[{day:6,time:'23:30'}],
+  estimatedDurationMinutes:60,operation:{turnaroundMinutes:45}
+ })]});
+ assert.deepEqual(board.rows[0].days[6].bands.map(x=>[x.start,x.end]),[[1410,1440]]);
+ assert.deepEqual(board.rows[0].days[0].bands.map(x=>[x.start,x.end]),[[0,75]]);
+ assert.equal(board.rows[0].days[0].bands[0].continues,true);
+ assert.equal(board.counts.flights,0);
 });
