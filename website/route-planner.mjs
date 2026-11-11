@@ -335,11 +335,18 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
  const updateFuelEstimate=()=>{
   const holder=$('route-fuel-phases'),from=selected('from'),to=selected('to');
   lastFuelEstimate=null;
+  updateCostBreakdown();
   const id=$('route-aircraft')?.value||'';
   const owned=ownedFleet.find(a=>'owned:'+a.id===id);
   const aircraft=owned&&typeof getFuelAircraft==='function'?getFuelAircraft(owned.id):null;
   if(!holder)return;
   holder.replaceChildren();
+  message('route-cruise-speed',
+   Number.isFinite(aircraft?.cruiseSpeedKmh)&&aircraft.cruiseSpeedKmh>0?
+    Math.round(aircraft.cruiseSpeedKmh)+' km/h (aircraft model reference)':
+    'Aircraft cruise reference not available');
+  message('route-airborne-time','Awaiting flight phase estimate');
+  message('route-min-turnaround','45 min (game minimum)');
   const setSummary=value=>{const el=$('route-fuel-summary');if(el)el.textContent=value;};
   if(!from||!to||!owned){setSummary('Select two airports and an owned aircraft.');return;}
   if(aircraft?.id!==owned.id||Number(aircraft?.configurationId)!==owned.configurationId){
