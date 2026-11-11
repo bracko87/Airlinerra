@@ -389,19 +389,10 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    }
    grid.append(line);
   }
-  const totals=doc.createElement('p');totals.className='hint';
-  totals.textContent='Block time '+Math.round(fuel.totalMinutes)+' min · trip burn '+kg(fuel.tripFuelKg)+
-   ' · screening reserve '+kg(fuel.screeningReserveFuelKg)+
-   ' · tentative fuel load '+kg(fuel.screeningFuelLoadKg)+
-   ' · estimated fuel expense '+usd(fuel.estimatedBurnCostUsd)+
-   (price.usdPerKg===null?' (fuel type or grade not confirmed).':
-    ' at $'+price.usdPerKg.toFixed(3)+'/kg (modelled departure-airport tier).');
-  const caveat=doc.createElement('p');caveat.className='hint';
-  caveat.textContent='Planning estimate using a neutral 50% load and a modelled fuel price. '+
-   'Actual fuel, cost and flight duration depend on the operated flight. '+
-   'No booking or fuel payment has occurred.';
-  holder.append(heading,grid,totals,caveat);
+  holder.append(heading,grid);
   setSummary(kg(fuel.tripFuelKg)+' · '+usd(fuel.estimatedBurnCostUsd)+' (forecast)');
+  message('route-airborne-time',Math.round(fuel.airborneMinutes)+' min (climb + cruise + descent)');
+  updateCostBreakdown(fuel,price);
   message('route-block-time',Math.round(fuel.totalMinutes)+' min (phase estimate)');
  };
  doc.addEventListener('airlinerra:fleet-fuel-updated',event=>{
