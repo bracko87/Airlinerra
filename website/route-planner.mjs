@@ -283,6 +283,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
   throw Error('Verified route planner data required');
  const $=id=>doc.getElementById(id);
  let cabinOptionAirlineId=null;
+ let lastFuelEstimate=null;
  const cabinSnapshot=()=>{
   const value=typeof getCabinState==='function'?getCabinState():null;
   return {packages:Array.isArray(value?.packages)?value.packages:[createBasicCabinPackage()],
@@ -290,6 +291,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
  };
  const updateFuelEstimate=()=>{
   const holder=$('route-fuel-phases'),from=selected('from'),to=selected('to');
+  lastFuelEstimate=null;
   const id=$('route-aircraft')?.value||'';
   const owned=ownedFleet.find(a=>'owned:'+a.id===id);
   const aircraft=owned&&typeof getFuelAircraft==='function'?getFuelAircraft(owned.id):null;
@@ -318,6 +320,8 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
   if(fuel.status!=='PLANNING_ESTIMATE'){
    setSummary('Fuel profile incomplete; no reliable estimate for this model.');return;
   }
+  lastFuelEstimate={aircraftId:owned.id,fromKey:from.key,toKey:to.key,
+   minutes:Math.round(fuel.totalMinutes)};
   const kg=n=>Math.round(n).toLocaleString('en-US')+' kg';
   const usd=n=>n===null?'Not priced':
    '$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -1417,7 +1421,13 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
   }
   // Other flight durations, time zones and slots are still not verified.
   // A local draft never mutates server finance, aircraft, schedules or live flights.
+  const durationReference=lastFuelEstimate?.aircraftId===ownedChoice?.id&&
+   lastFuelEstimate?.fromKey===from.key&&lastFuelEstimate?.toKey===to.key?
+    lastFuelEstimate.minutes:null;
   const draft={from,to,flightNumber,flights:schedule.length,schedule,
+   ...(Number.isInteger(durationReference)&&durationReference>=25?
+    {estimatedDurationMinutes:durationReference,
+     estimatedDurationSource:'five_phase_game_estimate'}:{}),
    storage:canSaveToServer?'server-planning':'browser',
    aircraftId:flightAircraft,
    aircraftConfigurationId:selectedCatalog?.id??ownedChoice.configurationId,
