@@ -4,6 +4,7 @@
 import {createAirportCountryPicker,populateAirportCountries,airportFlag,airportCountryName} from './airport-country-picker.mjs';
 import {renderRouteMap,routeDistanceKm} from './route-map.mjs';
 import {estimateFivePhaseFuel} from './flight-fuel-phase-engine.mjs';
+import {renderTrafficRightIndicators} from './route-traffic-rights.mjs';
 import {previewAirportFuelPrice} from './airport-fuel-price-preview.mjs';
 import {buildAircraftWeeklyTimeline,renderAircraftWeeklyTimeline} from './aircraft-weekly-timeline.mjs';
 import {assessAircraftRouteRunways} from './route-aircraft-runway-screen.mjs';
@@ -56,7 +57,7 @@ const optionalFare=(id,label)=>routeSetupField(id,label,
  '<div class="route-fare-input"><span>$</span><input id="'+id+'" type="number" min="0" max="100000" step="1" inputmode="decimal" placeholder="Not set"></div>');
 const routeAirportBlock=(side,title)=>
  '<section class="route-airport-block" aria-label="'+title+' airport facts">'+
-  '<h4>'+title+' airport</h4>'+
+  '<h4 id="route-'+side+'-title">'+title+' airport</h4>'+
   '<div id="route-'+side+'-restrictions" class="route-airport-rule-list" aria-live="polite">Airport rules loading…</div>'+
   '<div id="route-'+side+'-demand" class="route-airport-demand" aria-live="polite">Demand data pending</div>'+
  '</section>';
@@ -68,12 +69,21 @@ const routeCheckDetails =
   '<div class="route-check-item"><span>Market</span><strong id="route-market">Select airports</strong></div>'+
  '</div>'+
  '<div class="route-airport-columns">'+
-  routeAirportBlock('destination','Destination')+
   routeAirportBlock('origin','Origin')+
+  routeAirportBlock('destination','Destination')+
  '</div>'+
- '<div class="route-rights-note"><strong>Passenger / cargo traffic rights</strong>'+
-  '<span id="route-traffic-rights">Not verified</span>'+
-  '<p>Traffic rights are the commercial permissions needed to carry passengers or cargo on a route, especially between countries. They are separate from runway clearance and airport slots. “Not verified” means permission has not been confirmed, not that the route was rejected. Airlinerra licence and traffic-rights issuance is not active yet.</p></div>'+
+ '<div class="route-rights-note"><div class="route-rights-heading">'+
+  '<strong>Passenger / cargo traffic rights</strong>'+
+  '<details class="route-rights-info" id="route-rights-info">'+
+   '<summary aria-label="Information about the nine freedoms of the air" title="What do these rights mean?">i</summary>'+
+   '<div class="route-rights-info-content"><h4>Nine freedoms of the air</h4>'+
+    '<p>International traffic rights depend on the airline’s home country, full itinerary, bilateral rules and verified game grants. The categories do not authorize a flight.</p>'+
+    '<div id="route-rights-legend"></div>'+
+    '<p>Domestic home-country flights have domestic operating requirements. Passenger and cargo grants may differ.</p>'+
+   '</div></details></div>'+
+  '<span id="route-traffic-rights">Permission not verified</span>'+
+  '<div id="route-rights-icons" class="route-rights-icons" aria-label="Nine international aviation rights"></div>'+
+  '<p class="route-rights-key">Gray: not identified · Amber: potentially relevant but unverified · Orange: independently verified permission</p></div>'+
  '<div class="route-hidden-readouts" hidden aria-hidden="true">'+
   '<span id="route-status">Draft only</span>'+
   '<span id="route-weather-check"></span>'+
@@ -81,16 +91,11 @@ const routeCheckDetails =
  '</div>'+
  '<p id="route-check-message" class="route-check-message" role="status">Select airports to review the route.</p>';
 const aircraftPerformanceDetails=
- '<p class="hint">Aircraft-specific forecasts use your selected airline aircraft and available reference data. These estimates are not flight approvals or booked fuel purchases.</p>'+
- '<div class="route-aircraft-performance-grid">'+
-  '<div class="route-performance-fact"><span>Aircraft / runway suitability</span><strong id="route-aircraft-check">No aircraft assigned</strong></div>'+
-  '<div class="route-performance-fact"><span>Estimated fuel / flight cost</span><strong id="route-fuel-summary">Select two airports and an aircraft</strong></div>'+
- '</div>'+
+ '<div hidden aria-hidden="true"><span id="route-aircraft-check"></span><span id="route-fuel-summary"></span><span id="route-rotation-check"></span></div>'+
  '<div class="route-flight-calculations">'+
-  '<div><span>Aircraft cruise speed</span><strong id="route-cruise-speed">Pending verified data</strong></div>'+
-  '<div><span>Estimated airborne time</span><strong id="route-airborne-time">Pending verified performance</strong></div>'+
-  '<div><span>Required minimum turnaround</span><strong id="route-min-turnaround">Unverified · 45 min planning floor</strong></div>'+
-  '<div><span>Arrival / rotation checks</span><strong id="route-rotation-check">Pending aircraft and slot rules</strong></div>'+
+  '<div><span>Aircraft cruise speed</span><strong id="route-cruise-speed">Pending aircraft model</strong></div>'+
+  '<div><span>Estimated airborne time</span><strong id="route-airborne-time">Pending aircraft model</strong></div>'+
+  '<div><span>Minimum turnaround</span><strong id="route-min-turnaround">45 min (game minimum)</strong></div>'+
  '</div>'+
  '<div id="route-fuel-phases" class="route-fuel-phases" aria-live="polite"></div>';
 export function routePlannerMarkup(){
@@ -121,6 +126,7 @@ export function routePlannerMarkup(){
   '<p class="route-subtle-note" id="route-aircraft-feedback">Aircraft availability is not connected.</p>'+
   '<div class="route-position-bar"><span>Departure stand follows previous arrival</span><strong id="route-departure-stand-derived">Initial stand not verified</strong></div>'+
   '<p id="route-aircraft-position-status" class="route-position-status" role="status"></p>'+
+  '<p class="hint">Aircraft rotation means checking that the airplane lands, is at the right airport and has completed its turnaround before its next departure. The 45-minute minimum is a game planning rule, not proof of available airport slots.</p>'+
   weekTable()+
   '<details class="route-inline-restrictions route-operation-checks"><summary>Advanced airport schedule checks</summary>'+
    '<p id="route-preflight-status" class="hint" role="status" aria-live="polite">Automatic runway, curfew and noise checks are pending.</p>'+
@@ -153,6 +159,9 @@ export function routePlannerMarkup(){
    '<button type="button" class="route-text-action" data-workspace-go="route-list">My routes</button></div>'+
   '<p id="route-plan-status" class="hint" role="status" aria-live="polite"></p>'+
   '<div id="route-plan-review" class="workspace-detail"></div>')+
+ section('FLIGHT COSTS','Estimated operating costs per flight',
+  '<p class="hint">Planning estimates only. No flight charges are made here. The full total remains unavailable until all required cost rates can be verified.</p>'+
+  '<div id="route-cost-breakdown" class="route-cost-breakdown" aria-live="polite"></div>')+
  section('OPERATIONAL SCHEDULE CHECKS','Schedules with verified airport slot reservations',
   '<p class="hint">Planning routes saved to your airline appear in My Routes. This separate section shows schedules that have passed the airport slot checks. These are not active flights.</p>'+
   '<div id="route-server-draft-list" class="workspace-detail"></div>'+
