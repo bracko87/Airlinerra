@@ -20,7 +20,16 @@ export function screenAirportRunway({airport,aircraft,operation,airportLabel='Ai
  const requiredM=requiredAircraftRunwayM(aircraft,operation);
  const candidate=Array.isArray(airport?.runways)?airport.runways.filter(r=>
    paved(r?.surface)&&!closed(r?.operationalStatus)&&distance(r?.lengthM)!==null):[];
- const longest=candidate.length?Math.max(...candidate.map(r=>r.lengthM)):null;
+ // The fictional game design is an explicit stored runway used by game planning.
+ // It is never promoted to an observed aerodrome runway or dispatch certificate.
+ const design=airport?.key?.startsWith('FICTIONAL:') &&
+  airport?.gameRunwayDesign?.status==='fictional_game_only' &&
+  paved(airport.gameRunwayDesign.surface) &&
+  distance(airport.gameRunwayDesign.lengthM)!==null?
+  airport.gameRunwayDesign:null;
+ const fromDesign=!candidate.length&&Boolean(design);
+ const longest=candidate.length?Math.max(...candidate.map(r=>r.lengthM)):
+  fromDesign?design.lengthM:null;
  const roundedLength=longest===null?null:Math.floor(longest);
  const roundedRequired=requiredM===null?null:Math.ceil(requiredM);
  const purpose=operation==='arrival'?'landing':'takeoff';
@@ -28,12 +37,13 @@ export function screenAirportRunway({airport,aircraft,operation,airportLabel='Ai
   status:'REVIEW',requiredM:null,availableM:roundedLength,
   reason:airportLabel+': verified '+purpose+' distance not available for this aircraft.'
  };
- if(!airport||!Array.isArray(airport.runways)||!candidate.length)return {
+ if(!airport||longest===null)return {
   status:'REVIEW',requiredM:roundedRequired,availableM:null,
-  reason:airportLabel+': paved runway length not verified.'
+  reason:airportLabel+': runway length unavailable.'
  };
  if(longest<requiredM)return {
   status:'BLOCKED',requiredM:roundedRequired,availableM:roundedLength,
+  gameDesignReference:fromDesign,
   deficitM:Math.ceil(requiredM-longest),
   reason:airportLabel+': longest recorded paved runway '+roundedLength.toLocaleString('en-US')+
    ' m; aircraft needs '+roundedRequired.toLocaleString('en-US')+' m for '+purpose+
@@ -41,7 +51,8 @@ export function screenAirportRunway({airport,aircraft,operation,airportLabel='Ai
  };
  return {
   status:'PASS',requiredM:roundedRequired,availableM:roundedLength,
-  reason:airportLabel+': paved runway length suitable for game '+purpose+' screening.'
+  gameDesignReference:fromDesign,
+  reason:airportLabel+': runway length suitable for game '+purpose+' screening.'
  };
 }
 export function assessAircraftRouteRunways({aircraft,origin,destination}={}){
