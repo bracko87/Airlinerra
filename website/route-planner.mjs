@@ -298,6 +298,40 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
   return {packages:Array.isArray(value?.packages)?value.packages:[createBasicCabinPackage()],
    ready:value?.ready===true};
  };
+ const updateCostBreakdown=(fuel=null,price=null)=>{
+  const host=$('route-cost-breakdown');if(!host)return;
+  host.replaceChildren();
+  const money=value=>typeof value==='number'&&Number.isFinite(value)?
+   '$'+value.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'Rate unavailable';
+  const items=[
+   ['Trip fuel',fuel?.estimatedBurnCostUsd??null,
+    fuel?.tripFuelKg&&price?.usdPerKg?
+     Math.round(fuel.tripFuelKg).toLocaleString('en-US')+' kg × modelled $'+
+     price.usdPerKg.toFixed(3)+'/kg':'Fuel price or aircraft data pending'],
+   ['Origin airport departure / handling',null,'Airport handling tariff not connected'],
+   ['Destination landing / handling',null,'Airport fee and stand tariff not connected'],
+   ['Air navigation and en-route fees',null,'Route and airspace charges not verified'],
+   ['Flight and cabin crew',null,'Roster, hourly rates and duty assignment pending'],
+   ['Aircraft maintenance / wear',null,'Cost allocation per operating hour not connected'],
+   ['Onboard services / catering',null,'Passenger quantity and package cost rates pending'],
+   ['Aircraft financing / lease allocation',null,'Aircraft-specific cost allocation not verified']
+  ];
+  for(const [name,amount,detail] of items){
+   const row=doc.createElement('div');row.className='route-cost-line';
+   const left=doc.createElement('div');
+   const title=doc.createElement('strong');title.textContent=name;
+   const note=doc.createElement('small');note.textContent=detail;
+   left.append(title,note);
+   const value=doc.createElement('span');value.textContent=money(amount);
+   if(amount===null)value.className='is-pending';
+   row.append(left,value);host.append(row);
+  }
+  const footer=doc.createElement('p');footer.className='route-cost-total';
+  footer.textContent='Full estimated operating cost: Not available — '+
+   'additional aircraft, airport, crew and service rates are required. '+
+   'The fuel line is a forecast only, not the total or a charge.';
+  host.append(footer);
+ };
  const updateFuelEstimate=()=>{
   const holder=$('route-fuel-phases'),from=selected('from'),to=selected('to');
   lastFuelEstimate=null;
