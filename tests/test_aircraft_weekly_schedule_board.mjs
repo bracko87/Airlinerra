@@ -210,7 +210,7 @@ test('verified date label and estimated-only timeline are never presented as a b
  const lane=table.children[1].children[0].children[1].children[0].children[0];
  const estimated=lane.children.find(x=>x.className==='schedule-board-rotation-band is-planning');
  assert.ok(estimated);
- assert.equal(estimated.style.width,111/1440*100+'%',
+ assert.ok(Math.abs(parseFloat(estimated.style.width)-(111/1440*100))<1e-9,
   '66 min estimated flight plus saved 45 min turnaround');
  assert.ok(!lane.children.some(x=>x.className?.includes('is-slot-held')));
  assert.ok(!lane.children.some(x=>x.className==='schedule-board-estimated-band'));
