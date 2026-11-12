@@ -97,7 +97,7 @@ test('Route Details renders seven days with booking closed until engine certific
  assert.match(details,/Not open for booking/);
  assert.match(details,/bookingWindowPreview/);
  assert.match(details,/if\(mySerial!==serial\)return/);
- assert.match(details,/data\.bookingEnabled!==false/);
+ assert.match(details,/data\?\.bookingEnabled!==false/);
  assert.match(client,/bookingWindowPreview:\(\{airlineId,scheduleId\}\)/);
  assert.doesNotMatch(details,/bookedPassengers\s*\|\|\s*0/);
 });
