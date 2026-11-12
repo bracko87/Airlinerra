@@ -1,0 +1,25 @@
+name: Airlinerra Phase 1 operations (crew deferred)
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/20261112164500_section9_phase1_no_crew_still_signed_five_certificates.sql'
+      - 'tests/test_section9_phase1_no_crew_activation.mjs'
+      - 'docs/SECTION9_PHASE1_OPERATIONAL_MVP_NO_CREW.md'
+      - '.github/workflows/airlinerra-section9-phase1-no-crew-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  five-certificate-guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate operational Phase 1 crew exception and five mandatory independent clearances
+        run: node --test tests/test_section9_phase1_no_crew_activation.mjs
+      - name: Guard activated game code and protected build
+        run: npm run build --prefix website
