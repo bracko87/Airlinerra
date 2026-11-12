@@ -126,7 +126,7 @@ test('settings and local hypothetical briefs remain separate from owner-scoped p
  assert.match(workspace,/Location not verified/);
  assert.match(workspace,/fleet-detail-save/);
  assert.match(html,/data-player-view="fleet-aircraft"/);
- assert.match(workspace,/No live route was created/);
+ assert.match(workspace,/Route idea saved as a non-operational planning draft in your airline database/);
  assert.match(workspace,/Booked flights only/);
  assert.doesNotMatch(workspace,/schedule-board-legend|Departure only:/);
  assert.match(workspace,/cabinConfigurationManager\?\.updateData\(data\)/);
