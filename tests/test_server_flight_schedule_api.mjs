@@ -247,7 +247,7 @@ test('route planner exposes owned fleet schedule drafts, not live activation',as
  const markup=routePlannerMarkup();
  assert.match(markup,/route-server-draft-list/);
  assert.match(source,/loadOwnedScheduleData/);
- assert.match(source,/scheduler\.planSave/);
+ assert.match(source,/scheduler\.operationalCreate/);
  assert.match(source,/scheduler\.activationCheck/);
  assert.match(source,/serverScheduleId/);
  assert.doesNotMatch(source,/status:'active'/);
