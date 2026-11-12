@@ -47,6 +47,14 @@ export function createLocalOwnerFleetReaders({auth,origin,fetchImpl=globalThis.f
  });
  const scheduler=Object.freeze({
   list:airlineId=>read(SCHEDULE_PATH,{action:'list',airlineId}),
+  operationalCreate:({airlineId,aircraftInventoryId,flightNumber,originAirportKey,
+   destinationAirportKey,weeklySchedule,departureStand=null,arrivalStand='terminal',
+   turnaroundMinutes,fares,service,launchDelayDays=0,
+   referenceDepartureUtc=null,referenceArrivalUtc=null})=>
+    read(SCHEDULE_PATH,{action:'operational-create',airlineId,aircraftInventoryId,
+     flightNumber,originAirportKey,destinationAirportKey,weeklySchedule,
+     departureStand,arrivalStand,turnaroundMinutes,fares,service,launchDelayDays,
+     referenceDepartureUtc,referenceArrivalUtc}),
   planSave:({airlineId,aircraftInventoryId,flightNumber,originAirportKey,
    destinationAirportKey,weeklySchedule,departureStand=null,arrivalStand='terminal',
    turnaroundMinutes,fares,service,launchDelayDays=0,
