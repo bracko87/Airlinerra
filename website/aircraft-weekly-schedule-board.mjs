@@ -43,11 +43,9 @@ export function flightScheduleTooltip(event,band=null){
  const ground=timing?.turnaroundMinutes??null;
  return flightNumber+code+' | Departure '+departure+' UTC | '+
   'Estimated arrival '+arrival+' UTC | '+
-  'Flight '+(duration===null?'unknown':duration+' min')+' | '+
-  'Turnaround '+(ground===null?'unknown':ground+' min')+' | '+
-  'Total flight + turnaround '+(timing?.totalMinutes===null||!timing?
-   'unknown':timing.totalMinutes+' min')+' | '+
-  'Estimated available from '+available+' UTC';
+  'Flight '+(duration===null?'not calculated':duration+' min')+' | '+
+  'Turnaround '+(ground===null?'not set':ground+' min')+' | '+
+  'Available from '+available+' UTC';
 }
 const validDuration=(a,b)=>{
  if(!a||!b)return null;
@@ -272,10 +270,7 @@ export function renderAirlineWeeklyBoard(doc,host,board,{
    const tooltip=flightScheduleTooltip(event,band);
    const isBooked=band.kind==='slot-held';
    if(band.kind==='planned-departure'){
-    const marker=add(doc,lane,'span',null,'schedule-board-time-marker is-planning');
-    marker.style.left=pct(band.start)+'%';
-    marker.title=tooltip+' | Saved route plan, not booked';
-    meta(doc,marker,marker.title);
+    // No duration: retain the departure label, not a second orange stroke.
    }else{
     const filled=add(doc,lane,'div',null,
      'schedule-board-rotation-band '+(isBooked?'is-slot-held':'is-planning'));
@@ -286,17 +281,17 @@ export function renderAirlineWeeklyBoard(doc,host,board,{
    }
    const route=(event?.fromCode&&event?.toCode)?
     ' · '+event.fromCode+' → '+event.toCode:'';
-   const label=add(doc,lane,event?'button':'span',
-    flightNumber+route+(isBooked?'':' · Planned'),
+   const label=add(doc,lane,event?'button':'span',flightNumber+route,
     'schedule-board-inline-flight '+(isBooked?'is-slot-held':'is-planning'));
    if(event){
     label.type='button';
     label.setAttribute('data-schedule-flight',flightNumber);
-    label.setAttribute('aria-label','Open '+flightNumber+route+' in My Routes. '+tooltip);
+    label.setAttribute('aria-label','Open '+flightNumber+route+
+     (isBooked?' booked flight':' saved route plan')+' in My Routes. '+tooltip);
    }
    label.style.left=Math.min(pct(band.start),78)+'%';
-   label.title=tooltip+(isBooked?'':' | Saved route plan, no slots reserved');
-   meta(doc,label,label.title);
+   label.title=tooltip;
+   meta(doc,label,tooltip);
   }
  }
 }
