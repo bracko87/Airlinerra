@@ -122,7 +122,7 @@ export function proposeAirportOffice({type,airport,homeAirportKey,existing=[]}={
  if(!a.countryIso)return {ok:false,reason:'Select an airport from a country first.'};
  if(a.key===homeAirportKey)return {ok:false,reason:'Headquarters is already your permanent home base.'};
  if(existing.some(x=>x?.key===a.key))return {ok:false,reason:'An office proposal already exists for this airport.'};
- if(existing.length>=20)return {ok:false,reason:'Maximum 20 combined office proposals per browser session.'};
+ if(existing.length>=20)return {ok:false,reason:'Maximum 20 combined office proposals per airline.'};
  return {ok:true,entry:Object.freeze({...a,type,status:'draft',minimumStaff:type==='station'?1:null})};
 }
 const panel=(kicker,title,body)=>'<article class="panel airport-office-panel"><span class="panel-kicker">'+kicker+'</span><h2>'+title+'</h2>'+body+'</article>';
@@ -140,11 +140,6 @@ function button(doc,label,action,key){
  b.textContent=label;b.dataset.officeAction=action;
  if(key)b.dataset.airportKey=key;return b;
 }
-const readSession=(store,key)=>{try{return JSON.parse(store?.getItem(key)||'{}')||{}}catch{return {}}};
-const saveSession=(store,key,entries)=>{
- try{const current=readSession(store,key);store?.setItem(key,JSON.stringify({...current,airportOffices:entries}));return !!store}
- catch{return false}
-};
 const countryLabel=code=>{
  if(!code)return 'Data pending';
  try{return new Intl.DisplayNames(['en'],{type:'region'}).of(code)||code}catch{return code}
@@ -162,7 +157,8 @@ export function createAirportOffice({doc,session,identity,goTo,getAirlineLogoUrl
  const listPages={hub:0,station:0};
  const known=new Map();
  const entries=()=>{
-  const current=readSession(session,key);
+  const current=live.playerDraftStore?.ready('workplan')?
+   live.playerDraftStore.snapshot('workplan'):{};
   if(Array.isArray(current.airportOffices))return current.airportOffices.filter(x=>x?.status==='draft'&&
    ['hub','station'].includes(x.type)&&normalizeApprovedAirport(x));
   // Backward compatibility: previously proposed hubs had no country.
@@ -602,8 +598,8 @@ export function createAirportOffice({doc,session,identity,goTo,getAirlineLogoUrl
    const key=target.dataset.airportKey;
    const rows=entries(),next=rows.filter(a=>a.key!==key);
    if(rows.length===next.length)return;
-   if(!saveSession(session,keyForAccount(),next)){
-    feedback('Unable to save removal. Browser session storage is unavailable.');return;
+   if(!await saveOffices(next)){
+    feedback('NOT SAVED — Supabase did not confirm removing this office proposal.');return;
    }
    renderList('hub');renderList('station');feedback('Office proposal removed. No active airport office was changed.');
    return;
@@ -622,18 +618,24 @@ export function createAirportOffice({doc,session,identity,goTo,getAirlineLogoUrl
    const proposed=proposeAirportOffice({type,airport,
     homeAirportKey:live.airline.homeAirportKey,existing:entries()});
    if(!proposed.ok){feedback(proposed.reason);return;}
-   if(!saveSession(session,keyForAccount(),[...entries(),proposed.entry])){
-    feedback('Unable to save this draft in your browser. No airport office was opened.');return;
+   if(!await saveOffices([...entries(),proposed.entry])){
+    feedback('NOT SAVED — Supabase did not confirm this office proposal. No airport office was opened.');return;
    }
    renderList('hub');renderList('station');
    refreshOfficeActions(airport);
    feedback((type==='hub'?'Hub request':'Station request')+
-    ' saved as a local draft. No airport office, staffing, fees or slots have been activated.');
+    ' saved as a non-operational draft in Supabase. No airport office, staffing, fees or slots have been activated.');
    return;
   }
  });
- // Keep the private account draft key aligned with Route/Staff planning.
- function keyForAccount(){return key}
+ // All proposed offices are stored with the owner airline in Supabase.
+ async function saveOffices(airportOffices){
+  if(!live.playerDraftStore?.ready('workplan'))return false;
+  try{
+   await live.playerDraftStore.update('workplan',{airportOffices});
+   return true;
+  }catch{return false}
+ }
  function updateData(value){
   if(value?.airline?.id!==undefined&&value.airline.id!==live.airline?.id){
    ++logoLoadSerial;ownLogoUrl=null;
