@@ -1857,8 +1857,13 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
     'The aircraft starting airport has not yet been verified.':
     blockers.includes('AIRCRAFT_NOT_VERIFIED_AT_ORIGIN')?
     'The aircraft has not been verified at the departure airport.':
+    blockers.includes('AIRCRAFT_FUEL_DISPATCH_MODEL_NOT_APPROVED')&&
+    blockers.includes('AIRCRAFT_MAINTENANCE_BASELINE_NOT_VERIFIED')?
+    'Aircraft fuel and maintenance information must be verified before it can fly.':
     blockers.includes('AIRCRAFT_FUEL_DISPATCH_MODEL_NOT_APPROVED')?
     'The aircraft fuel model is not yet approved for flight operations.':
+    blockers.includes('AIRCRAFT_MAINTENANCE_BASELINE_NOT_VERIFIED')?
+    'Aircraft condition and maintenance tracking are not yet verified.':
     '';
    message('route-plan-status',
     specific?'NOT CREATED — '+specific+' The remaining flight systems are still being connected.':
