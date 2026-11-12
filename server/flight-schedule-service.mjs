@@ -3,6 +3,7 @@
  * The owner/aircraft/curfew gate is executed atomically INSIDE PostgreSQL.
  * There is intentionally no flight activation write. Never trust browser owner IDs.
  */
+import {SEVEN_DAY_WINDOW_SQL} from './section9-seven-day-window.mjs';
 export const FLIGHT_SCHEDULE_API_ROUTE='/api/v1/player/flight-schedule-drafts';
 const ORIGIN='https://airlinerra.com';
 const TOKEN=/^Bearer ([A-Za-z0-9._~-]{16,8192})$/u;
@@ -144,7 +145,8 @@ export function validateFlightSchedulePayload(body){
     Number.isInteger(body.loadPercent)&&body.loadPercent>=0&&body.loadPercent<=100&&
     Number.isInteger(body.parkingMinutes)&&body.parkingMinutes>=0&&
     body.parkingMinutes<=10080;
- if(body.action==='delete'||body.action==='activation-check')
+ if(body.action==='delete'||body.action==='activation-check'||
+    body.action==='booking-window-preview')
   return withinFields(body,CHECK_FIELDS)&&uuid(body.scheduleId);
  if(body.action==='rotation-preview'||body.action==='operations-preview'){
   if(!withinFields(body,ROTATION_FIELDS)||!uuid(body.scheduleId)||
@@ -174,6 +176,7 @@ export function validateFlightSchedulePayload(body){
  return Number.isFinite(delta)&&delta>0&&delta<=72*3600*1000;
 }
 export const SCHEDULE_SQL=Object.freeze({
+ bookingWindowPreview:SEVEN_DAY_WINDOW_SQL,
  owner:'SELECT id FROM airlinerra_game.airlines WHERE id=$1::uuid AND owner_player_id=$2::uuid AND world_id=1',
  feeAircraft:`SELECT i.configuration_id::bigint AS "configurationId",
  c.use_type AS "useType"
@@ -366,6 +369,24 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
     ]);
     return respond(200,{readOnly:false,activationAvailable:false,
       fleet:fleet.rows,drafts:drafts.rows,plans:plans.rows});
+   }
+   if(body.action==='booking-window-preview'){
+    const response=await client.query(SCHEDULE_SQL.bookingWindowPreview,[
+     userId,body.airlineId,body.scheduleId
+    ]);
+    const result=response.rows[0]?.result;
+    if(response.rowCount!==1||!result)
+     return respond(404,{error:'OWNED_SCHEDULE_OR_GAME_CLOCK_NOT_AVAILABLE'});
+    if(result.readOnly!==true||result.bookingEnabled!==false||
+       result.passengerBookingsCreated!==false||result.ledgerPosted!==false||
+       result.worldId!==1||result.scheduleId!==body.scheduleId||
+       result.status!=='seven_day_preview_only'||
+       result.windowDays!==7||!Array.isArray(result.occurrences)||
+       result.occurrences.length>7||
+       result.occurrences.some(x=>x.bookingEnabled!==false||
+        x.status!=='not_saleable'||x.passengerBookings!==null))
+     return respond(503,{error:'UNSAFE_BOOKING_PREVIEW_RESPONSE'});
+    return respond(200,result);
    }
    if(body.action==='plan-delete'){
     const result=await client.query(SCHEDULE_SQL.planDelete,[
