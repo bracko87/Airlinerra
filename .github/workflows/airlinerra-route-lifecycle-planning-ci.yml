@@ -13,6 +13,7 @@ on:
       - 'website/airline-workspace.mjs'
       - 'server/flight-schedule-service.mjs'
       - 'server/section9-seven-day-window.mjs'
+      - 'supabase/migrations/20261112100704_section9_seven_day_booking_storage_gated_v1.sql'
       - 'tests/test_section9_seven_day_booking_preview.mjs'
       - 'tests/test_route_lifecycle_policy.mjs'
       - 'tests/test_aircraft_weekly_schedule_board.mjs'
