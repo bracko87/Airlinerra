@@ -5,6 +5,7 @@ on:
     paths:
       - 'website/route-lifecycle-rules.mjs'
       - 'website/route-planner.mjs'
+      - 'website/route-planning-times.mjs'
       - 'website/airline-operations-center.mjs'
       - 'website/section9-flight-readiness.mjs'
       - 'website/dev-scripts/invited-overlay.mjs'
@@ -17,6 +18,7 @@ on:
       - 'server/section9-seven-day-window.mjs'
       - 'supabase/migrations/20261112100704_section9_seven_day_booking_storage_gated_v1.sql'
       - 'tests/test_section9_seven_day_booking_preview.mjs'
+      - 'tests/test_route_planning_times.mjs'
       - 'tests/test_route_lifecycle_policy.mjs'
       - 'tests/test_aircraft_weekly_schedule_board.mjs'
       - '.github/workflows/airlinerra-route-lifecycle-planning-ci.yml'
@@ -36,6 +38,7 @@ jobs:
         run: |
           node --check website/route-lifecycle-rules.mjs
           node --check website/route-planner.mjs
+          node --check website/route-planning-times.mjs
           node --check website/airline-operations-center.mjs
           node --check website/section9-flight-readiness.mjs
           node --check website/aircraft-weekly-schedule-board.mjs
@@ -43,6 +46,6 @@ jobs:
           node --check server/section9-seven-day-window.mjs
           node --check website/section9-route-details.mjs
       - name: Test route lifecycle rules, guarded API and flight labels
-        run: node --test tests/test_route_lifecycle_policy.mjs tests/test_aircraft_weekly_schedule_board.mjs tests/test_server_flight_schedule_api.mjs tests/test_section9_seven_day_booking_preview.mjs
+        run: node --test tests/test_route_lifecycle_policy.mjs tests/test_aircraft_weekly_schedule_board.mjs tests/test_server_flight_schedule_api.mjs tests/test_section9_seven_day_booking_preview.mjs tests/test_route_planning_times.mjs
       - name: Build invitation-only player website
         run: npm run build --prefix website
