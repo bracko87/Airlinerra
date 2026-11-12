@@ -16,7 +16,7 @@ const SAVE_FIELDS=new Set([...BASE_FIELDS,'aircraftInventoryId','flightNumber',
  'weeklySchedule','existingId','departureStand','arrivalStand']);
 const PLAN_FIELDS=new Set([...BASE_FIELDS,'aircraftInventoryId','flightNumber',
  'originAirportKey','destinationAirportKey','weeklySchedule','departureStand',
- 'arrivalStand','turnaroundMinutes','fares','service',
+ 'arrivalStand','turnaroundMinutes','fares','service','launchDelayDays',
  'referenceDepartureUtc','referenceArrivalUtc']);
 const SLOT_FIELDS=new Set([...BASE_FIELDS,'aircraftInventoryId','originAirportKey',
  'destinationAirportKey','referenceDepartureUtc','referenceArrivalUtc','weeklySchedule',
@@ -65,6 +65,7 @@ export function validateFlightSchedulePayload(body){
      !validWeeklyFlightSchedule(body.weeklySchedule)||
      !Number.isInteger(body.turnaroundMinutes)||
      body.turnaroundMinutes<45||body.turnaroundMinutes>360||
+     ![undefined,0,3,7].includes(body.launchDelayDays)||
      (body.departureStand!==null&&body.departureStand!==undefined&&
       !['terminal','remote','cargo'].includes(body.departureStand))||
      !['terminal','remote','cargo'].includes(body.arrivalStand)||
@@ -197,6 +198,8 @@ export const SCHEDULE_SQL=Object.freeze({
  jsonb_build_object('key',p.destination_airport_key,'name',coalesce(d.airport_name,p.destination_airport_key),
   'code',d.airport_code,'municipality',d.municipality,'countryIso',d.country_iso) AS "to",
  p.weekly_schedule AS "schedule",
+ CASE WHEN p.planning_options->>'launchDelayDays' IN ('0','3','7')
+  THEN (p.planning_options->>'launchDelayDays')::int ELSE 0 END AS "launchDelayDays",
  jsonb_build_object('departureStand',p.departure_stand_type,
   'arrivalStand',p.arrival_stand_type,'turnaroundMinutes',p.turnaround_minutes,
   'fares',p.planning_options->'fares','service',p.planning_options->'service') AS "operation",
@@ -357,7 +360,8 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
      body.originAirportKey,body.destinationAirportKey,
      JSON.stringify(body.weeklySchedule),body.departureStand??null,
      body.arrivalStand,body.turnaroundMinutes,
-     JSON.stringify({fares:body.fares,service:body.service}),
+     JSON.stringify({fares:body.fares,service:body.service,
+      launchDelayDays:body.launchDelayDays??0}),
      body.referenceDepartureUtc??null,body.referenceArrivalUtc??null
     ]);
     if(result.rowCount!==1||!result.rows[0]?.planId)
