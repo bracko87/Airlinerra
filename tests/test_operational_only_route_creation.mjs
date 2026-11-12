@@ -66,7 +66,8 @@ test('operational create fails closed, owner verified, without ANY schedule, slo
    assert.deepEqual(params,[USER,AIRLINE,AIRCRAFT,'OURAIRPORTS:4610']);
    return {rowCount:1,rows:[{aircraftInService:true,
     startingLocationVerified:false,atOrigin:false,originalStarterPosition:false,
-    fuelDispatchModelApproved:false,fuelAccountingModelApproved:false}]};
+    fuelDispatchModelApproved:false,fuelAccountingModelApproved:false,
+    maintenanceBaselineVerified:false}]};
   }
   throw Error('Any other SQL is an unauthorized operational write');
  });
@@ -83,6 +84,7 @@ test('operational create fails closed, owner verified, without ANY schedule, slo
  assert.match(out.blockingRequirements.join(' '),/AIRCRAFT_STARTING_LOCATION_NOT_VERIFIED/);
  assert.doesNotMatch(out.blockingRequirements.join(' '),/AIRCRAFT_NOT_VERIFIED_AT_ORIGIN/);
  assert.match(out.blockingRequirements.join(' '),/AIRCRAFT_FUEL_DISPATCH_MODEL_NOT_APPROVED/);
+ assert.match(out.blockingRequirements.join(' '),/AIRCRAFT_MAINTENANCE_BASELINE_NOT_VERIFIED/);
  assert.equal(out.crewRequired,false);
  assert.equal(out.crewCostsIncluded,false);
  assert.doesNotMatch(out.blockingRequirements.join(' '),/CREW_/);
@@ -185,7 +187,8 @@ test('a verified starter aircraft at the correct origin is not misdiagnosed as l
     originalStarterPosition:true,
     positionStatus:'verified_original_game_starter_position',
     verifiedPositionAirport:'OURAIRPORTS:4610',
-    fuelDispatchModelApproved:false,fuelAccountingModelApproved:false
+    fuelDispatchModelApproved:false,fuelAccountingModelApproved:false,
+    maintenanceBaselineVerified:false
    }]};
   }
   throw Error('Unexpected SQL / unauthorized write');
@@ -199,6 +202,7 @@ test('a verified starter aircraft at the correct origin is not misdiagnosed as l
  assert.equal(result.blockingRequirements.some(x=>x.includes('POSITION')||
    x.includes('DELIVERY')||x.includes('STARTING_LOCATION')),false);
  assert.ok(result.blockingRequirements.includes('AIRCRAFT_FUEL_DISPATCH_MODEL_NOT_APPROVED'));
+ assert.ok(result.blockingRequirements.includes('AIRCRAFT_MAINTENANCE_BASELINE_NOT_VERIFIED'));
  assert.ok(result.blockingRequirements.includes('SEVEN_DAY_PASSENGER_BOOKING_NOT_CONNECTED'));
  assert.equal(result.crewRequired,false);
  assert.equal(statements.length,3);
