@@ -21,7 +21,11 @@ export function createFlightScheduleClient({auth,origin,fetchImpl=(...args)=>fet
    const reason=await response.json().catch(()=>({}));
    const label=typeof reason.reason==='string'?reason.reason:
     typeof reason.error==='string'?reason.error:'SCHEDULE_RESTRICTION_BLOCKED';
-   throw Error('SCHEDULE_CONFLICT_'+label.replace(/[^A-Z0-9_]/gi,'_').slice(0,120));
+   const conflict=Error('SCHEDULE_CONFLICT_'+label.replace(/[^A-Z0-9_]/gi,'_').slice(0,120));
+   if(payload.action==='operational-create'&&Array.isArray(reason.blockingRequirements))
+    conflict.operationalBlockers=reason.blockingRequirements.filter(x=>
+      typeof x==='string'&&/^[A-Z][A-Z0-9_]{3,100}$/.test(x)).slice(0,16);
+   throw conflict;
   }
   if(!response.ok)throw Error('SCHEDULE_HTTP_'+String(response.status));
   const data=await response.json();
