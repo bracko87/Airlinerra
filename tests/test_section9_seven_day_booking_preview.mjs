@@ -220,7 +220,7 @@ test('unsaved custom cabin package is diagnosed without creating the PA400 plann
  assert.doesNotMatch(SCHEDULE_SQL.savedCabinPackage,/\b(?:INSERT|UPDATE|DELETE|TRUNCATE)\b/i);
  const planner=await readFile(new URL('../website/route-planner.mjs',import.meta.url),'utf8');
  assert.match(planner,/reason\.includes\('CABIN_PACKAGE_NOT_SAVED'\)/);
- assert.match(planner,/Open Flight Services, save the package/);
+ assert.match(planner,/save the selected cabin package in Flight Services first/);
 });
 
 test('existing custom package does not hide a separate route eligibility rejection',async()=>{
