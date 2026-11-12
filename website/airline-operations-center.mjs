@@ -90,7 +90,15 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
  if(root['route-details'])root['route-details'].innerHTML=card('Route Details',
   '<div class="workspace-actions"><button type="button" class="secondary" data-ops-page="route-list">Back to My routes</button>'+
   '<button type="button" class="secondary" id="operations-route-edit-from-details">Edit route</button>'+
+  '<button type="button" class="secondary" id="operations-route-cancel-open">Cancel route</button>'+
   '<button type="button" class="primary" id="operations-route-publish-plan" hidden>Save to airline database</button></div>'+
+  '<section id="operations-route-cancel-confirm" class="route-cancel-confirm" role="dialog" aria-labelledby="operations-route-cancel-title" hidden>'+
+   '<h4 id="operations-route-cancel-title">Cancel this route?</h4>'+
+   '<p id="operations-route-cancel-info">This removes the local draft and all planned departures displayed for it. No real bookings or airport slots will be changed.</p>'+
+   '<div class="workspace-actions">'+
+    '<button type="button" class="secondary" id="operations-route-cancel-dismiss">Keep route</button>'+
+    '<button type="button" class="primary" id="operations-route-cancel-confirm-button">Cancel local draft</button></div>'+
+  '</section>'+
   '<p id="operations-route-detail-save-status" class="hint" role="status"></p>'+
   '<div id="operations-route-detail" class="operations-route-detail-content"></div>',
   'ROUTE INFORMATION');
@@ -373,6 +381,7 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
     saveButton.disabled=false;
    }
    message('operations-route-detail-save-status','');
+   if($('operations-route-cancel-confirm'))$('operations-route-cancel-confirm').hidden=true;
    return;
   }
   if(target.id==='operations-route-edit-from-details'){
@@ -381,6 +390,58 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
     goTo?.('routes');
     doc.dispatchEvent(new CustomEvent('airlinerra:edit-route-draft',{detail:{route}}));
    }
+   return;
+  }
+  if(target.id==='operations-route-cancel-open'){
+   const route=allRoutes()[details.index()];
+   const confirmation=$('operations-route-cancel-confirm');
+   if(!route||!confirmation)return;
+   if(route.serverScheduleId||route.serverPlanningId){
+    confirmation.hidden=true;
+    message('operations-route-detail-save-status',
+     'This route has a server record. It cannot be cancelled here until protected flight, slot and passenger handling is implemented. No route or bookings changed.');
+    return;
+   }
+   confirmation.hidden=false;
+   message('operations-route-cancel-info','Cancel '+String(route.flightNumber||'this route')+
+    '? Its local planning draft and displayed planned departures will be removed. No passenger reservations or airport slots exist for this local draft.');
+   return;
+  }
+  if(target.id==='operations-route-cancel-dismiss'){
+   const confirmation=$('operations-route-cancel-confirm');
+   if(confirmation)confirmation.hidden=true;
+   return;
+  }
+  if(target.id==='operations-route-cancel-confirm-button'){
+   const i=details.index(),route=allRoutes()[i];
+   const confirmation=$('operations-route-cancel-confirm');
+   if(!route||route.serverPlanningId||route.serverScheduleId||
+    typeof route.flightNumber!=='string'){
+    if(confirmation)confirmation.hidden=true;
+    message('operations-route-detail-save-status','Cancellation not available. No route changed.');
+    return;
+   }
+   const number=route.flightNumber;
+   const previous=localRoutes(),next=previous.filter(r=>r?.flightNumber!==number);
+   if(next.length===previous.length){
+    if(confirmation)confirmation.hidden=true;
+    message('operations-route-detail-save-status','The draft is no longer available. Nothing changed.');
+    return;
+   }
+   const oldState=state;
+   state={...state,routes:next,route:state.route?.flightNumber===number?null:state.route};
+   if(!persist()){
+    state=oldState;
+    message('operations-route-detail-save-status','Could not save cancellation to local storage. The route was not removed.');
+    return;
+   }
+   if(confirmation)confirmation.hidden=true;
+   renderRoutes();
+   goTo?.('route-list');
+   message('operations-routes-feedback',number+
+    ' local draft cancelled. Its planned departures are removed from the display; no booked flights, airport slots or passenger records were changed.');
+   doc.dispatchEvent(new CustomEvent('airlinerra:route-draft-cancelled',
+    {detail:{flightNumber:number}}));
    return;
   }
   if(target.dataset.opsRouteRemove!==undefined){
