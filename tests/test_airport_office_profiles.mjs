@@ -59,7 +59,8 @@ test('headquarters, hubs, stations are distinct - with honest missing operationa
  assert.match(office,/Data pending/);
  assert.match(office,/station'\?1:null/);
  assert.match(office,/if\(!live.connected\|\|!live.airline\?\.id\)/);
- assert.doesNotMatch(office,/fetch\(|from\('airlines'\)|insert\(|update\(/);
+ assert.doesNotMatch(office,/fetch\(|from\('airlines'\)|insert\(/);
+ assert.match(office,/live\.playerDraftStore\.update\('workplan'/);
  for(const style of ['airport-office-headquarters','airport-office-list-row','airport-office-pagination',
   'airport-profile-office-actions','airport-profile-facts','airport-flight-board'])
   assert.ok(styles.includes(style),style);
@@ -282,7 +283,7 @@ test('airport profile offers safe station and hub request actions without openin
  assert.match(office,/airport\?\.key===live\.airline\?\.homeAirportKey/);
  assert.match(office,/activeAirport=effective/);
  assert.match(office,/proposeAirportOffice\(\{type,airport,/);
- assert.match(office,/saveSession\(session,keyForAccount\(\),\[\.\.\.entries\(\),proposed\.entry\]\)/);
+ assert.match(office,/await saveOffices\(\[\.\.\.entries\(\),proposed\.entry\]\)/);
  assert.match(office,/No airport office, staffing, fees or slots have been activated/);
 });
 test('hub and station pages list ten slim records per page with independent pagination',async()=>{
