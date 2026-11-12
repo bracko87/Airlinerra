@@ -338,18 +338,13 @@ const pages=Object.freeze({
 });
 const DRAFT_KEY='airlinerra.local.workplan.v1.';
 const PREF_KEY='airlinerra.ui.preferences.v1.';
-function safelyLoad(storage,key){
- try{const raw=storage?.getItem(key);return raw?JSON.parse(raw):null;}catch{return null;}
-}
-function safelySave(storage,key,val){
- try{storage?.setItem(key,JSON.stringify(val));return true;}catch{return false;}
-}
 export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
  if(!doc||typeof identity!=='string'||!/^[\w-]{3,128}$/.test(identity))
   throw Error('A verified account is required for airline workspace');
  const prefKey=PREF_KEY+identity,draftKey=DRAFT_KEY+identity;
- let preferences=cleanUiPreferences(safelyLoad(storage,prefKey));
- let data={connected:false,airline:null,countries:[],worlds:[],reader:null},draft=safelyLoad(session,draftKey)||{};
+ let preferences=cleanUiPreferences({});
+ let data={connected:false,airline:null,countries:[],worlds:[],reader:null},draft={};
+ const getDraft=()=>data.playerDraftStore?.snapshot('workplan')||draft;
  const $=id=>doc.getElementById(id);
  let marketSnapshot=null;
  let usedMarketSnapshot=null;
@@ -461,23 +456,37 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   const dates={dmy:'29/10/2026',mdy:'10/29/2026',ymd:'2026-10-29'};
   if($('settings-date-example'))$('settings-date-example').textContent=dates[field('settings-date')]||dates.dmy;
  }
- function writePreferences(keys,statusId){
+ async function savePreferences(next,statusId){
+  const database=data.playerDraftStore;
+  if(!database?.ready('preferences')){
+   $(statusId).textContent='NOT SAVED — the airline database is unavailable.';
+   return false;
+  }
+  const old=preferences;preferences=cleanUiPreferences(next);applyPreferences();
+  $(statusId).textContent='Saving account preferences in Supabase…';
+  try{
+   await database.update('preferences',preferences);
+   $(statusId).textContent='Preferences saved to your account in Supabase.';
+   return true;
+  }catch{
+   preferences=old;applyPreferences();
+   $(statusId).textContent='NOT SAVED — Supabase could not confirm the preferences.';
+   return false;
+  }
+ }
+ async function writePreferences(keys,statusId){
   const next={...preferences};
   for(const [id,key] of Object.entries(keys))next[key]=$(id).type==='checkbox'?$(id).checked:$(id).value;
-  preferences=cleanUiPreferences(next);applyPreferences();
-  $(statusId).textContent=safelySave(storage,prefKey,preferences)
-   ?'Preferences saved for this account in this browser.'
-   :'Preferences applied for this session. Browser storage is unavailable.';
+  return savePreferences(next,statusId);
  }
- function resetPreferences(statusId){
-  preferences=cleanUiPreferences({});applyPreferences();
-  $(statusId).textContent=safelySave(storage,prefKey,preferences)?'Defaults restored.':'Defaults applied for this session.';
+ async function resetPreferences(statusId){
+  return savePreferences(cleanUiPreferences({}),statusId);
  }
- function draftWrite(key,val){
-  // Another operations panel may have changed a separate field in the same
-  // account-local session draft. Refresh it before writing to avoid erasing it.
-  draft={...(safelyLoad(session,draftKey)||draft),[key]:val};
-  return safelySave(session,draftKey,draft);
+ async function draftWrite(key,val){
+  const database=data.playerDraftStore;
+  if(!database?.ready('workplan'))return false;
+  try{draft=await database.update('workplan',{[key]:val});return true}
+  catch{return false}
  }
  function populateCountries(){
   for(const id of ['route-from-country','route-to-country']){
@@ -535,7 +544,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
  function renderSchedule(){
   const host=$('schedule-aircraft-board');
   if(!host)return;
-  const saved=safelyLoad(session,draftKey)||draft;
+  const saved=getDraft();
   const localRoutes=Array.isArray(saved.routes)?saved.routes:[];
   const serverPlans=Array.isArray(scheduleSnapshot?.plans)?scheduleSnapshot.plans:[];
   const board=buildAirlineWeeklyBoard({
@@ -1310,6 +1319,11 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   const oldAirlineId=data.airline?.id||null;
   data={...data,...next};
   const airline=data.airline;
+  if(data.playerDraftStore?.ready('preferences')){
+   preferences=cleanUiPreferences(data.playerDraftStore.snapshot('preferences'));
+   applyPreferences();
+  }
+  draft=getDraft();
   try{cabinManager?.updateData(data)}catch{console.warn('Airlinerra flight services refresh unavailable')}
   try{cabinConfigurationManager?.updateData(data)}catch{
    console.warn('Cabin configuration refresh unavailable')
@@ -1474,14 +1488,18 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   if(id==='route-save'){
    const idea={from:selected('from'),to:selected('to'),flights:Number($('route-flights').value)};
    if(!validateRouteIdea(idea)){$('route-feedback').textContent='Choose two different approved airports and 1-28 departures per week.';return;}
-   const freshest=safelyLoad(session,draftKey)||draft;
+   const freshest=getDraft();
    const saved=Array.isArray(freshest.routes)?freshest.routes:[];
    if(saved.length>=25){$('route-feedback').textContent='Route draft limit is 25. Remove old drafts in My routes.';return;}
    const next=[...saved.filter(route=>route?.from?.key!==idea.from.key||route?.to?.key!==idea.to.key),idea];
-   draftWrite('route',idea);draftWrite('routes',next);
+   const savedToDb=await draftWrite('routes',next);
+   if(!savedToDb){
+    $('route-feedback').textContent='NOT SAVED — Supabase did not confirm this planning draft.';return;
+   }
+   await draftWrite('route',idea);
    showRoute();
    doc.dispatchEvent(new CustomEvent('airlinerra:route-draft-saved'));
-   $('route-feedback').textContent='Route draft saved in this browser tab under My routes. No live route was created.';
+   $('route-feedback').textContent='Route idea saved as a non-operational planning draft in your airline database.';
   }
   if(id==='used-market-find'||id==='used-market-refresh'||
      id==='used-market-prev'||id==='used-market-next'){
@@ -1673,13 +1691,15 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
      $('budget-result').textContent='Enter non-negative monthly amounts for every field.';return;
     }
    }
-   draftWrite('budget',budget);
+   if(!await draftWrite('budget',budget)){
+    $('budget-result').textContent='NOT SAVED — the airline database did not confirm the budget scenario.';return;
+   }
    const scenario=financialScenario({...budget,cash:Number(data.airline?.cashUsd||0)});
    const months=scenario.months===null?'Not decreasing with these assumptions':
     Number.isFinite(scenario.months)?scenario.months.toFixed(1)+' months':'Not available';
    $('budget-result').textContent='Monthly income: '+currency(scenario.income)+
     ' | Monthly expenses: '+currency(scenario.expenses)+' | Net: '+currency(scenario.net)+
-    ' | Estimated cash runway: '+months+'. Scenario only - no server changes.';
+    ' | Estimated cash runway: '+months+'. Saved as a planning scenario in Supabase; no ledger changes.';
   }
   if(id==='schedule-day-prev'||id==='schedule-day-next'){
    scheduleSelectedOffset=Math.max(0,Math.min(6,scheduleSelectedOffset+
@@ -1696,7 +1716,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
  for(const id of ['settings-time','settings-date','settings-units'])
   $(id)?.addEventListener('change',examples);
  const routePlannerController=createRoutePlanner({
-  doc,getData:()=>data,loadDraft:()=>safelyLoad(session,draftKey)||{},draftWrite,
+  doc,getData:()=>data,loadDraft:()=>getDraft(),draftWrite,
   getCabinState:()=>({packages:cabinManager?.getPackages()||[],
    ready:cabinManager?.isReady()===true}),
   getFuelAircraft:aircraftId=>data.connected&&marketSnapshot?.airlineId===data.airline?.id?
