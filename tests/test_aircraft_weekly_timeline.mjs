@@ -48,11 +48,11 @@ test('locations are checked across weekdays and multiple aircraft stay independe
  const independent=route('PA201',belgrade,podgorica,1,'10:00','terminal','different-a319');
  assert.equal(check([x],independent).errors.length,0);
 });
-test('first flight draft does not show a wrong-airport or return-loop warning',()=>{
+test('first flight draft is not rejected but repeated one-way flights warn about missing return',()=>{
  const repeated={...route('PA101',belgrade,tivat,0,'09:00'),schedule:[0,1,2,3,4,5,6].map(day=>({day,time:'09:00'}))};
  const result=check([],repeated);
  assert.equal(result.errors.length,0);
- assert.ok(!result.warnings.some(w=>/Weekly cycle is incomplete/.test(w)));
+ assert.ok(result.warnings.some(w=>/Weekly cycle is incomplete/.test(w)));
  assert.equal(result.events[0].departureStand,null);
 });
 test('an edited flight can replace its previous draft without being compared to itself',()=>{
@@ -82,4 +82,12 @@ test('fictional Aleksandrovo LYAL is shown by airport identity rather than Nova 
  const plan=check([route('PA444',belgrade,aleks,0,'09:00')]);
  assert.equal(plan.events[0].to,'Aleksandrovo');
  assert.equal(plan.errors.length,0);
+});
+
+
+test('one planned outbound each week still needs a return or repositioning for recurring service',()=>{
+ const single=route('PA400',belgrade,tivat,0,'06:00');
+ const result=check([single]);
+ assert.equal(result.errors.length,0);
+ assert.match(result.warnings.join(' '),/return or repositioning flight/i);
 });
