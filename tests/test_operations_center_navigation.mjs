@@ -74,5 +74,6 @@ test('staff structure includes executive board, crew, engineering, ground, suppo
  assert.equal(ticketRevenueEstimate({seats:100,occupancy:140,price:200,flights:7,cost:5000}),null);
  const workspace=await read('../website/airline-workspace.mjs');
  assert.match(workspace,/airlinerra:route-draft-saved/);
- assert.match(workspace,/freshest=safelyLoad\(session,draftKey\)/);
+ assert.match(workspace,/freshest=getDraft\(\)/);
+ assert.doesNotMatch(workspace,/\.setItem\s*\(/);
 });
