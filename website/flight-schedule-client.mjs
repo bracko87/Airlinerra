@@ -30,6 +30,15 @@ export function createFlightScheduleClient({auth,origin,fetchImpl=(...args)=>fet
  }
  return Object.freeze({
   list:airlineId=>post({action:'list',airlineId}),
+  operationalCreate:({airlineId,aircraftInventoryId,flightNumber,originAirportKey,
+   destinationAirportKey,weeklySchedule,departureStand=null,arrivalStand='terminal',
+   turnaroundMinutes,fares,service,launchDelayDays=0,
+   referenceDepartureUtc=null,referenceArrivalUtc=null})=>
+    post({action:'operational-create',airlineId,aircraftInventoryId,flightNumber,
+     originAirportKey,destinationAirportKey,weeklySchedule,departureStand,
+     arrivalStand,turnaroundMinutes,fares,service,launchDelayDays,
+     referenceDepartureUtc,referenceArrivalUtc}),
+
   planSave:({airlineId,aircraftInventoryId,flightNumber,originAirportKey,
    destinationAirportKey,weeklySchedule,departureStand=null,arrivalStand='terminal',
    turnaroundMinutes,fares,service,launchDelayDays=0,
