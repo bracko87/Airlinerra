@@ -192,6 +192,17 @@ export const SCHEDULE_SQL=Object.freeze({
   location.position->>'status' AS "positionStatus",
   (location.position->>'initialOnly')='true' AS "originalStarterPosition",
   location.position->>'airportKey' AS "verifiedPositionAirport",
+  EXISTS(SELECT 1 FROM airlinerra_game.section9_game_fuel_model_snapshot_v1 game_fuel
+   WHERE game_fuel.configuration_id=f.configuration_id
+     AND game_fuel.game_calculation_ready=true
+     AND game_fuel.model_version='AIRLINERRA_FIVE_PHASE_FUEL_GAME_V1_2026_11_12')
+     AS "gameFuelEstimateReady",
+  EXISTS(SELECT 1 FROM airlinerra_game.aircraft_maintenance_state_v1 usage
+   WHERE usage.aircraft_inventory_id=f.id AND usage.airline_id=f.airline_id
+    AND usage.verified_tracking_started_utc IS NOT NULL
+    AND usage.tracked_flight_hours IS NOT NULL
+    AND usage.tracked_flight_cycles IS NOT NULL)
+    AS "maintenanceUsageTrackingStarted",
   EXISTS(SELECT 1 FROM airlinerra_game.aircraft_fuel_planning_profiles_v1 fuel
    WHERE fuel.configuration_id=f.configuration_id
     AND fuel.approved_for_dispatch=true AND fuel.requires_further_evidence=false)
@@ -488,6 +499,8 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
       missing.push('AIRCRAFT_STARTING_LOCATION_NOT_VERIFIED');
      else if(aircraft.atOrigin!==true)
       missing.push('AIRCRAFT_NOT_VERIFIED_AT_ORIGIN');
+     if(aircraft.gameFuelEstimateReady!==true)
+      missing.push('AIRCRAFT_FUEL_GAME_INPUTS_INCOMPLETE');
      if(aircraft.fuelDispatchModelApproved!==true)
       missing.push('AIRCRAFT_FUEL_DISPATCH_MODEL_NOT_APPROVED');
      if(aircraft.fuelAccountingModelApproved!==true)
@@ -509,6 +522,8 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
      crewRequired:false,crewCostsIncluded:false,
      aircraftPositionStatus:aircraft?.positionStatus??null,
      originalStarterPosition:aircraft?.originalStarterPosition===true,
+     gameFuelEstimateReady:aircraft?.gameFuelEstimateReady===true,
+     maintenanceUsageTrackingStarted:aircraft?.maintenanceUsageTrackingStarted===true,
      blockingRequirements:missing,verifiedGameDate:state.confirmed_game_date||null});
    }
    if(body.action==='plan-save'){
