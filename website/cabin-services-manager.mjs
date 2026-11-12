@@ -84,6 +84,19 @@ export function publishedCabinPackages(packages,savedIds){
  return structuredClone(packages.filter(p=>
   p&&typeof p.id==='string'&&savedIds.has(p.id)));
 }
+/** Import a previously saved localhost package only into an EMPTY airline
+ * settings record. Never replace newer server settings or import drafts.
+ * The protected server independently validates the cleaned state and owner.
+ */
+export function localCabinPackagesForFirstSync(raw,serverVersion){
+ if(serverVersion!==0||typeof raw!=='string'||raw.length>16384)return null;
+ let local;
+ try{local=JSON.parse(raw)}catch{return null;}
+ if(!local||typeof local!=='object'||Array.isArray(local)||
+    local.version!==1)return null;
+ const cleaned=cleanCabinState(local);
+ return cleaned.packages.length>1?cleaned:null;
+}
 export function initialCabinState(){
  return {version:1,packages:[createBasicCabinPackage()],assignments:{
   economy:'basic',premium:'basic',business:'basic',first:'basic'
@@ -540,15 +553,36 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
    if(!id){status('Sign in to an airline to save cabin-service designs.');return;}
    if(!remote){notifyRoutes();return;}
    status('Loading cabin packages from Supabase…');
-   void remote.read(id).then(result=>{
-    if(ticket!==loadTicket||airlineId!==id)return;
-    state=cleanCabinState(result.state);revision=result.version;
+   void remote.read(id).then(async result=>{
+    if(ticket!==loadTicket||airlineId!==id||remote!==api)return;
+    const savedLocal=localCabinPackagesForFirstSync(read(savedKey),result.version);
+    let current=result,imported=false;
+    if(savedLocal){
+     status('Transferring your previously saved browser package to this airline in Supabase…');
+     try{
+      current=await api.save({airlineId:id,state:savedLocal,expectedVersion:0});
+      if(current?.source!=='supabase'||!Number.isInteger(current.version)||
+         current.version<1||current.operational!==false)
+       throw Error('Unverified cabin migration');
+      imported=true;
+     }catch{
+      if(ticket!==loadTicket||airlineId!==id||remote!==api)return;
+      ready=false;loading=false;render();
+      status('Your saved browser package was NOT transferred to Supabase. It remains in browser storage. No route can use it until the airline settings sync succeeds.');
+      return;
+     }
+    }
+    if(ticket!==loadTicket||airlineId!==id||remote!==api)return;
+    state=cleanCabinState(current.state);revision=current.version;
     savedPackageIds=new Set(state.packages.map(p=>p.id));
     ready=true;loading=false;activeId='basic';
     working=structuredClone(state.packages[0]);render();
-    status('Cabin packages loaded from Supabase for this airline.');notifyRoutes();
+    status(imported?
+     'Your saved browser package is now stored in Supabase for this airline and can be used when creating a route.':
+     'Cabin packages loaded from Supabase for this airline.');
+    notifyRoutes();
    }).catch(()=>{
-    if(ticket!==loadTicket||airlineId!==id)return;
+    if(ticket!==loadTicket||airlineId!==id||remote!==api)return;
     loading=false;ready=false;render();
     status('Cabin packages could not be loaded. Editing disabled to protect saved data.');
    });
