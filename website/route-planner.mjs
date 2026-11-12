@@ -1849,9 +1849,22 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    draft.status='active';
   }catch(error){
    const reason=String(error?.message||'');
+   const blockers=Array.isArray(error?.operationalBlockers)?error.operationalBlockers:[];
+   const specific=blockers.includes('AIRCRAFT_NOT_IN_AIRLINE_FLEET')?
+    'The selected aircraft is not in this airline fleet.':
+    blockers.includes('AIRCRAFT_NOT_IN_SERVICE')?
+    'The selected aircraft is not in service.':
+    blockers.includes('AIRCRAFT_DELIVERY_LOCATION_NOT_VERIFIED')?
+    'The aircraft delivery airport has not yet been verified.':
+    blockers.includes('AIRCRAFT_NOT_VERIFIED_AT_ORIGIN')?
+    'The aircraft has not been verified at the departure airport.':
+    blockers.includes('AIRCRAFT_FUEL_DISPATCH_MODEL_NOT_APPROVED')?
+    'The aircraft fuel model is not yet approved for flight operations.':
+    '';
    message('route-plan-status',
+    specific?'NOT CREATED — '+specific+' The remaining flight systems are still being connected.':
     reason.includes('GAME_ENGINE_NOT_READY')?
-     'NOT CREATED — flight activation, aircraft operations, passenger bookings and financial settlement are not connected yet. No planning-only route was saved.':
+     'NOT CREATED — automatic flight activation and bookings are not connected yet. No flight was created.':
     reason.includes('CABIN_PACKAGE_NOT_SAVED')?
      'NOT CREATED — save the selected cabin package in Flight Services first.':
     reason.includes('SCHEDULE_CONFLICT')?
