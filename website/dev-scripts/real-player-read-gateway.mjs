@@ -60,7 +60,8 @@ export function allowedLocalOwnerRead(pathname,payload){
  // remain forbidden through localhost.
  if(pathname===SCHEDULE_READ_PATH&&payload.action==='fee-preview')
   return validateFlightSchedulePayload(payload);
- if(pathname===SCHEDULE_READ_PATH&&payload.action==='plan-save')
+ if(pathname===SCHEDULE_READ_PATH&&
+    ['plan-save','operational-create'].includes(payload.action))
   return validateFlightSchedulePayload(payload);
  if(pathname===SCHEDULE_READ_PATH&&payload.action==='slot-check'){
   // Server input is validated again. The only non-list action allowed here
