@@ -18,6 +18,7 @@ const PLAN_FIELDS=new Set([...BASE_FIELDS,'aircraftInventoryId','flightNumber',
  'originAirportKey','destinationAirportKey','weeklySchedule','departureStand',
  'arrivalStand','turnaroundMinutes','fares','service','launchDelayDays',
  'referenceDepartureUtc','referenceArrivalUtc']);
+const PLAN_DELETE_FIELDS=new Set([...BASE_FIELDS,'planId']);
 const SLOT_FIELDS=new Set([...BASE_FIELDS,'aircraftInventoryId','originAirportKey',
  'destinationAirportKey','referenceDepartureUtc','referenceArrivalUtc','weeklySchedule',
  'existingId','departureStand','arrivalStand']);
@@ -97,6 +98,8 @@ export function validateFlightSchedulePayload(body){
  }
  if(body.action==='list'||body.action==='partner-list')
   return withinFields(body,BASE_FIELDS);
+ if(body.action==='plan-delete')
+  return withinFields(body,PLAN_DELETE_FIELDS)&&uuid(body.planId);
  if(body.action==='partner-propose')return withinFields(body,PARTNER_PROPOSE_FIELDS)&&
    typeof body.otherAirlineCode==='string'&&
    /^[A-Z0-9]{2,3}$/.test(body.otherAirlineCode);
@@ -214,6 +217,16 @@ export const SCHEDULE_SQL=Object.freeze({
  JOIN airlinerra_game.approved_game_airports o ON o.world_id=1 AND o.airport_key=p.origin_airport_key
  JOIN airlinerra_game.approved_game_airports d ON d.world_id=1 AND d.airport_key=p.destination_airport_key
  WHERE p.airline_id=$1::uuid ORDER BY p.updated_at DESC,p.id LIMIT 100`,
+ planDelete:`DELETE FROM airlinerra_game.airline_route_planning_drafts_v1 p
+ USING airlinerra_game.airlines a
+ WHERE p.id=$3::uuid AND p.airline_id=$2::uuid
+   AND a.id=p.airline_id AND a.owner_player_id=$1::uuid
+   AND a.world_id=1 AND p.status='planning'
+   AND p.slots_reserved=false AND p.activated=false
+   AND NOT EXISTS (
+    SELECT 1 FROM airlinerra_game.airline_flight_schedule_drafts_v1 s
+    WHERE s.airline_id=p.airline_id AND s.flight_number=p.flight_number)
+ RETURNING p.id::text AS "planId",p.flight_number AS "flightNumber"`,
  planSave:`INSERT INTO airlinerra_game.airline_route_planning_drafts_v1 AS p
  (world_id,airline_id,aircraft_inventory_id,flight_number,origin_airport_key,
  destination_airport_key,weekly_schedule,departure_stand_type,arrival_stand_type,
@@ -353,6 +366,17 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
     ]);
     return respond(200,{readOnly:false,activationAvailable:false,
       fleet:fleet.rows,drafts:drafts.rows,plans:plans.rows});
+   }
+   if(body.action==='plan-delete'){
+    const result=await client.query(SCHEDULE_SQL.planDelete,[
+     userId,body.airlineId,body.planId
+    ]);
+    if(result.rowCount!==1)
+     return respond(409,{error:'PLAN_NOT_CANCELLABLE',
+      reason:'NOT_OWNED_OR_HAS_OPERATIONAL_SCHEDULE'});
+    return respond(200,{deleted:true,...result.rows[0],
+     passengerBookingsChanged:false,airportSlotsChanged:false,ledgerPosted:false,
+     message:'Inactive planning route deleted. No flight or commercial booking changed.'});
    }
    if(body.action==='plan-save'){
     const result=await client.query(SCHEDULE_SQL.planSave,[
