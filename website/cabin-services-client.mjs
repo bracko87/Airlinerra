@@ -1,8 +1,11 @@
-/** Production-only cabin settings client; no passenger purchases or money movement. */
+/** Same owner-verified cabin settings API for production and trusted localhost preview.
+ * Neither path purchases flights, changes aircraft or posts money.
+ */
 export const CABIN_API_ROUTE='/api/v1/player/cabin-services';
 export function createCabinServicesClient({auth,origin,fetchImpl=(...a)=>fetch(...a)}={}){
- if(origin!=='https://airlinerra.com'||typeof auth?.getAccessToken!=='function'||
-    typeof fetchImpl!=='function')throw Error('Verified production cabin client required');
+ if(!['https://airlinerra.com','http://localhost:5188'].includes(origin)||
+    typeof auth?.getAccessToken!=='function'||
+    typeof fetchImpl!=='function')throw Error('Verified trusted-origin cabin client required');
  const post=async body=>{
   const token=await auth.getAccessToken();
   if(typeof token!=='string'||token.length<16)throw Error('CABIN_AUTH_REQUIRED');
