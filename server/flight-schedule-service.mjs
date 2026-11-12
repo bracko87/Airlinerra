@@ -211,6 +211,9 @@ export const SCHEDULE_SQL=Object.freeze({
   'fares',p.planning_options->'fares','service',p.planning_options->'service') AS "operation",
  p.reference_departure_utc AS "referenceDepartureUtc",
  p.reference_arrival_utc AS "referenceArrivalUtc",
+ s.id::text AS "serverScheduleId",
+ s.status AS "serverScheduleStatus",
+ s.operationally_verified AS "serverScheduleOperationallyVerified",
  'owned:'||p.aircraft_inventory_id::text AS "aircraftId",
  p.status,p.version,p.updated_at AS "updatedAt",
  i.registration||' · '||c.configuration_code AS "aircraftLabel"
@@ -219,6 +222,13 @@ export const SCHEDULE_SQL=Object.freeze({
  JOIN airlinerra.aircraft_configurations c ON c.id=i.configuration_id
  JOIN airlinerra_game.approved_game_airports o ON o.world_id=1 AND o.airport_key=p.origin_airport_key
  JOIN airlinerra_game.approved_game_airports d ON d.world_id=1 AND d.airport_key=p.destination_airport_key
+ LEFT JOIN airlinerra_game.airline_flight_schedule_drafts_v1 s
+  ON s.airline_id=p.airline_id
+  AND s.flight_number=p.flight_number
+  AND s.aircraft_inventory_id=p.aircraft_inventory_id
+  AND s.origin_airport_key=p.origin_airport_key
+  AND s.destination_airport_key=p.destination_airport_key
+  AND s.weekly_schedule=p.weekly_schedule
  WHERE p.airline_id=$1::uuid ORDER BY p.updated_at DESC,p.id LIMIT 100`,
  planDelete:`DELETE FROM airlinerra_game.airline_route_planning_drafts_v1 p
  USING airlinerra_game.airlines a
