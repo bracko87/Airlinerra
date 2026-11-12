@@ -23,7 +23,11 @@ export function createLocalOwnerFleetReaders({auth,origin,fetchImpl=globalThis.f
    const reason=typeof error?.reason==='string'&&
     /^[A-Z][A-Z0-9_]{2,100}$/.test(error.reason)?
      error.reason:'SCHEDULE_RESTRICTION_BLOCKED';
-   throw Error('SCHEDULE_CONFLICT_'+reason);
+   const conflict=Error('SCHEDULE_CONFLICT_'+reason);
+   if(body?.action==='operational-create'&&Array.isArray(error?.blockingRequirements))
+    conflict.operationalBlockers=error.blockingRequirements.filter(x=>
+     typeof x==='string'&&/^[A-Z][A-Z0-9_]{3,100}$/.test(x)).slice(0,16);
+   throw conflict;
   }
   if(!response.ok)throw Error('LOCAL_AIRLINERRA_API_HTTP_'+response.status);
   const result=await response.json();
