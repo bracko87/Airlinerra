@@ -181,3 +181,70 @@ test('My Routes uses authenticated records to explain the first operational bloc
  assert.match(ui,/id="operations-flight-readiness"/);
  assert.match(ui,/summarizeSection9FlightReadiness\(reply\)\.text/);
 });
+
+
+test('unsaved custom cabin package is diagnosed without creating the PA400 planning route',async()=>{
+ const action={
+  action:'plan-save',airlineId:AIRLINE,aircraftInventoryId:'33333333-3333-4333-8333-333333333333',
+  flightNumber:'PA400',originAirportKey:'OURAIRPORTS:4610',
+  destinationAirportKey:'OURAIRPORTS:4615',
+  weeklySchedule:[{day:0,time:'06:00'}],
+  departureStand:'terminal',arrivalStand:'terminal',turnaroundMinutes:45,
+  fares:{economy:78,premium:null,business:null,first:null},
+  service:{onboard:'basic',baggage:'hand-only',cargo:'none',cabinPackageId:'pkg-1'},
+  launchDelayDays:3,referenceDepartureUtc:null,referenceArrivalUtc:null
+ };
+ assert.equal(validateFlightSchedulePayload(action),true);
+ const calls=[];
+ const handler=createFlightScheduleHandler({
+  verifyUserToken:async()=>({user:{id:USER},error:null}),
+  database:{connect:async()=>({query:async(sql,args)=>{
+   calls.push({sql,args});
+   if(sql===SCHEDULE_SQL.planSave)return {rowCount:0,rows:[]};
+   if(sql===SCHEDULE_SQL.savedCabinPackage){
+    assert.deepEqual(args,[USER,AIRLINE,'pkg-1']);
+    return {rowCount:1,rows:[{savedPackageExists:false}]};
+   }
+   throw Error('Unexpected SQL operation');
+  },release:()=>{}})}
+ });
+ const response=await handler(req(action));
+ assert.equal(response.status,409);
+ const reply=await response.json();
+ assert.equal(reply.reason,'CABIN_PACKAGE_NOT_SAVED');
+ assert.match(reply.message,/Flight Services/);
+ assert.equal(calls.length,2);
+ assert.match(SCHEDULE_SQL.savedCabinPackage,/a\.owner_player_id=\$1::uuid/);
+ assert.match(SCHEDULE_SQL.savedCabinPackage,/a\.id=\$2::uuid/);
+ assert.match(SCHEDULE_SQL.savedCabinPackage,/item->>'id'=\$3::text/);
+ assert.doesNotMatch(SCHEDULE_SQL.savedCabinPackage,/\b(?:INSERT|UPDATE|DELETE|TRUNCATE)\b/i);
+ const planner=await readFile(new URL('../website/route-planner.mjs',import.meta.url),'utf8');
+ assert.match(planner,/reason\.includes\('CABIN_PACKAGE_NOT_SAVED'\)/);
+ assert.match(planner,/Open Flight Services, save the package/);
+});
+
+test('existing custom package does not hide a separate route eligibility rejection',async()=>{
+ const action={action:'plan-save',airlineId:AIRLINE,
+  aircraftInventoryId:'33333333-3333-4333-8333-333333333333',
+  flightNumber:'PA400',originAirportKey:'OURAIRPORTS:4610',
+  destinationAirportKey:'OURAIRPORTS:4615',
+  weeklySchedule:[{day:0,time:'06:00'}],departureStand:'terminal',
+  arrivalStand:'terminal',turnaroundMinutes:45,
+  fares:{economy:78,premium:null,business:null,first:null},
+  service:{onboard:'basic',baggage:'hand-only',cargo:'none',cabinPackageId:'pkg-1'},
+  referenceDepartureUtc:null,referenceArrivalUtc:null
+ };
+ const handler=createFlightScheduleHandler({
+  verifyUserToken:async()=>({user:{id:USER},error:null}),
+  database:{connect:async()=>({query:async(sql)=>{
+   if(sql===SCHEDULE_SQL.planSave)return {rowCount:0,rows:[]};
+   if(sql===SCHEDULE_SQL.savedCabinPackage)
+    return {rowCount:1,rows:[{savedPackageExists:true}]};
+   throw Error('Unexpected SQL');
+  },release:()=>{}})}
+ });
+ const response=await handler(req(action));
+ assert.equal(response.status,409);
+ assert.equal((await response.json()).reason,
+  'AIRLINE_AIRCRAFT_AIRPORT_OR_FLIGHT_NUMBER_NOT_ELIGIBLE');
+});
