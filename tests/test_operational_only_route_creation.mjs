@@ -169,3 +169,58 @@ test('route creation UI no longer invokes planning-only save or claims unapprove
  assert.match(ui,/No flight was created/);
  assert.match(ui,/const text='Route '\+flightNumber\+' created\.'/);
 });
+
+test('a verified starter aircraft at the correct origin is not misdiagnosed as lacking delivery or location',async()=>{
+ const {h,statements}=handler((sql,params)=>{
+  if(sql===SCHEDULE_SQL.owner)return {rowCount:1,rows:[{id:AIRLINE}]};
+  if(sql===SCHEDULE_SQL.operationalReadiness)
+   return {rowCount:1,rows:[{world_id:1,world_state:'active',
+    confirmed_game_date:'2026-11-12',
+    authoritative_clock_connected:true,clock_producer_enabled:true,
+    automatic_flight_and_fuel_settlement_enabled:false}]};
+  if(sql===SCHEDULE_SQL.aircraftPrerequisites){
+   assert.deepEqual(params,[USER,AIRLINE,AIRCRAFT,'OURAIRPORTS:4610']);
+   return {rowCount:1,rows:[{
+    aircraftInService:true,startingLocationVerified:true,atOrigin:true,
+    originalStarterPosition:true,
+    positionStatus:'verified_original_game_starter_position',
+    verifiedPositionAirport:'OURAIRPORTS:4610',
+    fuelDispatchModelApproved:false,fuelAccountingModelApproved:false
+   }]};
+  }
+  throw Error('Unexpected SQL / unauthorized write');
+ });
+ const response=await h(req(payload));
+ assert.equal(response.status,409);
+ const result=await response.json();
+ assert.equal(result.routeCreated,false);
+ assert.equal(result.originalStarterPosition,true);
+ assert.equal(result.aircraftPositionStatus,'verified_original_game_starter_position');
+ assert.equal(result.blockingRequirements.some(x=>x.includes('POSITION')||
+   x.includes('DELIVERY')||x.includes('STARTING_LOCATION')),false);
+ assert.ok(result.blockingRequirements.includes('AIRCRAFT_FUEL_DISPATCH_MODEL_NOT_APPROVED'));
+ assert.ok(result.blockingRequirements.includes('SEVEN_DAY_PASSENGER_BOOKING_NOT_CONNECTED'));
+ assert.equal(result.crewRequired,false);
+ assert.equal(statements.length,3);
+ assert.ok(statements.every(x=>x.sql.trim().startsWith('SELECT')));
+});
+test('server position resolver explicitly favors signed movements over the original starter allocation',async()=>{
+ const migration=await readFile(new URL(
+  '../supabase/migrations/20261112182500_section9_aircraft_position_resolver_record_alias_repair.sql',
+  import.meta.url),'utf8');
+ const server=await readFile(new URL('../server/flight-schedule-service.mjs',import.meta.url),'utf8');
+ assert.match(migration,/original_airline_starter_allocation/);
+ assert.match(migration,/section9_starter_origin_evidence_v1/);
+ assert.match(migration,/section9_operated_flight_movements_v1/);
+ assert.match(migration,/current_position_movement_evidence_mismatch/);
+ assert.match(migration,/operated_position_record_missing/);
+ assert.match(migration,/SELECT \* INTO pos/);
+ assert.match(migration,/IF FOUND THEN\s+SELECT \* INTO movement_row/);
+ assert.match(migration,/NOT EXISTS\([\s\S]*?later.actual_event_utc>movement_row.actual_event_utc/);
+ assert.match(migration,/SECURITY INVOKER/);
+ assert.match(migration,/REVOKE ALL ON FUNCTION/);
+ assert.doesNotMatch(migration,/INSERT INTO airlinerra_game.section9_operated_flight_movements/);
+ assert.match(server,/section9_owned_aircraft_operational_position_v1\(/);
+ assert.match(server,/startingLocationVerified/);
+ assert.doesNotMatch(server,/AIRCRAFT_DELIVERY_LOCATION_NOT_VERIFIED/);
+});
