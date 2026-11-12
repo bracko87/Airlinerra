@@ -6,6 +6,7 @@ import {createAirportOffice} from './airline-airports-office.mjs';
 import {createSection9RouteDetails} from './section9-route-details.mjs';
 import {createSection9PartnerConsole} from './section9-partner-console.mjs';
 import {summarizeSection9FlightReadiness} from './section9-flight-readiness.mjs';
+import {ownerPlanningEstimate,planningClockEstimate} from './route-planning-times.mjs';
 export const STAFF_DEPARTMENTS=Object.freeze({
  'Board and Executive':[
   ['Chairperson','Oversight and governance'],['Chief Executive Officer','Overall airline leadership'],
@@ -147,7 +148,7 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
   /^[A-Z0-9]{2}[0-9]{1,4}$/.test(plan.flightNumber||'')&&
   typeof plan.from?.key==='string'&&typeof plan.to?.key==='string'&&
   plan.from.key!==plan.to.key&&Array.isArray(plan.schedule)?{
-   ...plan,serverPlanningId:plan.planId,
+   ...plan,...ownerPlanningEstimate(plan,state.routes),serverPlanningId:plan.planId,
    status:'planning',storage:'server-planning',
    operationallyVerified:plan.serverScheduleStatus==='active'&&
     plan.serverScheduleOperationallyVerified===true&&
@@ -225,7 +226,10 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
     Number.isInteger(x?.day)&&x.day>=0&&x.day<=6&&/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(x.time)):[];
    const times=[...new Set(schedule.map(x=>x.time))];
    add(times.length===1?times[0]:times.length>1?'Varies':'—');
-   add('Pending');
+   const estimate=planningClockEstimate(route.schedule,
+    route.estimatedDurationMinutes,route.operation?.turnaroundMinutes);
+   const timed=estimate?.sameDepartureTime?estimate.rows[0]:null;
+   add(timed?'~'+timed.arrivalClock+' UTC':'—');
    add(route.aircraftLabel||'Not assigned');
    const weekdays=doc.createElement('span');weekdays.className='operations-route-weekdays';
    weekdays.setAttribute('aria-label','Days: '+(schedule.length?schedule.map(x=>days[x.day]).join(', '):'None selected'));
