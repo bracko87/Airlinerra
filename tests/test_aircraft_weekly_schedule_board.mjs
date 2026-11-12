@@ -190,9 +190,9 @@ test('schedule page reads only server drafts and omits all planning legends',asy
  assert.match(view,/id="schedule-aircraft-board"/);
  assert.match(view,/id="schedule-day-prev"/);
  assert.match(view,/id="schedule-day-next"/);
- assert.match(view,/Booked flights and saved route plans/);
+ assert.match(view,/Booked flights only/);
  assert.match(view,/drafts:scheduleSnapshot\?\.drafts/);
- assert.match(view,/plans:serverPlans,localRoutes/);
+ assert.match(view,/plans:\[\],localRoutes:\[\]/);
  assert.doesNotMatch(view,/schedule-board-legend|Departure only:|planning, not reserved|verified airport-slot flight windows/i);
  assert.doesNotMatch(view,/refreshScheduleEstimates/);
  assert.match(boardSource,/slotsReserved!==true/);
@@ -215,8 +215,9 @@ test('schedule workspace differentiates verified fleet, booked routes and local 
  const source=await readFile(new URL('../website/airline-workspace.mjs',import.meta.url),'utf8');
  assert.match(source,/bookingsAvailable:bookingDataAvailable/);
  assert.match(source,/Booking data unavailable: check the schedule API connection/);
- assert.match(source,/plannedCount\+' planned departures/);
- assert.match(source,/plans:serverPlans,localRoutes/);
+ assert.doesNotMatch(source,/plannedCount\+' planned departures/);
+ assert.match(source,/Booked flights only/);
+ assert.match(source,/plans:\[\],localRoutes:\[\]/);
 });
 
 test('local planning route uses flight time plus turnaround, unlike booked-flight bars',()=>{
