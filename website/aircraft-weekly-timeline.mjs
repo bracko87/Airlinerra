@@ -1,5 +1,5 @@
 /** Read-only per-aircraft weekly planning timeline.
- * These are browser-only route drafts, never authoritative aircraft positions.
+ * These may be owner-saved server routes, but are never proof of aircraft position.
  * A conflict prevents saving a contradictory draft, but a clean timeline does
  * not prove real flight feasibility, slot availability or turnaround clearance.
  */
@@ -78,7 +78,10 @@ export function buildAircraftWeeklyTimeline({
  }
  if(events.length){
   const first=events[0],last=events.at(-1);
-  if(last.toKey!==first.fromKey){
+  const earlierRouteExists=source.some(route=>route!==proposal&&
+   route?.aircraftId===aircraftId&&
+   Array.isArray(route.schedule)&&route.schedule.length>0);
+  if(earlierRouteExists&&last.toKey!==first.fromKey){
    warnings.push('Weekly cycle is incomplete: after '+signature(last)+
     ' the aircraft is in '+last.to+
     ', but the recurring schedule next begins in '+first.from+
