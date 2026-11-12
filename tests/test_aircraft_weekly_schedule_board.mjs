@@ -129,8 +129,7 @@ test('tooltip shows useful booking details without planning or reservation discl
  assert.match(tooltip,/Estimated arrival 10:30 UTC/);
  assert.match(tooltip,/Flight 90 min/);
  assert.match(tooltip,/Turnaround 45 min/);
- assert.match(tooltip,/Total flight \+ turnaround 135 min/);
- assert.match(tooltip,/Estimated available from 11:15 UTC/);
+ assert.match(tooltip,/Available from 11:15 UTC/);
  assert.doesNotMatch(tooltip,/planning only|time not reserved|airport slots reserved|not activated/i);
 });
 test('cross-midnight booked flights continue the exact remaining flight window',()=>{
@@ -216,7 +215,7 @@ test('schedule workspace differentiates verified fleet, booked routes and local 
  const source=await readFile(new URL('../website/airline-workspace.mjs',import.meta.url),'utf8');
  assert.match(source,/bookingsAvailable:bookingDataAvailable/);
  assert.match(source,/Booking data unavailable: check the schedule API connection/);
- assert.match(source,/saved route plan\(s\) are not booked flights/);
+ assert.match(source,/plannedCount\+' planned departures/);
  assert.match(source,/plans:serverPlans,localRoutes/);
 });
 
@@ -232,17 +231,18 @@ test('local planning route uses flight time plus turnaround, unlike booked-fligh
  const event=board.rows[0].days[0].events[0];
  assert.equal(event.timing.availableMinute,645);
  assert.equal(event.timing.totalMinutes,105);
- assert.match(flightScheduleTooltip(event),/Estimated available from 10:45 UTC/);
+ assert.match(flightScheduleTooltip(event),/Available from 10:45 UTC/);
  assert.equal(board.counts.held,0,'estimated window is not an airport booking');
 });
-test('plans lacking a duration show only a departure marker, never an invented block',()=>{
+test('plans lacking a duration retain only a flight label without duplicate marker',()=>{
  const board=buildAirlineWeeklyBoard({fleet,localRoutes:[local({
   flightNumber:'PA451',estimatedDurationMinutes:null,
   operation:{turnaroundMinutes:45}
  })]});
  assert.equal(board.rows[0].days[0].bands[0].kind,'planned-departure');
  const host=render(board);
- assert.equal(getAll(host,x=>x.className==='schedule-board-time-marker is-planning').length,1);
+ assert.equal(getAll(host,x=>x.className==='schedule-board-time-marker is-planning').length,0);
+ assert.equal(getAll(host,x=>x.className==='schedule-board-inline-flight is-planning').length,1);
  assert.equal(getAll(host,x=>x.className==='schedule-board-rotation-band is-planning').length,0);
  assert.equal(board.counts.flights,0);
 });
@@ -263,4 +263,15 @@ test('unbooked route crossing midnight has a visible next-day continuation witho
  assert.deepEqual(board.rows[0].days[0].bands.map(x=>[x.start,x.end]),[[0,75]]);
  assert.equal(board.rows[0].days[0].bands[0].continues,true);
  assert.equal(board.counts.flights,0);
+});
+
+test('planned route label stays flight number plus ICAO route without duplicate orange stroke',()=>{
+ const board=buildAirlineWeeklyBoard({fleet,localRoutes:[local({estimatedDurationMinutes:null})]});
+ const host=render(board);
+ const labels=getAll(host,x=>x.className==='schedule-board-inline-flight is-planning');
+ assert.equal(labels.length,1);
+ assert.equal(labels[0].textContent,'PA445 · LYBE → LYAL');
+ assert.match(labels[0].attributes['aria-label'],/saved route plan/);
+ assert.equal(getAll(host,x=>x.className==='schedule-board-time-marker is-planning').length,0);
+ assert.doesNotMatch(labels[0].title,/Saved route plan, no slots reserved/);
 });
