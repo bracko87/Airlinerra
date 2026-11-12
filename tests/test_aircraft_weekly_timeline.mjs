@@ -48,11 +48,11 @@ test('locations are checked across weekdays and multiple aircraft stay independe
  const independent=route('PA201',belgrade,podgorica,1,'10:00','terminal','different-a319');
  assert.equal(check([x],independent).errors.length,0);
 });
-test('first flight draft is not rejected but repeated one-way flights warn about missing return',()=>{
+test('first flight is not rejected or warned for absent return until next booking',()=>{
  const repeated={...route('PA101',belgrade,tivat,0,'09:00'),schedule:[0,1,2,3,4,5,6].map(day=>({day,time:'09:00'}))};
  const result=check([],repeated);
  assert.equal(result.errors.length,0);
- assert.ok(result.warnings.some(w=>/Weekly cycle is incomplete/.test(w)));
+ assert.ok(!result.warnings.some(w=>/Weekly cycle is incomplete/.test(w)));
  assert.equal(result.events[0].departureStand,null);
 });
 test('an edited flight can replace its previous draft without being compared to itself',()=>{
@@ -89,5 +89,5 @@ test('one planned outbound each week still needs a return or repositioning for r
  const single=route('PA400',belgrade,tivat,0,'06:00');
  const result=check([single]);
  assert.equal(result.errors.length,0);
- assert.match(result.warnings.join(' '),/return or repositioning flight/i);
+ assert.ok(!result.warnings.some(w=>/return or repositioning flight/i));
 });
