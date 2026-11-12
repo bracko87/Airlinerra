@@ -4,6 +4,7 @@ import {readFile} from 'node:fs/promises';
 import {
  CABIN_SERVICE_CATALOG,CABIN_MODE_OPTIONS,CABIN_CLASSES,
  createBasicCabinPackage,initialCabinState,cleanCabinState,
+ publishedCabinPackages,
  cleanCabinPackage,cabinPackageEstimate,cabinPackageUnitEconomics
 } from '../website/cabin-services-manager.mjs';
 
@@ -176,4 +177,21 @@ test('Flight Services follows My routes page layout with one shared white panel 
  assert.match(css,/\.cabin-mobile-label\{display:none\}/);
  assert.match(css,/\.cabin-mobile-label\{display:block/);
  assert.match(css,/:root\[data-ui-theme="dark"\] \.cabin-product-item-name strong/);
+});
+
+test('new unsaved cabin package is never offered in route creation',()=>{
+ const basic=createBasicCabinPackage();
+ const draft={...basic,id:'pkg-1',name:'New flight package',locked:false};
+ const editable=[basic,draft];
+ const beforeSave=publishedCabinPackages(editable,new Set(['basic']));
+ assert.deepEqual(beforeSave.map(p=>p.id),['basic']);
+ const afterSave=publishedCabinPackages(editable,new Set(['basic','pkg-1']));
+ assert.deepEqual(afterSave.map(p=>p.id),['basic','pkg-1']);
+ afterSave[1].name='mutated locally';
+ assert.equal(editable[1].name,'New flight package');
+ assert.deepEqual(publishedCabinPackages(null,new Set()),[]);
+ assert.deepEqual(publishedCabinPackages(editable,null),[]);
+ const source=await readFile(new URL('../website/cabin-services-manager.mjs',import.meta.url),'utf8');
+ assert.match(source,/getPackages:\(\)=>publishedCabinPackages\(state\.packages,savedPackageIds\)/);
+ assert.match(source,/savedPackageIds=new Set\(state\.packages\.map\(p=>p\.id\)\)/);
 });
