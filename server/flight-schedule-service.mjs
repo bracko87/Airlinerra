@@ -199,7 +199,16 @@ export const SCHEDULE_SQL=Object.freeze({
   EXISTS(SELECT 1 FROM airlinerra_game.aircraft_fuel_planning_profiles_v1 fuel
    WHERE fuel.configuration_id=f.configuration_id
     AND fuel.approved_for_accounting=true AND fuel.requires_further_evidence=false)
-    AS "fuelAccountingModelApproved"
+    AS "fuelAccountingModelApproved",
+  EXISTS(SELECT 1 FROM airlinerra_game.aircraft_maintenance_state_v1 maintenance
+   WHERE maintenance.aircraft_inventory_id=f.id
+    AND maintenance.airline_id=f.airline_id
+    AND maintenance.condition_pct IS NOT NULL
+    AND maintenance.condition_basis NOT IN ('unverified','unknown')
+    AND maintenance.verified_tracking_started_utc IS NOT NULL
+    AND maintenance.tracked_flight_hours IS NOT NULL
+    AND maintenance.tracked_flight_cycles IS NOT NULL)
+    AS "maintenanceBaselineVerified"
  FROM airlinerra_game.airline_aircraft_inventory f
  JOIN airlinerra_game.airlines a ON a.id=f.airline_id AND a.world_id=1
  CROSS JOIN LATERAL
@@ -483,6 +492,8 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
       missing.push('AIRCRAFT_FUEL_DISPATCH_MODEL_NOT_APPROVED');
      if(aircraft.fuelAccountingModelApproved!==true)
       missing.push('AIRCRAFT_FUEL_ACCOUNTING_MODEL_NOT_APPROVED');
+     if(aircraft.maintenanceBaselineVerified!==true)
+      missing.push('AIRCRAFT_MAINTENANCE_BASELINE_NOT_VERIFIED');
     }
     // Crew is intentionally out of Phase 1. These are independent, real
     // non-crew dependencies, not fictitious permits or release records.
