@@ -231,6 +231,8 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
     !/^[\w-]{3,128}$/.test(identity))throw Error('Verified manager required');
  let airlineId=undefined,state=initialCabinState(),activeId='basic',working=null,savedKey=null;
  let remote=null,revision=0,ready=false,loading=false,saving=false,loadTicket=0;
+ // Drafts created in the editor are NOT published to route creation until saved.
+ let savedPackageIds=new Set(['basic']);
  const status=text=>{const box=host.querySelector('#cabin-package-status');
   if(box)box.textContent=text;};
  let saveNoticeTimer=null;
@@ -258,7 +260,9 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
    try{
     const result=await api.save({airlineId:currentId,state,expectedVersion});
     if(currentId!==airlineId||api!==remote)return false;
-    state=cleanCabinState(result.state);revision=result.version;notifyRoutes();return true;
+    state=cleanCabinState(result.state);revision=result.version;
+    savedPackageIds=new Set(state.packages.map(p=>p.id));
+    notifyRoutes();return true;
    }catch(error){
     ready=false;
     status(error?.message==='CABIN_VERSION_CONFLICT'?
@@ -267,7 +271,9 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
     return false;
    }finally{saving=false}
   }
-  try{storage?.setItem(savedKey,JSON.stringify(state));notifyRoutes();return true}catch{return false}
+  try{storage?.setItem(savedKey,JSON.stringify(state));
+   savedPackageIds=new Set(state.packages.map(p=>p.id));
+   notifyRoutes();return true}catch{return false}
  };
  const locationLabel=()=>remote?'Supabase for this airline':'this browser';
  const choose=id=>{const found=find(id);if(!found)return;
@@ -523,7 +529,7 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
    revision=0;ready=!remote;loading=Boolean(remote);saving=false;
    let parsed=null;
    if(savedKey&&!remote)try{parsed=JSON.parse(read(savedKey)||'null')}catch{}
-   state=cleanCabinState(parsed);activeId='basic';
+   state=cleanCabinState(parsed);savedPackageIds=new Set(state.packages.map(p=>p.id));activeId='basic';
    working=structuredClone(state.packages[0]);render();
    if(!id){status('Sign in to an airline to save cabin-service designs.');return;}
    if(!remote){notifyRoutes();return;}
@@ -531,6 +537,7 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
    void remote.read(id).then(result=>{
     if(ticket!==loadTicket||airlineId!==id)return;
     state=cleanCabinState(result.state);revision=result.version;
+    savedPackageIds=new Set(state.packages.map(p=>p.id));
     ready=true;loading=false;activeId='basic';
     working=structuredClone(state.packages[0]);render();
     status('Cabin packages loaded from Supabase for this airline.');notifyRoutes();
@@ -543,7 +550,7 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
  updateData({connected:false,airline:null});
  return Object.freeze({
   updateData,
-  getPackages:()=>structuredClone(state.packages),
+  getPackages:()=>structuredClone(state.packages.filter(p=>savedPackageIds.has(p.id))),
   getAssignments:()=>({...state.assignments}),
    isReady:()=>Boolean(airlineId)&&!loading&&ready,
   destroy:()=>{host.removeEventListener('change',onChange);host.removeEventListener('click',onClick)}
