@@ -573,6 +573,18 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
      }
     }
     if(ticket!==loadTicket||airlineId!==id||remote!==api)return;
+    // Retire a legacy browser copy ONLY if every field matches the owner
+    // database after a confirmed read/save; never delete unmatched data.
+    const rawLegacy=read(savedKey);
+    if(typeof rawLegacy==='string'){
+     try{
+      const original=JSON.parse(rawLegacy);
+      const cleaned=cleanCabinState(original);
+      if(JSON.stringify(original)===JSON.stringify(cleaned)&&
+       JSON.stringify(cleaned)===JSON.stringify(cleanCabinState(current.state)))
+       storage?.removeItem?.(savedKey);
+     }catch{/* Keep incomplete browser data for recovery. */}
+    }
     state=cleanCabinState(current.state);revision=current.version;
     savedPackageIds=new Set(state.packages.map(p=>p.id));
     ready=true;loading=false;activeId='basic';
