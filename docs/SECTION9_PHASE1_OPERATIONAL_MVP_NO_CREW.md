@@ -200,12 +200,36 @@ is not yet connected. No mock flight data in the live World 1 game.
 ## Current verified blockers — 12 November 2026
 
 World 1 clock connected. PA888 only a planning route; no active schedules,
-certifications, crew roster, aircraft position, game slot reservations, dated
-flights or passenger reservations. A319 configuration 16 fuel source is
-provisional and not approved for dispatch/accounting. Section 9 commercial
+certifications, crew roster, operated-aircraft movement, game slot reservations,
+dated flights or passenger reservations. Panonian's A319 has a VERIFIED original
+game starter allocation at Belgrade (LYBE), 10 November 2026; this is sufficient
+as its initial game location before any flight but is not an operated arrival.
+The protected position resolver returns to signed movements once aircraft flies.
+A319 configuration 16 fuel source is provisional and not approved for
+dispatch/accounting. Section 9 commercial
 release has no enabled row; trusted execution and settlement are disabled.
 These are **real incomplete integrations**. Crew was removed from the Phase 1
 required-certificate logic in the database on November 12 without unlocking
 any other requirement or creating any fake flight.
 
 **Never mark this file complete merely because its specification is approved.**
+
+## Implementation update — 12 November, second milestone
+
+- The original airline starter allocation already exists and is verified by
+  `section9_starter_origin_evidence_v1`. **Do not** create a fictional
+  acquisition order or inspection for this aircraft.
+- Private `section9_owned_aircraft_operational_position_v1` was installed and
+  verified against PA's actual starter proof. It resolves the starting airport
+  only while there are NO operated movement records or current-position rows,
+  then requires a matching signed latest movement. Wrong game day is refused.
+  Browser/anonymous roles cannot directly execute it.
+- Protected flight-schedule API **v22** uses the resolver and checks the proposed
+  departure origin; PA has `startingLocationVerified=true`, `atOrigin=true`
+  for LYBE. Fuel dispatch/accounting approval remains false. The API still
+  refuses operational creation while the remaining systems are incomplete.
+- Phase 1 commercial preflight now also uses the same position source, defers
+  crew-only blockers, and retains restrictions, slot, licence/rights, execution
+  and commercial release blockers. No crew employee or fake flight created.
+- Verified production count: active schedules 0, movements 0, reservations 0.
+  The seven-day booking engine and settlement are NOT yet live.
