@@ -20,6 +20,7 @@ on:
       - 'website/netlify/functions/airlinerra-game.mjs'
       - 'supabase/migrations/20261112114500_owner_scoped_player_drafts_database_only_v1.sql'
       - 'tests/test_player_drafts_db_only.mjs'
+      - 'tests/test_no_browser_game_state_contract.mjs'
       - '.github/workflows/player-drafts-database-only-ci.yml'
   workflow_dispatch:
 permissions:
@@ -47,7 +48,7 @@ jobs:
           node --check website/dev-scripts/real-player-read-gateway.mjs
           node --check server/production-game-api.mjs
       - name: Verify no browser-only game saves and owner Supabase draft API
-        run: node --test tests/test_player_drafts_db_only.mjs
+        run: node --test tests/test_player_drafts_db_only.mjs tests/test_no_browser_game_state_contract.mjs
       - name: Build protected invited test website
         run: npm run build --prefix website
       - name: Validate browser module dependency graph
