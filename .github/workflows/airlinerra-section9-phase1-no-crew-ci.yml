@@ -5,6 +5,10 @@ on:
     paths:
       - 'supabase/migrations/20261112164500_section9_phase1_no_crew_still_signed_five_certificates.sql'
       - 'supabase/migrations/20261112171500_section5_activation_readiness_excludes_crew_phase1.sql'
+      - 'supabase/migrations/20261112181000_section9_owned_aircraft_operational_position_resolver_v1.sql'
+      - 'supabase/migrations/20261112182500_section9_aircraft_position_resolver_record_alias_repair.sql'
+      - 'supabase/migrations/20261112184000_section9_noncrew_preflight_verified_game_position.sql'
+      - 'tests/test_section9_initial_position_phase1.mjs'
       - 'website/route-planner.mjs'
       - 'server/flight-schedule-service.mjs'
       - 'tests/test_section9_phase1_no_crew_activation.mjs'
@@ -23,6 +27,6 @@ jobs:
         with:
           node-version: '22'
       - name: Validate operational Phase 1 crew exception and five mandatory independent clearances
-        run: node --test tests/test_section9_phase1_no_crew_activation.mjs
+        run: node --test tests/test_section9_phase1_no_crew_activation.mjs tests/test_section9_initial_position_phase1.mjs
       - name: Guard activated game code and protected build
         run: npm run build --prefix website
