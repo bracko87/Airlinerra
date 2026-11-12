@@ -5,6 +5,10 @@ on:
     paths:
       - 'website/cabin-services-manager.mjs'
       - 'website/cabin-services-client.mjs'
+      - 'website/dev-scripts/real-player-read-gateway.mjs'
+      - 'website/dev-scripts/dev.mjs'
+      - 'website/local-owner-fleet-reader.mjs'
+      - 'tests/test_local_owner_fleet_reader.mjs'
       - 'server/cabin-services-service.mjs'
       - 'server/cabin-services-edge-entry.ts'
       - 'server/production-game-api.mjs'
@@ -40,6 +44,9 @@ jobs:
         run: |
           node --check website/cabin-services-manager.mjs
           node --check website/cabin-services-client.mjs
+          node --check website/dev-scripts/real-player-read-gateway.mjs
+          node --check website/dev-scripts/dev.mjs
+          node --check website/local-owner-fleet-reader.mjs
           node --check server/cabin-services-service.mjs
           node --check server/flight-schedule-service.mjs
           node --check server/cabin-onboard-demand-engine.mjs
@@ -47,7 +54,7 @@ jobs:
           node --check website/player-app.mjs
           node --check website/airline-workspace.mjs
       - name: Test package selection, save notifications, pricing and removed route previews
-        run: node --test tests/test_cabin_services_manager.mjs tests/test_cabin_services_api.mjs tests/test_cabin_onboard_route_packages.mjs tests/test_cabin_onboard_simulation.mjs tests/test_cabin_route_cleanup_2026_11_10.mjs
+        run: node --test tests/test_cabin_services_manager.mjs tests/test_cabin_services_api.mjs tests/test_local_owner_fleet_reader.mjs tests/test_cabin_onboard_route_packages.mjs tests/test_cabin_onboard_simulation.mjs tests/test_cabin_route_cleanup_2026_11_10.mjs
       - name: Build complete protected website
         run: cd website && npm run build
       - name: Confirm protected build bundles cabin UI module
