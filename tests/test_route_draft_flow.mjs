@@ -16,7 +16,7 @@ test('orange Create new route button saves, while Clear form only resets',async(
  assert.match(html,/class="workspace-actions route-step1-actions"/);
  assert.match(source,/if\(target.id==='route-plan-new'\)\{\s*await resetRouteForm\(\);/);
  assert.match(source,/if\(target.id!=='route-plan-save'\)return;/);
- assert.match(source,/if\(!draftWrite\('routes',\[\.\.\.filtered,draft\]\)\)/);
+ assert.match(source,/await draftWrite\('routes',\[\.\.\.filtered,draft\]\)/);
  assert.match(source,/doc\.dispatchEvent\(new CustomEvent\('airlinerra:route-draft-saved'/);
  assert.match(source,/Form cleared\. Nothing was saved/);
  assert.match(css,/#workspace-routes \.route-step1-actions \.primary/);
@@ -53,25 +53,22 @@ test('route creation is blocked for same airport in UI, preview and save; invali
  assert.match(src,/Restricted — same airport/);
 });
 
-test('local route Save persists in the same account-session store as My Routes, with explicit confirmation',async()=>{
+test('authenticated route creation requires Supabase and no longer saves browser-only games',async()=>{
  const [route,workspace,directory]=await Promise.all([
   read('route-planner.mjs'),read('airline-workspace.mjs'),read('airline-operations-center.mjs')
  ]);
  assert.match(route,/const canSaveToServer=routeDraftSaveMode\(data\?\.scheduler\)==='server-planning'/);
- assert.match(route,/if\(canSaveToServer\)\{/);
- assert.match(route,/if\(canSaveToServer\)\{/);
+ assert.match(route,/if\(!canSaveToServer\)\{/);
+ assert.match(route,/Browser-only game routes are disabled/);
  assert.match(route,/if\(preflight\?\.gameHardBlocked===true\)/);
- assert.match(route,/if\(!draftWrite\('routes',\[\.\.\.filtered,draft\]\)\)/);
+ assert.match(route,/await draftWrite\('routes',\[\.\.\.filtered,draft\]\)/);
  assert.match(route,/airlinerra:route-draft-saved/);
- assert.match(route,/storage:canSaveToServer\?'server-planning':'browser'/);
- assert.match(route,/saved as a LOCAL planning draft/);
- assert.match(route,/No server schedule or flight was created/);
- assert.match(workspace,/airlinerra\.local\.workplan\.v1\./);
- assert.match(directory,/airlinerra\.local\.workplan\.v1\./);
- assert.match(directory,/state=storageRead\(session,key\);renderRoutes\(\)/);
- assert.match(directory,/route\.serverPlanningId\?'Airline planning draft'/);
+ assert.match(route,/storage:'server-planning'/);
+ assert.doesNotMatch(route,/saved as a LOCAL planning draft/);
+ assert.match(workspace,/await database\.update\('workplan'/);
+ assert.match(directory,/await playerStore\.update\('workplan'/);
+ assert.doesNotMatch(directory,/\.setItem\s*\(/);
  assert.match(directory,/airlinerra:route-draft-saved/);
- assert.match(directory,/saved as a local planning draft and listed above/);
 });
 
 test('weekday time picker uses in-game hours and minutes, not browser-native time popup',async()=>{
