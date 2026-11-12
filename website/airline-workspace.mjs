@@ -205,7 +205,7 @@ const pages=Object.freeze({
    button('fleet','Return to my fleet'),'MAINTENANCE NETWORK'),
  'routes':()=>routePlannerMarkup(),
  'schedule':()=>card('Aircraft daily flight schedule',
-   '<p class="hint">Booked flights and saved route plans · Today and the following six Berlin calendar days. Solid bars are booked; dashed bars are plans.</p>'+ 
+   '<p class="hint">Booked flights only · Today and the following six Berlin calendar days. Unconfirmed route plans remain under My Routes and are not shown here.</p>'+ 
    '<div class="schedule-board-toolbar">'+
     '<div class="schedule-day-switch" role="group" aria-label="Choose a date in the next seven days">'+
      '<button type="button" class="secondary" id="schedule-day-prev" aria-label="Previous day">◀</button>'+
@@ -544,14 +544,11 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
  function renderSchedule(){
   const host=$('schedule-aircraft-board');
   if(!host)return;
-  const saved=getDraft();
-  const localRoutes=Array.isArray(saved.routes)?saved.routes:[];
-  const serverPlans=Array.isArray(scheduleSnapshot?.plans)?scheduleSnapshot.plans:[];
   const board=buildAirlineWeeklyBoard({
-   // Fleet-market inventory includes all real owned/leased aircraft, even
-   // those not yet in service. A schedule-only read includes in-service ones.
+   // The aircraft schedule shows only verified slot-held server schedules.
+   // Browser or server planning drafts must never appear as booked flights.
    fleet:marketSnapshot?.fleet,serverFleet:scheduleSnapshot?.fleet,
-   drafts:scheduleSnapshot?.drafts,plans:serverPlans,localRoutes
+   drafts:scheduleSnapshot?.drafts,plans:[],localRoutes:[]
   });
   const selectedDate=scheduleCalendar[scheduleSelectedOffset];
   const caption=$('schedule-selected-day');
@@ -577,18 +574,15 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    const airplaneCount=board.rows.length;
    const bookedCount=board.rows.reduce((n,row)=>
     n+row.days[selectedDate.weekday].events.filter(e=>e.status==='slot-held').length,0);
-   const plannedCount=board.rows.reduce((n,row)=>
-    n+row.days[selectedDate.weekday].events.filter(e=>e.status==='planning').length,0);
    status.textContent=board.status==='unavailable'?
     'Fleet connection unavailable. Aircraft and bookings cannot be verified.':
     board.status==='empty'?
     'No owned or leased aircraft returned by the airline database.':
     !bookingDataAvailable?
     airplaneCount+' registered aircraft in fleet. Booking data unavailable: check the schedule API connection.':
-    airplaneCount+' registered aircraft · '+bookedCount+' booked flights · '+
-    plannedCount+' planned departures on '+selectedDate.label+'.'+
-    (plannedCount>0?' Planned routes are not booked or activated.':
-     bookedCount===0?' No booked or planned departures on this date.':'');
+    airplaneCount+' registered aircraft · '+bookedCount+' booked flights on '+
+    selectedDate.label+'.'+
+    (bookedCount===0?' No booked departures on this date.':'');
   }
  }
  async function loadAirlineSchedule(){
