@@ -24,8 +24,7 @@ BEGIN
  FROM airlinerra_game.airline_aircraft_inventory f
  JOIN airlinerra_game.airlines a ON a.id=f.airline_id
   AND a.world_id=1 AND a.owner_player_id=p_player
- WHERE f.id=p_aircraft AND f.airline_id=p_airline
- FOR SHARE OF f;
+ WHERE f.id=p_aircraft AND f.airline_id=p_airline;
  IF NOT FOUND THEN RAISE EXCEPTION USING ERRCODE='42501',
   MESSAGE='SECTION9_POSITION_AIRCRAFT_NOT_OWNED';
  END IF;
@@ -109,7 +108,6 @@ BEGIN
   p_airline,p_aircraft,p_game_date);
  IF starter->>'verified'='true'
   AND starter->>'initialPositionVerified'='true'
-  AND starter->>'initialPositionSource' IS NULL
   AND starter->>'airportKey'=f.home_airport_key
   AND starter->>'aircraftInventoryId'=p_aircraft::text
   AND starter->>'sourceKind'='original_airline_starter_allocation'
