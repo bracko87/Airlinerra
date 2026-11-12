@@ -275,3 +275,13 @@ test('planned route label stays flight number plus ICAO route without duplicate 
  assert.equal(getAll(host,x=>x.className==='schedule-board-time-marker is-planning').length,0);
  assert.doesNotMatch(labels[0].title,/Saved route plan, no slots reserved/);
 });
+
+test('missing flight duration is explained without nonsensical unknown UTC times',()=>{
+ const board=buildAirlineWeeklyBoard({fleet,localRoutes:[local({
+  flightNumber:'PA460',estimatedDurationMinutes:null
+ })]});
+ const value=flightScheduleTooltip(board.rows[0].days[0].events[0]);
+ assert.match(value,/Estimated arrival not yet calculated/);
+ assert.match(value,/Available from not yet calculated/);
+ assert.doesNotMatch(value,/unknown UTC|not verified UTC/);
+});
