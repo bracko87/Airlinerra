@@ -167,7 +167,7 @@ test('browser rejects an older deployed cabin service model and explains why new
  await assert.rejects(()=>client.read(airlineId),/CABIN_SCHEMA_MISMATCH/);
  const manager=await readFile(new URL('../website/cabin-services-manager.mjs',import.meta.url),'utf8');
  assert.match(manager,/if\(remote&&!ready&&!loading\)/);
- assert.match(manager,/data\.cabinAction='retry'/);
+ assert.match(manager,/retry\.dataset\.cabinAction='retry'/);
  assert.match(manager,/updateData\(lastData,\{force:true\}\)/);
  assert.match(manager,/Saving is unavailable until Supabase confirms/);
  assert.match(manager,/NOT SAVED — Supabase rejected the package/);
