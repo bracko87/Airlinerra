@@ -148,8 +148,15 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
   typeof plan.from?.key==='string'&&typeof plan.to?.key==='string'&&
   plan.from.key!==plan.to.key&&Array.isArray(plan.schedule)?{
    ...plan,serverPlanningId:plan.planId,
-   status:'planning',storage:'server-planning',operationallyVerified:false,
-   serverScheduleId:null,slotsReserved:false,
+   status:'planning',storage:'server-planning',
+   operationallyVerified:plan.serverScheduleStatus==='active'&&
+    plan.serverScheduleOperationallyVerified===true&&
+    typeof plan.serverScheduleId==='string'&&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(plan.serverScheduleId),
+   serverScheduleId:typeof plan.serverScheduleId==='string'&&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(plan.serverScheduleId)?
+     plan.serverScheduleId:null,
+   slotsReserved:false,
    flights:plan.schedule.length,aircraftId:'owned:'+plan.aircraftInventoryId
   }:null;
  async function loadRemotePlans(){
@@ -223,7 +230,9 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
    row.append(weekdays);
    const state=doc.createElement('span');
    state.className='operations-route-save-type';
-   state.textContent=route.serverScheduleId?'Schedule draft · inactive':
+   state.textContent=route.serverScheduleId?
+    (route.operationallyVerified?'Active schedule · bookings closed':
+     'Server schedule draft · inactive'):
     route.serverPlanningId?'Airline planning draft':'Local planning draft';
    row.append(state);
    const link=doc.createElement('button');link.type='button';
