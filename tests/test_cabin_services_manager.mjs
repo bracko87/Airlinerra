@@ -4,7 +4,7 @@ import {readFile} from 'node:fs/promises';
 import {
  CABIN_SERVICE_CATALOG,CABIN_MODE_OPTIONS,CABIN_CLASSES,
  createBasicCabinPackage,initialCabinState,cleanCabinState,
- publishedCabinPackages,
+ publishedCabinPackages,localCabinPackagesForFirstSync,
  cleanCabinPackage,cabinPackageEstimate,cabinPackageUnitEconomics
 } from '../website/cabin-services-manager.mjs';
 
@@ -194,4 +194,28 @@ test('new unsaved cabin package is never offered in route creation',async()=>{
  const source=await readFile(new URL('../website/cabin-services-manager.mjs',import.meta.url),'utf8');
  assert.match(source,/getPackages:\(\)=>publishedCabinPackages\(state\.packages,savedPackageIds\)/);
  assert.match(source,/savedPackageIds=new Set\(state\.packages\.map\(p=>p\.id\)\)/);
+});
+
+test('previously saved localhost custom service is imported only for an empty Supabase airline',async()=>{
+ const basic=createBasicCabinPackage();
+ const local=initialCabinState();
+ local.packages.push({...basic,id:'pkg-1',name:'New flight package',locked:false,
+  items:structuredClone(basic.items)});
+ local.packages[1].items.coffee.mode='included';
+ const raw=JSON.stringify(local);
+ const restored=localCabinPackagesForFirstSync(raw,0);
+ assert.ok(restored);
+ assert.deepEqual(restored.packages.map(p=>p.id),['basic','pkg-1']);
+ assert.equal(restored.packages[1].name,'New flight package');
+ assert.equal(restored.packages[1].items.coffee.mode,'included');
+ assert.equal(localCabinPackagesForFirstSync(raw,1),null,
+  'never overwrite an airline with existing remote package settings');
+ assert.equal(localCabinPackagesForFirstSync(JSON.stringify(initialCabinState()),0),null,
+  'only explicitly saved custom packages are imported');
+ assert.equal(localCabinPackagesForFirstSync('not-json',0),null);
+ assert.equal(localCabinPackagesForFirstSync('x'.repeat(16385),0),null);
+ const source=await readFile(new URL('../website/cabin-services-manager.mjs',import.meta.url),'utf8');
+ assert.match(source,/api\.save\(\{airlineId:id,state:savedLocal,expectedVersion:0\}\)/);
+ assert.match(source,/localCabinPackagesForFirstSync\(read\(savedKey\),result\.version\)/);
+ assert.match(source,/Your saved browser package is now stored in Supabase/);
 });
