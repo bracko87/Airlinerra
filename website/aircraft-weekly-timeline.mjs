@@ -78,10 +78,14 @@ export function buildAircraftWeeklyTimeline({
  }
  if(events.length){
   const first=events[0],last=events.at(-1);
-  const earlierRouteExists=Boolean(proposal)&&source.some(route=>route!==proposal&&
-   route?.aircraftId===aircraftId&&
-   Array.isArray(route.schedule)&&route.schedule.length>0);
-  if(earlierRouteExists&&last.toKey!==first.fromKey){
+  // Only show the missing-return message during a NEW flight booking.
+  // Merely opening or editing the first flight must not display the warning.
+  const anotherBooking=proposal!==null&&proposal!==undefined&&
+   Array.isArray(routes)&&routes.some(route=>route!==proposal&&
+    route?.aircraftId===aircraftId&&
+    route?.flightNumber!==excludeFlightNumber&&
+    Array.isArray(route.schedule)&&route.schedule.length>0);
+  if(anotherBooking&&last.toKey!==first.fromKey){
    warnings.push('Weekly cycle is incomplete: after '+signature(last)+
     ' the aircraft is in '+last.to+
     ', but the recurring schedule next begins in '+first.from+
