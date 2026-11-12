@@ -59,3 +59,17 @@ test('crew is skipped only in deferred mode; all other checks remain mandatory',
  assert.match(sql,/bookingsCreated',false/);
  assert.match(sql,/ledgerPosted',false/);
 });
+
+test('legacy schedule readiness reports missing operations without naming crew as a blocker',async()=>{
+ const source=await readFile(new URL(
+  '../supabase/migrations/20261112171500_section5_activation_readiness_excludes_crew_phase1.sql',
+  import.meta.url),'utf8');
+ assert.doesNotMatch(source,/CREW_ASSIGNMENT_NOT_CONNECTED/);
+ assert.match(source,/AIRPORT_SLOTS_AND_TRAFFIC_RIGHTS_NOT_CONNECTED/);
+ assert.match(source,/FLEET_POSITION_AND_ROTATION_NOT_VERIFIED/);
+ assert.match(source,/canActivateNormalFlight',false/);
+ assert.match(source,/does not activate any flight/);
+ const route=await readFile(new URL('../website/route-planner.mjs',import.meta.url),'utf8');
+ assert.doesNotMatch(route,/\['Flight and cabin crew',null/);
+ assert.match(route,/Crew is excluded from Phase 1 calculations/);
+});
