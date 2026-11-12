@@ -143,7 +143,8 @@ test('route fuel uses owner airport price estimate but hides raw internal model 
  assert.match(code,/NOT the complete flight cost/);
  assert.match(code,/originAirportCategory:originProfile/);
  assert.doesNotMatch(code,/fuelPeerModel\?\s*\(/);
- assert.match(code,/The fuel line is a forecast only, not the total or a charge/);
+ assert.match(code,/Crew is excluded from Phase 1 calculations/);
+ assert.match(code,/Airport fees use the verified game/);
 });
 
 test('unverified engine and piston AVGAS never receive a kerosene game price',()=>{
