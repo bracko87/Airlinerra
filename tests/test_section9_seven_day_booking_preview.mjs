@@ -5,6 +5,7 @@ import {createFlightScheduleHandler,validateFlightSchedulePayload,
  SCHEDULE_SQL,FLIGHT_SCHEDULE_API_ROUTE
 } from '../server/flight-schedule-service.mjs';
 import {SEVEN_DAY_WINDOW_SQL} from '../server/section9-seven-day-window.mjs';
+import {summarizeSection9FlightReadiness} from '../website/section9-flight-readiness.mjs';
 const AIRLINE='22222222-2222-4222-8222-222222222222';
 const SCHEDULE='44444444-4444-4444-8444-444444444444';
 const USER='11111111-1111-4111-8111-111111111111';
@@ -142,4 +143,41 @@ test('saved planning route links only its matching server timetable and never en
  assert.match(details,/route\.serverScheduleId\?/);
  assert.match(details,/Active schedule · flight movements not yet confirmed/);
  assert.match(details,/Booking is not yet enabled/);
+});
+
+test('My Routes uses authenticated records to explain the first operational blocker',async()=>{
+ const basic={activationAvailable:false,fleet:[{id:'owned-1',fleetStatus:'in_service'}],
+  plans:[],drafts:[]};
+ const empty=summarizeSection9FlightReadiness(basic);
+ assert.equal(empty.verified,true);
+ assert.equal(empty.stage,'needs-route');
+ assert.match(empty.text,/1 in-service aircraft, 0 planning routes, 0 registered schedules/);
+ assert.match(empty.text,/create a route and save it to the airline database/);
+ assert.match(empty.text,/Ticket sales remain disabled/);
+
+ const planned=summarizeSection9FlightReadiness({
+  ...basic,plans:[{planId:'plan-1',status:'planning'}]});
+ assert.equal(planned.stage,'needs-schedule');
+ assert.match(planned.text,/Operational Schedule Checks/);
+
+ const registered=summarizeSection9FlightReadiness({
+  ...basic,drafts:[{id:'draft-1',status:'draft',slotsReserved:true}]});
+ assert.equal(registered.stage,'needs-certification');
+ assert.equal(registered.slotDrafts,1);
+ assert.match(registered.text,/crew duties, game licences, traffic rights/);
+ assert.doesNotMatch(registered.text,/Tickets? (?:are |is )?on sale/);
+
+ const active=summarizeSection9FlightReadiness({
+  ...basic,drafts:[{id:'active-1',status:'active',slotsReserved:true}]});
+ assert.equal(active.stage,'needs-execution-proof');
+ assert.match(active.text,/not proof a flight operated/);
+
+ for(const unsafe of [null,{}, {...basic,activationAvailable:true},
+  {...basic,plans:'unverified'}, {...basic,drafts:null}])
+  assert.equal(summarizeSection9FlightReadiness(unsafe).verified,false);
+
+ const ui=await readFile(new URL('../website/airline-operations-center.mjs',
+  import.meta.url),'utf8');
+ assert.match(ui,/id="operations-flight-readiness"/);
+ assert.match(ui,/summarizeSection9FlightReadiness\(reply\)\.text/);
 });
