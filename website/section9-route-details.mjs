@@ -71,7 +71,10 @@ export function createSection9RouteDetails({doc,host,getRoutes,getServer}={}){
    (route.from.code?' ('+route.from.code+')':''));
   fact(doc,overview,'Destination',(route.to.name||route.to.key||'—')+
    (route.to.code?' ('+route.to.code+')':''));
-  fact(doc,overview,'Flight status','Planning only · not activated');
+  fact(doc,overview,'Flight status',route.serverScheduleId?
+   (route.operationallyVerified?'Active schedule · flight movements not yet confirmed':
+    'Server schedule saved · not activated'):
+   'Planning only · not activated');
   const launch=[0,3,7].includes(route.launchDelayDays)?route.launchDelayDays:0;
   fact(doc,overview,'Preferred launch',
    launch===0?'Next eligible departure after activation':
