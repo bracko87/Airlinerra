@@ -197,6 +197,12 @@ export function routePlannerMarkup(){
    routeSetupField('route-cargo-service','Cargo on this flight','<select id="route-cargo-service"><option value="none">No cargo</option><option value="requested">Request belly cargo (unverified)</option></select>')+
   '</div>'+
   '<p class="route-subtle-note">The selected cabin package is saved with your route. Actual flight services and costs depend on real flights; no charges are made when creating a route.</p>'+
+  routeSetupField('route-launch-delay','Preferred route launch', 
+   '<select id="route-launch-delay">'+
+    '<option value="0">As soon as operationally ready</option>'+
+    '<option value="3">After 3 game days</option>'+
+    '<option value="7">After 7 game days</option></select>')+
+  '<p class="route-subtle-note">This saves a launch preference only. Automatic flight activation and ticket sales are not connected yet.</p>'+
   '<div class="workspace-actions route-apply-actions">'+
    '<button type="button" id="route-plan-save" class="primary">Create new route</button>'+
    '<button type="button" id="route-plan-new" class="secondary">Clear form</button>'+
@@ -1190,6 +1196,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
   clearPreflight();
   if($('route-arrival-stand'))$('route-arrival-stand').value='terminal';
   if($('route-turnaround'))$('route-turnaround').value='45';
+  if($('route-launch-delay'))$('route-launch-delay').value='0';
   for(const label of ['economy','premium','business','first'])
    if($('route-fare-'+label))$('route-fare-'+label).value='';
   for(const id of ['route-baggage-service'])
@@ -1261,6 +1268,8 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
   if($('route-arrival-stand'))$('route-arrival-stand').value=
    ['remote','terminal','cargo'].includes(arrivalStand)?arrivalStand:'terminal';
   $('route-turnaround').value=String(route.operation?.turnaroundMinutes||45);
+  if($('route-launch-delay'))$('route-launch-delay').value=
+   [0,3,7].includes(route.launchDelayDays)?String(route.launchDelayDays):'0';
   for(let day=0;day<7;day++){
    const row=(Array.isArray(route.schedule)?route.schedule:[]).find(x=>x.day===day);
    const check=doc.querySelector('[data-route-day="'+day+'"]');
@@ -1748,7 +1757,12 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
   const durationReference=lastFuelEstimate?.aircraftId===ownedChoice?.id&&
    lastFuelEstimate?.fromKey===from.key&&lastFuelEstimate?.toKey===to.key?
     lastFuelEstimate.minutes:null;
+  const launchDelayDays=Number($('route-launch-delay')?.value??0);
+  if(![0,3,7].includes(launchDelayDays)){
+   message('route-plan-status','Select a valid route launch preference.');return;
+  }
   const draft={from,to,flightNumber,flights:schedule.length,schedule,
+   launchDelayDays,
    ...(Number.isInteger(durationReference)&&durationReference>=25?
     {estimatedDurationMinutes:durationReference,
      estimatedDurationSource:'five_phase_game_estimate'}:{}),
@@ -1787,7 +1801,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
     const result=await scheduler.planSave({
      airlineId:data.airline.id,aircraftInventoryId:ownedChoice.id,
      flightNumber,originAirportKey:from.key,destinationAirportKey:to.key,
-     weeklySchedule:schedule,
+     weeklySchedule:schedule,launchDelayDays,
      departureStand:operation.departureStand,
      arrivalStand:operation.arrivalStand,
      turnaroundMinutes:operation.turnaroundMinutes,
@@ -1807,7 +1821,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
      planId:result.planId,status:'planning',flightNumber,
      aircraftInventoryId:ownedChoice.id,
      originAirportKey:from.key,destinationAirportKey:to.key,
-     from,to,schedule,operation,
+     from,to,schedule,operation,launchDelayDays,
      referenceDepartureUtc:draft.referenceDepartureUtc,
      referenceArrivalUtc:draft.referenceArrivalUtc
     },...serverPlans.filter(p=>p.flightNumber!==flightNumber)];
