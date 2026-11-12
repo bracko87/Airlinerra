@@ -116,3 +116,30 @@ test('private booking storage is strictly non-saleable and produces no upfront m
  assert.match(sql,/FROM PUBLIC, anon, authenticated, service_role/);
  assert.doesNotMatch(sql,/GRANT\s+(?:ALL|INSERT|UPDATE)/i);
 });
+
+test('saved planning route links only its matching server timetable and never enables tickets',async()=>{
+ const sql=SCHEDULE_SQL.planList;
+ assert.match(sql,/s\.id::text AS "serverScheduleId"/);
+ assert.match(sql,/s\.status AS "serverScheduleStatus"/);
+ assert.match(sql,/s\.operationally_verified AS "serverScheduleOperationallyVerified"/);
+ assert.match(sql,/LEFT JOIN airlinerra_game\.airline_flight_schedule_drafts_v1 s/);
+ for(const match of [
+  's.airline_id=p.airline_id',
+  's.flight_number=p.flight_number',
+  's.aircraft_inventory_id=p.aircraft_inventory_id',
+  's.origin_airport_key=p.origin_airport_key',
+  's.destination_airport_key=p.destination_airport_key',
+  's.weekly_schedule=p.weekly_schedule'
+ ])assert.ok(sql.includes(match),match);
+ const [operations,details]=await Promise.all([
+  readFile(new URL('../website/airline-operations-center.mjs',import.meta.url),'utf8'),
+  readFile(new URL('../website/section9-route-details.mjs',import.meta.url),'utf8')
+ ]);
+ assert.match(operations,/serverScheduleId:typeof plan\.serverScheduleId/);
+ assert.match(operations,/plan\.serverScheduleStatus==='active'/);
+ assert.match(operations,/plan\.serverScheduleOperationallyVerified===true/);
+ assert.match(operations,/Active schedule · bookings closed/);
+ assert.match(details,/route\.serverScheduleId\?/);
+ assert.match(details,/Active schedule · flight movements not yet confirmed/);
+ assert.match(details,/Booking is not yet enabled/);
+});
