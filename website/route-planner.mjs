@@ -10,6 +10,7 @@ import {previewAirportFuelPrice} from './airport-fuel-price-preview.mjs';
 import {buildAircraftWeeklyTimeline,renderAircraftWeeklyTimeline} from './aircraft-weekly-timeline.mjs';
 import {assessAircraftRouteRunways} from './route-aircraft-runway-screen.mjs';
 import {createBasicCabinPackage} from './cabin-services-manager.mjs';
+import {planningClockEstimate} from './route-planning-times.mjs';
 const section=(eyebrow,title,body)=>
  '<article class="panel route-planner-panel"><span class="panel-kicker">'+eyebrow+'</span><h2>'+title+'</h2>'+body+'</article>';
 const field=(id,label,el)=>'<label class="workspace-label" for="'+id+'">'+label+'</label>'+el;
@@ -49,9 +50,8 @@ const weekTable=()=>'<div class="route-week-scroll"><div class="route-week-grid"
  weekRow('Departure',(_,i)=>'<input type="time" data-route-time="'+i+'" value="09:00" disabled aria-label="'+dayNames[i]+' departure time">')+
  weekRow('Departure stand',(_,i)=>'<output id="route-stand-'+i+'" class="route-week-estimate">—</output>')+
  weekRow('Arrival stand',(_,i)=>'<output id="route-arrival-stand-'+i+'" class="route-week-estimate">—</output>')+
- weekRow('Estimated arrival',(_,i)=>'<output id="route-arrival-'+i+'" class="route-week-estimate">Pending</output>')+
- weekRow('Slot availability',()=>'<span class="route-week-pending">Unverified</span>')+
- weekRow('Next possible departure',(_,i)=>'<output id="route-next-departure-'+i+'" class="route-week-estimate">—</output>')+
+ weekRow('Arrival (estimate)',(_,i)=>'<output id="route-arrival-'+i+'" class="route-week-estimate">—</output>')+
+ weekRow('Ready after turnaround (estimate)',(_,i)=>'<output id="route-next-departure-'+i+'" class="route-week-estimate">—</output>')+
  '</div></div>';
 const routeSetupField=(id,label,input)=>'<label class="route-setup-field" for="'+id+'"><span>'+label+'</span>'+input+'</label>';
 const optionalFare=(id,label)=>routeSetupField(id,label,
@@ -555,6 +555,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
   message('route-airborne-time',Math.round(fuel.airborneMinutes)+' min (climb + cruise + descent)');
   updateCostBreakdown(fuel,price);
   message('route-block-time',Math.round(fuel.totalMinutes)+' min (phase estimate)');
+  updateWeek();
  };
  doc.addEventListener('airlinerra:fleet-fuel-updated',event=>{
   if(event.detail?.airlineId===getData()?.airline?.id)updateFuelEstimate();
@@ -710,15 +711,25 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
   const estimate=exampleNextDepartureUtc(
    utcFromInput($('route-preflight-departure-utc')?.value),
    utcFromInput($('route-preflight-arrival-utc')?.value),target);
+  const from=selected('from'),to=selected('to');
+  const aircraftId=$('route-aircraft')?.value?.replace(/^owned:/,'');
+  const modelMinutes=lastFuelEstimate?.aircraftId===aircraftId&&
+   lastFuelEstimate?.fromKey===from?.key&&lastFuelEstimate?.toKey===to?.key?
+    lastFuelEstimate.minutes:null;
+  const model=planningClockEstimate(schedule,modelMinutes,target);
   for(let day=0;day<7;day++){
+   const modelDay=model?.rows.find(x=>x.day===day);
    message('route-arrival-'+day,chosenDays.has(day)?
-    (estimate?'Example '+estimate.arrivalClock:'Pending verified duration'):'—');
+    (estimate?'Example '+estimate.arrivalClock:
+     modelDay?'~'+modelDay.arrivalClock+' UTC':'—'):'—');
    message('route-next-departure-'+day,chosenDays.has(day)?
-    (estimate?'Example '+estimate.clock:'Pending arrival time'):'—');
+    (estimate?'Example '+estimate.clock:
+     modelDay?'~'+modelDay.availableClock+' UTC':'—'):'—');
   }
   message('route-rotation-check',Number.isInteger(target)&&target>=45&&target<=360?
-   (estimate?'Example next ground departure '+estimate.clock+' · not an approved slot':
-    'Target '+target+' min · flight duration and slots unverified'):
+   (estimate?'Reference ground time '+estimate.clock+' · not an airport slot':
+    model?'Aircraft ready time is a provisional model estimate, not an approved slot':
+    'No flight-time model currently loaded; this is still only a weekly plan'):
    'Choose a turnaround between 45 and 360 minutes');
  };
  const scheduledRoutesForAircraft=aircraftId=>{
@@ -1855,9 +1866,8 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    detail:{flightNumber,serverSaved:Boolean(draft.serverPlanningId||draft.serverScheduleId)}
   }));
   await resetRouteForm();
-  const text=flightNumber+(draft.serverPlanningId?
-   ' saved in your AIRLINE DATABASE as a planning route. It is available under My Routes on any signed-in device. No slots reserved or flights activated.':
-   ' saved as a non-operational planning draft in Supabase. No airport slot or flight was created.');
+  const text='Route '+flightNumber+' created.'+
+   (copiedToDrafts?'':' Some optional planning estimates were not saved.');
   const status=$('route-plan-status');
   if(status){status.classList.add('is-success');status.textContent=text;}
 
