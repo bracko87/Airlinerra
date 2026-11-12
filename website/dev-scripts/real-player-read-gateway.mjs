@@ -5,6 +5,7 @@
  */
 import {createCanonicalGameApi,CANONICAL_GAME_API_PATHS} from '../../server/canonical-game-api.mjs';
 import {validateFlightSchedulePayload} from '../../server/flight-schedule-service.mjs';
+import {validCabinRequest} from '../../server/cabin-services-service.mjs';
 import {validateFleetAcquisitionRequest} from '../../server/fleet-acquisition-service.mjs';
 import {parseOfficeRequest,AIRPORT_OFFICE_API_PATH} from '../../server/airport-office-http-handler.mjs';
 import {AIRLINERRA_INVITED_TESTER_PUBLIC_SETTINGS} from '../invited-tester-public-settings.mjs';
@@ -15,17 +16,19 @@ const AUTH_URL='https://'+REF+'.supabase.co';
 const AIRLINE_ID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const FLEET_READ_PATH='/api/v1/player/fleet-acquisition';
 const SCHEDULE_READ_PATH='/api/v1/player/flight-schedule-drafts';
+const CABIN_SETTINGS_PATH='/api/v1/player/cabin-services';
 const GROUP2_LOCATION_PATH='/api/v1/player/group2-location-plans';
 // The HTTP server must route these dedicated read-only proxy endpoints before
 // it tries the static dist/ directory. Canonical game API paths alone do not
 // contain the two dedicated Edge APIs.
 export const LOCAL_PLAYER_API_PATHS=Object.freeze([
- ...CANONICAL_GAME_API_PATHS,FLEET_READ_PATH,SCHEDULE_READ_PATH
+ ...CANONICAL_GAME_API_PATHS,FLEET_READ_PATH,SCHEDULE_READ_PATH,CABIN_SETTINGS_PATH
 ]);
 /** The local gateway never forwards payment, schedule reservation,
  * delivery update, payments or operational state-changing command.
  */
 export function allowedLocalOwnerRead(pathname,payload){
+ if(pathname===CABIN_SETTINGS_PATH)return validCabinRequest(payload);
  if(pathname!==FLEET_READ_PATH&&pathname!==SCHEDULE_READ_PATH)return false;
  if(!payload||typeof payload!=='object'||Array.isArray(payload)||
     typeof payload.action!=='string'||!AIRLINE_ID.test(payload.airlineId||''))return false;
@@ -120,6 +123,7 @@ export function createLiveReadOnlyPreviewHandler({fetchImpl=globalThis.fetch}={}
   '/api/v1/player/holding-status',
   FLEET_READ_PATH,
   SCHEDULE_READ_PATH,
+  CABIN_SETTINGS_PATH,
   '/api/v1/onboarding/context'
  ]);
  const error=(status,why)=>{
@@ -143,9 +147,11 @@ export function createLiveReadOnlyPreviewHandler({fetchImpl=globalThis.fetch}={}
   let body;
   try{
    body=await request.text();
-   if(new TextEncoder().encode(body).length>2048)return error(413,'Request too large');
+   if(new TextEncoder().encode(body).length>(url.pathname===CABIN_SETTINGS_PATH?16384:2048))
+    return error(413,'Request too large');
   }catch{return error(400,'Invalid body')}
-  if(url.pathname===FLEET_READ_PATH||url.pathname===SCHEDULE_READ_PATH||url.pathname===GROUP2_LOCATION_PATH||url.pathname===AIRPORT_OFFICE_API_PATH){
+  if([FLEET_READ_PATH,SCHEDULE_READ_PATH,CABIN_SETTINGS_PATH,GROUP2_LOCATION_PATH,
+   AIRPORT_OFFICE_API_PATH].includes(url.pathname)){
    let payload;
    try{payload=JSON.parse(body);}catch{return error(400,'Invalid JSON body')}
    if(!(url.pathname===GROUP2_LOCATION_PATH?validGroup2LocationPlanRequest(payload):
@@ -159,7 +165,8 @@ export function createLiveReadOnlyPreviewHandler({fetchImpl=globalThis.fetch}={}
      url.pathname==='/api/v1/player/aircraft-library'?'airlinerra-aircraft-library':
      url.pathname==='/api/v1/player/noise-curfew-check'?'airlinerra-noise-curfew-check':
      url.pathname===FLEET_READ_PATH?'airlinerra-fleet-acquisition':
-     url.pathname===SCHEDULE_READ_PATH?'airlinerra-flight-schedule-drafts':'airlinerra-game';
+     url.pathname===SCHEDULE_READ_PATH?'airlinerra-flight-schedule-drafts':
+     url.pathname===CABIN_SETTINGS_PATH?'airlinerra-cabin-services':'airlinerra-game';
    const response=await fetchImpl(AUTH_URL+'/functions/v1/'+edge,{
     method:'POST',headers:{
      apikey:AIRLINERRA_INVITED_TESTER_PUBLIC_SETTINGS.publishableKey,
