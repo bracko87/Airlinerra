@@ -5,6 +5,7 @@
 import {createAirportOffice} from './airline-airports-office.mjs';
 import {createSection9RouteDetails} from './section9-route-details.mjs';
 import {createSection9PartnerConsole} from './section9-partner-console.mjs';
+import {summarizeSection9FlightReadiness} from './section9-flight-readiness.mjs';
 export const STAFF_DEPARTMENTS=Object.freeze({
  'Board and Executive':[
   ['Chairperson','Oversight and governance'],['Chief Executive Officer','Overall airline leadership'],
@@ -85,6 +86,7 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
   '<div id="operations-route-list" class="operations-route-table"></div>'+
   '<div class="workspace-actions"><button type="button" class="secondary" data-ops-page="routes">Create a route</button></div>'+
   '<p id="operations-routes-feedback" class="hint" role="status"></p>'+
+  '<p id="operations-flight-readiness" class="hint" role="status">Flight readiness will appear after the airline database is checked.</p>'+
   '<div id="operations-partner-console" class="operations-partner-console"></div>',
   'ROUTE DIRECTORY');
  if(root['route-details'])root['route-details'].innerHTML=card('Route Details',
@@ -163,17 +165,25 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
   const airlineId=server.airline?.id,scheduler=server.scheduler;
   const ticket=++remotePlanTicket;
   if(!server.connected||!airlineId||typeof scheduler?.list!=='function'){
-   remotePlans=[];renderRoutes();return;
+   remotePlans=[];
+   message('operations-flight-readiness',
+    'Airline database is not connected. Flight readiness cannot be verified.');
+   renderRoutes();return;
   }
   try{
    const reply=await scheduler.list(airlineId);
    if(ticket!==remotePlanTicket)return;
    if(!Array.isArray(reply?.plans))throw Error('Plan list unavailable');
    remotePlans=reply.plans.map(normalizePlan).filter(Boolean);
+   message('operations-flight-readiness',
+    summarizeSection9FlightReadiness(reply).text);
    renderRoutes();
   }catch{
    if(ticket!==remotePlanTicket)return;
-   remotePlans=[];renderRoutes();
+   remotePlans=[];
+   message('operations-flight-readiness',
+    'Airline flight readiness could not be verified. No flight activation was confirmed.');
+   renderRoutes();
    message('operations-routes-feedback',
     'Server planning routes could not be loaded. Browser drafts are still visible; refresh when connected.');
   }
