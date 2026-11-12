@@ -62,12 +62,6 @@ export function ticketRevenueEstimate({flights,seats,occupancy,price,cost}={}){
 }
 const money=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n);
 const escText=(t)=>String(t||'');
-function storageRead(storage,key){
- try{const s=storage?.getItem(key);return s?JSON.parse(s):{}}catch{return {}}
-}
-function storageWrite(storage,key,state){
- try{storage?.setItem(key,JSON.stringify(state));return true}catch{return false}
-}
 const card=(title,body,kicker='OPERATIONS PLANNING')=>'<article class="panel workspace-panel"><span class="panel-kicker">'+kicker+'</span><h2>'+title+'</h2>'+body+'</article>';
 export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogoUrl}={}){
  if(!doc||!identity||typeof identity!=='string'||!/^[\w-]{3,128}$/.test(identity))throw Error('Verified account required');
@@ -82,7 +76,7 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
   'staff':$('workspace-staff')
  };
  if(root['route-list'])root['route-list'].innerHTML=card('My routes',
-  '<p class="hint">Planning drafts saved in this browser tab are listed below. They are not active flights. Protected server schedules require a separately confirmed save.</p>'+
+  '<p class="hint">Inactive route plans are loaded from your airline database. Drafts are not active flights and do not reserve airport slots.</p>'+
   '<div id="operations-route-list" class="operations-route-table"></div>'+
   '<div class="workspace-actions"><button type="button" class="secondary" data-ops-page="routes">Create a route</button></div>'+
   '<p id="operations-routes-feedback" class="hint" role="status"></p>'+
@@ -136,9 +130,13 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
   '<p id="ops-staff-feedback" class="hint" role="status"></p>'+
   '<p class="hint">Budget estimates only. No employees are hired, no salaries charged, and no staff market orders are placed.</p>',
   'STAFF AND SALARIES');
- let state=storageRead(session,key);
+ let state={},playerStore=null;
  let remotePlans=[],remotePlanTicket=0,loadedPlanAirline=null,loadedPlanScheduler=null;
- const persist=()=>storageWrite(session,key,{...storageRead(session,key),...state});
+ const persist=async(...fields)=>{
+  if(!playerStore?.ready('workplan'))return false;
+  const patch=Object.fromEntries(fields.map(field=>[field,state[field]??null]));
+  try{state=await playerStore.update('workplan',patch);return true}catch{return false}
+ };
  const localRoutes=()=>Array.isArray(state.routes)&&state.routes.length?state.routes:
   state.route?[state.route]:[];
  const allRoutes=()=>{
@@ -371,7 +369,16 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
   return {values:p,estimate};
  }
  function updateData(value){
-  server={...server,...value};countries();
+  server={...server,...value};
+  playerStore=value?.playerDraftStore||null;
+  state=playerStore?.ready('workplan')?playerStore.snapshot('workplan'):{};
+  const savedPrice=state.ticketPrice;
+  if(savedPrice&&typeof savedPrice==='object')
+   for(const [id,key] of [['ops-price-seat','seats'],['ops-price-fare','price'],
+    ['ops-price-load','occupancy'],['ops-price-flights','flights'],
+    ['ops-price-cost','cost'],['ops-price-class','cabin']])
+    if($(id)&&savedPrice[key]!==undefined)$(id).value=String(savedPrice[key]);
+  initStaff();countries();
   const home=server.airline?.homeAirportName?
    server.airline.homeAirportName+' ('+(server.airline.homeAirportCode||'-')+')':
    'Not available';message('operations-home-airport',server.connected?home:'Not connected');
@@ -474,7 +481,7 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
    if(hadLocal){
     const oldState=state;
     state={...state,routes:next,route:state.route?.flightNumber===number?null:state.route};
-    if(!persist()){
+    if(!await persist('routes','route')){
      state=oldState;
      if(confirmation)confirmation.hidden=true;
      renderRoutes();
@@ -502,7 +509,12 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
    const i=Number(target.dataset.opsRouteRemove);
    const rows=Array.isArray(state.routes)&&state.routes.length?state.routes:state.route?[state.route]:[];
    if(!Number.isInteger(i)||i<0||i>=rows.length)return;
-   state={...state,routes:rows.filter((_,n)=>n!==i),route:null};persist();renderRoutes();
+   const previous=state;
+    state={...state,routes:rows.filter((_,n)=>n!==i),route:null};
+    if(!await persist('routes','route')){
+     state=previous;message('operations-routes-feedback','NOT SAVED — database did not confirm draft deletion.');return;
+    }
+    renderRoutes();
    message('operations-routes-feedback','Route draft deleted from this browser tab.');return;
   }
   if(target.id==='operations-route-publish-plan'){
@@ -538,10 +550,13 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
     const local=localRoutes().map(x=>x.flightNumber===route.flightNumber?{
      ...x,serverPlanningId:result.planId,storage:'server-planning'
     }:x);
-    state={...state,routes:local};persist();
+    state={...state,routes:local};
+    const mirrored=await persist('routes');
     await loadRemotePlans();
     message('operations-route-detail-save-status',
-     route.flightNumber+' is now saved in your airline database. No slots or flights activated.');
+     route.flightNumber+' is saved in your airline database. '+
+      (mirrored?'Supporting draft details also saved.':'Supporting draft mirror could not be verified.')+
+      ' No slots or flights activated.');
     target.hidden=true;
    }catch{
     message('operations-route-detail-save-status',
@@ -554,7 +569,9 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
    const i=Number(target.dataset.opsHubRemove);
    const hubs=Array.isArray(state.hubs)?state.hubs:[];
    if(!Number.isInteger(i)||i<0||i>=hubs.length)return;
-   state={...state,hubs:hubs.filter((_,n)=>n!==i)};persist();renderHubs();return;
+   const previous=state;state={...state,hubs:hubs.filter((_,n)=>n!==i)};
+    if(!await persist('hubs')){state=previous;message('operations-hub-feedback','NOT SAVED — database hub draft deletion failed.');return}
+    renderHubs();return;
   }
   const id=target.id;
   if(id==='operations-hub-find')await findHub();
@@ -570,26 +587,30 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
     message('operations-hub-feedback','That airport is already your home airport or planned hub.');return;
    }
    state={...state,hubs:[...hubs,hub]};
-   const persisted=persist();renderHubs();
-   if(!persisted){message('operations-hub-feedback','Browser storage is unavailable. The draft will only remain in this session.');return;}
-   message('operations-hub-feedback','Hub draft saved locally. No real hub was opened.');
+   const persisted=await persist('hubs');
+   if(!persisted){state={...state,hubs};message('operations-hub-feedback','NOT SAVED — Supabase did not confirm this hub proposal.');return;}
+   renderHubs();message('operations-hub-feedback','Hub proposal saved in Supabase as a draft. No real hub was opened.');
   }
   if(id==='ops-price-calc')priceResults();
   if(id==='ops-price-save'){
    const result=priceResults();if(!result)return;
-   state={...state,ticketPrice:result.values};persist();
-   message('ops-price-feedback','Fare scenario saved in this browser tab. No real prices were changed.');
+   const previous=state;state={...state,ticketPrice:result.values};
+    if(!await persist('ticketPrice')){state=previous;message('ops-price-feedback','NOT SAVED — Supabase did not confirm this fare scenario.');return}
+   message('ops-price-feedback','Fare scenario saved in Supabase. No real prices were changed.');
   }
   if(id==='ops-staff-save'){
    const {rows,total}=formPayroll();
    if(!total){message('ops-staff-feedback','Enter valid non-negative headcounts and salaries.');return;}
-   state={...state,staff:rows};persist();updateStaffTotals();
-   message('ops-staff-feedback','Staffing plan saved locally. No employee was hired or paid.');
+   const previous=state;state={...state,staff:rows};
+    if(!await persist('staff')){state=previous;message('ops-staff-feedback','NOT SAVED — Supabase did not confirm this staffing plan.');return}
+    updateStaffTotals();
+   message('ops-staff-feedback','Staffing plan saved in Supabase as a draft. No employee was hired or paid.');
   }
   if(id==='ops-staff-reset'){
-   state={...state,staff:[]};persist();
+   const previous=state;state={...state,staff:[]};
+    if(!await persist('staff')){state=previous;message('ops-staff-feedback','NOT SAVED — database did not confirm staffing reset.');return}
    staffRows.forEach((_,i)=>{$('ops-staff-count-'+i).value='0';$('ops-staff-salary-'+i).value='0';});
-   updateStaffTotals();message('ops-staff-feedback','Staffing plan cleared.');return;
+   updateStaffTotals();message('ops-staff-feedback','Staffing plan cleared in Supabase.');return;
   }
  });
  // The schedule timetable links to the existing route-details page,
@@ -615,11 +636,11 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
   }
  });
  doc.addEventListener('airlinerra:route-draft-saved',event=>{
-  state=storageRead(session,key);renderRoutes();void details.refresh();
+  state=playerStore?.ready('workplan')?playerStore.snapshot('workplan'):{};renderRoutes();void details.refresh();
   const flight=typeof event?.detail?.flightNumber==='string'?event.detail.flightNumber:'Route';
   message('operations-routes-feedback',event?.detail?.serverSaved?
    flight+' saved in the airline database as an inactive planning route. No flight or slot was activated.':
-   flight+' saved as a local planning draft and listed above. No server flight was created.');
+   flight+' saved as a non-operational planning draft in Supabase. No server flight was created.');
   if(event?.detail?.serverSaved)void loadRemotePlans();
  });
  const prices=state.ticketPrice;
