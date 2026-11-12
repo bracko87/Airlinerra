@@ -191,7 +191,7 @@ test('main game screens contain no new browser-only persistence',async()=>{
   ['offices',offices],['cabin',cabin]])
   assert.doesNotMatch(source,/\b(?:localStorage|sessionStorage)\s*\.\s*setItem\s*\(|(?:storage|session|store)\?*\s*\.\s*setItem\s*\(/,
    name+' must not save game state in browser storage');
- assert.match(routes,/Browser-only game routes are disabled/);
+ assert.match(routes,/No route or flight was saved/);
  assert.match(workspace,/playerDraftStore\.update|database\.update/);
  assert.match(operations,/playerStore\.update/);
  assert.match(offices,/live\.playerDraftStore\.update/);
