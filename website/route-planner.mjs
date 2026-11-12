@@ -1827,8 +1827,10 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
     },...serverPlans.filter(p=>p.flightNumber!==flightNumber)];
    }catch(error){
     const reason=String(error?.message||'');
-    message('route-plan-status',reason.includes('409')||reason.includes('CONFLICT_')?
-      'NOT SAVED — airline, aircraft, airport or flight number is not eligible. Check the route details.':
+    message('route-plan-status',reason.includes('CABIN_PACKAGE_NOT_SAVED')?
+      'NOT SAVED — the selected cabin service package has not been saved to your airline database. Open Flight Services, save the package, then try again. Or choose Basic Cabin Service.':
+      reason.includes('409')||reason.includes('CONFLICT_')?
+      'NOT SAVED — a server rule rejected this route. Check the owned aircraft, airport eligibility and flight number.':
       'NOT SAVED — server planning save failed. This route has not been recorded in Supabase.');
     return;
    }
