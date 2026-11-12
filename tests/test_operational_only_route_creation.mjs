@@ -62,6 +62,12 @@ test('operational create fails closed, owner verified, without ANY schedule, slo
     operational_certification_records:0,aircraft_operation_jobs:0,
     verified_movement_records:0,
     automatic_flight_and_fuel_settlement_enabled:false}]};
+  if(sql===SCHEDULE_SQL.aircraftPrerequisites){
+   assert.deepEqual(params,[USER,AIRLINE,AIRCRAFT,'OURAIRPORTS:4610']);
+   return {rowCount:1,rows:[{aircraftInService:true,
+    deliveryLocationVerified:false,atOrigin:false,
+    fuelDispatchModelApproved:false,fuelAccountingModelApproved:false}]};
+  }
   throw Error('Any other SQL is an unauthorized operational write');
  });
  const res=await h(req(payload));
@@ -73,12 +79,18 @@ test('operational create fails closed, owner verified, without ANY schedule, slo
  assert.equal(out.bookingEnabled,false);
  assert.equal(out.ledgerPosted,false);
  assert.equal(out.scheduleId,null);
- assert.match(out.blockingRequirements.join(' '),/VERIFIED_FLIGHT_ACTIVATION_NOT_CONNECTED/);
+ assert.match(out.blockingRequirements.join(' '),/ATOMIC_SCHEDULE_AND_AIRPORT_SLOT_ACTIVATION_NOT_CONNECTED/);
+ assert.match(out.blockingRequirements.join(' '),/AIRCRAFT_DELIVERY_LOCATION_NOT_VERIFIED/);
+ assert.match(out.blockingRequirements.join(' '),/AIRCRAFT_NOT_VERIFIED_AT_ORIGIN/);
+ assert.match(out.blockingRequirements.join(' '),/AIRCRAFT_FUEL_DISPATCH_MODEL_NOT_APPROVED/);
+ assert.equal(out.crewRequired,false);
+ assert.equal(out.crewCostsIncluded,false);
+ assert.doesNotMatch(out.blockingRequirements.join(' '),/CREW_/);
  assert.match(out.blockingRequirements.join(' '),/TRUSTED_AIRCRAFT_EXECUTION_NOT_CONNECTED/);
  assert.match(out.blockingRequirements.join(' '),/SEVEN_DAY_PASSENGER_BOOKING_NOT_CONNECTED/);
  assert.match(out.blockingRequirements.join(' '),/FLIGHT_FINANCIAL_SETTLEMENT_NOT_CONNECTED/);
- assert.equal(statements.length,2,'owner and readiness SELECT only');
- assert.ok(statements.every(x=>[SCHEDULE_SQL.owner,SCHEDULE_SQL.operationalReadiness].includes(x.sql)));
+ assert.equal(statements.length,3,'owner, readiness and aircraft SELECT only');
+ assert.ok(statements.every(x=>[SCHEDULE_SQL.owner,SCHEDULE_SQL.operationalReadiness,SCHEDULE_SQL.aircraftPrerequisites].includes(x.sql)));
 });
 test('unowned airline or invalid auth never reveals readiness and writes nothing',async()=>{
  const foreign=handler((sql)=>{
