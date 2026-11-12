@@ -61,6 +61,9 @@ test('route API trusts server-only position provenance, not supplied airplane ai
  assert.match(api,/originalStarterPosition:aircraft\?\.originalStarterPosition===true/);
  assert.match(api,/fuelDispatchModelApproved/);
  assert.match(api,/fuelAccountingModelApproved/);
+ assert.match(api,/maintenanceBaselineVerified/);
+ assert.match(api,/aircraft_maintenance_state_v1/);
+ assert.match(api,/AIRCRAFT_MAINTENANCE_BASELINE_NOT_VERIFIED/);
  assert.match(api,/automatic_flight_and_fuel_settlement_enabled/);
  assert.match(api,/routeCreated:false/);
  const start=api.indexOf("if(body.action==='operational-create'){",
