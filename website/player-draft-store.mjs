@@ -59,7 +59,9 @@ export function createPlayerDraftStore({client,identity,session,storage}={}){
  const listeners=new Set();
  const tell=()=>{for(const fn of listeners)try{fn()}catch{}};
  const snapshot=kind=>clone(records[kind]?.state??{});
- const ready=kind=>Boolean(airlineId&&records[kind]?.ready);
+ // Unresolved legacy data is a blocked save, not a silent overwrite.
+ const ready=kind=>Boolean(airlineId&&records[kind]?.ready&&
+  !records[kind]?.migrationPending);
  const pendingMigration=kind=>Boolean(records[kind]?.migrationPending);
  const load=async id=>{
   const serial=++generation;airlineId=id;
