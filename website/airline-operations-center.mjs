@@ -372,6 +372,14 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
   server={...server,...value};
   playerStore=value?.playerDraftStore||null;
   state=playerStore?.ready('workplan')?playerStore.snapshot('workplan'):{};
+  if(playerStore?.pendingMigration('workplan')){
+   message('operations-routes-feedback',
+    'SAVE BLOCKED — older browser planning data differs from Supabase. It was preserved for recovery and was NOT silently overwritten.');
+   message('ops-price-feedback','SAVE BLOCKED — old browser draft needs database reconciliation.');
+   message('ops-staff-feedback','SAVE BLOCKED — old browser draft needs database reconciliation.');
+  }else if(!playerStore?.ready('workplan')){
+   message('operations-routes-feedback','SAVING DISABLED — airline workspace database is unavailable.');
+  }
   const savedPrice=state.ticketPrice;
   if(savedPrice&&typeof savedPrice==='object')
    for(const [id,key] of [['ops-price-seat','seats'],['ops-price-fare','price'],
