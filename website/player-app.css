@@ -1586,6 +1586,11 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
 .operations-route-detail-content .route-detail-map{width:100%;height:300px;min-height:260px;border-radius:9px;overflow:hidden;background:#f1f5f8}
 .operations-route-detail-content .route-detail-map svg{width:100%;height:100%;display:block}
 .operations-route-detail-content .route-detail-map-feedback{line-height:1.55;font-size:11px;margin:8px 0 0}
+.operations-route-detail-content .route-booking-preview-rows{display:grid;gap:8px;margin:12px 0 0}
+.operations-route-detail-content .route-booking-preview-row{display:grid;grid-template-columns:1fr 90px 170px;gap:12px;align-items:center;border-bottom:1px solid #dce5ee;padding:8px 0;font-size:12px}
+.operations-route-detail-content .route-booking-preview-row strong{font-weight:650}
+.operations-route-detail-content .route-booking-preview-row span:last-child{text-align:right;color:#825b38}
+@media(max-width:700px){.operations-route-detail-content .route-booking-preview-row{grid-template-columns:1fr 1fr;gap:4px}.operations-route-detail-content .route-booking-preview-row span:last-child{text-align:left;grid-column:1/-1}}
 .operations-route-detail-content .route-detail-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:7px;margin-bottom:15px}
 .operations-route-detail-content .route-detail-day{display:grid;gap:4px;padding:12px 5px;text-align:center;
  border:1px solid #d9e4ee;border-radius:8px;background:#f5f8fb;color:#647a91;font-size:11px}
