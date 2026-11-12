@@ -97,7 +97,7 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
    '<p id="operations-route-cancel-info">This removes the local draft and all planned departures displayed for it. No real bookings or airport slots will be changed.</p>'+
    '<div class="workspace-actions">'+
     '<button type="button" class="secondary" id="operations-route-cancel-dismiss">Keep route</button>'+
-    '<button type="button" class="primary" id="operations-route-cancel-confirm-button">Cancel local draft</button></div>'+
+    '<button type="button" class="primary" id="operations-route-cancel-confirm-button">Confirm cancellation</button></div>'+
   '</section>'+
   '<p id="operations-route-detail-save-status" class="hint" role="status"></p>'+
   '<div id="operations-route-detail" class="operations-route-detail-content"></div>',
