@@ -55,6 +55,6 @@ test('developer-only browser drafts cannot become authoritative signed-in game r
  assert.match(operations,/await playerStore\.update\('workplan'/);
  assert.match(office,/await live\.playerDraftStore\.update\('workplan'/);
  assert.match(cabin,/No browser-only writes/);
- assert.match(planner,/Browser-only game routes are disabled/);
+ assert.match(planner,/No route or flight was saved/);
  assert.doesNotMatch(store,/\.setItem\s*\(/);
 });
