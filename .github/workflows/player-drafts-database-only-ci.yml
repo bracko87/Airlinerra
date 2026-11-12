@@ -1,0 +1,54 @@
+name: Airlinerra owner game drafts (database only)
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'server/player-drafts-service.mjs'
+      - 'server/player-drafts-edge-entry.ts'
+      - 'website/player-drafts-client.mjs'
+      - 'website/player-draft-store.mjs'
+      - 'website/player-app.mjs'
+      - 'website/airline-workspace.mjs'
+      - 'website/airline-operations-center.mjs'
+      - 'website/airline-airports-office.mjs'
+      - 'website/cabin-services-manager.mjs'
+      - 'website/route-planner.mjs'
+      - 'website/dev-scripts/real-player-read-gateway.mjs'
+      - 'website/dev-scripts/dev.mjs'
+      - 'website/dev-scripts/invited-overlay.mjs'
+      - 'server/production-game-api.mjs'
+      - 'website/netlify/functions/airlinerra-game.mjs'
+      - 'supabase/migrations/20261112114500_owner_scoped_player_drafts_database_only_v1.sql'
+      - 'tests/test_player_drafts_db_only.mjs'
+      - '.github/workflows/player-drafts-database-only-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  owner-database-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check source syntax
+        run: |
+          node --check server/player-drafts-service.mjs
+          node --check website/player-drafts-client.mjs
+          node --check website/player-draft-store.mjs
+          node --check website/player-app.mjs
+          node --check website/airline-workspace.mjs
+          node --check website/airline-operations-center.mjs
+          node --check website/airline-airports-office.mjs
+          node --check website/cabin-services-manager.mjs
+          node --check website/route-planner.mjs
+          node --check website/dev-scripts/real-player-read-gateway.mjs
+          node --check server/production-game-api.mjs
+      - name: Verify no browser-only game saves and owner Supabase draft API
+        run: node --test tests/test_player_drafts_db_only.mjs
+      - name: Build protected invited test website
+        run: npm run build --prefix website
+      - name: Validate browser module dependency graph
+        run: node --test tests/test_player_built_module_graph.mjs
