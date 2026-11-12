@@ -27,7 +27,8 @@ createServer(async (req, res) => {
       }
       let size=0;
       const chunks=[];
-      const maxBodyBytes=pathname==='/api/v1/player/cabin-services'?16384:2048;
+      const maxBodyBytes=pathname==='/api/v1/player/workspace-drafts'?32768:
+        pathname==='/api/v1/player/cabin-services'?16384:2048;
       for await(const chunk of req){
         size+=chunk.length;
         if(size>maxBodyBytes){res.writeHead(413).end('Body too large');return;}
