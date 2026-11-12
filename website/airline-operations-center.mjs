@@ -472,6 +472,7 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
      arrivalStand:route.operation.arrivalStand,
      turnaroundMinutes:route.operation.turnaroundMinutes,
      fares:route.operation.fares,service:route.operation.service,
+     launchDelayDays:[0,3,7].includes(route.launchDelayDays)?route.launchDelayDays:0,
      referenceDepartureUtc:route.referenceDepartureUtc&&route.referenceArrivalUtc?
       route.referenceDepartureUtc:null,
      referenceArrivalUtc:route.referenceDepartureUtc&&route.referenceArrivalUtc?
