@@ -6,6 +6,8 @@ on:
       - 'website/route-lifecycle-rules.mjs'
       - 'website/route-planner.mjs'
       - 'website/airline-operations-center.mjs'
+      - 'website/section9-flight-readiness.mjs'
+      - 'website/dev-scripts/invited-overlay.mjs'
       - 'website/aircraft-weekly-schedule-board.mjs'
       - 'website/flight-schedule-client.mjs'
       - 'website/section9-route-details.mjs'
@@ -35,6 +37,7 @@ jobs:
           node --check website/route-lifecycle-rules.mjs
           node --check website/route-planner.mjs
           node --check website/airline-operations-center.mjs
+          node --check website/section9-flight-readiness.mjs
           node --check website/aircraft-weekly-schedule-board.mjs
           node --check server/flight-schedule-service.mjs
           node --check server/section9-seven-day-window.mjs
