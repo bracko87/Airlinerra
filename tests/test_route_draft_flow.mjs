@@ -57,13 +57,14 @@ test('authenticated route creation requires Supabase and no longer saves browser
  const [route,workspace,directory]=await Promise.all([
   read('route-planner.mjs'),read('airline-workspace.mjs'),read('airline-operations-center.mjs')
  ]);
- assert.match(route,/const canSaveToServer=routeDraftSaveMode\(data\?\.scheduler\)==='server-planning'/);
- assert.match(route,/if\(!canSaveToServer\)\{/);
- assert.match(route,/Browser-only game routes are disabled/);
+ assert.match(route,/const canCreateOperational=typeof data\?\.scheduler\?\.operationalCreate==='function'/);
+ assert.match(route,/if\(!canCreateOperational\)\{/);
+ assert.match(route,/NOT CREATED — the operational flight service is not connected/);
  assert.match(route,/if\(preflight\?\.gameHardBlocked===true\)/);
  assert.match(route,/await draftWrite\('routes',\[\.\.\.filtered,draft\]\)/);
  assert.match(route,/airlinerra:route-draft-saved/);
- assert.match(route,/storage:'server-planning'/);
+ assert.match(route,/draft\.storage='server-operational'/);
+ assert.doesNotMatch(route,/scheduler\.planSave\(/);
  assert.doesNotMatch(route,/saved as a LOCAL planning draft/);
  assert.match(workspace,/await database\.update\('workplan'/);
  assert.match(directory,/await playerStore\.update\('workplan'/);
