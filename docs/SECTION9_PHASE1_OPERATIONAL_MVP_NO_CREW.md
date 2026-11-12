@@ -224,10 +224,13 @@ any other requirement or creating any fake flight.
   only while there are NO operated movement records or current-position rows,
   then requires a matching signed latest movement. Wrong game day is refused.
   Browser/anonymous roles cannot directly execute it.
-- Protected flight-schedule API **v22** uses the resolver and checks the proposed
+- Protected flight-schedule API **v23** uses the resolver and checks the proposed
   departure origin; PA has `startingLocationVerified=true`, `atOrigin=true`
-  for LYBE. Fuel dispatch/accounting approval remains false. The API still
-  refuses operational creation while the remaining systems are incomplete.
+  for LYBE. Fuel dispatch/accounting approval remains false. The API also
+  checks the real aircraft maintenance condition, hours and cycles baseline,
+  which remains unverified for YU-PAN01. Neither unknown condition nor unknown
+  age is silently initialized as 100%. Operational creation is still blocked
+  until the remaining independent systems are working.
 - Phase 1 commercial preflight now also uses the same position source, defers
   crew-only blockers, and retains restrictions, slot, licence/rights, execution
   and commercial release blockers. No crew employee or fake flight created.
