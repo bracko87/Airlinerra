@@ -182,6 +182,7 @@ export function routePlannerMarkup(){
   '<details class="route-aircraft-timeline-panel" id="route-aircraft-timeline"><summary>Aircraft weekly timeline and locations</summary><div id="route-aircraft-timeline-content"></div></details>'+
   '<div class="route-week-footer"><span id="route-flights" class="route-week-count">0 departures/week</span>'+
   '<span>Example next departures use entered UTC times; actual local arrival, slots and aircraft position are not yet verified.</span></div>'+
+  '<p id="route-cycle-warning" class="hint" role="status" aria-live="polite"></p>'+
   '')+
  section('AIRCRAFT PERFORMANCE','Aircraft performance and fuel estimate',aircraftPerformanceDetails)+
  section('STEP 3','Ticket prices and onboard services',
@@ -810,6 +811,8 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
  };
  const refreshAircraftTimeline=()=>{
   const timeline=selectedAircraftTimeline();
+  const cycleNotice=timeline.warnings.find(x=>x.startsWith('Weekly cycle is incomplete:'));
+  message('route-cycle-warning',cycleNotice||'');
   renderAircraftWeeklyTimeline(doc,$('route-aircraft-timeline-content'),timeline);
   const chosen=timeline.events.filter(x=>x.proposed);
   const derived=departureStandFromTimeline(timeline);
