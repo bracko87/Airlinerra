@@ -184,13 +184,14 @@ export const SCHEDULE_SQL=Object.freeze({
   WHERE world_id=1`,
  aircraftPrerequisites:`SELECT
   f.fleet_status='in_service' AS "aircraftInService",
-  EXISTS(SELECT 1 FROM airlinerra_game.section9_aircraft_delivery_position_v1 d
-   WHERE d.aircraft_inventory_id=f.id AND d.airline_id=f.airline_id AND d.world_id=1)
-   AS "deliveryLocationVerified",
-  EXISTS(SELECT 1 FROM airlinerra_game.section9_aircraft_current_position_v1 pos
-   WHERE pos.aircraft_inventory_id=f.id AND pos.airline_id=f.airline_id
-    AND pos.world_id=1 AND pos.location_status='grounded'
-    AND pos.airport_key=$4::text) AS "atOrigin",
+  (location.position->>'verified')='true'
+   AS "startingLocationVerified",
+  (location.position->>'verified')='true'
+   AND (location.position->>'atGroundAirport')='true'
+   AND location.position->>'airportKey'=$4::text AS "atOrigin",
+  location.position->>'status' AS "positionStatus",
+  (location.position->>'initialOnly')='true' AS "originalStarterPosition",
+  location.position->>'airportKey' AS "verifiedPositionAirport",
   EXISTS(SELECT 1 FROM airlinerra_game.aircraft_fuel_planning_profiles_v1 fuel
    WHERE fuel.configuration_id=f.configuration_id
     AND fuel.approved_for_dispatch=true AND fuel.requires_further_evidence=false)
@@ -201,6 +202,11 @@ export const SCHEDULE_SQL=Object.freeze({
     AS "fuelAccountingModelApproved"
  FROM airlinerra_game.airline_aircraft_inventory f
  JOIN airlinerra_game.airlines a ON a.id=f.airline_id AND a.world_id=1
+ CROSS JOIN LATERAL
+  airlinerra_game.section9_owned_aircraft_operational_position_v1(
+   $1::uuid,$2::uuid,$3::uuid,
+   (SELECT confirmed_game_date FROM airlinerra_game.holding_world_clock_v1
+    WHERE world_id=1)) AS location(position)
  WHERE f.id=$3::uuid AND f.airline_id=$2::uuid
   AND a.owner_player_id=$1::uuid`,
  bookingWindowPreview:SEVEN_DAY_WINDOW_SQL,
@@ -469,9 +475,10 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
      missing.push('AIRCRAFT_NOT_IN_AIRLINE_FLEET');
     }else{
      if(aircraft.aircraftInService!==true)missing.push('AIRCRAFT_NOT_IN_SERVICE');
-     if(aircraft.deliveryLocationVerified!==true)
-      missing.push('AIRCRAFT_DELIVERY_LOCATION_NOT_VERIFIED');
-     if(aircraft.atOrigin!==true)missing.push('AIRCRAFT_NOT_VERIFIED_AT_ORIGIN');
+     if(aircraft.startingLocationVerified!==true)
+      missing.push('AIRCRAFT_STARTING_LOCATION_NOT_VERIFIED');
+     else if(aircraft.atOrigin!==true)
+      missing.push('AIRCRAFT_NOT_VERIFIED_AT_ORIGIN');
      if(aircraft.fuelDispatchModelApproved!==true)
       missing.push('AIRCRAFT_FUEL_DISPATCH_MODEL_NOT_APPROVED');
      if(aircraft.fuelAccountingModelApproved!==true)
@@ -489,6 +496,8 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
      slotsReserved:false,activated:false,bookingEnabled:false,
      passengerBookingsCreated:false,ledgerPosted:false,
      crewRequired:false,crewCostsIncluded:false,
+     aircraftPositionStatus:aircraft?.positionStatus??null,
+     originalStarterPosition:aircraft?.originalStarterPosition===true,
      blockingRequirements:missing,verifiedGameDate:state.confirmed_game_date||null});
    }
    if(body.action==='plan-save'){
