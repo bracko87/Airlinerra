@@ -43,6 +43,8 @@ export function buildAircraftWeeklyTimeline({
   if(previous){
    event.priorLocation=previous.to;
    // A recurring draft describes one flight number, not a full rotation.
+   // Treat repeated legs as unfinished drafts, not as operationally validated
+   // repositioning. The missing return is highlighted below for every cycle.
    // Do not accuse the FIRST flight of being misplaced merely because
    // its next weekday occurrence is shown before a return leg is added.
    const sameRecurringRoute=previous.flightNumber===event.flightNumber&&
@@ -76,7 +78,7 @@ export function buildAircraftWeeklyTimeline({
  }
  if(events.length){
   const first=events[0],last=events.at(-1);
-  if(new Set(events.map(e=>e.flightNumber)).size>1&&last.toKey!==first.fromKey){
+  if(last.toKey!==first.fromKey){
    warnings.push('Weekly cycle is incomplete: after '+signature(last)+
     ' the aircraft is in '+last.to+
     ', but the recurring schedule next begins in '+first.from+
