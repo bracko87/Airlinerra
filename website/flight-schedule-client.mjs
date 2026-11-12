@@ -39,6 +39,8 @@ export function createFlightScheduleClient({auth,origin,fetchImpl=(...args)=>fet
      arrivalStand,turnaroundMinutes,fares,service,launchDelayDays,
      referenceDepartureUtc,referenceArrivalUtc}),
 
+  planDelete:({airlineId,planId})=>
+   post({action:'plan-delete',airlineId,planId}),
   save:({airlineId,aircraftInventoryId,flightNumber,originAirportKey,destinationAirportKey,
    referenceDepartureUtc,referenceArrivalUtc,weeklySchedule,existingId,
    departureStand='terminal',arrivalStand='terminal'})=>
