@@ -291,7 +291,7 @@ export function renderAirlineWeeklyBoard(doc,host,board,{
    }
    label.style.left=Math.min(pct(band.start),78)+'%';
    label.title=tooltip;
-   meta(doc,label,tooltip);
+   if(!event)meta(doc,label,tooltip);
   }
  }
 }
