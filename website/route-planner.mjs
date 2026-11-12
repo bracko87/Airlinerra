@@ -1750,14 +1750,15 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    message('route-plan-status','Select an in-service aircraft owned or leased by this company. Test and catalogue aircraft cannot be scheduled.');
    return;
   }
-  const canSaveToServer=routeDraftSaveMode(data?.scheduler)==='server-planning';
-  if(!canSaveToServer){
+  const canCreateOperational=typeof data?.scheduler?.operationalCreate==='function';
+  if(!canCreateOperational){
    message('route-plan-status',
-    'NOT SAVED — owner-verified airline database is unavailable. Browser-only game routes are disabled.');
+    'NOT CREATED — the operational flight service is not connected. No route or flight was saved.');
    return;
   }
-  // Owner-verified planning saves do NOT reserve slots or require invented
-  // arrival timestamps. Commercial schedule creation uses a separate gate.
+  // Create route now means a fully verified operating route or no new record.
+  // The backend must atomically confirm the real schedule, slots, clearance,
+  // execution and booking gates. No fallback to a planning-only save.
   const preflight=await automaticPreflight({force:true});
   if(preflight?.gameHardBlocked===true){
    message('route-plan-status','BLOCKED — a verified airport restriction prevents saving this route.');
@@ -1820,46 +1821,43 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    message('route-plan-status','This server schedule must stay linked to your registered fleet aircraft. Choose an owned/leased aircraft.');
    return;
   }
-  if(canSaveToServer){
-   const scheduler=data.scheduler;
-   message('route-plan-status','Saving owner-verified planning route in your airline database...');
-   try{
-    const result=await scheduler.planSave({
-     airlineId:data.airline.id,aircraftInventoryId:ownedChoice.id,
-     flightNumber,originAirportKey:from.key,destinationAirportKey:to.key,
-     weeklySchedule:schedule,launchDelayDays,
-     departureStand:operation.departureStand,
-     arrivalStand:operation.arrivalStand,
-     turnaroundMinutes:operation.turnaroundMinutes,
-     fares:operation.fares,service:operation.service,
-     referenceDepartureUtc:draft.referenceDepartureUtc&&draft.referenceArrivalUtc?
-      draft.referenceDepartureUtc:null,
-     referenceArrivalUtc:draft.referenceDepartureUtc&&draft.referenceArrivalUtc?
-      draft.referenceArrivalUtc:null
-    });
-    if(result?.status!=='planning'||typeof result.planId!=='string'||
-       result.canActivateNormalFlight!==false||result.slotsReserved!==false||
-       result.ledgerPosted!==false)
-     throw Error('UNVERIFIED_PLAN_SAVE_CONFIRMATION');
-    draft.serverPlanningId=result.planId;
-    draft.storage='server-planning';
-    serverPlans=[{
-     planId:result.planId,status:'planning',flightNumber,
-     aircraftInventoryId:ownedChoice.id,
-     originAirportKey:from.key,destinationAirportKey:to.key,
-     from,to,schedule,operation,launchDelayDays,
-     referenceDepartureUtc:draft.referenceDepartureUtc,
-     referenceArrivalUtc:draft.referenceArrivalUtc
-    },...serverPlans.filter(p=>p.flightNumber!==flightNumber)];
-   }catch(error){
-    const reason=String(error?.message||'');
-    message('route-plan-status',reason.includes('CABIN_PACKAGE_NOT_SAVED')?
-      'NOT SAVED — the selected cabin service package has not been saved to your airline database. Open Flight Services, save the package, then try again. Or choose Basic Cabin Service.':
-      reason.includes('409')||reason.includes('CONFLICT_')?
-      'NOT SAVED — a server rule rejected this route. Check the owned aircraft, airport eligibility and flight number.':
-      'NOT SAVED — server planning save failed. This route has not been recorded in Supabase.');
-    return;
-   }
+  const scheduler=data.scheduler;
+  message('route-plan-status','Checking the operating schedule and required approvals…');
+  try{
+   const result=await scheduler.operationalCreate({
+    airlineId:data.airline.id,aircraftInventoryId:ownedChoice.id,
+    flightNumber,originAirportKey:from.key,destinationAirportKey:to.key,
+    weeklySchedule:schedule,launchDelayDays,
+    departureStand:operation.departureStand,
+    arrivalStand:operation.arrivalStand,
+    turnaroundMinutes:operation.turnaroundMinutes,
+    fares:operation.fares,service:operation.service,
+    referenceDepartureUtc:draft.referenceDepartureUtc&&draft.referenceArrivalUtc?
+     draft.referenceDepartureUtc:null,
+    referenceArrivalUtc:draft.referenceDepartureUtc&&draft.referenceArrivalUtc?
+     draft.referenceArrivalUtc:null
+   });
+   if(result?.routeCreated!==true||result?.status!=='active'||
+      result.activated!==true||result.slotsReserved!==true||
+      result.bookingEnabled!==true||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(result.scheduleId||''))
+    throw Error('OPERATIONAL_ROUTE_NOT_CONFIRMED');
+   draft.serverScheduleId=result.scheduleId;
+   draft.serverPlanningId=result.planId||null;
+   draft.storage='server-operational';
+   draft.operationallyVerified=true;
+   draft.status='active';
+  }catch(error){
+   const reason=String(error?.message||'');
+   message('route-plan-status',
+    reason.includes('GAME_ENGINE_NOT_READY')?
+     'NOT CREATED — flight activation, aircraft operations, passenger bookings and financial settlement are not connected yet. No planning-only route was saved.':
+    reason.includes('CABIN_PACKAGE_NOT_SAVED')?
+     'NOT CREATED — save the selected cabin package in Flight Services first.':
+    reason.includes('SCHEDULE_CONFLICT')?
+     'NOT CREATED — the aircraft, airport slots or flight schedule failed verification.':
+     'NOT CREATED — an operational flight could not be verified. No route was saved.');
+   return;
   }
   const copiedToDrafts=await draftWrite('routes',[...filtered,draft]);
   if(!copiedToDrafts){
@@ -1873,8 +1871,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    detail:{flightNumber,serverSaved:Boolean(draft.serverPlanningId||draft.serverScheduleId)}
   }));
   await resetRouteForm();
-  const text='Route '+flightNumber+' created.'+
-   (copiedToDrafts?'':' Some optional planning estimates were not saved.');
+  const text='Route '+flightNumber+' created.';
   const status=$('route-plan-status');
   if(status){status.classList.add('is-success');status.textContent=text;}
 
