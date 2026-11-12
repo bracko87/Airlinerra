@@ -1706,6 +1706,11 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   renderSchedule();
   void loadAirlineSchedule();
  });
+ doc.addEventListener('airlinerra:route-draft-cancelled',()=>{
+  // This event only follows a confirmed local-draft deletion.
+  // The timetable rereads session storage, never simulates slot release.
+  renderSchedule();
+ });
  applyPreferences();loadDraftForms();
  return Object.freeze({updateData,
   openFleetAircraft:hash=>{
