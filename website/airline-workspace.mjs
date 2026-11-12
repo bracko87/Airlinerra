@@ -1317,6 +1317,14 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    preferences=cleanUiPreferences(data.playerDraftStore.snapshot('preferences'));
    applyPreferences();
   }
+  if(data.playerDraftStore?.pendingMigration('preferences')){
+   for(const id of ['settings-feedback','interface-status'])
+    if($(id))$(id).textContent=
+     'SAVE BLOCKED — older browser preferences differ from Supabase. They were preserved for recovery.';
+  }
+  if(data.playerDraftStore?.pendingMigration('workplan')&&$('budget-result'))
+   $('budget-result').textContent=
+    'SAVE BLOCKED — older browser workplans require reconciliation with Supabase.';
   draft=getDraft();
   try{cabinManager?.updateData(data)}catch{console.warn('Airlinerra flight services refresh unavailable')}
   try{cabinConfigurationManager?.updateData(data)}catch{
