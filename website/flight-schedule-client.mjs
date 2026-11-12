@@ -73,6 +73,8 @@ export function createFlightScheduleClient({auth,origin,fetchImpl=(...args)=>fet
      otherAirlineCode:String(otherAirlineCode||'').toUpperCase().trim()}),
   partnerDecision:({airlineId,agreementId,decision})=>
     post({action:'partner-decision',airlineId,agreementId,decision}),
+  bookingWindowPreview:({airlineId,scheduleId})=>
+    post({action:'booking-window-preview',airlineId,scheduleId}),
   rotationPreview:({airlineId,scheduleId,startDate,days=28})=>
     post({action:'rotation-preview',airlineId,scheduleId,startDate,days}),
   operationsPreview:({airlineId,scheduleId,startDate,days=28})=>
