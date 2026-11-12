@@ -1853,8 +1853,8 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
     'The selected aircraft is not in this airline fleet.':
     blockers.includes('AIRCRAFT_NOT_IN_SERVICE')?
     'The selected aircraft is not in service.':
-    blockers.includes('AIRCRAFT_DELIVERY_LOCATION_NOT_VERIFIED')?
-    'The aircraft delivery airport has not yet been verified.':
+    blockers.includes('AIRCRAFT_STARTING_LOCATION_NOT_VERIFIED')?
+    'The aircraft starting airport has not yet been verified.':
     blockers.includes('AIRCRAFT_NOT_VERIFIED_AT_ORIGIN')?
     'The aircraft has not been verified at the departure airport.':
     blockers.includes('AIRCRAFT_FUEL_DISPATCH_MODEL_NOT_APPROVED')?
