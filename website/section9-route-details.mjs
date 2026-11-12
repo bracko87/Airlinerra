@@ -26,6 +26,7 @@ export function createSection9RouteDetails({doc,host,getRoutes,getServer}={}){
  async function open(index,month=null){
   const routes=getRoutes?.()||[];
   const route=routes[index];
+  const server=getServer?.()||{};
   const mySerial=++serial;
   selectedIndex=index;
   host.replaceChildren();
@@ -112,6 +113,64 @@ export function createSection9RouteDetails({doc,host,getRoutes,getServer}={}){
   schedulePanel.append(schedInfo);
   host.append(schedulePanel);
 
+  const bookingPanel=doc.createElement('section');
+  bookingPanel.className='route-detail-section route-detail-booking-window';
+  bookingPanel.append(text(doc,'span','SEVEN-DAY WINDOW','panel-kicker'),
+   text(doc,'h4','Upcoming departures and bookings'));
+  const bookingStatus=hint(doc,bookingPanel,
+   'Tickets are not on sale. No passenger reservations or ticket income are recorded.');
+  const bookingRows=doc.createElement('div');
+  bookingRows.className='route-booking-preview-rows';
+  bookingPanel.append(bookingRows);
+  host.append(bookingPanel);
+  if(!route.serverScheduleId){
+   bookingStatus.textContent='Not open for booking. First complete operational scheduling and certification. No passenger reservations exist for this planning route.';
+  }else if(!server.connected||!server.airline?.id||
+    typeof server.scheduler?.bookingWindowPreview!=='function'){
+   bookingStatus.textContent='Seven-day departure preview unavailable. Ticket sales remain closed.';
+  }else{
+   bookingStatus.textContent='Loading seven-day game calendar preview. Ticket sales remain closed.';
+   void (async()=>{
+    try{
+     const data=await server.scheduler.bookingWindowPreview({
+      airlineId:server.airline.id,scheduleId:route.serverScheduleId
+     });
+     if(mySerial!==serial)return;
+     if(data?.status!=='seven_day_preview_only'||data?.worldId!==1||
+       data?.readOnly!==true||data?.bookingEnabled!==false||
+       data?.passengerBookingsCreated!==false||
+       data?.ledgerPosted!==false||data?.windowDays!==7||
+       data?.scheduleId!==route.serverScheduleId||
+       !Array.isArray(data.occurrences)||data.occurrences.length>7||
+       data.occurrences.some(d=>d?.status!=='not_saleable'||
+        d?.bookingEnabled!==false||d?.passengerBookings!==null))
+      throw Error('Invalid booking-window preview');
+     bookingStatus.textContent='Next seven game dates: '+
+      String(data.gameDate||'unavailable')+' through '+
+      String(data.lastGameDate||'unavailable')+
+      '. Booking is not yet enabled; passenger counts are not available.';
+     bookingRows.replaceChildren();
+     if(!data.occurrences.length){
+      hint(doc,bookingRows,'No departures fall within the next seven game dates.');
+      return;
+     }
+     for(const d of data.occurrences){
+      const row=doc.createElement('div');
+      row.className='route-booking-preview-row';
+      const time=d.timeIssue?'Departure time needs review':
+       typeof d.departureLocal==='string'?d.departureLocal.slice(11,16):'Time unavailable';
+      row.append(text(doc,'strong',String(d.flightLocalDate||'Date unavailable')),
+       text(doc,'span',time),
+       text(doc,'span','Not open for booking'));
+      bookingRows.append(row);
+     }
+    }catch{
+     if(mySerial===serial)
+      bookingStatus.textContent='Seven-day schedule preview could not be verified. Ticket sales remain closed.';
+    }
+   })();
+  }
+
   const marketPanel=doc.createElement('section');
   marketPanel.className='route-detail-section';
   marketPanel.append(text(doc,'span','PASSENGER & CARGO MARKET','panel-kicker'),
@@ -150,7 +209,6 @@ export function createSection9RouteDetails({doc,host,getRoutes,getServer}={}){
    text(doc,'h4','Projected costs and actual profitability'));
   hint(doc,economicHeading,'Estimated income and itemized airport, ground handling, security and ATC costs are separate from verified settled flights. The last seven settled flights and older cumulative totals appear only when genuine ledger data exists.');
   host.append(economicHeading);
-  const server=getServer?.()||{};
   const planHost=doc.createElement('section');
   planHost.className='section9-commercial-plan';
   host.append(planHost);
