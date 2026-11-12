@@ -1,6 +1,7 @@
 /** Same owner-verified cabin settings API for production and trusted localhost preview.
  * Neither path purchases flights, changes aircraft or posts money.
  */
+import {CABIN_DATA_SCHEMA_ID} from './cabin-services-manager.mjs';
 export const CABIN_API_ROUTE='/api/v1/player/cabin-services';
 export function createCabinServicesClient({auth,origin,fetchImpl=(...a)=>fetch(...a)}={}){
  if(!['https://airlinerra.com','http://localhost:5188'].includes(origin)||
@@ -17,6 +18,7 @@ export function createCabinServicesClient({auth,origin,fetchImpl=(...a)=>fetch(.
   if(res.status===401||res.status===403)throw Error('CABIN_AUTH_REQUIRED');
   if(!res.ok)throw Error('CABIN_HTTP_'+res.status);
   const data=await res.json();
+  if(data?.schemaId!==CABIN_DATA_SCHEMA_ID)throw Error('CABIN_SCHEMA_MISMATCH');
   if(data?.source!=='supabase'||!Number.isInteger(data.version)||data.version<0||
      data.operational!==false||!data.state)throw Error('Invalid cabin response');
   return data;
