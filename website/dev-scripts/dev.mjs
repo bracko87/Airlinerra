@@ -27,9 +27,10 @@ createServer(async (req, res) => {
       }
       let size=0;
       const chunks=[];
+      const maxBodyBytes=pathname==='/api/v1/player/cabin-services'?16384:2048;
       for await(const chunk of req){
         size+=chunk.length;
-        if(size>2048){res.writeHead(413).end('Body too large');return;}
+        if(size>maxBodyBytes){res.writeHead(413).end('Body too large');return;}
         chunks.push(chunk);
       }
       const request=new Request('http://localhost:5188'+pathname,{
