@@ -32,10 +32,12 @@ export function createFlightScheduleClient({auth,origin,fetchImpl=(...args)=>fet
   list:airlineId=>post({action:'list',airlineId}),
   planSave:({airlineId,aircraftInventoryId,flightNumber,originAirportKey,
    destinationAirportKey,weeklySchedule,departureStand=null,arrivalStand='terminal',
-   turnaroundMinutes,fares,service,referenceDepartureUtc=null,referenceArrivalUtc=null})=>
+   turnaroundMinutes,fares,service,launchDelayDays=0,
+   referenceDepartureUtc=null,referenceArrivalUtc=null})=>
     post({action:'plan-save',airlineId,aircraftInventoryId,flightNumber,
      originAirportKey,destinationAirportKey,weeklySchedule,departureStand,
-     arrivalStand,turnaroundMinutes,fares,service,referenceDepartureUtc,referenceArrivalUtc}),
+     arrivalStand,turnaroundMinutes,fares,service,launchDelayDays,
+     referenceDepartureUtc,referenceArrivalUtc}),
 
   save:({airlineId,aircraftInventoryId,flightNumber,originAirportKey,destinationAirportKey,
    referenceDepartureUtc,referenceArrivalUtc,weeklySchedule,existingId,
