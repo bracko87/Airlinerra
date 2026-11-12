@@ -71,6 +71,11 @@ export function createSection9RouteDetails({doc,host,getRoutes,getServer}={}){
   fact(doc,overview,'Destination',(route.to.name||route.to.key||'—')+
    (route.to.code?' ('+route.to.code+')':''));
   fact(doc,overview,'Flight status','Planning only · not activated');
+  const launch=[0,3,7].includes(route.launchDelayDays)?route.launchDelayDays:0;
+  fact(doc,overview,'Preferred launch',
+   launch===0?'Next eligible departure after activation':
+   'After '+launch+' game days (planning preference)');
+  hint(doc,overview,'Launch preference does not activate flights or start ticket sales.');
   top.append(mapPanel,overview);
   host.append(top);
 
