@@ -1857,7 +1857,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
   await resetRouteForm();
   const text=flightNumber+(draft.serverPlanningId?
    ' saved in your AIRLINE DATABASE as a planning route. It is available under My Routes on any signed-in device. No slots reserved or flights activated.':
-   ' saved as a LOCAL planning draft. It is now listed under My Routes in this browser tab. No server schedule or flight was created.');
+   ' saved as a non-operational planning draft in Supabase. No airport slot or flight was created.');
   const status=$('route-plan-status');
   if(status){status.classList.add('is-success');status.textContent=text;}
 
