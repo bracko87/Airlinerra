@@ -166,6 +166,6 @@ test('route creation UI no longer invokes planning-only save or claims unapprove
  assert.match(ui,/NOT CREATED — automatic flight activation/);
  assert.match(ui,/AIRCRAFT_DELIVERY_LOCATION_NOT_VERIFIED/);
  assert.doesNotMatch(ui,/CREW_ASSIGNMENTS_INCOMPLETE/);
- assert.match(ui,/No planning-only route was saved/);
+ assert.match(ui,/No flight was created/);
  assert.match(ui,/const text='Route '\+flightNumber\+' created\.'/);
 });
