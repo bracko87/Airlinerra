@@ -4,6 +4,7 @@ import {readFile} from 'node:fs/promises';
 import {createLiveReadOnlyPreviewHandler,allowedLocalOwnerRead}
  from '../website/dev-scripts/real-player-read-gateway.mjs';
 import {createLocalOwnerFleetReaders} from '../website/local-owner-fleet-reader.mjs';
+import {initialCabinState,createBasicCabinPackage} from '../website/cabin-services-manager.mjs';
 
 const AIRLINE='9c5c6aff-588f-4d25-abe5-dd91efc2e0d1';
 const AIRCRAFT='a4547aef-e5a6-4362-8b2b-fbdf96d21907';
@@ -148,4 +149,43 @@ test('localhost allows owner-validated refit estimate and quote reload but never
   airlineId:AIRLINE,aircraftInventoryId:AIRCRAFT});
  assert.deepEqual(calls.map(x=>x.action),['cabin-prepare-quote','cabin-quote-status']);
  assert.equal(local.fleetClient.bookRefit,undefined);
+});
+
+test('localhost owner can save validated cabin packages to Supabase, not only browser storage',async()=>{
+ const path='/api/v1/player/cabin-services',state=initialCabinState();
+ const basic=createBasicCabinPackage();
+ state.packages.push({...basic,id:'pkg-1',name:'New flight package',locked:false,
+  items:structuredClone(basic.items)});
+ const actions=[];
+ const handler=createLiveReadOnlyPreviewHandler({fetchImpl:async(url,options)=>{
+  const body=JSON.parse(options.body);
+  actions.push(body.action);
+  assert.equal(url,'https://hwllkabgzaynalahvkpz.supabase.co/functions/v1/airlinerra-cabin-services');
+  assert.equal(options.headers['x-airlinerra-route'],path);
+  assert.equal(options.headers.origin,'https://airlinerra.com');
+  assert.equal(options.headers.authorization,'Bearer '+TOKEN);
+  return Response.json({source:'supabase',operational:false,state,
+   version:body.action==='save'?1:0});
+ }});
+ const read={action:'read',airlineId:AIRLINE};
+ const save={action:'save',airlineId:AIRLINE,state,expectedVersion:0};
+ assert.equal(allowedLocalOwnerRead(path,read),true);
+ assert.equal(allowedLocalOwnerRead(path,save),true);
+ assert.equal((await handler(request(path,read))).status,200);
+ const response=await handler(request(path,save));
+ assert.equal(response.status,200);
+ assert.equal((await response.json()).version,1);
+ assert.deepEqual(actions,['read','save']);
+ assert.equal(allowedLocalOwnerRead(path,{...save,expectedVersion:-1}),false);
+ assert.equal(allowedLocalOwnerRead(path,{...save,flightActivated:true}),false);
+ assert.equal((await handler(request(path,{action:'activate',airlineId:AIRLINE}))).status,403);
+ assert.equal((await handler(request(path,{action:'save',airlineId:AIRLINE,
+  state:{...state,operational:true},expectedVersion:0}))).status,403);
+ assert.deepEqual(actions,['read','save'],'invalid cabin requests never reach the server');
+ const [server,app]=await Promise.all([
+  readFile(new URL('../website/dev-scripts/dev.mjs',import.meta.url),'utf8'),
+  readFile(new URL('../website/player-app.mjs',import.meta.url),'utf8')
+ ]);
+ assert.match(server,/pathname==='\/api\/v1\/player\/cabin-services'\?16384:2048/);
+ assert.match(app,/local&&window\.location\.origin===LOCAL_REAL_AUTH_ORIGIN/);
 });
