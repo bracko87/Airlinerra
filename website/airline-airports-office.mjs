@@ -308,7 +308,7 @@ export function createAirportOffice({doc,session,identity,goTo,getAirlineLogoUrl
    !airport?.countryIso?'Airport country is unavailable. Requests cannot be created here.':
    request?'An '+(request.type==='hub'?'additional hub':'station')+
     ' draft is already saved for this airport. No office is active.':
-   'Open station and Request hub save draft requests in this browser only. No airport office is activated yet.';
+   'Open station and Request hub save non-operational proposals in your airline database. No airport office is activated yet.';
  }
  function renderAirportProfile(airport,detail=null,loading=false){
   const p=detail;
