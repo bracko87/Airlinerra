@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {initialCabinState} from '../website/cabin-services-manager.mjs';
+import {initialCabinState,createBasicCabinPackage,cleanCabinPackage,cleanCabinState} from '../website/cabin-services-manager.mjs';
 import {createCabinServicesHandler,validCabinRequest,validCabinState,CABIN_SQL}
  from '../server/cabin-services-service.mjs';
 import {createCabinServicesClient} from '../website/cabin-services-client.mjs';
@@ -121,4 +121,35 @@ test('localhost cabin client authenticates and posts only through its same-origi
  assert.throws(()=>createCabinServicesClient({
   auth:{getAccessToken:async()=>token},origin:'https://attacker.example'
  }),/trusted-origin cabin client/);
+});
+
+test('current Basic Flight Services and a newly created custom package are valid in owner API',async()=>{
+ const state=initialCabinState();
+ assert.equal(state.packages[0].name,'Basic Flight Services');
+ const newPackage=structuredClone(createBasicCabinPackage());
+ newPackage.id='pkg-1';
+ newPackage.name='New flight package';
+ newPackage.locked=false;
+ newPackage.items.coffee.mode='included';
+ state.packages.push(cleanCabinPackage(newPackage));
+ const request={action:'save',airlineId,state,expectedVersion:0};
+ assert.deepEqual(cleanCabinState(state),state);
+ assert.equal(validCabinRequest(request),true,
+  'A package created by the live editor must pass the backend validation');
+ const calls=[];
+ const handle=createCabinServicesHandler({
+  verifyUserToken:async()=>({user:{id:playerId}}),
+  database:{connect:async()=>({query:async(sql,args)=>{
+   calls.push(sql);
+   if(sql===CABIN_SQL.owner)return {rowCount:1,rows:[{}]};
+   if(sql===CABIN_SQL.save)return {rowCount:1,rows:[{state,version:1,updatedAt:null}]};
+   throw Error('unexpected query');
+  },release(){}})}
+ });
+ const response=await handle(req(request));
+ assert.equal(response.status,200);
+ const body=await response.json();
+ assert.deepEqual(body.state.packages.map(p=>p.name),['Basic Flight Services','New flight package']);
+ assert.equal(body.ledgerPosted,false);
+ assert.equal(calls.length,2);
 });
