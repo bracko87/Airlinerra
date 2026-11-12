@@ -28,6 +28,8 @@ export const CABIN_MODE_OPTIONS=Object.freeze([
  ['included','Included / free'],
  ['onboard','Paid onboard']
 ]);
+/** Bump when the canonical package shape changes; API and browser must match. */
+export const CABIN_DATA_SCHEMA_ID='airlinerra-cabin-v2-basic-flight-services-2026-11-12';
 export const CABIN_CLASSES=Object.freeze([
  ['economy','Economy'],['premium','Premium Economy'],
  ['business','Business'],['first','First Class']
@@ -250,6 +252,7 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
     !/^[\w-]{3,128}$/.test(identity))throw Error('Verified manager required');
  let airlineId=undefined,state=initialCabinState(),activeId='basic',working=null,savedKey=null;
  let remote=null,revision=0,ready=false,loading=false,saving=false,loadTicket=0;
+ let lastData=null;
  // Drafts created in the editor are NOT published to route creation until saved.
  let savedPackageIds=new Set(['basic']);
  const status=text=>{const box=host.querySelector('#cabin-package-status');
@@ -283,10 +286,23 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
     savedPackageIds=new Set(state.packages.map(p=>p.id));
     notifyRoutes();return true;
    }catch(error){
-    ready=false;
-    status(error?.message==='CABIN_VERSION_CONFLICT'?
-     'These cabin settings changed in another session. Reload before editing.':
-     'Supabase could not save the change. No flight or money was changed.');
+    // A malformed request or temporary server error cannot grant a success,
+    // but must not permanently disable the editor. Version/auth/schema
+    // conflicts require an explicit reload to avoid overwriting newer data.
+    const reason=String(error?.message||'');
+    const incompatible=['CABIN_VERSION_CONFLICT','CABIN_AUTH_REQUIRED',
+     'CABIN_SCHEMA_MISMATCH'].includes(reason);
+    if(incompatible)ready=false;
+    if(incompatible)render();
+    status(reason==='CABIN_VERSION_CONFLICT'?
+     'NOT SAVED — cabin settings changed in another session. Use Retry connection to reload them.':
+     reason==='CABIN_SCHEMA_MISMATCH'?
+     'NOT SAVED — game and Supabase cabin versions differ. Please reload after the API has been updated.':
+     reason==='CABIN_AUTH_REQUIRED'?
+     'NOT SAVED — airline session expired. Sign in again, then retry.':
+     'NOT SAVED — Supabase rejected the package ('+
+      (/^CABIN_HTTP_[4-5][0-9]{2}$/.test(reason)?reason.replace('CABIN_HTTP_','HTTP '):'network failure')+
+      '). No package was recorded. You can correct it and retry.');
     return false;
    }finally{saving=false}
   }
@@ -305,12 +321,23 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
   host.replaceChildren();
   const heading=element(doc,'div','cabin-product-header');
   const title=element(doc,'div');
-  title.append(element(doc,'p','hint cabin-product-lead','Choose a package to select free or paid services and set passenger prices. '+(remote?'Settings are saved to your airline in Supabase; flights and money are not changed.':'The airline database is unavailable; saving is disabled. Nothing is stored in this browser.')));
+  title.append(element(doc,'p','hint cabin-product-lead','Choose a package to select free or paid services and set passenger prices. '+(remote&&ready?'Settings are saved to your airline in Supabase only after server confirmation.':'Saving is unavailable until Supabase confirms your airline settings; no browser-only game saves.')));
   heading.append(title);
   const addBtn=element(doc,'button','primary cabin-compact-button','+ New package');
   addBtn.type='button';addBtn.dataset.cabinAction='new';
   addBtn.disabled=!airlineId||loading||saving||(remote&&!ready)||state.packages.length>=9;
-  heading.append(addBtn);host.append(heading);
+  heading.append(addBtn);
+  if(remote&&!ready&&!loading){
+   const retry=element(doc,'button','secondary cabin-compact-button','Retry connection');
+   retry.type='button';retry.dataset.cabinAction='retry';
+   heading.append(retry);
+  }
+  host.append(heading);
+  // Put the connection/save failure where the user can see it, before the
+  // long service catalog rather than at the very bottom of the page.
+  const upperStatus=element(doc,'p','hint cabin-product-status');
+  upperStatus.id='cabin-package-status';upperStatus.setAttribute('role','status');
+  upperStatus.setAttribute('aria-live','polite');host.append(upperStatus);
   const body=element(doc,'div','cabin-product-layout');
   const sidebar=element(doc,'aside','cabin-product-sidebar');
   sidebar.append(element(doc,'h3','','Your packages'));
@@ -426,9 +453,7 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
   editor.append(element(doc,'p','hint',
    'Airline unit costs are provisional game estimates. Free services count as one unit each in the per-passenger allowance; actual use may differ. Physical paid items cost money when stocked, even if unsold. Unit margin means selling price minus supply cost, before waste and other expenses. Flight totals are calculated only from actual flights.'));
   body.append(editor);host.append(body);
-  const feedback=element(doc,'p','hint cabin-product-status');
-  feedback.id='cabin-package-status';feedback.setAttribute('role','status');
-  feedback.setAttribute('aria-live','polite');host.append(feedback);
+
   updateMetrics();
   doc.dispatchEvent(new CustomEvent('airlinerra:refresh-game-select-menus'));
  };
@@ -479,10 +504,14 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
  const onClick=async event=>{
   const button=event.target.closest?.('[data-cabin-action],[data-cabin-choose]');
   if(!button||!host.contains(button))return;
+  if(button.dataset.cabinAction==='retry'){
+   if(lastData)updateData(lastData,{force:true});
+   return;
+  }
   if(loading||saving||(remote&&!ready)){
-    status('Cabin packages are not ready. Check the connection and reload.');return;
-   }
-   const selected=button.dataset.cabinChoose;
+   status('Cabin packages are not ready. Use Retry connection above the editor.');return;
+  }
+  const selected=button.dataset.cabinChoose;
   if(selected){choose(selected);return;}
   const action=button.dataset.cabinAction;
   if(!airlineId){status('Connect a verified airline first.');return;}
@@ -537,11 +566,12 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
  };
  host.addEventListener('change',onChange);
  host.addEventListener('click',onClick);
- const updateData=data=>{
+ const updateData=(data,{force=false}={})=>{
+   lastData=data;
    const id=data?.connected&&typeof data?.airline?.id==='string'?data.airline.id:null;
    const api=id&&typeof data?.cabinServiceClient?.read==='function'&&
     typeof data?.cabinServiceClient?.save==='function'?data.cabinServiceClient:null;
-   if(id===airlineId&&api===remote)return;
+   if(!force&&id===airlineId&&api===remote)return;
    const ticket=++loadTicket;
    airlineId=id;remote=api;savedKey=id?'airlinerra.cabin.services.v1.'+identity+'.'+id:null;
    revision=0;ready=false;loading=Boolean(remote);saving=false;
@@ -568,7 +598,7 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
      }catch{
       if(ticket!==loadTicket||airlineId!==id||remote!==api)return;
       ready=false;loading=false;render();
-      status('Your saved browser package was NOT transferred to Supabase. It remains in browser storage. No route can use it until the airline settings sync succeeds.');
+      status('NOT SAVED — older browser package could not be transferred to Supabase. It remains preserved. Use Retry connection after resolving the API error.');
       return;
      }
     }
@@ -593,10 +623,12 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
      'Your saved browser package is now stored in Supabase for this airline and can be used when creating a route.':
      'Cabin packages loaded from Supabase for this airline.');
     notifyRoutes();
-   }).catch(()=>{
+   }).catch(error=>{
     if(ticket!==loadTicket||airlineId!==id||remote!==api)return;
     loading=false;ready=false;render();
-    status('Cabin packages could not be loaded. Editing disabled to protect saved data.');
+    status(error?.message==='CABIN_SCHEMA_MISMATCH'?
+     'The game and Supabase cabin versions do not match. Package editing is paused until the server is updated; use Retry connection.':
+     'Cabin packages could not be loaded ('+String(error?.message||'connection error')+'). Nothing was saved. Use Retry connection.');
    });
   };
  updateData({connected:false,airline:null});
