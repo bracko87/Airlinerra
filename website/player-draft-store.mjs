@@ -31,6 +31,23 @@ const readLegacy=(store,key)=>{
  try{return JSON.parse(store?.getItem(key)||'null')}
  catch{return null}
 };
+const canonical=value=>{
+ if(Array.isArray(value))return '['+value.map(canonical).join(',')+']';
+ if(value&&typeof value==='object')return '{'+Object.keys(value).sort().map(k=>
+  JSON.stringify(k)+':'+canonical(value[k])).join(',')+'}';
+ return JSON.stringify(value);
+};
+const fullLegacyMatch=(kind,raw,remote)=>{
+ if(!safeObject(raw)||!safeObject(remote))return false;
+ const allowed=kind==='preferences'?PREF_KEYS:PLAN_KEYS;
+ return Object.keys(raw).every(k=>allowed.has(k))&&
+  canonical(raw)===canonical(remote);
+};
+const retireVerifiedLegacy=(store,key,kind,raw,remote)=>{
+ if(!fullLegacyMatch(kind,raw,remote))return false;
+ try{store?.removeItem?.(key);return typeof store?.removeItem==='function'}
+ catch{return false}
+};
 export function createPlayerDraftStore({client,identity,session,storage}={}){
  if(typeof client?.read!=='function'||typeof client?.save!=='function'||
   typeof identity!=='string'||identity.length<3)
@@ -61,16 +78,22 @@ export function createPlayerDraftStore({client,identity,session,storage}={}){
     !Number.isInteger(result.version)||result.version<0)
     throw Error('Unverified server workspace document');
    let current=result,migrationPending=false;
-   const legacy=clean(kind,readLegacy(sources[kind],legacyKeys[kind]));
+   const legacyRaw=readLegacy(sources[kind],legacyKeys[kind]);
+   const legacy=clean(kind,legacyRaw);
+   if(safeObject(legacyRaw)&&Object.keys(legacyRaw).length&&
+     !Object.keys(legacy).length)migrationPending=true;
    if(Object.keys(legacy).length&&current.version===0){
     try{
      current=await client.save({airlineId:id,kind,state:legacy,expectedVersion:0});
      if(current.source!=='supabase'||current.version!==1||
       current.operational!==false)throw Error('Unconfirmed legacy import');
+     if(!retireVerifiedLegacy(sources[kind],legacyKeys[kind],
+       kind,legacyRaw,current.state))migrationPending=true;
     }catch{migrationPending=true}
    }else if(Object.keys(legacy).length&&current.version>0){
-    // Do not overwrite a newer database record with stale browser data.
-    migrationPending=true;
+    // Existing database records win. Retire browser data only if identical.
+    if(!retireVerifiedLegacy(sources[kind],legacyKeys[kind],
+      kind,legacyRaw,current.state))migrationPending=true;
    }
    return {kind,version:current.version,state:clean(kind,current.state),
     migrationPending};
