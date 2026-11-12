@@ -290,11 +290,10 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
     return false;
    }finally{saving=false}
   }
-  try{storage?.setItem(savedKey,JSON.stringify(state));
-   savedPackageIds=new Set(state.packages.map(p=>p.id));
-   notifyRoutes();return true}catch{return false}
+  // No browser-only writes. A disconnected airline can never claim a save.
+  return false;
  };
- const locationLabel=()=>remote?'Supabase for this airline':'this browser';
+ const locationLabel=()=>remote?'Supabase for this airline':'database unavailable';
  const choose=id=>{const found=find(id);if(!found)return;
   activeId=id;working=structuredClone(found);render();
  };
@@ -306,7 +305,7 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
   host.replaceChildren();
   const heading=element(doc,'div','cabin-product-header');
   const title=element(doc,'div');
-  title.append(element(doc,'p','hint cabin-product-lead','Choose a package to select free or paid services and set passenger prices. '+(remote?'Settings are saved to your airline in Supabase; flights and money are not changed.':'Local preview: saved in this browser; no flight or cash effects.')));
+  title.append(element(doc,'p','hint cabin-product-lead','Choose a package to select free or paid services and set passenger prices. '+(remote?'Settings are saved to your airline in Supabase; flights and money are not changed.':'The airline database is unavailable; saving is disabled. Nothing is stored in this browser.')));
   heading.append(title);
   const addBtn=element(doc,'button','primary cabin-compact-button','+ New package');
   addBtn.type='button';addBtn.dataset.cabinAction='new';
@@ -545,13 +544,14 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
    if(id===airlineId&&api===remote)return;
    const ticket=++loadTicket;
    airlineId=id;remote=api;savedKey=id?'airlinerra.cabin.services.v1.'+identity+'.'+id:null;
-   revision=0;ready=!remote;loading=Boolean(remote);saving=false;
-   let parsed=null;
-   if(savedKey&&!remote)try{parsed=JSON.parse(read(savedKey)||'null')}catch{}
-   state=cleanCabinState(parsed);savedPackageIds=new Set(state.packages.map(p=>p.id));activeId='basic';
+   revision=0;ready=false;loading=Boolean(remote);saving=false;
+   state=initialCabinState();savedPackageIds=new Set(['basic']);activeId='basic';
    working=structuredClone(state.packages[0]);render();
    if(!id){status('Sign in to an airline to save cabin-service designs.');return;}
-   if(!remote){notifyRoutes();return;}
+   if(!remote){
+    status('NOT SAVED — the owner database is unavailable. Local browser game saves are disabled.');
+    notifyRoutes();return;
+   }
    status('Loading cabin packages from Supabase…');
    void remote.read(id).then(async result=>{
     if(ticket!==loadTicket||airlineId!==id||remote!==api)return;
