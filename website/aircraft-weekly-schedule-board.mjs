@@ -37,15 +37,16 @@ export function flightScheduleTooltip(event,band=null){
  const duration=event?.durationMinutes??event?.sampleDurationMinutes??null;
  const timing=event?.timing||(duration!==null&&event?.minute!==undefined?
   plannedRotationTiming(event.minute,duration,event?.turnaroundMinutes):null);
- const arrival=timing?clockOnDay(timing.arrivalMinute,timing.arrivalDayOffset):'unknown';
+ const arrival=timing?'Estimated arrival '+
+  clockOnDay(timing.arrivalMinute,timing.arrivalDayOffset)+' UTC':
+  'Estimated arrival not yet calculated';
  const available=timing?.totalMinutes!==null&&timing?
-  clockOnDay(timing.availableMinute,timing.availableDayOffset):'not verified';
+  'Available from '+clockOnDay(timing.availableMinute,timing.availableDayOffset)+' UTC':
+  'Available from not yet calculated';
  const ground=timing?.turnaroundMinutes??null;
  return flightNumber+code+' | Departure '+departure+' UTC | '+
-  'Estimated arrival '+arrival+' UTC | '+
-  'Flight '+(duration===null?'not calculated':duration+' min')+' | '+
-  'Turnaround '+(ground===null?'not set':ground+' min')+' | '+
-  'Available from '+available+' UTC';
+  arrival+' | Flight '+(duration===null?'not calculated':duration+' min')+' | '+
+  'Turnaround '+(ground===null?'not set':ground+' min')+' | '+available;
 }
 const validDuration=(a,b)=>{
  if(!a||!b)return null;
