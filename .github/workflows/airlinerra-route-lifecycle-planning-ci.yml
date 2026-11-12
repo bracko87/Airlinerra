@@ -1,0 +1,40 @@
+name: Airlinerra route lifecycle planning (isolated)
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'website/route-lifecycle-rules.mjs'
+      - 'website/route-planner.mjs'
+      - 'website/airline-operations-center.mjs'
+      - 'website/aircraft-weekly-schedule-board.mjs'
+      - 'website/flight-schedule-client.mjs'
+      - 'website/section9-route-details.mjs'
+      - 'website/player-app.css'
+      - 'website/airline-workspace.mjs'
+      - 'server/flight-schedule-service.mjs'
+      - 'tests/test_route_lifecycle_policy.mjs'
+      - 'tests/test_aircraft_weekly_schedule_board.mjs'
+      - '.github/workflows/airlinerra-route-lifecycle-planning-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  planning:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate changed code syntax
+        run: |
+          node --check website/route-lifecycle-rules.mjs
+          node --check website/route-planner.mjs
+          node --check website/airline-operations-center.mjs
+          node --check website/aircraft-weekly-schedule-board.mjs
+          node --check server/flight-schedule-service.mjs
+      - name: Test route lifecycle rules, guarded API and flight labels
+        run: node --test tests/test_route_lifecycle_policy.mjs tests/test_aircraft_weekly_schedule_board.mjs tests/test_server_flight_schedule_api.mjs
+      - name: Build invitation-only player website
+        run: npm run build --prefix website
