@@ -66,6 +66,7 @@ test('operational create fails closed, owner verified, without ANY schedule, slo
    assert.deepEqual(params,[USER,AIRLINE,AIRCRAFT,'OURAIRPORTS:4610']);
    return {rowCount:1,rows:[{aircraftInService:true,
     startingLocationVerified:false,atOrigin:false,originalStarterPosition:false,
+    gameFuelEstimateReady:false,maintenanceUsageTrackingStarted:false,
     fuelDispatchModelApproved:false,fuelAccountingModelApproved:false,
     maintenanceBaselineVerified:false}]};
   }
@@ -83,6 +84,7 @@ test('operational create fails closed, owner verified, without ANY schedule, slo
  assert.match(out.blockingRequirements.join(' '),/ATOMIC_SCHEDULE_AND_AIRPORT_SLOT_ACTIVATION_NOT_CONNECTED/);
  assert.match(out.blockingRequirements.join(' '),/AIRCRAFT_STARTING_LOCATION_NOT_VERIFIED/);
  assert.doesNotMatch(out.blockingRequirements.join(' '),/AIRCRAFT_NOT_VERIFIED_AT_ORIGIN/);
+ assert.match(out.blockingRequirements.join(' '),/AIRCRAFT_FUEL_GAME_INPUTS_INCOMPLETE/);
  assert.match(out.blockingRequirements.join(' '),/AIRCRAFT_FUEL_DISPATCH_MODEL_NOT_APPROVED/);
  assert.match(out.blockingRequirements.join(' '),/AIRCRAFT_MAINTENANCE_BASELINE_NOT_VERIFIED/);
  assert.equal(out.crewRequired,false);
@@ -187,6 +189,7 @@ test('a verified starter aircraft at the correct origin is not misdiagnosed as l
     originalStarterPosition:true,
     positionStatus:'verified_original_game_starter_position',
     verifiedPositionAirport:'OURAIRPORTS:4610',
+    gameFuelEstimateReady:true,maintenanceUsageTrackingStarted:true,
     fuelDispatchModelApproved:false,fuelAccountingModelApproved:false,
     maintenanceBaselineVerified:false
    }]};
@@ -204,6 +207,8 @@ test('a verified starter aircraft at the correct origin is not misdiagnosed as l
  assert.ok(result.blockingRequirements.includes('AIRCRAFT_FUEL_DISPATCH_MODEL_NOT_APPROVED'));
  assert.ok(result.blockingRequirements.includes('AIRCRAFT_MAINTENANCE_BASELINE_NOT_VERIFIED'));
  assert.ok(result.blockingRequirements.includes('SEVEN_DAY_PASSENGER_BOOKING_NOT_CONNECTED'));
+ assert.equal(result.gameFuelEstimateReady,true);
+ assert.equal(result.maintenanceUsageTrackingStarted,true);
  assert.equal(result.crewRequired,false);
  assert.equal(statements.length,3);
  assert.ok(statements.every(x=>x.sql.trim().startsWith('SELECT')));
