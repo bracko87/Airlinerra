@@ -625,7 +625,8 @@ async function loadPlayerReadData({local=false}={}){
   const scheduler=localReaders?.scheduler||
    (window.location.origin==='https://airlinerra.com'?
     createFlightScheduleClient({auth,origin:window.location.origin}):null);
-  const cabinServiceClient=window.location.origin==='https://airlinerra.com'?
+  const cabinServiceClient=(window.location.origin==='https://airlinerra.com'||
+    (local&&window.location.origin===LOCAL_REAL_AUTH_ORIGIN))?
      createCabinServicesClient({auth,origin:window.location.origin}):null;
    const fleetClient=localReaders?.fleetClient||
    (window.location.origin==='https://airlinerra.com'?
