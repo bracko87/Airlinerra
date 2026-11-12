@@ -417,7 +417,6 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
      ...feeBaseline.unknownRows.map(x=>[x.label,null,x.evidence])]:
     [['Airport movement, landing, handling and navigation',null,feeRequestStatus],
      ['Passenger / cargo airport charges',null,'Real passenger/cargo quantities not available']]),
-   ['Flight and cabin crew',null,'Crew roster, salary and assignment pending'],
    ['Aircraft maintenance / wear',null,'Per-flight cost allocation not connected'],
    ['Onboard service / catering',null,'Final passengers and package costs pending'],
    ['Aircraft finance / leasing allocation',null,'Per-flight aircraft cost allocation not verified']
@@ -440,8 +439,8 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
     (typeof fuelAmount==='number'?
      ' · Plus fuel forecast: '+money(fuelAmount):
      ' · Fuel forecast pending')+
-    '. NOT the complete flight cost; passenger, cargo, crew, maintenance and '+
-    'other expenses are not included. Airport fees use the verified game '+
+    '. NOT the complete flight cost; passenger, cargo, maintenance and '+
+    'other expenses are not included. Crew is excluded from Phase 1 calculations. Airport fees use the verified game '+
     'calculator with zero passengers/cargo ONLY to isolate fixed costs. No charge.';
   }else footer.textContent='Complete flight cost unavailable. '+
    'Airport fees will appear after the server verifies the chosen aircraft, '+
@@ -1603,7 +1602,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
      await draftWrite('route',updateRoute(local.route));
     doc.dispatchEvent(new CustomEvent('airlinerra:route-draft-saved'));
     message('route-server-draft-status',
-      draft.flightNumber+' registered as an operational DRAFT with airport slots reserved. It is NOT active: crew, route rights and independent approvals are still required. No flight or charge was created.');
+      draft.flightNumber+' registered as an inactive draft with game slots reserved. Route rights and independent flight approvals are still required. Crew is excluded from Phase 1. No flight or charge was created.');
    }catch{
     message('route-server-draft-status',
       'Operational schedule registration was not confirmed. Refresh the server list before retrying. No flight was activated.');
