@@ -1580,9 +1580,9 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
     const updateRoute=r=>r?.flightNumber===draft.flightNumber?
       {...r,serverScheduleId:result.scheduleId,slotsReserved:true}:r;
     if(Array.isArray(local.routes))
-     draftWrite('routes',local.routes.map(updateRoute));
+     await draftWrite('routes',local.routes.map(updateRoute));
     if(local.route?.flightNumber===draft.flightNumber)
-     draftWrite('route',updateRoute(local.route));
+     await draftWrite('route',updateRoute(local.route));
     doc.dispatchEvent(new CustomEvent('airlinerra:route-draft-saved'));
     message('route-server-draft-status',
       draft.flightNumber+' registered as an operational DRAFT with airport slots reserved. It is NOT active: crew, route rights and independent approvals are still required. No flight or charge was created.');
@@ -1608,8 +1608,8 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
     const current=loadDraft?.()||{};
     const cleaned=r=>r?.serverScheduleId===id?
       {...r,serverScheduleId:null,slotsReserved:false}:r;
-    if(Array.isArray(current.routes))draftWrite('routes',current.routes.map(cleaned));
-    if(current.route?.serverScheduleId===id)draftWrite('route',cleaned(current.route));
+    if(Array.isArray(current.routes))await draftWrite('routes',current.routes.map(cleaned));
+    if(current.route?.serverScheduleId===id)await draftWrite('route',cleaned(current.route));
     doc.dispatchEvent(new CustomEvent('airlinerra:route-draft-saved'));
     message('route-server-draft-status','Schedule deleted. Reserved airport slots released.');
     clearPreflight();
@@ -1733,6 +1733,11 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    return;
   }
   const canSaveToServer=routeDraftSaveMode(data?.scheduler)==='server-planning';
+  if(!canSaveToServer){
+   message('route-plan-status',
+    'NOT SAVED — owner-verified airline database is unavailable. Browser-only game routes are disabled.');
+   return;
+  }
   // Owner-verified planning saves do NOT reserve slots or require invented
   // arrival timestamps. Commercial schedule creation uses a separate gate.
   const preflight=await automaticPreflight({force:true});
@@ -1769,7 +1774,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    ...(Number.isInteger(durationReference)&&durationReference>=25?
     {estimatedDurationMinutes:durationReference,
      estimatedDurationSource:'five_phase_game_estimate'}:{}),
-   storage:canSaveToServer?'server-planning':'browser',
+   storage:'server-planning',
    aircraftId:flightAircraft,
    aircraftConfigurationId:selectedCatalog?.id??ownedChoice.configurationId,
    aircraftLabel:[selectedCatalog?.manufacturer||ownedChoice.manufacturer,
@@ -1838,15 +1843,14 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
     return;
    }
   }
-  if(!draftWrite('routes',[...filtered,draft])){
-   message('route-plan-status',draft.serverPlanningId?
-    'Route saved in the airline database. Local cache is unavailable; open My Routes to load it from the server.':
-    'NOT SAVED — browser storage is unavailable. No local route draft was created.');
-   if(!draft.serverPlanningId)return;
+  const copiedToDrafts=await draftWrite('routes',[...filtered,draft]);
+  if(!copiedToDrafts){
+   message('route-plan-status',
+    'Route saved in the authoritative airline database, but the optional workplan mirror could not be confirmed. Open My Routes to check the saved server record.');
+  }else{
+   // Supporting editor details are database drafts, not browser state.
+   await draftWrite('route',draft);
   }
-  // My Routes uses the routes array, not the legacy single-route key.
-  // A failed compatibility write must never hide a successfully stored route.
-  draftWrite('route',draft);
   doc.dispatchEvent(new CustomEvent('airlinerra:route-draft-saved',{
    detail:{flightNumber,serverSaved:Boolean(draft.serverPlanningId||draft.serverScheduleId)}
   }));
