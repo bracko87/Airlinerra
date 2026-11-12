@@ -396,15 +396,22 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
    const route=allRoutes()[details.index()];
    const confirmation=$('operations-route-cancel-confirm');
    if(!route||!confirmation)return;
-   if(route.serverScheduleId||route.serverPlanningId){
+   if(route.serverScheduleId){
     confirmation.hidden=true;
     message('operations-route-detail-save-status',
-     'This route has a server record. It cannot be cancelled here until protected flight, slot and passenger handling is implemented. No route or bookings changed.');
+     'This route has reserved airport slots. Cancellation remains unavailable until passenger and slot release checks are connected. Nothing changed.');
+    return;
+   }
+   if(route.serverPlanningId&&
+    (!server.airline?.id||typeof server.scheduler?.planDelete!=='function')){
+    confirmation.hidden=true;
+    message('operations-route-detail-save-status',
+     'Protected planning-route cancellation is not connected. Nothing changed.');
     return;
    }
    confirmation.hidden=false;
    message('operations-route-cancel-info','Cancel '+String(route.flightNumber||'this route')+
-    '? Its local planning draft and displayed planned departures will be removed. No passenger reservations or airport slots exist for this local draft.');
+    '? This is an inactive planning route with no passenger bookings or reserved airport slots. Its planned departures will be removed.');
    return;
   }
   if(target.id==='operations-route-cancel-dismiss'){
@@ -415,33 +422,61 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
   if(target.id==='operations-route-cancel-confirm-button'){
    const i=details.index(),route=allRoutes()[i];
    const confirmation=$('operations-route-cancel-confirm');
-   if(!route||route.serverPlanningId||route.serverScheduleId||
-    typeof route.flightNumber!=='string'){
+   if(!route||route.serverScheduleId||typeof route.flightNumber!=='string'){
     if(confirmation)confirmation.hidden=true;
     message('operations-route-detail-save-status','Cancellation not available. No route changed.');
     return;
    }
    const number=route.flightNumber;
-   const previous=localRoutes(),next=previous.filter(r=>r?.flightNumber!==number);
-   if(next.length===previous.length){
-    if(confirmation)confirmation.hidden=true;
-    message('operations-route-detail-save-status','The draft is no longer available. Nothing changed.');
-    return;
+   const serverPlanningId=route.serverPlanningId||null;
+   if(serverPlanningId){
+    if(!server.airline?.id||typeof server.scheduler?.planDelete!=='function'){
+     message('operations-route-detail-save-status',
+      'Server cancellation connection unavailable. Nothing changed.');return;
+    }
+    target.disabled=true;
+    message('operations-route-detail-save-status','Cancelling inactive server planning route…');
+    try{
+     const response=await server.scheduler.planDelete({
+      airlineId:server.airline.id,planId:serverPlanningId
+     });
+     if(response?.deleted!==true||response.planId!==serverPlanningId)
+      throw Error('Unconfirmed planning route cancellation');
+     remotePlans=remotePlans.filter(p=>p.serverPlanningId!==serverPlanningId);
+    }catch{
+     message('operations-route-detail-save-status',
+      'Cancellation not confirmed by the airline database. No route has been removed locally.');
+     target.disabled=false;return;
+    }
+    target.disabled=false;
    }
-   const oldState=state;
-   state={...state,routes:next,route:state.route?.flightNumber===number?null:state.route};
-   if(!persist()){
-    state=oldState;
-    message('operations-route-detail-save-status','Could not save cancellation to local storage. The route was not removed.');
+   const previous=localRoutes(),next=previous.filter(r=>r?.flightNumber!==number);
+   const hadLocal=next.length!==previous.length;
+   if(hadLocal){
+    const oldState=state;
+    state={...state,routes:next,route:state.route?.flightNumber===number?null:state.route};
+    if(!persist()){
+     state=oldState;
+     if(confirmation)confirmation.hidden=true;
+     renderRoutes();
+     message('operations-route-detail-save-status',
+      serverPlanningId?'Server planning route cancelled, but its old browser copy could not be cleared. Refresh My Routes to reconcile.':
+      'Could not save cancellation to local storage. The local route was not removed.');
+     return;
+    }
+   }else if(!serverPlanningId){
+    if(confirmation)confirmation.hidden=true;
+    message('operations-route-detail-save-status','Draft already unavailable. Nothing changed.');
     return;
    }
    if(confirmation)confirmation.hidden=true;
    renderRoutes();
    goTo?.('route-list');
    message('operations-routes-feedback',number+
-    ' local draft cancelled. Its planned departures are removed from the display; no booked flights, airport slots or passenger records were changed.');
+    ' inactive planning route cancelled. Planned departures removed. No booked flights, passengers, airport slots or finances were changed.');
    doc.dispatchEvent(new CustomEvent('airlinerra:route-draft-cancelled',
-    {detail:{flightNumber:number}}));
+    {detail:{flightNumber:number,serverSaved:Boolean(serverPlanningId)}}));
+   if(serverPlanningId)void loadRemotePlans();
    return;
   }
   if(target.dataset.opsRouteRemove!==undefined){
