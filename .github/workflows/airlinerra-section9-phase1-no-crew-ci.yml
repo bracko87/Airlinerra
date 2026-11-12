@@ -4,6 +4,9 @@ on:
     branches: [main]
     paths:
       - 'supabase/migrations/20261112164500_section9_phase1_no_crew_still_signed_five_certificates.sql'
+      - 'supabase/migrations/20261112171500_section5_activation_readiness_excludes_crew_phase1.sql'
+      - 'website/route-planner.mjs'
+      - 'server/flight-schedule-service.mjs'
       - 'tests/test_section9_phase1_no_crew_activation.mjs'
       - 'docs/SECTION9_PHASE1_OPERATIONAL_MVP_NO_CREW.md'
       - '.github/workflows/airlinerra-section9-phase1-no-crew-ci.yml'
