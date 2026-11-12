@@ -128,8 +128,8 @@ test('both production and localhost clients expose planning save but not localho
  const args={...plan};delete args.action;
  await prod.planSave(args);
  await local.scheduler.planSave(args);
- assert.deepEqual(prodBody,plan);
- assert.deepEqual(localBody,plan);
+ assert.deepEqual(prodBody,{...plan,launchDelayDays:0});
+ assert.deepEqual(localBody,{...plan,launchDelayDays:0});
  assert.equal(local.scheduler.save,undefined);
  assert.equal(local.scheduler.delete,undefined);
  assert.equal(local.scheduler.commercialSave,undefined);
