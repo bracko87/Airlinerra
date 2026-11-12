@@ -179,7 +179,7 @@ test('Flight Services follows My routes page layout with one shared white panel 
  assert.match(css,/:root\[data-ui-theme="dark"\] \.cabin-product-item-name strong/);
 });
 
-test('new unsaved cabin package is never offered in route creation',()=>{
+test('new unsaved cabin package is never offered in route creation',async()=>{
  const basic=createBasicCabinPackage();
  const draft={...basic,id:'pkg-1',name:'New flight package',locked:false};
  const editable=[basic,draft];
