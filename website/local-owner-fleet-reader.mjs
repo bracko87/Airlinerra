@@ -18,6 +18,13 @@ export function createLocalOwnerFleetReaders({auth,origin,fetchImpl=globalThis.f
    body:JSON.stringify(body),mode:'same-origin',credentials:'omit',
    cache:'no-store',redirect:'error',referrerPolicy:'no-referrer'
   });
+  if(response.status===409&&path===SCHEDULE_PATH){
+   const error=await response.json().catch(()=>null);
+   const reason=typeof error?.reason==='string'&&
+    /^[A-Z][A-Z0-9_]{2,100}$/.test(error.reason)?
+     error.reason:'SCHEDULE_RESTRICTION_BLOCKED';
+   throw Error('SCHEDULE_CONFLICT_'+reason);
+  }
   if(!response.ok)throw Error('LOCAL_AIRLINERRA_API_HTTP_'+response.status);
   const result=await response.json();
   if(!result||typeof result!=='object'||Array.isArray(result))
@@ -42,10 +49,11 @@ export function createLocalOwnerFleetReaders({auth,origin,fetchImpl=globalThis.f
   list:airlineId=>read(SCHEDULE_PATH,{action:'list',airlineId}),
   planSave:({airlineId,aircraftInventoryId,flightNumber,originAirportKey,
    destinationAirportKey,weeklySchedule,departureStand=null,arrivalStand='terminal',
-   turnaroundMinutes,fares,service,referenceDepartureUtc=null,referenceArrivalUtc=null})=>
+   turnaroundMinutes,fares,service,launchDelayDays=0,
+   referenceDepartureUtc=null,referenceArrivalUtc=null})=>
     read(SCHEDULE_PATH,{action:'plan-save',airlineId,aircraftInventoryId,
      flightNumber,originAirportKey,destinationAirportKey,weeklySchedule,
-     departureStand,arrivalStand,turnaroundMinutes,fares,service,
+     departureStand,arrivalStand,turnaroundMinutes,fares,service,launchDelayDays,
      referenceDepartureUtc,referenceArrivalUtc}),
   feePreview:({airlineId,aircraftInventoryId,originAirportKey,destinationAirportKey,
    departureStand='terminal',arrivalStand='terminal',parkingMinutes=60})=>
