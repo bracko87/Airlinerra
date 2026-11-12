@@ -101,3 +101,18 @@ test('Route Details renders seven days with booking closed until engine certific
  assert.match(client,/bookingWindowPreview:\(\{airlineId,scheduleId\}\)/);
  assert.doesNotMatch(details,/bookedPassengers\s*\|\|\s*0/);
 });
+
+test('private booking storage is strictly non-saleable and produces no upfront money',async()=>{
+ const sql=await readFile(new URL('../supabase/migrations/20261112100704_section9_seven_day_booking_storage_gated_v1.sql',import.meta.url),'utf8');
+ assert.match(sql,/CREATE TABLE IF NOT EXISTS airlinerra_game\.section9_dated_flight_occurrences_v1/);
+ assert.match(sql,/CREATE TABLE IF NOT EXISTS airlinerra_game\.section9_passenger_reservation_batches_v1/);
+ assert.match(sql,/CHECK\(booking_status='not_open'\)/);
+ assert.match(sql,/CHECK\(booked_seats=0\)/);
+ assert.match(sql,/CHECK\(reservation_status='unissued'\)/);
+ assert.match(sql,/CHECK\(paid_upfront=false\)/);
+ assert.match(sql,/CHECK\(recognized_revenue_usd=0\)/);
+ assert.match(sql,/section9_dated_flight_occurrences_v1 ENABLE ROW LEVEL SECURITY/);
+ assert.match(sql,/section9_passenger_reservation_batches_v1 ENABLE ROW LEVEL SECURITY/);
+ assert.match(sql,/FROM PUBLIC, anon, authenticated, service_role/);
+ assert.doesNotMatch(sql,/GRANT\s+(?:ALL|INSERT|UPDATE)/i);
+});
