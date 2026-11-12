@@ -63,5 +63,9 @@ test('route API trusts server-only position provenance, not supplied airplane ai
  assert.match(api,/fuelAccountingModelApproved/);
  assert.match(api,/automatic_flight_and_fuel_settlement_enabled/);
  assert.match(api,/routeCreated:false/);
- assert.doesNotMatch(api,/action==='operational-create'[\s\S]*?INSERT INTO airlinerra_game/);
+ const start=api.indexOf("if(body.action==='operational-create'){",
+  api.indexOf('export function createFlightScheduleHandler'));
+ const end=api.indexOf("if(body.action==='plan-save'){",start);
+ assert.ok(start>0&&end>start,'inspect only the operational creation branch');
+ assert.doesNotMatch(api.slice(start,end),/\b(?:INSERT|UPDATE|DELETE)\b/i);
 });
