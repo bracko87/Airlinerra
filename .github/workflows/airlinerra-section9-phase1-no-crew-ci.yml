@@ -8,6 +8,10 @@ on:
       - 'supabase/migrations/20261112181000_section9_owned_aircraft_operational_position_resolver_v1.sql'
       - 'supabase/migrations/20261112182500_section9_aircraft_position_resolver_record_alias_repair.sql'
       - 'supabase/migrations/20261112184000_section9_noncrew_preflight_verified_game_position.sql'
+      - 'supabase/migrations/20261112190000_section9_verified_starter_usage_tracking_baseline_v1.sql'
+      - 'supabase/migrations/20261112191500_section9_game_fuel_model_snapshot_v1.sql'
+      - 'tests/test_section9_verified_starter_usage_baseline.mjs'
+      - 'tests/test_section9_game_fuel_snapshot.mjs'
       - 'tests/test_section9_initial_position_phase1.mjs'
       - 'website/route-planner.mjs'
       - 'server/flight-schedule-service.mjs'
@@ -27,6 +31,6 @@ jobs:
         with:
           node-version: '22'
       - name: Validate operational Phase 1 crew exception and five mandatory independent clearances
-        run: node --test tests/test_section9_phase1_no_crew_activation.mjs tests/test_section9_initial_position_phase1.mjs
+        run: node --test tests/test_section9_phase1_no_crew_activation.mjs tests/test_section9_initial_position_phase1.mjs tests/test_section9_verified_starter_usage_baseline.mjs tests/test_section9_game_fuel_snapshot.mjs
       - name: Guard activated game code and protected build
         run: npm run build --prefix website
