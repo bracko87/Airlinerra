@@ -4,7 +4,7 @@ import {readFile} from 'node:fs/promises';
 import {createLiveReadOnlyPreviewHandler,allowedLocalOwnerRead}
  from '../website/dev-scripts/real-player-read-gateway.mjs';
 import {createLocalOwnerFleetReaders} from '../website/local-owner-fleet-reader.mjs';
-import {initialCabinState,createBasicCabinPackage} from '../website/cabin-services-manager.mjs';
+import {initialCabinState,createBasicCabinPackage,cleanCabinState} from '../website/cabin-services-manager.mjs';
 
 const AIRLINE='9c5c6aff-588f-4d25-abe5-dd91efc2e0d1';
 const AIRCRAFT='a4547aef-e5a6-4362-8b2b-fbdf96d21907';
@@ -156,6 +156,7 @@ test('localhost owner can save validated cabin packages to Supabase, not only br
  const basic=createBasicCabinPackage();
  state.packages.push({...basic,id:'pkg-1',name:'New flight package',locked:false,
   items:structuredClone(basic.items)});
+ const canonicalState=cleanCabinState(state);
  const actions=[];
  const handler=createLiveReadOnlyPreviewHandler({fetchImpl:async(url,options)=>{
   const body=JSON.parse(options.body);
@@ -164,11 +165,11 @@ test('localhost owner can save validated cabin packages to Supabase, not only br
   assert.equal(options.headers['x-airlinerra-route'],path);
   assert.equal(options.headers.origin,'https://airlinerra.com');
   assert.equal(options.headers.authorization,'Bearer '+TOKEN);
-  return Response.json({source:'supabase',operational:false,state,
+  return Response.json({source:'supabase',operational:false,state:canonicalState,
    version:body.action==='save'?1:0});
  }});
  const read={action:'read',airlineId:AIRLINE};
- const save={action:'save',airlineId:AIRLINE,state,expectedVersion:0};
+ const save={action:'save',airlineId:AIRLINE,state:canonicalState,expectedVersion:0};
  assert.equal(allowedLocalOwnerRead(path,read),true);
  assert.equal(allowedLocalOwnerRead(path,save),true);
  assert.equal((await handler(request(path,read))).status,200);
