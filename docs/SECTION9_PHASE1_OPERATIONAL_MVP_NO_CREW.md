@@ -236,3 +236,32 @@ any other requirement or creating any fake flight.
   and commercial release blockers. No crew employee or fake flight created.
 - Verified production count: active schedules 0, movements 0, reservations 0.
   The seven-day booking engine and settlement are NOT yet live.
+
+## Further implementation — 12 November, fuel and usage-baseline integration
+
+- **Verified original starter usage baseline:** For PA-owned A319 YU-PAN01,
+  private `section9_initialize_verified_starter_usage_v1` used the trusted
+  original game allocation (2026-11-10 08:44:08 UTC) to initialize **0 hours
+  and 0 cycles since this allocation**, NOT lifetime hours/cycles. Production
+  read-back confirmed those values; a repeat request changed nothing.
+  Manufacture year and condition remain NULL/unverified, and there are no
+  created maintenance completions, flights, movements or ledger posts.
+- **Versioned game fuel input snapshots:** New private
+  `section9_game_fuel_model_snapshot_v1` freezes exactly 271 existing
+  source-labelled fuel model configurations for future server calculations:
+  270 have a reference tank and usable game calculation inputs; Jetstream 32
+  (configuration 98) lacks tank capacity and is flagged incomplete.
+  Research-derived peer estimates remain clearly distinguishable from the
+  existing provisional consumption rates. The game-only universal kerosene
+  assumption is explicit. **No model is released for dispatch or settlement.**
+- **Flight Schedule API v24** now independently reports
+  `gameFuelEstimateReady`, `maintenanceUsageTrackingStarted`,
+  `fuelDispatchModelApproved`, `fuelAccountingModelApproved` and
+  `maintenanceBaselineVerified`. Live PA query returned respectively
+  true, true, false, false and false. Starter origin LYBE remains verified.
+- Operational activation, airport slot allocations, saleable seven-day
+  bookings, flight movement and finance remain **OFF**. Crew remains
+  deliberately excluded. This milestone cannot be mistaken for flight release.
+- Dedicated Phase 1 CI includes regression checks for starter source,
+  idempotent usage counters, preserved unknown airframe condition and
+  untouched financial/dispatch locks.
