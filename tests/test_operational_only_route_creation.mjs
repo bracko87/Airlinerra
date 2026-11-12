@@ -65,7 +65,7 @@ test('operational create fails closed, owner verified, without ANY schedule, slo
   if(sql===SCHEDULE_SQL.aircraftPrerequisites){
    assert.deepEqual(params,[USER,AIRLINE,AIRCRAFT,'OURAIRPORTS:4610']);
    return {rowCount:1,rows:[{aircraftInService:true,
-    deliveryLocationVerified:false,atOrigin:false,
+    startingLocationVerified:false,atOrigin:false,originalStarterPosition:false,
     fuelDispatchModelApproved:false,fuelAccountingModelApproved:false}]};
   }
   throw Error('Any other SQL is an unauthorized operational write');
@@ -80,8 +80,8 @@ test('operational create fails closed, owner verified, without ANY schedule, slo
  assert.equal(out.ledgerPosted,false);
  assert.equal(out.scheduleId,null);
  assert.match(out.blockingRequirements.join(' '),/ATOMIC_SCHEDULE_AND_AIRPORT_SLOT_ACTIVATION_NOT_CONNECTED/);
- assert.match(out.blockingRequirements.join(' '),/AIRCRAFT_DELIVERY_LOCATION_NOT_VERIFIED/);
- assert.match(out.blockingRequirements.join(' '),/AIRCRAFT_NOT_VERIFIED_AT_ORIGIN/);
+ assert.match(out.blockingRequirements.join(' '),/AIRCRAFT_STARTING_LOCATION_NOT_VERIFIED/);
+ assert.doesNotMatch(out.blockingRequirements.join(' '),/AIRCRAFT_NOT_VERIFIED_AT_ORIGIN/);
  assert.match(out.blockingRequirements.join(' '),/AIRCRAFT_FUEL_DISPATCH_MODEL_NOT_APPROVED/);
  assert.equal(out.crewRequired,false);
  assert.equal(out.crewCostsIncluded,false);
@@ -106,7 +106,7 @@ test('unowned airline or invalid auth never reveals readiness and writes nothing
 });
 test('production and localhost route creator send identical strict operational-only API commands',async()=>{
  let production,local;
- const blockers=['AIRCRAFT_DELIVERY_LOCATION_NOT_VERIFIED',
+ const blockers=['AIRCRAFT_STARTING_LOCATION_NOT_VERIFIED',
   'AIRCRAFT_FUEL_DISPATCH_MODEL_NOT_APPROVED','SEVEN_DAY_PASSENGER_BOOKING_NOT_CONNECTED'];
  const client=createFlightScheduleClient({
   origin:'https://airlinerra.com',auth:{getAccessToken:async()=>TOKEN},
@@ -164,7 +164,7 @@ test('route creation UI no longer invokes planning-only save or claims unapprove
  assert.match(ui,/result\.activated!==true/);
  assert.match(ui,/result\.bookingEnabled!==true/);
  assert.match(ui,/NOT CREATED — automatic flight activation/);
- assert.match(ui,/AIRCRAFT_DELIVERY_LOCATION_NOT_VERIFIED/);
+ assert.match(ui,/AIRCRAFT_STARTING_LOCATION_NOT_VERIFIED/);
  assert.doesNotMatch(ui,/CREW_ASSIGNMENTS_INCOMPLETE/);
  assert.match(ui,/No flight was created/);
  assert.match(ui,/const text='Route '\+flightNumber\+' created\.'/);
