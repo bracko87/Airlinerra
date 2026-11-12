@@ -240,6 +240,18 @@ export const SCHEDULE_SQL=Object.freeze({
     SELECT 1 FROM airlinerra_game.airline_flight_schedule_drafts_v1 s
     WHERE s.airline_id=p.airline_id AND s.flight_number=p.flight_number)
  RETURNING p.id::text AS "planId",p.flight_number AS "flightNumber"`,
+ savedCabinPackage:`SELECT EXISTS (
+  SELECT 1 FROM airlinerra_game.airlines a
+  JOIN airlinerra_game.airline_cabin_service_settings_v1 c
+   ON c.airline_id=a.id
+  WHERE a.id=$2::uuid AND a.owner_player_id=$1::uuid AND a.world_id=1
+   AND EXISTS (
+    SELECT 1 FROM jsonb_array_elements(
+     CASE WHEN jsonb_typeof(c.state->'packages')='array'
+      THEN c.state->'packages' ELSE '[]'::jsonb END
+    ) AS item WHERE item->>'id'=$3::text
+   )
+ ) AS "savedPackageExists"`,
  planSave:`INSERT INTO airlinerra_game.airline_route_planning_drafts_v1 AS p
  (world_id,airline_id,aircraft_inventory_id,flight_number,origin_airport_key,
  destination_airport_key,weekly_schedule,departure_stand_type,arrival_stand_type,
@@ -419,9 +431,22 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
       launchDelayDays:body.launchDelayDays??0}),
      body.referenceDepartureUtc??null,body.referenceArrivalUtc??null
     ]);
-    if(result.rowCount!==1||!result.rows[0]?.planId)
+    if(result.rowCount!==1||!result.rows[0]?.planId){
+     const packageId=body.service.cabinPackageId;
+     if(typeof packageId==='string'&&/^pkg-[1-9][0-9]{0,5}$/.test(packageId)){
+      const stored=await client.query(SCHEDULE_SQL.savedCabinPackage,[
+       userId,body.airlineId,packageId
+      ]);
+      if(stored.rowCount!==1||typeof stored.rows?.[0]?.savedPackageExists!=='boolean')
+       return respond(503,{error:'Cabin package verification unavailable'});
+      if(stored.rows[0].savedPackageExists===false)
+       return respond(409,{error:'ROUTE_PLANNING_REQUIREMENTS_NOT_MET',
+        reason:'CABIN_PACKAGE_NOT_SAVED',
+        message:'Save this custom package under Flight Services before creating the route.'});
+     }
      return respond(409,{error:'ROUTE_PLANNING_REQUIREMENTS_NOT_MET',
       reason:'AIRLINE_AIRCRAFT_AIRPORT_OR_FLIGHT_NUMBER_NOT_ELIGIBLE'});
+    }
     const saved=result.rows[0];
     return respond(200,{...saved,canActivateNormalFlight:false,
      slotsReserved:false,passengerBookingsCreated:false,ledgerPosted:false,
