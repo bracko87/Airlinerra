@@ -143,12 +143,13 @@ test('legacy workplans and preferences migrate only to empty owner record, with 
    return {kind,source:'supabase',operational:false,state,version}
   }
  };
- const writes=[];
+ const writes=[],removed=[];
  const session={getItem:()=>JSON.stringify({budget:{fuel:4000},
   routes:[{flightNumber:'PA400',schedule:[{day:0,time:'06:00'}]}],
-  airportOffices:[]}),setItem:()=>{writes.push('session')}};
+  airportOffices:[]}),setItem:()=>{writes.push('session')},
+  removeItem:key=>{removed.push('session:'+key)}};
  const local={getItem:()=>JSON.stringify({theme:'dark',hints:false}),
-  setItem:()=>{writes.push('local')}};
+  setItem:()=>{writes.push('local')},removeItem:key=>{removed.push('local:'+key)}};
  const store=createPlayerDraftStore({
   client,session,storage:local,identity:ownerId});
  assert.equal(await store.load(airlineId),true);
@@ -159,6 +160,7 @@ test('legacy workplans and preferences migrate only to empty owner record, with 
  assert.equal(store.snapshot('workplan').budget.fuel,4000);
  assert.equal(store.snapshot('workplan').ticketPrice.price,78);
  assert.deepEqual(writes,[]);
+ assert.equal(removed.length,2,'only confirmed legacy copies may be retired');
  assert.equal(remote.get('workplan').version,2);
 });
 test('existing authoritative data is never overwritten by stale browser drafts',async()=>{
