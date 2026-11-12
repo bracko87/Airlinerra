@@ -396,6 +396,13 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
  const renderCostBreakdown=()=>{
   const host=$('route-cost-breakdown');if(!host)return;
   host.replaceChildren();
+  // After a successful route save the form resets for the next route.
+  // Do not display a wall of missing costs against an empty form.
+  if(!displayedFuel&&!feeBaseline&&feeRequestStatus.startsWith('Choose ')){
+   const note=doc.createElement('p');note.className='hint';
+   note.textContent='Select an aircraft and two airports to see the next route estimate.';
+   host.append(note);return;
+  }
   const money=value=>typeof value==='number'&&Number.isFinite(value)?
    '$'+value.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):
    'Rate unavailable';
