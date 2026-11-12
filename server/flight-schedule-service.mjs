@@ -58,7 +58,7 @@ export function validWeeklyFlightSchedule(value){
 export function validateFlightSchedulePayload(body){
  if(!body||typeof body!=='object'||Array.isArray(body)||
     !uuid(body.airlineId)||typeof body.action!=='string')return false;
- if(body.action==='plan-save'){
+ if(body.action==='plan-save'||body.action==='operational-create'){
   if(!withinFields(body,PLAN_FIELDS)||!uuid(body.aircraftInventoryId)||
      !/^[A-Z0-9]{2}[0-9]{1,4}$/.test(body.flightNumber||'')||
      !AIRPORT.test(body.originAirportKey||'')||
@@ -176,6 +176,12 @@ export function validateFlightSchedulePayload(body){
  return Number.isFinite(delta)&&delta>0&&delta<=72*3600*1000;
 }
 export const SCHEDULE_SQL=Object.freeze({
+ operationalReadiness:`SELECT world_id,world_state,confirmed_game_date,
+  authoritative_clock_connected,clock_producer_enabled,
+  operational_certification_records,aircraft_operation_jobs,
+  verified_movement_records,automatic_flight_and_fuel_settlement_enabled
+  FROM airlinerra_game.section9_flight_engine_readiness_audit_v1
+  WHERE world_id=1`,
  bookingWindowPreview:SEVEN_DAY_WINDOW_SQL,
  owner:'SELECT id FROM airlinerra_game.airlines WHERE id=$1::uuid AND owner_player_id=$2::uuid AND world_id=1',
  feeAircraft:`SELECT i.configuration_id::bigint AS "configurationId",
@@ -420,6 +426,33 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
     return respond(200,{deleted:true,...result.rows[0],
      passengerBookingsChanged:false,airportSlotsChanged:false,ledgerPosted:false,
      message:'Inactive planning route deleted. No flight or commercial booking changed.'});
+   }
+   if(body.action==='operational-create'){
+    // Create route never silently saves a planning-only record.
+    // Owner-scoped, zero-write readiness check; no fabricated approvals.
+    const owner=await client.query(SCHEDULE_SQL.owner,[body.airlineId,userId]);
+    if(owner.rowCount!==1)return respond(403,{error:'Airline not owned by this account'});
+    const live=await client.query(SCHEDULE_SQL.operationalReadiness);
+    const state=live.rows?.[0];
+    if(live.rowCount!==1||!state)return respond(503,{
+     error:'OPERATIONAL_READINESS_UNAVAILABLE',routeCreated:false});
+    const missing=[];
+    if(state.world_state!=='active'||!state.authoritative_clock_connected||
+       !state.clock_producer_enabled)
+     missing.push('WORLD_CLOCK_NOT_READY');
+    // Schedule issuance, six independent verifiers, durable aircraft jobs,
+    // passenger sales and financial settlement must work as ONE certified
+    // atomic flow before this endpoint can ever report success.
+    missing.push('VERIFIED_FLIGHT_ACTIVATION_NOT_CONNECTED',
+     'TRUSTED_AIRCRAFT_EXECUTION_NOT_CONNECTED',
+     'SEVEN_DAY_PASSENGER_BOOKING_NOT_CONNECTED');
+    if(state.automatic_flight_and_fuel_settlement_enabled!==true)
+     missing.push('FLIGHT_FINANCIAL_SETTLEMENT_NOT_CONNECTED');
+    return respond(409,{error:'OPERATIONAL_ROUTE_CREATION_BLOCKED',
+     reason:'GAME_ENGINE_NOT_READY',routeCreated:false,scheduleId:null,
+     slotsReserved:false,activated:false,bookingEnabled:false,
+     passengerBookingsCreated:false,ledgerPosted:false,
+     blockingRequirements:missing,verifiedGameDate:state.confirmed_game_date||null});
    }
    if(body.action==='plan-save'){
     const result=await client.query(SCHEDULE_SQL.planSave,[
