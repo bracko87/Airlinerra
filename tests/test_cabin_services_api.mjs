@@ -98,3 +98,27 @@ test('protected build includes the cabin service module and no direct secret SQL
  assert.match(migration,/REVOKE ALL/);
  assert.doesNotMatch(manager,/service_role|sb_secret_|\.auth\.signUp/);
 });
+
+test('localhost cabin client authenticates and posts only through its same-origin protected proxy',async()=>{
+ const token='v'.repeat(48),calls=[];
+ const client=createCabinServicesClient({
+  auth:{getAccessToken:async()=>token},origin:'http://localhost:5188',
+  fetchImpl:async(url,options)=>{
+   calls.push({url,options});
+   return Response.json({state,version:0,source:'supabase',operational:false});
+  }
+ });
+ const read=await client.read(airlineId);
+ assert.equal(read.version,0);
+ assert.equal(calls.length,1);
+ assert.equal(calls[0].url,'http://localhost:5188'+CABIN_ROUTE);
+ assert.equal(calls[0].options.headers.authorization,'Bearer '+token);
+ assert.equal(calls[0].options.mode,'same-origin');
+ assert.equal(calls[0].options.credentials,'omit');
+ assert.throws(()=>createCabinServicesClient({
+  auth:{getAccessToken:async()=>token},origin:'http://127.0.0.1:5188'
+ }),/trusted-origin cabin client/);
+ assert.throws(()=>createCabinServicesClient({
+  auth:{getAccessToken:async()=>token},origin:'https://attacker.example'
+ }),/trusted-origin cabin client/);
+});
