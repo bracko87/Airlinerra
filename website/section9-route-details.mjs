@@ -3,6 +3,7 @@ import {createSection9CommercialPlanEditor} from './section9-commercial-plan-edi
 import {createSection9RotationReview} from './section9-rotation-review.mjs';
 import {createSection9RouteFinancePanel} from './section9-route-finance-panel.mjs';
 import {renderRouteMap,routeDistanceKm} from './route-map.mjs';
+import {planningClockEstimate} from './route-planning-times.mjs';
 const MONTHS=['January','February','March','April','May','June','July','August',
  'September','October','November','December'];
 const DAYS=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
@@ -100,18 +101,32 @@ export function createSection9RouteDetails({doc,host,getRoutes,getServer}={}){
   }
   schedulePanel.append(days);
   const schedInfo=doc.createElement('div');schedInfo.className='route-detail-fact-grid';
-  fact(doc,schedInfo,'Departure stand',route.operation?.departureStand||
+  fact(doc,schedInfo,'Planned departure stand',route.operation?.departureStand||
    'Initial stand not verified');
-  fact(doc,schedInfo,'Arrival stand',route.operation?.arrivalStand||'Unspecified');
+  fact(doc,schedInfo,'Planned arrival stand',route.operation?.arrivalStand||'Unspecified');
   fact(doc,schedInfo,'Target turnaround',Number.isInteger(route.operation?.turnaroundMinutes)?
    route.operation.turnaroundMinutes+' minutes':'Not configured');
-  fact(doc,schedInfo,'Estimated arrival',
-   route.referenceArrivalUtc?'UTC example only · '+route.referenceArrivalUtc:
-   'Pending verified aircraft performance');
-  fact(doc,schedInfo,'Next possible departure',
-   route.referenceArrivalUtc&&Number.isInteger(route.operation?.turnaroundMinutes)?
-    new Date(Date.parse(route.referenceArrivalUtc)+route.operation.turnaroundMinutes*60000).toISOString().slice(11,16)+' UTC (example)':
-    'Not calculated until arrival time is verified');
+  const estimate=planningClockEstimate(weekly,route.estimatedDurationMinutes,
+   route.operation?.turnaroundMinutes);
+  const firstEstimate=estimate?.sameDepartureTime?estimate.rows[0]:null;
+  const shift=offset=>offset?' (+'+offset+' day'+(offset>1?'s':'')+')':'';
+  if(route.referenceArrivalUtc){
+   const arrivedAt=Date.parse(route.referenceArrivalUtc);
+   fact(doc,schedInfo,'Reference arrival',
+    Number.isFinite(arrivedAt)?
+     new Date(arrivedAt).toISOString().slice(0,16).replace('T',' ')+' UTC':'—');
+  }else if(firstEstimate){
+   fact(doc,schedInfo,'Estimated flight time',
+    estimate.durationMinutes+' minutes · game model');
+   fact(doc,schedInfo,'Estimated arrival',
+    firstEstimate.arrivalClock+' UTC'+shift(firstEstimate.arrivalDayOffset));
+   fact(doc,schedInfo,'Ready after turnaround (estimate)',
+    firstEstimate.availableClock+' UTC'+shift(firstEstimate.availableDayOffset));
+   hint(doc,schedInfo,'These are planning estimates, not approved flight times or airport slots.');
+  }else{
+   hint(doc,schedInfo,
+    'This planning route has no saved flight-time estimate. Departure times are saved; arrival and next aircraft availability are not yet known.');
+  }
   fact(doc,schedInfo,'Airport slots','Not reserved for planning routes');
   schedulePanel.append(schedInfo);
   host.append(schedulePanel);
