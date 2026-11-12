@@ -30,3 +30,10 @@ Status: DESIGN ONLY. Not a live booking, cancellation, or finance engine. 2026-1
 - Game launch preference 0/3/7 is saved on route planning drafts only. It does not activate flights or sell seats.
 - Route Details can cancel local drafts and owner-verified server planning routes, only when no operational schedule is attached.
 - Actual bookings, dated flight cancellations, passenger rebooking, operational slot release, live engine and settlement are **not yet built**.
+
+
+## Implementation update — 12 November 2026
+- The protected airline flight-schedule API exposes a read-only, owner-scoped preview of seven upcoming **game calendar dates** for an operational schedule. It uses the authoritative World 1 game date, the origin airport's IANA timezone and DST validation. It reports **not saleable** and provides no invented booking counts.
+- Private tables `airlinerra_game.section9_dated_flight_occurrences_v1` and `airlinerra_game.section9_passenger_reservation_batches_v1` are installed as versioned storage foundations. The tables currently have zero records.
+- Both tables have row-level security enabled and direct `anon`, `authenticated` and `service_role` table privileges revoked. The first is constrained to zero booked seats, no ticket sales and zero earned revenue. The second permits only unissued reservation drafts, no payments and no earned revenue.
+- The game still reports `actualFlightBookingsEnabled: false`, `engineEventProducerConnected: false`, and no operational schedules or certifications. Do not start sales, create confirmed passengers or settle flight revenue until those are corrected and tested end to end.
