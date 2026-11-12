@@ -78,6 +78,12 @@ export function cleanCabinPackage(input){
   items:Object.fromEntries(CABIN_SERVICE_CATALOG.map(i=>[i.id,cleanItem(values[i.id],i.id)]))
  };
 }
+/** Only persisted packages may be offered to other game forms. */
+export function publishedCabinPackages(packages,savedIds){
+ if(!Array.isArray(packages)||!(savedIds instanceof Set))return [];
+ return structuredClone(packages.filter(p=>
+  p&&typeof p.id==='string'&&savedIds.has(p.id)));
+}
 export function initialCabinState(){
  return {version:1,packages:[createBasicCabinPackage()],assignments:{
   economy:'basic',premium:'basic',business:'basic',first:'basic'
@@ -550,7 +556,7 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
  updateData({connected:false,airline:null});
  return Object.freeze({
   updateData,
-  getPackages:()=>structuredClone(state.packages.filter(p=>savedPackageIds.has(p.id))),
+  getPackages:()=>publishedCabinPackages(state.packages,savedPackageIds),
   getAssignments:()=>({...state.assignments}),
    isReady:()=>Boolean(airlineId)&&!loading&&ready,
   destroy:()=>{host.removeEventListener('change',onChange);host.removeEventListener('click',onClick)}
