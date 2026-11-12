@@ -182,6 +182,27 @@ export const SCHEDULE_SQL=Object.freeze({
   verified_movement_records,automatic_flight_and_fuel_settlement_enabled
   FROM airlinerra_game.section9_flight_engine_readiness_audit_v1
   WHERE world_id=1`,
+ aircraftPrerequisites:`SELECT
+  f.fleet_status='in_service' AS "aircraftInService",
+  EXISTS(SELECT 1 FROM airlinerra_game.section9_aircraft_delivery_position_v1 d
+   WHERE d.aircraft_inventory_id=f.id AND d.airline_id=f.airline_id AND d.world_id=1)
+   AS "deliveryLocationVerified",
+  EXISTS(SELECT 1 FROM airlinerra_game.section9_aircraft_current_position_v1 pos
+   WHERE pos.aircraft_inventory_id=f.id AND pos.airline_id=f.airline_id
+    AND pos.world_id=1 AND pos.location_status='grounded'
+    AND pos.airport_key=$4::text) AS "atOrigin",
+  EXISTS(SELECT 1 FROM airlinerra_game.aircraft_fuel_planning_profiles_v1 fuel
+   WHERE fuel.configuration_id=f.configuration_id
+    AND fuel.approved_for_dispatch=true AND fuel.requires_further_evidence=false)
+    AS "fuelDispatchModelApproved",
+  EXISTS(SELECT 1 FROM airlinerra_game.aircraft_fuel_planning_profiles_v1 fuel
+   WHERE fuel.configuration_id=f.configuration_id
+    AND fuel.approved_for_accounting=true AND fuel.requires_further_evidence=false)
+    AS "fuelAccountingModelApproved"
+ FROM airlinerra_game.airline_aircraft_inventory f
+ JOIN airlinerra_game.airlines a ON a.id=f.airline_id AND a.world_id=1
+ WHERE f.id=$3::uuid AND f.airline_id=$2::uuid
+  AND a.owner_player_id=$1::uuid`,
  bookingWindowPreview:SEVEN_DAY_WINDOW_SQL,
  owner:'SELECT id FROM airlinerra_game.airlines WHERE id=$1::uuid AND owner_player_id=$2::uuid AND world_id=1',
  feeAircraft:`SELECT i.configuration_id::bigint AS "configurationId",
@@ -440,10 +461,25 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
     if(state.world_state!=='active'||!state.authoritative_clock_connected||
        !state.clock_producer_enabled)
      missing.push('WORLD_CLOCK_NOT_READY');
-    // Schedule issuance, six independent verifiers, durable aircraft jobs,
-    // passenger sales and financial settlement must work as ONE certified
-    // atomic flow before this endpoint can ever report success.
-    missing.push('VERIFIED_FLIGHT_ACTIVATION_NOT_CONNECTED',
+    const physical=await client.query(SCHEDULE_SQL.aircraftPrerequisites,[
+     userId,body.airlineId,body.aircraftInventoryId,body.originAirportKey
+    ]);
+    const aircraft=physical.rows?.[0];
+    if(physical.rowCount!==1||!aircraft){
+     missing.push('AIRCRAFT_NOT_IN_AIRLINE_FLEET');
+    }else{
+     if(aircraft.aircraftInService!==true)missing.push('AIRCRAFT_NOT_IN_SERVICE');
+     if(aircraft.deliveryLocationVerified!==true)
+      missing.push('AIRCRAFT_DELIVERY_LOCATION_NOT_VERIFIED');
+     if(aircraft.atOrigin!==true)missing.push('AIRCRAFT_NOT_VERIFIED_AT_ORIGIN');
+     if(aircraft.fuelDispatchModelApproved!==true)
+      missing.push('AIRCRAFT_FUEL_DISPATCH_MODEL_NOT_APPROVED');
+     if(aircraft.fuelAccountingModelApproved!==true)
+      missing.push('AIRCRAFT_FUEL_ACCOUNTING_MODEL_NOT_APPROVED');
+    }
+    // Crew is intentionally out of Phase 1. These are independent, real
+    // non-crew dependencies, not fictitious permits or release records.
+    missing.push('ATOMIC_SCHEDULE_AND_AIRPORT_SLOT_ACTIVATION_NOT_CONNECTED',
      'TRUSTED_AIRCRAFT_EXECUTION_NOT_CONNECTED',
      'SEVEN_DAY_PASSENGER_BOOKING_NOT_CONNECTED');
     if(state.automatic_flight_and_fuel_settlement_enabled!==true)
@@ -452,6 +488,7 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
      reason:'GAME_ENGINE_NOT_READY',routeCreated:false,scheduleId:null,
      slotsReserved:false,activated:false,bookingEnabled:false,
      passengerBookingsCreated:false,ledgerPosted:false,
+     crewRequired:false,crewCostsIncluded:false,
      blockingRequirements:missing,verifiedGameDate:state.confirmed_game_date||null});
    }
    if(body.action==='plan-save'){
