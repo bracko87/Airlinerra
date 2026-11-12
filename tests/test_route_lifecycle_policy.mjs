@@ -90,11 +90,28 @@ test('local route cancellation requires confirmation and blocks protected server
  assert.match(ops,/id="operations-route-cancel-open"/);
  assert.match(ops,/id="operations-route-cancel-confirm-button"/);
  assert.match(ops,/id="operations-route-cancel-dismiss"/);
- assert.match(ops,/route\.serverPlanningId\|\|route\.serverScheduleId/);
+ assert.match(ops,/if\(route\.serverScheduleId\)/);
+ assert.match(ops,/server\.scheduler\.planDelete/);
  assert.match(ops,/if\(!persist\(\)\)/);
  assert.match(ops,/airlinerra:route-draft-cancelled/);
  assert.match(schedule,/airlinerra:route-draft-cancelled/);
  assert.doesNotMatch(ops,/scheduler\.delete\(\{airlineId.*serverPlanningId/);
  assert.match(renderer,/flightNumber\+route,/);
  assert.doesNotMatch(renderer,/flightNumber\+route\+\(isBooked\?'':' · Planned'\)/);
+});
+
+test('owner-scoped inactive planning route cancellation rejects unauthorized or active schedule writes',async()=>{
+ const planId='55555555-5555-4555-8555-555555555555';
+ assert.equal(validateFlightSchedulePayload({action:'plan-delete',airlineId:A,planId}),true);
+ assert.equal(validateFlightSchedulePayload({action:'plan-delete',airlineId:A,planId:'not-uuid'}),false);
+ assert.equal(validateFlightSchedulePayload({action:'plan-delete',airlineId:A,planId,
+  releaseSlots:true}),false);
+ assert.match(SCHEDULE_SQL.planDelete,/a\.owner_player_id=\$1::uuid/);
+ assert.match(SCHEDULE_SQL.planDelete,/p\.slots_reserved=false AND p\.activated=false/);
+ assert.match(SCHEDULE_SQL.planDelete,/NOT EXISTS/);
+ assert.match(SCHEDULE_SQL.planDelete,/airline_flight_schedule_drafts_v1/);
+ const client=await read('../website/flight-schedule-client.mjs');
+ const api=await read('../server/flight-schedule-service.mjs');
+ assert.match(client,/planDelete:\(\{airlineId,planId\}\)/);
+ assert.match(api,/passengerBookingsChanged:false,airportSlotsChanged:false,ledgerPosted:false/);
 });
