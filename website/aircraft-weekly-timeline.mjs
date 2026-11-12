@@ -78,7 +78,7 @@ export function buildAircraftWeeklyTimeline({
  }
  if(events.length){
   const first=events[0],last=events.at(-1);
-  const earlierRouteExists=source.some(route=>route!==proposal&&
+  const earlierRouteExists=Boolean(proposal)&&source.some(route=>route!==proposal&&
    route?.aircraftId===aircraftId&&
    Array.isArray(route.schedule)&&route.schedule.length>0);
   if(earlierRouteExists&&last.toKey!==first.fromKey){
