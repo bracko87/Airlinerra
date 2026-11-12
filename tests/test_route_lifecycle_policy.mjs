@@ -92,7 +92,7 @@ test('local route cancellation requires confirmation and blocks protected server
  assert.match(ops,/id="operations-route-cancel-dismiss"/);
  assert.match(ops,/if\(route\.serverScheduleId\)/);
  assert.match(ops,/server\.scheduler\.planDelete/);
- assert.match(ops,/if\(!persist\(\)\)/);
+ assert.match(ops,/if\(!await persist\('routes','route'\)\)/);
  assert.match(ops,/airlinerra:route-draft-cancelled/);
  assert.match(schedule,/airlinerra:route-draft-cancelled/);
  assert.doesNotMatch(ops,/scheduler\.delete\(\{airlineId.*serverPlanningId/);
