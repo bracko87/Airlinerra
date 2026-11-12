@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {initialCabinState,createBasicCabinPackage,cleanCabinPackage,cleanCabinState} from '../website/cabin-services-manager.mjs';
+import {initialCabinState,createBasicCabinPackage,cleanCabinPackage,cleanCabinState,CABIN_DATA_SCHEMA_ID} from '../website/cabin-services-manager.mjs';
 import {createCabinServicesHandler,validCabinRequest,validCabinState,CABIN_SQL}
  from '../server/cabin-services-service.mjs';
 import {createCabinServicesClient} from '../website/cabin-services-client.mjs';
@@ -64,7 +64,7 @@ test('stale writes conflict, save never claims live financial effects',async()=>
 test('production proxy and browser client use the isolated secure endpoint',async()=>{
  let sent=null;
  const api=createProductionGameApi({fetchImpl:async(url,options)=>{
-  sent={url,options};return Response.json({state,version:0,source:'supabase',operational:false});
+  sent={url,options};return Response.json({state,version:0,source:'supabase',schemaId:CABIN_DATA_SCHEMA_ID,operational:false});
  }});
  const incoming=new Request('https://airlinerra.com'+CABIN_ROUTE,{
   method:'POST',headers:{authorization:'Bearer '+('a'.repeat(50)),
@@ -78,7 +78,7 @@ test('production proxy and browser client use the isolated secure endpoint',asyn
   origin:'https://airlinerra.com',fetchImpl:async(url,options)=>{
    assert.equal(url,'https://airlinerra.com'+CABIN_ROUTE);
    assert.equal(JSON.parse(options.body).airlineId,airlineId);
-   return Response.json({state,version:0,source:'supabase',operational:false});
+   return Response.json({state,version:0,source:'supabase',schemaId:CABIN_DATA_SCHEMA_ID,operational:false});
   }});
  assert.equal((await client.read(airlineId)).version,0);
 });
@@ -105,7 +105,7 @@ test('localhost cabin client authenticates and posts only through its same-origi
   auth:{getAccessToken:async()=>token},origin:'http://localhost:5188',
   fetchImpl:async(url,options)=>{
    calls.push({url,options});
-   return Response.json({state,version:0,source:'supabase',operational:false});
+   return Response.json({state,version:0,source:'supabase',schemaId:CABIN_DATA_SCHEMA_ID,operational:false});
   }
  });
  const read=await client.read(airlineId);
@@ -152,4 +152,23 @@ test('current Basic Flight Services and a newly created custom package are valid
  assert.deepEqual(body.state.packages.map(p=>p.name),['Basic Flight Services','New flight package']);
  assert.equal(body.ledgerPosted,false);
  assert.equal(calls.length,2);
+});
+
+test('browser rejects an older deployed cabin service model and explains why new package is unavailable',async()=>{
+ const basic=initialCabinState();
+ const client=createCabinServicesClient({
+  auth:{getAccessToken:async()=>('z'.repeat(48))},
+  origin:'https://airlinerra.com',
+  fetchImpl:async()=>Response.json({
+   state:basic,version:0,source:'supabase',
+   schemaId:'old-basic-cabin-service',operational:false
+  })
+ });
+ await assert.rejects(()=>client.read(airlineId),/CABIN_SCHEMA_MISMATCH/);
+ const manager=await readFile(new URL('../website/cabin-services-manager.mjs',import.meta.url),'utf8');
+ assert.match(manager,/if\(remote&&!ready&&!loading\)/);
+ assert.match(manager,/data\.cabinAction='retry'/);
+ assert.match(manager,/updateData\(lastData,\{force:true\}\)/);
+ assert.match(manager,/Saving is unavailable until Supabase confirms/);
+ assert.match(manager,/NOT SAVED — Supabase rejected the package/);
 });
