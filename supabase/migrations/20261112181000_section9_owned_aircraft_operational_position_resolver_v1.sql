@@ -11,20 +11,20 @@ LANGUAGE plpgsql STABLE SECURITY INVOKER
 SET search_path TO 'airlinerra_game','pg_catalog'
 AS $function$
 DECLARE
- f record; clk record; pos record; m record; starter jsonb;
+ aircraft_row record; clk record; pos record; movement_row record; starter jsonb;
 BEGIN
  IF p_player IS NULL OR p_airline IS NULL OR p_aircraft IS NULL OR
     p_game_date IS NULL OR p_game_date NOT BETWEEN DATE '2000-01-01' AND DATE '2199-12-31'
  THEN RAISE EXCEPTION USING ERRCODE='22023',
   MESSAGE='SECTION9_INVALID_AIRCRAFT_POSITION_REQUEST';
  END IF;
- SELECT f.id,f.fleet_status,f.registration,f.configuration_id,
+ SELECT fleet.id,fleet.fleet_status,fleet.registration,fleet.configuration_id,
         a.home_airport_key
- INTO f
- FROM airlinerra_game.airline_aircraft_inventory f
- JOIN airlinerra_game.airlines a ON a.id=f.airline_id
+ INTO aircraft_row
+ FROM airlinerra_game.airline_aircraft_inventory fleet
+ JOIN airlinerra_game.airlines a ON a.id=fleet.airline_id
   AND a.world_id=1 AND a.owner_player_id=p_player
- WHERE f.id=p_aircraft AND f.airline_id=p_airline;
+ WHERE fleet.id=p_aircraft AND fleet.airline_id=p_airline;
  IF NOT FOUND THEN RAISE EXCEPTION USING ERRCODE='42501',
   MESSAGE='SECTION9_POSITION_AIRCRAFT_NOT_OWNED';
  END IF;
@@ -43,7 +43,7 @@ BEGIN
   'atGroundAirport',false,'initialOnly',false,'readOnly',true,
   'movementRecorded',false,'flightActivated',false);
  END IF;
- IF f.fleet_status IS DISTINCT FROM 'in_service'
+ IF aircraft_row.fleet_status IS DISTINCT FROM 'in_service'
  THEN RETURN jsonb_build_object(
   'status','aircraft_not_in_service','verified',false,
   'atGroundAirport',false,'initialOnly',false,'readOnly',true,
@@ -55,28 +55,28 @@ BEGIN
  WHERE aircraft_inventory_id=p_aircraft AND airline_id=p_airline
   AND world_id=1;
  IF FOUND THEN
-  SELECT * INTO m
+  SELECT * INTO movement_row
   FROM airlinerra_game.section9_operated_flight_movements_v1
   WHERE engine_event_id=pos.last_engine_event_id
    AND aircraft_inventory_id=p_aircraft
    AND airline_id=p_airline AND world_id=1;
-  IF FOUND AND m.actual_event_utc=pos.last_event_utc
+  IF FOUND AND movement_row.actual_event_utc=pos.last_event_utc
    AND (
-    (pos.location_status='grounded' AND m.phase='arrived'
-     AND pos.airport_key=m.destination_airport_key
+    (pos.location_status='grounded' AND movement_row.phase='arrived'
+     AND pos.airport_key=movement_row.destination_airport_key
      AND pos.current_flight_occurrence_id IS NULL)
     OR
-    (pos.location_status='in_flight' AND m.phase='departed'
+    (pos.location_status='in_flight' AND movement_row.phase='departed'
      AND pos.airport_key IS NULL
-     AND pos.current_flight_occurrence_id=m.flight_occurrence_id)
+     AND pos.current_flight_occurrence_id=movement_row.flight_occurrence_id)
    )
    AND NOT EXISTS(
     SELECT 1 FROM airlinerra_game.section9_operated_flight_movements_v1 later
     WHERE later.aircraft_inventory_id=p_aircraft
      AND later.airline_id=p_airline AND later.world_id=1
-     AND (later.actual_event_utc>m.actual_event_utc OR
-      (later.actual_event_utc=m.actual_event_utc
-       AND later.engine_event_id<>m.engine_event_id)))
+     AND (later.actual_event_utc>movement_row.actual_event_utc OR
+      (later.actual_event_utc=movement_row.actual_event_utc
+       AND later.engine_event_id<>movement_row.engine_event_id)))
   THEN RETURN jsonb_build_object(
     'status','verified_operated_aircraft_position',
     'verified',true,'atGroundAirport',pos.location_status='grounded',
@@ -108,7 +108,7 @@ BEGIN
   p_airline,p_aircraft,p_game_date);
  IF starter->>'verified'='true'
   AND starter->>'initialPositionVerified'='true'
-  AND starter->>'airportKey'=f.home_airport_key
+  AND starter->>'airportKey'=aircraft_row.home_airport_key
   AND starter->>'aircraftInventoryId'=p_aircraft::text
   AND starter->>'sourceKind'='original_airline_starter_allocation'
   AND EXISTS (
