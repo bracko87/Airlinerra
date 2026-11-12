@@ -1,6 +1,6 @@
 /** Account-local airline operations planning.
  * No hiring, flight, price, hub or route mutation calls. Only authenticated
- * World 1 reads for approved airport lookup; drafts live in sessionStorage.
+ * World 1 reads for approved airport lookup; player workplans live in Supabase.
  */
 import {createAirportOffice} from './airline-airports-office.mjs';
 import {createSection9RouteDetails} from './section9-route-details.mjs';
@@ -486,8 +486,8 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
      if(confirmation)confirmation.hidden=true;
      renderRoutes();
      message('operations-route-detail-save-status',
-      serverPlanningId?'Server planning route cancelled, but its old browser copy could not be cleared. Refresh My Routes to reconcile.':
-      'Could not save cancellation to local storage. The local route was not removed.');
+      serverPlanningId?'Server planning route cancelled, but the stored workspace draft could not be updated. Refresh My Routes to reconcile.':
+      'NOT SAVED — Supabase could not confirm draft cancellation.');
      return;
     }
    }else if(!serverPlanningId){
@@ -515,7 +515,7 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
      state=previous;message('operations-routes-feedback','NOT SAVED — database did not confirm draft deletion.');return;
     }
     renderRoutes();
-   message('operations-routes-feedback','Route draft deleted from this browser tab.');return;
+   message('operations-routes-feedback','Route draft deleted from your Supabase workplan.');return;
   }
   if(target.id==='operations-route-publish-plan'){
    const i=details.index(),route=allRoutes()[i];
@@ -524,7 +524,7 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
       route.serverPlanningId||route.serverScheduleId)return;
    if(!route.aircraftId?.startsWith('owned:')||!route.operation||
       route.from?.key===route.to?.key){
-    message('operations-route-detail-save-status','This local draft is missing a verified aircraft, two airports, or operating options.');
+    message('operations-route-detail-save-status','This workplan draft is missing a verified aircraft, two airports, or operating options.');
     return;
    }
    target.disabled=true;
@@ -581,7 +581,7 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
     message('operations-hub-feedback','Choose an approved airport first.');return;
    }
    const hubs=Array.isArray(state.hubs)?state.hubs:[];
-   if(hubs.length>=10){message('operations-hub-feedback','Maximum 10 planned hubs per browser tab.');return;}
+   if(hubs.length>=10){message('operations-hub-feedback','Maximum 10 planned hubs per airline draft.');return;}
    const hub={key:select.value,name:opt.dataset.name,code:opt.dataset.code};
    if(hubs.some(x=>x.key===hub.key)||server.airline?.homeAirportKey===hub.key){
     message('operations-hub-feedback','That airport is already your home airport or planned hub.');return;
