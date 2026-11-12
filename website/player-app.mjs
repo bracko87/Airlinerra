@@ -7,6 +7,8 @@ import {openPrivateTesterDashboard,PrivateTesterAccessDenied} from './tester-das
 import {createPlayerReadClient,PLAYER_READ_API_ENABLED} from './player-read-client.mjs';
 import {createFlightScheduleClient} from './flight-schedule-client.mjs';
 import {createCabinServicesClient} from './cabin-services-client.mjs';
+import {createPlayerDraftsClient} from './player-drafts-client.mjs';
+import {createPlayerDraftStore} from './player-draft-store.mjs';
 import {createFleetAcquisitionClient} from './fleet-acquisition-client.mjs';
 import {createLocalOwnerFleetReaders} from './local-owner-fleet-reader.mjs';
 import {createAircraftLibrary} from './aircraft-library.mjs';
@@ -307,6 +309,7 @@ let hasRealAirline=false;
 let workspaceController=null;
 let operationsController=null;
 let currentAirline=null,manageLogoBlob=null,manageLogoPreviewUrl=null,manageLogoRequest=0;
+let ownerDraftStore=null,ownerDraftAirlineId=null;
 // Initial verified login is redirected; explicit later navigation is respected.
 let initialManagerLanding=false;
 let nextAirportOffset=null;
@@ -636,6 +639,24 @@ async function loadPlayerReadData({local=false}={}){
   if(!Array.isArray(data.worlds)||!Array.isArray(data.countries)||!Array.isArray(data.airlines))
    throw Error('Invalid game directory');
   const first=data.airlines[0];
+  // All signed-in game workplans and preferences use the owner database.
+  // Old browser session data is READ ONCE for safe migration, never newly saved.
+  let draftStore=null;
+  if(first?.id&&['https://airlinerra.com',LOCAL_REAL_AUTH_ORIGIN].includes(window.location.origin)){
+   const owner=await auth.getUser();
+   if(typeof owner?.id!=='string')throw Error('Verified owner identity required');
+   if(!ownerDraftStore||ownerDraftAirlineId!==first.id){
+    ownerDraftStore=createPlayerDraftStore({
+     client:createPlayerDraftsClient({auth,origin:window.location.origin}),
+     identity:owner.id,
+     session:(()=>{try{return window.sessionStorage}catch{return null}})(),
+     storage:(()=>{try{return window.localStorage}catch{return null}})()
+    });
+    ownerDraftAirlineId=first.id;
+    await ownerDraftStore.load(first.id);
+   }
+   draftStore=ownerDraftStore;
+  }
   currentAirline=first||null;
   hasRealAirline=Boolean(first?.name);
   if(safePlayerView(window.location.hash)==='licenses')
@@ -648,8 +669,9 @@ async function loadPlayerReadData({local=false}={}){
   catch{console.warn('Airlinerra secondary directory failed to display');}
   try{
     workspaceController?.updateData({connected:true,airline:first||null,worlds:data.worlds,
-     countries:data.countries,reader:playerData,scheduler,fleetClient,cabinServiceClient,aircraftMedia:auth});
-    operationsController?.updateData({connected:true,airline:first||null,worlds:data.worlds,countries:data.countries,reader:playerData,scheduler});
+     countries:data.countries,reader:playerData,scheduler,fleetClient,cabinServiceClient,aircraftMedia:auth,
+     playerDraftStore:draftStore});
+    operationsController?.updateData({connected:true,airline:first||null,worlds:data.worlds,countries:data.countries,reader:playerData,scheduler,playerDraftStore:draftStore});
   }
   catch{console.warn('Airlinerra secondary workspace failed to display');}
   if(first?.id)void loadManageAirlineLogo();
