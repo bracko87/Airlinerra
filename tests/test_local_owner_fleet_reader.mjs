@@ -190,3 +190,28 @@ test('localhost owner can save validated cabin packages to Supabase, not only br
  assert.match(server,/pathname==='\/api\/v1\/player\/cabin-services'\?16384:2048/);
  assert.match(app,/local&&window\.location\.origin===LOCAL_REAL_AUTH_ORIGIN/);
 });
+
+test('localhost route planner displays the precise Supabase 409 cause and preserves launch preference',async()=>{
+ const calls=[],local=createLocalOwnerFleetReaders({
+  auth:{getAccessToken:async()=>TOKEN},origin:LOCAL,
+  fetchImpl:async(url,options)=>{
+   const requestBody=JSON.parse(options.body);calls.push(requestBody);
+   return Response.json({error:'ROUTE_PLANNING_REQUIREMENTS_NOT_MET',
+    reason:'CABIN_PACKAGE_NOT_SAVED'},{status:409});
+  }
+ });
+ const draft={
+  airlineId:AIRLINE,aircraftInventoryId:AIRCRAFT,
+  flightNumber:'PA400',originAirportKey:'OURAIRPORTS:4610',
+  destinationAirportKey:'OURAIRPORTS:4615',
+  weeklySchedule:[{day:0,time:'06:00'}],
+  departureStand:'terminal',arrivalStand:'terminal',turnaroundMinutes:45,
+  fares:{economy:45,premium:null,business:null,first:null},
+  service:{onboard:'basic',baggage:'standard',cargo:'none',cabinPackageId:'pkg-1'},
+  launchDelayDays:3,referenceDepartureUtc:null,referenceArrivalUtc:null
+ };
+ await assert.rejects(()=>local.scheduler.planSave(draft),/SCHEDULE_CONFLICT_CABIN_PACKAGE_NOT_SAVED/);
+ assert.equal(calls.length,1);
+ assert.equal(calls[0].launchDelayDays,3);
+ assert.equal(allowedLocalOwnerRead(pathSchedule,calls[0]),true);
+});
