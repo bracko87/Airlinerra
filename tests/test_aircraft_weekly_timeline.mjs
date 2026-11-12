@@ -85,9 +85,11 @@ test('fictional Aleksandrovo LYAL is shown by airport identity rather than Nova 
 });
 
 
-test('one planned outbound each week still needs a return or repositioning for recurring service',()=>{
+test('viewing one saved outbound does not trigger next-booking return warning',()=>{
  const single=route('PA400',belgrade,tivat,0,'06:00');
- const result=check([single]);
+ const result=buildAircraftWeeklyTimeline({
+  aircraftId,routes:[single],proposal:null,homeAirportKey:belgrade.key
+ });
  assert.equal(result.errors.length,0);
- assert.ok(!result.warnings.some(w=>/return or repositioning flight/i));
+ assert.deepEqual(result.warnings.filter(w=>/return or repositioning flight/i.test(w)),[]);
 });
