@@ -13,6 +13,8 @@ export const NOISE_CURFEW_EDGE_URL='https://hwllkabgzaynalahvkpz.supabase.co/fun
 export const RESTRICTION_ROUTE='/api/v1/player/noise-curfew-check';
 export const SCHEDULE_ROUTE='/api/v1/player/flight-schedule-drafts';
 export const CABIN_ROUTE='/api/v1/player/cabin-services';
+export const PLAYER_DRAFTS_ROUTE='/api/v1/player/workspace-drafts';
+export const PLAYER_DRAFTS_EDGE_URL='https://hwllkabgzaynalahvkpz.supabase.co/functions/v1/airlinerra-player-workspace-drafts';
 export const CABIN_EDGE_URL='https://hwllkabgzaynalahvkpz.supabase.co/functions/v1/airlinerra-cabin-services';
 export const SCHEDULE_EDGE_URL='https://hwllkabgzaynalahvkpz.supabase.co/functions/v1/airlinerra-flight-schedule-drafts';
 export const FLEET_ROUTE='/api/v1/player/fleet-acquisition';
@@ -31,7 +33,7 @@ export function createProductionGameApi({origin=PRODUCTION_ORIGIN,fetchImpl=glob
   const url=new URL(request.url);
   if(url.origin!==PRODUCTION_ORIGIN||url.search||url.hash)return fail(403,'Forbidden');
   if(!CANONICAL_GAME_API_PATHS.includes(url.pathname)&&
-       ![RESTRICTION_ROUTE,SCHEDULE_ROUTE,CABIN_ROUTE,FLEET_ROUTE,GAME_PERMISSION_ROUTE].includes(url.pathname))return fail(404,'Not found');
+       ![RESTRICTION_ROUTE,SCHEDULE_ROUTE,CABIN_ROUTE,PLAYER_DRAFTS_ROUTE,FLEET_ROUTE,GAME_PERMISSION_ROUTE].includes(url.pathname))return fail(404,'Not found');
   const isReadiness=url.pathname==='/api/v1/registration/readiness';
   if(request.method!==(isReadiness?'GET':'POST'))return fail(405,'Method not allowed');
   const userBearer=request.headers.get('authorization')||'';
@@ -42,7 +44,7 @@ export function createProductionGameApi({origin=PRODUCTION_ORIGIN,fetchImpl=glob
   if(!isReadiness){
    try{
     body=await request.text();
-    if(new TextEncoder().encode(body).byteLength>(url.pathname===CABIN_ROUTE?16384:2048))return fail(413,'Request too large');
+    if(new TextEncoder().encode(body).byteLength>(url.pathname===PLAYER_DRAFTS_ROUTE?32768:url.pathname===CABIN_ROUTE?16384:2048))return fail(413,'Request too large');
    }catch{return fail(400,'Invalid request body')}
   }
   try{
@@ -58,6 +60,7 @@ export function createProductionGameApi({origin=PRODUCTION_ORIGIN,fetchImpl=glob
      url.pathname===RESTRICTION_ROUTE?NOISE_CURFEW_EDGE_URL:
       url.pathname===SCHEDULE_ROUTE?SCHEDULE_EDGE_URL:
        url.pathname===CABIN_ROUTE?CABIN_EDGE_URL:
+       url.pathname===PLAYER_DRAFTS_ROUTE?PLAYER_DRAFTS_EDGE_URL:
       url.pathname===FLEET_ROUTE?FLEET_EDGE_URL:
       url.pathname===GAME_PERMISSION_ROUTE?GAME_PERMISSION_EDGE_URL:EDGE_FUNCTION_URL,{
     method:request.method,headers,body,cache:'no-store',redirect:'error',
