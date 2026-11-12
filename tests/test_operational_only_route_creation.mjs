@@ -106,12 +106,14 @@ test('unowned airline or invalid auth never reveals readiness and writes nothing
 });
 test('production and localhost route creator send identical strict operational-only API commands',async()=>{
  let production,local;
+ const blockers=['AIRCRAFT_DELIVERY_LOCATION_NOT_VERIFIED',
+  'AIRCRAFT_FUEL_DISPATCH_MODEL_NOT_APPROVED','SEVEN_DAY_PASSENGER_BOOKING_NOT_CONNECTED'];
  const client=createFlightScheduleClient({
   origin:'https://airlinerra.com',auth:{getAccessToken:async()=>TOKEN},
   fetchImpl:async(_url,opts)=>{
    production=JSON.parse(opts.body);
    return Response.json({error:'OPERATIONAL_ROUTE_CREATION_BLOCKED',
-    reason:'GAME_ENGINE_NOT_READY'},{status:409});
+    reason:'GAME_ENGINE_NOT_READY',blockingRequirements:blockers},{status:409});
   }
  });
  const preview=createLocalOwnerFleetReaders({
@@ -119,12 +121,19 @@ test('production and localhost route creator send identical strict operational-o
   fetchImpl:async(_url,opts)=>{
    local=JSON.parse(opts.body);
    return Response.json({error:'OPERATIONAL_ROUTE_CREATION_BLOCKED',
-    reason:'GAME_ENGINE_NOT_READY'},{status:409});
+    reason:'GAME_ENGINE_NOT_READY',blockingRequirements:blockers},{status:409});
   }
  });
- await assert.rejects(()=>client.operationalCreate(args),/SCHEDULE_CONFLICT_GAME_ENGINE_NOT_READY/);
- await assert.rejects(()=>preview.scheduler.operationalCreate(args),
-  /SCHEDULE_CONFLICT_GAME_ENGINE_NOT_READY/);
+ await assert.rejects(()=>client.operationalCreate(args),error=>{
+  assert.match(error.message,/SCHEDULE_CONFLICT_GAME_ENGINE_NOT_READY/);
+  assert.deepEqual(error.operationalBlockers,blockers);
+  return true;
+ });
+ await assert.rejects(()=>preview.scheduler.operationalCreate(args),error=>{
+  assert.match(error.message,/SCHEDULE_CONFLICT_GAME_ENGINE_NOT_READY/);
+  assert.deepEqual(error.operationalBlockers,blockers);
+  return true;
+ });
  assert.deepEqual(production,payload);
  assert.deepEqual(local,payload);
  assert.equal(allowedLocalOwnerRead(FLIGHT_SCHEDULE_API_ROUTE,payload),true);
@@ -154,7 +163,9 @@ test('route creation UI no longer invokes planning-only save or claims unapprove
  assert.match(ui,/result\?\.routeCreated!==true/);
  assert.match(ui,/result\.activated!==true/);
  assert.match(ui,/result\.bookingEnabled!==true/);
- assert.match(ui,/NOT CREATED — flight activation/);
+ assert.match(ui,/NOT CREATED — automatic flight activation/);
+ assert.match(ui,/AIRCRAFT_DELIVERY_LOCATION_NOT_VERIFIED/);
+ assert.doesNotMatch(ui,/CREW_ASSIGNMENTS_INCOMPLETE/);
  assert.match(ui,/No planning-only route was saved/);
  assert.match(ui,/const text='Route '\+flightNumber\+' created\.'/);
 });
