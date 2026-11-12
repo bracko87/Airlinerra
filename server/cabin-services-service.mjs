@@ -1,5 +1,5 @@
 /** Verified owner API for cabin package designs. Does not operate flights or money. */
-import {cleanCabinState,initialCabinState} from '../website/cabin-services-manager.mjs';
+import {cleanCabinState,initialCabinState,CABIN_DATA_SCHEMA_ID} from '../website/cabin-services-manager.mjs';
 export const CABIN_ROUTE='/api/v1/player/cabin-services';
 const TOKEN=/^Bearer ([A-Za-z0-9._~-]{16,8192})$/u;
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
@@ -63,13 +63,13 @@ export function createCabinServicesHandler({verifyUserToken,database}={}){
    if(body.action==='read'){
     const rows=await db.query(CABIN_SQL.read,[body.airlineId]),first=rows.rows[0];
     return response(200,{state:first?.state||initialCabinState(),version:first?.version||0,
-      source:'supabase',operational:false,updatedAt:first?.updatedAt||null});
+      source:'supabase',schemaId:CABIN_DATA_SCHEMA_ID,operational:false,updatedAt:first?.updatedAt||null});
    }
    const rows=await db.query(CABIN_SQL.save,[body.airlineId,userId,JSON.stringify(body.state),body.expectedVersion]);
    if(rows.rowCount!==1)return response(409,{error:'CABIN_VERSION_CONFLICT'});
    const first=rows.rows[0];
    return response(200,{state:first.state,version:first.version,updatedAt:first.updatedAt,
-      source:'supabase',operational:false,ledgerPosted:false,flightsChanged:false});
+      source:'supabase',schemaId:CABIN_DATA_SCHEMA_ID,operational:false,ledgerPosted:false,flightsChanged:false});
   }catch{return response(503,{error:'Cabin storage temporarily unavailable'});}
   finally{try{db?.release()}catch{}}
  };
