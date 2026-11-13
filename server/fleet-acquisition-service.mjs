@@ -298,10 +298,21 @@ export const FLEET_SQL=Object.freeze({
   "FROM airlinerra_game.cabin_seat_types_v1 "+
   "ORDER BY CASE cabin_class WHEN 'economy' THEN 1 WHEN 'premium' THEN 2 "+
   "WHEN 'business' THEN 3 ELSE 4 END,equivalent_economy_units,seat_code",
- cabinStandards:"SELECT configuration_id::int AS \"configurationId\", "+
-  "use_type AS \"useType\",reference_seat_units::text AS \"referenceUnits\", "+
-  "standard_economy_seats AS \"economy\" FROM airlinerra_game.cabin_model_standard_v1 "+
-  "ORDER BY configuration_id LIMIT 400",
+ cabinStandards:"SELECT s.configuration_id::int AS \"configurationId\", "+
+  "s.use_type AS \"useType\",s.reference_seat_units::text AS \"referenceUnits\", "+
+  "s.standard_economy_seats AS \"economy\", "+
+  "f.economy AS \"factoryEconomy\",f.premium AS \"factoryPremium\", "+
+  "f.business AS \"factoryBusiness\",f.first AS \"factoryFirst\", "+
+  "f.economy_type AS \"factoryEconomyType\", "+
+  "f.premium_type AS \"factoryPremiumType\", "+
+  "f.business_type AS \"factoryBusinessType\", "+
+  "f.first_type AS \"factoryFirstType\", "+
+  "f.extra_legroom_cm::text AS \"factoryExtraLegroomCm\", "+
+  "f.profile_tier AS \"factoryProfileTier\",f.space_used_pct::text AS \"factorySpacePct\" "+
+  "FROM airlinerra_game.cabin_model_standard_v1 s "+
+  "LEFT JOIN airlinerra_game.cabin_model_factory_layout_v2 f "+
+  "ON f.configuration_id=s.configuration_id "+
+  "ORDER BY s.configuration_id LIMIT 400",
  cabinGeometry:"SELECT configuration_id::int AS \"configurationId\", "+
   "to_jsonb(economy_columns) AS \"economyColumns\", "+
   "to_jsonb(premium_columns) AS \"premiumColumns\", "+
