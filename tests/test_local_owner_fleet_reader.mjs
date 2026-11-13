@@ -215,3 +215,72 @@ test('localhost route planner displays the precise Supabase 409 cause and preser
  assert.equal(calls[0].launchDelayDays,3);
  assert.equal(allowedLocalOwnerRead(pathSchedule,calls[0]),true);
 });
+
+
+test('localhost used-aircraft profile opens from a signed-in auction listing without enabling purchases',async()=>{
+ const LISTING='fab819e6-cd24-4e50-af80-2745b29e4031';
+ const detail={action:'used-detail',airlineId:AIRLINE,listingId:LISTING};
+ const invalid=[
+  {...detail,listingId:'not-an-aircraft'},
+  {...detail,airlineId:'not-an-airline'},
+  {...detail,playerId:'override'},
+  {...detail,priceUsd:0},
+  {...detail,action:'bid-used'},
+  {...detail,action:'acquire'}
+ ];
+ assert.equal(allowedLocalOwnerRead(pathFleet,detail),true,
+  'single-aircraft detail is a permitted owner-verified local read');
+ for(const payload of invalid)
+  assert.equal(allowedLocalOwnerRead(pathFleet,payload),false,
+   'invalid or write-capable request is blocked');
+
+ const forwarded=[];
+ const handler=createLiveReadOnlyPreviewHandler({fetchImpl:async(url,opts)=>{
+  forwarded.push({url,opts});
+  return Response.json({airlineId:AIRLINE,readOnly:true,marketOpen:false,
+   offer:{listingId:LISTING,manufacturer:'Airbus',model:'A300-600F',
+    useType:'cargo',conditionPct:'81',manufactureYear:2002,
+    openingBidUsd:'21030000',rangeKm:'7500',cabinSnapshot:null}});
+ }});
+ const response=await handler(request(pathFleet,detail));
+ assert.equal(response.status,200);
+ assert.equal((await response.json()).offer.listingId,LISTING);
+ assert.equal(forwarded.length,1);
+ assert.equal(forwarded[0].url,
+  'https://hwllkabgzaynalahvkpz.supabase.co/functions/v1/airlinerra-fleet-acquisition');
+ assert.equal(forwarded[0].opts.headers['x-airlinerra-route'],pathFleet);
+ assert.equal(forwarded[0].opts.headers.authorization,'Bearer '+TOKEN);
+ assert.equal(forwarded[0].opts.headers.origin,'https://airlinerra.com');
+ assert.equal((await handler(request(pathFleet,{...detail,action:'bid-used'}))).status,403);
+ assert.equal(forwarded.length,1,'no invalid write reaches the protected service');
+
+ const outgoing=[];
+ const local=createLocalOwnerFleetReaders({auth:{getAccessToken:async()=>TOKEN},
+  origin:LOCAL,fetchImpl:async(url,opts)=>{
+   outgoing.push({url,payload:JSON.parse(opts.body),auth:opts.headers.authorization});
+   return Response.json({airlineId:AIRLINE,readOnly:true,
+    offer:{listingId:LISTING,model:'A300-600F'}});
+  }});
+ const viewed=await local.fleetClient.usedDetail({airlineId:AIRLINE,listingId:LISTING});
+ assert.equal(viewed.readOnly,true);
+ assert.equal(viewed.offer.listingId,LISTING);
+ assert.deepEqual(outgoing.map(x=>x.payload),[detail]);
+ assert.equal(outgoing[0].url,LOCAL+pathFleet);
+ assert.equal(outgoing[0].auth,'Bearer '+TOKEN);
+ assert.equal(local.fleetClient.bidUsed,undefined);
+ assert.equal(local.fleetClient.acquire,undefined);
+});
+
+test('local profile disconnection message distinguishes missing reader from expired login',async()=>{
+ const [workspace,source,gateway]=await Promise.all([
+  readFile(new URL('../website/airline-workspace.mjs',import.meta.url),'utf8'),
+  readFile(new URL('../website/local-owner-fleet-reader.mjs',import.meta.url),'utf8'),
+  readFile(new URL('../website/dev-scripts/real-player-read-gateway.mjs',import.meta.url),'utf8')
+ ]);
+ assert.match(workspace,/Individual aircraft details are not connected in this version/);
+ assert.match(workspace,/Your airline data is unavailable/);
+ assert.doesNotMatch(workspace,/Sign in to a verified airline to view this aircraft/);
+ assert.match(source,/usedDetail:.*action:'used-detail'/);
+ assert.match(gateway,/\['list-used','used-detail'\]/);
+ assert.doesNotMatch(gateway,/\['list-used','used-detail','bid-used'\]/);
+});
