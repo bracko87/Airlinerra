@@ -120,3 +120,41 @@ test('blocked route response carries read-only airport evidence through client i
  assert.match(planner,/aircraft noise certificate/);
  assert.match(planner,/NOT CREATED/);
 });
+
+
+test('preliminary game suitability never acts as operational flight clearance',async()=>{
+ const sql=await read('supabase/migrations/20261113210000_section9_shared_game_model_preliminary_route_suitability_v1.sql');
+ assert.match(sql,/'gameModelPreliminarySuitable'/);
+ assert.match(sql,/'gameModelEvidenceType','GAME_ESTIMATE_NOT_OFFICIAL_CLEARANCE'/);
+ assert.match(sql,/'gameModelChecks'/);
+ assert.match(sql,/'gameModelFlightActivated',false/);
+ assert.match(sql,/'flightActivated',false/);
+ assert.match(sql,/'airportSlotsReserved',false/);
+ assert.match(sql,/'operatorLicenceOperationallyVerified',false/);
+ assert.match(sql,/'operationallyApproved',false/);
+ assert.doesNotMatch(sql,/\bINSERT INTO\s+airlinerra_game\./i);
+ assert.doesNotMatch(sql,/\bUPDATE\s+airlinerra_game\./i);
+});
+test('game permission fee draft is worldwide but applications cannot issue or charge',async()=>{
+ const sql=await read('supabase/migrations/20261113211000_section9_global_game_licence_fee_policy_draft_v1.sql');
+ for(const code of ['AIR_OPERATOR_CERTIFICATE','DOMESTIC_TRAFFIC','THIRD_FOURTH_FREEDOM'])
+  assert.match(sql,new RegExp(code));
+ assert.match(sql,/enabled_in_game=false/);
+ assert.match(sql,/release_enabled,validity_game_days/);
+ assert.match(sql,/false,365,1/);
+ assert.match(sql,/ON CONFLICT\(permission_code\) DO NOTHING/);
+ assert.doesNotMatch(sql,/SET\s+enabled_in_game\s*=\s*true/i);
+ assert.doesNotMatch(sql,/\bINSERT INTO\s+airlinerra_game\.airline_ledger/i);
+});
+test('UI carries model estimate but keeps operational route creation blocked',async()=>{
+ const server=await read('server/flight-schedule-service.mjs');
+ const client=await read('website/flight-schedule-client.mjs');
+ const planner=await read('website/route-planner.mjs');
+ assert.match(server,/gameModelPreliminarySuitable:/);
+ assert.match(server,/gameModelEvidenceType:'GAME_ESTIMATE_NOT_OFFICIAL_CLEARANCE'/);
+ assert.match(server,/routeCreated:false/);
+ assert.match(client,/conflict\.gameModelPreliminarySuitable=reason\.gameModelPreliminarySuitable/);
+ assert.match(planner,/error\?\.gameModelPreliminarySuitable===true/);
+ assert.match(planner,/game estimate, not an operating clearance/);
+ assert.match(planner,/NOT CREATED/);
+});
