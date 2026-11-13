@@ -260,6 +260,15 @@ export function createAircraftLibrary({doc,getReader}={}){
  let lastSelectedAircraftId=null;
  const warmPictures=new Map();
  const cabinViewer=createReadonlyCabinViewer({doc});
+ const cabinNavButton=$('library-profile-cabin-button');
+ if(!cabinNavButton)throw Error('Aircraft profile cabin navigation button missing');
+ cabinNavButton.addEventListener('click',()=>{
+  const a=aircraft?.find(x=>x.id===lastSelectedAircraftId);
+  if(!a||a.useType==='cargo'||!a.cabinDefault)return;
+  cabinViewer.show({title:aircraftCatalogName(a),useType:a.useType,
+   cabin:a.cabinDefault,referenceUnits:a.cabinDefault.referenceUnits,
+   geometry:a.cabinDefault.geometry,origin:'model_default'});
+ });
  function warmAircraftPhoto(a){
   const url=aircraftImagePath(a);
   if(!url||warmPictures.has(url))return;
@@ -325,17 +334,8 @@ export function createAircraftLibrary({doc,getReader}={}){
   title.id='aircraft-library-profile-title';
   heading.append(title);
   header.append(heading);
-  if(a.useType!=='cargo'&&a.cabinDefault?.economy!==null&&
-     Number.isInteger(a.cabinDefault?.economy)){
-   const cabinButton=element('button','secondary library-cabin-view','View cabin configuration');
-   cabinButton.type='button';
-   cabinButton.addEventListener('click',()=>cabinViewer.show({
-    title:aircraftCatalogName(a),useType:a.useType,
-    cabin:a.cabinDefault,referenceUnits:a.cabinDefault.referenceUnits,
-    geometry:a.cabinDefault.geometry,origin:'model_default'
-   }));
-   header.append(cabinButton);
-  }
+  cabinNavButton.hidden=a.useType==='cargo'||!a.cabinDefault||
+   !Number.isInteger(a.cabinDefault.economy);
   const hero=element('div','library-profile-hero');
   const image=element('div','library-profile-image');
   const path=aircraftImagePath(a);
