@@ -22,6 +22,13 @@ export function createFlightScheduleClient({auth,origin,fetchImpl=(...args)=>fet
    const label=typeof reason.reason==='string'?reason.reason:
     typeof reason.error==='string'?reason.error:'SCHEDULE_RESTRICTION_BLOCKED';
    const conflict=Error('SCHEDULE_CONFLICT_'+label.replace(/[^A-Z0-9_]/gi,'_').slice(0,120));
+   if(payload.action==='operational-roundtrip-create'&&Array.isArray(reason.blockers)){
+    conflict.operationalBlockers=reason.blockers.filter(x=>
+     typeof x==='string'&&/^[A-Z][A-Z0-9_]{3,100}$/.test(x)).slice(0,16);
+    conflict.roundtripModelPassed=reason.roundtripPreview?.readOnly===true&&
+      reason.roundtripPreview?.gameRoundtripModelSuitable===true;
+    conflict.isAtomicRoundtrip=true;
+   }
    if(payload.action==='operational-create'&&Array.isArray(reason.blockingRequirements))
     conflict.operationalBlockers=reason.blockingRequirements.filter(x=>
       typeof x==='string'&&/^[A-Z][A-Z0-9_]{3,100}$/.test(x)).slice(0,16);
@@ -114,6 +121,16 @@ export function createFlightScheduleClient({auth,origin,fetchImpl=(...args)=>fet
     post({action:'slot-check',airlineId,aircraftInventoryId,originAirportKey,
      destinationAirportKey,referenceDepartureUtc,referenceArrivalUtc,weeklySchedule,
      departureStand,arrivalStand,...(existingId?{existingId}:{})}),
+  operationalRoundtripCreate:({airlineId,aircraftInventoryId,outboundFlightNumber,
+   returnFlightNumber,originAirportKey,destinationAirportKey,
+   referenceDepartureUtc,referenceArrivalUtc,returnDepartureUtc,returnArrivalUtc,
+   weeklySchedule,returnWeeklySchedule,departureStand='terminal',arrivalStand='terminal',
+   returnDepartureStand='terminal',returnArrivalStand='terminal',turnaroundMinutes})=>
+    post({action:'operational-roundtrip-create',airlineId,aircraftInventoryId,
+     outboundFlightNumber,returnFlightNumber,originAirportKey,destinationAirportKey,
+     referenceDepartureUtc,referenceArrivalUtc,returnDepartureUtc,returnArrivalUtc,
+     weeklySchedule,returnWeeklySchedule,departureStand,arrivalStand,
+     returnDepartureStand,returnArrivalStand,turnaroundMinutes}),
   roundtripPreview:({airlineId,aircraftInventoryId,originAirportKey,destinationAirportKey,
    referenceDepartureUtc,referenceArrivalUtc,returnDepartureUtc,returnArrivalUtc,
    weeklySchedule,returnWeeklySchedule,departureStand='terminal',arrivalStand='terminal',
