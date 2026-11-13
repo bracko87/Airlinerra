@@ -1887,7 +1887,9 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
     reason.includes('SCHEDULE_CONFLICT')?
      'NOT CREATED — the aircraft, airport slots or flight schedule failed verification.':
      'NOT CREATED — an operational flight could not be verified. No route was saved.';
-   message('route-plan-status',statusText+details);
+   const gameOnlyNote=error?.gameModelPreliminarySuitable===true?
+    ' The route passes preliminary GAME runway, restriction and slot-capacity checks. This is a game estimate, not an operating clearance.':'';
+   message('route-plan-status',statusText+details+gameOnlyNote);
    return;
   }
   const copiedToDrafts=await draftWrite('routes',[...filtered,draft]);
