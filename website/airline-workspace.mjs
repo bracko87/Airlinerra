@@ -203,7 +203,7 @@ const pages=Object.freeze({
 </section>
 <section id="fleet-game-maintenance-jobs" class="fleet-maintenance-preview" aria-label="Book in-game maintenance" hidden>
  <h3>In-game maintenance bookings</h3>
- <p class="hint">Choose a game maintenance check. A booked check reserves this aircraft until service finishes. Game fees are charged once when the check completes. If there is not enough money, the aircraft remains grounded. Booking never activates a flight.</p>
+ <p class="hint">Choose a game maintenance check. A booked check reserves this aircraft until service finishes. The provisional game fee is charged once when the check completes. If there is not enough money, the aircraft remains grounded. Booking never activates a flight.</p>
  <div id="fleet-game-maintenance-checks" class="workspace-actions" role="group" aria-label="Maintenance type">
   <button type="button" class="secondary" data-game-maint-check="daily" aria-pressed="true">Daily</button>
   <button type="button" class="secondary" data-game-maint-check="weekly" aria-pressed="false">Weekly</button>
