@@ -210,3 +210,67 @@ test('owned-aircraft details import the defined five-phase fuel estimator and ca
  assert.match(workspace,/if\(!result\|\|!Array\.isArray\(result\.fleet\)/,
   'owner-scoped fleet responses are validated before rendering');
 });
+
+
+test('all four aircraft library profile actions share one top navigation row',async()=>{
+ const [html,js,css]=await Promise.all([
+  read('../website/private-player-app.html'),
+  read('../website/aircraft-library.mjs'),
+  read('../website/aircraft-library.css')
+ ]);
+ const start=html.indexOf('<div class="library-profile-actions"');
+ const end=html.indexOf('</div>',start);
+ const actions=html.slice(start,end);
+ assert.ok(start>=0);
+ assert.match(actions,/Lease Airplane/);
+ assert.match(actions,/Purchase Airplane/);
+ assert.match(actions,/Compare Airplane/);
+ assert.match(actions,/id="library-profile-cabin-button"/);
+ assert.match(js,/cabinNavButton\.hidden=/);
+ assert.doesNotMatch(js,/header\.append\(cabinButton\)/);
+ assert.match(css,/min-width:174px;min-height:38px/);
+ assert.match(css,/library-profile-actions.*button\.library-profile-action/);
+});
+
+test('used airframes open refreshed individual read-only pages, including cargo',async()=>{
+ const [workspace,client,profile,model,css,overlay]=await Promise.all([
+  read('../website/airline-workspace.mjs'),
+  read('../website/fleet-acquisition-client.mjs'),
+  read('../website/used-aircraft-profile.mjs'),
+  read('../website/player-app-model.mjs'),
+  read('../website/player-app.css'),
+  read('../website/dev-scripts/invited-overlay.mjs')
+ ]);
+ assert.match(workspace,/used-aircraft-profile/);
+ assert.match(workspace,/const view=doc\.createElement\('button'\)/);
+ assert.match(workspace,/view\.dataset\.usedProfileOpen=aircraft\.listingId/);
+ assert.match(workspace,/client\.usedDetail\(\{airlineId,listingId:id\}\)/);
+ assert.match(workspace,/readOnly!==true/);
+ assert.match(workspace,/selectedUsedProfileId!==id/);
+ assert.match(workspace,/onCabin:offer=>void openReadonlyCabin\('used',offer\)/);
+ assert.match(client,/usedDetail:.*post\(\{action:'used-detail'/);
+ assert.match(profile,/offer\.listingId/);
+ assert.match(profile,/offer\.conditionPct/);
+ assert.match(profile,/offer\.cabinSnapshot/);
+ assert.match(profile,/offer\.sourceKind/);
+ assert.match(profile,/offer\.nextCCheckInHours/);
+ assert.match(profile,/offer\.rangeKm/);
+ assert.doesNotMatch(profile,/\.innerHTML|bidUsed\(|acquire\(/);
+ assert.match(model,/USED_AIRCRAFT_ROUTE/);
+ assert.match(css,/\.used-aircraft-profile-groups/);
+ assert.match(overlay,/'used-aircraft-profile\.mjs'/);
+ const mod=await import('../website/player-app-model.mjs');
+ const id='11111111-1111-4111-8111-111111111111';
+ assert.equal(mod.safePlayerView('#aircraft-market/'+id),'aircraft-market');
+ assert.equal(mod.playerViewUrl('aircraft-market/'+id),'/player.html#aircraft-market/'+id);
+});
+
+test('management-page state messages have no decorative orange vertical bars',async()=>{
+ const css=await read('../website/player-app.css');
+ const info=css.match(/\.workspace-state\{[\s\S]*?\}/)?.[0]||'';
+ assert.match(info,/border:1px/);
+ assert.doesNotMatch(info,/border-left/);
+ const notice=css.match(/\.notice\{[^}]*\}/)?.[0]||'';
+ assert.doesNotMatch(notice,/border-left/);
+ assert.match(css,/#workspace-aircraft-market>.workspace-panel>h2\{display:none\}/);
+});
