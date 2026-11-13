@@ -42,7 +42,7 @@ AS $function$
 DECLARE
  s record; guard record; execution_guard record; readiness record;
  verified_date date;
- seat record; proof jsonb; capacity record;
+ min_ground_minutes integer; proof jsonb; capacity record;
  existing record; inserted integer;
 BEGIN
  IF current_user IS DISTINCT FROM 'postgres' THEN
@@ -101,6 +101,13 @@ BEGIN
  OR s.commercial_version IS NULL THEN
   RETURN jsonb_build_object('status','blocked_unverified_schedule_capacity_or_fare',
    'opened',false,'bookingsCreated',false,'ledgerPosted',false);END IF;
+ SELECT t.min_ground_minutes INTO min_ground_minutes
+ FROM airlinerra_game.section9_game_turnaround_policy_v1 t
+ WHERE t.role='passenger' AND t.max_seats>=s.passenger_seats
+ ORDER BY t.max_seats LIMIT 1;
+ IF min_ground_minutes IS NULL OR min_ground_minutes NOT BETWEEN 15 AND 360
+ THEN RETURN jsonb_build_object('status','blocked_game_turnaround_policy_missing',
+  'opened',false,'bookingsCreated',false,'ledgerPosted',false);END IF;
  -- This initialization rechecks the ACTUAL matching weekly airport slots,
  -- local dates (including DST), aircraft and commercial version.
  proof:=airlinerra_game.section9_initialize_verified_occurrence_v1(
@@ -137,7 +144,7 @@ BEGIN
  VALUES(1,s.airline_id,p_schedule,s.aircraft_inventory_id,
   s.version,p_weekly_entry,p_local_date,
   s.origin_airport_key,s.destination_airport_key,
-  capacity.departure_utc,capacity.arrival_utc,45,
+  capacity.departure_utc,capacity.arrival_utc,greatest(45,min_ground_minutes),
   s.passenger_seats,'open',0,'game_verified_saleable_schedule_v1')
  ON CONFLICT(schedule_id,flight_local_date,weekly_entry) DO NOTHING;
  GET DIAGNOSTICS inserted=ROW_COUNT;
