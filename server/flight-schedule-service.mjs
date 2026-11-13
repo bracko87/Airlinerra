@@ -24,6 +24,7 @@ const SLOT_FIELDS=new Set([...BASE_FIELDS,'aircraftInventoryId','originAirportKe
  'destinationAirportKey','referenceDepartureUtc','referenceArrivalUtc','weeklySchedule',
  'existingId','departureStand','arrivalStand']);
 const CHECK_FIELDS=new Set([...BASE_FIELDS,'scheduleId']);
+const COMMISSIONING_FIELDS=new Set([...BASE_FIELDS,'aircraftInventoryId']);
 const DEMAND_FIELDS=new Set([...CHECK_FIELDS,'month']);
 const FINANCIAL_FIELDS=new Set([...CHECK_FIELDS,'loadPercent','parkingMinutes']);
 const FEE_PREVIEW_FIELDS=new Set([...BASE_FIELDS,'aircraftInventoryId','originAirportKey',
@@ -99,6 +100,8 @@ export function validateFlightSchedulePayload(body){
  }
  if(body.action==='list'||body.action==='partner-list')
   return withinFields(body,BASE_FIELDS);
+ if(body.action==='commissioning-status'||body.action==='commissioning-request')
+  return withinFields(body,COMMISSIONING_FIELDS)&&uuid(body.aircraftInventoryId);
  if(body.action==='plan-delete')
   return withinFields(body,PLAN_DELETE_FIELDS)&&uuid(body.planId);
  if(body.action==='partner-propose')return withinFields(body,PARTNER_PROPOSE_FIELDS)&&
@@ -231,6 +234,8 @@ export const SCHEDULE_SQL=Object.freeze({
   AND a.owner_player_id=$1::uuid`,
  maintenanceReadiness:`SELECT airlinerra_game.section9_owned_aircraft_maintenance_readiness_v1(
    $1::uuid,$2::uuid,$3::uuid,$4::date) AS result`,
+ commissioning:`SELECT airlinerra_game.section9_owned_starter_commissioning_v1(
+  $1::uuid,$2::uuid,$3::uuid,$4::text) AS result`,
  bookingWindowPreview:SEVEN_DAY_WINDOW_SQL,
  owner:'SELECT id FROM airlinerra_game.airlines WHERE id=$1::uuid AND owner_player_id=$2::uuid AND world_id=1',
  feeAircraft:`SELECT i.configuration_id::bigint AS "configurationId",
@@ -475,6 +480,26 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
     return respond(200,{deleted:true,...result.rows[0],
      passengerBookingsChanged:false,airportSlotsChanged:false,ledgerPosted:false,
      message:'Inactive planning route deleted. No flight or commercial booking changed.'});
+   }
+   if(body.action==='commissioning-status'||body.action==='commissioning-request'){
+    // The authenticated owner can request/status a starter inspection once.
+    // This never approves condition, age, maintenance or flight operations.
+    const action=body.action==='commissioning-request'?'request':'status';
+    const response=await client.query(SCHEDULE_SQL.commissioning,[
+      userId,body.airlineId,body.aircraftInventoryId,action
+    ]);
+    const result=response.rows?.[0]?.result;
+    if(response.rowCount!==1||!result||
+       typeof result.status!=='string'||
+       result.flightActivated!==false||
+       result.inspectionCompleted!==false||
+       result.created!==true&&result.created!==false||
+       (result.ledgerPosted!==undefined&&result.ledgerPosted!==false))
+      return respond(503,{error:'COMMISSIONING_STATUS_UNVERIFIED'});
+    if(result.status.startsWith('blocked_'))
+      return respond(409,{...result,commissioningPending:false});
+    return respond(200,{...result,commissioningPending:result.status==='requested'||
+      result.status==='in_review'});
    }
    if(body.action==='operational-create'){
     // Create route never silently saves a planning-only record.
