@@ -12,10 +12,13 @@ on:
       - 'supabase/migrations/20261112191500_section9_game_fuel_model_snapshot_v1.sql'
       - 'supabase/migrations/20261113083000_section9_game_five_phase_fuel_preview_only_v1.sql'
       - 'supabase/migrations/20261113095000_section9_jetstream32_easa_usable_tank_capacity_v1.sql'
+      - 'supabase/migrations/20261113103000_section9_owned_aircraft_maintenance_readiness_v1.sql'
+      - 'supabase/migrations/20261113105500_section9_missing_maintenance_state_fails_closed.sql'
       - 'tests/test_section9_verified_starter_usage_baseline.mjs'
       - 'tests/test_section9_game_fuel_snapshot.mjs'
       - 'tests/test_section9_game_five_phase_fuel_quote.mjs'
       - 'tests/test_section9_jetstream32_easa_fuel_capacity.mjs'
+      - 'tests/test_section9_maintenance_evidence_readiness.mjs'
       - 'tests/test_section9_initial_position_phase1.mjs'
       - 'website/route-planner.mjs'
       - 'server/flight-schedule-service.mjs'
@@ -35,6 +38,6 @@ jobs:
         with:
           node-version: '22'
       - name: Validate operational Phase 1 crew exception and five mandatory independent clearances
-        run: node --test tests/test_section9_phase1_no_crew_activation.mjs tests/test_section9_initial_position_phase1.mjs tests/test_section9_verified_starter_usage_baseline.mjs tests/test_section9_game_fuel_snapshot.mjs tests/test_section9_game_five_phase_fuel_quote.mjs tests/test_section9_jetstream32_easa_fuel_capacity.mjs
+        run: node --test tests/test_section9_phase1_no_crew_activation.mjs tests/test_section9_initial_position_phase1.mjs tests/test_section9_verified_starter_usage_baseline.mjs tests/test_section9_game_fuel_snapshot.mjs tests/test_section9_game_five_phase_fuel_quote.mjs tests/test_section9_jetstream32_easa_fuel_capacity.mjs tests/test_section9_maintenance_evidence_readiness.mjs
       - name: Guard activated game code and protected build
         run: npm run build --prefix website
