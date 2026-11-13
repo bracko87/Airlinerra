@@ -487,3 +487,48 @@ test('browser restores nonbinding prepared quote after dialog reopens',async()=>
  assert.doesNotMatch(ui,/scheduleRefit\(/);
  assert.doesNotMatch(ui,/bookRefit\(/);
 });
+
+
+test('single used-airframe profile is a fresh protected, read-only DB lookup by listing UUID',async()=>{
+ const detail={action:'used-detail',airlineId:airline,listingId:offer};
+ assert.equal(validateFleetAcquisitionRequest(detail),true);
+ for(const bad of [
+  {...detail,listingId:'1'}, {...detail,playerId:user},
+  {...detail,sourceInventoryId:aircraft}, {...detail,priceUsd:0}
+ ]) assert.equal(validateFleetAcquisitionRequest(bad),false);
+ const aircraftDetail={listingId:offer,manufacturer:'Airbus',model:'A300-600R',
+  manufactureYear:1998,conditionPct:'82.00',useType:'passenger',
+  nextCCheckInHours:'1222',cabinSnapshot:{economy:232,premium:18,business:8,first:0}};
+ const queries=[];
+ const handler=setup((sql,args)=>{
+  queries.push(sql);
+  if(sql===FLEET_SQL.owner){assert.deepEqual(args,[airline,user]);return {rowCount:1,rows:[{id:airline}]};}
+  if(sql===FLEET_SQL.usedDetail){assert.deepEqual(args,[airline,offer]);
+   return {rowCount:1,rows:[aircraftDetail]};}
+  if(sql===FLEET_SQL.marketState)return {rowCount:1,rows:[{marketOpen:false,leaseEnabled:false}]};
+  throw Error('Unexpected used details SQL');
+ });
+ const result=await handler.handler(request(detail));
+ assert.equal(result.status,200);
+ const payload=await result.json();
+ assert.equal(payload.readOnly,true);
+ assert.equal(payload.marketOpen,false);
+ assert.deepEqual(payload.offer,aircraftDetail);
+ assert.ok(queries.includes(FLEET_SQL.usedDetail));
+ assert.match(FLEET_SQL.usedDetail,/l\.listing_id=\$2::uuid/);
+ assert.match(FLEET_SQL.usedDetail,/l\.world_id=1/);
+ assert.match(FLEET_SQL.usedDetail,/cabin_snapshot/);
+ assert.match(FLEET_SQL.usedDetail,/t\.id=c\.selected_technical_spec_id/);
+ const foreign=setup(sql=>{
+  if(sql===FLEET_SQL.owner)return {rowCount:0,rows:[]};
+  throw Error('No private used aircraft data before owner verification');
+ });
+ assert.equal((await foreign.handler(request(detail))).status,403);
+ const missing=setup(sql=>{
+  if(sql===FLEET_SQL.owner)return {rowCount:1,rows:[{id:airline}]};
+  if(sql===FLEET_SQL.usedDetail)return {rowCount:0,rows:[]};
+  if(sql===FLEET_SQL.marketState)return {rowCount:1,rows:[{}]};
+  throw Error('Unexpected missing listing SQL');
+ });
+ assert.equal((await missing.handler(request(detail))).status,404);
+});
