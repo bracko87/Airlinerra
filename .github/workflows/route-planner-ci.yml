@@ -83,6 +83,8 @@ on:
       - 'supabase/migrations/20261113203000_section9_owner_candidate_airport_restriction_evidence_details.sql'
       - 'supabase/migrations/20261113204000_section5_belgrade_normal_runway_procedural_evidence.sql'
       - 'supabase/migrations/20261113205000_section5_prefer_sourced_normal_main_runway.sql'
+      - 'supabase/migrations/20261113210000_section9_shared_game_model_preliminary_route_suitability_v1.sql'
+      - 'supabase/migrations/20261113211000_section9_global_game_licence_fee_policy_draft_v1.sql'
       - 'tests/test_section5_normal_runway_operational_evidence_v1.mjs'
       - 'tests/test_section9_permission_player_api_ui.mjs'
       - 'tests/test_section9_route_financial_dashboard.mjs'
