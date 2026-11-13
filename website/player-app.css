@@ -2896,3 +2896,57 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
 :root[data-ui-theme="dark"] .airlinerra-cabin-readonly h2,
 :root[data-ui-theme="dark"] .airlinerra-cabin-readonly h3,
 :root[data-ui-theme="dark"] .airlinerra-cabin-readonly strong{color:#edf5ff}
+
+/* Read-only passenger score gauge in modal; same as Cabin configurations page. */
+.airlinerra-cabin-readonly .cabin-passenger-rating{
+ display:grid;grid-template-columns:minmax(180px,.8fr) minmax(220px,1.2fr);
+ align-items:center;gap:16px;padding:16px 2px 18px;
+ border-bottom:1px solid var(--line);color:var(--navy)
+}
+.airlinerra-cabin-readonly .cabin-passenger-rating-description{
+ display:flex;flex-direction:column;gap:3px;min-width:0
+}
+.airlinerra-cabin-readonly .cabin-passenger-rating-description strong{
+ font-size:13px;font-weight:750
+}
+.airlinerra-cabin-readonly .cabin-passenger-rating-description small{
+ color:var(--muted);font-size:11px;line-height:1.45
+}
+.airlinerra-cabin-readonly .cabin-passenger-rating-scale{
+ min-width:0;padding-top:23px
+}
+.airlinerra-cabin-readonly .cabin-passenger-rating-track{
+ position:relative;height:9px;border-radius:999px;background:#dbe4ef;
+ overflow:visible;margin:0 10px
+}
+.airlinerra-cabin-readonly .cabin-passenger-rating-fill{
+ height:100%;width:0;background:#3a81c6;border-radius:999px
+}
+.airlinerra-cabin-readonly .cabin-passenger-rating-thumb{
+ position:absolute;left:0;top:50%;height:16px;width:16px;
+ border-radius:50%;border:2px solid #245f9d;background:#fff;
+ transform:translate(-50%,-50%);pointer-events:none
+}
+.airlinerra-cabin-readonly .cabin-passenger-rating-value{
+ position:absolute;left:0;bottom:21px;transform:translateX(-50%);
+ background:#0b3567;color:#fff;padding:4px 10px;border-radius:5px;
+ font-size:11px;line-height:1.2;white-space:nowrap;font-weight:750
+}
+.airlinerra-cabin-readonly .cabin-passenger-rating-ends{
+ display:flex;justify-content:space-between;color:var(--muted);
+ padding-top:8px;font-size:11px
+}
+.airlinerra-cabin-readonly .cabin-rating-unavailable .cabin-passenger-rating-fill,
+.airlinerra-cabin-readonly .cabin-rating-unavailable .cabin-passenger-rating-thumb{
+ display:none
+}
+@media(max-width:700px){
+ .airlinerra-cabin-readonly .cabin-passenger-rating{
+  grid-template-columns:1fr;gap:13px
+ }
+ .airlinerra-cabin-readonly .cabin-passenger-rating-scale{padding-top:25px}
+}
+:root[data-ui-theme="dark"] .airlinerra-cabin-readonly .cabin-passenger-rating-track{
+ background:#34506e
+}
+
