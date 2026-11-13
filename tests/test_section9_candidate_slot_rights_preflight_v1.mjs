@@ -52,3 +52,28 @@ test('protected operational-create reports slot and rights problems without writ
  assert.match(source,/routeCreated:false/);
  assert.match(source,/slotsReserved:false/);
 });
+
+
+test('game international home-carrier route names the required third/fourth-freedom permission but does not grant it',async()=>{
+ const sql=await read('supabase/migrations/20261113200000_section9_classify_required_international_game_traffic_rights.sql');
+ assert.match(sql,/preview->>'status'='agreement_check_required'/);
+ assert.match(sql,/p_origin<>p_destination/);
+ assert.match(sql,/p_operator=p_origin OR p_operator=p_destination/);
+ assert.match(sql,/RETURN 'THIRD_FOURTH_FREEDOM'/);
+ assert.doesNotMatch(sql,/\bINSERT INTO\s+airlinerra_game\./i);
+ assert.doesNotMatch(sql,/\bUPDATE\s+airlinerra_game\./i);
+});
+test('game rights candidate checker has qualified permission variable and remains no-write',async()=>{
+ const sql=await read('supabase/migrations/20261113201000_section9_candidate_slot_rights_permission_variable_fix.sql');
+ assert.match(sql,/v_permission_code text/);
+ assert.match(sql,/catalog\.permission_code=v_permission_code/);
+ assert.match(sql,/app\.permission_code=v_permission_code/);
+ assert.match(sql,/'requiredGamePermission',v_permission_code/);
+ assert.doesNotMatch(sql,/\bcatalog\.permission_code=permission_code/);
+ assert.doesNotMatch(sql,/\bapp\.permission_code=permission_code/);
+ assert.match(sql,/'airportSlotsReserved',false/);
+ assert.match(sql,/'flightActivated',false/);
+ assert.match(sql,/'ledgerPosted',false/);
+ assert.doesNotMatch(sql,/\bINSERT INTO\s+airlinerra_game\./i);
+ assert.doesNotMatch(sql,/\bUPDATE\s+airlinerra_game\./i);
+});
