@@ -25,6 +25,9 @@ export function validateFleetAcquisitionRequest(body){
   ['manufacturer','family','model','configuration'].every(k=>
     body[k]===undefined||(typeof body[k]==='string'&&body[k].length<=100&&
       !/[\u0000-\u001F\u007F]/u.test(body[k])));
+ if(body.action==='used-detail')return Object.keys(body).length===3 &&
+  Object.keys(body).every(k=>['action','airlineId','listingId'].includes(k)) &&
+  uuid(body.listingId);
  if(body.action==='bid-used')return Object.keys(body).length===6 &&
   Object.keys(body).every(k=>['action','airlineId','listingId','bidUsd','registration','requestId'].includes(k)) &&
   uuid(body.listingId)&&uuid(body.requestId)&&typeof body.bidUsd==='string' &&
@@ -174,6 +177,67 @@ export const FLEET_SQL=Object.freeze({
   "CASE WHEN l.status='bidding' THEN l.close_after_utc END NULLS LAST,"+
   "c.manufacturer_name,c.model_name,l.opening_bid_usd,l.listing_id "+
   "LIMIT 30 OFFSET ($4::integer*30)",
+ usedDetail:"SELECT l.listing_id::text AS \"listingId\", "+
+  "l.configuration_id::int AS \"configurationId\", "+
+  "l.offering_type AS \"offeringType\",l.manufacture_year AS \"manufactureYear\", "+
+  "l.condition_pct::text AS \"conditionPct\",l.source_kind AS \"sourceKind\", "+
+  "l.next_c_check_in_hours::text AS \"nextCCheckInHours\", "+
+  "l.provisional_new_value_usd::text AS \"provisionalNewValueUsd\", "+
+  "l.opening_bid_usd::text AS \"openingBidUsd\", "+
+  "l.min_bid_increment_usd::text AS \"minIncrementUsd\", "+
+  "l.highest_bid_usd::text AS \"highestBidUsd\", "+
+  "l.fixed_lease_deposit_usd::text AS \"leaseDepositUsd\", "+
+  "l.lease_months AS \"leaseMonths\",l.status,l.bid_count AS \"bidCount\", "+
+  "l.close_after_utc AS \"closeAfterUtc\", "+
+  "(l.highest_bid_airline_id=$1::uuid) AS \"myHighestBid\", "+
+  "l.price_basis AS \"pricingBasis\",l.cabin_snapshot AS \"cabinSnapshot\", "+
+  "l.cabin_origin AS \"cabinOrigin\", "+
+  "c.manufacturer_name AS manufacturer,c.family_name AS family,c.model_name AS model, "+
+  "c.configuration_code AS configuration,c.use_type AS \"useType\", "+
+  "c.civilian_service_status AS \"serviceStatus\", "+
+  "c.production_start_year AS \"productionStartYear\", "+
+  "c.production_end_year AS \"productionEndYear\", "+
+  "c.technical_review_status AS \"technicalReviewStatus\", "+
+  "c.reference_passenger_capacity AS \"referenceSeats\", "+
+  "c.maximum_passenger_seats AS \"maxSeats\", "+
+  "c.maximum_cargo_payload_kg::text AS \"cargoKg\", "+
+  "c.range_km::text AS \"rangeKm\",c.cruise_speed_kmh::text AS \"cruiseSpeedKmh\", "+
+  "c.takeoff_runway_m::text AS \"takeoffRunwayM\", "+
+  "c.landing_runway_m::text AS \"landingRunwayM\", "+
+  "c.mtow_kg::text AS \"mtowKg\",c.mlw_kg::text AS \"mlwKg\", "+
+  "c.wingspan_m::text AS \"wingspanM\", "+
+  "c.length_m::text AS \"lengthM\",c.height_m::text AS \"heightM\", "+
+  "c.engine_option AS \"engineOption\", "+
+  "coalesce(t.maximum_fuel_capacity_kg,t.manufacturer_usable_fuel_mass_kg,"+
+  "t.gameplay_placeholder_fuel_capacity_kg)::text AS \"fuelTankKg\", "+
+  "p.simultaneous_passenger_seats AS \"serviceSeats\", "+
+  "p.simultaneous_freight_kg::text AS \"serviceFreightKg\", "+
+  "p.belly_hold_reference_kg::text AS \"bellyHoldReferenceKg\", "+
+  "p.belly_hold_reference_type AS \"bellyHoldReferenceType\", "+
+  "seller.display_name AS \"sellerName\",seller.is_fictional AS \"sellerFictional\", "+
+  "r.reference_price_usd::text AS \"referencePriceUsd\", "+
+  "r.reference_year AS \"referencePriceYear\",r.evidence_kind AS \"priceEvidence\", "+
+  "g.economy_columns AS \"economyColumns\", "+
+  "g.premium_columns AS \"premiumColumns\", "+
+  "g.business_columns AS \"businessColumns\", "+
+  "g.first_columns AS \"firstColumns\", "+
+  "g.review_status AS \"rowReviewStatus\", "+
+  "s.reference_seat_units::text AS \"referenceUnits\", "+
+  "media.storage_object_path AS \"imagePath\" "+
+  "FROM airlinerra_game.used_aircraft_auction_lots_v1 l "+
+  "JOIN airlinerra.aircraft_catalog_configuration_inventory c ON c.configuration_id=l.configuration_id "+
+  "JOIN airlinerra_game.aircraft_market_sellers_v1 seller ON seller.seller_id=l.seller_id "+
+  "LEFT JOIN airlinerra.aircraft_technical_specs t ON t.id=c.selected_technical_spec_id "+
+  "LEFT JOIN airlinerra.aircraft_service_payload_game_v1 p ON p.configuration_id=c.configuration_id "+
+  "LEFT JOIN airlinerra_game.cabin_model_row_geometry_v1 g ON g.configuration_id=c.configuration_id "+
+  "LEFT JOIN airlinerra_game.cabin_model_standard_v1 s ON s.configuration_id=c.configuration_id "+
+  "LEFT JOIN airlinerra_game.aircraft_model_reference_prices_v1 r ON r.configuration_id=c.configuration_id "+
+  "LEFT JOIN LATERAL (SELECT m.storage_object_path "+
+  "FROM airlinerra.aircraft_configuration_media m "+
+  "WHERE m.configuration_id=c.configuration_id AND m.is_approved=true "+
+  "ORDER BY CASE WHEN m.image_role='hero' THEN 0 ELSE 1 END,m.storage_object_path LIMIT 1) media ON true "+
+  "WHERE l.world_id=1 AND l.listing_id=$2::uuid "+
+  "AND l.status IN('available','bidding') LIMIT 1",
  usedCount:"SELECT count(*)::int AS total "+
   "FROM airlinerra_game.used_aircraft_auction_lots_v1 l "+
   "JOIN airlinerra.aircraft_catalog_configuration_inventory c "+
@@ -526,6 +590,19 @@ export function createFleetAcquisitionHandler({verifyUserToken,database}={}){
      serverNowUtc:market?.serverNowUtc||null,
      auctionRule:'rolling_15_minutes_after_each_valid_higher_bid',
      noBidsNoExpiry:true});
+   }
+   if(body.action==='used-detail'){
+    const owner=await client.query(FLEET_SQL.owner,[body.airlineId,playerId]);
+    if(owner.rowCount!==1)return respond(403,{error:'Airline not owned by this account'});
+    const [detail,state]=await Promise.all([
+     client.query(FLEET_SQL.usedDetail,[body.airlineId,body.listingId]),
+     client.query(FLEET_SQL.marketState)
+    ]);
+    if(detail.rowCount!==1)return respond(404,{error:'Used aircraft listing no longer available'});
+    return respond(200,{airlineId:body.airlineId,offer:detail.rows[0],
+     marketOpen:state.rows?.[0]?.marketOpen===true,
+     leaseEnabled:state.rows?.[0]?.leaseEnabled===true,
+     readOnly:true,serverNowUtc:state.rows?.[0]?.serverNowUtc||null});
    }
    if(body.action==='bid-used'){
     const result=await client.query(FLEET_SQL.usedBid,[
