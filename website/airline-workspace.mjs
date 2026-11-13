@@ -1166,7 +1166,15 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   let cabin=null,referenceUnits=standard?.referenceUnits??record.referenceSeats;
   let origin='model_default',details=[];
   if(kind==='new'){
-   if(standard)cabin={economy:standard.economy,premium:0,business:0,first:0};
+   if(standard?.factoryEconomy!==null&&standard?.factoryEconomy!==undefined)
+    cabin={economy:standard.factoryEconomy,premium:standard.factoryPremium,
+     business:standard.factoryBusiness,first:standard.factoryFirst,
+     economyType:standard.factoryEconomyType,
+     premiumType:standard.factoryPremiumType,
+     businessType:standard.factoryBusinessType,
+     firstType:standard.factoryFirstType,
+     extraLegroomCm:standard.factoryExtraLegroomCm};
+   else if(standard)cabin={economy:standard.economy,premium:0,business:0,first:0};
    details=[['Manufacturer',record.manufacturer],['Model',record.model],
     ['Configuration',record.configuration],['Availability','Factory preview only']];
   }else if(kind==='used'){
