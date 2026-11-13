@@ -454,19 +454,21 @@ test('read-only catalog, factory and used seat profiles keep source-specific lay
 });
 
 test('non-owner cabin viewing never provides refit, acquisition or cabin-save actions',async()=>{
- const [view,library,market,overlay,styles]=await Promise.all([
+ const [view,library,market,overlay,styles,html]=await Promise.all([
   readFile(new URL('../website/aircraft-cabin-preview.mjs',import.meta.url),'utf8'),
   readFile(new URL('../website/aircraft-library.mjs',import.meta.url),'utf8'),
   readFile(new URL('../website/airline-workspace.mjs',import.meta.url),'utf8'),
   readFile(new URL('../website/dev-scripts/invited-overlay.mjs',import.meta.url),'utf8'),
-  readFile(new URL('../website/player-app.css',import.meta.url),'utf8')
+  readFile(new URL('../website/player-app.css',import.meta.url),'utf8'),
+  readFile(new URL('../website/private-player-app.html',import.meta.url),'utf8')
  ]);
  assert.match(view,/renderCabinFloorplan/);
  assert.match(view,/updatePassengerRatingGauge/);
  assert.match(view,/not passenger happiness or actual feedback/);
  assert.doesNotMatch(view,/\.innerHTML|post\(|bidUsed\(|acquire\(|saveCabinDraft\(/);
- assert.match(library,/View cabin configuration/);
- assert.match(market,/View aircraft profile & cabin/);
+ assert.match(html,/id="library-profile-cabin-button" hidden>View cabin configuration/);
+ assert.match(library,/cabinNavButton.hidden=/);
+ assert.match(market,/View aircraft details/);
  assert.match(market,/new-aircraft-view-cabin/);
  assert.match(market,/fleet-view-cabin/);
  assert.match(market,/record\.cabinSnapshot/);
