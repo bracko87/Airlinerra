@@ -263,6 +263,8 @@ test('used airframes open refreshed individual read-only pages, including cargo'
  const id='11111111-1111-4111-8111-111111111111';
  assert.equal(mod.safePlayerView('#aircraft-market/'+id),'aircraft-market');
  assert.equal(mod.playerViewUrl('aircraft-market/'+id),'/player.html#aircraft-market/'+id);
+ const startup=await read('../website/player-app.mjs');
+ assert.match(startup,/workspaceController\.openUsedAircraft\?\.\(window\.location\.hash\)/);
 });
 
 test('management-page state messages have no decorative orange vertical bars',async()=>{
