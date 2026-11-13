@@ -25,6 +25,7 @@ const SLOT_FIELDS=new Set([...BASE_FIELDS,'aircraftInventoryId','originAirportKe
  'existingId','departureStand','arrivalStand']);
 const CHECK_FIELDS=new Set([...BASE_FIELDS,'scheduleId']);
 const COMMISSIONING_FIELDS=new Set([...BASE_FIELDS,'aircraftInventoryId']);
+const MAINTENANCE_JOB_FIELDS=new Set([...COMMISSIONING_FIELDS,'checkCode']);
 const DEMAND_FIELDS=new Set([...CHECK_FIELDS,'month']);
 const FINANCIAL_FIELDS=new Set([...CHECK_FIELDS,'loadPercent','parkingMinutes']);
 const FEE_PREVIEW_FIELDS=new Set([...BASE_FIELDS,'aircraftInventoryId','originAirportKey',
@@ -102,6 +103,11 @@ export function validateFlightSchedulePayload(body){
   return withinFields(body,BASE_FIELDS);
  if(body.action==='commissioning-status'||body.action==='commissioning-request')
   return withinFields(body,COMMISSIONING_FIELDS)&&uuid(body.aircraftInventoryId);
+ if(body.action==='maintenance-job-status'||body.action==='maintenance-job-cancel')
+  return withinFields(body,COMMISSIONING_FIELDS)&&uuid(body.aircraftInventoryId);
+ if(body.action==='maintenance-job-book')
+  return withinFields(body,MAINTENANCE_JOB_FIELDS)&&uuid(body.aircraftInventoryId)&&
+   ['daily','weekly','a','b','c','d'].includes(body.checkCode);
  if(body.action==='plan-delete')
   return withinFields(body,PLAN_DELETE_FIELDS)&&uuid(body.planId);
  if(body.action==='partner-propose')return withinFields(body,PARTNER_PROPOSE_FIELDS)&&
@@ -261,6 +267,8 @@ export const SCHEDULE_SQL=Object.freeze({
   $1::uuid,$2::uuid,$3::uuid,$4::text) AS result`,
  maintenanceGameDue:`SELECT airlinerra_game.section9_owned_game_maintenance_due_v1(
   $1::uuid,$2::uuid,$3::uuid,$4::date) AS result`,
+ maintenanceGameJob:`SELECT airlinerra_game.section9_owned_game_maintenance_job_v1(
+  $1::uuid,$2::uuid,$3::uuid,$4::text,$5::text) AS result`,
  bookingWindowPreview:SEVEN_DAY_WINDOW_SQL,
  owner:'SELECT id FROM airlinerra_game.airlines WHERE id=$1::uuid AND owner_player_id=$2::uuid AND world_id=1',
  feeAircraft:`SELECT i.configuration_id::bigint AS "configurationId",
@@ -612,6 +620,25 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
      physicalInspectionCompleted:false,aircraftClearedForFlight:false,
      commissioningPending:['requested','in_review'].includes(gameData?.status??result.status)});
    }
+   if(['maintenance-job-status','maintenance-job-book','maintenance-job-cancel'].includes(body.action)){
+    // New game maintenance job lifecycle: private owner/aircraft/clock/airport checks.
+    // No real aircraft inspection, fleet activation, fuel charge or financial posting.
+    const task=body.action==='maintenance-job-book'?'book':
+      body.action==='maintenance-job-cancel'?'cancel':'status';
+    const query=await client.query(SCHEDULE_SQL.maintenanceGameJob,[
+      userId,body.airlineId,body.aircraftInventoryId,task,body.checkCode??null
+    ]);
+    const result=query.rows?.[0]?.result;
+    if(query.rowCount!==1||!result||typeof result.status!=='string'||
+       result.flightActivated!==false||result.ledgerPosted!==false||
+       result.status==='scheduled'&&(
+        result.created!==true||typeof result.jobId!=='string'||
+        result.gameJobOnly!==true))
+      return respond(503,{error:'GAME_MAINTENANCE_JOB_RESPONSE_UNVERIFIED'});
+    if(result.status==='scheduled'||result.status==='game_maintenance_jobs'||
+       result.status==='cancelled')return respond(200,result);
+    return respond(409,{...result,created:false,aircraftClearedForFlight:false});
+   }
    if(body.action==='operational-create'){
     // Create route never silently saves a planning-only record.
     // Owner-scoped, zero-write readiness check; no fabricated approvals.
@@ -698,6 +725,12 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
       missing.push('MAINTENANCE_HOURLY_GROUNDING_NOT_CONNECTED');
      if(gameMaintenance.maintenanceCompletionSchedulingConnected!==true)
       missing.push('MAINTENANCE_SERVICE_JOB_AND_RELEASE_NOT_CONNECTED');
+    }
+    // A booked service is an aircraft-time reservation, even before the
+    // daily/weekly due threshold. It blocks route creation separately.
+    if(physical.rowCount===1&&aircraft&&gameMaintenance){
+     if(gameMaintenance.gameJobBlocksDate===true)
+      missing.push('AIRCRAFT_ALREADY_RESERVED_FOR_MAINTENANCE');
     }
     // Crew is intentionally out of Phase 1. These are independent, real
     // non-crew dependencies, not fictitious permits or release records.
