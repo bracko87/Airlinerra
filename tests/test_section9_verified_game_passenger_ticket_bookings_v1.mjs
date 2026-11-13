@@ -52,7 +52,8 @@ test('booking is restricted to trusted game scheduler, economy only, no upfront 
  assert.match(source,/p_seats NOT BETWEEN 1 AND 1000/);
  assert.match(source,/REVOKE ALL ON FUNCTION airlinerra_game\.section9_open_verified_game_ticket_occurrence_v1[\s\S]*FROM PUBLIC,anon,authenticated,service_role/);
  assert.match(source,/REVOKE ALL ON FUNCTION airlinerra_game\.section9_reserve_verified_game_passenger_seats_v1[\s\S]*FROM PUBLIC,anon,authenticated,service_role/);
- assert.match(source,/SE(CURITY)?\s+INVOKER/);
+ assert.match(source,/LANGUAGE plpgsql/);
+ assert.doesNotMatch(source,/SECURITY DEFINER/);
  assert.doesNotMatch(source,/\bINSERT INTO airlinerra_game\.airline_ledger/i);
  assert.doesNotMatch(source,/\bUPDATE airlinerra_game\.airlines/i);
  assert.doesNotMatch(source,/paid_upfront,true/);
