@@ -31,6 +31,8 @@ export function createFlightScheduleClient({auth,origin,fetchImpl=(...args)=>fet
     const safeSide=side=>
      side&&/^[A-Z0-9]{3,4}$/.test(side.airportCode||'')?
       {airportCode:side.airportCode,
+       runway:typeof side.runway==='string'&&/^[0-9]{1,2}[LRC]?\/[0-9]{1,2}[LRC]?$/.test(side.runway)?
+        side.runway:null,
        runwayOperationalStatusVerified:side.runwayOperationalStatusVerified===true,
        aircraftChapterMatched:side.aircraftChapterMatched===true,
        anyHardTimeRuleBlock:side.anyHardTimeRuleBlock===true}:null;
