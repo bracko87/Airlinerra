@@ -825,6 +825,11 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
      maintenanceDueEvaluationConnected:maintenance?.checkDueEvaluationConnected===true,
      gameAirportSlotCapacityAvailable:candidate.airportSlotCapacityPreviewAvailable===true,
      gameAirportRestrictionsChecked:candidate.airportRestrictionGateChecked===true,
+     gameModelPreliminarySuitable:
+      candidate.gameModelPreliminarySuitable===true&&
+      candidate.gameModelEvidenceType==='GAME_ESTIMATE_NOT_OFFICIAL_CLEARANCE'&&
+      candidate.gameModelFlightActivated===false,
+     gameModelEvidenceType:'GAME_ESTIMATE_NOT_OFFICIAL_CLEARANCE',
      // Evidence diagnostic only: never mistake an airport review for approval.
      gameAirportRestrictionFindings:
       candidate.airportRestrictionFindings?.readOnly===true&&
