@@ -29,6 +29,7 @@ on:
       - 'supabase/migrations/20261113185000_section9_maintenance_due_requires_settled_game_expense.sql'
       - 'supabase/migrations/20261113185500_section9_maintenance_ledger_generated_identity_fix.sql'
       - 'supabase/migrations/20261113190000_section9_unpaid_maintenance_indefinite_grounding.sql'
+      - 'supabase/migrations/20261113192000_section9_owned_candidate_slot_rights_preflight_v1.sql'
       - 'tests/test_section9_verified_starter_usage_baseline.mjs'
       - 'tests/test_section9_game_fuel_snapshot.mjs'
       - 'tests/test_section9_game_five_phase_fuel_quote.mjs'
@@ -39,6 +40,7 @@ on:
       - 'tests/test_section9_commissioning_player_ui_v1.mjs'
       - 'tests/test_section9_starter_game_airframe_maintenance.mjs'
       - 'tests/test_section9_game_maintenance_jobs_hourly_v1.mjs'
+      - 'tests/test_section9_candidate_slot_rights_preflight_v1.mjs'
       - 'website/flight-schedule-client.mjs'
       - 'website/airline-workspace.mjs'
       - 'tests/test_section9_initial_position_phase1.mjs'
@@ -60,6 +62,6 @@ jobs:
         with:
           node-version: '22'
       - name: Validate operational Phase 1 crew exception and five mandatory independent clearances
-        run: node --test tests/test_section9_phase1_no_crew_activation.mjs tests/test_section9_initial_position_phase1.mjs tests/test_section9_verified_starter_usage_baseline.mjs tests/test_section9_game_fuel_snapshot.mjs tests/test_section9_game_five_phase_fuel_quote.mjs tests/test_section9_jetstream32_easa_fuel_capacity.mjs tests/test_section9_maintenance_evidence_readiness.mjs tests/test_section9_starter_commissioning_workflow.mjs tests/test_section9_starter_game_data_inspection_v1.mjs tests/test_section9_commissioning_player_ui_v1.mjs tests/test_section9_starter_game_airframe_maintenance.mjs tests/test_section9_game_maintenance_jobs_hourly_v1.mjs
+        run: node --test tests/test_section9_phase1_no_crew_activation.mjs tests/test_section9_initial_position_phase1.mjs tests/test_section9_verified_starter_usage_baseline.mjs tests/test_section9_game_fuel_snapshot.mjs tests/test_section9_game_five_phase_fuel_quote.mjs tests/test_section9_jetstream32_easa_fuel_capacity.mjs tests/test_section9_maintenance_evidence_readiness.mjs tests/test_section9_starter_commissioning_workflow.mjs tests/test_section9_starter_game_data_inspection_v1.mjs tests/test_section9_commissioning_player_ui_v1.mjs tests/test_section9_starter_game_airframe_maintenance.mjs tests/test_section9_game_maintenance_jobs_hourly_v1.mjs tests/test_section9_candidate_slot_rights_preflight_v1.mjs
       - name: Guard activated game code and protected build
         run: npm run build --prefix website
