@@ -39,8 +39,11 @@ export function allowedLocalOwnerRead(pathname,payload){
  if(payload.action==='list')
   return Object.keys(payload).length===2 &&
    Object.keys(payload).every(x=>x==='action'||x==='airlineId');
- // New and used marketplace discovery is read-only.
- if(pathname===FLEET_READ_PATH&&payload.action==='list-used')
+ // New and used marketplace discovery and individual aircraft details are read-only.
+ // The deployed Edge service independently validates airline ownership and the
+ // selected listing ID; localhost never forwards bids or purchases.
+ if(pathname===FLEET_READ_PATH&&
+    ['list-used','used-detail'].includes(payload.action))
   return validateFleetAcquisitionRequest(payload);
  // Cabin layouts are owner-only reads, saved planning drafts or non-binding
  // refit quotes; none can install seats, book maintenance or debit funds.
