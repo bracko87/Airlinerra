@@ -34,3 +34,14 @@ test('universal airport gate prefers documented routine runway over longer condi
  assert.doesNotMatch(sql,/\bINSERT INTO\s+airlinerra_game\./i);
  assert.doesNotMatch(sql,/\bUPDATE\s+airlinerra_game\./i);
 });
+
+
+test('player UI includes the selected main runway in safety feedback without implying approval',async()=>{
+ const client=await read('website/flight-schedule-client.mjs');
+ const planner=await read('website/route-planner.mjs');
+ assert.match(client,/runway:typeof side\.runway==='string'/);
+ assert.match(client,/runwayOperationalStatusVerified:side\.runwayOperationalStatusVerified===true/);
+ assert.match(planner,/side\.airportCode\+\(side\.runway\?/);
+ assert.match(planner,/NOT CREATED/);
+ assert.match(planner,/runway status/);
+});
