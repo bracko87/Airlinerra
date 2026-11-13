@@ -108,6 +108,8 @@ test('cabins overview fetches only airline-owned aircraft and source-linked faci
    configurationId:16,economyColumns:[3,3],premiumColumns:[3,3],
    businessColumns:[2,2],firstColumns:[1,1],reviewStatus:'operator_supported_pattern'
   }]};
+  if(sql===FLEET_SQL.cabinStandards)return {rowCount:1,rows:[
+   {configurationId:16,useType:'passenger',referenceUnits:'156',economy:156}]};
   throw Error('Unexpected SQL');
  });
  const out=await handler(makeRequest({action:'cabin-overview',airlineId:airline}));
@@ -118,6 +120,7 @@ test('cabins overview fetches only airline-owned aircraft and source-linked faci
  assert.equal(data.aircraft[0].installedEconomy,156);
  assert.equal(data.directory[0].continent,'Europe');
  assert.deepEqual(data.geometries[0].economyColumns,[3,3]);
+ assert.equal(data.standards[0].economy,156);
 });
 test('floorplan and navigation do not claim certified exit positions or live refits',async()=>{
  const [ui,workspace,html,overlay]=await Promise.all([
