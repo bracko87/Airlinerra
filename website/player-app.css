@@ -2853,3 +2853,46 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
  #workspace-routes .route-cost-line{align-items:start;flex-direction:column;gap:6px}
  #workspace-routes .route-rights-info-content{left:-130px;width:min(300px,85vw)}
 }
+
+
+/* Shared view-only aircraft cabin profile: same flat white-panel style as
+   My Routes and Cabin configurations. Never an editing or purchasing screen. */
+.airlinerra-cabin-readonly{
+ width:min(1020px,calc(100vw - 28px));max-width:1020px;
+ max-height:calc(100dvh - 28px);overflow:auto;margin:auto;
+ padding:0;border:1px solid var(--line);border-radius:10px;
+ background:var(--panel,#fff);color:var(--navy);box-shadow:0 18px 60px #0c27432a
+}
+.airlinerra-cabin-readonly::backdrop{background:rgba(12,30,51,.48)}
+.airlinerra-cabin-readonly-shell{padding:24px 27px}
+.airlinerra-cabin-readonly-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;border-bottom:1px solid var(--line);padding-bottom:15px}
+.airlinerra-cabin-readonly-head h2{margin:0;font-size:22px;color:var(--navy)}
+.airlinerra-cabin-readonly-head .hint{margin:5px 0 0}
+.airlinerra-cabin-readonly-head button{font-size:12px}
+.airlinerra-cabin-readonly-origin{font-size:12px;font-weight:650;color:var(--muted);margin:17px 0 10px}
+.airlinerra-cabin-readonly-grid{display:grid;grid-template-columns:minmax(250px,.95fr) minmax(250px,1fr);gap:28px}
+.airlinerra-cabin-readonly-plan,.airlinerra-cabin-readonly-information{min-width:0}
+.airlinerra-cabin-readonly-plan h3,.airlinerra-cabin-readonly-information h3,.airlinerra-cabin-readonly-facts h3{font-size:14px;font-weight:700;color:var(--navy);margin:0 0 12px}
+.airlinerra-cabin-readonly-svg{display:block;width:100%;max-height:540px;min-height:210px;background:#fff}
+.airlinerra-cabin-readonly-row,.airlinerra-cabin-readonly-total,.airlinerra-cabin-readonly-fact{display:grid;grid-template-columns:1fr auto;gap:5px 14px;padding:10px 1px;border-bottom:1px solid var(--line);font-size:12px;align-items:center}
+.airlinerra-cabin-readonly-row span,.airlinerra-cabin-readonly-total span,.airlinerra-cabin-readonly-fact span{color:var(--muted)}
+.airlinerra-cabin-readonly-row strong,.airlinerra-cabin-readonly-total strong,.airlinerra-cabin-readonly-fact strong{color:var(--navy);font-variant-numeric:tabular-nums}
+.airlinerra-cabin-readonly-row small{grid-column:1/-1;color:var(--muted)}
+.airlinerra-cabin-readonly-total{font-weight:700;margin-top:7px}
+.airlinerra-cabin-readonly-information .cabin-passenger-rating{margin-top:20px}
+.airlinerra-cabin-readonly-facts{margin-top:20px;border-top:1px solid var(--line);padding-top:18px}
+#workspace-aircraft-market .used-market-aircraft-identity .route-text-action{align-self:flex-start;margin-top:6px}
+#workspace-aircraft-new-orders #new-aircraft-view-cabin{padding:5px 0}
+#workspace-fleet-aircraft #fleet-view-cabin{white-space:nowrap}
+.library-profile-header .library-cabin-view{white-space:nowrap;font-size:12px}
+@media(max-width:700px){
+ .airlinerra-cabin-readonly-shell{padding:17px}
+ .airlinerra-cabin-readonly-grid{grid-template-columns:1fr;gap:20px}
+ .airlinerra-cabin-readonly-svg{max-height:430px}
+ .airlinerra-cabin-readonly-head h2{font-size:18px}
+ .library-profile-header{flex-wrap:wrap}
+}
+:root[data-ui-theme="dark"] .airlinerra-cabin-readonly{background:#192d42;border-color:#405972;color:#e8f3ff}
+:root[data-ui-theme="dark"] .airlinerra-cabin-readonly h2,
+:root[data-ui-theme="dark"] .airlinerra-cabin-readonly h3,
+:root[data-ui-theme="dark"] .airlinerra-cabin-readonly strong{color:#edf5ff}
