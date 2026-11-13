@@ -1871,7 +1871,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
     const needs=[];
     if(!side.runwayOperationalStatusVerified)needs.push('runway status');
     if(!side.aircraftChapterMatched)needs.push('aircraft noise certificate');
-    return needs.length?side.airportCode+': '+needs.join(' and ')+' unverified':'';
+    return needs.length?side.airportCode+(side.runway?' ('+side.runway+')':'')+': '+needs.join(' and ')+' unverified':'';
    };
    const unresolvedAirports=blockers.includes('AIRPORT_GAME_RESTRICTIONS_NOT_CLEARED')?
     [airportEvidenceNote(airportEvidence?.origin),
