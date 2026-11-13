@@ -14,7 +14,7 @@ SELECT 1::smallint,'OURAIRPORTS:4615','LYTV',
  '16:30'::time,'07:00'::time,NULL::smallint[],false,false,true,
  'https://www.sluzbenilist.me/propisi/399378',
  'MONTENEGRO_OFFICIAL_GAZETTE_156_2026',
- 'Order 05-348/26-7787/2 effective 2026-10-25. Tivat must be open daily 07:00-16:30 local to 2027-03-27. Flight outside published hours requires prior airport operator consent and daylight SR-30 min to SS+30 min. This entry is review-only: not a blanket curfew, no automatic clearance or exception grant. Full text: https://invero.me/montenegro/legislation/naredbu-o-vremenu-u_kojem_aerodromi_moraju_biti_otvoreni_za_vazdusni_saobracaj',
+ 'Order 05-348/26-7787/2 effective 2026-10-25. Tivat must be open daily 07:00-16:30 local to 2027-03-27. Flight outside published hours requires prior airport operator consent and daylight SR-30 min to SS+30 min. This entry is review-only: not a blanket curfew, no automatic clearance or exception grant. Full text: https://invero.me/montenegro/legislation/naredbu-o-vremenu-u-kojem-aerodromi-moraju-biti-otvoreni-za-vazdusni-saobracaj--doc8e8bf318',
  DATE '2026-11-13',ARRAY['passenger','cargo','combi']::text[],
  DATE '2026-10-25',DATE '2027-03-27'
 WHERE EXISTS (
