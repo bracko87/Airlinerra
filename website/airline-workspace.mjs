@@ -946,7 +946,23 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
       result.flightActivated!==false||result.inspectionCompleted!==false)return;
    panel.hidden=false;
    if(result.status==='in_review'){
-    status.textContent='Game records checked: '+String(result.gameDataChecksPassed||0)+' of 6 passed. Awaiting independent condition and age review. Aircraft is not yet cleared to fly.';
+    const gameCondition=Number(result.gameConditionPct);
+    const gameAge=Number(result.gameAgeYears);
+    const gameValid=result.gameConditionPct!==null&&result.gameAgeYears!==null&&
+      Number.isFinite(gameCondition)&&gameCondition>=1&&gameCondition<=100&&
+      Number.isInteger(gameAge)&&gameAge>=0&&gameAge<=40;
+    const checks=Array.isArray(result.gameMaintenanceDue)?result.gameMaintenanceDue:[];
+    const dated=checks.filter(c=>c&&typeof c.name==='string'&&
+      /^20[0-9]{2}-[0-9]{2}-[0-9]{2}$/.test(c.dueGameDate||''));
+    const upcoming=dated.slice(0,2).map(c=>c.name+': '+c.dueGameDate).join(' · ');
+    const grounded=result.gameMaintenanceGrounded===true?
+      ' A game maintenance check is due; aircraft grounded.':'';
+    status.textContent='Game records checked: '+String(result.gameDataChecksPassed||0)+
+      ' of 6 passed. '+(gameValid?
+       'GAME values (not actual inspection): condition '+gameCondition+'%, age '+
+       gameAge+' years.':'Game condition and age not initialized.')+
+      (upcoming?' Upcoming checks: '+upcoming+'.':'')+grounded+
+      ' Aircraft has NOT received operational clearance.';
    }else if(result.status==='requested'){
     status.textContent='Commissioning requested. Game-data verification is pending. No inspection or flight approval yet.';
    }else if(result.status==='not_requested'){
