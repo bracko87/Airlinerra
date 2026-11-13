@@ -426,3 +426,63 @@ test('cabin model and factory rows show seat price per unit and no product sourc
  assert.equal(plan.economyType,'eco_extra');
  assert.equal(updated,1);
 });
+
+
+test('read-only catalog, factory and used seat profiles keep source-specific layouts and rating',async()=>{
+ const {normalizeCabinPreview}=await import('../website/aircraft-cabin-preview.mjs');
+ const catalog=normalizeCabinPreview({useType:'passenger',
+  cabin:{economy:274,premium:0,business:0,first:0},referenceUnits:274,seatTypes});
+ assert.equal(catalog.evaluation.valid,true);
+ assert.equal(catalog.evaluation.count,274);
+ assert.equal(catalog.evaluation.comfortRating,49);
+ assert.equal(catalog.plan.business,0);
+ const previousOwner=normalizeCabinPreview({useType:'combi',
+  cabin:{economy:100,premium:20,business:10,first:0,
+   economyType:'eco_standard',premiumType:'premium_standard',
+   businessType:'business_standard',firstType:'first_standard',extraLegroomCm:0},
+  referenceUnits:156,seatTypes});
+ assert.equal(previousOwner.evaluation.valid,true);
+ assert.equal(previousOwner.evaluation.count,130);
+ assert.equal(previousOwner.evaluation.used,147);
+ assert.equal(previousOwner.plan.premium,20);
+ assert.equal(previousOwner.plan.business,10);
+ assert.equal(normalizeCabinPreview({useType:'cargo',cabin:catalog.plan,referenceUnits:274}),null);
+ assert.equal(normalizeCabinPreview({useType:'passenger',cabin:null,referenceUnits:274}),null);
+ assert.equal(normalizeCabinPreview({useType:'passenger',
+  cabin:{economy:100,premium:0,business:0,first:0,economyType:'invented'},
+  referenceUnits:156,seatTypes}),null);
+});
+
+test('non-owner cabin viewing never provides refit, acquisition or cabin-save actions',async()=>{
+ const [view,library,market,overlay,styles]=await Promise.all([
+  readFile(new URL('../website/aircraft-cabin-preview.mjs',import.meta.url),'utf8'),
+  readFile(new URL('../website/aircraft-library.mjs',import.meta.url),'utf8'),
+  readFile(new URL('../website/airline-workspace.mjs',import.meta.url),'utf8'),
+  readFile(new URL('../website/dev-scripts/invited-overlay.mjs',import.meta.url),'utf8'),
+  readFile(new URL('../website/player-app.css',import.meta.url),'utf8')
+ ]);
+ assert.match(view,/renderCabinFloorplan/);
+ assert.match(view,/updatePassengerRatingGauge/);
+ assert.match(view,/not passenger happiness or actual feedback/);
+ assert.doesNotMatch(view,/\.innerHTML|post\(|bidUsed\(|acquire\(|saveCabinDraft\(/);
+ assert.match(library,/View cabin configuration/);
+ assert.match(market,/View aircraft profile & cabin/);
+ assert.match(market,/new-aircraft-view-cabin/);
+ assert.match(market,/fleet-view-cabin/);
+ assert.match(market,/record\.cabinSnapshot/);
+ assert.match(market,/airframe\.installedEconomy/);
+ assert.match(overlay,/'aircraft-cabin-preview\.mjs'/);
+ assert.match(styles,/\.airlinerra-cabin-readonly-grid/);
+});
+
+test('used-aircraft cabin snapshot is attached to the airframe not the seller label',async()=>{
+ const migration=await readFile(new URL('../supabase/migrations/20261113230000_airlinerra_used_aircraft_cabin_snapshots_v1.sql',import.meta.url),'utf8');
+ const followup=await readFile(new URL('../supabase/migrations/20261113230100_airlinerra_allow_previous_owner_installed_cabin_origin.sql',import.meta.url),'utf8');
+ assert.match(migration,/NEW\.source_inventory_id/);
+ assert.match(migration,/NEW\.cabin_snapshot=jsonb_build_object/);
+ assert.match(migration,/IF NEW\.awarded_inventory_id IS NULL/);
+ assert.match(migration,/AFTER UPDATE OF awarded_inventory_id/);
+ assert.match(migration,/installed_source=CASE WHEN NEW\.cabin_origin='previous_owner'/);
+ assert.match(followup,/used_aircraft_previous_owner_layout/);
+ assert.doesNotMatch(migration,/release_state\s*=\s*'live'|state\s*=\s*'active'/);
+});
