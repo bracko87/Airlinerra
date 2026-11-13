@@ -825,6 +825,13 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
      maintenanceDueEvaluationConnected:maintenance?.checkDueEvaluationConnected===true,
      gameAirportSlotCapacityAvailable:candidate.airportSlotCapacityPreviewAvailable===true,
      gameAirportRestrictionsChecked:candidate.airportRestrictionGateChecked===true,
+     // Evidence diagnostic only: never mistake an airport review for approval.
+     gameAirportRestrictionFindings:
+      candidate.airportRestrictionFindings?.readOnly===true&&
+      candidate.airportRestrictionFindings?.operationApproved===false?
+       candidate.airportRestrictionFindings:null,
+     gameTrafficGrantDetails:Array.isArray(candidate.gameTrafficGrantDetails)?
+      candidate.gameTrafficGrantDetails:[],
      gameTrafficGrantsVerified:candidate.verifiedGameTrafficGrants??0,
      gameTrafficRequiredServiceTypes:candidate.requiredServiceTypes??[],
      blockingRequirements:missing,verifiedGameDate:state.confirmed_game_date||null});
