@@ -231,3 +231,23 @@ test('verified public image fallbacks keep the correct model, role and unique ke
  assert.ok(entries.length>=76,'Original fallback mappings must remain available');
  assert.equal(entries.length,new Set(entries.map(entry=>entry[1])).size,'Fallback keys must be unique');
 });
+
+
+test('catalog profile reports factory cabin seats, not maximum-reference capacity',async()=>{
+ const {aircraftFactorySeats,aircraftServiceSeats}=await import('../website/aircraft-library.mjs');
+ const aircraft=serializeAircraftLibrary([{
+  ...sample,id:309,model:'A330-800neo',seats:406,game_service_seats:406,
+  cabin_reference_units:406,cabin_standard_economy:406,
+  cabin_factory_economy:328,cabin_factory_premium:18,
+  cabin_factory_business:12,cabin_factory_first:8,
+  cabin_factory_extra_legroom_cm:'1.2'
+ }]).aircraft[0];
+ assert.equal(aircraftServiceSeats(aircraft),406,'published service reference is preserved');
+ assert.equal(aircraftFactorySeats(aircraft),366,'physical factory seats include all classes');
+ assert.deepEqual([
+  aircraft.cabinDefault.economy,aircraft.cabinDefault.premium,
+  aircraft.cabinDefault.business,aircraft.cabinDefault.first
+ ],[328,18,12,8]);
+ assert.equal(aircraft.cabinDefault.extraLegroomCm,1.2);
+ assert.equal(aircraftFactorySeats({...aircraft,useType:'cargo'}),null);
+});
