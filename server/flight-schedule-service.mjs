@@ -271,6 +271,9 @@ export const SCHEDULE_SQL=Object.freeze({
   $1::uuid,$2::uuid,$3::uuid,$4::text,$5::text) AS result`,
  maintenanceFlightWindow:`SELECT airlinerra_game.section9_owned_game_maintenance_flight_window_v1(
   $1::uuid,$2::uuid,$3::uuid,$4::timestamptz,$5::timestamptz) AS result`,
+ candidateSlotRights:`SELECT airlinerra_game.section9_owned_candidate_slot_rights_preflight_v1(
+  $1::uuid,$2::uuid,$3::uuid,$4::text,$5::text,
+  $6::timestamptz,$7::timestamptz,$8::jsonb,$9::text,$10::text) AS result`,
  bookingWindowPreview:SEVEN_DAY_WINDOW_SQL,
  owner:'SELECT id FROM airlinerra_game.airlines WHERE id=$1::uuid AND owner_player_id=$2::uuid AND world_id=1',
  feeAircraft:`SELECT i.configuration_id::bigint AS "configurationId",
@@ -764,6 +767,40 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
     // A preview for a single reference flight is not a whole recurring
     // weekly schedule. Full route booking remains fail closed.
     missing.push('RECURRING_MAINTENANCE_WINDOW_CERTIFICATION_NOT_CONNECTED');
+    // Reuse the exact existing weekly airport stand/curfew and issued
+    // game-traffic-rights sources. This is a read-only candidate check:
+    // no schedule, permit or airport slot is reserved or claimed here.
+    const candidateResponse=await client.query(SCHEDULE_SQL.candidateSlotRights,[
+     userId,body.airlineId,body.aircraftInventoryId,
+     body.originAirportKey,body.destinationAirportKey,
+     body.referenceDepartureUtc??null,body.referenceArrivalUtc??null,
+     JSON.stringify(body.weeklySchedule),body.departureStand??null,
+     body.arrivalStand??null
+    ]);
+    const candidate=candidateResponse.rows?.[0]?.result;
+    if(candidateResponse.rowCount!==1||!candidate||
+       candidate.status!=='candidate_operating_route_preflight_only'||
+       candidate.readOnly!==true||
+       candidate.worldId!==1||candidate.operatingScheduleCreated!==false||
+       candidate.airportSlotsReserved!==false||
+       candidate.operatorLicenceOperationallyVerified!==false||
+       candidate.operationallyApproved!==false||
+       candidate.trafficRightsOperationallyApproved!==false||
+       candidate.flightActivated!==false||
+       candidate.passengerBookingsCreated!==false||
+       candidate.ledgerPosted!==false||
+       !Array.isArray(candidate.blockers)||
+       candidate.blockers.some(x=>typeof x!=='string'||x.length>120))
+      return respond(503,{error:'GAME_SLOT_RIGHTS_PREFLIGHT_UNVERIFIED',
+       routeCreated:false,slotsReserved:false,activated:false});
+    for(const code of candidate.blockers)
+     if(!missing.includes(code))missing.push(code);
+    if(candidate.airportSlotCapacityPreviewAvailable!==true)
+     missing.push('AIRPORT_SLOT_CAPACITY_NOT_VERIFIED_FOR_ROUTE');
+    if(candidate.verifiedGameTrafficGrants!==
+      (Array.isArray(candidate.requiredServiceTypes)?
+        candidate.requiredServiceTypes.length:-1))
+     missing.push('GAME_ROUTE_TRAFFIC_PERMISSION_NOT_GRANTED');
     // Crew is intentionally out of Phase 1. These are independent, real
     // non-crew dependencies, not fictitious permits or release records.
     missing.push('ATOMIC_SCHEDULE_AND_AIRPORT_SLOT_ACTIVATION_NOT_CONNECTED',
