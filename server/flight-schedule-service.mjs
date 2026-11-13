@@ -28,6 +28,8 @@ const ROUNDTRIP_FIELDS=new Set([...BASE_FIELDS,'aircraftInventoryId',
  'returnDepartureUtc','returnArrivalUtc','weeklySchedule','returnWeeklySchedule',
  'departureStand','arrivalStand','returnDepartureStand','returnArrivalStand',
  'turnaroundMinutes']);
+const ROUNDTRIP_CREATE_FIELDS=new Set([...ROUNDTRIP_FIELDS,'outboundFlightNumber',
+ 'returnFlightNumber']);
 const CHECK_FIELDS=new Set([...BASE_FIELDS,'scheduleId']);
 const COMMISSIONING_FIELDS=new Set([...BASE_FIELDS,'aircraftInventoryId']);
 const MAINTENANCE_JOB_FIELDS=new Set([...COMMISSIONING_FIELDS,'checkCode']);
@@ -104,9 +106,14 @@ export function validateFlightSchedulePayload(body){
   }
   return true;
  }
- if(body.action==='roundtrip-preview'){
-  if(!withinFields(body,ROUNDTRIP_FIELDS)||
-    Object.keys(body).length!==ROUNDTRIP_FIELDS.size||
+ if(body.action==='roundtrip-preview'||body.action==='operational-roundtrip-create'){
+  const create=body.action==='operational-roundtrip-create';
+  const fields=create?ROUNDTRIP_CREATE_FIELDS:ROUNDTRIP_FIELDS;
+  if(!withinFields(body,fields)||
+    Object.keys(body).length!==fields.size||
+    (create&&(!/^[A-Z0-9]{2}[0-9]{1,4}$/.test(body.outboundFlightNumber||'')||
+      !/^[A-Z0-9]{2}[0-9]{1,4}$/.test(body.returnFlightNumber||'')||
+      body.outboundFlightNumber===body.returnFlightNumber))||
     !uuid(body.aircraftInventoryId)||
     !AIRPORT.test(body.originAirportKey||'')||
     !AIRPORT.test(body.destinationAirportKey||'')||
@@ -303,6 +310,11 @@ export const SCHEDULE_SQL=Object.freeze({
   $6::timestamptz,$7::timestamptz,$8::timestamptz,$9::timestamptz,
   $10::jsonb,$11::jsonb,$12::text,$13::text,$14::text,$15::text,
   $16::integer,28::integer) AS result`,
+ roundtripAtomicCreate:`SELECT airlinerra_game.section9_owned_atomic_roundtrip_operational_create_v1(
+  $1::uuid,$2::uuid,$3::uuid,$4::text,$5::text,$6::text,$7::text,
+  $8::timestamptz,$9::timestamptz,$10::timestamptz,$11::timestamptz,
+  $12::jsonb,$13::jsonb,$14::text,$15::text,$16::text,$17::text,
+  $18::integer,28::integer) AS result`,
  candidateSlotRights:`SELECT airlinerra_game.section9_owned_candidate_slot_rights_preflight_v1(
   $1::uuid,$2::uuid,$3::uuid,$4::text,$5::text,
   $6::timestamptz,$7::timestamptz,$8::jsonb,$9::text,$10::text) AS result`,
@@ -684,6 +696,35 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
     if(result.status==='scheduled'||result.status==='game_maintenance_jobs'||
        result.status==='cancelled')return respond(200,result);
     return respond(409,{...result,created:false,aircraftClearedForFlight:false});
+   }
+   if(body.action==='operational-roundtrip-create'){
+    // Atomic owner-scoped DB function. It must NEVER silently retain
+    // one half of a route, reserve orphan slots, or report a draft as live.
+    const owner=await client.query(SCHEDULE_SQL.owner,[body.airlineId,userId]);
+    if(owner.rowCount!==1)return respond(403,{error:'Airline not owned by this account'});
+    const response=await client.query(SCHEDULE_SQL.roundtripAtomicCreate,[
+      userId,body.airlineId,body.aircraftInventoryId,
+      body.outboundFlightNumber,body.returnFlightNumber,
+      body.originAirportKey,body.destinationAirportKey,
+      body.referenceDepartureUtc,body.referenceArrivalUtc,
+      body.returnDepartureUtc,body.returnArrivalUtc,
+      JSON.stringify(body.weeklySchedule),JSON.stringify(body.returnWeeklySchedule),
+      body.departureStand,body.arrivalStand,body.returnDepartureStand,
+      body.returnArrivalStand,body.turnaroundMinutes
+    ]);
+    const result=response.rows?.[0]?.result;
+    const blocked=['blocked_flight_number_already_used',
+      'blocked_roundtrip_game_model','blocked_operational_releases_not_ready',
+      'blocked_airport_capacity_not_configured','blocked_pair_capacity_or_rotation_changed'];
+    if(response.rowCount!==1||!result||!blocked.includes(result.status)||
+      result.routeCreated!==false||result.outboundCreated!==false||
+      result.returnCreated!==false||result.slotsReserved!==false||
+      result.flightActivated!==false||result.bookingEnabled!==false||
+      result.ledgerPosted!==false)
+     return respond(503,{error:'ATOMIC_ROUNDTRIP_NOT_OPERATIONALLY_CONFIRMED',
+      routeCreated:false});
+    return respond(409,{...result,routeCreated:false,
+      message:'Both flights NOT CREATED. Operating permissions or flight execution are not ready.'});
    }
    if(body.action==='roundtrip-preview'){
     // Preview ONLY. Two proposed flights are checked together with the
