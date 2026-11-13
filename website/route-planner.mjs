@@ -1865,15 +1865,29 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
     blockers.includes('AIRCRAFT_MAINTENANCE_BASELINE_NOT_VERIFIED')?
     'Aircraft condition and maintenance tracking are not yet verified.':
     '';
-   message('route-plan-status',
-    specific?'NOT CREATED — '+specific+' The remaining flight systems are still being connected.':
+   const airportEvidence=error?.operationalAirportFindings;
+   const airportEvidenceNote=side=>{
+    if(!side?.airportCode)return '';
+    const needs=[];
+    if(!side.runwayOperationalStatusVerified)needs.push('runway status');
+    if(!side.aircraftChapterMatched)needs.push('aircraft noise certificate');
+    return needs.length?side.airportCode+': '+needs.join(' and ')+' unverified':'';
+   };
+   const unresolvedAirports=blockers.includes('AIRPORT_GAME_RESTRICTIONS_NOT_CLEARED')?
+    [airportEvidenceNote(airportEvidence?.origin),
+     airportEvidenceNote(airportEvidence?.destination)].filter(Boolean):[];
+   const details=unresolvedAirports.length?
+    ' Airport reviews needed — '+unresolvedAirports.join('; ')+'.':'';
+   const statusText=specific?
+    'NOT CREATED — '+specific+' The remaining flight systems are still being connected.':
     reason.includes('GAME_ENGINE_NOT_READY')?
      'NOT CREATED — automatic flight activation and bookings are not connected yet. No flight was created.':
     reason.includes('CABIN_PACKAGE_NOT_SAVED')?
      'NOT CREATED — save the selected cabin package in Flight Services first.':
     reason.includes('SCHEDULE_CONFLICT')?
      'NOT CREATED — the aircraft, airport slots or flight schedule failed verification.':
-     'NOT CREATED — an operational flight could not be verified. No route was saved.');
+     'NOT CREATED — an operational flight could not be verified. No route was saved.';
+   message('route-plan-status',statusText+details);
    return;
   }
   const copiedToDrafts=await draftWrite('routes',[...filtered,draft]);
