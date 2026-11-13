@@ -26,6 +26,9 @@ test('seven-day ticket opening requires verified game day and operating approval
  assert.match(source,/section9_operated_flight_movements_v1/);
  assert.match(source,/section9_dated_flight_occurrences_v1/);
  assert.match(source,/ON CONFLICT\(schedule_id,flight_local_date,weekly_entry\) DO NOTHING/);
+ assert.match(source,/section9_game_turnaround_policy_v1/);
+ assert.match(source,/t.max_seats>=s.passenger_seats/);
+ assert.match(source,/greatest\(45,min_ground_minutes\)/);
  assert.match(source,/sevenDayWindowVerified',true/);
 });
 test('passenger booking is atomic, idempotent, and cannot overbook',async()=>{
