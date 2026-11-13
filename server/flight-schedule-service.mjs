@@ -238,6 +238,10 @@ export const SCHEDULE_SQL=Object.freeze({
   $1::uuid,$2::uuid,$3::uuid,$4::text) AS result`,
  commissioningDataInspection:`SELECT airlinerra_game.section9_owned_starter_game_data_inspection_v1(
   $1::uuid,$2::uuid,$3::uuid,$4::text) AS result`,
+ commissioningGameAirframe:`SELECT airlinerra_game.section9_owned_starter_game_airframe_initialize_v1(
+  $1::uuid,$2::uuid,$3::uuid,$4::text) AS result`,
+ maintenanceGameDue:`SELECT airlinerra_game.section9_owned_game_maintenance_due_v1(
+  $1::uuid,$2::uuid,$3::uuid,$4::date) AS result`,
  bookingWindowPreview:SEVEN_DAY_WINDOW_SQL,
  owner:'SELECT id FROM airlinerra_game.airlines WHERE id=$1::uuid AND owner_player_id=$2::uuid AND world_id=1',
  feeAircraft:`SELECT i.configuration_id::bigint AS "configurationId",
@@ -526,11 +530,55 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
        blockingRequirements:gameData.blockingRequirements||[],
        commissioningPending:true});
     }
+    // Game age and condition are separate from real aircraft records.
+    // Initialize once only following an explicit owner request and six checks.
+    let gameAirframe=null,gameMaintenance=null;
+    if(gameData?.status==='in_review'){
+     const gameInit=await client.query(SCHEDULE_SQL.commissioningGameAirframe,[
+      userId,body.airlineId,body.aircraftInventoryId,
+      action==='request'?'initialize':'status'
+     ]);
+     gameAirframe=gameInit.rows?.[0]?.result;
+     if(gameInit.rowCount!==1||!gameAirframe||
+        gameAirframe.dispatchApproved!==false||
+        gameAirframe.flightActivated!==false||
+        gameAirframe.ledgerPosted!==false||
+        gameAirframe.physicalConditionVerified!==false||
+        gameAirframe.realManufactureYearVerified!==false)
+      return respond(503,{error:'GAME_AIRFRAME_BASELINE_UNVERIFIED'});
+     const gameDue=await client.query(SCHEDULE_SQL.maintenanceGameDue,[
+      userId,body.airlineId,body.aircraftInventoryId,
+      // Owner does not supply or choose the authoritative game day.
+      // This read uses the same private clock that anchors the service model.
+      // Readback is still guarded against incomplete/unsafe output.
+      (await client.query(
+       'SELECT confirmed_game_date FROM airlinerra_game.holding_world_clock_v1 WHERE world_id=1'
+      )).rows?.[0]?.confirmed_game_date
+     ]);
+     gameMaintenance=gameDue.rows?.[0]?.result;
+     if(gameDue.rowCount!==1||!gameMaintenance||
+        gameMaintenance.readOnly!==true||
+        gameMaintenance.maintenanceReady!==false||
+        gameMaintenance.dispatchApproved!==false||
+        gameMaintenance.flightActivated!==false||
+        gameMaintenance.ledgerPosted!==false||
+        gameMaintenance.gameDatePrecisionOnly!==true||
+        !Array.isArray(gameMaintenance.checks)||
+        gameMaintenance.checks.length!==6||
+        typeof gameMaintenance.gameMaintenanceGrounded!=='boolean')
+      return respond(503,{error:'GAME_MAINTENANCE_DUE_UNVERIFIED'});
+    }
     return respond(200,{...result,
      status:gameData?.status??result.status,
      gameDataInspectionComplete:gameData?.gameDataInspectionComplete===true,
      gameDataChecksPassed:gameData?.dataChecksPassed??0,
      gameDataChecksRequired:gameData?.requiredDataChecks??6,
+     gameAgeYears:gameMaintenance?.gameAgeYears??null,
+     gameConditionPct:gameMaintenance?.gameConditionPct??null,
+     gameMaintenanceDue:gameMaintenance?.checks??null,
+     gameMaintenanceGrounded:gameMaintenance?.gameMaintenanceGrounded??true,
+     gameMaintenanceDueCount:gameMaintenance?.dueCheckCount??null,
+     gameMaintenanceDateOnly:true,
      physicalConditionVerified:false,manufactureYearVerified:false,
      physicalInspectionCompleted:false,aircraftClearedForFlight:false,
      commissioningPending:['requested','in_review'].includes(gameData?.status??result.status)});
@@ -589,6 +637,33 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
      for(const reason of maintenance.blockers){
       if(!missing.includes(reason))missing.push(reason);
      }
+    }
+    // Separate game-day maintenance gate. Unlike unverified real inspection
+    // it can evaluate explicit GAME dates, but does not release flights.
+    let gameMaintenance=null;
+    if(physical.rowCount===1&&aircraft){
+     const evaluated=await client.query(SCHEDULE_SQL.maintenanceGameDue,[
+      userId,body.airlineId,body.aircraftInventoryId,
+      state.confirmed_game_date
+     ]);
+     gameMaintenance=evaluated.rows?.[0]?.result;
+     if(evaluated.rowCount!==1||!gameMaintenance||
+        gameMaintenance.readOnly!==true||
+        gameMaintenance.maintenanceReady!==false||
+        gameMaintenance.dispatchApproved!==false||
+        gameMaintenance.flightActivated!==false||
+        gameMaintenance.ledgerPosted!==false||
+        typeof gameMaintenance.gameMaintenanceGrounded!=='boolean')
+      return respond(503,{error:'GAME_MAINTENANCE_PREFLIGHT_UNAVAILABLE',
+       routeCreated:false});
+     if(gameMaintenance.gameMaintenanceGrounded)
+      missing.push(gameMaintenance.status==='game_maintenance_due'?
+       'GAME_AIRCRAFT_MAINTENANCE_CHECK_DUE':
+       'GAME_MAINTENANCE_EVIDENCE_MISSING');
+     if(gameMaintenance.hourlyGroundingEnforced!==true)
+      missing.push('MAINTENANCE_HOURLY_GROUNDING_NOT_CONNECTED');
+     if(gameMaintenance.maintenanceCompletionSchedulingConnected!==true)
+      missing.push('MAINTENANCE_SERVICE_JOB_AND_RELEASE_NOT_CONNECTED');
     }
     // Crew is intentionally out of Phase 1. These are independent, real
     // non-crew dependencies, not fictitious permits or release records.
