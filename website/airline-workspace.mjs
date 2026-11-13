@@ -203,7 +203,7 @@ const pages=Object.freeze({
 </section>
 <section id="fleet-game-maintenance-jobs" class="fleet-maintenance-preview" aria-label="Book in-game maintenance" hidden>
  <h3>In-game maintenance bookings</h3>
- <p class="hint">Choose a game maintenance check. A booked check reserves the aircraft from its start until its full service hours finish. No flight or charge is created.</p>
+ <p class="hint">Choose a game maintenance check. A booked check reserves this aircraft until service finishes. Game fees are charged once when the check completes. If there is not enough money, the aircraft remains grounded. Booking never activates a flight.</p>
  <div id="fleet-game-maintenance-checks" class="workspace-actions" role="group" aria-label="Maintenance type">
   <button type="button" class="secondary" data-game-maint-check="daily" aria-pressed="true">Daily</button>
   <button type="button" class="secondary" data-game-maint-check="weekly" aria-pressed="false">Weekly</button>
@@ -383,6 +383,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
  let maintenanceLast=null;
  let commissioningFetchVersion=0;
  let gameServiceFetchVersion=0,gameServiceSelectedCheck='daily';
+ let gameServiceQuotes={};
  let aircraftPhotoToken=0,aircraftPhotoId=null,aircraftCustomPhoto=false,photoBlob=null,photoPreviewUrl=null,photoPendingId=null;
  let scheduleSnapshot=null;
  let scheduleFetchVersion=0;
@@ -964,7 +965,23 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
      result.ledgerPosted!==false||!Array.isArray(result.jobs)||
      result.jobs.length>15)return;
    panel.hidden=false;
-   const active=result.jobs.find(x=>x&&['scheduled','in_progress'].includes(x.status));
+   gameServiceQuotes=result.quotedGameServicePricesUsd&&
+     typeof result.quotedGameServicePricesUsd==='object'?
+     result.quotedGameServicePricesUsd:{};
+   for(const choice of $('fleet-game-maintenance-checks')?.querySelectorAll('[data-game-maint-check]')||[]){
+    const code=choice.dataset.gameMaintCheck;
+    const price=Number(gameServiceQuotes[code]);
+    const label=code==='daily'?'Daily':code==='weekly'?'Weekly':code.toUpperCase();
+    choice.textContent=label+(Number.isFinite(price)&&price>0?
+      ' · $'+Math.round(price).toLocaleString('en-US'):' · price unavailable');
+    choice.disabled=!(Number.isFinite(price)&&price>0);
+   }
+   const selectedPrice=Number(gameServiceQuotes[gameServiceSelectedCheck]);
+   book.textContent=Number.isFinite(selectedPrice)&&selectedPrice>0?
+     'Book '+gameServiceSelectedCheck.toUpperCase()+' check — $'+
+      Math.round(selectedPrice).toLocaleString('en-US'):'Maintenance price unavailable';
+   const active=result.jobs.find(x=>x&&
+     ['scheduled','in_progress','payment_required'].includes(x.status));
    const latest=result.jobs[0];
    const formatGameUtc=utc=>{
     const date=new Date(utc);
@@ -973,19 +990,25 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
        dateStyle:'medium',timeStyle:'short'}).format(date):'Unknown time';
    };
    if(active){
+    const amount=Number(active.quotedCostUsd);
+    const label=Number.isFinite(amount)&&amount>0?
+      '$'+Math.round(amount).toLocaleString('en-US'):'unknown fee';
     status.textContent=String(active.checkCode||'Maintenance').toUpperCase()+
      ' — '+String(active.status).replace('_',' ')+
      '. Game service: '+formatGameUtc(active.gameStartUtc)+' to '+
-     formatGameUtc(active.gameEndUtc)+
-     '. The aircraft is reserved until the check completes. No financial charge posted.';
-    book.disabled=true;
-    cancel.hidden=active.status!=='scheduled';
+     formatGameUtc(active.gameEndUtc)+'. '+
+     (active.status==='payment_required'?
+       'The '+label+' game fee is unpaid. Aircraft remains grounded until payment.':
+       'Aircraft reserved. The '+label+' game fee posts once when service completes.')+
+     ' This is not a real aircraft inspection certificate.';
+    book.disabled=true;cancel.hidden=active.status!=='scheduled';
    }else{
     status.textContent=latest?.status==='completed'?
-     'Last game maintenance completed. '+formatGameUtc(latest.gameEndUtc)+
-     '. This is game service, not a real inspection certificate.':
-     'No active maintenance booking. The next game job starts shortly after you book it.';
-    book.disabled=false;cancel.hidden=true;
+     'Last game maintenance completed: '+formatGameUtc(latest.gameEndUtc)+
+     '. Game fee posted. This is not a real aircraft inspection certificate.':
+     'No active service booked. Select a game maintenance check to reserve aircraft time.';
+    book.disabled=!(Number.isFinite(selectedPrice)&&selectedPrice>0);
+    cancel.hidden=true;
    }
   }catch{
    if(ticket!==gameServiceFetchVersion)return;
@@ -1464,7 +1487,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
     usedMarketSnapshot=null;usedMarketFetchVersion++;usedMarketPage=0;
    selectedUsedListingId=null;
    maintenanceLast=null;maintenanceFetchVersion++;
-   commissioningFetchVersion++;gameServiceFetchVersion++;
+   commissioningFetchVersion++;gameServiceFetchVersion++;gameServiceQuotes={};
    if($('fleet-starter-commissioning'))$('fleet-starter-commissioning').hidden=true;
    if($('fleet-game-maintenance-jobs'))$('fleet-game-maintenance-jobs').hidden=true;
    aircraftPhotoId=null;aircraftPhotoToken++;resetPhotoDraft();
@@ -1565,6 +1588,392 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    const code=gameMaintenanceChoice.dataset.gameMaintCheck;
    if(!['daily','weekly','a','b','c','d'].includes(code))return;
    gameServiceSelectedCheck=code;
+   const price=Number(gameServiceQuotes[code]);
+   const book=$('fleet-game-maintenance-book');
+   if(book){
+    book.textContent=Number.isFinite(price)&&price>0?
+     'Book '+code.toUpperCase()+' check — 
+   for(const button of choices?.querySelectorAll('[data-game-maint-check]')||[])
+    button.setAttribute('aria-pressed',String(button.dataset.gameMaintCheck===code));
+   return;
+  }
+  const gameJobButton=event.target.closest('[data-game-maint-job]');
+  if(gameJobButton){
+   const action=gameJobButton.dataset.gameMaintJob;
+   const aircraftId=selectedFleetAircraftId,airlineId=data.airline?.id;
+   const message=$('fleet-game-maintenance-status');
+   const scheduler=data.scheduler;
+   if(!data.connected||!airlineId||!marketSnapshot?.fleet?.some(a=>a.id===aircraftId)||
+      !['book','cancel'].includes(action))return;
+   const doAction=action==='book'?scheduler?.maintenanceJobBook:scheduler?.maintenanceJobCancel;
+   if(typeof doAction!=='function')return;
+   gameJobButton.disabled=true;
+   if(message)message.textContent=action==='book'?
+     'Checking aircraft location and reserving game maintenance time…':
+     'Cancelling scheduled game maintenance…';
+   try{
+    const result=await doAction({airlineId,aircraftInventoryId:aircraftId,
+     ...(action==='book'?{checkCode:gameServiceSelectedCheck}:{})});
+    if(result?.flightActivated!==false||result?.ledgerPosted!==false||
+      (action==='book'?(result.status!=='scheduled'||result.created!==true||
+        result.chargedNow!==false||result.chargedAtServiceCompletion!==true||
+        !(Number(result.quotedCostUsd)>0)):
+       !['cancelled','no_cancelable_service'].includes(result.status)))
+      throw Error('Game maintenance change not confirmed');
+    await loadGameMaintenanceJobs(aircraftId);
+    void loadCommissioningStatus(aircraftId);
+   }catch{
+    if(message)message.textContent='Game maintenance booking could not be confirmed. Aircraft has not been cleared to fly.';
+   }finally{gameJobButton.disabled=false;}
+   return;
+  }
+  const commissioningButton=event.target.closest('#fleet-commissioning-request');
+  if(commissioningButton){
+   const aircraft=marketSnapshot?.fleet?.find(a=>a.id===selectedFleetAircraftId);
+   const status=$('fleet-commissioning-status');
+   const airlineId=data.airline?.id;
+   if(!aircraft||!data.connected||!airlineId||
+      typeof data.scheduler?.commissioningRequest!=='function')return;
+   commissioningButton.disabled=true;
+   if(status)status.textContent='Checking commissioning request in the game database…';
+   try{
+    const result=await data.scheduler.commissioningRequest({
+     airlineId,aircraftInventoryId:aircraft.id
+    });
+    if(!result||!['requested','in_review'].includes(result.status)||
+       result.flightActivated!==false||
+       result.physicalInspectionCompleted!==false||
+       result.aircraftClearedForFlight!==false)
+      throw Error('Invalid commissioning response');
+    await loadCommissioningStatus(aircraft.id);
+   }catch{
+    if(status)status.textContent='Commissioning request could not be verified. Aircraft remains unchanged.';
+   }finally{
+    commissioningButton.disabled=false;
+   }
+   return;
+  }
+  const deliveryButton=event.target.closest('[data-aircraft-delivery]');
+  if(deliveryButton){
+   const orderId=deliveryButton.dataset.aircraftDelivery;
+   const airlineId=data.airline?.id;
+   const notice=$('fleet-delivery-feedback');
+   if(!marketSnapshot?.fleet?.some(x=>x.orderId===orderId &&
+       x.deliveryStatus==='awaiting_delivery')||!data.fleetClient?.checkDelivery||!airlineId){
+    if(notice)notice.textContent='This order is not available for delivery checking.';
+    return;
+   }
+   deliveryButton.disabled=true;
+   if(notice)notice.textContent='Checking game delivery status...';
+   try{
+    const result=await data.fleetClient.checkDelivery({airlineId,orderId});
+    if(result?.deliveryStatus==='delivered_pending_inspection'){
+     if(notice)notice.textContent='Aircraft delivered. Inspection is required before it can be scheduled.';
+    }else if(result?.deliveryStatus==='awaiting_delivery'){
+     if(notice)notice.textContent='Aircraft is awaiting delivery. Expected date: '+
+       new Date(result.deliveryDueAt).toLocaleDateString('en-US')+'.';
+    }else{
+     if(notice)notice.textContent='Delivery status: '+String(result?.deliveryStatus||'unknown')+'.';
+    }
+    await loadRealFleetMarket();
+   }catch{
+    if(notice)notice.textContent='Could not confirm delivery status. Try again.';
+   }finally{deliveryButton.disabled=false;}
+   return;
+  }
+  const selectedUsed=event.target.closest('[data-used-market-select]');
+  if(selectedUsed){
+   const offer=usedMarketSnapshot?.offers?.find(x=>x.listingId===selectedUsed.dataset.usedMarketSelect);
+   showUsedBidPanel(offer);
+   return;
+  }
+  const nav=event.target.closest('[data-workspace-go]');
+  if(nav){const to=nav.dataset.workspaceGo;
+   if(to==='cabin-configurations'&&selectedFleetAircraftId)
+    cabinConfigurationManager?.selectAircraft(selectedFleetAircraftId);
+   if(AIRLINE_UI_VIEWS.includes(to)&&typeof goTo==='function')goTo(to);
+   if(to==='fleet'||to==='aircraft-new-orders')void loadRealFleetMarket();
+   if(to==='aircraft-new-orders'||to==='aircraft-market')void loadUsedMarket();
+   return;}
+  const id=event.target.closest('button')?.id;
+  if(!id)return;
+  if(id==='fleet-configuration-change'){
+   await aircraftConfigurationDialog?.open();
+   return;
+  }
+  const general={'settings-units':'units','settings-time':'time','settings-date':'date',
+   'settings-timezone':'timezone','settings-language':'language'};
+  const interfaceKeys={'pref-theme':'theme','pref-density':'density','pref-motion':'motion','pref-landing':'landing'};
+  if(id==='settings-save')writePreferences(general,'settings-feedback');
+  if(id==='settings-reset')resetPreferences('settings-feedback');
+  if(id==='interface-save')writePreferences(interfaceKeys,'interface-status');
+  if(id==='interface-reset')resetPreferences('interface-status');
+  if(id==='notification-save')writePreferences({'pref-hints':'hints'},'notification-status');
+  if(id==='route-from-find')await findAirport('from');
+  if(id==='route-to-find')await findAirport('to');
+  if(id==='route-save'){
+   const idea={from:selected('from'),to:selected('to'),flights:Number($('route-flights').value)};
+   if(!validateRouteIdea(idea)){$('route-feedback').textContent='Choose two different approved airports and 1-28 departures per week.';return;}
+   const freshest=getDraft();
+   const saved=Array.isArray(freshest.routes)?freshest.routes:[];
+   if(saved.length>=25){$('route-feedback').textContent='Route draft limit is 25. Remove old drafts in My routes.';return;}
+   const next=[...saved.filter(route=>route?.from?.key!==idea.from.key||route?.to?.key!==idea.to.key),idea];
+   const savedToDb=await draftWrite('routes',next);
+   if(!savedToDb){
+    $('route-feedback').textContent='NOT SAVED — Supabase did not confirm this planning draft.';return;
+   }
+   await draftWrite('route',idea);
+   showRoute();
+   doc.dispatchEvent(new CustomEvent('airlinerra:route-draft-saved'));
+   $('route-feedback').textContent='Route idea saved as a non-operational planning draft in your airline database.';
+  }
+  if(id==='used-market-find'||id==='used-market-refresh'||
+     id==='used-market-prev'||id==='used-market-next'){
+   if(id==='used-market-find'){
+    usedMarketPage=0;
+    usedMarketSearch=String($('used-market-search')?.value||'').trim().slice(0,60);
+    usedMarketFilter=['all','purchase','lease'].includes($('used-market-mode')?.value)?
+      $('used-market-mode').value:'all';
+    for(const [key,id] of [['maker','used-maker'],['family','used-family'],
+      ['model','used-model'],['configuration','used-configuration']])
+     usedMarketChoice[key]=String($(id)?.value||'');
+   }
+   if(id==='used-market-prev')usedMarketPage=Math.max(0,usedMarketPage-1);
+   if(id==='used-market-next'&&usedMarketSnapshot&&
+       (usedMarketPage+1)*usedMarketSnapshot.pageSize<usedMarketSnapshot.total)
+    usedMarketPage++;
+   selectedUsedListingId=null;
+   if($('used-market-bid-panel'))$('used-market-bid-panel').hidden=true;
+   if($('used-market-state'))$('used-market-state').textContent='Refreshing approved auction listings…';
+   await loadUsedMarket();
+   return;
+  }
+  if(id==='used-market-bid-cancel'){
+   selectedUsedListingId=null;
+   if($('used-market-bid-panel'))$('used-market-bid-panel').hidden=true;
+   return;
+  }
+  if(id==='used-market-bid-confirm'){
+   const offer=usedMarketSnapshot?.offers?.find(x=>x.listingId===selectedUsedListingId);
+   const feedback=$('used-market-bid-feedback');
+   const button=$('used-market-bid-confirm');
+   const amount=String($('used-market-bid-amount')?.value||'').trim();
+   const registration=String($('used-market-bid-registration')?.value||'').trim().toUpperCase();
+   if(!offer||!marketIsOpen()||!data.fleetClient?.bidUsed||
+     usedMarketChoice.payment!=='cash'||offer.offeringType!=='purchase'){
+    if(feedback)feedback.textContent='Bidding is not available for this listing.';
+    return;
+   }
+   const minimum=Number(offer.highestBidUsd===null||offer.highestBidUsd===undefined?
+    offer.openingBidUsd:Number(offer.highestBidUsd)+Number(offer.minIncrementUsd));
+   if(!/^[1-9][0-9]{2,11}(?:\.[0-9]{1,2})?$/.test(amount)||
+      !Number.isFinite(minimum)||Number(amount)<minimum){
+    if(feedback)feedback.textContent='Bid must be at least '+usd(minimum)+' with no more than two decimal places.';
+    return;
+   }
+   if(!/^[A-Z0-9][A-Z0-9-]{2,18}[A-Z0-9]$/.test(registration)){
+    if(feedback)feedback.textContent='Choose a unique registration with 4–20 letters, digits or hyphens.';
+    return;
+   }
+   const requestId=doc.defaultView?.crypto?.randomUUID?.();
+   if(!requestId){
+    if(feedback)feedback.textContent='Secure request identifier unavailable. No money was reserved.';
+    return;
+   }
+   const airlineId=data.airline?.id;
+   if(!airlineId)return;
+   button.disabled=true;
+   if(feedback)feedback.textContent='Submitting owner-verified bid and reserving funds…';
+   try{
+    const result=await data.fleetClient.bidUsed({
+     airlineId,listingId:offer.listingId,bidUsd:amount,registration,requestId
+    });
+    if(!['bid_accepted','accepted_replay'].includes(result?.status)||
+       result.listingId!==offer.listingId||!result.bidId)
+     throw Error('Bid not confirmed');
+    if(feedback)feedback.textContent='Bid accepted by the server. '+
+     (result.cashReservedAgain?'Funds reserved. ':'No additional funds reserved. ')+
+     'Auction closes after 15 minutes without another higher bid.';
+    selectedUsedListingId=null;
+    await Promise.all([loadUsedMarket(),loadRealFleetMarket()]);
+   }catch(error){
+    const msg=String(error?.message||'');
+    if(feedback)feedback.textContent=
+     msg.includes('INSUFFICIENT_AIRLINE_CASH')?'Bid refused: insufficient airline cash.':
+     msg.includes('AUCTION_BID_BELOW_REQUIRED_AMOUNT')?'A higher bid arrived first. Refresh to see the new minimum.':
+     msg.includes('AIRCRAFT_MARKET_NOT_OPEN')?'The marketplace is not yet open. No funds were reserved.':
+     'Bid could not be confirmed. Refresh the listing before trying again.';
+   }finally{button.disabled=false;}
+   return;
+  }
+  if(id==='market-acquire'){
+   const select=$('market-offer-select'),entry=$('market-aircraft-registration');
+   const feedback=$('market-feedback'),button=$('market-acquire');
+   const offer=marketSnapshot?.offers?.find(item=>item.offerId===select?.value);
+   const registration=String(entry?.value||'').trim().toUpperCase();
+   if(newAircraftChoice.payment!=='cash'||cabinConfigurationManager?.getFactoryPlan()?.standard===false||
+    !isReleasedFactoryOffer(offer)||
+    offer?.offerId!==currentFactoryOffer()?.offerId||
+    !data.airline?.id||!data.fleetClient?.acquire||!marketIsOpen()){
+    if(feedback)feedback.textContent='Factory orders are not open yet. No funds were charged.';
+    return;
+   }
+
+   if(!/^[A-Z0-9][A-Z0-9-]{2,18}[A-Z0-9]$/.test(registration)){
+    feedback.textContent='Use a 4–20 character registration with letters, digits or hyphens.';return;
+   }
+   button.disabled=true;feedback.textContent='Checking offer and confirming the order with the server...';
+   try{
+    const result=await data.fleetClient.acquire({
+      airlineId:data.airline.id,offerId:offer.offerId,registration
+    });
+    if(result?.deliveryStatus!=='awaiting_delivery'||!result.aircraftInventoryId)
+     throw Error('Invalid acquisition response');
+    feedback.textContent='Aircraft '+registration+
+      (result.replayed?' already ordered.':' ordered successfully.')+
+      ' Upfront cost '+currency(result.paidUpfrontUsd)+
+      '. Stored until delivery and inspection; no flight activated.';
+    if(entry)entry.value='';
+    await loadRealFleetMarket();
+    doc.dispatchEvent(new CustomEvent('airlinerra:fleet-updated'));
+   }catch(error){
+    const reason=String(error?.message||'');
+    feedback.textContent=reason.includes('INSUFFICIENT_AIRLINE_CASH')?
+      'Not enough airline cash to purchase or lease this aircraft.':
+      reason.includes('AIRCRAFT_REGISTRATION_ALREADY_TAKEN')?
+      'That aircraft registration is already in use.':
+      reason.includes('AIRCRAFT_OFFER_NOT_AVAILABLE')?
+      'This offer is no longer available. Refresh the market.':
+      'The order was not confirmed. Check the offer and try again.';
+   }finally{updateNewOrderAvailability();}
+   return;
+  }
+  if(id==='fleet-aircraft-image-save'){
+   const aircraft=marketSnapshot?.fleet?.find(a=>a.id===selectedFleetAircraftId);
+   const status=$('fleet-aircraft-image-status'),save=$('fleet-aircraft-image-save');
+   if(!aircraft||!photoBlob||photoPendingId!==aircraft.id||
+      !data.airline?.id||!data.aircraftMedia?.uploadAircraftImage){
+    if(status)status.textContent='Choose an image for this owned aircraft first.';return;
+   }
+   const airlineId=data.airline.id,aircraftId=aircraft.id;
+   if(save)save.disabled=true;if(status)status.textContent='Saving this individual aircraft picture…';
+   try{
+    await data.aircraftMedia.uploadAircraftImage({airlineId,aircraftInventoryId:aircraftId,blob:photoBlob});
+    if(data.airline?.id!==airlineId||selectedFleetAircraftId!==aircraftId)return;
+    await refreshAircraftPhoto(aircraft,true);
+    if(status)status.textContent='Aircraft picture saved. Other aircraft and catalog images were not changed.';
+   }catch{
+    if(status)status.textContent='Picture upload failed. No existing aircraft image was replaced.';
+    if(save)save.disabled=!photoBlob;
+   }
+   return;
+  }
+  if(id==='fleet-aircraft-image-reset'){
+   const aircraft=marketSnapshot?.fleet?.find(a=>a.id===selectedFleetAircraftId);
+   const status=$('fleet-aircraft-image-status');
+   if(!aircraft||!data.airline?.id||!data.aircraftMedia?.removeAircraftImage)return;
+   if(doc.defaultView?.confirm?.('Remove the custom picture for this aircraft and show its standard model image?')===false)return;
+   const airlineId=data.airline.id,id=aircraft.id;
+   try{
+    await data.aircraftMedia.removeAircraftImage({airlineId,aircraftInventoryId:id});
+    if(data.airline?.id!==airlineId||selectedFleetAircraftId!==id)return;
+    await refreshAircraftPhoto(aircraft,true);
+    if(status)status.textContent='Standard model picture restored for this aircraft only.';
+   }catch{
+    if(status)status.textContent='Custom picture could not be removed. No other aircraft changed.';
+   }
+   return;
+  }
+  if(id==='fleet-detail-save'){
+   const aircraft=marketSnapshot?.fleet?.find(a=>a.id===selectedFleetAircraftId);
+   const input=$('fleet-detail-nickname'),feedback=$('fleet-detail-feedback');
+   const nickname=String(input?.value||'').trim();
+   if(!aircraft||!data.airline?.id||!data.fleetClient?.updateNickname){
+    if(feedback)feedback.textContent='Aircraft nickname editing is unavailable.';return;
+   }
+   if(nickname.length>40||/[\u0000-\u001F\u007F]/u.test(nickname)){
+    if(feedback)feedback.textContent='Use a nickname of up to 40 characters without control symbols.';return;
+   }
+   const save=$('fleet-detail-save');
+   save.disabled=true;if(feedback)feedback.textContent='Saving aircraft nickname…';
+   try{
+    const updated=await data.fleetClient.updateNickname({
+     airlineId:data.airline.id,aircraftInventoryId:aircraft.id,nickname
+    });
+    if(updated?.id!==aircraft.id)throw Error('Nickname response mismatch');
+    marketSnapshot={...marketSnapshot,fleet:marketSnapshot.fleet.map(a=>
+     a.id===aircraft.id?{...a,nickname:updated.nickname||null}:a)};
+    renderRealFleetMarket(marketSnapshot);
+    if(feedback)feedback.textContent='Aircraft nickname saved.';
+   }catch{
+    if(feedback)feedback.textContent='Could not save the nickname. Please try again.';
+   }finally{save.disabled=false;}
+   return;
+  }
+  if(id==='budget-calc'){
+   const budget={};for(const key of ['revenue','leases','crew','fuel','maintenance','airportFees','services','marketing']){
+    budget[key]=Number($('budget-'+key).value);
+    if(!Number.isFinite(budget[key])||budget[key]<0||budget[key]>10000000000){
+     $('budget-result').textContent='Enter non-negative monthly amounts for every field.';return;
+    }
+   }
+   if(!await draftWrite('budget',budget)){
+    $('budget-result').textContent='NOT SAVED — the airline database did not confirm the budget scenario.';return;
+   }
+   const scenario=financialScenario({...budget,cash:Number(data.airline?.cashUsd||0)});
+   const months=scenario.months===null?'Not decreasing with these assumptions':
+    Number.isFinite(scenario.months)?scenario.months.toFixed(1)+' months':'Not available';
+   $('budget-result').textContent='Monthly income: '+currency(scenario.income)+
+    ' | Monthly expenses: '+currency(scenario.expenses)+' | Net: '+currency(scenario.net)+
+    ' | Estimated cash runway: '+months+'. Saved as a planning scenario in Supabase; no ledger changes.';
+  }
+  if(id==='schedule-day-prev'||id==='schedule-day-next'){
+   scheduleSelectedOffset=Math.max(0,Math.min(6,scheduleSelectedOffset+
+    (id==='schedule-day-next'?1:-1)));
+   renderSchedule();return;
+  }
+  if(id==='schedule-refresh'){
+   void syncScheduleCalendar();
+   $('schedule-status').textContent='Refreshing company fleet and airline routes…';
+   void loadRealFleetMarket();
+   void loadAirlineSchedule();
+  }
+ });
+ for(const id of ['settings-time','settings-date','settings-units'])
+  $(id)?.addEventListener('change',examples);
+ const routePlannerController=createRoutePlanner({
+  doc,getData:()=>data,loadDraft:()=>getDraft(),draftWrite,
+  getCabinState:()=>({packages:cabinManager?.getPackages()||[],
+   ready:cabinManager?.isReady()===true}),
+  getFuelAircraft:aircraftId=>data.connected&&marketSnapshot?.airlineId===data.airline?.id?
+   marketSnapshot.fleet?.find(a=>a.id===aircraftId)||null:null
+ });
+ doc.addEventListener('airlinerra:route-draft-saved',()=>{
+  renderSchedule();
+  void loadAirlineSchedule();
+ });
+ doc.addEventListener('airlinerra:route-draft-cancelled',()=>{
+  // This event only follows a confirmed local-draft deletion.
+  // The timetable rereads session storage, never simulates slot release.
+  renderSchedule();
+ });
+ applyPreferences();loadDraftForms();
+ return Object.freeze({updateData,
+  openFleetAircraft:hash=>{
+   const id=/^#fleet-aircraft\/([0-9a-f-]{36})$/iu.exec(String(hash||''))?.[1]||null;
+   selectedFleetAircraftId=id;renderAircraftDetail();
+   if(id){
+    void loadCommissioningStatus(id);
+    void loadGameMaintenanceJobs(id);
+   }
+  },
+  getLandingView:()=>preferences.landing,formatDistance:km=>
+  preferences.units==='mi'?(Number(km)*0.621371).toFixed(0)+' mi':Number(km).toFixed(0)+' km'});
+}
++Math.round(price).toLocaleString('en-US'):
+     'Maintenance price unavailable';
+    book.disabled=!(Number.isFinite(price)&&price>0);
+   }
    const choices=$('fleet-game-maintenance-checks');
    for(const button of choices?.querySelectorAll('[data-game-maint-check]')||[])
     button.setAttribute('aria-pressed',String(button.dataset.gameMaintCheck===code));
