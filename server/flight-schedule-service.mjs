@@ -830,6 +830,20 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
       candidate.gameModelEvidenceType==='GAME_ESTIMATE_NOT_OFFICIAL_CLEARANCE'&&
       candidate.gameModelFlightActivated===false,
      gameModelEvidenceType:'GAME_ESTIMATE_NOT_OFFICIAL_CLEARANCE',
+     // Owner-scoped route sequence summary, read-only. A repeating departure
+     // from the wrong airport must never become a booked/operating flight.
+     gameAircraftRotationCandidate:
+      candidate.aircraftRotationCandidate?.readOnly===true&&
+      candidate.aircraftRotationCandidate?.flightActivated===false&&
+      candidate.aircraftRotationCandidate?.airportSlotsReserved===false?
+      {returnOrRepositionRequired:
+        candidate.aircraftRotationCandidate.returnOrRepositionRequired===true,
+       wrongAirportDepartures:
+        candidate.aircraftRotationCandidate.wrongAirportDepartures,
+       overlappingFlights:
+        candidate.aircraftRotationCandidate.overlappingFlights,
+       candidateOccurrences:
+        candidate.aircraftRotationCandidate.candidateOccurrences}:null,
      // Evidence diagnostic only: never mistake an airport review for approval.
      gameAirportRestrictionFindings:
       candidate.airportRestrictionFindings?.readOnly===true&&
