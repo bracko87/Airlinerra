@@ -1333,6 +1333,82 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
   if(serial!==editSerial)return false;
   return pickers[side].choose(airport.key);
  };
+ const suggestReturnFromSavedFlight=async(preferredFlightNumber=null)=>{
+  const data=getData(),prefix=flightPrefixFor(data?.airline).prefix;
+  if(!data?.connected||!data.airline?.id||fleetReadState!=='verified'){
+   message('route-next-flight-hint','Load your airline and its saved routes before suggesting the next flight.');
+   return false;
+  }
+  const selectedAircraft=$('route-aircraft')?.value||'';
+  const candidates=serverPlans.filter(p=>
+   p&&['planning','active'].includes(p.status)&&
+   (!preferredFlightNumber||p.flightNumber===preferredFlightNumber)&&
+   (preferredFlightNumber||!selectedAircraft.startsWith('owned:')||
+      p.aircraftId===selectedAircraft));
+  const local=loadDraft?.()||{};
+  const used=[
+   ...serverPlans.map(p=>p?.flightNumber),
+   ...serverDrafts.map(p=>p?.flightNumber),
+   ...(Array.isArray(local.routes)?local.routes.map(p=>p?.flightNumber):[])
+  ].filter(v=>typeof v==='string');
+  let source=null,returnFlight=null;
+  for(const candidate of candidates){
+   const estimate=suggestNextReturnFlight(candidate,{
+    airlinePrefix:prefix,usedFlightNumbers:used
+   });
+   if(estimate&&ownedFleet.some(a=>'owned:'+a.id===estimate.aircraftId)){
+    source=candidate;returnFlight=estimate;break;
+   }
+  }
+  if(!returnFlight){
+   message('route-next-flight-hint',
+    preferredFlightNumber?
+     'The previous flight was saved, but a reliable return time is unavailable. Start a blank new flight instead.':
+     'No suitable saved flight with verified airport time zones and example departure/arrival times. You can start a blank new flight.');
+   return false;
+  }
+  await resetRouteForm({blank:true});
+  const serial=editSerial;
+  for(const [side,airport] of [['from',returnFlight.from],['to',returnFlight.to]]){
+   if(!await selectStoredAirport(side,airport,serial)){
+    if(serial===editSerial){
+     await resetRouteForm({blank:true});
+     message('route-next-flight-hint','The suggested airport could not be loaded. Use Blank new flight or select the airports manually.');
+    }
+    return false;
+   }
+  }
+  if(serial!==editSerial)return false;
+  if($('route-aircraft'))$('route-aircraft').value=returnFlight.aircraftId;
+  if($('route-plan-number'))$('route-plan-number').value=
+   returnFlight.flightNumberDigits;
+  if($('route-arrival-stand'))$('route-arrival-stand').value=returnFlight.arrivalStand;
+  if($('route-turnaround'))$('route-turnaround').value=
+   String(returnFlight.turnaroundMinutes);
+  for(let day=0;day<7;day++){
+   const row=returnFlight.weeklySchedule.find(w=>w.day===day);
+   const checkbox=doc.querySelector('[data-route-day="'+day+'"]');
+   const time=doc.querySelector('[data-route-time="'+day+'"]');
+   if(checkbox)checkbox.checked=Boolean(row);
+   if(time)time.value=row?.time||'09:00';
+  }
+  if($('route-preflight-departure-utc'))
+   $('route-preflight-departure-utc').value=
+    returnFlight.referenceDepartureUtc.slice(0,16);
+  if($('route-preflight-arrival-utc'))
+   $('route-preflight-arrival-utc').value=
+    returnFlight.referenceArrivalUtc.slice(0,16);
+  show();
+  const label=prefix&&returnFlight.flightNumberDigits?
+   prefix+returnFlight.flightNumberDigits:'new flight number';
+  message('route-next-flight-hint',
+   'Suggested return after '+source.flightNumber+': '+label+
+   '. All details can be changed. Choose Blank new flight to discard the suggestion. Nothing has been saved.');
+  message('route-plan-status',
+   'Return flight suggested, NOT CREATED. Check the timetable, airport rules and available slots before trying to create it.');
+  return true;
+ };
+
  const editRouteDraft=async ref=>{
   const stored=loadDraft?.()||{};
   const routes=Array.isArray(stored.routes)&&stored.routes.length?stored.routes:
