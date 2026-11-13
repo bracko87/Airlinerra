@@ -1347,7 +1347,10 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   renderUsedAircraftProfile({doc,host,offer:null,onBack:()=>goTo?.('aircraft-market'),
    onRefresh:()=>void loadUsedAircraftDetail(id)});
   if(!data.connected||!airlineId||typeof client?.usedDetail!=='function'){
-   host.append(doc.createTextNode('Sign in to a verified airline to view this individual aircraft.'));
+   renderUsedAircraftProfile({doc,host,offer:null,
+    message:'Sign in to a verified airline to view this aircraft.',
+    onBack:()=>goTo?.('aircraft-market'),
+    onRefresh:()=>void loadUsedAircraftDetail(id)});
    return;
   }
   try{
@@ -1363,9 +1366,10 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
     onCabin:offer=>void openReadonlyCabin('used',offer)});
   }catch{
    if(ticket!==usedProfileFetchVersion||selectedUsedProfileId!==id)return;
-   renderUsedAircraftProfile({doc,host,offer:null,onBack:()=>goTo?.('aircraft-market'),
+   renderUsedAircraftProfile({doc,host,offer:null,
+    message:'This listing is unavailable or could not be verified. Return to auctions or refresh. No aircraft data was changed.',
+    onBack:()=>goTo?.('aircraft-market'),
     onRefresh:()=>void loadUsedAircraftDetail(id)});
-   host.append(doc.createTextNode('This listing is unavailable or could not be verified. Return to auctions or refresh. No aircraft data was changed.'));
   }
  }
  function renderUsedMarket(){
