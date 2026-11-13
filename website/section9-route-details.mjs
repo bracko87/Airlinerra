@@ -112,9 +112,12 @@ export function createSection9RouteDetails({doc,host,getRoutes,getServer}={}){
   const shift=offset=>offset?' (+'+offset+' day'+(offset>1?'s':'')+')':'';
   if(route.referenceArrivalUtc){
    const arrivedAt=Date.parse(route.referenceArrivalUtc);
-   fact(doc,schedInfo,'Reference arrival',
+   fact(doc,schedInfo,route.operationallyVerified?
+    'Reference arrival':'Estimated arrival (provisional)',
     Number.isFinite(arrivedAt)?
      new Date(arrivedAt).toISOString().slice(0,16).replace('T',' ')+' UTC':'—');
+   if(!route.operationallyVerified)
+    hint(doc,schedInfo,'This arrival is a planning estimate, not an approved flight time or reserved airport slot.');
   }else if(firstEstimate){
    fact(doc,schedInfo,'Estimated flight time',
     estimate.durationMinutes+' minutes · game model');
