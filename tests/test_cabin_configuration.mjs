@@ -486,3 +486,46 @@ test('used-aircraft cabin snapshot is attached to the airframe not the seller la
  assert.match(followup,/used_aircraft_previous_owner_layout/);
  assert.doesNotMatch(migration,/release_state\s*=\s*'live'|state\s*=\s*'active'/);
 });
+
+
+test('factory v2 A330 model mixes four full rows and fills nearly all game cabin space',async()=>{
+ const {normalizeCabinPreview}=await import('../website/aircraft-cabin-preview.mjs');
+ const cabin={economy:328,premium:18,business:12,first:8,
+  economyType:'eco_standard',premiumType:'premium_standard',
+  businessType:'business_standard',firstType:'first_standard',extraLegroomCm:1.2};
+ const layout={economyColumns:[2,4,2],premiumColumns:[2,2,2],
+  businessColumns:[1,2,1],firstColumns:[1,2,1]};
+ const evaluated=normalizeCabinPreview({
+  useType:'passenger',cabin,referenceUnits:406,seatTypes
+ });
+ assert.equal(evaluated.evaluation.valid,true);
+ assert.equal(evaluated.evaluation.count,366);
+ assert.equal(validateCabinModelRows(cabin,layout,406).valid,true);
+ assert.ok(evaluated.evaluation.spacePct>=99.8);
+ assert.ok(evaluated.evaluation.spacePct<=100);
+ const plan=createCabinFloorplanModel(evaluated.evaluation,406,layout);
+ assert.equal(plan.totalSeats,366);
+ assert.deepEqual(plan.sections.map(s=>s.className),['first','business','premium','economy']);
+ assert.deepEqual(plan.sections.map(s=>s.seats),[8,12,18,328]);
+ assert.ok(plan.height>650,'A widebody should grow vertically, not shrink to a fixed icon');
+});
+
+test('factory default migration contains complete row audit and preserves owned/customized cabin',async()=>{
+ const migration=await readFile(new URL(
+  '../supabase/migrations/20261113233000_airlinerra_factory_cabin_row_complete_defaults_v2.sql',import.meta.url),'utf8');
+ const manager=await readFile(new URL('../website/cabin-configuration-manager.mjs',import.meta.url),'utf8');
+ const service=await readFile(new URL('../server/fleet-acquisition-service.mjs',import.meta.url),'utf8');
+ const library=await readFile(new URL('../server/aircraft-library-query.mjs',import.meta.url),'utf8');
+ const css=await readFile(new URL('../website/player-app.css',import.meta.url),'utf8');
+ assert.match(migration,/cabin_model_factory_layout_v2/);
+ assert.match(migration,/factory_cabin_row_or_space_invalid/i);
+ assert.match(migration,/installed_premium,installed_business,installed_first/);
+ assert.match(migration,/source_inventory_id IS NULL AND lot\.cabin_origin='model_default'/);
+ assert.match(migration,/initial_installed_cabin_v1/);
+ assert.match(manager,/validateCabinModelRows\(factoryPlan,geometry,f\.referenceSeats\)/);
+ assert.match(manager,/sameFactoryPlan\(f,factoryPlan\)/);
+ assert.match(manager,/factoryPlan=factoryReferencePlan\(factory\)/);
+ assert.match(service,/factoryExtraLegroomCm/);
+ assert.match(library,/cabin_factory_economy/);
+ assert.match(css,/max-height:none;min-height:0/);
+});
