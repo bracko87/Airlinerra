@@ -283,6 +283,10 @@ function setManager(user){
      navigateTo(view);
     }
    });
+   // The initial hash is parsed before login creates the workspace.
+   // Restore individual used-aircraft deep links after verified manager setup.
+   if(/^#aircraft-market\/[0-9a-f-]{36}$/iu.test(window.location.hash))
+    workspaceController.openUsedAircraft?.(window.location.hash);
   }
   if(!operationsController){
     operationsController=createOperationsCenter({
