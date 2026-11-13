@@ -51,6 +51,17 @@ export function aircraftCatalogName(a){
 export function aircraftServiceSeats(a){
  return a.useType==='cargo'?null:(a.serviceSeats??a.seats??a.maxSeats);
 }
+/** Physical seats in the saved model factory cabin, not maximum seats or
+ * the unchanged manufacturer/service reference. */
+export function aircraftFactorySeats(a){
+ if(a?.useType==='cargo')return null;
+ const cabin=a?.cabinDefault;
+ if(cabin&&['economy','premium','business','first'].every(k=>
+  Number.isInteger(cabin[k])&&cabin[k]>=0)){
+  return cabin.economy+cabin.premium+cabin.business+cabin.first;
+ }
+ return aircraftServiceSeats(a);
+}
 export function aircraftServiceCargoLabel(a){
  if(a.useType==='cargo')return typeof a.cargoKg==='number'?format(a.cargoKg):'Unverified';
  if(a.useType==='combi')return typeof a.serviceFreightKg==='number'
@@ -86,7 +97,7 @@ export function compareAircraftCatalog(a,b,sortKey='manufacturer',direction='asc
   compareText(a.configuration,b.configuration)||
   Number(a.id??0)-Number(b.id??0);
  if(sortKey==='manufacturer'||sortKey==='model')return dir*group();
- const sortValue=item=>sortKey==='seats'?aircraftServiceSeats(item):
+ const sortValue=item=>sortKey==='seats'?aircraftFactorySeats(item):
   sortKey==='cargoKg'?(item.useType==='cargo'?item.cargoKg:
     item.useType==='combi'?item.serviceFreightKg:item.bellyHoldReferenceKg):
   item[sortKey];
@@ -350,7 +361,7 @@ export function createAircraftLibrary({doc,getReader}={}){
   const noiseChapter=a.icaoNoiseChapter??a.gameNoiseChapter;
   const summary=[
    ['Role',a.useType],
-   ['Seats · current layout',a.useType==='cargo'?'—':(aircraftServiceSeats(a)??'Not recorded')],
+   ['Seats · factory layout',a.useType==='cargo'?'—':(aircraftFactorySeats(a)??'Not recorded')],
    ['Cargo · kg (reference)',aircraftServiceCargoLabel(a)],
    ['Range',a.rangeKm===null?'Not recorded':format(a.rangeKm)+' km'],
    ['Fuel tank',a.fuelKg===null?'Not recorded':format(a.fuelKg)+' kg'],
@@ -379,7 +390,8 @@ export function createAircraftLibrary({doc,getReader}={}){
     ['End production year'+(a.productionEndEstimated?' (estimated)':''),a.productionEnd,'year']
    ]),
    specificationGroup('Passenger, cargo & fuel',[
-    ['Seats · current service layout',a.useType==='cargo'?'—':aircraftServiceSeats(a)],
+    ['Seats · factory layout',a.useType==='cargo'?'—':aircraftFactorySeats(a)],
+    ['Service seating reference (not installed)',a.useType==='cargo'?'—':aircraftServiceSeats(a)],
     ['Passenger-only seating reference',a.useType==='combi'?(a.maxSeats??a.seats):'—'],
     ['Mixed-layout freight (kg)',a.useType==='combi'?(a.serviceFreightKg??'Not verified'):'—'],
     ['Passenger belly-hold reference (kg)',a.useType==='passenger'?(a.bellyHoldReferenceKg??'Not verified'):'—'],
@@ -443,7 +455,7 @@ export function createAircraftLibrary({doc,getReader}={}){
   const header=element('tr','');
   const columns=[
    ['manufacturer','Manufacturer'],['model','Model / family'],['useType','Role'],
-   ['seats','Seats · layout'],['cargoKg','Cargo ref. (kg)'],['rangeKm','Range (km)'],
+   ['seats','Seats · factory'],['cargoKg','Cargo ref. (kg)'],['rangeKm','Range (km)'],
    ['speedKmh','Cruise (km/h)'],['fuelKg','Fuel (kg)'],
    ['productionStatus','Production']
   ];
@@ -462,7 +474,7 @@ export function createAircraftLibrary({doc,getReader}={}){
    row.dataset.aircraftId=String(a.id);
    const values=[
     a.manufacturer,null,a.useType,
-    aircraftServiceSeats(a),aircraftServiceCargoLabel(a),a.rangeKm,a.speedKmh,a.fuelKg,
+    aircraftFactorySeats(a),aircraftServiceCargoLabel(a),a.rangeKm,a.speedKmh,a.fuelKg,
     a.productionStatus?.replaceAll('_',' ')||'Unconfirmed'
    ];
    for(let i=0;i<values.length;i++){
