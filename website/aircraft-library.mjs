@@ -1,3 +1,4 @@
+import {createReadonlyCabinViewer} from './aircraft-cabin-preview.mjs';
 /** Airlinerra Settings -> Aircraft Library. Read-only, real catalog data.
  * No fabricated aircraft list, no HTML interpolation of database values.
  */
@@ -247,6 +248,7 @@ export function createAircraftLibrary({doc,getReader}={}){
  let aircraft=null,pending=null,currentPage=0,sortKey='manufacturer',sortDirection='asc';
  let lastSelectedAircraftId=null;
  const warmPictures=new Map();
+ const cabinViewer=createReadonlyCabinViewer({doc});
  function warmAircraftPhoto(a){
   const url=aircraftImagePath(a);
   if(!url||warmPictures.has(url))return;
@@ -312,6 +314,17 @@ export function createAircraftLibrary({doc,getReader}={}){
   title.id='aircraft-library-profile-title';
   heading.append(title);
   header.append(heading);
+  if(a.useType!=='cargo'&&a.cabinDefault?.economy!==null&&
+     Number.isInteger(a.cabinDefault?.economy)){
+   const cabinButton=element('button','secondary library-cabin-view','View cabin configuration');
+   cabinButton.type='button';
+   cabinButton.addEventListener('click',()=>cabinViewer.show({
+    title:aircraftCatalogName(a),useType:a.useType,
+    cabin:a.cabinDefault,referenceUnits:a.cabinDefault.referenceUnits,
+    geometry:a.cabinDefault.geometry,origin:'model_default'
+   }));
+   header.append(cabinButton);
+  }
   const hero=element('div','library-profile-hero');
   const image=element('div','library-profile-image');
   const path=aircraftImagePath(a);
