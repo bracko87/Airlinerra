@@ -25,6 +25,21 @@ export function createFlightScheduleClient({auth,origin,fetchImpl=(...args)=>fet
    if(payload.action==='operational-create'&&Array.isArray(reason.blockingRequirements))
     conflict.operationalBlockers=reason.blockingRequirements.filter(x=>
       typeof x==='string'&&/^[A-Z][A-Z0-9_]{3,100}$/.test(x)).slice(0,16);
+   if(payload.action==='operational-create'&&
+      reason.gameAirportRestrictionFindings?.readOnly===true&&
+      reason.gameAirportRestrictionFindings?.operationApproved===false){
+    const safeSide=side=>
+     side&&/^[A-Z0-9]{3,4}$/.test(side.airportCode||'')?
+      {airportCode:side.airportCode,
+       runwayOperationalStatusVerified:side.runwayOperationalStatusVerified===true,
+       aircraftChapterMatched:side.aircraftChapterMatched===true,
+       anyHardTimeRuleBlock:side.anyHardTimeRuleBlock===true}:null;
+    const findings=reason.gameAirportRestrictionFindings;
+    conflict.operationalAirportFindings={
+     origin:safeSide(findings.origin),
+     destination:safeSide(findings.destination)
+    };
+   }
    throw conflict;
   }
   if(!response.ok)throw Error('SCHEDULE_HTTP_'+String(response.status));
