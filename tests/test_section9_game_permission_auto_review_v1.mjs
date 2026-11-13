@@ -75,3 +75,19 @@ test('automatic expiry job uses trusted existing game-day expiry, never a paymen
  assert.doesNotMatch(sql,/\bINSERT INTO airlinerra_game\.airline_ledger/i);
  assert.doesNotMatch(sql,/\bUPDATE airlinerra_game\.airlines/i);
 });
+
+
+test('issued game route grants work with unverified bilateral references, never fake real clearance',async()=>{
+ const sql=await read('supabase/migrations/20261113219000_section9_game_only_route_permit_reference_alignment_v1.sql');
+ assert.match(sql,/section9_verify_game_operator_licence_v1/);
+ assert.match(sql,/section9_required_game_traffic_permission_v1/);
+ assert.match(sql,/preview->>'status' IN \('invalid_input','forbidden'\)/);
+ assert.match(sql,/catalog_row\.enabled_in_game IS DISTINCT FROM true/);
+ assert.match(sql,/game_grant\.issued_application_id IS NULL/);
+ assert.match(sql,/app\.ledger_entry_id IS NOT NULL/);
+ assert.match(sql,/'legalReferenceOperationallyAuthorizes',false/);
+ assert.match(sql,/'realWorldAgreementUnverified'/);
+ assert.match(sql,/'gameOnlyPermit',true/);
+ assert.match(sql,/FROM PUBLIC,anon,authenticated,service_role/);
+ assert.doesNotMatch(sql,/operationally_authorized',true/);
+});
