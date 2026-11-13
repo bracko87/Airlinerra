@@ -269,6 +269,8 @@ export const SCHEDULE_SQL=Object.freeze({
   $1::uuid,$2::uuid,$3::uuid,$4::date) AS result`,
  maintenanceGameJob:`SELECT airlinerra_game.section9_owned_game_maintenance_job_v1(
   $1::uuid,$2::uuid,$3::uuid,$4::text,$5::text) AS result`,
+ maintenanceFlightWindow:`SELECT airlinerra_game.section9_owned_game_maintenance_flight_window_v1(
+  $1::uuid,$2::uuid,$3::uuid,$4::timestamptz,$5::timestamptz) AS result`,
  bookingWindowPreview:SEVEN_DAY_WINDOW_SQL,
  owner:'SELECT id FROM airlinerra_game.airlines WHERE id=$1::uuid AND owner_player_id=$2::uuid AND world_id=1',
  feeAircraft:`SELECT i.configuration_id::bigint AS "configurationId",
@@ -726,12 +728,39 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
      if(gameMaintenance.maintenanceCompletionSchedulingConnected!==true)
       missing.push('MAINTENANCE_SERVICE_JOB_AND_RELEASE_NOT_CONNECTED');
     }
-    // A booked service is an aircraft-time reservation, even before the
-    // daily/weekly due threshold. It blocks route creation separately.
-    if(physical.rowCount===1&&aircraft&&gameMaintenance){
-     if(gameMaintenance.gameJobBlocksDate===true)
-      missing.push('AIRCRAFT_ALREADY_RESERVED_FOR_MAINTENANCE');
+    // Exact UTC check for the reference flight and any reserved game service;
+    // recurring departures require separate comprehensive certification.
+    let maintenanceFlightWindow=null;
+    if(physical.rowCount===1&&aircraft){
+     if(!body.referenceDepartureUtc||!body.referenceArrivalUtc){
+      missing.push('GAME_MAINTENANCE_FLIGHT_TIMES_NOT_VERIFIED');
+     }else{
+      const windowResponse=await client.query(SCHEDULE_SQL.maintenanceFlightWindow,[
+       userId,body.airlineId,body.aircraftInventoryId,
+       body.referenceDepartureUtc,body.referenceArrivalUtc
+      ]);
+      maintenanceFlightWindow=windowResponse.rows?.[0]?.result;
+      if(windowResponse.rowCount!==1||!maintenanceFlightWindow||
+         maintenanceFlightWindow.readOnly!==true||
+         maintenanceFlightWindow.dispatchApproved!==false||
+         maintenanceFlightWindow.flightActivated!==false||
+         maintenanceFlightWindow.ledgerPosted!==false||
+         !Array.isArray(maintenanceFlightWindow.blockers)||
+         maintenanceFlightWindow.blockers.some(x=>typeof x!=='string'||x.length>100))
+       return respond(503,{error:'GAME_MAINTENANCE_HOUR_WINDOW_UNVERIFIED',
+        routeCreated:false});
+      for(const code of maintenanceFlightWindow.blockers)
+       if(!missing.includes(code))missing.push(code);
+      if(maintenanceFlightWindow.hourlyJobOverlapChecked!==true)
+       missing.push('MAINTENANCE_HOURLY_RESERVATION_CHECK_INCOMPLETE');
+      if(maintenanceFlightWindow.hourlyJobOverlapChecked===true&&
+         maintenanceFlightWindow.flightWindowClear!==true)
+       missing.push('MAINTENANCE_FLIGHT_WINDOW_BLOCKED');
+     }
     }
+    // A preview for a single reference flight is not a whole recurring
+    // weekly schedule. Full route booking remains fail closed.
+    missing.push('RECURRING_MAINTENANCE_WINDOW_CERTIFICATION_NOT_CONNECTED');
     // Crew is intentionally out of Phase 1. These are independent, real
     // non-crew dependencies, not fictitious permits or release records.
     missing.push('ATOMIC_SCHEDULE_AND_AIRPORT_SLOT_ACTIVATION_NOT_CONNECTED',
