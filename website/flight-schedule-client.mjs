@@ -43,6 +43,23 @@ export function createFlightScheduleClient({auth,origin,fetchImpl=(...args)=>fet
     };
    }
    if(payload.action==='operational-create'&&
+      reason.gameAircraftRotationCandidate&&
+      typeof reason.gameAircraftRotationCandidate==='object'){
+    const a=reason.gameAircraftRotationCandidate;
+    if(a.returnOrRepositionRequired===true||
+       (Number.isInteger(a.overlappingFlights)&&a.overlappingFlights>0)){
+      conflict.aircraftRotationWarning={
+       returnRequired:a.returnOrRepositionRequired===true,
+       wrongAirportDepartures:Number.isInteger(a.wrongAirportDepartures)&&
+        a.wrongAirportDepartures>=0&&a.wrongAirportDepartures<=42?
+        a.wrongAirportDepartures:0,
+       overlappingFlights:Number.isInteger(a.overlappingFlights)&&
+        a.overlappingFlights>=0&&a.overlappingFlights<=100?
+        a.overlappingFlights:0
+      };
+    }
+   }
+   if(payload.action==='operational-create'&&
       reason.gameModelEvidenceType==='GAME_ESTIMATE_NOT_OFFICIAL_CLEARANCE'&&
       typeof reason.gameModelPreliminarySuitable==='boolean')
     conflict.gameModelPreliminarySuitable=reason.gameModelPreliminarySuitable;
