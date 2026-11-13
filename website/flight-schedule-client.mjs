@@ -114,6 +114,14 @@ export function createFlightScheduleClient({auth,origin,fetchImpl=(...args)=>fet
     post({action:'slot-check',airlineId,aircraftInventoryId,originAirportKey,
      destinationAirportKey,referenceDepartureUtc,referenceArrivalUtc,weeklySchedule,
      departureStand,arrivalStand,...(existingId?{existingId}:{})}),
+  roundtripPreview:({airlineId,aircraftInventoryId,originAirportKey,destinationAirportKey,
+   referenceDepartureUtc,referenceArrivalUtc,returnDepartureUtc,returnArrivalUtc,
+   weeklySchedule,returnWeeklySchedule,departureStand='terminal',arrivalStand='terminal',
+   returnDepartureStand='terminal',returnArrivalStand='terminal',turnaroundMinutes})=>
+    post({action:'roundtrip-preview',airlineId,aircraftInventoryId,
+     originAirportKey,destinationAirportKey,referenceDepartureUtc,referenceArrivalUtc,
+     returnDepartureUtc,returnArrivalUtc,weeklySchedule,returnWeeklySchedule,
+     departureStand,arrivalStand,returnDepartureStand,returnArrivalStand,turnaroundMinutes}),
   demandPreview:({airlineId,scheduleId,month})=>
     post({action:'demand-preview',airlineId,scheduleId,month}),
   commercialRead:({airlineId,scheduleId})=>
