@@ -265,3 +265,14 @@ any other requirement or creating any fake flight.
 - Dedicated Phase 1 CI includes regression checks for starter source,
   idempotent usage counters, preserved unknown airframe condition and
   untouched financial/dispatch locks.
+
+## Implementation update — 13 November: private five-phase fuel estimate (no dispatch)
+
+- Added the **private, read-only** PostgreSQL function `section9_game_five_phase_fuel_quote_v1`. It interpolates the versioned existing per-100-km aircraft game fuel rate at an explicitly supplied load percentage and calculates taxi-out, climb, cruise, descent, and taxi-in fuel from explicitly supplied phase minutes.
+- **Critical provenance:** phase multipliers (taxi = 0.18, climb = 1.35, descent = 0.40 of cruise-hour rate) are clearly tagged **unverified GAME assumptions**, not aircraft/manufacturer fuel evidence. This is not a dispatch, reserve-fuel, refuelling, or aircraft-specific fuel certification model. Real route phase durations, approved coefficients, load and airport fuel tariffs have NOT been connected.
+- A319 configuration 16, illustrative input 50% load/10+15+40+15+10 minutes: 2,819.28 kg estimated; this is **a test input**, not PA888's actual distance, flight load, or fuel burn. All five phase values add to the returned total.
+- Jetstream 32 configuration 98 still has no tank-capacity reference and returns `model_incomplete` with NULL total rather than a guessed result.
+- Live audit across 271 models: 270 `game_estimate_only`, one `model_incomplete`, zero phase-total mismatches, zero unsafe release flags. Out-of-range input rejected; anon, authenticated and service_role have no direct function execution grant.
+- GitHub migration, focused regression tests, and Phase 1 CI workflow updated on `main`. These are **code and database checks**, not proof of browser use, passenger bookings or live flight execution.
+- Actual production state after migration: zero active schedules, zero dated occurrences, zero operated movements, zero settled finances. PA888 is preserved and still NOT operating. Crew remains deferred.
+- **Next blockers:** trusted airframe condition; approval-quality fuel phase and reserve model; game airport slot and rights allocation under one transaction; activation with dated saleable flights; clock-driven movements and exactly-once financial settlement. Do not enable operation merely because preview fuel totals exist.
