@@ -42,6 +42,10 @@ export function createFlightScheduleClient({auth,origin,fetchImpl=(...args)=>fet
      destination:safeSide(findings.destination)
     };
    }
+   if(payload.action==='operational-create'&&
+      reason.gameModelEvidenceType==='GAME_ESTIMATE_NOT_OFFICIAL_CLEARANCE'&&
+      typeof reason.gameModelPreliminarySuitable==='boolean')
+    conflict.gameModelPreliminarySuitable=reason.gameModelPreliminarySuitable;
    throw conflict;
   }
   if(!response.ok)throw Error('SCHEDULE_HTTP_'+String(response.status));
