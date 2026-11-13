@@ -1347,8 +1347,10 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   renderUsedAircraftProfile({doc,host,offer:null,onBack:()=>goTo?.('aircraft-market'),
    onRefresh:()=>void loadUsedAircraftDetail(id)});
   if(!data.connected||!airlineId||typeof client?.usedDetail!=='function'){
-   renderUsedAircraftProfile({doc,host,offer:null,
-    message:'Sign in to a verified airline to view this aircraft.',
+   const message=!data.connected||!airlineId?
+    'Your airline data is unavailable. Refresh the game connection and try again.':
+    'Individual aircraft details are not connected in this version. Update the local build and restart the preview server.';
+   renderUsedAircraftProfile({doc,host,offer:null,message,
     onBack:()=>goTo?.('aircraft-market'),
     onRefresh:()=>void loadUsedAircraftDetail(id)});
    return;
