@@ -79,6 +79,8 @@ on:
       - 'supabase/migrations/20261113192000_section9_owned_candidate_slot_rights_preflight_v1.sql'
       - 'supabase/migrations/20261113200000_section9_classify_required_international_game_traffic_rights.sql'
       - 'supabase/migrations/20261113201000_section9_candidate_slot_rights_permission_variable_fix.sql'
+      - 'supabase/migrations/20261113202000_section5_tivat_winter_2026_27_operating_hours_review.sql'
+      - 'supabase/migrations/20261113203000_section9_owner_candidate_airport_restriction_evidence_details.sql'
       - 'tests/test_section9_permission_player_api_ui.mjs'
       - 'tests/test_section9_route_financial_dashboard.mjs'
       - 'tests/test_group2_1118_airport_cohort.mjs'
