@@ -383,7 +383,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
  let maintenanceLast=null;
  let commissioningFetchVersion=0;
  let gameServiceFetchVersion=0,gameServiceSelectedCheck='daily';
- let gameServiceQuotes={};
+ let gameServiceQuotes={},gameServiceHasActive=false;
  let aircraftPhotoToken=0,aircraftPhotoId=null,aircraftCustomPhoto=false,photoBlob=null,photoPreviewUrl=null,photoPendingId=null;
  let scheduleSnapshot=null;
  let scheduleFetchVersion=0;
@@ -954,6 +954,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   const book=$('fleet-game-maintenance-book'),cancel=$('fleet-game-maintenance-cancel');
   if(!panel||!status||!book||!cancel)return;
   panel.hidden=true;book.disabled=true;cancel.hidden=true;
+  gameServiceQuotes={};gameServiceHasActive=false;
   const airlineId=data.airline?.id,scheduler=data.scheduler;
   if(!data.connected||!airlineId||!aircraftId||
      typeof scheduler?.maintenanceJobStatus!=='function')return;
@@ -983,6 +984,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    const active=result.jobs.find(x=>x&&
      ['scheduled','in_progress','payment_required'].includes(x.status));
    const latest=result.jobs[0];
+   gameServiceHasActive=Boolean(active);
    const formatGameUtc=utc=>{
     const date=new Date(utc);
     return Number.isFinite(date.getTime())?
@@ -1487,7 +1489,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
     usedMarketSnapshot=null;usedMarketFetchVersion++;usedMarketPage=0;
    selectedUsedListingId=null;
    maintenanceLast=null;maintenanceFetchVersion++;
-   commissioningFetchVersion++;gameServiceFetchVersion++;gameServiceQuotes={};
+   commissioningFetchVersion++;gameServiceFetchVersion++;gameServiceQuotes={};gameServiceHasActive=false;
    if($('fleet-starter-commissioning'))$('fleet-starter-commissioning').hidden=true;
    if($('fleet-game-maintenance-jobs'))$('fleet-game-maintenance-jobs').hidden=true;
    aircraftPhotoId=null;aircraftPhotoToken++;resetPhotoDraft();
@@ -1594,7 +1596,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
     book.textContent=Number.isFinite(price)&&price>0?
      'Book '+code.toUpperCase()+' check — $'+Math.round(price).toLocaleString('en-US'):
      'Maintenance price unavailable';
-    book.disabled=!(Number.isFinite(price)&&price>0);
+    book.disabled=gameServiceHasActive||!(Number.isFinite(price)&&price>0);
    }
    const choices=$('fleet-game-maintenance-checks');
    for(const button of choices?.querySelectorAll('[data-game-maint-check]')||[])
@@ -1612,6 +1614,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    const doAction=action==='book'?scheduler?.maintenanceJobBook:scheduler?.maintenanceJobCancel;
    if(typeof doAction!=='function')return;
    gameJobButton.disabled=true;
+   let didBook=false;
    if(message)message.textContent=action==='book'?
      'Checking aircraft location and reserving game maintenance time…':
      'Cancelling scheduled game maintenance…';
@@ -1624,11 +1627,12 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
         !(Number(result.quotedCostUsd)>0)):
        !['cancelled','no_cancelable_service'].includes(result.status)))
       throw Error('Game maintenance change not confirmed');
+    didBook=action==='book';
     await loadGameMaintenanceJobs(aircraftId);
     void loadCommissioningStatus(aircraftId);
    }catch{
     if(message)message.textContent='Game maintenance booking could not be confirmed. Aircraft has not been cleared to fly.';
-   }finally{gameJobButton.disabled=false;}
+   }finally{gameJobButton.disabled=didBook||gameServiceHasActive;}
    return;
   }
   const commissioningButton=event.target.closest('#fleet-commissioning-request');
