@@ -65,7 +65,7 @@ test('production API validates owner scoped book/status/cancel and reports servi
  assert.match(api,/maintenanceGameJob:`SELECT airlinerra_game\.section9_owned_game_maintenance_job_v1/);
  assert.match(api,/SCHEDULE_SQL\.maintenanceGameJob/);
  assert.match(api,/GAME_MAINTENANCE_JOB_RESPONSE_UNVERIFIED/);
- assert.match(api,/AIRCRAFT_ALREADY_RESERVED_FOR_MAINTENANCE/);
+ assert.match(api,/MAINTENANCE_FLIGHT_WINDOW_BLOCKED/);
  assert.match(api,/GAME_AIRCRAFT_MAINTENANCE_CHECK_DUE/);
  assert.match(api,/routeCreated:false/);
 });
@@ -106,7 +106,7 @@ test('aircraft details UI has six small maintenance buttons and no fake clearanc
  assert.match(ui,/scheduler\?\.maintenanceJobBook/);
  assert.match(ui,/scheduler\?\.maintenanceJobCancel/);
  assert.match(ui,/Aircraft reserved\. The/);
- assert.match(ui,/No financial charge posted/);
+ assert.match(ui,/Game fee posted/);
  assert.match(ui,/has NOT received operational clearance|NOT received operational clearance/);
 });
 test('exact 1:1 flight window checks full UTC maintenance overlap plus overnight due dates',async()=>{
