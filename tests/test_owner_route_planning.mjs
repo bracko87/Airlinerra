@@ -160,3 +160,14 @@ test('route detail uses geographic map and organised operational and finance sec
  assert.match(sql,/slots_reserved boolean NOT NULL DEFAULT false CHECK \(slots_reserved=false\)/);
  assert.match(sql,/REVOKE ALL ON airlinerra_game\.airline_route_planning_drafts_v1 FROM PUBLIC, anon, authenticated/);
 });
+
+
+test('route list and details surface the saved provisional flight arrival without claiming clearance',async()=>{
+ const list=await readFile(new URL('../website/airline-operations-center.mjs',import.meta.url),'utf8');
+ const details=await readFile(new URL('../website/section9-route-details.mjs',import.meta.url),'utf8');
+ assert.match(list,/Date\.parse\(route\.referenceArrivalUtc\|\|''\)/);
+ assert.match(list,/savedArrivalUtc\?'~'/);
+ assert.match(details,/Estimated arrival \(provisional\)/);
+ assert.match(details,/not an approved flight time or reserved airport slot/);
+ assert.match(details,/slots','Not reserved for planning routes/);
+});
