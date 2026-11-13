@@ -94,6 +94,7 @@ on:
       - 'supabase/migrations/20261113218000_section9_game_permission_expiry_cron_v1.sql'
       - 'supabase/migrations/20261113219000_section9_game_only_route_permit_reference_alignment_v1.sql'
       - 'supabase/migrations/20261113220000_section9_verified_game_passenger_ticket_bookings_v1.sql'
+      - 'supabase/migrations/20261113221000_section9_verified_ticket_window_batch_scheduler_v1.sql'
       - 'tests/test_section9_roundtrip_candidate_preview_v1.mjs'
       - 'tests/test_section9_atomic_roundtrip_create_v1.mjs'
       - 'tests/test_section9_game_permission_auto_review_v1.mjs'
