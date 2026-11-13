@@ -18,6 +18,7 @@ on:
       - 'supabase/migrations/20261113124000_section9_starter_game_data_inspection_v1.sql'
       - 'supabase/migrations/20261113144500_section9_starter_game_airframe_baseline_v1.sql'
       - 'supabase/migrations/20261113150000_section9_game_maintenance_due_preview_v1.sql'
+      - 'supabase/migrations/20261113151500_section9_starter_game_commissioning_date_provenance_fix.sql'
       - 'tests/test_section9_verified_starter_usage_baseline.mjs'
       - 'tests/test_section9_game_fuel_snapshot.mjs'
       - 'tests/test_section9_game_five_phase_fuel_quote.mjs'
