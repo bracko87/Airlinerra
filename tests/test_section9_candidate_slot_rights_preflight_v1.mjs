@@ -77,3 +77,46 @@ test('game rights candidate checker has qualified permission variable and remain
  assert.doesNotMatch(sql,/\bINSERT INTO\s+airlinerra_game\./i);
  assert.doesNotMatch(sql,/\bUPDATE\s+airlinerra_game\./i);
 });
+
+
+test('sourced Tivat winter 2026/27 airport hours remain review-only, with daylight consent exception',async()=>{
+ const sql=await read('supabase/migrations/20261113202000_section5_tivat_winter_2026_27_operating_hours_review.sql');
+ assert.match(sql,/TIVAT_WINTER_2026_27_OUTSIDE_MANDATORY_OPEN_HOURS/);
+ assert.match(sql,/'16:30'::time,'07:00'::time/);
+ assert.match(sql,/DATE '2026-10-25',DATE '2027-03-27'/);
+ assert.match(sql,/'OPERATING_HOURS_REVIEW'/);
+ assert.match(sql,/game_auto_enforcement/);
+ assert.match(sql,/NULL::smallint\[\],false,false,true/);
+ assert.match(sql,/prior airport operator consent and daylight/);
+ assert.match(sql,/sluzbenilist\.me\/propisi\/399378/);
+});
+test('owner route candidate includes four-week per-airport evidence details, never approvals',async()=>{
+ const sql=await read('supabase/migrations/20261113203000_section9_owner_candidate_airport_restriction_evidence_details.sql');
+ assert.match(sql,/airport_findings jsonb:=NULL/);
+ assert.match(sql,/restrictionDecision/);
+ assert.match(sql,/weeklyOccurrencesChecked/);
+ assert.match(sql,/runwayOperationalStatusVerified/);
+ assert.match(sql,/aircraftChapterMatched/);
+ assert.match(sql,/anyHardTimeRuleBlock/);
+ assert.match(sql,/'airportRestrictionFindings',airport_findings/);
+ assert.match(sql,/'operationApproved',false/);
+ assert.match(sql,/'airportSlotsReserved',false/);
+ assert.match(sql,/'flightActivated',false/);
+ assert.match(sql,/'ledgerPosted',false/);
+ assert.doesNotMatch(sql,/\bINSERT INTO\s+airlinerra_game\./i);
+ assert.doesNotMatch(sql,/\bUPDATE\s+airlinerra_game\./i);
+});
+test('blocked route response carries read-only airport evidence through client into explicit UI blockers',async()=>{
+ const server=await read('server/flight-schedule-service.mjs');
+ const client=await read('website/flight-schedule-client.mjs');
+ const planner=await read('website/route-planner.mjs');
+ assert.match(server,/gameAirportRestrictionFindings:/);
+ assert.match(server,/candidate\.airportRestrictionFindings\?\.readOnly===true/);
+ assert.match(server,/candidate\.airportRestrictionFindings\?\.operationApproved===false/);
+ assert.match(client,/conflict\.operationalAirportFindings=/);
+ assert.match(client,/reason\.gameAirportRestrictionFindings\?\.readOnly===true/);
+ assert.match(planner,/unresolvedAirports/);
+ assert.match(planner,/runway status/);
+ assert.match(planner,/aircraft noise certificate/);
+ assert.match(planner,/NOT CREATED/);
+});
