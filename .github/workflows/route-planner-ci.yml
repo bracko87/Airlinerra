@@ -89,6 +89,7 @@ on:
       - 'supabase/migrations/20261113213000_section9_candidate_preflight_requires_aircraft_rotation.sql'
       - 'supabase/migrations/20261113214000_section9_owned_roundtrip_candidate_game_preview.sql'
       - 'supabase/migrations/20261113215000_section9_atomic_roundtrip_operational_boundary_v1.sql'
+      - 'supabase/migrations/20261113216000_section9_world1_paused_crew_deferred_phase1.sql'
       - 'tests/test_section9_roundtrip_candidate_preview_v1.mjs'
       - 'tests/test_section9_atomic_roundtrip_create_v1.mjs'
       - 'tests/test_route_next_flight_suggestion.mjs'
