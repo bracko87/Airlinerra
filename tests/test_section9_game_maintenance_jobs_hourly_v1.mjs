@@ -109,3 +109,22 @@ test('aircraft details UI has six small maintenance buttons and no fake clearanc
  assert.match(ui,/No financial charge posted/);
  assert.match(ui,/has NOT received operational clearance|NOT received operational clearance/);
 });
+test('exact 1:1 flight window checks full UTC maintenance overlap plus overnight due dates',async()=>{
+ const sql=await read('supabase/migrations/20261113180000_section9_hour_level_maintenance_flight_window_gate.sql');
+ const api=await read('server/flight-schedule-service.mjs');
+ assert.match(sql,/CREATE FUNCTION airlinerra_game\.section9_owned_game_maintenance_flight_window_v1/);
+ assert.match(sql,/section9_verified_world_instant_v1\(\)/);
+ assert.match(sql,/p_arrival_utc>p_departure_utc\+interval '72 hours'/);
+ assert.match(sql,/generate_series\(/);
+ assert.match(sql,/section9_owned_game_maintenance_due_v1\(/);
+ assert.match(sql,/j\.game_start_utc<p_arrival_utc/);
+ assert.match(sql,/j\.game_end_utc>p_departure_utc/);
+ assert.match(sql,/hourlyJobOverlapChecked',true/);
+ assert.match(sql,/dispatchApproved',false/);
+ assert.match(sql,/REVOKE ALL ON FUNCTION/);
+ assert.match(api,/maintenanceFlightWindow:`SELECT airlinerra_game\.section9_owned_game_maintenance_flight_window_v1/);
+ assert.match(api,/SCHEDULE_SQL\.maintenanceFlightWindow/);
+ assert.match(api,/GAME_MAINTENANCE_HOUR_WINDOW_UNVERIFIED/);
+ assert.match(api,/MAINTENANCE_FLIGHT_WINDOW_BLOCKED/);
+ assert.match(api,/RECURRING_MAINTENANCE_WINDOW_CERTIFICATION_NOT_CONNECTED/);
+});
