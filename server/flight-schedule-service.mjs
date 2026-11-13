@@ -178,6 +178,25 @@ export function validateFlightSchedulePayload(body){
  const delta=Date.parse(body.referenceArrivalUtc)-Date.parse(body.referenceDepartureUtc);
  return Number.isFinite(delta)&&delta>0&&delta<=72*3600*1000;
 }
+/** First requested weekly operating date in the authoritative GAME calendar.
+ * Day 0 is Monday. Date-only clock means time-of-day clearance remains blocked.
+ */
+export function nextWeeklyDepartureGameDate(gameDate,weeklySchedule,launchDelayDays=0){
+ const canonical=gameDate instanceof Date&&Number.isFinite(gameDate.getTime())?
+  gameDate.toISOString().slice(0,10):gameDate;
+ if(typeof canonical!=='string'||!/^(20|21)[0-9]{2}-[0-9]{2}-[0-9]{2}$/.test(canonical)||
+    !validWeeklyFlightSchedule(weeklySchedule)||
+    ![0,3,7].includes(launchDelayDays))return null;
+ const first=Date.parse(canonical+'T00:00:00Z');
+ if(!Number.isFinite(first)||new Date(first).toISOString().slice(0,10)!==canonical)return null;
+ for(let step=launchDelayDays;step<=launchDelayDays+6;step++){
+  const day=new Date(first+step*86400000);
+  const weekday=(day.getUTCDay()+6)%7;
+  if(weeklySchedule.some(row=>row.day===weekday))
+   return day.toISOString().slice(0,10);
+ }
+ return null;
+}
 export const SCHEDULE_SQL=Object.freeze({
  operationalReadiness:`SELECT world_id,world_state,confirmed_game_date,
   authoritative_clock_connected,clock_producer_enabled,
@@ -651,10 +670,15 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
     // Separate game-day maintenance gate. Unlike unverified real inspection
     // it can evaluate explicit GAME dates, but does not release flights.
     let gameMaintenance=null;
+    const firstFlightGameDate=nextWeeklyDepartureGameDate(
+     state.confirmed_game_date,body.weeklySchedule,body.launchDelayDays??0
+    );
+    if(!firstFlightGameDate)return respond(503,{
+      error:'MAINTENANCE_FLIGHT_GAME_DATE_UNAVAILABLE',routeCreated:false});
     if(physical.rowCount===1&&aircraft){
      const evaluated=await client.query(SCHEDULE_SQL.maintenanceGameDue,[
       userId,body.airlineId,body.aircraftInventoryId,
-      state.confirmed_game_date
+      firstFlightGameDate
      ]);
      gameMaintenance=evaluated.rows?.[0]?.result;
      if(evaluated.rowCount!==1||!gameMaintenance||
