@@ -70,3 +70,19 @@ test('corrected game maintenance provenance is anchored to commissioning, not or
  assert.doesNotMatch(sql,/UPDATE\s+airlinerra_game\.aircraft_maintenance_state_v1/i);
  assert.doesNotMatch(sql,/INSERT INTO\s+airlinerra_game\.aircraft_maintenance_completions_v1/i);
 });
+
+test('weekly flight preflight evaluates maintenance on first real scheduled game day',async()=>{
+ const {nextWeeklyDepartureGameDate}=await import('../server/flight-schedule-service.mjs');
+ const day=(n,time='09:00')=>({day:n,time});
+ assert.equal(nextWeeklyDepartureGameDate('2026-11-13',[day(4)],0),'2026-11-13');
+ assert.equal(nextWeeklyDepartureGameDate('2026-11-13',[day(0)],0),'2026-11-16');
+ assert.equal(nextWeeklyDepartureGameDate('2026-11-13',[day(1)],3),'2026-11-17');
+ assert.equal(nextWeeklyDepartureGameDate('2026-11-13',[day(4)],7),'2026-11-20');
+ assert.equal(nextWeeklyDepartureGameDate('2026-02-30',[day(4)],0),null);
+ assert.equal(nextWeeklyDepartureGameDate('2026-11-13',[day(4)],9),null);
+ const source=await read('server/flight-schedule-service.mjs');
+ assert.match(source,/const firstFlightGameDate=nextWeeklyDepartureGameDate/);
+ assert.match(source,/state\.confirmed_game_date,body\.weeklySchedule,body\.launchDelayDays\?\?0/);
+ assert.match(source,/MAINTENANCE_FLIGHT_GAME_DATE_UNAVAILABLE/);
+ assert.match(source,/userId,body\.airlineId,body\.aircraftInventoryId,\s*firstFlightGameDate/);
+});
