@@ -195,7 +195,12 @@ const pages=Object.freeze({
 <div class="fleet-detail-row"><span>Current individual aircraft market value</span><strong id="fleet-detail-market-value">—</strong></div>
 <div class="fleet-detail-row"><span>Verified operating cost per flight</span><strong id="fleet-detail-operating-cost">—</strong></div></div></section>
 <p class="hint fleet-detail-disclaimer">Individual aircraft condition, build year, lifecycle and price stay “Not recorded” until verified values are available. Model specifications are reference data, not proof of an individual installed configuration. No invented age, valuation, flight hours or maintenance dates are displayed.</p>
-<section id="fleet-maintenance-preview" class="fleet-maintenance-preview" aria-label="Aircraft maintenance cycle" aria-live="polite">Maintenance information loads when you open this aircraft.</section>`,'AIRCRAFT PROFILE'),
+<section id="fleet-maintenance-preview" class="fleet-maintenance-preview" aria-label="Aircraft maintenance cycle" aria-live="polite">Maintenance information loads when you open this aircraft.</section>
+<section id="fleet-starter-commissioning" class="fleet-maintenance-preview" aria-label="Starter aircraft commissioning" hidden>
+ <h3>Aircraft commissioning</h3>
+ <p id="fleet-commissioning-status" class="hint" role="status" aria-live="polite"></p>
+ <button id="fleet-commissioning-request" type="button" class="secondary" hidden>Request game inspection</button>
+</section>`,'AIRCRAFT PROFILE'),
  'aircraft-new-orders':()=>card('New factory aircraft orders',"<p class=\"hint\">Select a current-production aircraft and its cabin or cargo configuration. Delivery depends on available factory stock and manufacturer orders.</p>\n<p id=\"market-state\" class=\"workspace-state\" role=\"status\">Loading factory catalog…</p>\n<div class=\"aircraft-market-filter-grid\" aria-label=\"Choose new aircraft\">\n<label>Manufacturer<select id=\"new-maker\"><option value=\"\">Choose manufacturer</option></select></label>\n<label>Family<select id=\"new-family\" disabled><option value=\"\">Choose family</option></select></label>\n<label>Model<select id=\"new-model\" disabled><option value=\"\">Choose model</option></select></label>\n<label>Configuration<select id=\"new-configuration\" disabled><option value=\"\">Choose configuration</option></select></label>\n</div>\n<div class=\"aircraft-market-finance-row\">\n<label>Payment<select id=\"new-payment\"><option value=\"cash\">Pay cash</option><option value=\"credit\">Buy on credit (not yet active)</option><option value=\"lease\">Lease (not yet active)</option></select></label>\n<label>Aircraft registration<input id=\"market-aircraft-registration\" maxlength=\"20\" autocomplete=\"off\" placeholder=\"e.g. D-ABCD\" aria-describedby=\"market-feedback\"></label>\n</div>\n<div id=\"new-aircraft-quote\" class=\"aircraft-market-quote\" role=\"status\" aria-live=\"polite\">Choose manufacturer, family, model and configuration to see prices and delivery.</div>\n<div id=\"factory-cabin-customizer\" class=\"factory-cabin-customizer\" aria-label=\"Factory cabin preview\"></div>\n<div class=\"workspace-actions aircraft-market-actionbar\">\n<button type=\"button\" class=\"primary aircraft-market-compact-button\" id=\"market-acquire\" disabled>Confirm cash order</button>\n<button type=\"button\" class=\"secondary aircraft-market-compact-button\" data-workspace-go=\"fleet\">My fleet</button>\n<button type=\"button\" class=\"secondary aircraft-market-compact-button\" data-workspace-go=\"aircraft-market\">Used aircraft market</button>\n</div>\n<p id=\"market-feedback\" class=\"hint\" role=\"status\" aria-live=\"polite\"></p>\n<p class=\"hint\">Aircraft prices are game estimates, not manufacturer offers. Credit and lease payment engines are not yet active. No payment or aircraft delivery happens before World 1 opens.</p>\n<div id=\"market-offers\" hidden></div><select id=\"market-offer-select\" hidden aria-label=\"Selected server offer\"><option value=\"\"></option></select>",'NEW AIRCRAFT'),
  'aircraft-market':()=>card('Used aircraft auctions',"<p class=\"hint\">Every offer represents one fictional game aircraft. You can filter by manufacturer, family, model and configuration. Sellers are fictional market companies until player-to-player trading is enabled.</p>\n<p id=\"used-market-state\" class=\"workspace-state\" role=\"status\" aria-live=\"polite\">Loading used-aircraft listings…</p>\n<div class=\"aircraft-market-filter-grid\" aria-label=\"Filter used aircraft\">\n<label>Manufacturer<select id=\"used-maker\"><option value=\"\">All manufacturers</option></select></label>\n<label>Family<select id=\"used-family\"><option value=\"\">All families</option></select></label>\n<label>Model<select id=\"used-model\"><option value=\"\">All models</option></select></label>\n<label>Configuration<select id=\"used-configuration\"><option value=\"\">All configurations</option></select></label>\n</div>\n<div class=\"aircraft-market-search-row\">\n<label>Search<input id=\"used-market-search\" type=\"search\" maxlength=\"60\" autocomplete=\"off\" placeholder=\"Aircraft or seller\"></label>\n<label>Offer type<select id=\"used-market-mode\"><option value=\"all\">All listings</option><option value=\"purchase\">Purchase</option><option value=\"lease\">Leasing</option></select></label>\n<label>Payment method<select id=\"used-market-payment\"><option value=\"cash\">Cash (purchase auction)</option><option value=\"credit\">Credit (not yet active)</option><option value=\"lease\">Leasing (not yet active)</option></select></label>\n<div class=\"aircraft-market-search-actions\">\n<button id=\"used-market-find\" type=\"button\" class=\"secondary aircraft-market-compact-button\">Search</button>\n<button id=\"used-market-refresh\" type=\"button\" class=\"secondary aircraft-market-compact-button\">Refresh</button>\n</div></div>\n<div id=\"used-market-lots\" class=\"used-market-list\" role=\"list\" aria-live=\"polite\"></div>\n<div class=\"used-market-pagination\">\n<button id=\"used-market-prev\" type=\"button\" class=\"secondary aircraft-market-compact-button\" disabled>Previous</button>\n<span id=\"used-market-page\">Page 1</span>\n<button id=\"used-market-next\" type=\"button\" class=\"secondary aircraft-market-compact-button\" disabled>Next</button></div>\n<section id=\"used-market-bid-panel\" class=\"used-market-bid-panel\" hidden>\n<h3 id=\"used-market-bid-title\">Bid on aircraft</h3><p id=\"used-market-bid-info\" class=\"hint\"></p>\n<div class=\"aircraft-market-finance-row\">\n<label>Your bid (USD)<input id=\"used-market-bid-amount\" type=\"number\" min=\"100\" step=\"0.01\" autocomplete=\"off\" inputmode=\"decimal\"></label>\n<label>Aircraft registration<input id=\"used-market-bid-registration\" type=\"text\" maxlength=\"20\" autocomplete=\"off\" placeholder=\"e.g. D-ABCD\"></label>\n</div><div class=\"workspace-actions aircraft-market-actionbar\">\n<button id=\"used-market-bid-confirm\" type=\"button\" class=\"primary aircraft-market-compact-button\" disabled>Confirm cash bid</button>\n<button id=\"used-market-bid-cancel\" type=\"button\" class=\"secondary aircraft-market-compact-button\">Cancel</button></div>\n<p id=\"used-market-bid-feedback\" class=\"hint\" role=\"status\" aria-live=\"polite\"></p></section>\n<p class=\"hint\">Unsold listings have no expiry. The first accepted bid starts 15 minutes; each higher bid restarts the countdown. A cash bid holds your funds and refunds the previous highest bidder. Real-money transactions do not occur.</p>\n<div class=\"workspace-actions aircraft-market-actionbar\">\n<button type=\"button\" class=\"secondary aircraft-market-compact-button\" data-workspace-go=\"aircraft-new-orders\">New aircraft orders</button>\n<button type=\"button\" class=\"secondary aircraft-market-compact-button\" data-workspace-go=\"fleet\">My fleet</button></div>",'SECOND-HAND AVIATION MARKET'),
  'maintenance':()=>card('Aircraft maintenance locations',
@@ -359,6 +364,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
  let marketFetchVersion=0;
  let maintenanceFetchVersion=0;
  let maintenanceLast=null;
+ let commissioningFetchVersion=0;
  let aircraftPhotoToken=0,aircraftPhotoId=null,aircraftCustomPhoto=false,photoBlob=null,photoPreviewUrl=null,photoPendingId=null;
  let scheduleSnapshot=null;
  let scheduleFetchVersion=0;
@@ -922,6 +928,44 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    if(host)host.textContent='Maintenance cycle is temporarily unavailable. Your aircraft ownership and flight data are unchanged.';
   }
  }
+ async function loadCommissioningStatus(aircraftId){
+  const ticket=++commissioningFetchVersion;
+  const panel=$('fleet-starter-commissioning');
+  const status=$('fleet-commissioning-status');
+  const button=$('fleet-commissioning-request');
+  if(!panel||!status||!button)return;
+  panel.hidden=true;button.hidden=true;
+  const airlineId=data.airline?.id,scheduler=data.scheduler;
+  if(!data.connected||!airlineId||!aircraftId||
+     typeof scheduler?.commissioningStatus!=='function')return;
+  try{
+   const result=await scheduler.commissioningStatus({airlineId,aircraftInventoryId:aircraftId});
+   if(ticket!==commissioningFetchVersion||data.airline?.id!==airlineId||
+      selectedFleetAircraftId!==aircraftId)return;
+   if(!result||!['not_requested','requested','in_review','reviewed','declined'].includes(result.status)||
+      result.flightActivated!==false||result.inspectionCompleted!==false)return;
+   panel.hidden=false;
+   if(result.status==='in_review'){
+    status.textContent='Game records checked: '+String(result.gameDataChecksPassed||0)+' of 6 passed. Awaiting independent condition and age review. Aircraft is not yet cleared to fly.';
+   }else if(result.status==='requested'){
+    status.textContent='Commissioning requested. Game-data verification is pending. No inspection or flight approval yet.';
+   }else if(result.status==='not_requested'){
+    status.textContent='No game commissioning requested. This checks recorded aircraft information, but does not automatically approve maintenance or flights.';
+   }else if(result.status==='declined'){
+    status.textContent='Commissioning was declined. The aircraft remains unavailable for operational approval.';
+   }else{
+    status.textContent='Commissioning reviewed. Full maintenance and operational release must still pass separately.';
+   }
+   button.hidden=!['not_requested','requested'].includes(result.status);
+   button.textContent=result.status==='requested'?
+     'Check commissioning request':'Request game inspection';
+  }catch{
+   if(ticket!==commissioningFetchVersion)return;
+   // Only original starter airframes support this workflow. A failed lookup
+   // must not block the aircraft profile or show an untrusted status.
+   panel.hidden=true;button.hidden=true;
+  }
+ }
  function renderAircraftDetail(){
   const aircraft=marketSnapshot?.fleet?.find(x=>x.id===selectedFleetAircraftId);
   const detail=$('fleet-detail-name');
@@ -1271,6 +1315,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   }
   if(selectedFleetAircraftId&&fleet.some(x=>x.id===selectedFleetAircraftId)){
    void loadMaintenancePreview(selectedFleetAircraftId);
+   void loadCommissioningStatus(selectedFleetAircraftId);
   }
   const offerList=$('market-offers'),select=$('market-offer-select');
   if(offerList)offerList.replaceChildren();
@@ -1338,6 +1383,8 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
     usedMarketSnapshot=null;usedMarketFetchVersion++;usedMarketPage=0;
    selectedUsedListingId=null;
    maintenanceLast=null;maintenanceFetchVersion++;
+   commissioningFetchVersion++;
+   if($('fleet-starter-commissioning'))$('fleet-starter-commissioning').hidden=true;
    aircraftPhotoId=null;aircraftPhotoToken++;resetPhotoDraft();
    selectedFleetAircraftId=/^#fleet-aircraft\/([0-9a-f-]{36})$/iu.exec(doc.defaultView?.location?.hash||'')?.[1]||null;
   }
@@ -1426,7 +1473,34 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    cabinConfigurationManager?.selectAircraft(aircraftId);
    renderAircraftDetail();
    void loadMaintenancePreview(aircraftId);
+   void loadCommissioningStatus(aircraftId);
    if(typeof goTo==='function')goTo('fleet-aircraft/'+aircraftId);
+   return;
+  }
+  const commissioningButton=event.target.closest('#fleet-commissioning-request');
+  if(commissioningButton){
+   const aircraft=marketSnapshot?.fleet?.find(a=>a.id===selectedFleetAircraftId);
+   const status=$('fleet-commissioning-status');
+   const airlineId=data.airline?.id;
+   if(!aircraft||!data.connected||!airlineId||
+      typeof data.scheduler?.commissioningRequest!=='function')return;
+   commissioningButton.disabled=true;
+   if(status)status.textContent='Checking commissioning request in the game database…';
+   try{
+    const result=await data.scheduler.commissioningRequest({
+     airlineId,aircraftInventoryId:aircraft.id
+    });
+    if(!result||!['requested','in_review'].includes(result.status)||
+       result.flightActivated!==false||
+       result.physicalInspectionCompleted!==false||
+       result.aircraftClearedForFlight!==false)
+      throw Error('Invalid commissioning response');
+    await loadCommissioningStatus(aircraft.id);
+   }catch{
+    if(status)status.textContent='Commissioning request could not be verified. Aircraft remains unchanged.';
+   }finally{
+    commissioningButton.disabled=false;
+   }
    return;
   }
   const deliveryButton=event.target.closest('[data-aircraft-delivery]');
@@ -1738,6 +1812,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   openFleetAircraft:hash=>{
    const id=/^#fleet-aircraft\/([0-9a-f-]{36})$/iu.exec(String(hash||''))?.[1]||null;
    selectedFleetAircraftId=id;renderAircraftDetail();
+   if(id)void loadCommissioningStatus(id);
   },
   getLandingView:()=>preferences.landing,formatDistance:km=>
   preferences.units==='mi'?(Number(km)*0.621371).toFixed(0)+' mi':Number(km).toFixed(0)+' km'});
