@@ -1981,9 +1981,49 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    return;
   }
   const scheduler=data.scheduler;
-  message('route-plan-status','Checking the operating schedule and required approvals…');
+  const source=suggestedSourceFlight;
+  const matchingReturn=Boolean(source&&source.aircraftId===flightAircraft&&
+    source.from?.key===to.key&&source.to?.key===from.key&&
+    source.flightNumber!==flightNumber);
+  const fromServerUtc=value=>{
+   const t=Date.parse(value);
+   return Number.isFinite(t)?new Date(t).toISOString().slice(0,19)+'Z':null;
+  };
+  const sourceDeparture=matchingReturn?fromServerUtc(source.referenceDepartureUtc):null;
+  const sourceArrival=matchingReturn?fromServerUtc(source.referenceArrivalUtc):null;
+  const sourceStand=source?.operation?.departureStand;
+  const sourceArrivalStand=source?.operation?.arrivalStand;
+  const sourceTurnaround=source?.operation?.turnaroundMinutes;
+  if(matchingReturn&&(
+    typeof scheduler?.operationalRoundtripCreate!=='function'||
+    !sourceDeparture||!sourceArrival||
+    !draft.referenceDepartureUtc||!draft.referenceArrivalUtc||
+    !Array.isArray(source.schedule)||source.schedule.length<1||
+    !['terminal','remote','cargo'].includes(sourceStand)||
+    !['terminal','remote','cargo'].includes(sourceArrivalStand)||
+    !Number.isInteger(sourceTurnaround)||sourceTurnaround<45||sourceTurnaround>360
+  )){
+   message('route-plan-status',
+    'NOT CREATED — the previous flight and suggested return need complete times, stands and a connected two-flight service. You can edit the suggestion or choose Blank new flight.');
+   return;
+  }
+  message('route-plan-status',matchingReturn?
+   'Checking both flights together — no partial route will be saved…':
+   'Checking the operating schedule and required approvals…');
   try{
-   const result=await scheduler.operationalCreate({
+   const result=matchingReturn?await scheduler.operationalRoundtripCreate({
+    airlineId:data.airline.id,aircraftInventoryId:ownedChoice.id,
+    outboundFlightNumber:source.flightNumber,returnFlightNumber:flightNumber,
+    originAirportKey:source.from.key,destinationAirportKey:source.to.key,
+    referenceDepartureUtc:sourceDeparture,referenceArrivalUtc:sourceArrival,
+    returnDepartureUtc:draft.referenceDepartureUtc,
+    returnArrivalUtc:draft.referenceArrivalUtc,
+    weeklySchedule:source.schedule,returnWeeklySchedule:schedule,
+    departureStand:sourceStand,arrivalStand:sourceArrivalStand,
+    returnDepartureStand:operation.departureStand,
+    returnArrivalStand:operation.arrivalStand,
+    turnaroundMinutes:sourceTurnaround
+   }):await scheduler.operationalCreate({
     airlineId:data.airline.id,aircraftInventoryId:ownedChoice.id,
     flightNumber,originAirportKey:from.key,destinationAirportKey:to.key,
     weeklySchedule:schedule,launchDelayDays,
@@ -2009,6 +2049,20 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
   }catch(error){
    const reason=String(error?.message||'');
    const blockers=Array.isArray(error?.operationalBlockers)?error.operationalBlockers:[];
+   if(error?.isAtomicRoundtrip===true){
+    const permissions=blockers.some(x=>x.startsWith('GAME_PERMISSION_RELEASE_MISSING_'));
+    const disabled=blockers.includes('FLIGHT_EXECUTION_AND_SETTLEMENT_NOT_RELEASED');
+    const release=blockers.includes('INDEPENDENT_OPERATIONAL_ACTIVATION_NOT_RELEASED');
+    const notes=[
+     disabled?'Flight execution and automatic finance settlement are not enabled.':null,
+     permissions?'Game operating licence or route permissions are not released.':null,
+     release?'The independently checked operational release is still disabled.':null
+    ].filter(Boolean);
+    message('route-plan-status','NOT CREATED — neither flight was changed or booked. '+
+     (notes.join(' ')||'The two-flight schedule is not cleared.')+
+     ' No airport slots were reserved and no charge was made.');
+    return;
+   }
    const specific=blockers.includes('AIRCRAFT_NOT_IN_AIRLINE_FLEET')?
     'The selected aircraft is not in this airline fleet.':
     blockers.includes('AIRCRAFT_NOT_IN_SERVICE')?
