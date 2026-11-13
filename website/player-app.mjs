@@ -63,6 +63,7 @@ function navigateTo(view){
   const selected=safePlayerView('#'+view);
   const name=selected==='onboarding'&&hasRealAirline?'overview':selected;
   if(name==='fleet-aircraft')workspaceController?.openFleetAircraft?.(window.location.hash);
+  if(name==='aircraft-market')workspaceController?.openUsedAircraft?.(window.location.hash);
   if(name!==selected)window.history.replaceState({},'',playerViewUrl(name));
   for(const section of doc.querySelectorAll('[data-player-view]')){
     section.hidden=section.dataset.playerView!==name;
