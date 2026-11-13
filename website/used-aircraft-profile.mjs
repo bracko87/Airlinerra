@@ -45,7 +45,7 @@ const cabinCounts=cabin=>['economy','premium','business','first'].every(k=>
 
 export function renderUsedAircraftProfile({
  doc,host,offer,marketOpen=false,serverNowUtc=null,
- onBack,onRefresh,onCabin
+ onBack,onRefresh,onCabin,message='Loading the selected aircraft from the game database…'
 }={}){
  if(!doc||!host)throw Error('Used aircraft profile host not available');
  host.replaceChildren();
@@ -58,7 +58,7 @@ export function renderUsedAircraftProfile({
  refreshButton.type='button';refreshButton.addEventListener('click',reload);
  nav.append(backButton,refreshButton);host.append(nav);
  if(!offer){
-  host.append(node(doc,'p','hint','Loading the selected aircraft from the game database…'));
+  host.append(node(doc,'p','hint',message));
   return;
  }
  const name=aircraftDisplayName(offer.manufacturer,offer.model);
