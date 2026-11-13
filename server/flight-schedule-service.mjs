@@ -23,6 +23,11 @@ const PLAN_DELETE_FIELDS=new Set([...BASE_FIELDS,'planId']);
 const SLOT_FIELDS=new Set([...BASE_FIELDS,'aircraftInventoryId','originAirportKey',
  'destinationAirportKey','referenceDepartureUtc','referenceArrivalUtc','weeklySchedule',
  'existingId','departureStand','arrivalStand']);
+const ROUNDTRIP_FIELDS=new Set([...BASE_FIELDS,'aircraftInventoryId',
+ 'originAirportKey','destinationAirportKey','referenceDepartureUtc','referenceArrivalUtc',
+ 'returnDepartureUtc','returnArrivalUtc','weeklySchedule','returnWeeklySchedule',
+ 'departureStand','arrivalStand','returnDepartureStand','returnArrivalStand',
+ 'turnaroundMinutes']);
 const CHECK_FIELDS=new Set([...BASE_FIELDS,'scheduleId']);
 const COMMISSIONING_FIELDS=new Set([...BASE_FIELDS,'aircraftInventoryId']);
 const MAINTENANCE_JOB_FIELDS=new Set([...COMMISSIONING_FIELDS,'checkCode']);
@@ -98,6 +103,28 @@ export function validateFlightSchedulePayload(body){
    if(minutes<=0||minutes>72*3600000)return false;
   }
   return true;
+ }
+ if(body.action==='roundtrip-preview'){
+  if(!withinFields(body,ROUNDTRIP_FIELDS)||
+    Object.keys(body).length!==ROUNDTRIP_FIELDS.size||
+    !uuid(body.aircraftInventoryId)||
+    !AIRPORT.test(body.originAirportKey||'')||
+    !AIRPORT.test(body.destinationAirportKey||'')||
+    body.originAirportKey===body.destinationAirportKey||
+    !validWeeklyFlightSchedule(body.weeklySchedule)||
+    !validWeeklyFlightSchedule(body.returnWeeklySchedule)||
+    ![body.departureStand,body.arrivalStand,body.returnDepartureStand,
+      body.returnArrivalStand].every(stand=>['terminal','remote','cargo'].includes(stand))||
+    ![body.referenceDepartureUtc,body.referenceArrivalUtc,
+      body.returnDepartureUtc,body.returnArrivalUtc].every(utc)||
+    !Number.isInteger(body.turnaroundMinutes)||
+    body.turnaroundMinutes<15||body.turnaroundMinutes>360)return false;
+  const a=Date.parse(body.referenceDepartureUtc);
+  const b=Date.parse(body.referenceArrivalUtc);
+  const c=Date.parse(body.returnDepartureUtc);
+  const d=Date.parse(body.returnArrivalUtc);
+  return a<b&&b<c&&c<d&&b-a<=72*3600000&&
+    d-c<=72*3600000&&c-a<=72*3600000;
  }
  if(body.action==='list'||body.action==='partner-list')
   return withinFields(body,BASE_FIELDS);
@@ -271,6 +298,11 @@ export const SCHEDULE_SQL=Object.freeze({
   $1::uuid,$2::uuid,$3::uuid,$4::text,$5::text) AS result`,
  maintenanceFlightWindow:`SELECT airlinerra_game.section9_owned_game_maintenance_flight_window_v1(
   $1::uuid,$2::uuid,$3::uuid,$4::timestamptz,$5::timestamptz) AS result`,
+ roundtripPreview:`SELECT airlinerra_game.section9_owned_roundtrip_candidate_preview_v1(
+  $1::uuid,$2::uuid,$3::uuid,$4::text,$5::text,
+  $6::timestamptz,$7::timestamptz,$8::timestamptz,$9::timestamptz,
+  $10::jsonb,$11::jsonb,$12::text,$13::text,$14::text,$15::text,
+  $16::integer,28::integer) AS result`,
  candidateSlotRights:`SELECT airlinerra_game.section9_owned_candidate_slot_rights_preflight_v1(
   $1::uuid,$2::uuid,$3::uuid,$4::text,$5::text,
   $6::timestamptz,$7::timestamptz,$8::jsonb,$9::text,$10::text) AS result`,
@@ -646,6 +678,31 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
     if(result.status==='scheduled'||result.status==='game_maintenance_jobs'||
        result.status==='cancelled')return respond(200,result);
     return respond(409,{...result,created:false,aircraftClearedForFlight:false});
+   }
+   if(body.action==='roundtrip-preview'){
+    // Preview ONLY. Two proposed flights are checked together with the
+    // existing aircraft rotations and both airports' slot capacities.
+    // No temporary schedule, slot, licence or financial entry is created.
+    const owner=await client.query(SCHEDULE_SQL.owner,[body.airlineId,userId]);
+    if(owner.rowCount!==1)return respond(403,{error:'Airline not owned by this account'});
+    const response=await client.query(SCHEDULE_SQL.roundtripPreview,[
+      userId,body.airlineId,body.aircraftInventoryId,
+      body.originAirportKey,body.destinationAirportKey,
+      body.referenceDepartureUtc,body.referenceArrivalUtc,
+      body.returnDepartureUtc,body.returnArrivalUtc,
+      JSON.stringify(body.weeklySchedule),JSON.stringify(body.returnWeeklySchedule),
+      body.departureStand,body.arrivalStand,body.returnDepartureStand,
+      body.returnArrivalStand,body.turnaroundMinutes
+    ]);
+    const result=response.rows?.[0]?.result;
+    if(response.rowCount!==1||result?.readOnly!==true||
+       result?.gameEvidenceType!=='GAME_ESTIMATE_NOT_OFFICIAL_CLEARANCE'||
+       result.flightsCreated!==0||result.slotsReserved!==false||
+       result.flightActivated!==false||result.ledgerPosted!==false||
+       !['ROUNDTRIP_GAME_PREVIEW_PASSED','ROUNDTRIP_GAME_PREVIEW_BLOCKED',
+        'ROUNDTRIP_TURNAROUND_TOO_SHORT'].includes(result.status))
+     return respond(503,{error:'ROUNDTRIP_PREVIEW_NOT_VERIFIED'});
+    return respond(200,result);
    }
    if(body.action==='operational-create'){
     // Create route never silently saves a planning-only record.
