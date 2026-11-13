@@ -153,7 +153,10 @@ export function routePlannerMarkup(){
    '<p id="route-prefix-note" class="hint">Checking registered airline code...</p></div>'+
    '<div class="route-planner-airports">'+picker('from','Origin')+picker('to','Destination')+'</div>'+
    '<div class="workspace-actions route-step1-actions"><button type="button" id="route-plan-swap" class="secondary">Swap airports</button>'+
-   '<button type="button" id="route-plan-preview" class="primary">Preview route</button></div>'+
+   '<button type="button" id="route-plan-preview" class="primary">Preview route</button>'+
+   '<button type="button" id="route-plan-next" class="secondary">Next flight — suggest return</button>'+
+   '<button type="button" id="route-plan-blank" class="secondary">Blank new flight</button></div>'+
+   '<p id="route-next-flight-hint" class="hint" role="status" aria-live="polite">Next flight suggests a return journey based on your last saved flight. You can change or clear the suggestion. Nothing is saved automatically.</p>'+
    '<p id="route-feedback" class="hint" role="status"></p>')+
   section('ROUTE MAP','Geographic route preview',
    '<h3 id="route-map-heading" class="route-map-heading">Select two airports</h3>'+
@@ -206,7 +209,7 @@ export function routePlannerMarkup(){
   '<p class="route-subtle-note">This saves a launch preference only. Automatic flight activation and ticket sales are not connected yet.</p>'+
   '<div class="workspace-actions route-apply-actions">'+
    '<button type="button" id="route-plan-save" class="primary">Create new route</button>'+
-   '<button type="button" id="route-plan-new" class="secondary">Clear form</button>'+
+   '<button type="button" id="route-plan-new" class="secondary">Blank new flight</button>'+
    '<button type="button" class="route-text-action" data-workspace-go="route-list">My routes</button></div>'+
   '<p id="route-plan-status" class="hint" role="status" aria-live="polite"></p>'+
   '<div id="route-plan-review" class="workspace-detail"></div>')+
@@ -1278,7 +1281,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    if(!selected('from'))await selectHome('from');
   }catch{message('route-feedback','Home airport could not be preselected. Choose an origin manually.');}
  };
- const resetRouteForm=async()=>{
+ const resetRouteForm=async({blank=false}={})=>{
   const serial=++editSerial;
   editingFlightNumber=null;editingLegacyIndex=null;++detailTicket;lastKeys='';airportProfiles={};
   showDetails();
@@ -1313,7 +1316,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
   message('route-feedback','');message('route-plan-review','');message('route-plan-status','');
   $('route-plan-status')?.classList?.remove('is-success');
   show();
-  if(homeLocation&&serial===editSerial)await selectHome('from');
+  if(!blank&&homeLocation&&serial===editSerial)await selectHome('from');
  };
  const selectStoredAirport=async(side,airport,serial)=>{
   if(!airport||typeof airport.key!=='string'||typeof airport.name!=='string')return false;
