@@ -1848,9 +1848,14 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    message('route-feedback','Route preview ready. Select an aircraft and weekday departures below.');
    return;
   }
-  if(target.id==='route-plan-new'){
-   await resetRouteForm();
-   message('route-plan-status','Form cleared. Nothing was saved. Enter a route and click Create new route to save a draft.');
+  if(target.id==='route-plan-next'){
+   await suggestReturnFromSavedFlight();
+   return;
+  }
+  if(target.id==='route-plan-new'||target.id==='route-plan-blank'){
+   await resetRouteForm({blank:true});
+   message('route-plan-status','Blank new flight. The suggestion was cleared, but no saved route was removed.');
+   message('route-next-flight-hint','Blank flight selected. Choose any aircraft, airports and departure schedule.');
    return;
   }
   if(target.id!=='route-plan-save')return;
@@ -2062,8 +2067,13 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
   doc.dispatchEvent(new CustomEvent('airlinerra:route-draft-saved',{
    detail:{flightNumber,serverSaved:Boolean(draft.serverPlanningId||draft.serverScheduleId)}
   }));
-  await resetRouteForm();
-  const text='Route '+flightNumber+' created.';
+  // Once the server has confirmed an operating route, prepare its return as
+  // the NEXT editable form. No return route is saved without user action.
+  await loadOwnedScheduleData(data.airline.id);
+  const suggested=await suggestReturnFromSavedFlight(flightNumber);
+  if(!suggested)await resetRouteForm({blank:true});
+  const text='Route '+flightNumber+' created.'+
+   (suggested?' Suggested return is ready to edit, but has not been created.':'');
   const status=$('route-plan-status');
   if(status){status.classList.add('is-success');status.textContent=text;}
 
