@@ -23,6 +23,7 @@ on:
       - 'supabase/migrations/20261113172000_section9_maintenance_job_aircraft_alias_repair.sql'
       - 'supabase/migrations/20261113174000_section9_maintenance_due_uses_game_job_receipts.sql'
       - 'supabase/migrations/20261113175000_section9_world1_maintenance_minute_cron.sql'
+      - 'supabase/migrations/20261113180000_section9_hour_level_maintenance_flight_window_gate.sql'
       - 'tests/test_section9_verified_starter_usage_baseline.mjs'
       - 'tests/test_section9_game_fuel_snapshot.mjs'
       - 'tests/test_section9_game_five_phase_fuel_quote.mjs'
