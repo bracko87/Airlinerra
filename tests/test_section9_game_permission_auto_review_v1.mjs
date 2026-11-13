@@ -63,3 +63,15 @@ test('cron scheduling is idempotent and never enables the licence release itself
  assert.doesNotMatch(sql,/SET\s+release_enabled\s*=\s*true/i);
  assert.doesNotMatch(sql,/SET\s+enabled_in_game\s*=\s*true/i);
 });
+
+
+test('automatic expiry job uses trusted existing game-day expiry, never a payment writer',async()=>{
+ const sql=await read('supabase/migrations/20261113218000_section9_game_permission_expiry_cron_v1.sql');
+ assert.match(sql,/WHERE jobname='airlinerra-game-permission-expiry-v1'/);
+ assert.match(sql,/cron\.schedule\(/);
+ assert.match(sql,/section9_expire_game_permissions_batch_v1\(100\)/);
+ assert.match(sql,/'\*\/5 \* \* \* \*'/);
+ assert.doesNotMatch(sql,/section9_decide_game_permission_application_v1/);
+ assert.doesNotMatch(sql,/\bINSERT INTO airlinerra_game\.airline_ledger/i);
+ assert.doesNotMatch(sql,/\bUPDATE airlinerra_game\.airlines/i);
+});
