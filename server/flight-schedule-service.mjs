@@ -546,6 +546,16 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
         gameAirframe.physicalConditionVerified!==false||
         gameAirframe.realManufactureYearVerified!==false)
       return respond(503,{error:'GAME_AIRFRAME_BASELINE_UNVERIFIED'});
+     if(gameAirframe.status==='not_initialized'&&action==='status'){
+      return respond(200,{...result,status:gameData.status,
+       gameDataInspectionComplete:gameData.gameDataInspectionComplete===true,
+       gameDataChecksPassed:gameData.dataChecksPassed??0,
+       gameDataChecksRequired:6,gameAgeYears:null,gameConditionPct:null,
+       gameMaintenanceDue:null,gameMaintenanceGrounded:true,
+       physicalConditionVerified:false,manufactureYearVerified:false,
+       physicalInspectionCompleted:false,aircraftClearedForFlight:false,
+       commissioningPending:true});
+     }
      const gameDue=await client.query(SCHEDULE_SQL.maintenanceGameDue,[
       userId,body.airlineId,body.aircraftInventoryId,
       // Owner does not supply or choose the authoritative game day.
