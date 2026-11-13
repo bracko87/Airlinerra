@@ -330,9 +330,11 @@ export const SCHEDULE_SQL=Object.freeze({
  p.aircraft_inventory_id::text AS "aircraftInventoryId",
  p.origin_airport_key AS "originAirportKey",p.destination_airport_key AS "destinationAirportKey",
  jsonb_build_object('key',p.origin_airport_key,'name',coalesce(o.airport_name,p.origin_airport_key),
-  'code',o.airport_code,'municipality',o.municipality,'countryIso',o.country_iso) AS "from",
+  'code',o.airport_code,'municipality',o.municipality,'countryIso',o.country_iso,
+  'timezoneIana',origin_timezone.timezone_iana) AS "from",
  jsonb_build_object('key',p.destination_airport_key,'name',coalesce(d.airport_name,p.destination_airport_key),
-  'code',d.airport_code,'municipality',d.municipality,'countryIso',d.country_iso) AS "to",
+  'code',d.airport_code,'municipality',d.municipality,'countryIso',d.country_iso,
+  'timezoneIana',destination_timezone.timezone_iana) AS "to",
  p.weekly_schedule AS "schedule",
  CASE WHEN p.planning_options->>'launchDelayDays' IN ('0','3','7')
   THEN (p.planning_options->>'launchDelayDays')::int ELSE 0 END AS "launchDelayDays",
@@ -352,6 +354,10 @@ export const SCHEDULE_SQL=Object.freeze({
  JOIN airlinerra.aircraft_configurations c ON c.id=i.configuration_id
  JOIN airlinerra_game.approved_game_airports o ON o.world_id=1 AND o.airport_key=p.origin_airport_key
  JOIN airlinerra_game.approved_game_airports d ON d.world_id=1 AND d.airport_key=p.destination_airport_key
+ LEFT JOIN airlinerra_game.airport_reference_profiles origin_timezone
+  ON origin_timezone.world_id=1 AND origin_timezone.airport_key=p.origin_airport_key
+ LEFT JOIN airlinerra_game.airport_reference_profiles destination_timezone
+  ON destination_timezone.world_id=1 AND destination_timezone.airport_key=p.destination_airport_key
  LEFT JOIN airlinerra_game.airline_flight_schedule_drafts_v1 s
   ON s.airline_id=p.airline_id
   AND s.flight_number=p.flight_number
