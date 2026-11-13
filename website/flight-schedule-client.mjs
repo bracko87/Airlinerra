@@ -38,6 +38,12 @@ export function createFlightScheduleClient({auth,origin,fetchImpl=(...args)=>fet
     post({action:'commissioning-status',airlineId,aircraftInventoryId}),
   commissioningRequest:({airlineId,aircraftInventoryId})=>
     post({action:'commissioning-request',airlineId,aircraftInventoryId}),
+  maintenanceJobStatus:({airlineId,aircraftInventoryId})=>
+    post({action:'maintenance-job-status',airlineId,aircraftInventoryId}),
+  maintenanceJobBook:({airlineId,aircraftInventoryId,checkCode})=>
+    post({action:'maintenance-job-book',airlineId,aircraftInventoryId,checkCode}),
+  maintenanceJobCancel:({airlineId,aircraftInventoryId})=>
+    post({action:'maintenance-job-cancel',airlineId,aircraftInventoryId}),
   operationalCreate:({airlineId,aircraftInventoryId,flightNumber,originAirportKey,
    destinationAirportKey,weeklySchedule,departureStand=null,arrivalStand='terminal',
    turnaroundMinutes,fares,service,launchDelayDays=0,
