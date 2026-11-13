@@ -105,7 +105,7 @@ test('aircraft details UI has six small maintenance buttons and no fake clearanc
  assert.match(ui,/scheduler\.maintenanceJobStatus\(/);
  assert.match(ui,/scheduler\?\.maintenanceJobBook/);
  assert.match(ui,/scheduler\?\.maintenanceJobCancel/);
- assert.match(ui,/aircraftGroundedForJob/); // should be displayed or used in UI
+ assert.match(ui,/The aircraft is reserved until the check completes/);
  assert.match(ui,/No financial charge posted/);
  assert.match(ui,/has NOT received operational clearance|NOT received operational clearance/);
 });
