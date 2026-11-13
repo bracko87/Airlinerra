@@ -635,7 +635,10 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
        result.flightActivated!==false||result.ledgerPosted!==false||
        result.status==='scheduled'&&(
         result.created!==true||typeof result.jobId!=='string'||
-        result.gameJobOnly!==true))
+        result.gameJobOnly!==true||
+        result.chargedNow!==false||result.chargedAtServiceCompletion!==true||
+        !Number.isFinite(Number(result.quotedCostUsd))||
+        Number(result.quotedCostUsd)<=0))
       return respond(503,{error:'GAME_MAINTENANCE_JOB_RESPONSE_UNVERIFIED'});
     if(result.status==='scheduled'||result.status==='game_maintenance_jobs'||
        result.status==='cancelled')return respond(200,result);
