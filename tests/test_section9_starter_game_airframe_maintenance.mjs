@@ -61,3 +61,12 @@ test('protected schedule endpoint refuses to activate during due game maintenanc
  assert.match(ui,/gameMaintenanceGrounded/);
  assert.match(ui,/Upcoming checks:/);
 });
+
+test('corrected game maintenance provenance is anchored to commissioning, not original allocation',async()=>{
+ const sql=await read('supabase/migrations/20261113151500_section9_starter_game_commissioning_date_provenance_fix.sql');
+ assert.match(sql,/assumed_current_at_game_commissioning_not_completed/);
+ assert.match(sql,/game_assumed_current_at_commissioning_NOT_actual_completion/);
+ assert.match(sql,/CREATE OR REPLACE FUNCTION airlinerra_game\.section9_owned_game_maintenance_due_v1/);
+ assert.doesNotMatch(sql,/UPDATE\s+airlinerra_game\.aircraft_maintenance_state_v1/i);
+ assert.doesNotMatch(sql,/INSERT INTO\s+airlinerra_game\.aircraft_maintenance_completions_v1/i);
+});
