@@ -229,6 +229,8 @@ export const SCHEDULE_SQL=Object.freeze({
     WHERE world_id=1)) AS location(position)
  WHERE f.id=$3::uuid AND f.airline_id=$2::uuid
   AND a.owner_player_id=$1::uuid`,
+ maintenanceReadiness:`SELECT airlinerra_game.section9_owned_aircraft_maintenance_readiness_v1(
+   $1::uuid,$2::uuid,$3::uuid,$4::date) AS result`,
  bookingWindowPreview:SEVEN_DAY_WINDOW_SQL,
  owner:'SELECT id FROM airlinerra_game.airlines WHERE id=$1::uuid AND owner_player_id=$2::uuid AND world_id=1',
  feeAircraft:`SELECT i.configuration_id::bigint AS "configurationId",
@@ -508,6 +510,27 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
      if(aircraft.maintenanceBaselineVerified!==true)
       missing.push('AIRCRAFT_MAINTENANCE_BASELINE_NOT_VERIFIED');
     }
+    // Independent owner/clock-scoped maintenance verification. This is
+    // read-only and can never manufacture condition, age, or completed checks.
+    let maintenance=null;
+    if(physical.rowCount===1&&aircraft){
+     const receipt=await client.query(SCHEDULE_SQL.maintenanceReadiness,[
+      userId,body.airlineId,body.aircraftInventoryId,state.confirmed_game_date
+     ]);
+     maintenance=receipt.rows?.[0]?.result;
+     if(receipt.rowCount!==1||!maintenance||
+        maintenance.readOnly!==true||maintenance.maintenanceReady!==false||
+        maintenance.dispatchApproved!==false||
+        maintenance.flightActivated!==false||
+        maintenance.ledgerPosted!==false||
+        !Array.isArray(maintenance.blockers)||
+        maintenance.blockers.some(code=>typeof code!=='string'||code.length>128))
+      return respond(503,{error:'MAINTENANCE_EVIDENCE_UNAVAILABLE',
+       routeCreated:false});
+     for(const reason of maintenance.blockers){
+      if(!missing.includes(reason))missing.push(reason);
+     }
+    }
     // Crew is intentionally out of Phase 1. These are independent, real
     // non-crew dependencies, not fictitious permits or release records.
     missing.push('ATOMIC_SCHEDULE_AND_AIRPORT_SLOT_ACTIVATION_NOT_CONNECTED',
@@ -524,6 +547,12 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
      originalStarterPosition:aircraft?.originalStarterPosition===true,
      gameFuelEstimateReady:aircraft?.gameFuelEstimateReady===true,
      maintenanceUsageTrackingStarted:aircraft?.maintenanceUsageTrackingStarted===true,
+     maintenanceStatus:maintenance?.status??'aircraft_not_verified',
+     conditionEvidenceVerified:maintenance?.conditionEvidenceVerified===true,
+     manufactureYearVerified:maintenance?.manufactureYearVerified===true,
+     maintenanceHistoryVerifiedChecks:maintenance?.checkTypesWithVerifiedHistory??0,
+     maintenanceRequiredCheckTypes:maintenance?.checkPolicies??null,
+     maintenanceDueEvaluationConnected:maintenance?.checkDueEvaluationConnected===true,
      blockingRequirements:missing,verifiedGameDate:state.confirmed_game_date||null});
    }
    if(body.action==='plan-save'){
