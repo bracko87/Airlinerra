@@ -20,15 +20,19 @@ export const WORLD_LABELS=Object.freeze([
   Object.freeze({id:3,name:'Odyssey',status:'Planned'})
 ]);
 const AIRCRAFT_ROUTE=/^fleet-aircraft\/([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/iu;
+const USED_AIRCRAFT_ROUTE=/^aircraft-market\/([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/iu;
 export function safePlayerView(hash){
   const candidate=typeof hash==='string'?hash.replace(/^#/u,''):'';
   if(AIRCRAFT_ROUTE.test(candidate))return 'fleet-aircraft';
+  if(USED_AIRCRAFT_ROUTE.test(candidate))return 'aircraft-market';
   return VIEW_SET.has(candidate)?candidate:'overview';
 }
 export function playerViewUrl(view){
   const candidate=String(view||'').replace(/^#/u,'');
   const aircraft=AIRCRAFT_ROUTE.exec(candidate);
   if(aircraft)return PLAYER_APP_PATH+'#fleet-aircraft/'+aircraft[1].toLowerCase();
+  const used=USED_AIRCRAFT_ROUTE.exec(candidate);
+  if(used)return PLAYER_APP_PATH+'#aircraft-market/'+used[1].toLowerCase();
   return PLAYER_APP_PATH+'#'+safePlayerView('#'+candidate);
 }
 /**
