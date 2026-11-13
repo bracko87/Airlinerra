@@ -224,6 +224,79 @@ export function routeAirportPairStatus(origin,destination){
  if(!origin?.key||!destination?.key)return 'INCOMPLETE';
  return origin.key===destination.key?'SAME_AIRPORT':'VALID';
 }
+/** Suggest the next return leg without saving or reserving anything.
+ * Authoritative route times and airport IANA zones are required, rather than
+ * guessing local times from country or browser time zone.
+ */
+export function suggestNextReturnFlight(previous,{airlinePrefix,usedFlightNumbers=[]}={}){
+ const key=/^(?:OURAIRPORTS:[1-9]\d{0,18}|FICTIONAL:fictional:[A-Z]{2}:[A-Z0-9]{2,8})$/;
+ const number=/^[A-Z0-9]{2}[0-9]{1,4}$/;
+ const start=previous?.referenceDepartureUtc,arrive=previous?.referenceArrivalUtc;
+ if(!previous||!key.test(previous.from?.key||'')||
+    !key.test(previous.to?.key||'')||
+    previous.from.key===previous.to.key||
+    !/^[A-Z0-9]{2}$/.test(airlinePrefix||'')||
+    !number.test(previous.flightNumber||'')||
+    !previous.flightNumber.startsWith(airlinePrefix)||
+    typeof previous.from?.timezoneIana!=='string'||
+    typeof previous.to?.timezoneIana!=='string'||
+    !Array.isArray(previous.schedule)||previous.schedule.length<1||
+    previous.schedule.length>7||
+    !previous.aircraftId?.startsWith('owned:'))return null;
+ const outMs=Date.parse(start),inMs=Date.parse(arrive);
+ if(!Number.isFinite(outMs)||!Number.isFinite(inMs)||
+    inMs<=outMs||inMs-outMs>72*3600000)return null;
+ const ground=Number.isInteger(previous.operation?.turnaroundMinutes)?
+  previous.operation.turnaroundMinutes:45;
+ if(ground<45||ground>360)return null;
+ const groundMs=ground*60000;
+ const backOut=inMs+groundMs,backIn=backOut+(inMs-outMs);
+ const local=(stamp,zone)=>{
+  try{
+   const parts=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{
+    timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit',
+    hour:'2-digit',minute:'2-digit',hourCycle:'h23'
+   }).formatToParts(new Date(stamp)).filter(p=>p.type!=='literal')
+    .map(p=>[p.type,p.value]));
+   const y=Number(parts.year),m=Number(parts.month),d=Number(parts.day);
+   const hour=parts.hour,minute=parts.minute;
+   if(!Number.isInteger(y)||!Number.isInteger(m)||!Number.isInteger(d)||
+      !/^(?:[01]\d|2[0-3])$/.test(hour)||!/^[0-5]\d$/.test(minute))return null;
+   const day=(new Date(Date.UTC(y,m-1,d)).getUTCDay()+6)%7;
+   return {day,time:hour+':'+minute};
+  }catch{return null;}
+ };
+ const oldLocal=local(outMs,previous.from.timezoneIana);
+ const backLocal=local(backOut,previous.to.timezoneIana);
+ if(!oldLocal||!backLocal||
+    !previous.schedule.some(row=>row?.day===oldLocal.day&&row.time===oldLocal.time)||
+    previous.schedule.some(row=>!Number.isInteger(row?.day)||row.day<0||row.day>6||
+      typeof row.time!=='string'||!/^([01]\d|2[0-3]):[0-5]\d$/.test(row.time))||
+    new Set(previous.schedule.map(row=>row.day)).size!==previous.schedule.length)return null;
+ // The example UTC departure determines the shift in local weekdays.
+ // The authoritative 28-day pair checker must validate DST changes separately.
+ const shift=(backLocal.day-oldLocal.day+7)%7;
+ const weeklySchedule=previous.schedule.map(row=>({
+  day:(row.day+shift)%7,time:backLocal.time
+ })).sort((a,b)=>a.day-b.day);
+ const taken=new Set(usedFlightNumbers);
+ const suffix=Number(previous.flightNumber.slice(airlinePrefix.length));
+ let next=suffix+1;
+ while(next<=9999&&taken.has(airlinePrefix+next))next++;
+ return {
+  sourceFlightNumber:previous.flightNumber,
+  flightNumberDigits:next<=9999?String(next):'',
+  aircraftId:previous.aircraftId,
+  from:previous.to,to:previous.from,
+  referenceDepartureUtc:new Date(backOut).toISOString().slice(0,19)+'Z',
+  referenceArrivalUtc:new Date(backIn).toISOString().slice(0,19)+'Z',
+  weeklySchedule,turnaroundMinutes:ground,
+  arrivalStand:previous.operation?.departureStand==='remote'?'remote':
+   previous.operation?.departureStand==='cargo'?'cargo':'terminal',
+  evidenceType:'EDITABLE_GAME_ESTIMATE_NOT_OPERATING_FLIGHT'
+ };
+}
+
 /** Real schedule mutation is never implied by read-only list or slot checks. */
 /** Promote only a server-owned planning route with explicit UTC timetable.
  * Nothing here activates an aircraft, sells a ticket or creates finances.
