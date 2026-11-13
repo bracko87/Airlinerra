@@ -33,7 +33,14 @@ COMMENT ON TABLE airlinerra_game.section9_fuel_tank_capacity_evidence_v1 IS
 DO $guard$
 DECLARE changed integer;
 BEGIN
- IF (SELECT count(*) FROM airlinerra_game.aircraft_fuel_planning_profiles_v1
+ IF (SELECT count(*) FROM airlinerra.aircraft_technical_specs
+     WHERE id=136 AND configuration_id=98
+       AND manufacturer_usable_fuel_mass_kg IS NULL
+       AND maximum_fuel_capacity_kg IS NULL
+       AND gameplay_placeholder_fuel_capacity_kg IS NULL
+       AND fuel_capacity_reference_note IS NULL
+       AND review_status='research')<>1
+ OR (SELECT count(*) FROM airlinerra_game.aircraft_fuel_planning_profiles_v1
      WHERE configuration_id=98 AND model_name='Jetstream 32'
        AND fuel_tank_capacity_kg IS NULL
        AND approved_for_dispatch=false AND approved_for_accounting=false
@@ -59,14 +66,17 @@ BEGIN
   'https://www.easa.europa.eu/sites/default/files/dfu/TCDS%20EASA.A.191_Jetstream_3100_3200_Iss_03_20150115.pdf'
  );
 
- UPDATE airlinerra_game.aircraft_fuel_planning_profiles_v1
- SET fuel_tank_capacity_kg=1477
- WHERE configuration_id=98 AND model_name='Jetstream 32'
-   AND fuel_tank_capacity_kg IS NULL
-   AND approved_for_dispatch=false AND approved_for_accounting=false
-   AND requires_further_evidence=true;
+ UPDATE airlinerra.aircraft_technical_specs
+ SET manufacturer_usable_fuel_mass_kg=1477,
+     fuel_capacity_reference_note=
+      'EASA.A.191 Issue 3 (2015-01-15) Section 3 III.9.1 Jetstream Series 3200: usable fuel 1477 kg / 1846 L; total 1491 kg including unusable. Type-level source, not airframe-specific release. Game calculation only; rate/dispatch/settlement remain unverified.'
+ WHERE id=136 AND configuration_id=98
+   AND manufacturer_usable_fuel_mass_kg IS NULL
+   AND maximum_fuel_capacity_kg IS NULL
+   AND gameplay_placeholder_fuel_capacity_kg IS NULL
+   AND review_status='research';
  GET DIAGNOSTICS changed=ROW_COUNT;
- IF changed<>1 THEN RAISE EXCEPTION 'SECTION9_JETSTREAM32_ORIGIN_UPDATE_NOT_EXACT'; END IF;
+ IF changed<>1 THEN RAISE EXCEPTION 'SECTION9_JETSTREAM32_SOURCE_SPEC_UPDATE_NOT_EXACT'; END IF;
 
  UPDATE airlinerra_game.section9_game_fuel_model_snapshot_v1
  SET tank_capacity_kg=1477,snapshot_at=clock_timestamp()
