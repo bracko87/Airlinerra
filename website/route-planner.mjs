@@ -1887,9 +1887,16 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
     reason.includes('SCHEDULE_CONFLICT')?
      'NOT CREATED — the aircraft, airport slots or flight schedule failed verification.':
      'NOT CREATED — an operational flight could not be verified. No route was saved.';
+   const rotation=error?.aircraftRotationWarning;
+   const rotationNote=rotation?.returnRequired?
+    ' AIRCRAFT ROTATION — The aircraft will still be at the previous destination for '+String(rotation.wrongAirportDepartures)+
+    ' future departure(s) in this schedule. Add a return or repositioning flight before operating this route.':
+    rotation?.overlappingFlights>0?
+    ' AIRCRAFT ROTATION — '+String(rotation.overlappingFlights)+
+    ' overlapping flight(s) were detected. Adjust the schedule before operating this route.':'';
    const gameOnlyNote=error?.gameModelPreliminarySuitable===true?
-    ' The route passes preliminary GAME runway, restriction and slot-capacity checks. This is a game estimate, not an operating clearance.':'';
-   message('route-plan-status',statusText+details+gameOnlyNote);
+    ' The route passes preliminary GAME runway, rotation, restriction and slot-capacity checks. This is a game estimate, not an operating clearance.':'';
+   message('route-plan-status',statusText+rotationNote+details+gameOnlyNote);
    return;
   }
   const copiedToDrafts=await draftWrite('routes',[...filtered,draft]);
