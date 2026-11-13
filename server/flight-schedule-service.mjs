@@ -236,6 +236,8 @@ export const SCHEDULE_SQL=Object.freeze({
    $1::uuid,$2::uuid,$3::uuid,$4::date) AS result`,
  commissioning:`SELECT airlinerra_game.section9_owned_starter_commissioning_v1(
   $1::uuid,$2::uuid,$3::uuid,$4::text) AS result`,
+ commissioningDataInspection:`SELECT airlinerra_game.section9_owned_starter_game_data_inspection_v1(
+  $1::uuid,$2::uuid,$3::uuid,$4::text) AS result`,
  bookingWindowPreview:SEVEN_DAY_WINDOW_SQL,
  owner:'SELECT id FROM airlinerra_game.airlines WHERE id=$1::uuid AND owner_player_id=$2::uuid AND world_id=1',
  feeAircraft:`SELECT i.configuration_id::bigint AS "configurationId",
@@ -498,8 +500,40 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
       return respond(503,{error:'COMMISSIONING_STATUS_UNVERIFIED'});
     if(result.status.startsWith('blocked_'))
       return respond(409,{...result,commissioningPending:false});
-    return respond(200,{...result,commissioningPending:result.status==='requested'||
-      result.status==='in_review'});
+    // Record only the six independently corroborated game-data checks.
+    // This is NOT a physical inspection, maintenance sign-off, or clearance.
+    let gameData=null;
+    if(result.status!=='not_requested'){
+     const follow=await client.query(SCHEDULE_SQL.commissioningDataInspection,[
+      userId,body.airlineId,body.aircraftInventoryId,
+      action==='request'?'run':'status'
+     ]);
+     gameData=follow.rows?.[0]?.result;
+     if(follow.rowCount!==1||!gameData||
+        typeof gameData.status!=='string'||
+        gameData.flightActivated!==false||
+        gameData.ledgerPosted!==false||
+        gameData.maintenanceReady!==false||
+        gameData.conditionVerified!==false||
+        gameData.manufactureYearVerified!==false||
+        gameData.maintenanceInspectionCompleted!==false||
+        !Number.isInteger(gameData.dataChecksPassed??0)||
+        (gameData.dataChecksPassed??0)>6)
+      return respond(503,{error:'COMMISSIONING_GAME_DATA_EVIDENCE_UNAVAILABLE'});
+     if(gameData.status==='game_data_inspection_blocked')
+      return respond(409,{...result,
+       status:gameData.status,gameDataInspectionComplete:false,
+       blockingRequirements:gameData.blockingRequirements||[],
+       commissioningPending:true});
+    }
+    return respond(200,{...result,
+     status:gameData?.status??result.status,
+     gameDataInspectionComplete:gameData?.gameDataInspectionComplete===true,
+     gameDataChecksPassed:gameData?.dataChecksPassed??0,
+     gameDataChecksRequired:gameData?.requiredDataChecks??6,
+     physicalConditionVerified:false,manufactureYearVerified:false,
+     physicalInspectionCompleted:false,aircraftClearedForFlight:false,
+     commissioningPending:['requested','in_review'].includes(gameData?.status??result.status)});
    }
    if(body.action==='operational-create'){
     // Create route never silently saves a planning-only record.
