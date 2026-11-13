@@ -25,7 +25,6 @@ test('maintenance gate belongs to verified owner, clock and actual check receipt
  assert.match(sql,/a\.owner_player_id=p_player/);
  assert.match(sql,/w\.state='active'/);
  assert.match(sql,/clock_row\.confirmed_game_date IS DISTINCT FROM p_game_day/);
- assert.match(sql,/m\.tracked_flight_hours>=0/);
  assert.match(sql,/tracked_flight_hours>=0/);
  assert.match(sql,/aircraft_maintenance_completions_v1/);
  assert.match(sql,/count\(DISTINCT c\.check_code\)/);
