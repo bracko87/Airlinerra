@@ -74,3 +74,13 @@ test('route planner sends both flights when return suggestion still matches airc
  assert.match(src,/No airport slots were reserved and no charge was made/);
  assert.match(src,/suggestedSourceFlight=null/);
 });
+
+
+test('phase-1 crew exemption is represented as a PAUSED, never-open release policy',async()=>{
+ const sql=await read('supabase/migrations/20261113216000_section9_world1_paused_crew_deferred_phase1.sql');
+ assert.match(sql,/'paused'/);
+ assert.match(sql,/'deferred_phase1'/);
+ assert.match(sql,/clock_timestamp\(\),NULL/);
+ assert.match(sql,/ON CONFLICT\(world_id\) DO NOTHING/);
+ assert.doesNotMatch(sql,/'enabled'/);
+});
