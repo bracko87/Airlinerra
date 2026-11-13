@@ -8,10 +8,10 @@ import {
 } from './cabin-configuration-manager.mjs';
 
 const DEFAULT_TYPES=Object.freeze([
- {code:'eco_standard',cabinClass:'economy',pitchInches:'31',spaceUnits:'1',installUsd:0},
- {code:'premium_standard',cabinClass:'premium',pitchInches:'38',spaceUnits:'1.5',installUsd:0},
- {code:'business_standard',cabinClass:'business',pitchInches:'45',spaceUnits:'2',installUsd:0},
- {code:'first_standard',cabinClass:'first',pitchInches:'55',spaceUnits:'3',installUsd:0}
+ {code:'eco_standard',cabinClass:'economy',pitchInches:'30',spaceUnits:'1',installUsd:0},
+ {code:'premium_standard',cabinClass:'premium',pitchInches:'38',spaceUnits:'1.4',installUsd:0},
+ {code:'business_standard',cabinClass:'business',pitchInches:'44',spaceUnits:'1.9',installUsd:0},
+ {code:'first_standard',cabinClass:'first',pitchInches:'60',spaceUnits:'3',installUsd:0}
 ]);
 const classes=[['economy','Economy'],['premium','Premium Economy'],
  ['business','Business'],['first','First Class']];
@@ -65,7 +65,7 @@ export function createReadonlyCabinViewer({doc}={}){
   const head=text(doc,'div','airlinerra-cabin-readonly-head','');
   const titles=text(doc,'div','airlinerra-cabin-readonly-titles','');
   titles.append(text(doc,'h2','',title),
-   text(doc,'p','hint','Installed cabin configuration · View only'));
+   text(doc,'p','hint','Cabin seating configuration · View only'));
   const close=text(doc,'button','secondary','Close');
   close.type='button';close.addEventListener('click',()=>dialog.close());
   head.append(titles,close);shell.append(head);
