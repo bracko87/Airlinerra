@@ -61,7 +61,7 @@
 .library-spec:last-child{border-bottom:0}
 .library-spec span{color:#61788f;max-width:55%}
 .library-spec strong{color:#183d5f;text-align:right;overflow-wrap:anywhere;max-width:45%}
-.library-disclaimer{background:#fff4e9;border-left:3px solid #ff6917;border-radius:6px;padding:10px 13px;font-size:12px;color:#624726}
+.library-disclaimer{background:#fff4e9;border:1px solid #ffdfc9;border-radius:6px;padding:10px 13px;font-size:12px;color:#624726}
 .library-evidence{font-size:12px;color:#586f88}
 .library-profile-footer{font-size:11px;color:#72849a;border-top:1px solid #e4ecf4;padding-top:12px;margin:18px 0 0}
 @media(max-width:1020px){.library-toolbar{grid-template-columns:repeat(2,minmax(0,1fr))}}
