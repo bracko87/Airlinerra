@@ -2982,3 +2982,107 @@ h2{font-size:20px;letter-spacing:-.025em;line-height:1.3;color:var(--navy);margi
   width:min(340px,100%)
  }
 }
+
+
+/* New / used fleet markets follow the same page-head + clean white workspace
+   panel layout as My Routes. Do not repeat the page title inside its panel. */
+#workspace-aircraft-new-orders>.workspace-panel>.panel-kicker,
+#workspace-aircraft-new-orders>.workspace-panel>h2,
+#workspace-aircraft-market>.workspace-panel>.panel-kicker,
+#workspace-aircraft-market>.workspace-panel>h2{display:none}
+
+/* Contextual individual-airframe page; retain its own URL and back action. */
+#used-aircraft-profile[hidden]{display:none!important}
+#workspace-aircraft-market.is-showing-used-profile>.workspace-panel>*:not(#used-aircraft-profile){
+ display:none!important
+}
+section[data-player-view="aircraft-market"]:has(#workspace-aircraft-market.is-showing-used-profile)>.page-head{
+ display:none!important
+}
+.used-aircraft-profile{width:100%;color:var(--navy);min-width:0}
+.used-aircraft-profile-navigation{
+ display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;
+ gap:10px;margin-bottom:18px
+}
+#player-main .used-aircraft-profile-navigation .secondary{
+ margin:0;padding:9px 13px;font-size:12px;border-radius:7px
+}
+.used-aircraft-profile-back{
+ border:0!important;padding-left:0!important;background:transparent!important;
+ box-shadow:none!important;text-align:left
+}
+.used-aircraft-profile-eyebrow{font-size:11px;color:var(--orange);font-weight:750;letter-spacing:.1em;margin:0 0 8px}
+.used-aircraft-profile-heading{margin-bottom:18px}
+.used-aircraft-profile-heading h1{font-size:clamp(23px,2.5vw,32px);margin:0 0 6px}
+.used-aircraft-profile-heading>.hint{margin:0}
+.used-aircraft-profile-hero{
+ display:grid;grid-template-columns:minmax(300px,1.05fr) minmax(330px,1fr);
+ gap:16px;margin:18px 0
+}
+.used-aircraft-profile-image{
+ display:flex;flex-direction:column;align-items:center;justify-content:center;
+ min-height:350px;border:1px solid var(--line);border-radius:9px;
+ background:var(--card,#fff);padding:16px;text-align:center;gap:9px
+}
+.used-aircraft-profile-image img{
+ display:block;width:100%;height:310px;object-fit:contain;object-position:center
+}
+.used-aircraft-profile-image small{font-size:11px;color:var(--muted)}
+.used-aircraft-profile-highlights{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:9px;align-items:stretch
+}
+.used-aircraft-profile-highlights .used-aircraft-profile-row{
+ display:flex;flex-direction:column;justify-content:center;gap:5px;
+ border:1px solid var(--line);border-radius:8px;background:var(--card,#fff);
+ padding:10px 12px
+}
+.used-aircraft-profile-row span{color:var(--muted);font-size:11px;line-height:1.5}
+.used-aircraft-profile-row strong{
+ color:var(--navy);font-size:13px;line-height:1.5;font-weight:700;
+ overflow-wrap:anywhere;font-variant-numeric:tabular-nums
+}
+.used-aircraft-profile-groups{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:14px;margin-top:14px
+}
+.used-aircraft-profile-group,.used-aircraft-profile-cabin{
+ background:var(--card,#fff);border:1px solid var(--line);
+ border-radius:9px;padding:15px 17px;min-width:0
+}
+.used-aircraft-profile-group h3,.used-aircraft-profile-cabin h3{
+ font-size:14px;color:var(--navy);margin:0 0 10px
+}
+.used-aircraft-profile-group .used-aircraft-profile-row,
+.used-aircraft-profile-cabin .used-aircraft-profile-row{
+ display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
+ border-bottom:1px solid var(--line);padding:9px 0
+}
+.used-aircraft-profile-group .used-aircraft-profile-row:last-child,
+.used-aircraft-profile-cabin .used-aircraft-profile-row:last-child{border-bottom:0}
+.used-aircraft-profile-group .used-aircraft-profile-row strong,
+.used-aircraft-profile-cabin .used-aircraft-profile-row strong{max-width:65%;text-align:right}
+.used-aircraft-profile-cabin{margin:16px 0}
+.used-aircraft-profile-cabin-top{
+ display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px
+}
+.used-aircraft-profile-cabin-top p{margin:0}
+#player-main .used-aircraft-profile-cabin-top .secondary{
+ margin:0;font-size:12px;padding:9px 13px
+}
+.used-aircraft-profile-cabin-seats{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 24px;margin-top:11px
+}
+#workspace-aircraft-market .used-market-aircraft-identity [data-used-profile-open]{
+ display:inline-flex;align-self:flex-start;align-items:center;
+ min-height:25px;margin-top:5px;padding:2px 0;
+ text-decoration:underline;text-underline-offset:3px
+}
+@media(max-width:950px){
+ .used-aircraft-profile-hero{grid-template-columns:1fr}
+ .used-aircraft-profile-image{min-height:245px}
+}
+@media(max-width:680px){
+ .used-aircraft-profile-groups,.used-aircraft-profile-cabin-seats{grid-template-columns:1fr}
+ .used-aircraft-profile-highlights{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
