@@ -19,6 +19,15 @@ select c.id::int as id,m.name as manufacturer,f.family_name as family,
  popularity.passenger_demand_multiplier as passenger_demand_multiplier,
  cabins.reference_seat_units as cabin_reference_units,
  cabins.standard_economy_seats as cabin_standard_economy,
+ factory.economy as cabin_factory_economy,
+ factory.premium as cabin_factory_premium,
+ factory.business as cabin_factory_business,
+ factory.first as cabin_factory_first,
+ factory.economy_type as cabin_factory_economy_type,
+ factory.premium_type as cabin_factory_premium_type,
+ factory.business_type as cabin_factory_business_type,
+ factory.first_type as cabin_factory_first_type,
+ factory.extra_legroom_cm as cabin_factory_extra_legroom_cm,
  cabin_rows.economy_columns as cabin_economy_columns,
  cabin_rows.premium_columns as cabin_premium_columns,
  cabin_rows.business_columns as cabin_business_columns,
@@ -73,6 +82,7 @@ left join airlinerra.aircraft_configuration_media media on media.configuration_i
 left join airlinerra.aircraft_service_payload_game_v1 payload on payload.configuration_id=c.id
 left join airlinerra_game.aircraft_passenger_popularity_v1 popularity on popularity.configuration_id=c.id
 left join airlinerra_game.cabin_model_standard_v1 cabins on cabins.configuration_id=c.id
+left join airlinerra_game.cabin_model_factory_layout_v2 factory on factory.configuration_id=c.id
 left join airlinerra_game.cabin_model_row_geometry_v1 cabin_rows on cabin_rows.configuration_id=c.id
 left join lateral (
  select
@@ -158,7 +168,15 @@ export function serializeAircraftLibrary(rows){
    passengerPopularityScore:r.use_type==='cargo'?null:num(r.passenger_popularity_score,1,6),
    passengerDemandMultiplier:r.use_type==='cargo'?null:num(r.passenger_demand_multiplier,0.6,1.3),
    cabinDefault:r.use_type==='cargo'?null:{
-    economy:num(r.cabin_standard_economy,0,850),premium:0,business:0,first:0,
+    economy:num(r.cabin_factory_economy,0,850)??num(r.cabin_standard_economy,0,850),
+    premium:num(r.cabin_factory_premium,0,850)??0,
+    business:num(r.cabin_factory_business,0,850)??0,
+    first:num(r.cabin_factory_first,0,850)??0,
+    economyType:safeText(r.cabin_factory_economy_type,80)||'eco_standard',
+    premiumType:safeText(r.cabin_factory_premium_type,80)||'premium_standard',
+    businessType:safeText(r.cabin_factory_business_type,80)||'business_standard',
+    firstType:safeText(r.cabin_factory_first_type,80)||'first_standard',
+    extraLegroomCm:num(r.cabin_factory_extra_legroom_cm,0,20)??0,
     referenceUnits:num(r.cabin_reference_units,0,850),
     geometry:{economyColumns:Array.isArray(r.cabin_economy_columns)?r.cabin_economy_columns:null,
      premiumColumns:Array.isArray(r.cabin_premium_columns)?r.cabin_premium_columns:null,
