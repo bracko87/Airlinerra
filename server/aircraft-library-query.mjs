@@ -17,6 +17,12 @@ select c.id::int as id,m.name as manufacturer,f.family_name as family,
  payload.evidence_url as capacity_source_url,
  popularity.popularity_score as passenger_popularity_score,
  popularity.passenger_demand_multiplier as passenger_demand_multiplier,
+ cabins.reference_seat_units as cabin_reference_units,
+ cabins.standard_economy_seats as cabin_standard_economy,
+ cabin_rows.economy_columns as cabin_economy_columns,
+ cabin_rows.premium_columns as cabin_premium_columns,
+ cabin_rows.business_columns as cabin_business_columns,
+ cabin_rows.first_columns as cabin_first_columns,
  media.storage_object_path as image_storage_object_path,
  coalesce(fleet_usage.total_in_use,0)::integer as fleet_in_use,
  coalesce(fleet_usage.top_airlines,'[]'::jsonb) as top_airlines,
@@ -66,6 +72,8 @@ join airlinerra.aircraft_configuration_game_readiness_v1 ready on ready.configur
 left join airlinerra.aircraft_configuration_media media on media.configuration_id=c.id and media.is_approved
 left join airlinerra.aircraft_service_payload_game_v1 payload on payload.configuration_id=c.id
 left join airlinerra_game.aircraft_passenger_popularity_v1 popularity on popularity.configuration_id=c.id
+left join airlinerra_game.cabin_model_standard_v1 cabins on cabins.configuration_id=c.id
+left join airlinerra_game.cabin_model_row_geometry_v1 cabin_rows on cabin_rows.configuration_id=c.id
 left join lateral (
  select
   (select count(*)::integer
@@ -149,6 +157,14 @@ export function serializeAircraftLibrary(rows){
    capacitySourceUrl:safeText(r.capacity_source_url,512),
    passengerPopularityScore:r.use_type==='cargo'?null:num(r.passenger_popularity_score,1,6),
    passengerDemandMultiplier:r.use_type==='cargo'?null:num(r.passenger_demand_multiplier,0.6,1.3),
+   cabinDefault:r.use_type==='cargo'?null:{
+    economy:num(r.cabin_standard_economy,0,850),premium:0,business:0,first:0,
+    referenceUnits:num(r.cabin_reference_units,0,850),
+    geometry:{economyColumns:Array.isArray(r.cabin_economy_columns)?r.cabin_economy_columns:null,
+     premiumColumns:Array.isArray(r.cabin_premium_columns)?r.cabin_premium_columns:null,
+     businessColumns:Array.isArray(r.cabin_business_columns)?r.cabin_business_columns:null,
+     firstColumns:Array.isArray(r.cabin_first_columns)?r.cabin_first_columns:null}
+   },
    productionStart:num(r.production_start,1900,2100),
    productionEnd:num(r.planning_production_end,1900,2100),
    productionEndEstimated:r.factual_production_end===null&&r.planning_production_end!==null,
