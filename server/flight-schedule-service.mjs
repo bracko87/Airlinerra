@@ -823,6 +823,10 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
      maintenanceHistoryVerifiedChecks:maintenance?.checkTypesWithVerifiedHistory??0,
      maintenanceRequiredCheckTypes:maintenance?.checkPolicies??null,
      maintenanceDueEvaluationConnected:maintenance?.checkDueEvaluationConnected===true,
+     gameAirportSlotCapacityAvailable:candidate.airportSlotCapacityPreviewAvailable===true,
+     gameAirportRestrictionsChecked:candidate.airportRestrictionGateChecked===true,
+     gameTrafficGrantsVerified:candidate.verifiedGameTrafficGrants??0,
+     gameTrafficRequiredServiceTypes:candidate.requiredServiceTypes??[],
      blockingRequirements:missing,verifiedGameDate:state.confirmed_game_date||null});
    }
    if(body.action==='plan-save'){
