@@ -57,3 +57,21 @@ test('booking is restricted to trusted game scheduler, economy only, no upfront 
  assert.doesNotMatch(source,/\bUPDATE airlinerra_game\.airlines/i);
  assert.doesNotMatch(source,/paid_upfront,true/);
 });
+
+
+test('game ticket scheduler only opens verified flights 1-7 days ahead and is a harmless no-op while disabled',async()=>{
+ const sql=await read('supabase/migrations/20261113221000_section9_verified_ticket_window_batch_scheduler_v1.sql');
+ assert.match(sql,/section9_open_verified_ticket_window_batch_v1/);
+ assert.match(sql,/current_user IS DISTINCT FROM 'postgres'/);
+ assert.match(sql,/section9_verified_permission_game_day_v1/);
+ assert.match(sql,/automatic_flight_and_fuel_settlement_enabled IS DISTINCT FROM true/);
+ assert.match(sql,/generate_series\(\s*\(game_day\+1\)::timestamp,\(game_day\+7\)::timestamp/);
+ assert.match(sql,/section9_open_verified_game_ticket_occurrence_v1/);
+ assert.match(sql,/WHERE jobname='airlinerra-game-ticket-window-v1'/);
+ assert.match(sql,/cron\.schedule\(/);
+ assert.match(sql,/NOT EXISTS \(/);
+ assert.match(sql,/FROM PUBLIC,anon,authenticated,service_role/);
+ assert.match(sql,/'ledgerPosted',false/);
+ assert.doesNotMatch(sql,/\bINSERT INTO airlinerra_game\.airline_ledger/i);
+ assert.doesNotMatch(sql,/\bUPDATE airlinerra_game\.airlines/i);
+});
