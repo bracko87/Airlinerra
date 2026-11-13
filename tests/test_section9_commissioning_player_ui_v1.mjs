@@ -46,8 +46,10 @@ test('aircraft details renders game-data checks separately from physical conditi
  assert.match(ui,/data\.airline\?\.id!==airlineId/);
  assert.match(ui,/selectedFleetAircraftId!==aircraftId/);
  assert.match(ui,/Game records checked:/);
- assert.match(ui,/Awaiting independent condition and age review/);
- assert.match(ui,/Aircraft is not yet cleared to fly/);
+ assert.match(ui,/gameMaintenanceDue/);
+ assert.match(ui,/gameMaintenanceGrounded/);
+ assert.match(ui,/GAME values \(not actual inspection\)/);
+ assert.match(ui,/Aircraft has NOT received operational clearance/);
  assert.match(ui,/button\.hidden=!\['not_requested','requested'\]/);
  assert.match(ui,/panel\.hidden=true;button\.hidden=true/);
  assert.match(ui,/typeof data\.scheduler\?\.commissioningRequest!=='function'/);
