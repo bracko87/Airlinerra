@@ -670,6 +670,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
  let preflightCatalogFor=null,preflightLoadToken=0,preflightRequest=0;
  let catalogAircraft=[],preflightCache=null,preflightPromise=null;
  let ownedFleet=[],serverDrafts=[],serverPlans=[],fleetTicket=0,fleetReadState='unavailable';
+ let suggestedSourceFlight=null;
  const pickers={},selected=side=>pickers[side]?.selected()||null;
  // The country-picker constructor calls onSelect synchronously. Defer route
  // rendering until all planner callbacks, including preflight, are initialized.
@@ -1282,6 +1283,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
   }catch{message('route-feedback','Home airport could not be preselected. Choose an origin manually.');}
  };
  const resetRouteForm=async({blank=false}={})=>{
+  suggestedSourceFlight=null;
   const serial=++editSerial;
   editingFlightNumber=null;editingLegacyIndex=null;++detailTicket;lastKeys='';airportProfiles={};
   showDetails();
@@ -1399,6 +1401,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    $('route-preflight-arrival-utc').value=
     returnFlight.referenceArrivalUtc.slice(0,16);
   show();
+  suggestedSourceFlight=source;
   const label=prefix&&returnFlight.flightNumberDigits?
    prefix+returnFlight.flightNumberDigits:'new flight number';
   message('route-next-flight-hint',
