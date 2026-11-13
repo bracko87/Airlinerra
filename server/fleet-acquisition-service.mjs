@@ -155,7 +155,8 @@ export const FLEET_SQL=Object.freeze({
   "r.reference_year AS \"referencePriceYear\",r.evidence_kind AS \"priceEvidence\", "+
   "c.production_start_year AS \"productionStartYear\", "+
   "c.production_end_year AS \"productionEndYear\", "+
-  "l.price_basis AS \"pricingBasis\" "+
+  "l.price_basis AS \"pricingBasis\", "+
+  "l.cabin_snapshot AS \"cabinSnapshot\",l.cabin_origin AS \"cabinOrigin\" "+
   "FROM airlinerra_game.used_aircraft_auction_lots_v1 l "+
   "JOIN airlinerra.aircraft_catalog_configuration_inventory c "+
   "ON c.configuration_id=l.configuration_id "+
@@ -297,6 +298,10 @@ export const FLEET_SQL=Object.freeze({
   "FROM airlinerra_game.cabin_seat_types_v1 "+
   "ORDER BY CASE cabin_class WHEN 'economy' THEN 1 WHEN 'premium' THEN 2 "+
   "WHEN 'business' THEN 3 ELSE 4 END,equivalent_economy_units,seat_code",
+ cabinStandards:"SELECT configuration_id::int AS \"configurationId\", "+
+  "use_type AS \"useType\",reference_seat_units::text AS \"referenceUnits\", "+
+  "standard_economy_seats AS \"economy\" FROM airlinerra_game.cabin_model_standard_v1 "+
+  "ORDER BY configuration_id LIMIT 400",
  cabinGeometry:"SELECT configuration_id::int AS \"configurationId\", "+
   "to_jsonb(economy_columns) AS \"economyColumns\", "+
   "to_jsonb(premium_columns) AS \"premiumColumns\", "+
@@ -315,6 +320,12 @@ export const FLEET_SQL=Object.freeze({
   "installed.installed_premium AS \"installedPremium\", "+
   "installed.installed_business AS \"installedBusiness\", "+
   "installed.installed_first AS \"installedFirst\", "+
+  "installed.installed_source AS \"installedSource\", "+
+  "installed.installed_economy_type AS \"installedEconomyType\", "+
+  "installed.installed_premium_type AS \"installedPremiumType\", "+
+  "installed.installed_business_type AS \"installedBusinessType\", "+
+  "installed.installed_first_type AS \"installedFirstType\", "+
+  "installed.installed_extra_legroom_cm::text AS \"installedExtraLegroomCm\", "+
   "draft.economy_seats AS \"draftEconomy\",draft.premium_seats AS \"draftPremium\", "+
   "draft.business_seats AS \"draftBusiness\",draft.first_seats AS \"draftFirst\", "+
   "draft.economy_type AS \"draftEconomyType\", "+
@@ -517,17 +528,19 @@ export function createFleetAcquisitionHandler({verifyUserToken,database}={}){
    if(body.action==='cabin-overview'){
     const owner=await client.query(FLEET_SQL.owner,[body.airlineId,playerId]);
     if(owner.rowCount!==1)return respond(403,{error:'Airline not owned by this account'});
-    const [types,aircraft,directory,refitSites,geometry,modelDesigns]=await Promise.all([
+    const [types,aircraft,directory,refitSites,geometry,modelDesigns,standards]=await Promise.all([
      client.query(FLEET_SQL.cabinTypes),
      client.query(FLEET_SQL.cabinAircraft,[body.airlineId]),
      client.query(FLEET_SQL.cabinDirectory),
      client.query(FLEET_SQL.cabinRefitSites,[body.airlineId]),
      client.query(FLEET_SQL.cabinGeometry),
-     client.query(FLEET_SQL.cabinModelDesigns,[body.airlineId])
+     client.query(FLEET_SQL.cabinModelDesigns,[body.airlineId]),
+     client.query(FLEET_SQL.cabinStandards)
     ]);
     return respond(200,{airlineId:body.airlineId,seatTypes:types.rows,aircraft:aircraft.rows,
      directory:directory.rows,refitSites:refitSites.rows,geometries:geometry.rows,
-     modelDesigns:modelDesigns.rows,previewOnly:true,installedLayoutsImmutable:true,canActivateRefit:false});
+     modelDesigns:modelDesigns.rows,standards:standards.rows,
+     previewOnly:true,installedLayoutsImmutable:true,canActivateRefit:false});
    }
    if(body.action==='cabin-save-model-design'){
     const owner=await client.query(FLEET_SQL.owner,[body.airlineId,playerId]);
