@@ -229,7 +229,11 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
    const estimate=planningClockEstimate(route.schedule,
     route.estimatedDurationMinutes,route.operation?.turnaroundMinutes);
    const timed=estimate?.sameDepartureTime?estimate.rows[0]:null;
-   add(timed?'~'+timed.arrivalClock+' UTC':'—');
+   const savedArrival=Date.parse(route.referenceArrivalUtc||'');
+   const savedArrivalUtc=Number.isFinite(savedArrival)?
+    new Date(savedArrival).toISOString().slice(11,16):null;
+   add(savedArrivalUtc?'~'+savedArrivalUtc+' UTC':
+    timed?'~'+timed.arrivalClock+' UTC':'—');
    add(route.aircraftLabel||'Not assigned');
    const weekdays=doc.createElement('span');weekdays.className='operations-route-weekdays';
    weekdays.setAttribute('aria-label','Days: '+(schedule.length?schedule.map(x=>days[x.day]).join(', '):'None selected'));
