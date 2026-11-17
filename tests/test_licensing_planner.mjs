@@ -32,11 +32,20 @@ test('company formation and application do not demand an aircraft purchase',()=>
   const entry=LICENCE_PLAN.find(x=>x.code===code);
   assert.match(entry.aircraft,/No aircraft required/);
  }
- for(const code of ['AIR_OPERATOR_CERTIFICATE','CARGO_OPERATIONS_SCOPE','CHARTER_VIP_SCOPE']){
+ for(const code of ['CARGO_OPERATIONS_SCOPE','CHARTER_VIP_SCOPE']){
   const entry=LICENCE_PLAN.find(x=>x.code===code);
   assert.match(entry.aircraft,/Apply: no/);
   assert.match(entry.aircraft,/Final approval:/);
  }
+ const aoc=LICENCE_PLAN.find(x=>x.code==='AIR_OPERATOR_CERTIFICATE');
+ assert.match(aoc.aircraft,/no additional aircraft purchase/);
+ assert.match(aoc.cost,/New separately incorporated subsidiary: \$10,000/);
+ assert.match(aoc.processing,/Subsidiary: 3 game days/);
+ assert.match(aoc.validity,/365 game days/);
+ assert.match(aoc.validity,/90 game days before expiry/);
+ assert.match(aoc.validity,/Safety Rating 70\/100/);
+ assert.match(aoc.recovery,/automatically reinstates AOC/);
+ assert.match(aoc.notes,/No flights, ordinary maintenance, passenger image and crew currently cause no penalty/);
  assert.match(LICENCE_PLAN.find(x=>x.code==='HOLDING_FORMATION').notes,/calendar days/);
  assert.match(LICENCE_PLAN.find(x=>x.code==='CARGO_OPERATIONS_SCOPE').notes,/already has one/);
  assert.match(LICENCE_PLAN.find(x=>x.code==='CABOTAGE').limits,/Unavailable markets remain blocked/);
@@ -75,16 +84,16 @@ test('ticket-style licence planner uses selects, preserves checks, and remains r
  assert.match(text,/LICENSING PLANNING/);
  assert.match(text,/Signed-in airline: Test Airline · requirements not evaluated/);
  assert.match(text,/For final approval/);
- assert.match(text,/1 suitable delivered and inspected aircraft/);
+ assert.match(text,/no additional aircraft purchase/);
  assert.match(text,/Applications not yet available/);
- assert.match(text,/Included in original airline activation/);
+ assert.match(text,/\$0 — automatically issued on registration/);
  assert.equal(root.children.length,2,'ticket-price-style two-panel layout');
  assert.ok(root.children.every(x=>x.className.includes('panel workspace-panel')));
  assert.ok(root.querySelectorAll('button').every(x=>x.disabled),'only disabled application button');
 
  const scenario=first(root,'select',x=>x.attrs['aria-label']==='Cost scenario');
  scenario.value='subsidiary';scenario.listeners.change();
- assert.match(flatText(root),/\$150,000 for new airline subsidiary/);
+ assert.match(flatText(root),/\$10,000 — charged once when approved/);
 
  const licence=first(root,'select',x=>x.attrs['aria-label']==='Licence or permit');
  licence.value='CARGO_OPERATIONS_SCOPE';licence.listeners.change();
@@ -112,6 +121,22 @@ test('ticket-style licence planner uses selects, preserves checks, and remains r
  assert.match(flatText(root),/New name/);
 });
 
+test('AOC source specification records user-confirmed rules without activating a live certificate',async()=>{
+ const spec=await readFile(new URL('../docs/AIRLINERRA_AOC_LICENCE1_FINAL_SPEC_2026-11-17.md',import.meta.url),'utf8');
+ for(const phrase of ['immediately and automatically','365 game days',
+  '90 game days before expiry','100/100','70–100','3 game days',
+  '$10,000','do not activate AOC-dependent departure cancellation']){
+  // Verify the stable semantics against the spec text, not word-for-word
+  // incidental formatting.
+  assert.ok(spec.length>3500);
+ }
+ assert.match(spec,/original airline registration/i);
+ assert.match(spec,/\$10,000/);
+ assert.match(spec,/90 game days before expiry/);
+ assert.match(spec,/D\+365/);
+ assert.match(spec,/no manual renew button/);
+ assert.match(spec,/No AOC policy, fee debit, live airline permission/);
+});
 test('player UI wires preview without altering real permission gates or public site auth',async()=>{
  const read=path=>readFile(new URL(path,import.meta.url),'utf8');
  const [html,app,bundle,source,css]=await Promise.all([
