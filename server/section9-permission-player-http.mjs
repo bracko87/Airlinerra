@@ -7,6 +7,7 @@
 import {createSection9GamePermissionApplicationService}
  from './section9-game-permission-application-service.mjs';
 import {verifiedPlayerId} from './airline-activation.mjs';
+import {createSection9AocReadService} from './section9-aoc-read-service.mjs';
 
 export const GAME_PERMISSION_PLAYER_PATH='/api/v1/player/permission-applications';
 const PROD='https://airlinerra.com';
@@ -124,6 +125,18 @@ export function createSection9PermissionPlayerHandler({
    }
    // Verify ownership using the private DB BEFORE returning policy/status.
    const owned=await service.listApplications({airlineId:body.airlineId});
+   // Separate owner-scoped AOC source: no certificate is inferred from
+   // registration or an empty incident history while AOC release is disabled.
+   // The client only receives private, read-only status. No issue action.
+   const aocRead=createSection9AocReadService({
+    database,identityAuthority:{
+     authorizeStatus:async({airlineId})=>({
+      authorized:true,source:'verified_game_player_session',
+      ownerPlayerId:playerId,airlineId
+     })
+    }
+   });
+   const aocStatus=await aocRead.getOwnedStatus({airlineId:body.airlineId});
    const client=await database.connect();
    let rows;
    try{rows=(await client.query(GAME_PERMISSION_PLAYER_SQL.policy)).rows;}
@@ -143,7 +156,7 @@ export function createSection9PermissionPlayerHandler({
     status:'permission_applications_status',
     airlineId:body.airlineId,worldId:1,gameDay:day,
     canApply:policies.some(p=>p.canApply),
-    policies,applications:owned.applications,
+    policies,applications:owned.applications,aocStatus,
     approvalByPlayer:false,ledgerPosted:false,flightActivated:false
    });
   }catch(error){
