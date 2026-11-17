@@ -101,3 +101,19 @@ test('schedule, reserved slots and operated movements use unified airport member
  assert.match(sql,/airport_sections1_8_combined_members_v1/);
  assert.doesNotMatch(sql,/INSERT INTO airlinerra_game\.approved_game_airports/i);
 });
+
+test('Section 5 common leg checks no longer exclude Group 2 from airport lookup',async()=>{
+ const s=await read('../supabase/migrations/20261117192500_section5_universal_restrictions_unified_airport_lookup.sql');
+ assert.match(s,/JOIN airlinerra_game\.airport_sections1_8_combined_members_v1/);
+ assert.doesNotMatch(s,/JOIN airlinerra_game\.approved_game_airports/);
+ assert.match(s,/runway_review|runwayReview|runway_review :=/);
+});
+test('Section 6 timezone and simplified restriction rules consume both airport groups',async()=>{
+ const slot=await read('../supabase/migrations/20261117194500_unified_section6_slot_timezone_lookup.sql');
+ const restrictions=await read('../supabase/migrations/20261117190000_group2_simplified_section5_game_restrictions.sql');
+ assert.match(slot,/FROM airlinerra_game\.section5_airport_operating_policy_v1 p/g);
+ assert.doesNotMatch(slot,/FROM airlinerra_game\.airport_reference_profiles p/);
+ assert.match(restrictions,/section5_simplified_rules_unified_airport_fk/);
+ assert.match(restrictions,/GROUP2_ESTIMATED_SECTION5_SIMULATION_MODEL_V1/);
+ assert.match(restrictions,/GAME_DEFAULT_NOT_CHECKED/);
+});
