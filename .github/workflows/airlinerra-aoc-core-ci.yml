@@ -6,6 +6,8 @@ on:
       - 'server/section9-aoc-policy.mjs'
       - 'server/section9-aoc-read-service.mjs'
       - 'server/section9-permission-player-http.mjs'
+      - 'server/airline-activation.mjs'
+      - 'tests/test_airline_activation.mjs'
       - 'website/game-permission-applications-client.mjs'
       - 'website/game-permission-applications-view.mjs'
       - 'website/player-app.css'
@@ -33,6 +35,8 @@ jobs:
           node --check server/section9-aoc-policy.mjs
           node --check server/section9-aoc-read-service.mjs
           node --check server/section9-permission-player-http.mjs
+          node --check server/airline-activation.mjs
+          node --check tests/test_airline_activation.mjs
           node --check website/game-permission-applications-client.mjs
           node --check website/game-permission-applications-view.mjs
           node --check tests/test_section9_aoc_policy.mjs
@@ -40,7 +44,7 @@ jobs:
           node --check tests/test_section9_aoc_licence_ui.mjs
           node --check tests/test_section9_permission_player_api_ui.mjs
       - name: Prove AOC scoring and renewal rules without database writes
-        run: node --test tests/test_section9_aoc_policy.mjs tests/test_section9_aoc_read_service.mjs tests/test_section9_aoc_licence_ui.mjs tests/test_section9_permission_player_api_ui.mjs
+        run: node --test tests/test_section9_aoc_policy.mjs tests/test_section9_aoc_read_service.mjs tests/test_section9_aoc_licence_ui.mjs tests/test_section9_permission_player_api_ui.mjs tests/test_airline_activation.mjs
       - name: Build the protected player website
         run: |
           cd website
