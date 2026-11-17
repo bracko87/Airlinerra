@@ -150,7 +150,7 @@ test('AOC source specification records user-confirmed rules without activating a
  assert.match(spec,/zero unresolved incidents but a Safety Rating below 70/);
  assert.match(spec,/If insufficient funds, the task cannot complete/);
  assert.match(spec,/without requiring a flight/);
- assert.match(spec,/no unresolved incidents \+ score shown as 60 => recompute to 100 without another fee/);
+ assert.match(spec,/no open incidents \+ score shown as 60 => recompute to 100 without another fee/);
  assert.match(LICENCE_PLAN.find(x=>x.code==='AIR_OPERATOR_CERTIFICATE').notes,
   /All corrective repairs, required inspections and safety audits have approved nonzero game costs/);
  assert.match(spec,/No AOC policy, fee debit, live airline permission/);
