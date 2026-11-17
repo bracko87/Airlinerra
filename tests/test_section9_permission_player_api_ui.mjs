@@ -42,12 +42,12 @@ function database({list=owned,policies=[policy()],blockedSubmit=null,
       {const e=Error('SECTION9_PERMISSION_APPLICATION_LIST_NOT_OWNED');e.code='42501';throw e;}
      if(sql.includes('section9_owned_game_permission_applications'))
       return {rowCount:1,rows:[{result:list}]};
+     if(sql===GAME_PERMISSION_PLAYER_SQL.policy)
+      return {rowCount:policies.length,rows:policies};
      if(sql.includes('section9_verified_permission_game_day_v1()::text'))
       return {rowCount:1,rows:[{game_day:null}]};
      if(sql.includes('section9_aoc_owned_status_v1'))
       return {rowCount:1,rows:[{result:aocStatus}]};
-     if(sql===GAME_PERMISSION_PLAYER_SQL.policy)
-      return {rowCount:policies.length,rows:policies};
      if(sql.includes('section9_submit_game_permission_application_v1'))
       return {rowCount:1,rows:[{result:blockedSubmit??{
        status:'blocked_unverified_world_or_game_day',submitted:false,
