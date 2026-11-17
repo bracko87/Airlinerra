@@ -130,3 +130,15 @@ test('unified game readiness is computed across actual Section 5/6 input tables,
  assert.match(sql,/GAME_MODEL_READY_DOES_NOT_MEAN_FLIGHT_AUTHORIZED/);
  assert.doesNotMatch(sql,/insert into airlinerra_game\.approved_game_airports/i);
 });
+
+test('two prohibited military air bases remain source records but are absent from the player game roster',async()=>{
+ const sql=await read('../supabase/migrations/20261117204000_exclude_two_military_airports_from_player_game_roster.sql');
+ const onboarding=await read('../server/onboarding-context-service.mjs');
+ assert.match(sql,/airport_player_game_roster_v1/);
+ assert.match(sql,/4257/);
+ assert.match(sql,/1116/);
+ assert.match(sql,/OURAIRPORTS:29484/);
+ assert.match(sql,/OURAIRPORTS:4436/);
+ assert.match(onboarding,/airport_player_game_roster_v1/);
+ assert.equal((onboarding.match(/airport_player_game_roster_v1/g)||[]).length,2);
+});
