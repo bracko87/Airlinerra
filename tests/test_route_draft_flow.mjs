@@ -7,14 +7,15 @@ import {gameTimeValue} from '../website/game-time-pickers.mjs';
 
 const read=name=>readFile(new URL('../website/'+name,import.meta.url),'utf8');
 
-test('orange Create new route button saves, while Clear form only resets',async()=>{
+test('orange Create new route saves, while Blank new flight clears only the editor',async()=>{
  const html=routePlannerMarkup(),source=await read('route-planner.mjs');
  const css=await read('player-app.css');
  assert.match(html,/<button type="button" id="route-plan-save" class="primary">Create new route<\/button>/);
  assert.match(html,/<button type="button" id="route-plan-new" class="secondary">Clear form<\/button>/);
  assert.doesNotMatch(html,/>Apply route draft<\/button>/);
- assert.match(html,/class="workspace-actions route-step1-actions"/);
- assert.match(source,/if\(target.id==='route-plan-new'\)\{\s*await resetRouteForm\(\);/);
+ assert.match(html,/class="workspace-actions route-apply-actions"/);
+ assert.match(source,/if\\(target.id==='route-plan-new'\\|\\|target.id==='route-plan-blank'\\)/);
+ assert.match(source,/await resetRouteForm\\(\\{blank:true\\}\\)/);
  assert.match(source,/if\(target.id!=='route-plan-save'\)return;/);
  assert.match(source,/await draftWrite\('routes',\[\.\.\.filtered,draft\]\)/);
  assert.match(source,/doc\.dispatchEvent\(new CustomEvent\('airlinerra:route-draft-saved'/);
