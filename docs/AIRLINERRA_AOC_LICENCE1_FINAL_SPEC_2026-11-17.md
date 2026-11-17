@@ -83,6 +83,32 @@ SIMPLE RECOVERY: current rating = clamp(100 minus the points from UNRESOLVED ver
 
 An expired airline never needs to fly to regain its AOC, and its sister companies may operate normally throughout.
 
+
+### 4A. Guaranteed, paid recovery and no stranded score (confirmed 17 November 2026)
+
+**No unresolved incidents = 100 Safety Rating** under the approved model, even when the airline has a severe historical incident record. All historical incidents still count in the last-365-game-days and lifetime counters, but verified-and-resolved incidents **never keep deducting current score points**.
+
+**Authoritative formula:**
+`safety_rating = max(0, 100 - SUM(penalty_points for unresolved verified safety incidents of THIS airline))`
+
+The rating is DERIVED from the incident ledger on each material safety update and before every AOC renewal/reinstatement, not stored as an independent manually mutable total. Therefore an airline cannot legitimately have no outstanding safety incidents and a rating below 70.
+
+**Recovery is not free.** Every actual remedial operation (aircraft repair, specialist safety inspection, mandatory reinspection, compliance audit or corrective training when that future system exists) must have a real nonzero GAME fee/cost charged **to the affected airline company's own cash**, with a protected ledger transaction, before that action can count as complete. The AOC annual renewal and automatic reinstatement themselves stay **$0**, as already agreed; the company pays for the actual corrective work, not simply to buy points.
+
+**Payment and completion flow:**
+1. A recorded incident lists one or more SPECIFIC corrective tasks that resolve its underlying cause; show each task, eligibility, expected cost, game time/duration, airport/provider if relevant, and evidence required. The player can view incidents free of charge but cannot execute the corrective work for free.
+2. Quote each action from its supported game service/maintenance pricing rules. For aircraft work, use the existing model/age/condition/workshop prices where established. Separate specialist reviews/inspections must also have an explicit **nonzero, approved game price** before the feature can be released. Do not guess a worldwide real-world fee or fabricate an invoice. The player must see and approve the GAME cost before it is committed.
+3. Book and pay through the trusted owner-verified, airline-scoped game ledger; spending by a holding or a sister airline is NOT automatic. If insufficient funds, the task cannot complete and the rating stays unchanged. If funding is later legitimately transferred to the company through the separate holding treasury system, it can then pay for its own task.
+4. The independent game maintenance/inspection service records a genuinely completed corrective task (including necessary duration and resulting evidence), not merely a payment. A paid-but-unperformed repair DOES NOT remove a safety penalty. Each charge and completion has an idempotency key; never double-debit on retries.
+5. Once all mandatory paid corrective tasks for a particular incident are VERIFIED complete, mark that incident resolved and immediately recalculate its company's rating. The original incident remains in immutable history.
+6. If the refreshed rating is >=70 and the relevant clock/ownership evidence is valid, automatically reinstate the same airline's AOC; aircraft still need their own dispatch clearances.
+
+**Fail-safe for the player's exact concern:** If the interface ever shows **zero unresolved incidents but a Safety Rating below 70**, that is a score/data-consistency bug, NOT a legitimate reason to keep the airline grounded. The server must recompute from the authoritative incident records; with none unresolved it yields 100. Do not invent a secret penalty, request another paid repair when no underlying problem exists, or require the player to operate flights. Record/alert the mismatch and repair the derived display. There is no charge to correct a SOFTWARE/accounting inconsistency; the player already paid for all real corrective work.
+
+**No dead end:** Each future penalty category MUST ship with an executable, fully priced, positively tested non-flight corrective path before its event type can start deducting points. Unsupported/unremediable incident types cannot cause AOC renewal failure. This applies even if the airline AOC is expired and all aircraft are grounded. If the ability to view, quote, pay for, and independently complete corrective tasks is down, fail safely rather than permanently denying an otherwise eligible renewal.
+
+**Acceptance cases:** no open incidents + score shown as 60 => recompute to 100 without another fee; two -20 incidents => 60; after paying and completing ONLY the first full task => 80; second paid task => 100; uncompleted task despite payment => 60; insufficient airline cash => no completed task/no score recovery/no balance change; duplicate task/fee receipt => only one charge/one restoration; holding/company B payment or completion cannot repair company A's safety rating.
+
 Until signed incident and corrective-action systems actually exist, do NOT invent incidents or enforce penalties from missing data. Display the initial/no-confirmed-events baseline honestly, and never deny renewal due to a read failure or missing future scoring system.
 
 ## 5. Annual automatic review, expiry, reinstatement
