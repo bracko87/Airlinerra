@@ -1,3 +1,5 @@
+**INCORRECT LICENCE 2 INTERPRETATION — SUPERSEDED 17 Nov 2026:** This document interpreted Licence 2 as an airline's HOME operating licence. The user clarified Licence 2 means **foreign-carrier permits to enter a destination market** (e.g., Serbian company seeking L2-UK to serve UK). Do NOT implement this model as a single global 4-tier licence. Use [foreign-market correction](AIRLINERRA_LICENCE2_FOREIGN_MARKET_CORRECTION_2026-11-17.md) instead. The market airport counts remain useful reference data.
+
 # Airlinerra — Licence 2: Four-Level Commercial Operating Licence
 
 **17 November 2026 — PROPOSED DESIGN; not implemented, not approved for release.**  
