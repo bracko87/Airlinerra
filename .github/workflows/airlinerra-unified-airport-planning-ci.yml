@@ -1,0 +1,24 @@
+name: Unified airport planning and admission boundary
+on:
+  push:
+    paths:
+      - 'server/flight-schedule-service.mjs'
+      - 'supabase/migrations/*unified*airport*.sql'
+      - 'tests/test_unified_airport_route_planning.mjs'
+      - '.github/workflows/airlinerra-unified-airport-planning-ci.yml'
+  pull_request:
+    paths:
+      - 'server/flight-schedule-service.mjs'
+      - 'supabase/migrations/*unified*airport*.sql'
+      - 'tests/test_unified_airport_route_planning.mjs'
+      - '.github/workflows/airlinerra-unified-airport-planning-ci.yml'
+  workflow_dispatch:
+jobs:
+  unified-airport-planning:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/test_unified_airport_route_planning.mjs tests/test_owner_route_planning.mjs tests/test_group2_1118_airport_cohort.mjs
