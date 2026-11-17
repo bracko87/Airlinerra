@@ -262,6 +262,12 @@ DECLARE
  reason_codes text[]:=ARRAY[]::text[];
  required_code text;origin_country text;destination_country text;required_route_permission text;
  BEGIN
+ -- This writer accepts a claimed player ID ONLY from the private verified
+ -- server DB connection, never directly from a service_role data API key.
+ IF current_user IS DISTINCT FROM 'postgres' THEN
+   RAISE EXCEPTION USING ERRCODE='42501',
+     MESSAGE='ROUNDTRIP_PRIVATE_TRUSTED_SERVER_ONLY';
+ END IF;
  IF p_player IS NULL OR p_airline IS NULL OR p_aircraft IS NULL THEN
   RAISE EXCEPTION USING ERRCODE='22023',MESSAGE='ROUNDTRIP_OWNER_AND_AIRCRAFT_REQUIRED';END IF;
  SELECT a.id,a.owner_player_id,a.world_id,a.iata_code,w.state AS membership_state
