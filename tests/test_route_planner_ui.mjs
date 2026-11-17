@@ -274,7 +274,7 @@ test('three-step flight draft screen includes daily aircraft assignments and pri
   assert.ok(ui.includes('id="route-next-departure-'+day+'"'));
  }
  assert.match(source,/status:'draft',operationallyVerified:false/);
- assert.match(source,/await resetRouteForm\(\)/);
+ assert.match(source,/await resetRouteForm\(\{blank:true\}\)/);
  assert.match(source,/airlinerra:edit-route-draft/);
  assert.match(ui,/Pending aircraft model/);
  assert.match(ui,/45 min \(game minimum\)/);
@@ -326,7 +326,7 @@ test('saved legacy route ideas remain editable while applied drafts reset the fo
  assert.match(src,/editingLegacyIndex=route\.flightNumber\?null:index/);
  assert.match(src,/i!==editingLegacyIndex/);
  assert.match(src,/message\('route-plan-status',route\.flightNumber\?/);
- assert.match(src,/await resetRouteForm\(\)/);
+ assert.match(src,/await resetRouteForm\(\{blank:true\}\)/);
  assert.match(src,/showDetails\(\);/);
  const css=await read('../website/player-app.css');
  assert.match(css,/#player-main \.operations-route-directory-row \.operations-route-open-text\{/);
