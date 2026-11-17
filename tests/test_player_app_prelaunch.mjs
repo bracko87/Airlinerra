@@ -204,7 +204,7 @@ test('Group 2 locations support real HQ registration and owner-only hub/station 
  assert.match(app,/Create hub draft/);
  assert.match(app,/Create station draft/);
  assert.match(app,/loadGroup2Offices/);
- assert.match(app,/data\.office\?\.status!=='draft'/);
+ assert.match(app,/data\?\.office\?\.status!=='draft'/);
  assert.match(app,/Group2Plan|changeGroup2Plan/);
  assert.match(client,/saveAirportOffice:/);
  assert.match(client,/removeAirportOffice:/);
