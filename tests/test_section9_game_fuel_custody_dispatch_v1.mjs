@@ -18,8 +18,8 @@ test('fuel custody and supplier/flight event tables are private, permanent and u
   assert.match(s,new RegExp('ALTER TABLE airlinerra_game\\."'+t+'" ENABLE ROW LEVEL SECURITY'));
   assert.match(s,new RegExp('REVOKE ALL ON TABLE airlinerra_game\\."'+t+'"'));
  }
- assert.match(s,/physical_flight_id.*PRIMARY KEY/);
- assert.match(s,/source_event_id.*PRIMARY KEY/);
+ assert.match(s,/PRIMARY KEY \(physical_flight_id\)/);
+ assert.match(s,/PRIMARY KEY \(source_event_id\)/);
  assert.match(s,/CONSTRAINT.*arrival_engine_event_id_key/);
  assert.match(s,/FROM PUBLIC,anon,authenticated,service_role/);
 });
