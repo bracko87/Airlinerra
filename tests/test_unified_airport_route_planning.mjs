@@ -83,3 +83,21 @@ test('common mixed-group route diagnostics keep game compatibility separate from
  assert.match(sql,/'canActivateFlights',false/);
  assert.match(sql,/revoke all on function airlinerra_game\.unified_airport_route_game_readiness_v1/);
 });
+
+test('Group 2 simulation eligibility never upgrades real-world evidence into flight permission',async()=>{
+ const sql=await read('../supabase/migrations/20261117182000_group2_simulation_only_admission_candidates.sql');
+ assert.match(sql,/documented_commercial_prohibition/);
+ assert.match(sql,/simulation_candidate_only/);
+ assert.match(sql,/operationally_released/);
+ assert.match(sql,/GAME_ESTIMATES_ONLY_NOT_REAL_WORLD_VERIFICATION/);
+});
+test('schedule, reserved slots and operated movements use unified airport membership keys',async()=>{
+ const sql=await read('../supabase/migrations/20261117184500_unified_operational_airport_foreign_keys.sql');
+ assert.match(sql,/airline_flight_schedule_unified_origin_fk/);
+ assert.match(sql,/airline_flight_schedule_unified_destination_fk/);
+ assert.match(sql,/section6_weekly_airport_slot_reservations_unified_airport_fk/);
+ assert.match(sql,/section9_operated_flight_movements_unified_origin_fk/);
+ assert.match(sql,/section9_operated_flight_movements_unified_destination_fk/);
+ assert.match(sql,/airport_sections1_8_combined_members_v1/);
+ assert.doesNotMatch(sql,/INSERT INTO airlinerra_game\.approved_game_airports/i);
+});
