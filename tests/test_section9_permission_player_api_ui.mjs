@@ -24,6 +24,10 @@ const policy=(released=false,gameDay=null)=>({
 const owned={
  worldId:1,airlineId:AIRLINE,applications:[],readOnly:true
 };
+const aocStatus={
+ airlineId:AIRLINE,worldId:1,status:'planned_not_released',
+ verifiedCompanyRegistry:false,issued:false,safetyRating:null,readOnly:true
+};
 const user={user:{id:OWNER,email_confirmed_at:'2026-11-01T00:00:00Z',
  is_anonymous:false},error:null};
 function database({list=owned,policies=[policy()],blockedSubmit=null,
@@ -38,6 +42,10 @@ function database({list=owned,policies=[policy()],blockedSubmit=null,
       {const e=Error('SECTION9_PERMISSION_APPLICATION_LIST_NOT_OWNED');e.code='42501';throw e;}
      if(sql.includes('section9_owned_game_permission_applications'))
       return {rowCount:1,rows:[{result:list}]};
+     if(sql.includes('section9_verified_permission_game_day_v1()::text'))
+      return {rowCount:1,rows:[{game_day:null}]};
+     if(sql.includes('section9_aoc_owned_status_v1'))
+      return {rowCount:1,rows:[{result:aocStatus}]};
      if(sql===GAME_PERMISSION_PLAYER_SQL.policy)
       return {rowCount:policies.length,rows:policies};
      if(sql.includes('section9_submit_game_permission_application_v1'))
@@ -80,13 +88,15 @@ test('player policy lookup is strictly behind authenticated airline ownership',a
    category:'airline',canApply:false,feeUsd:null,
    processingGameDays:null,validityGameDays:null
   }],
-  applications:[],approvalByPlayer:false,ledgerPosted:false,
+  applications:[],aocStatus,approvalByPlayer:false,ledgerPosted:false,
   flightActivated:false
  });
  assert.match(d.calls[0].sql,/section9_owned_game_permission_applications_v1/);
  assert.deepEqual(d.calls[0].args,[OWNER,AIRLINE]);
- assert.equal(d.calls[1].sql,GAME_PERMISSION_PLAYER_SQL.policy);
- assert.deepEqual(d.counts(),{connects:2,releases:2});
+ assert.equal(d.calls[1].sql.includes('section9_verified_permission_game_day_v1'),true);
+ assert.deepEqual(d.calls[2].args,[OWNER,AIRLINE,null]);
+ assert.equal(d.calls[3].sql,GAME_PERMISSION_PLAYER_SQL.policy);
+ assert.deepEqual(d.counts(),{connects:3,releases:3});
 });
 test('unowned airline gets 403 without reading catalogue',async()=>{
  const d=database({ownerDenied:true});
