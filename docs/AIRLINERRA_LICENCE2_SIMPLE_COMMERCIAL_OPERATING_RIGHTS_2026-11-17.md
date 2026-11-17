@@ -1,3 +1,5 @@
+**PARTIALLY SUPERSEDED 17 November 2026:** Keep the simple home-country/EU-EEA market-access policy, BUT the user subsequently rejected automatic Licence 2 issuance with AOC. Licence 2 now requires a **separate application and has four proposed capability levels**, with **no aircraft quantity gates** and **no periodic renewal**. See [Four-Level Licence 2 Design](AIRLINERRA_LICENCE2_FOUR_LEVEL_DESIGN_2026-11-17.md). Do NOT implement this file's old automatic-grant proposal.
+
 # Airlinerra — Licence 2: Commercial Operating Licence and Basic Market Access
 
 **Simplified game specification — 17 November 2026**  
