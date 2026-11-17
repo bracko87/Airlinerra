@@ -8,7 +8,7 @@
  */
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 export const AOC_STATUS_SQL=Object.freeze({
- verifiedGameDay:'SELECT airlinerra_game.section9_verified_permission_game_day_v1() AS game_day',
+ verifiedGameDay:'SELECT airlinerra_game.section9_verified_permission_game_day_v1()::text AS game_day',
  ownerStatus:'SELECT airlinerra_game.section9_aoc_owned_status_v1($1::uuid,$2::uuid,$3::date) AS result'
 });
 const statuses=new Set(['planned_not_released','not_issued','active','expired']);
