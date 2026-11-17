@@ -67,10 +67,10 @@ test('the UI offers Next flight and Blank new flight, no automatic return save',
  assert.match(src,/await suggestReturnFromSavedFlight\(flightNumber\)/);
  assert.match(src,/Return flight suggested, NOT CREATED/);
 });
-test('server returns source time zones from the owner-scoped airport reference table',async()=>{
+test('server returns time zones from the unified airport read model',async()=>{
  const src=await read('server/flight-schedule-service.mjs');
- assert.match(src,/'timezoneIana',origin_timezone\.timezone_iana/);
- assert.match(src,/'timezoneIana',destination_timezone\.timezone_iana/);
- assert.match(src,/origin_timezone\.world_id=1 AND origin_timezone\.airport_key=p\.origin_airport_key/);
- assert.match(src,/destination_timezone\.world_id=1 AND destination_timezone\.airport_key=p\.destination_airport_key/);
+ assert.match(src,/'timezoneIana',o\.timezone_iana/);
+ assert.match(src,/'timezoneIana',d\.timezone_iana/);
+ assert.match(src,/airport_unified_operations_v1/);
+ assert.match(src,/airport_unified_operations_v1/);
 });
