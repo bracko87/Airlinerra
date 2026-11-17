@@ -124,7 +124,7 @@ test('ticket-style licence planner uses selects, preserves checks, and remains r
 test('AOC source specification records user-confirmed rules without activating a live certificate',async()=>{
  const spec=await readFile(new URL('../docs/AIRLINERRA_AOC_LICENCE1_FINAL_SPEC_2026-11-17.md',import.meta.url),'utf8');
  assert.ok(spec.length>3500);
- assert.match(spec,/immediately and automatically/i);
+ assert.match(spec,/automatically and immediately/i);
  assert.match(spec,/3 game days/);
  assert.match(spec,/365 game days/);
  assert.match(spec,/100\/100/);
