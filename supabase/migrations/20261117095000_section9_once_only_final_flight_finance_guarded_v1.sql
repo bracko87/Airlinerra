@@ -523,3 +523,38 @@ BEGIN
   );
  END IF;
 END $cron_install$;
+
+
+-- Extra fail-closed constraints: PostgreSQL CHECK treats NULL as passing.
+-- Enforce non-NULL approval evidence, all eleven fee keys, and nonnegative
+-- fee items at the database level, before an approved cost can ever post.
+ALTER TABLE airlinerra_game.section9_flight_finance_posting_release_v1
+ ADD CONSTRAINT section9_finance_release_needs_real_reference_v2
+ CHECK(release_state='paused' OR (
+  approved_at IS NOT NULL
+  AND coalesce(length(approval_reference),0)>=20));
+
+ALTER TABLE airlinerra_game.section9_flight_final_cost_approvals_v1
+ ADD CONSTRAINT section9_final_cost_approval_evidence_required_v2
+ CHECK(approval_state='unapproved' OR(
+  approved_at IS NOT NULL
+  AND coalesce(length(approval_reference),0)>=20
+  AND fuel_reserve_verified IS TRUE
+  AND fuel_reserve_kg>0
+  AND coalesce(length(fuel_source_reference),0)>=16
+  AND coalesce(length(tariff_source_reference),0)>=16));
+
+ALTER TABLE airlinerra_game.section9_flight_final_cost_approvals_v1
+ ADD CONSTRAINT section9_final_cost_required_all_fee_lines_v2
+ CHECK(airport_fee_lines ?& ARRAY[
+  'departureAirportMovementUsd','arrivalLandingUsd',
+  'departureGroundHandlingUsd','arrivalStandParkingUsd',
+  'departureTerminalAirTrafficControlUsd','enrouteAirTrafficControlUsd',
+  'departingPassengerFacilityUsd','departingPassengerSecurityUsd',
+  'internationalPassengerProcessingUsd','originCargoHandlingUsd',
+  'destinationCargoHandlingUsd'
+ ]::text[]);
+
+ALTER TABLE airlinerra_game.section9_flight_final_cost_approvals_v1
+ ADD CONSTRAINT section9_final_cost_no_negative_fee_items_v2
+ CHECK(NOT jsonb_path_exists(airport_fee_lines,'$.* ? (@ < 0)'::jsonpath));
