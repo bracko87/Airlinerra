@@ -98,3 +98,16 @@ test('no direct anonymous, authenticated or service-role mutation rights',async(
  assert.match(s,/FROM PUBLIC,anon,authenticated,service_role/);
  assert.doesNotMatch(s,/SECURITY DEFINER/i);
 });
+
+
+test('approved finance evidence rejects missing references and incomplete airport fees',async()=>{
+ const s=await sql();
+ assert.match(s,/section9_finance_release_needs_real_reference_v2/);
+ assert.match(s,/section9_final_cost_approval_evidence_required_v2/);
+ assert.match(s,/coalesce\(length\(approval_reference\),0\)>=20/);
+ assert.match(s,/coalesce\(length\(fuel_source_reference\),0\)>=16/);
+ assert.match(s,/coalesce\(length\(tariff_source_reference\),0\)>=16/);
+ assert.match(s,/section9_final_cost_required_all_fee_lines_v2/);
+ assert.match(s,/airport_fee_lines \?& ARRAY\[/);
+ assert.match(s,/section9_final_cost_no_negative_fee_items_v2/);
+});
