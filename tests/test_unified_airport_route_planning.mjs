@@ -200,3 +200,13 @@ test('trusted execution release has one canonical state in both independent and 
  assert.match(sql,/active_state IS DISTINCT FROM 'ACTIVATED'/);
  assert.doesNotMatch(sql,/active_state IS DISTINCT FROM 'RELEASED'/);
 });
+
+test('commercial dispatch recognizes the same certified status as the signed clearance issuer',async()=>{
+ const s=await read('../supabase/migrations/20261117235500_section9_dispatch_uses_certified_approval_status.sql');
+ assert.match(s,/section9_auto_dispatch_due_flight_events_v1/);
+ assert.match(s,/c\.review_status='certified'/);
+ assert.doesNotMatch(s,/c\.review_status='verified'/);
+ assert.match(s,/section9_schedule_operational_certifications_v1/);
+ assert.match(s,/activation\.release_state IS DISTINCT FROM 'enabled'/);
+ assert.match(s,/execution\.release_state IS DISTINCT FROM 'enabled'/);
+});
