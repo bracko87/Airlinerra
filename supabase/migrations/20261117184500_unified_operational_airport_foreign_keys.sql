@@ -1,0 +1,22 @@
+-- Unified foreign keys for flight scheduling, reservations, and movements.
+-- This does not bypass the separately enforced airport admission or flight permissions.
+begin;
+alter table airlinerra_game.airline_flight_schedule_drafts_v1
+ drop constraint airline_flight_schedule_origin_fkey,
+ drop constraint airline_flight_schedule_destination_fkey,
+ add constraint airline_flight_schedule_unified_origin_fk foreign key(world_id,origin_airport_key)
+ references airlinerra_game.airport_sections1_8_combined_members_v1(world_id,airport_key),
+ add constraint airline_flight_schedule_unified_destination_fk foreign key(world_id,destination_airport_key)
+ references airlinerra_game.airport_sections1_8_combined_members_v1(world_id,airport_key);
+alter table airlinerra_game.section6_weekly_airport_slot_reservations_v1
+ drop constraint section6_weekly_airport_slot_reservat_world_id_airport_key_fkey,
+ add constraint section6_weekly_airport_slot_reservations_unified_airport_fk
+ foreign key(world_id,airport_key) references airlinerra_game.airport_sections1_8_combined_members_v1(world_id,airport_key);
+alter table airlinerra_game.section9_operated_flight_movements_v1
+ drop constraint section9_operated_flight_movem_world_id_origin_airport_key_fkey,
+ drop constraint section9_operated_flight_move_world_id_destination_airport_fkey,
+ add constraint section9_operated_flight_movements_unified_origin_fk foreign key(world_id,origin_airport_key)
+ references airlinerra_game.airport_sections1_8_combined_members_v1(world_id,airport_key),
+ add constraint section9_operated_flight_movements_unified_destination_fk foreign key(world_id,destination_airport_key)
+ references airlinerra_game.airport_sections1_8_combined_members_v1(world_id,airport_key);
+commit;
