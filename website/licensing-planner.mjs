@@ -286,7 +286,7 @@ export function createLicensingPlanner({doc,root,getAirline=()=>null}={}){
   details.append(element(doc,'h3','lp-selected-name',item.title),
    element(doc,'p','hint lp-aircraft',item.aircraft));
   const metrics=element(doc,'div','workspace-kpis lp-metrics');
-  for(const [label,value] of [['Game fee (AOC) / proposed fee',feeFor(item)],['Approval time',reviewFor(item)],['Validity / renewal',item.validity]]){
+  for(const [label,value] of [[item.code==='AIR_OPERATOR_CERTIFICATE'?'Agreed game fee':'Proposed fee',feeFor(item)],['Approval time',reviewFor(item)],['Validity / renewal',item.validity]]){
    const cell=element(doc,'div','');
    cell.append(element(doc,'span','',label),element(doc,'strong','',value));
    metrics.append(cell);
