@@ -26,17 +26,25 @@ export const LICENCE_PLAN=Object.freeze([
   'No inherited AOC, traffic rights, aircraft or staff from the original airline',
   'Registration persists while company legally exists',
   'Company may become inactive or be legally dissolved','Re-register if dissolved; otherwise restore compliance'),
- define('AIR_OPERATOR_CERTIFICATE','airline','Air Operator Certificate (AOC)','Original airline: included in activation · New subsidiary: $150,000','7 game days',
-  'Apply: no aircraft. Final approval: at least 1 suitable delivered and inspected aircraft (owned or leased)',
-  ['Registered airline in a supported home jurisdiction','Name and verified operating company identity','Appoint a safety manager and accountable operations manager','Sufficient cash for application and required reserves'],
-  ['At least 1 correct passenger- or cargo-capable aircraft registered to this operator, delivered, inspected and service-ready','Qualified employed pilots for that aircraft configuration (count from aircraft rules)','Appropriate cabin crew where passengers are carried','Approved home base, safety procedures, operating manuals and maintenance arrangements','Maintain a proposed minimum $250,000 airline cash reserve after fees'],
-  ['Before each flight: confirm valid crew, aircraft, maintenance, market rights, slots, runway and schedule restrictions'],
-  'Commercial flying within approved aircraft and activity scope',
-  'AOC does not give international market access, airport slots, or authority for unapproved aircraft/operations',
-  'Ongoing, subject to safety and financial compliance; annual game compliance review',
-  'Commercial departures needing the AOC stop immediately on suspension; existing schedules are kept',
-  'Correct the failed conditions and pass reinspection; revocation requires a new application',
-  'The same eligible aircraft can support multiple compatible approvals. New subsidiaries never inherit the original AOC.'),
+ define('AIR_OPERATOR_CERTIFICATE','airline','Air Operator Certificate (AOC)',
+  'Original airline: free · New separately incorporated subsidiary: $10,000',
+  'Original airline: immediate · Subsidiary: 3 game days',
+  'AOC issue itself requires no additional aircraft purchase; every operating flight still requires a suitable service-ready aircraft',
+  ['Original airline: issued immediately when registered; no AOC application',
+   'Subsidiary: register a distinct operating company under an eligible holding',
+   'Subsidiary: submit one owner-verified game application; no fee at submission'],
+  ['Original airline: automatically issued for $0',
+   'Subsidiary: after 3 verified game days, confirm registration, airline ownership and available $10,000',
+   'Subsidiary: debit $10,000 exactly once only upon successful approval; failed applications are not charged',
+   'No additional aircraft, hired crew or speculative financial reserve required solely to issue the game AOC in this phase'],
+  ['Before commercial departure: independently verify a ready aircraft, maintenance, route permissions, airport/slot restrictions and operational flight clearance',
+   'Crew is excluded from these checks until the later crew feature is introduced'],
+  'Authorises the airline to operate commercial flights in its separately approved scope',
+  'Does not itself grant international traffic rights, landing slots, independent aircraft clearance or another company’s AOC',
+  'Valid 365 game days; reminder 90 game days before expiry; automatic annual renewal at Safety Rating 70/100 or higher; renewal free',
+  'Below 70 on renewal day: AOC expires and commercial departures pause; aircraft and route records remain',
+  'Complete verified corrective actions to restore rating to at least 70; game automatically reinstates AOC for 365 game days at $0',
+  'Safety Rating starts at 100/100 as an initial game baseline, deducting only verified safety incidents. No flights, ordinary maintenance, passenger image and crew currently cause no penalty. No incident engine is active yet; this is a reviewed specification, not a live grant.'),
  define('EU_AIRLINE_OPERATING_LICENCE','airline','EU commercial operating licence','Included in corresponding airline certification','Reviewed together with AOC',
   'No additional aircraft beyond the approved AOC fleet',
   ['Airline established in an eligible EU jurisdiction','Eligible ownership/control and business registration','AOC application or active AOC','Finances sufficient for the proposed operations'],
@@ -213,8 +221,11 @@ export function createLicensingPlanner({doc,root,getAirline=()=>null}={}){
  const listFor=()=>LICENCE_PLAN.filter(item=>(group==='all'||item.group===group)&&
    (item.title+' '+item.code+' '+item.application.join(' ')+' '+item.approval.join(' ')).toLowerCase().includes(query));
  const feeFor=item=>item.code==='AIR_OPERATOR_CERTIFICATE'
-  ?(scenario==='original'?'Included in original airline activation':'$150,000 for new airline subsidiary')
+  ?(scenario==='original'?'$0 — automatically issued on registration':'$10,000 — charged once when approved')
   :item.cost;
+ const reviewFor=item=>item.code==='AIR_OPERATOR_CERTIFICATE'
+  ?(scenario==='original'?'Immediate on registration':'3 game days after application')
+  :item.processing;
  const field=(name,control)=>{
   const label=element(doc,'label','lp-field workspace-label');
   label.append(element(doc,'span','',name),control);
@@ -275,7 +286,7 @@ export function createLicensingPlanner({doc,root,getAirline=()=>null}={}){
   details.append(element(doc,'h3','lp-selected-name',item.title),
    element(doc,'p','hint lp-aircraft',item.aircraft));
   const metrics=element(doc,'div','workspace-kpis lp-metrics');
-  for(const [label,value] of [['Proposed fee',feeFor(item)],['Review time',item.processing],['Validity / renewal',item.validity]]){
+  for(const [label,value] of [['Game fee (AOC) / proposed fee',feeFor(item)],['Approval time',reviewFor(item)],['Validity / renewal',item.validity]]){
    const cell=element(doc,'div','');
    cell.append(element(doc,'span','',label),element(doc,'strong','',value));
    metrics.append(cell);
