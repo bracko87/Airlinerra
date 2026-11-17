@@ -4,7 +4,10 @@ on:
     branches: [main]
     paths:
       - 'server/section9-aoc-policy.mjs'
+      - 'server/section9-aoc-read-service.mjs'
       - 'tests/test_section9_aoc_policy.mjs'
+      - 'tests/test_section9_aoc_read_service.mjs'
+      - 'docs/sql/AIRLINERRA_AOC_*.sql'
       - 'supabase/migrations/*aoc*'
       - '.github/workflows/airlinerra-aoc-core-ci.yml'
   workflow_dispatch:
@@ -22,9 +25,11 @@ jobs:
       - name: Validate pure server decision rules and test syntax
         run: |
           node --check server/section9-aoc-policy.mjs
+          node --check server/section9-aoc-read-service.mjs
           node --check tests/test_section9_aoc_policy.mjs
+          node --check tests/test_section9_aoc_read_service.mjs
       - name: Prove AOC scoring and renewal rules without database writes
-        run: node --test tests/test_section9_aoc_policy.mjs
+        run: node --test tests/test_section9_aoc_policy.mjs tests/test_section9_aoc_read_service.mjs
       - name: Confirm no unreleased AOC module is included in public browser bundle
         run: |
           if grep -R "section9-aoc-policy" website --include='*.mjs'; then
