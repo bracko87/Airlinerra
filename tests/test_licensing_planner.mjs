@@ -133,6 +133,17 @@ test('AOC source specification records user-confirmed rules without activating a
  assert.match(spec,/90 game days before expiry/);
  assert.match(spec,/D\+365/);
  assert.match(spec,/no manual renew button/);
+ assert.match(spec,/NEVER issued to the holding\/parent/);
+ assert.match(spec,/no AOC, no Airline Safety Rating/);
+ assert.match(spec,/passenger, regional, low-cost, cargo, commercial charter, and commercial VIP airline/);
+ assert.match(spec,/academy \/ flight training unit/);
+ assert.match(spec,/maintenance \/ MRO business/);
+ assert.match(spec,/A continues flying with its own valid AOC/);
+ assert.match(spec,/request inspections, book maintenance, repair its aircraft/);
+ assert.match(spec,/100 to 60/);
+ assert.match(spec,/produces 80/);
+ assert.match(spec,/without waiting for the next annual review/);
+ assert.match(spec,/no cross-company score contribution/);
  assert.match(spec,/No AOC policy, fee debit, live airline permission/);
 });
 test('player UI wires preview without altering real permission gates or public site auth',async()=>{
