@@ -18,6 +18,30 @@ export function checkedGamePermissionStatus(data,airlineId){
    !Array.isArray(data.applications)||data.applications.length>2000||
    (data.gameDay!==null&&!DAY.test(data.gameDay)))
   throw Error('Unverified game licence application status');
+ // Older deployed Edge versions may omit AOC; never synthesize one.
+ if(data.aocStatus!==undefined){
+  const aoc=data.aocStatus;
+  if(!aoc||typeof aoc!=='object'||Array.isArray(aoc)||
+     aoc.airlineId!==airlineId||aoc.worldId!==1||aoc.readOnly!==true||
+     !['planned_not_released','not_issued','active','expired'].includes(aoc.status)||
+     typeof aoc.issued!=='boolean'||
+     (aoc.status==='planned_not_released'&&aoc.issued!==false)||
+     (aoc.status==='not_issued'&&aoc.issued!==false)||
+     (['active','expired'].includes(aoc.status)&&aoc.issued!==true))
+   throw Error('Unverified airline AOC status');
+  if(aoc.issued){
+   if(!DAY.test(aoc.issuedGameDay||'')||
+      !DAY.test(aoc.expiresGameDay||'')||
+      !Number.isInteger(aoc.safetyRating?.rating)||
+      aoc.safetyRating.rating<0||aoc.safetyRating.rating>100||
+      aoc.safetyRating.airlineId!==airlineId)
+    throw Error('Unverified issued AOC details');
+  }else if(aoc.safetyRating!==null&&aoc.safetyRating!==undefined){
+   // No provisional safety value should look like an issued licence.
+   if(aoc.status==='planned_not_released')
+    throw Error('Unreleased AOC exposed an unverified rating');
+  }
+ }
  const codes=new Set();
  for(const policy of data.policies){
   if(!CODES.has(policy?.code)||codes.has(policy.code)||
