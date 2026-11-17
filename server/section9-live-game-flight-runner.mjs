@@ -48,11 +48,13 @@ const blocked=reason=>Object.freeze({
 });
 const safeReady=r=>r?.world_id===1&&r.world_state==='active'&&
  r.authoritative_clock_connected===true&&
- r.trusted_flight_execution_release==='RELEASED'&&
+ r.trusted_flight_execution_release==='ACTIVATED'&&
  Number(r.active_flight_schedules)>0&&
  Number(r.operational_certification_records)>0&&
- r.automatic_flight_and_fuel_settlement_enabled===false&&
- r.fuel_transaction_release==='NOT_ACTIVATED';
+ ((r.automatic_flight_and_fuel_settlement_enabled===false&&
+   r.fuel_transaction_release==='NOT_ACTIVATED')||
+  (r.automatic_flight_and_fuel_settlement_enabled===true&&
+   r.fuel_transaction_release==='ACTIVATED'));
 const validCandidate=(c,airline,aircraft,day)=>
  c?.worldId===1&&c.airlineId===airline&&c.aircraftInventoryId===aircraft&&
  uuid.test(c.scheduleId||'')&&Number.isInteger(c.scheduleVersion)&&
