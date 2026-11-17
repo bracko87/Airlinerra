@@ -63,7 +63,7 @@ AS $fn$
                 AND m.game_completed_at_utc::date<=p_game_day
                 AND t.completion_receipt_reference=
                  'aoc-game-maintenance-v1-'||m.job_id::text)
-            ))
+            )
            OR
            (t.work_kind IN('safety_inspection','compliance_audit')
             AND EXISTS(
