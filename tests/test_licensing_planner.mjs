@@ -123,13 +123,11 @@ test('ticket-style licence planner uses selects, preserves checks, and remains r
 
 test('AOC source specification records user-confirmed rules without activating a live certificate',async()=>{
  const spec=await readFile(new URL('../docs/AIRLINERRA_AOC_LICENCE1_FINAL_SPEC_2026-11-17.md',import.meta.url),'utf8');
- for(const phrase of ['immediately and automatically','365 game days',
-  '90 game days before expiry','100/100','70–100','3 game days',
-  '$10,000','do not activate AOC-dependent departure cancellation']){
-  // Verify the stable semantics against the spec text, not word-for-word
-  // incidental formatting.
-  assert.ok(spec.length>3500);
- }
+ assert.ok(spec.length>3500);
+ assert.match(spec,/immediately and automatically/i);
+ assert.match(spec,/3 game days/);
+ assert.match(spec,/365 game days/);
+ assert.match(spec,/100\/100/);
  assert.match(spec,/original airline registration/i);
  assert.match(spec,/\$10,000/);
  assert.match(spec,/90 game days before expiry/);
