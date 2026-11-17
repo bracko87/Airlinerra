@@ -1,3 +1,5 @@
+**SUPERSEDED 17 November 2026:** The user replaced 14 levels with **4** and rejected aircraft-count gates for licence tiers. This historical proposal must NOT be implemented. Use [Four-Level Licence 2 Design](AIRLINERRA_LICENCE2_FOUR_LEVEL_DESIGN_2026-11-17.md) instead.
+
 # Airlinerra — Licence 2: 14 operating levels (DESIGN PROPOSAL)
 
 **17 November 2026.** This is a **discussion draft**, NOT an activated game feature. Specific route ceilings, airport thresholds and minimum fleet sizes below are **PROPOSED**, not yet user-approved.
