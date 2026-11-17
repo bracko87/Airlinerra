@@ -305,7 +305,7 @@ export const SCHEDULE_SQL=Object.freeze({
   $1::uuid,$2::uuid,$3::uuid,$4::text,$5::text) AS result`,
  maintenanceFlightWindow:`SELECT airlinerra_game.section9_owned_game_maintenance_flight_window_v1(
   $1::uuid,$2::uuid,$3::uuid,$4::timestamptz,$5::timestamptz) AS result`,
- roundtripPreview:`SELECT airlinerra_game.section9_owned_roundtrip_candidate_preview_v1(
+ roundtripPreview:`SELECT airlinerra_game.section9_owned_roundtrip_launch_readiness_v1(
   $1::uuid,$2::uuid,$3::uuid,$4::text,$5::text,
   $6::timestamptz,$7::timestamptz,$8::timestamptz,$9::timestamptz,
   $10::jsonb,$11::jsonb,$12::text,$13::text,$14::text,$15::text,
