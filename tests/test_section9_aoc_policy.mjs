@@ -47,7 +47,7 @@ test('only airline businesses get their OWN AOC, never holding, academy or MRO',
 
 test('game dates are strict, timezone-independent, exact 365-day validity',()=>{
  assert.equal(aocAddDays('2026-11-17',365),'2027-11-17');
- assert.equal(aocAddDays('2026-11-17',275),'2027-08-17');
+ assert.equal(aocAddDays('2026-11-17',275),'2027-08-19');
  assert.equal(aocAddDays('2028-02-28',1),'2028-02-29');
  assert.equal(aocDayNumber('2028-03-01')-aocDayNumber('2028-02-28'),2);
  for(const bad of ['2026-02-29','2026-13-01','2026-00-01','2026-11-31','11/17/2026',null]){
@@ -139,15 +139,15 @@ test('reject forged evidence, bad dates and duplicate incident identity',()=>{
 
 test('reminder is 90 days before expiry exactly once',()=>{
  const a=base();
- assert.equal(aocRenewalDecision({...a,gameDay:'2027-08-16',
-  safety:{airlineId:P,gameDay:'2027-08-16',rating:100}}).status,'active');
- const due=aocRenewalDecision({...a,gameDay:'2027-08-17',
-  safety:{airlineId:P,gameDay:'2027-08-17',rating:100}});
+ assert.equal(aocRenewalDecision({...a,gameDay:'2027-08-18',
+  safety:{airlineId:P,gameDay:'2027-08-18',rating:100}}).status,'active');
+ const due=aocRenewalDecision({...a,gameDay:'2027-08-19',
+  safety:{airlineId:P,gameDay:'2027-08-19',rating:100}});
  assert.equal(due.status,'reminder_due');
  assert.equal(due.change,true);
- const repeat=aocRenewalDecision({...a,gameDay:'2027-08-17',
+ const repeat=aocRenewalDecision({...a,gameDay:'2027-08-19',
   certificate:{...a.certificate,remindedForExpiry:'2027-11-17'},
-  safety:{airlineId:P,gameDay:'2027-08-17',rating:100}});
+  safety:{airlineId:P,gameDay:'2027-08-19',rating:100}});
  assert.equal(repeat.status,'active');
  assert.equal(repeat.change,false);
 });
