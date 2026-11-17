@@ -18,7 +18,7 @@ const TOKEN='not-a-real-verified-access-token-with-length';
 const policy=(released=false,gameDay=null)=>({
  permissionCode:'AIR_OPERATOR_CERTIFICATE',title:'Air Operator Certificate',
  category:'airline',catalogueEnabled:released,releaseEnabled:released,
- gameFeeUsd:released?'150000.00':null,processingGameDays:released?7:null,
+ gameFeeUsd:released?'10000.00':null,processingGameDays:released?3:null,
  validityGameDays:released?365:null,gameDay
 });
 const owned={
@@ -168,7 +168,7 @@ test('a released, verified current game day exposes real fee and processing time
  assert.deepEqual([
   obj.policies[0].feeUsd,
   obj.policies[0].processingGameDays,
-  obj.policies[0].validityGameDays],[150000,7,365]);
+  obj.policies[0].validityGameDays],[10000,3,365]);
 });
 test('player API cannot be used to create an issue without release',async()=>{
  const d=database();
@@ -197,6 +197,26 @@ test('browser status client rejects a fake licence grant or unpublished fee',()=
  assert.throws(()=>checkedGamePermissionStatus({
   ...valid,canApply:true
  },AIRLINE),/Inconsistent licence release status/);
+});
+test('browser validates company-scoped AOC and cannot accept a fake issued certificate',()=>{
+ const base={status:'permission_applications_status',airlineId:AIRLINE,
+  worldId:1,gameDay:null,canApply:false,
+  approvalByPlayer:false,ledgerPosted:false,flightActivated:false,
+  policies:[],applications:[],aocStatus};
+ assert.equal(checkedGamePermissionStatus(base,AIRLINE).aocStatus.status,'planned_not_released');
+ for(const wrong of [
+  {...aocStatus,airlineId:OWNER},
+  {...aocStatus,worldId:2},
+  {...aocStatus,issued:true},
+  {...aocStatus,status:'active'},
+  {...aocStatus,safetyRating:{rating:100}},
+  {...aocStatus,readOnly:false}
+ ]){
+  assert.throws(()=>checkedGamePermissionStatus({...base,aocStatus:wrong},AIRLINE),
+   /Unverified airline AOC status|Unreleased AOC exposed/);
+ }
+ const oldEdge={...base};delete oldEdge.aocStatus;
+ assert.equal(checkedGamePermissionStatus(oldEdge,AIRLINE).aocStatus,undefined);
 });
 test('browser posts only to the same-origin, authenticated player endpoint',async()=>{
  let captured;
