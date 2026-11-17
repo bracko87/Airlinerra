@@ -144,6 +144,15 @@ test('AOC source specification records user-confirmed rules without activating a
  assert.match(spec,/produces 80/);
  assert.match(spec,/without waiting for the next annual review/);
  assert.match(spec,/no cross-company score contribution/);
+ assert.match(spec,/No unresolved incidents = 100 Safety Rating/);
+ assert.match(spec,/nonzero GAME fee\/cost charged/);
+ assert.match(spec,/paid-but-unperformed repair DOES NOT remove a safety penalty/);
+ assert.match(spec,/zero unresolved incidents but a Safety Rating below 70/);
+ assert.match(spec,/If insufficient funds, the task cannot complete/);
+ assert.match(spec,/without requiring a flight/);
+ assert.match(spec,/no unresolved incidents \+ score shown as 60 => recompute to 100 without another fee/);
+ assert.match(LICENCE_PLAN.find(x=>x.code==='AIR_OPERATOR_CERTIFICATE').notes,
+  /All corrective repairs, required inspections and safety audits have approved nonzero game costs/);
  assert.match(spec,/No AOC policy, fee debit, live airline permission/);
 });
 test('player UI wires preview without altering real permission gates or public site auth',async()=>{
