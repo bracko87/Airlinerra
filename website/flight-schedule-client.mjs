@@ -27,6 +27,11 @@ export function createFlightScheduleClient({auth,origin,fetchImpl=(...args)=>fet
      typeof x==='string'&&/^[A-Z][A-Z0-9_]{3,100}$/.test(x)).slice(0,16);
     conflict.roundtripModelPassed=reason.roundtripPreview?.readOnly===true&&
       reason.roundtripPreview?.gameRoundtripModelSuitable===true;
+    conflict.launchBlockers=
+     reason.roundtripPreview?.readOnly===true&&
+     Array.isArray(reason.roundtripPreview.launchBlockers)?
+     reason.roundtripPreview.launchBlockers.filter(x=>
+       typeof x==='string'&&/^[A-Z][A-Z0-9_]{3,100}$/.test(x)).slice(0,24):[];
     conflict.isAtomicRoundtrip=true;
    }
    if(payload.action==='operational-create'&&Array.isArray(reason.blockingRequirements))
