@@ -21,7 +21,7 @@ const event={worldId:1,airlineId:AIRLINE,aircraftInventoryId:AIRCRAFT,
  activatedAndCapacityVerified:true};
 const ready={world_id:1,world_state:'active',
  authoritative_clock_connected:true,
- trusted_flight_execution_release:'RELEASED',
+ trusted_flight_execution_release:'ACTIVATED',
  active_flight_schedules:'1',operational_certification_records:'6',
  automatic_flight_and_fuel_settlement_enabled:false,
  fuel_transaction_release:'NOT_ACTIVATED'};
