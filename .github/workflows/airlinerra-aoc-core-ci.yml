@@ -1,0 +1,33 @@
+name: Airlinerra AOC safety and renewal rules (isolated)
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'server/section9-aoc-policy.mjs'
+      - 'tests/test_section9_aoc_policy.mjs'
+      - 'supabase/migrations/*aoc*'
+      - '.github/workflows/airlinerra-aoc-core-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  aoc-core:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate pure server decision rules and test syntax
+        run: |
+          node --check server/section9-aoc-policy.mjs
+          node --check tests/test_section9_aoc_policy.mjs
+      - name: Prove AOC scoring and renewal rules without database writes
+        run: node --test tests/test_section9_aoc_policy.mjs
+      - name: Confirm no unreleased AOC module is included in public browser bundle
+        run: |
+          if grep -R "section9-aoc-policy" website --include='*.mjs'; then
+            echo "AOC server logic cannot be shipped as browser authority"
+            exit 1
+          fi
