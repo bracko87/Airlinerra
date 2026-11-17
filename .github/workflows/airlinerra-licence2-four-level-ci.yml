@@ -1,4 +1,4 @@
-name: Airlinerra Licence 2 four-level proposal (isolated)
+name: Airlinerra Licence 2 foreign-network design (isolated)
 on:
   push:
     branches: [main]
@@ -19,7 +19,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Verify read-only four-level game proposal
+      - name: Verify correct read-only foreign-network licence planner
         run: |
           node --check website/licensing-planner.mjs
           node --check tests/test_licensing_planner.mjs
