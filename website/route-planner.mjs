@@ -2050,13 +2050,32 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    const reason=String(error?.message||'');
    const blockers=Array.isArray(error?.operationalBlockers)?error.operationalBlockers:[];
    if(error?.isAtomicRoundtrip===true){
-    const permissions=blockers.some(x=>x.startsWith('GAME_PERMISSION_RELEASE_MISSING_'));
-    const disabled=blockers.includes('FLIGHT_EXECUTION_AND_SETTLEMENT_NOT_RELEASED');
-    const release=blockers.includes('INDEPENDENT_OPERATIONAL_ACTIVATION_NOT_RELEASED');
+    const launch=Array.isArray(error?.launchBlockers)?error.launchBlockers:[];
+    const both=[...new Set([...blockers,...launch])];
+    const permissions=both.some(x=>x.startsWith('GAME_PERMISSION_RELEASE_MISSING_')||
+      x.startsWith('GAME_PERMISSION_APPLICATION_NOT_RELEASED_'));
+    const noLicence=both.includes('GAME_OPERATOR_LICENCE_NOT_ISSUED');
+    const noRights=both.includes('OUTBOUND_GAME_TRAFFIC_RIGHTS_NOT_ISSUED')||
+      both.includes('RETURN_GAME_TRAFFIC_RIGHTS_NOT_ISSUED');
+    const noEngine=both.includes('FLIGHT_EXECUTION_AND_SETTLEMENT_NOT_RELEASED')||
+      both.includes('FLIGHT_EXECUTION_AND_FUEL_NOT_RELEASED');
+    const noRelease=both.includes('INDEPENDENT_OPERATIONAL_ACTIVATION_NOT_RELEASED')||
+      both.includes('INDEPENDENT_GAME_ACTIVATION_NOT_RELEASED');
+    const noFinance=both.includes('ONCE_ONLY_FINANCIAL_SETTLEMENT_NOT_RELEASED')||
+      both.includes('AIRCRAFT_GAME_FUEL_DISPATCH_AND_FINANCE_NOT_RELEASED');
+    const noBookingBridge=both.includes('ATOMIC_BOOKING_AND_FLIGHT_BRIDGE_NOT_COMPLETED');
     const notes=[
-     disabled?'Flight execution and automatic finance settlement are not enabled.':null,
-     permissions?'Game operating licence or route permissions are not released.':null,
-     release?'The independently checked operational release is still disabled.':null
+     error.roundtripModelPassed===true?
+      'The outbound and return times passed the timetable check.':null,
+     noEngine?'The flight engine is not released.':null,
+     noRelease?'Independent flight activation is not released.':null,
+     permissions?'Game licence applications are not enabled.':null,
+     noLicence?'The airline operating licence is not issued.':null,
+     noRights?'One or both route traffic permissions are not issued.':null,
+     noFinance?'Fuel or final financial settlement approval is missing.':null,
+     both.includes('AIRPORT_REVIEWS_NOT_COMPLETED')?
+      'Airport reviews are not complete.':null,
+     noBookingBridge?'The verified booking-to-flight connection is not complete.':null
     ].filter(Boolean);
     message('route-plan-status','NOT CREATED — neither flight was changed or booked. '+
      (notes.join(' ')||'The two-flight schedule is not cleared.')+
