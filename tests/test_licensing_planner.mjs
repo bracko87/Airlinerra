@@ -54,6 +54,17 @@ test('company formation and application do not demand an aircraft purchase',()=>
  assert.match(market.limits,/No stand-alone third-country to third-country/);
  assert.match(market.loss,/no holding-wide suspension/);
  assert.match(market.notes,/not live/);
+ const l2=LICENCE_PLAN.find(x=>x.code==='EU_AIRLINE_OPERATING_LICENCE');
+ assert.match(l2.title,/4 levels/);
+ assert.match(l2.application.join(' '),/90 game days/);
+ assert.match(l2.approval.join(' '),/NOT automatically granted with AOC/);
+ assert.match(l2.aircraft,/do NOT require a fleet-size threshold/);
+ assert.match(l2.operation.join(' '),/Level 1 proposal: 8 served airports/);
+ assert.match(l2.operation.join(' '),/Level 2 proposal: 25 served airports/);
+ assert.match(l2.operation.join(' '),/Level 3 proposal: 75 served airports/);
+ assert.match(l2.operation.join(' '),/Level 4 proposal: unlimited served airports/);
+ assert.match(l2.validity,/NO periodic renewal/);
+ assert.match(l2.notes,/NOT ACTIVE GAME PERMISSIONS/);
  assert.match(LICENCE_PLAN.find(x=>x.code==='HOLDING_FORMATION').notes,/calendar days/);
  assert.match(LICENCE_PLAN.find(x=>x.code==='CARGO_OPERATIONS_SCOPE').notes,/already has one/);
  assert.match(LICENCE_PLAN.find(x=>x.code==='CABOTAGE').limits,/Unavailable markets remain blocked/);
