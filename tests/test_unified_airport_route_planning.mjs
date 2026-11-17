@@ -72,3 +72,14 @@ test('mixed Group 1 / Group 2 routes fail closed with airport-specific admission
  assert.doesNotMatch(source,/group2_owned_aircraft_route_preflight_v1/);
  assert.match(source,/p_origin_key,p_destination_key/);
 });
+
+test('common mixed-group route diagnostics keep game compatibility separate from flight permission',async()=>{
+ const sql=await read('../supabase/migrations/20261117175500_unified_airport_game_route_readiness.sql');
+ assert.match(sql,/unified_airport_route_game_readiness_v1/);
+ assert.match(sql,/airport_unified_operations_v1/);
+ assert.match(sql,/gameStandCapacityAvailable/);
+ assert.match(sql,/gameTrafficTypeCompatible/);
+ assert.match(sql,/GAME_INPUTS_PREPARED_ADMISSION_BLOCKED/);
+ assert.match(sql,/'canActivateFlights',false/);
+ assert.match(sql,/revoke all on function airlinerra_game\.unified_airport_route_game_readiness_v1/);
+});
