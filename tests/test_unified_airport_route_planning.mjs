@@ -142,3 +142,20 @@ test('two prohibited military air bases remain source records but are absent fro
  assert.match(onboarding,/airport_player_game_roster_v1/);
  assert.equal((onboarding.match(/airport_player_game_roster_v1/g)||[]).length,2);
 });
+
+test('1,116 Group 2 airports are admitted for game simulation without falsifying real-world approval',async()=>{
+ const [ledger,view]=await Promise.all([
+  read('../supabase/migrations/20261117211000_group2_owner_simulation_admission_ledger.sql'),
+  read('../supabase/migrations/20261117212000_group2_game_admission_unified_view.sql')
+ ]);
+ assert.match(ledger,/GAME_SIMULATION_ONLY/);
+ assert.match(ledger,/simulation_candidate_only and not documented_commercial_prohibition/);
+ assert.match(ledger,/GROUP2_GAME_ADMISSION_COUNT_MISMATCH/);
+ assert.match(ledger,/OURAIRPORTS:29484/);
+ assert.match(ledger,/OURAIRPORTS:4436/);
+ assert.match(view,/airport_group2_simulation_admissions_v1/);
+ assert.match(view,/GAME_SIMULATION_ADMITTED_REAL_WORLD_EVIDENCE_UNVERIFIED/);
+ assert.match(view,/operationally_authorized/);
+ assert.match(view,/dispatch_eligible_by_airport_admission/);
+ assert.doesNotMatch(view,/insert into airlinerra_game\.airport_group2_operational_releases_v1/i);
+});
