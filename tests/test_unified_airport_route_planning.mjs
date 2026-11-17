@@ -159,3 +159,17 @@ test('1,116 Group 2 airports are admitted for game simulation without falsifying
  assert.match(view,/dispatch_eligible_by_airport_admission/);
  assert.doesNotMatch(view,/insert into airlinerra_game\.airport_group2_operational_releases_v1/i);
 });
+
+test('commercial flight release remains blocked until independent fuel, ticket, finance, and execution gates pass',async()=>{
+ const s=await read('../supabase/migrations/20261117215000_commercial_flight_release_blockers_readonly.sql');
+ for(const n of ['section9_flight_engine_readiness_audit_v1','section9_activation_release_policy_v1',
+ 'section9_trusted_execution_release_policy_v1','section9_flight_finance_posting_release_v1',
+ 'section9_game_fuel_model_snapshot_v1','NO_ACTIVE_CERTIFIED_FLIGHTS',
+ 'TRUSTED_FLIGHT_EXECUTION_RELEASE_DISABLED','FUEL_AND_AUTOMATIC_SETTLEMENT_NOT_ACTIVATED',
+ 'NO_AIRCRAFT_FUEL_MODEL_OPERATIONALLY_RELEASED','basic_release_gates_satisfied']){
+  assert.ok(s.includes(n),n);
+ }
+ assert.match(s,/security_invoker=true/);
+ assert.match(s,/revoke all on airlinerra_game\.section9_commercial_flight_release_blockers_v1/);
+ assert.doesNotMatch(s,/UPDATE airlinerra_game\./i);
+});
