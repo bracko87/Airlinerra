@@ -49,3 +49,16 @@ test('future Group 2 releases require explicit validated approval and use dynami
  assert.match(guard,/SECTION6_AIRPORT_NOT_YET_ADMITTED/);
  assert.doesNotMatch(guard,/WHERE g\.airport_key IN\(p_origin_key,p_destination_key\)/);
 });
+
+test('all Group 2 airport game inputs now have a shared slot and policy bridge',async()=>{
+ const slot=await read('../supabase/migrations/20261117170500_group2_slot_engine_capacity_unified_inputs.sql');
+ const policy=await read('../supabase/migrations/20261117171500_group2_section5_policy_game_model_bridge.sql');
+ assert.match(slot,/section6_airport_slot_capacity_v1/);
+ assert.match(slot,/airport_sections1_8_combined_members_v1/);
+ assert.match(slot,/group2_estimated_stand_capacity_v1/);
+ assert.match(slot,/1118/);
+ assert.match(policy,/section5_airport_operating_policy_v1/);
+ assert.match(policy,/GROUP2_GAME_MODEL_ESTIMATE_NOT_REAL_WORLD_VERIFIED/);
+ assert.match(policy,/false,'GROUP2_GAME_MODEL_ESTIMATE_NOT_REAL_WORLD_VERIFIED'/);
+ assert.match(policy,/UNEXPECTED_COMMERCIAL_RELEASE/);
+});
