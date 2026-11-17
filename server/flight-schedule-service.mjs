@@ -342,10 +342,10 @@ export const SCHEDULE_SQL=Object.freeze({
  p.aircraft_inventory_id::text AS "aircraftInventoryId",
  p.origin_airport_key AS "originAirportKey",p.destination_airport_key AS "destinationAirportKey",
  jsonb_build_object('key',p.origin_airport_key,'name',coalesce(o.airport_name,p.origin_airport_key),
-  'code',o.game_lookup_code,'municipality',o.airport_name,'countryIso',o.country_iso,
+  'code',o.game_lookup_code,'municipality',o.game_municipality,'countryIso',o.country_iso,
   'timezoneIana',o.timezone_iana) AS "from",
  jsonb_build_object('key',p.destination_airport_key,'name',coalesce(d.airport_name,p.destination_airport_key),
-  'code',d.game_lookup_code,'municipality',d.airport_name,'countryIso',d.country_iso,
+  'code',d.game_lookup_code,'municipality',d.game_municipality,'countryIso',d.country_iso,
   'timezoneIana',d.timezone_iana) AS "to",
  p.weekly_schedule AS "schedule",
  CASE WHEN p.planning_options->>'launchDelayDays' IN ('0','3','7')
