@@ -35,7 +35,7 @@ test('five phase estimated fuel and airport charges remain explicitly unapproved
  assert.match(s,/fuel_price_assumption_usd_per_kg/);
  assert.match(s,/GAME_ESTIMATE_NOT_REAL_AERONAUTICAL_TARIFF/);
  assert.match(s,/GAME_COST_PREVIEW_V1_NEVER_POST/);
- assert.match(s,/reserveFuelIncluded',false/);
+ assert.match(s,/fuelReserveIncluded',false/);
  assert.match(s,/crewCostsIncluded',false/);
  assert.match(s,/maintenanceChargesIncluded',false/);
  assert.match(s,/realWorldOperatingCostVerified',false/);
