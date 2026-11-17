@@ -5,7 +5,7 @@ import {LICENCE_PLAN,createLicensingPlanner} from '../website/licensing-planner.
 
 const expectedCodes=[
  'HOLDING_FORMATION','SUBSIDIARY_FORMATION','AIR_OPERATOR_CERTIFICATE',
- 'EU_AIRLINE_OPERATING_LICENCE','CARGO_OPERATIONS_SCOPE',
+ 'EU_AIRLINE_OPERATING_LICENCE','FOREIGN_NETWORK_LICENCE_2','CARGO_OPERATIONS_SCOPE',
  'CHARTER_VIP_SCOPE','DANGEROUS_GOODS','DOMESTIC_TRAFFIC',
  'INTEGRATED_MARKET','THIRD_FOURTH_FREEDOM','FIFTH_FREEDOM',
  'SEVENTH_FREEDOM','CABOTAGE','FOREIGN_BASE_PERMIT',
@@ -15,7 +15,7 @@ const expectedCodes=[
 test('planner covers every installed reference type plus labelled future concepts',()=>{
  const codes=LICENCE_PLAN.map(x=>x.code);
  assert.equal(new Set(codes).size,codes.length,'no duplicated game permission codes');
- assert.equal(codes.length,18);
+ assert.equal(codes.length,19);
  for(const code of expectedCodes)assert.ok(codes.includes(code),code);
  for(const future of ['AIRPORT_SLOTS','FLIGHT_ACADEMY'])
   assert.ok(codes.includes(future),'future concept '+future);
@@ -46,17 +46,23 @@ test('company formation and application do not demand an aircraft purchase',()=>
  assert.match(aoc.validity,/Safety Rating 70\/100/);
  assert.match(aoc.recovery,/automatically reinstates AOC/);
  assert.match(aoc.notes,/No flights, ordinary maintenance, passenger image and crew currently cause no penalty/);
- const l2=LICENCE_PLAN.find(x=>x.code==='EU_AIRLINE_OPERATING_LICENCE');
- assert.match(l2.title,/4 levels/);
+ const euReference=LICENCE_PLAN.find(x=>x.code==='EU_AIRLINE_OPERATING_LICENCE');
+ assert.match(euReference.title,/real-world reference/);
+ assert.match(euReference.notes,/DO NOT USE this legacy EU reference code as L2-EU/);
+ const l2=LICENCE_PLAN.find(x=>x.code==='FOREIGN_NETWORK_LICENCE_2');
+ assert.match(l2.title,/Foreign network expansion/);
  assert.match(l2.application.join(' '),/90 game days/);
- assert.match(l2.approval.join(' '),/NOT automatically granted with AOC/);
- assert.match(l2.aircraft,/do NOT require a fleet-size threshold/);
- assert.match(l2.operation.join(' '),/Level 1 proposal: 8 served airports/);
- assert.match(l2.operation.join(' '),/Level 2 proposal: 25 served airports/);
- assert.match(l2.operation.join(' '),/Level 3 proposal: 75 served airports/);
- assert.match(l2.operation.join(' '),/Level 4 proposal: unlimited served airports/);
- assert.match(l2.validity,/NO periodic renewal/);
- assert.match(l2.notes,/NOT ACTIVE GAME PERMISSIONS/);
+ assert.match(l2.application.join(' '),/80\/100/);
+ assert.match(l2.aircraft,/does NOT define licence level/);
+ assert.match(l2.operation.join(' '),/home country -> foreign destination -> home country/);
+ assert.match(l2.operation.join(' '),/Zagreb -> Ljubljana/);
+ assert.match(l2.operation.join(' '),/Ljubljana -> Zagreb/);
+ assert.match(l2.operation.join(' '),/Zagreb -> Hurghada/);
+ assert.match(l2.operation.join(' '),/two directed slots/);
+ assert.match(l2.operation.join(' '),/Level 1 = 10, Level 2 = 50, Level 3 = 150, Level 4 = unlimited/);
+ assert.match(l2.limits,/No free additional domestic network in Egypt/);
+ assert.match(l2.validity,/No periodic renewal/);
+ assert.match(l2.notes,/NOT LIVE/);
  assert.match(LICENCE_PLAN.find(x=>x.code==='HOLDING_FORMATION').notes,/calendar days/);
  assert.match(LICENCE_PLAN.find(x=>x.code==='CARGO_OPERATIONS_SCOPE').notes,/already has one/);
  assert.match(LICENCE_PLAN.find(x=>x.code==='CABOTAGE').limits,/Unavailable markets remain blocked/);
