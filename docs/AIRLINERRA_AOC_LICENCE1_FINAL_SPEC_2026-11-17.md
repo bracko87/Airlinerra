@@ -169,3 +169,36 @@ Existing game code: website/licensing-planner.mjs; website/game-permission-appli
 AOC continuous oversight in actual European aviation is separate from this game's invented annual expiry mechanic: https://www.easa.europa.eu/en/domains/air-operations/air-operator-certificate-aoc ; https://eur-lex.europa.eu/eli/reg/2012/965/2026-02-22/eng.
 
 NEXT: Implement and independently test Licence 1 before opening its rules. Licence 2 to be reviewed separately.
+
+
+## 10. Implementation status — staged backend foundation, 17 November 2026
+
+This section records WHAT IS ACTUALLY INSTALLED, independently of approved product rules.
+
+### Done and verified
+
+- Pure server-only decision engine: server/section9-aoc-policy.mjs. Strict game-date arithmetic, original/subsidiary/academy/MRO scope, unique airline incident scoring, paid+completed corrective evidence, 90-day reminder and renewal/reinstatement decisions. Isolated Node tests passed in GitHub Actions.
+- Read-only owner-verified adapter: server/section9-aoc-read-service.mjs. Uses verified Auth identity and private database owner function, never browser-supplied player/holding IDs. No write methods; isolated tests passed.
+- Private database (Supabase Airlinerra project) installed from the following versioned SQL sources:
+  - docs/sql/AIRLINERRA_AOC_DORMANT_FOUNDATION_2026-11-17.sql
+  - docs/sql/AIRLINERRA_AOC_DORMANT_PRIVATE_OPERATIONS_2026-11-17.sql
+  - docs/sql/AIRLINERRA_AOC_CORRECTIVE_RECEIPT_HARDENING_2026-11-17.sql
+- Private operating-company registry, AOC certificate, verified-incident, paid-correction, specialist completion-receipt, reminder-outbox and audit tables all have RLS enabled and are not granted to anonymous/authenticated users.
+- Private original-airline free issuer, paid-subsidiary receipt importer, renewal/expiry/reinstatement batch and corrective-payment function installed, but ALL return "not released" until explicitly enabled.
+- Corrective charges: specialist audit/inspection quote requires cash plus ledger check and a nonzero game cost. AOC repair payment explicitly refuses a second charge where the existing maintenance-job settlement already provides the paid repair. The score also requires a matching independently settled maintenance/compliance receipt, not a typed confirmation.
+- Rollback-only integration exercised original free issue and replay, 365-day renewal, 60-point failed review, 80-point paid recovery and automatic reinstatement, plus a separate compliance-receipt test. All game changes during these tests were ROLLED BACK.
+- Final production query found: 0 registered AOC companies, 0 AOC certificates, 0 incidents, 0 corrective jobs, 0 compliance receipts, 0 reminder deliveries and 0 AOC review events; all four feature switches FALSE; original airline balance unchanged at $5,000,000, one original ledger entry.
+- Isolated AOC CI passing: https://github.com/bracko87/Airlinerra/actions/runs/44076418219
+
+### NOT yet connected — mandatory before any release
+
+1. Verify and store original-airline and legally distinct subsidiary company identities as part of actual player registration/holding creation. The new registry has no live airline rows yet. No AOC auto issue on player registration can occur yet.
+2. Add genuine signed incident generation and dedicated, supported, fairly priced safety-correction workflows. No random/invented incident write producer; no external client may set scores/receipts. The current AOC specialist completion table is only a secured foundation, not an operating inspection service.
+3. Connect operational paid-maintenance job completion to each corresponding AOC correction task with price/aircraft proof, and connect authorised paid independent safety inspections/audits. Prove no duplicate charge and no unpaid-completion safety credit.
+4. Connect a trusted session-backed player read endpoint to the Licences & Permits AOC status, Safety issues, quotes and action/confirmation UI. The owner-only SQL adapter is present but the player page does not yet load the new status.
+5. Connect the reminder outbox to a durable game notification-delivery pipeline and schedule/monitor the trusted review worker. It is intentionally NOT cron-enabled yet.
+6. Safely reconcile original-free AOC evidence with the EXISTING section9_verify_game_operator_licence_v1 paid-only application provenance. Do not disable existing signed-approval or market-right checks. An AOC certificate in the new table is not yet accepted by operational flight verification.
+7. Before expiry blocks flights, implement and prove non-operated-flight booking refunds, cancellations, and financial settlement in the flight engine. Run positive paid and free end-to-end tests, per-company/sister-company isolation, recovery with no flights, frozen/missed game-day ticks and retries.
+8. Keep issuance_enabled=false, safety_events_enabled=false, renewal_enabled=false, flight_enforcement_enabled=false until all the above pass and an explicitly approved release occurs. Tests that temporarily turn them on must roll back, never affect real players.
+
+This work is a REAL installed backend foundation, NOT a claim that the game's operational AOC has launched.
