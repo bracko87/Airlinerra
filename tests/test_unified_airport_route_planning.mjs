@@ -173,3 +173,29 @@ test('commercial flight release remains blocked until independent fuel, ticket, 
  assert.match(s,/revoke all on airlinerra_game\.section9_commercial_flight_release_blockers_v1/);
  assert.doesNotMatch(s,/UPDATE airlinerra_game\./i);
 });
+
+test('validated game fuel models can be released without enabling the cash ledger',async()=>{
+ const sql=await read('../supabase/migrations/20261117224500_release_validated_game_estimate_fuel_models.sql');
+ assert.match(sql,/section9_game_fuel_model_snapshot_v1/);
+ assert.match(sql,/tank_capacity_kg>0/);
+ assert.match(sql,/game_calculation_ready=true/);
+ assert.match(sql,/financial_settlement_release='RELEASED'/);
+ assert.match(sql,/UNEXPECTED_ACTIVE_CASH_POSTING_WHILE_TESTING_GAME_FUEL_MODELS/);
+});
+test('game fuel and finance release has reviewed evidence policy rather than a permanent false literal',async()=>{
+ const sql=await read('../supabase/migrations/20261117230500_section9_reviewed_fuel_finance_release_policy.sql');
+ assert.match(sql,/section9_fuel_and_settlement_release_policy_v1/);
+ assert.match(sql,/execution_producer_evidence/);
+ assert.match(sql,/fuel_writer_evidence/);
+ assert.match(sql,/settlement_writer_evidence/);
+ assert.match(sql,/section9_flight_engine_readiness_audit_v1/);
+ assert.match(sql,/release_state='enabled'/);
+ assert.match(sql,/revoke all on airlinerra_game.section9_fuel_and_settlement_release_policy_v1/);
+ assert.match(sql,/UNEXPECTED_FLIGHT_FINANCE_RELEASE_DURING_POLICY_INSTALL/);
+});
+test('trusted execution release has one canonical state in both independent and certified checkers',async()=>{
+ const sql=await read('../supabase/migrations/20261117221000_section9_canonical_trusted_flight_execution_state.sql');
+ assert.match(sql,/'ACTIVATED'::text AS trusted_flight_execution_release/);
+ assert.match(sql,/active_state IS DISTINCT FROM 'ACTIVATED'/);
+ assert.doesNotMatch(sql,/active_state IS DISTINCT FROM 'RELEASED'/);
+});
