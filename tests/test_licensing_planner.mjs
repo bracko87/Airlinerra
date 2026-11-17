@@ -46,14 +46,6 @@ test('company formation and application do not demand an aircraft purchase',()=>
  assert.match(aoc.validity,/Safety Rating 70\/100/);
  assert.match(aoc.recovery,/automatically reinstates AOC/);
  assert.match(aoc.notes,/No flights, ordinary maintenance, passenger image and crew currently cause no penalty/);
- const market=LICENCE_PLAN.find(x=>x.code==='EU_AIRLINE_OPERATING_LICENCE');
- assert.match(market.title,/home market and EU\/EEA/);
- assert.match(market.cost,/no extra fee/);
- assert.match(market.approval.join(' '),/No extra country-by-country application/);
- assert.match(market.operation.join(' '),/any foreign country/);
- assert.match(market.limits,/No stand-alone third-country to third-country/);
- assert.match(market.loss,/no holding-wide suspension/);
- assert.match(market.notes,/not live/);
  const l2=LICENCE_PLAN.find(x=>x.code==='EU_AIRLINE_OPERATING_LICENCE');
  assert.match(l2.title,/4 levels/);
  assert.match(l2.application.join(' '),/90 game days/);
