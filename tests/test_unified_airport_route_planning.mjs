@@ -117,3 +117,16 @@ test('Section 6 timezone and simplified restriction rules consume both airport g
  assert.match(restrictions,/GROUP2_ESTIMATED_SECTION5_SIMULATION_MODEL_V1/);
  assert.match(restrictions,/GAME_DEFAULT_NOT_CHECKED/);
 });
+
+test('unified game readiness is computed across actual Section 5/6 input tables, not flight permits',async()=>{
+ const sql=await read('../supabase/migrations/20261117200500_unified_airport_game_subsystem_readiness.sql');
+ for (const table of ['airport_unified_operations_v1','section6_airport_slot_capacity_v1',
+   'section5_airport_operating_policy_v1','section5_airport_simplified_game_rules_v1',
+   'airport_group2_simulation_admission_candidates_v1']){
+   assert.ok(sql.includes(table),table);
+ }
+ assert.match(sql,/airport_game_subsystem_ready/);
+ assert.match(sql,/flight_admission_released/);
+ assert.match(sql,/GAME_MODEL_READY_DOES_NOT_MEAN_FLIGHT_AUTHORIZED/);
+ assert.doesNotMatch(sql,/insert into airlinerra_game\.approved_game_airports/i);
+});
