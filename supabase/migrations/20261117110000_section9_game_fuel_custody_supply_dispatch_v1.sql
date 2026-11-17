@@ -196,7 +196,7 @@ BEGIN
  THEN RETURN jsonb_build_object('status','blocked_incomplete_game_aircraft_fuel_model',
   'gameOnly',true,'fuelVerifiedForGame',false,'readOnly',true,'ledgerPosted',false);END IF;
  total_minutes:=ceil(extract(epoch from(r.arrival_utc-r.departure_utc))/60)::integer;
- IF total_minutes NOT BETWEEN 45 AND 1800 THEN
+ IF total_minutes NOT BETWEEN 30 AND 1800 THEN
  RETURN jsonb_build_object('status','blocked_invalid_game_fuel_flight_duration',
   'gameOnly',true,'fuelVerifiedForGame',false,'readOnly',true,'ledgerPosted',false);END IF;
  taxi_out_min:=least(9,greatest(3,floor(total_minutes*0.16)::integer));
