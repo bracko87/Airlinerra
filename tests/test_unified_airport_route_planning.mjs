@@ -62,3 +62,13 @@ test('all Group 2 airport game inputs now have a shared slot and policy bridge',
  assert.match(policy,/false,'GROUP2_GAME_MODEL_ESTIMATE_NOT_REAL_WORLD_VERIFIED'/);
  assert.match(policy,/UNEXPECTED_COMMERCIAL_RELEASE/);
 });
+
+test('mixed Group 1 / Group 2 routes fail closed with airport-specific admission diagnostics',async()=>{
+ const source=await read('../supabase/migrations/20261117173000_unified_airport_mixed_route_admission_diagnostics.sql');
+ assert.match(source,/SECTION6_AIRPORT_NOT_IN_UNIFIED_CATALOGUE/);
+ assert.match(source,/SECTION6_AIRPORT_NOT_YET_ADMITTED/);
+ assert.match(source,/unresolvedGates/);
+ assert.match(source,/dispatch_eligible_by_airport_admission IS DISTINCT FROM true/);
+ assert.doesNotMatch(source,/group2_owned_aircraft_route_preflight_v1/);
+ assert.match(source,/p_origin_key,p_destination_key/);
+});
