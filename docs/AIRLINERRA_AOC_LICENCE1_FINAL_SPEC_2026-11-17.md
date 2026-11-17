@@ -1,6 +1,6 @@
 # Airlinerra — Licence 1: Air Operator Certificate (AOC)
 Decision specification — 17 November 2026
-Status: Product rules finalized for implementation; NOT active in the live game.
+Status: Product rules finalized and clarified 17 November 2026; NOT active in the live game.
 Scope: Game-only AOC, not a government aviation certificate.
 
 ## 1. Confirmed product decisions
@@ -22,6 +22,18 @@ Scope: Game-only AOC, not a government aviation certificate.
 Recommended game-balance setting, consistent with the simple-renewal design: automatic annual renewal and reinstatement cost $0.
 
 All AOC timing uses the server's independently verified WORLD GAME DATE, not the desktop clock or the 60-real-day holding-registration rule. A frozen clock does not expire a certificate.
+
+## 1A. Exact legal-company scope: NOT a holding-wide rating
+
+The AOC and Airline Safety Rating are attached to the **specific separately registered COMMERCIAL AIRLINE / AIR OPERATOR company**, identified by its unique airline ID and world ID. They are NEVER issued to the holding/parent; the holding has **no AOC, no Airline Safety Rating, and no company-wide/aggregated Company Image score**.
+
+In this game, AOC-eligible operating company business types include **passenger, regional, low-cost, cargo, commercial charter, and commercial VIP airline** (including mixed passenger/cargo operations under the appropriate later scope). These companies each have their OWN AOC validity, renewal clock, safety events, safety score, and corrective action register.
+
+An **academy / flight training unit** and **aircraft maintenance / MRO business** do NOT receive this airline AOC solely for running training or maintenance. Such activities belong to their own future training-organisation/maintenance permissions, to be specified under separate licence reviews. An academy situated *inside* an airline is not a second commercial airline and does not receive a second AOC; the parent airline's commercial flying still uses its existing AOC. If an academy later also operates commercial passenger/cargo charter transport as a separate air operator, only that separately authorised commercial transport activity would bring it into AOC scope.
+
+**Independence under a common holding:** Holding H may own passenger airline A and cargo airline B. If B's AOC fails renewal and B is grounded, **A continues flying with its own valid AOC**, subject only to A's own flight clearances. Neither B's incidents nor B's safety-score penalties change A's score. Company A also cannot use B's certificate. Never query by holding ID when applying AOC stop/reinstate/renewal; owner- and world-verify the exact airline/company ID. No group-average score, no cascading suspension or cross-company recovery credit.
+
+A company can operate several aircraft or service types under its own AOC and relevant individual operating scopes: an incident belongs to that operating company, not automatically to other companies or the holding.
 
 ## 2. Original airline: immediate, free AOC
 
@@ -60,7 +72,16 @@ Deduct points ONLY for uniquely identified, server-confirmed GAME safety events 
 
 These event weights are initial BALANCING DEFAULTS to test, not existing live evidence. No random penalty roll, invented incidents, fake historic events, player-editable scores or crew penalties. Never treat a server-BLOCKED unsafe departure as an actual completed unsafe flight.
 
-SIMPLE RECOVERY: current rating = clamp(100 minus the points from UNRESOLVED verified events, 0, 100). Completing a trustworthy, incident-specific corrective action marks that incident RESOLVED and restores its remaining points ONCE. Retain the incident in permanent history with evidence and resolution dates. Maintain two display counters: incidents in the most recent 365 game days and all-time incidents. Flight frequency alone never improves or degrades the rating. This means an expired airline can recover without first operating flights.
+SIMPLE RECOVERY: current rating = clamp(100 minus the points from UNRESOLVED verified events, 0, 100). Completing a trustworthy, incident-specific corrective action marks that incident RESOLVED and restores its remaining points ONCE. Retain the incident in permanent history with evidence and resolution dates. Maintain two display counters: incidents in the most recent 365 game days and all-time incidents. Flight frequency alone never improves or degrades the rating.
+
+**Grounded-airline correction loop (CRITICAL, otherwise the player can be trapped):**
+1. The airline with expired AOC can still open its **Safety issues / Corrective actions** screen, view every unresolved evidence-backed event, request inspections, book maintenance, repair its aircraft, record an authorised safety review, and complete the exact remediation required for that event. These are non-commercial, non-flight actions and **cannot** be blocked merely because the AOC expired.
+2. Every incident must contain an objectively achievable remediation path BEFORE its penalty can be enabled. Example: a specific verified aircraft-safety violation requires the corresponding aircraft repair plus a separate verified inspection/release; an organisational safety finding requires a confirmed corrective audit. Do not allow arbitrary money purchases to buy safety points, unrelated routine maintenance to clear incidents, or a random waiting timer that leaves the AOC permanently expired.
+3. The protected server confirms event-specific corrective evidence, marks it resolved ONCE, and immediately recalculates the SAME airline's current score. Example: two unresolved serious incidents lower 100 to 60. Fixing either verified serious incident removes its 20-point unresolved penalty and produces 80; its historical occurrence still counts.
+4. When this airline's score is >=70, the trusted signed game-clock worker **automatically reinstates that same company's AOC**, without waiting for the next annual review and without requiring a flight. Normal independent flight readiness gates remain.
+5. If the remediation system or game-day clock is unavailable or incidents cannot practically be corrected, the game **must not** enforce a renewal failure that leaves the player unable to recover. Build and positively test the corrections path before release of rating-based expiry.
+
+An expired airline never needs to fly to regain its AOC, and its sister companies may operate normally throughout.
 
 Until signed incident and corrective-action systems actually exist, do NOT invent incidents or enforce penalties from missing data. Display the initial/no-confirmed-events baseline honestly, and never deny renewal due to a read failure or missing future scoring system.
 
@@ -103,7 +124,7 @@ No AOC policy, fee debit, live airline permission, flight operation, player acco
 
 ## 8. Implementation acceptance tests before any activation
 
-1. Original airline creates or backfills exactly ONE free AOC for the correct airline/world, without changing seed capital. First/original identity stays stable even when holding structure is created.
+1. Original airline creates or backfills exactly ONE free AOC for the correct airline/world, without changing seed capital. First/original identity stays stable even when holding structure is created. A parent holding never has an AOC or aggregated Safety Rating / Company Image.
 2. Subsidiary gets NO inherited AOC. A separate application processes at +3 game days. Approval charges one $10,000 ledger entry; rejection/insufficient funds charges zero. Replay charges zero.
 3. Reminders happen at exactly expiry minus 90 game days, once. Validity boundary D+364 active; D+365 renews if score >=70 or expires below 70; no off-by-one errors.
 4. No flights, maintenance-only downtime and lack of crew do not cause negative events or expiry. A company image of 0 does not reduce AOC Safety Rating.
@@ -111,7 +132,9 @@ No AOC policy, fee debit, live airline permission, flight operation, player acco
 6. Expired airline with a verified score recovery automatically reinstates for a new 365 days; affected commercial flights cannot depart during expiry but aircraft/route data is preserved.
 7. Frozen or unsigned clock, unexpected service outage, skipped days, repeated cron, forged browser score/certificates, foreign airline ID, rejected owner and cross-world attempts never invent new AOCs or charges.
 8. Before enabling expiry enforcement, prove that cancelled-flight bookings/refunds and financial settlements handle denied flights safely. Verify protected UI and real-world staging integration.
-9. Only after explicit deployment/release acceptance may private policy flags change. Do not automatically activate the game while implementing or reviewing this document.
+9. A passenger or cargo sister airline keeps its flights when a different separately registered sister company's AOC expires; no cross-company score contribution, no holding-level score, no global holding suspension. Academy/training and MRO business types have no commercial-airline AOC merely for operating their own activity.
+10. Confirm an AOC-expired airline can request/complete event-specific maintenance and inspection or compliance corrective actions without flights, restore a verified score from 60 to 80, and automatically regain its OWN AOC. Historical incidents remain. Never release a penalty event without a working correction mechanism.
+11. Only after explicit deployment/release acceptance may private policy flags change. Do not automatically activate the game while implementing or reviewing this document.
 
 ## 9. Source references and game-versus-real distinction
 
