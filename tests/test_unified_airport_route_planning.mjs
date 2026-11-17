@@ -34,3 +34,18 @@ test('unified read model cannot silently authorize unverified Group 2 airports',
  assert.match(operational,/SECTION6_GROUP2_NOT_YET_ADMITTED/);
  assert.match(operational,/section6_save_owned_aircraft_schedule_with_slots_v1/);
 });
+
+test('future Group 2 releases require explicit validated approval and use dynamic schedule gate',async()=>{
+ const release=await read('../supabase/migrations/20261117164500_group2_operational_release_control.sql');
+ const catalogue=await read('../supabase/migrations/20261117165000_unified_airport_dynamic_group2_release.sql');
+ const guard=await read('../supabase/migrations/20261117165500_unified_airport_admission_schedule_guard.sql');
+ assert.match(release,/ready_for_owner_release_review=true/);
+ assert.match(release,/documented_commercial_prohibition=false/);
+ assert.match(release,/section6_airport_slot_capacity_v1/);
+ assert.match(release,/section5_airport_operating_policy_v1/);
+ assert.match(release,/enable row level security/i);
+ assert.match(catalogue,/rel\.release_status='approved'/);
+ assert.match(guard,/dispatch_eligible_by_airport_admission IS DISTINCT FROM true/);
+ assert.match(guard,/SECTION6_AIRPORT_NOT_YET_ADMITTED/);
+ assert.doesNotMatch(guard,/WHERE g\.airport_key IN\(p_origin_key,p_destination_key\)/);
+});
