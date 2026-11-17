@@ -4,7 +4,8 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import {
-  createAirlineActivationService, validatedActivationRequest, AIRLINE_ACTIVATION_SQL
+  createAirlineActivationService, validatedActivationRequest, AIRLINE_ACTIVATION_SQL,
+  AIRLINE_AOC_REGISTRATION_SQL
 } from '../server/airline-activation.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -13,7 +14,7 @@ const AIRLINE='22222222-2222-4222-8222-222222222222';
 const request={worldId:1,airlineName:' North Star Airways ',homeAirportKey:'OURAIRPORTS:101',icaoCode:' nsa ',iataCode:' n1 '};
 const validUser=()=>({user:{id:USER,email_confirmed_at:'2026-10-26T08:00:00.000Z',is_anonymous:false},error:null});
 
-function createFakeDb({failAt=null,rows=null}={}) {
+function createFakeDb({failAt=null,rows=null,aocStatus='aoc_not_released'}={}) {
   const calls=[];
   const db={
     async connect() {
@@ -24,6 +25,9 @@ function createFakeDb({failAt=null,rows=null}={}) {
           if(failAt==='BEGIN'&&sql==='BEGIN')throw Error('begin refused');
           if(failAt==='SELECT'&&sql===AIRLINE_ACTIVATION_SQL)throw Error('DB constraint');
           if(failAt==='COMMIT'&&sql==='COMMIT')throw Error('commit refused');
+          if(sql===AIRLINE_AOC_REGISTRATION_SQL)
+            return {rows:[{aoc:{status:aocStatus,issued:aocStatus==='aoc_original_issued',
+              charged:false,flightActivated:false}}]};
           if(sql===AIRLINE_ACTIVATION_SQL) return {rows:rows??[{
             airline_id:AIRLINE,newly_created:true,
             starting_balance_usd:'5000000.00',
@@ -89,11 +93,31 @@ test('trusted verified Auth user ID overrides caller-supplied account identifier
   assert.equal(response.newlyCreated,true);
   assert.equal(response.cashUsd,'5000000.00');
   assert.deepEqual(calls.map(c=>c[0]==='query'?c[1]:c[0]),
-    ['connect','BEGIN',AIRLINE_ACTIVATION_SQL,'COMMIT','release']);
+    ['connect','BEGIN',AIRLINE_ACTIVATION_SQL,AIRLINE_AOC_REGISTRATION_SQL,'COMMIT','release']);
   const values=calls.find(c=>c[1]===AIRLINE_ACTIVATION_SQL)[2];
   assert.deepEqual(values,[USER,1,'North Star Airways','OURAIRPORTS:101','NSA','N1']);
 });
 
+test('original AOC is coupled to signup transaction and never charges when dormant',async()=>{
+ const {db,calls}=createFakeDb();
+ const s=createAirlineActivationService({database:db,enabled:true,
+  verifyUserToken:async()=>validUser()});
+ const r=await s.createAirline({accessToken:'secret-bearer-token-test',request});
+ assert.equal(r.newlyCreated,true);
+ assert.deepEqual(calls.find(c=>c[1]===AIRLINE_AOC_REGISTRATION_SQL)[2],
+  [USER,1,AIRLINE]);
+ assert.equal(calls.some(c=>c[1]==='COMMIT'),true);
+});
+test('AOC bridge returning an unexpected grant rolls back registration',async()=>{
+ const {db,calls}=createFakeDb({aocStatus:'unsafe_fake_issuance'});
+ const s=createAirlineActivationService({database:db,enabled:true,
+  verifyUserToken:async()=>validUser()});
+ await assert.rejects(
+  s.createAirline({accessToken:'secret-bearer-token-test',request}),
+  /AOC registration incomplete/);
+ assert.equal(calls.some(c=>c[1]==='ROLLBACK'),true);
+ assert.equal(calls.some(c=>c[1]==='COMMIT'),false);
+});
 test('unverified, anonymous or spoofed identities are rejected before connection', async () => {
   for (const data of [
     {user:null,error:null},
