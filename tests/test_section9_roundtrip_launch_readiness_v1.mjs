@@ -82,3 +82,13 @@ test('UI distinguishes valid timing from missing licences, fuel and booking brid
  assert.match(ui,/The flight engine is not released\./);
  assert.match(ui,/NOT CREATED — neither flight was changed or booked\./);
 });
+
+
+test('atomic route creation is restricted to trusted postgres and cannot be called by client data API role',async()=>{
+ const sql=await read(sqlPath);
+ assert.match(sql,/ROUNDTRIP_PRIVATE_TRUSTED_SERVER_ONLY/);
+ assert.match(sql,/current_user IS DISTINCT FROM 'postgres'/);
+ assert.match(sql,/REVOKE ALL ON FUNCTION airlinerra_game\.section9_owned_atomic_roundtrip_operational_create_v1/);
+ assert.match(sql,/FROM PUBLIC,anon,authenticated,service_role/);
+ assert.match(sql,/ROUNDTRIP_BOOKING_AND_EXECUTION_NOT_CONNECTED_FULL_ROLLBACK/);
+});
