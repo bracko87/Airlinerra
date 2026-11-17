@@ -1,3 +1,5 @@
+**LATEST USER CORRECTION — 17 NOVEMBER 2026:** This document's Licence 2 interpretation is OBSOLETE. **Ordinary home-country ⇄ foreign-country return flights require only Licence 1 under the simplified game rule; Licence 2 is extra foreign NETWORK expansion, with quota counted by DIRECTIONAL ROUTE (not unique airports).** Example: Serbian airline Belgrade⇄London uses L1; Zagreb→Ljubljana and Ljubljana→Zagreb need two L2-EU slots; Zagreb⇄Hurghada uses two L2-EU slots; Hurghada→Cairo remains forbidden. Do NOT implement this historical version. See [current Licence 2 foreign-network design](AIRLINERRA_LICENCE2_FOREIGN_NETWORK_2026-11-17.md).
+
 **SUPERSEDED 17 November 2026:** The user replaced 14 levels with **4** and rejected aircraft-count gates for licence tiers. This historical proposal must NOT be implemented. Use [Four-Level Licence 2 Design](AIRLINERRA_LICENCE2_FOUR_LEVEL_DESIGN_2026-11-17.md) instead.
 
 # Airlinerra — Licence 2: 14 operating levels (DESIGN PROPOSAL)
