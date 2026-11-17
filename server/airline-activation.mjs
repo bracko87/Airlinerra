@@ -10,6 +10,10 @@ const AIRPORT_KEY = /^(?:OURAIRPORTS:[1-9]\d{0,18}|FICTIONAL:fictional:[A-Z]{2}:
 export const AIRLINE_ACTIVATION_SQL =
   'select airline_id, newly_created, starting_balance_usd, trial_ends_at ' +
   'from airlinerra_game.create_airline_with_codes($1::uuid,$2::smallint,$3::text,$4::text,$5::text,$6::text)';
+export const AIRLINE_AOC_REGISTRATION_SQL =
+  'SELECT airlinerra_game.section9_aoc_original_registration_bridge_v1('+
+  '$1::uuid,$2::smallint,$3::uuid) AS aoc';
+
 
 export function validatedActivationRequest(request) {
   if (request === null || typeof request !== 'object' || Array.isArray(request)) {
@@ -92,6 +96,20 @@ export function createAirlineActivationService({
           typeof row.newly_created !== 'boolean' ||
           !/^\d+(\.\d+)?$/u.test(String(row.starting_balance_usd))) {
         throw new Error('Airline activation returned invalid data.');
+      }
+      // AOC remains fully dormant while the independent release policy
+      // is off. When separately approved, issue the free original-company
+      // game certificate in THIS registration transaction. No browser score,
+      // fee or holding-level licence is accepted.
+      if(valid.worldId===1){
+        const grant=await client.query(AIRLINE_AOC_REGISTRATION_SQL,
+          [playerId,valid.worldId,row.airline_id]);
+        const outcome=grant?.rows?.length===1?grant.rows[0]?.aoc:null;
+        if(!outcome||![
+          'aoc_not_released','aoc_original_issued','aoc_already_recorded'
+        ].includes(outcome.status)||
+          outcome.charged!==false||outcome.flightActivated!==false)
+          throw Error('Verified original-airline AOC registration incomplete.');
       }
       await client.query('COMMIT');
       started = false;
