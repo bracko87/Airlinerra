@@ -32,6 +32,14 @@ export function createGamePermissionApplicationsView({
  const note=node(doc,'p','game-licence-state','Select your airline to check the game licence status.');
  note.setAttribute('role','status');note.setAttribute('aria-live','polite');
  section.append(note);
+ const aocPanel=node(doc,'div','game-aoc-status');
+ const aocTitle=node(doc,'h3','','Air Operator Certificate (AOC)');
+ const aocState=node(doc,'p','game-aoc-status-text',
+  'Checking the selected airline’s AOC record…');
+ const aocDetail=node(doc,'p','hint',
+  'AOC status is company-specific. The holding, academies and maintenance companies do not share an airline AOC.');
+ aocPanel.append(aocTitle,aocState,aocDetail);
+ section.append(aocPanel);
  const metrics=node(doc,'div','game-licence-metrics');
  const fields=[];
  for(const name of ['Current game date','Pending review','Issued permissions']){
@@ -133,6 +141,24 @@ export function createGamePermissionApplicationsView({
     row.append(left,right);list.append(row);
    }
   }
+  const aoc=current?.aocStatus;
+  if(!aoc){
+   aocState.textContent='AOC record not connected to this server version.';
+   aocDetail.textContent='No issued AOC can be assumed. The detailed status requires an updated game connection.';
+  }else if(aoc.status==='planned_not_released'){
+   aocState.textContent='AOC system planned — not yet enabled';
+   aocDetail.textContent='Original airline: free automatic AOC when the feature launches. Separately incorporated airline subsidiaries: $10,000 and 3 game days after application. No certificate has been issued by this system.';
+  }else if(aoc.status==='not_issued'){
+   aocState.textContent='No AOC issued to this airline';
+   aocDetail.textContent='Applications and issuance depend on the type of airline company and current game release permissions.';
+  }else{
+   aocState.textContent=aoc.status==='active'?'AOC active for this airline':'AOC expired for this airline';
+   const rating=Number.isInteger(aoc.safetyRating?.rating)
+     ?' · Safety Rating '+aoc.safetyRating.rating+'/100':'';
+   aocDetail.textContent='Issued '+aoc.issuedGameDay+
+     ' · Valid until '+aoc.expiresGameDay+rating+
+     ' · Renewal is automatic after 365 game days when safety requirements are met.';
+  }
   note.textContent=current?.canApply
    ?'Game applications are enabled for eligible permissions. Issuance still requires independent review.'
    :'Applications are not open. You may review requirements and your application history; no money will be deducted.';
@@ -176,6 +202,8 @@ export function createGamePermissionApplicationsView({
   loadedAirline=id??null;current=null;submit.disabled=true;
   if(!id||!client){
    note.textContent='Select a verified airline to view your game licence applications.';
+   aocState.textContent='AOC details unavailable for the selected airline.';
+   aocDetail.textContent='No company licence is inferred without verified server data.';
    fields.forEach(v=>{v.textContent='—';});
    list.replaceChildren(node(doc,'p','hint','No verified application data is available.'));
    type.replaceChildren();updateForm();return;
@@ -188,6 +216,8 @@ export function createGamePermissionApplicationsView({
   }catch{
    if(requestVersion!==version)return;
    note.textContent='Permission status is temporarily unavailable. No licence or fee can be assumed.';
+   aocState.textContent='AOC status temporarily unavailable.';
+   aocDetail.textContent='No active AOC is assumed while the owner-verified status cannot be read.';
    fields.forEach(v=>{v.textContent='—';});
    list.replaceChildren(node(doc,'p','hint','The protected permission API could not be reached.'));
    type.replaceChildren();updateForm();
