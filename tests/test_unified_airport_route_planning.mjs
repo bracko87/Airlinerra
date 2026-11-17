@@ -195,7 +195,8 @@ test('game fuel and finance release has reviewed evidence policy rather than a p
 });
 test('trusted execution release has one canonical state in both independent and certified checkers',async()=>{
  const sql=await read('../supabase/migrations/20261117221000_section9_canonical_trusted_flight_execution_state.sql');
- assert.match(sql,/'ACTIVATED'::text AS trusted_flight_execution_release/);
+ assert.match(sql,/THEN 'ACTIVATED'::text/);
+ assert.match(sql,/END AS trusted_flight_execution_release/);
  assert.match(sql,/active_state IS DISTINCT FROM 'ACTIVATED'/);
  assert.doesNotMatch(sql,/active_state IS DISTINCT FROM 'RELEASED'/);
 });
