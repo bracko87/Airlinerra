@@ -169,7 +169,7 @@ export function createGamePermissionApplicationsView({
   l2Markets.replaceChildren();
   const licence2=current?.licence2;
   if(licence2?.readOnly===true&&Array.isArray(licence2.marketLevels)){
-   l2State.textContent='Foreign-network applications are not yet open. Current market limits are shown below; no fee or licence is assumed.';
+   l2State.textContent='You can save a draft for markets with confirmed levels. Submission and approval are not open. Saving a draft never charges a fee or grants a licence.';
    for(const market of ['L2-EU','L2-US','L2-UK','L2-JP']){
     const levels=licence2.marketLevels.filter(row=>row.marketCode===market);
     if(!levels.length)continue;
@@ -188,6 +188,45 @@ export function createGamePermissionApplicationsView({
       node(doc,'small','',issued
        ?'Directed routes allocated: '+levels[0].directedRoutesUsed
        :'Applications unavailable · No fee charged'));
+    const permittedLevels=levels.filter(x=>x.quotaApproved);
+    if(!issued&&levels[0].applicationStatus===null&&permittedLevels.length){
+     const draftActions=node(doc,'div','workspace-actions game-licence-actions');
+     const levelSelect=node(doc,'select','game-licence-input');
+     levelSelect.setAttribute('aria-label','Licence 2 level for '+levels[0].marketName);
+     for(const tier of permittedLevels){
+      const option=node(doc,'option','','Level '+tier.level);
+      option.value=String(tier.level);levelSelect.append(option);
+     }
+     const draftButton=node(doc,'button','secondary','Save application draft');
+     draftButton.type='button';draftButton.disabled=busy;
+     const draftFeedback=node(doc,'span','hint','No payment or submission. Eligibility is checked at final submission.');
+     draftFeedback.setAttribute('role','status');
+     draftButton.addEventListener('click',async()=>{
+      if(busy||getAirline()?.id!==loadedAirline)return;
+      const api=getClient();
+      if(typeof api?.saveLicence2Draft!=='function'){
+       draftFeedback.textContent='Draft service unavailable.';return;
+      }
+      const expectedId=loadedAirline;
+      busy=true;draftButton.disabled=true;
+      draftFeedback.textContent='Saving draft…';
+      try{
+       const result=await api.saveLicence2Draft({
+        airlineId:expectedId,marketCode:market,level:Number(levelSelect.value)});
+       if(getAirline()?.id!==expectedId)return;
+       draftFeedback.textContent=result.created
+        ?'Draft saved. No application submitted and no money charged.'
+        :result.status==='EXISTING_APPLICATION_ALREADY_OPEN'
+          ?'An application draft or submission already exists for this market.'
+          :'Unable to create draft: '+result.status.replaceAll('_',' ').toLowerCase()+'.';
+       if(result.created)await load({refresh:true});
+      }catch{
+       draftFeedback.textContent='Could not confirm the draft. Please refresh before trying again.';
+      }finally{busy=false;draftButton.disabled=false;}
+     });
+     draftActions.append(levelSelect,draftButton,draftFeedback);
+     left.append(draftActions);
+    }
     row.append(left,right);l2Markets.append(row);
    }
   }else{
