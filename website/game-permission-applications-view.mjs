@@ -227,6 +227,45 @@ export function createGamePermissionApplicationsView({
      draftActions.append(levelSelect,draftButton,draftFeedback);
      left.append(draftActions);
     }
+    if(!issued&&levels[0].applicationStatus!==null){
+     const application=levels[0];
+     const statusText=application.applicationStatus==='draft'
+      ?'Saved draft · Level '+application.requestedLevel+' · Not submitted'
+      :'Application '+application.applicationStatus+' · Level '+application.requestedLevel;
+     left.append(node(doc,'p','hint',statusText));
+     if(application.draftIssues?.length){
+      const detail=node(doc,'p','hint','Last checked requirements: '+
+       application.draftIssues.slice(0,12).map(s=>s.replaceAll('_',' ').toLowerCase()).join('; ')+
+       '. Requirements are checked again before submission.');
+      left.append(detail);
+     }
+     if(application.applicationStatus==='draft'&&application.draftApplicationId){
+      const tools=node(doc,'div','workspace-actions game-licence-actions');
+      const withdraw=node(doc,'button','secondary','Withdraw draft');
+      withdraw.type='button';
+      const info=node(doc,'span','hint','Removes this unfinished application. No payment.');
+      info.setAttribute('role','status');
+      withdraw.addEventListener('click',async()=>{
+       if(busy||getAirline()?.id!==loadedAirline)return;
+       const api=getClient();
+       if(typeof api?.withdrawLicence2Draft!=='function'){
+        info.textContent='Withdrawal service unavailable.';return;
+       }
+       busy=true;withdraw.disabled=true;info.textContent='Withdrawing draft…';
+       const expectedId=loadedAirline;
+       try{
+        const result=await api.withdrawLicence2Draft({
+         airlineId:expectedId,applicationId:application.draftApplicationId});
+        if(getAirline()?.id!==expectedId)return;
+        info.textContent=result.withdrawn?'Draft withdrawn. No fee charged.':
+         'Draft could not be withdrawn: '+result.status.replaceAll('_',' ').toLowerCase()+'.';
+        if(result.withdrawn)await load({refresh:true});
+       }catch{info.textContent='Could not confirm withdrawal. Refresh to check status.';}
+       finally{busy=false;withdraw.disabled=false;}
+      });
+      tools.append(withdraw,info);left.append(tools);
+     }
+    }
     row.append(left,right);l2Markets.append(row);
    }
   }else{
