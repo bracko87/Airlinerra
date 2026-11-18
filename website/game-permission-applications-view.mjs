@@ -40,6 +40,13 @@ export function createGamePermissionApplicationsView({
   'AOC status is company-specific. The holding, academies and maintenance companies do not share an airline AOC.');
  aocPanel.append(aocTitle,aocState,aocDetail);
  section.append(aocPanel);
+ const l2Panel=node(doc,'div','game-aoc-status game-licence-l2');
+ l2Panel.append(node(doc,'h3','','Licence 2 — Foreign network expansion'),
+  node(doc,'p','hint','Licence 1 covers normal flights to and from your home market. Licence 2 is for additional foreign-network routes. Each direction counts separately; repeat flights on the same directed route use one slot.'));
+ const l2State=node(doc,'p','hint','Checking foreign-market licence limits…');
+ const l2Markets=node(doc,'div','game-licence-applications');
+ l2Panel.append(l2State,l2Markets);
+ section.append(l2Panel);
  const metrics=node(doc,'div','game-licence-metrics');
  const fields=[];
  for(const name of ['Current game date','Pending review','Issued permissions']){
@@ -159,6 +166,33 @@ export function createGamePermissionApplicationsView({
      ' · Valid until '+aoc.expiresGameDay+rating+
      ' · Renewal is automatic after 365 game days when safety requirements are met.';
   }
+  l2Markets.replaceChildren();
+  const licence2=current?.licence2;
+  if(licence2?.readOnly===true&&Array.isArray(licence2.marketLevels)){
+   l2State.textContent='Foreign-network applications are not yet open. Current market limits are shown below; no fee or licence is assumed.';
+   for(const market of ['L2-EU','L2-US','L2-UK','L2-JP']){
+    const levels=licence2.marketLevels.filter(row=>row.marketCode===market);
+    if(!levels.length)continue;
+    const row=node(doc,'div','game-licence-application');
+    const left=node(doc,'div','game-licence-application-text');
+    left.append(node(doc,'strong','',levels[0].marketName));
+    const capabilities=levels.map(level=>{
+      if(!level.quotaApproved)return 'Level '+level.level+': requirements pending';
+      return 'Level '+level.level+': '+(level.directedRouteLimit===null?'Unlimited':String(level.directedRouteLimit))+
+        ' directed routes · up to '+level.maxAirportCategory;
+    });
+    left.append(node(doc,'small','',capabilities.join(' · ')));
+    const right=node(doc,'div','game-licence-application-balance');
+    const issued=levels[0].permitStatus==='approved';
+    right.append(node(doc,'b','',issued?'Approved · Level '+levels[0].permitLevel:'Not issued'),
+      node(doc,'small','',issued
+       ?'Directed routes allocated: '+levels[0].directedRoutesUsed
+       :'Applications unavailable · No fee charged'));
+    row.append(left,right);l2Markets.append(row);
+   }
+  }else{
+   l2State.textContent='Foreign-network licence status is not connected to this server version. No Licence 2 is assumed.';
+  }
   note.textContent=current?.canApply
    ?'Game applications are enabled for eligible permissions. Issuance still requires independent review.'
    :'Applications are not open. You may review requirements and your application history; no money will be deducted.';
@@ -203,6 +237,8 @@ export function createGamePermissionApplicationsView({
   if(!id||!client){
    note.textContent='Select a verified airline to view your game licence applications.';
    aocState.textContent='AOC details unavailable for the selected airline.';
+   l2Markets.replaceChildren();
+   l2State.textContent='Select a verified airline to view Licence 2 market status.';
    aocDetail.textContent='No company licence is inferred without verified server data.';
    fields.forEach(v=>{v.textContent='—';});
    list.replaceChildren(node(doc,'p','hint','No verified application data is available.'));
@@ -217,6 +253,8 @@ export function createGamePermissionApplicationsView({
    if(requestVersion!==version)return;
    note.textContent='Permission status is temporarily unavailable. No licence or fee can be assumed.';
    aocState.textContent='AOC status temporarily unavailable.';
+   l2Markets.replaceChildren();
+   l2State.textContent='Licence 2 status unavailable. No permit or fee is assumed.';
    aocDetail.textContent='No active AOC is assumed while the owner-verified status cannot be read.';
    fields.forEach(v=>{v.textContent='—';});
    list.replaceChildren(node(doc,'p','hint','The protected permission API could not be reached.'));
