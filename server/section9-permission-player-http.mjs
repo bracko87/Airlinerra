@@ -38,7 +38,75 @@ const applicationPolicySql=[
  "'SEVENTH_FREEDOM','CABOTAGE')",
  "ORDER BY CASE WHEN c.permission_code='AIR_OPERATOR_CERTIFICATE' THEN 0 ELSE 1 END,c.title"
 ].join(' ');
-export const GAME_PERMISSION_PLAYER_SQL=Object.freeze({policy:applicationPolicySql});
+
+const LICENCE2_OWNER_STATUS_SQL=[
+ 'SELECT m.market_code AS "marketCode",m.market_name AS "marketName",',
+ 'l.level AS "level",l.max_active_directed_routes AS "maxDirectedRoutes",',
+ 'l.max_category AS "maxAirportCategory",l.quota_approved AS "quotaApproved",',
+ 'm.issuance_enabled AS "issuanceEnabled",m.enforcement_enabled AS "enforcementEnabled",',
+ 'COALESCE(permit.status,\'not_issued\') AS "permitStatus",',
+ 'permit.level AS "permitLevel",',
+ 'COALESCE((SELECT count(*)::integer FROM airlinerra_game.licence2_directed_route_allocations_v1 routes',
+ 'WHERE routes.world_id=1 AND routes.airline_id=a.id AND routes.market_code=m.market_code',
+ 'AND routes.allocation_state IN (\'reserved\',\'active\')),0) AS "routesUsed",',
+ 'latest.status AS "applicationStatus"',
+ 'FROM airlinerra_game.airlines a',
+ 'JOIN airlinerra_game.world_memberships w ON w.world_id=a.world_id',
+ 'AND w.player_id=a.owner_player_id AND w.state=\'active\'',
+ 'CROSS JOIN airlinerra_game.licence2_market_policy_v1 m',
+ 'JOIN airlinerra_game.licence2_market_levels_v1 l ON l.market_code=m.market_code',
+ 'LEFT JOIN airlinerra_game.licence2_airline_market_permits_v1 permit',
+ 'ON permit.world_id=a.world_id AND permit.airline_id=a.id AND permit.market_code=m.market_code',
+ 'LEFT JOIN LATERAL (SELECT app.status FROM airlinerra_game.licence2_market_applications_v1 app',
+ 'WHERE app.world_id=a.world_id AND app.airline_id=a.id AND app.market_code=m.market_code',
+ 'ORDER BY app.requested_at DESC,app.application_id DESC LIMIT 1) latest ON true',
+ 'WHERE a.id=$2::uuid AND a.owner_player_id=$1::uuid AND a.world_id=1',
+ 'ORDER BY m.market_code,l.level'
+].join(' ');
+const L2_MARKETS=Object.freeze({'L2-EU':4,'L2-US':4,'L2-UK':2,'L2-JP':2});
+const L2_CATEGORIES=new Set(['Local','Regional','Medium','Large','Major Hub','Mega Hub']);
+function safeLicence2Rows(rows){
+ if(!Array.isArray(rows)||rows.length!==12)throw Error('LICENCE2_INVALID_PRIVATE_MARKET_COUNT');
+ const counts=new Map(),perMarket=new Map();
+ const items=rows.map(r=>{
+  if(!Object.hasOwn(L2_MARKETS,r?.marketCode)||typeof r.marketName!=='string'||
+    r.marketName.length<3||r.marketName.length>80||
+    !Number.isInteger(r.level)||r.level<1||r.level>L2_MARKETS[r.marketCode]||
+    typeof r.quotaApproved!=='boolean'||typeof r.issuanceEnabled!=='boolean'||
+    typeof r.enforcementEnabled!=='boolean'||
+    !Number.isInteger(r.routesUsed)||r.routesUsed<0||
+    !['not_issued','draft','pending_review','approved','suspended','revoked'].includes(r.permitStatus)||
+    (r.permitLevel!==null&&(!Number.isInteger(r.permitLevel)||r.permitLevel<1||r.permitLevel>L2_MARKETS[r.marketCode]))||
+    (r.applicationStatus!==null&&!['draft','submitted','under_review','approved','rejected','withdrawn'].includes(r.applicationStatus))||
+    (r.maxDirectedRoutes!==null&&(!Number.isInteger(r.maxDirectedRoutes)||r.maxDirectedRoutes<1))||
+    (r.maxAirportCategory!==null&&!L2_CATEGORIES.has(r.maxAirportCategory)))
+   throw Error('LICENCE2_INVALID_PRIVATE_MARKET_ROW');
+  if(r.permitStatus==='not_issued'&&r.permitLevel!==null)
+   throw Error('LICENCE2_INCONSISTENT_PERMIT');
+  if(r.quotaApproved&&r.maxAirportCategory===null)
+   throw Error('LICENCE2_APPROVED_QUOTA_MISSING_CATEGORY');
+  const key=r.marketCode+':'+r.level;
+  if(counts.has(key))throw Error('LICENCE2_DUPLICATE_MARKET_LEVEL');
+  counts.set(key,true);
+  const shared=[r.permitStatus,r.permitLevel,r.routesUsed,r.applicationStatus,r.issuanceEnabled,r.enforcementEnabled];
+  if(perMarket.has(r.marketCode)&&JSON.stringify(perMarket.get(r.marketCode))!==JSON.stringify(shared))
+   throw Error('LICENCE2_INCONSISTENT_MARKET_STATUS');
+  perMarket.set(r.marketCode,shared);
+  // Do not leak unfinished/unapproved prices; the fee policy is not displayed.
+  return {
+   marketCode:r.marketCode,marketName:r.marketName,level:r.level,
+   directedRouteLimit:r.quotaApproved?r.maxDirectedRoutes:null,
+   maxAirportCategory:r.quotaApproved?r.maxAirportCategory:null,
+   quotaApproved:r.quotaApproved,
+   permitStatus:r.permitStatus,permitLevel:r.permitLevel,
+   directedRoutesUsed:r.routesUsed,applicationStatus:r.applicationStatus,
+   canApply:false,feeUsd:null,processingGameDays:null
+  };
+ });
+ return {readOnly:true,applicationsOpen:false,marketLevels:items};
+}
+
+export const GAME_PERMISSION_PLAYER_SQL=Object.freeze({policy:applicationPolicySql,licence2:LICENCE2_OWNER_STATUS_SQL});
 async function readBody(req){
  const n=req.headers.get('content-length');
  if(n!==null&&(!/^\d+$/.test(n)||Number(n)>2048))
@@ -138,9 +206,11 @@ export function createSection9PermissionPlayerHandler({
    });
    const aocStatus=await aocRead.getOwnedStatus({airlineId:body.airlineId});
    const client=await database.connect();
-   let rows;
-   try{rows=(await client.query(GAME_PERMISSION_PLAYER_SQL.policy)).rows;}
-   finally{client.release();}
+   let rows,l2Rows;
+   try{
+    rows=(await client.query(GAME_PERMISSION_PLAYER_SQL.policy)).rows;
+    l2Rows=(await client.query(GAME_PERMISSION_PLAYER_SQL.licence2,[playerId,body.airlineId])).rows;
+   }finally{client.release();}
    if(!Array.isArray(rows)||rows.length>7||rows.length<1)
     throw Error('SECTION9_INVALID_PERMISSION_POLICY_COUNT');
    const unique=new Set();
@@ -149,6 +219,7 @@ export function createSection9PermissionPlayerHandler({
     if(unique.has(p.code))throw Error('SECTION9_DUPLICATE_PERMISSION_POLICY');
     unique.add(p.code);return p;
    });
+   const licence2=safeLicence2Rows(l2Rows);
    const day=rows[0]?.gameDay??null;
    if(rows.some(r=>(r.gameDay??null)!==day))
     throw Error('SECTION9_INCONSISTENT_PERMISSION_CLOCK');
@@ -156,7 +227,7 @@ export function createSection9PermissionPlayerHandler({
     status:'permission_applications_status',
     airlineId:body.airlineId,worldId:1,gameDay:day,
     canApply:policies.some(p=>p.canApply),
-    policies,applications:owned.applications,aocStatus,
+    policies,applications:owned.applications,aocStatus,licence2,
     approvalByPlayer:false,ledgerPosted:false,flightActivated:false
    });
   }catch(error){
