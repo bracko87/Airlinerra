@@ -69,3 +69,39 @@ test('owner draft application is idempotent and cannot be issued or charged as a
  assert.match(s,/enable row level security/);
  assert.match(s,/revoke all on airlinerra_game\.licence2_market_applications_v1/);
 });
+
+test('verified company registration day and reserves never infer eligibility from creation timestamp or raw cash',async()=>{
+ const source=await read('supabase/migrations/20261118133000_licence2_verified_company_age_and_financial_reserves.sql');
+ const readiness=await read('supabase/migrations/20261118134500_licence2_readiness_consumes_verified_company_and_reserve_evidence.sql');
+ assert.match(source,/licence2_company_game_registration_evidence_v1/);
+ assert.match(source,/licence2_airline_operating_reserve_evidence_v1/);
+ assert.match(source,/registered_game_date/);
+ assert.match(source,/projected_daily_operating_cost_usd/);
+ assert.match(source,/reserve_days>=90/);
+ assert.match(source,/security_invoker=true/);
+ assert.match(source,/enable row level security/g);
+ assert.match(readiness,/verified_company_game_days/);
+ assert.match(readiness,/COMPANY_YOUNGER_THAN_90_GAME_DAYS/);
+ assert.match(readiness,/INSUFFICIENT_VERIFIED_NINETY_DAY_OPERATING_RESERVE/);
+ assert.match(readiness,/NINETY_DAY_OPERATING_COST_RESERVE_NOT_VERIFIED/);
+ assert.doesNotMatch(readiness,/v_age:=null/);
+ assert.match(readiness,/rightsGranted',false/);
+ assert.match(readiness,/feeCharged',false/);
+});
+test('directional allocation counts direction once, holds quota lock and blocks release without approvals',async()=>{
+ const schema=await read('supabase/migrations/20261118141000_licence2_atomic_directional_route_allocation_boundary.sql');
+ const guard=await read('supabase/migrations/20261118142000_licence2_directional_quota_insert_update_guard_fix.sql');
+ assert.match(schema,/licence2_directed_route_allocations_v1/);
+ assert.match(schema,/primary key\(world_id,airline_id,market_code,origin_airport_key,destination_airport_key\)/);
+ assert.match(schema,/licence2_one_active_source_per_directed_pair_v1/);
+ assert.match(schema,/allocation_state in \('reserved','active'\)/);
+ assert.match(schema,/licence2_market_route_quota_usage_v1/);
+ assert.match(schema,/enable row level security/);
+ assert.match(guard,/pg_advisory_xact_lock/);
+ assert.match(guard,/LICENCE2_ROUTE_ALLOCATION_RELEASE_DISABLED/);
+ assert.match(guard,/LICENCE2_VALID_APPROVED_PERMIT_REQUIRED/);
+ assert.match(guard,/L2_NEEDS_DIRECTED_ROUTE_QUOTA_CHECK/);
+ assert.match(guard,/LICENCE2_DIRECTED_ROUTE_QUOTA_FULL/);
+ assert.match(guard,/if tg_op='INSERT' then/);
+ assert.match(guard,/v_used>=v_tier.max_active_directed_routes/);
+});
