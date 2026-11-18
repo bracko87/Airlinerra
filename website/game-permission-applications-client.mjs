@@ -63,17 +63,25 @@ export function checkedGamePermissionStatus(data,airlineId){
      (r.permitLevel!==null&&(!Number.isInteger(r.permitLevel)||r.permitLevel<1||r.permitLevel>expected[r.marketCode]))||
      !Number.isInteger(r.directedRoutesUsed)||r.directedRoutesUsed<0||
      !['not_issued','draft','pending_review','approved','suspended','revoked'].includes(r.permitStatus)||
-     (r.applicationStatus!==null&&!['draft','submitted','under_review','approved','rejected','withdrawn'].includes(r.applicationStatus))||
+     (r.applicationStatus!==null&&!['draft','submitted','under_review'].includes(r.applicationStatus))||
+     (r.draftApplicationId!==null&&!UUID.test(r.draftApplicationId||''))||
+     (r.requestedLevel!==null&&(!Number.isInteger(r.requestedLevel)||r.requestedLevel<1||r.requestedLevel>expected[r.marketCode]))||
+     (r.draftIssues!==null&&(!Array.isArray(r.draftIssues)||r.draftIssues.length>20||
+      r.draftIssues.some(issue=>typeof issue!=='string'||! /^[A-Z0-9_]{3,100}$/.test(issue))))||
      r.canApply!==false||r.feeUsd!==null||r.processingGameDays!==null)
     throw Error('Unverified Licence 2 market level');
    const key=r.marketCode+':'+r.level;
    if(seen.has(key))throw Error('Duplicate Licence 2 level');
    seen.add(key);
+   if((r.applicationStatus===null)!==(r.draftApplicationId===null)||
+      (r.applicationStatus===null)!==(r.requestedLevel===null)||
+      (r.applicationStatus===null&&r.draftIssues!==null))
+    throw Error('Unverified Licence 2 draft metadata');
    if(!r.quotaApproved&&(r.directedRouteLimit!==null||r.maxAirportCategory!==null))
     throw Error('Unapproved Licence 2 rules displayed as final');
    if(r.permitStatus==='not_issued'&&r.permitLevel!==null)
     throw Error('Unverified Licence 2 permit');
-   const status=[r.permitStatus,r.permitLevel,r.directedRoutesUsed,r.applicationStatus];
+   const status=[r.permitStatus,r.permitLevel,r.directedRoutesUsed,r.applicationStatus,r.draftApplicationId,r.requestedLevel,r.draftIssues];
    if(shared.has(r.marketCode)&&JSON.stringify(shared.get(r.marketCode))!==JSON.stringify(status))
     throw Error('Inconsistent Licence 2 permit status');
    shared.set(r.marketCode,status);
@@ -140,6 +148,16 @@ export function createGamePermissionApplicationsClient({
    if(!UUID.test(airlineId||''))throw Error('Valid airline required');
    return checkedGamePermissionStatus(
     await post({action:'status',airlineId}),airlineId);
+  },
+  async withdrawLicence2Draft({airlineId,applicationId}={}){
+   if(!UUID.test(airlineId||'')||!UUID.test(applicationId||''))
+    throw Error('Invalid Licence 2 withdrawal request');
+   const result=await post({action:'licence2_withdraw',airlineId,applicationId});
+   if(!['DRAFT_WITHDRAWN','DRAFT_ALREADY_WITHDRAWN','DRAFT_NOT_WITHDRAWABLE','DRAFT_NOT_FOUND'].includes(result.status)||
+      typeof result.withdrawn!=='boolean'||result.feeCharged!==false||
+      result.rightsGranted!==false||result.flightsActivated!==false)
+     throw Error('Unsafe Licence 2 withdrawal response');
+   return result;
   },
   async saveLicence2Draft({airlineId,marketCode,level}={}){
    const levels={'L2-EU':4,'L2-US':4,'L2-UK':2,'L2-JP':2};
