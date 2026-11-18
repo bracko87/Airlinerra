@@ -220,3 +220,27 @@ test('original AOC identity backfill needs owner, one airline, matching registra
  assert.doesNotMatch(migration,/INSERT INTO airlinerra_game\.section9_aoc_certificates_v1/i);
  assert.doesNotMatch(migration,/UPDATE airlinerra_game\.airlines SET cash_usd/i);
 });
+
+test('commercial schedule activation requires AOC at both transaction and trigger boundaries',async()=>{
+ const read=path=>readFile(new URL('../supabase/migrations/'+path,import.meta.url),'utf8');
+ const sql=await read('20261118222500_section9_certified_activation_requires_verified_aoc.sql');
+ const guard=await read('20261118225500_section9_schedule_activation_trigger_requires_live_aoc.sql');
+ const pay=await read('20261118224000_section9_aoc_corrective_payment_requires_balanced_ledger.sql');
+ for(const phrase of ['section9_aoc_flight_release_readiness_v1',
+   'rp.issuance_enabled and rp.safety_events_enabled',
+   'rp.renewal_enabled and rp.flight_enforcement_enabled',
+   "'AOC_ACTIVE_CERTIFICATE_NOT_VERIFIED'",
+   "'AOC_FLIGHT_ENFORCEMENT_NOT_RELEASED'",
+   'AOC_ORIGINAL_ISSUE_PROVENANCE_INVALID',
+   'AOC_SUBSIDIARY_PAID_PROVENANCE_INVALID',
+   "'authorized',cardinality(issues)=0",
+   'blocked_activation_not_fully_certified']){
+  assert.ok(sql.includes(phrase),phrase);
+ }
+ assert.match(guard,/section9_aoc_flight_release_readiness_v1/);
+ assert.match(guard,/SECTION9_AOC_NOT_VERIFIED_FOR_SCHEDULE_ACTIVATION/);
+ assert.match(pay,/ledger_balance IS DISTINCT FROM a\.cash_usd/);
+ assert.match(pay,/aoc_company_cash_ledger_not_reconciled/);
+ assert.match(pay,/'charged',false/);
+ assert.doesNotMatch(sql,/update airlinerra_game\.section9_aoc_release_policy_v1/i);
+});
