@@ -162,7 +162,7 @@ export function createSection9PermissionPlayerHandler({
   let body;
   try{body=await readBody(req);}
   catch{return response(400,{error:'Invalid application request'});}
-  if(!['status','apply'].includes(body.action)||!UUID.test(body.airlineId||''))
+  if(!['status','apply','licence2_draft'].includes(body.action)||!UUID.test(body.airlineId||''))
    return response(400,{error:'Invalid application request'});
   if(body.action==='status'&&Object.keys(body).sort().join(',')!=='action,airlineId')
    return response(400,{error:'Invalid status request'});
@@ -182,6 +182,34 @@ export function createSection9PermissionPlayerHandler({
    database,identityAuthority:identity
   });
   try{
+   if(body.action==='licence2_draft'){
+    if(Object.keys(body).sort().join(',')!=='action,airlineId,level,marketCode'||
+       !Object.hasOwn(L2_MARKETS,body.marketCode)||
+       !Number.isInteger(body.level)||body.level<1||
+       body.level>L2_MARKETS[body.marketCode])
+     return response(400,{error:'Invalid Licence 2 draft'});
+    // The existing private owner-verified listing must succeed first.
+    await service.listApplications({airlineId:body.airlineId});
+    const client=await database.connect();
+    try{
+     const r=await client.query(
+      'SELECT airlinerra_game.licence2_stage_owner_application_v1($1::uuid,$2::uuid,$3::text,$4::smallint) AS result',
+      [playerId,body.airlineId,body.marketCode,body.level]);
+     const result=r.rows?.[0]?.result;
+     if(r.rowCount!==1||!result||![
+       'APPLICATION_DRAFT_STAGED_NOT_SUBMITTED','EXISTING_APPLICATION_ALREADY_OPEN',
+       'ALREADY_HOLDS_SUFFICIENT_LEVEL','INVALID_OR_UNSUPPORTED_MARKET_LEVEL'
+      ].includes(result.status)||
+      result.feeCharged===true||result.rightsGranted===true||
+      result.flightsActivated===true||result.submitted===true)
+      throw Error('LICENCE2_UNSAFE_DRAFT_RESULT');
+     return response(200,{
+      status:result.status,created:result.created===true,
+      applicationId:result.applicationId??null,
+      submitted:false,feeCharged:false,rightsGranted:false,flightsActivated:false
+     });
+    }finally{client.release();}
+   }
    if(body.action==='apply'){
     const {action,...request}=body;
     if(Object.keys(request).some(key=>![
