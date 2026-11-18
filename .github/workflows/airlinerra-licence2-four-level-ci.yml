@@ -5,6 +5,8 @@ on:
     paths:
       - 'website/licensing-planner.mjs'
       - 'tests/test_licensing_planner.mjs'
+      - 'tests/test_licence2_foreign_network_foundation.mjs'
+      - 'supabase/migrations/*licence2*.sql'
       - 'docs/AIRLINERRA_LICENCE2_*'
       - '.github/workflows/airlinerra-licence2-four-level-ci.yml'
   workflow_dispatch:
@@ -23,7 +25,7 @@ jobs:
         run: |
           node --check website/licensing-planner.mjs
           node --check tests/test_licensing_planner.mjs
-          node --test tests/test_licensing_planner.mjs
+          node --test tests/test_licensing_planner.mjs tests/test_licence2_foreign_network_foundation.mjs
       - name: Validate website build
         run: |
           cd website
