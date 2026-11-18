@@ -41,3 +41,31 @@ test('merged-airport route preview leaves AOC and commercial execution separate'
  assert.doesNotMatch(classifier,/insert into airlinerra_game\.licence2_airline_market_permits_v1/i);
  assert.doesNotMatch(classifier,/update airlinerra_game\.airline_flight_schedule_drafts_v1/i);
 });
+
+test('L2 readiness uses existing AOC and aircraft evidence and does not claim invented company maturity',async()=>{
+ const s=await read('supabase/migrations/20261118114500_licence2_readonly_application_eligibility.sql');
+ for(const phrase of ['section9_aoc_certificates_v1','airline_aircraft_inventory',
+  'section9_aoc_safety_incidents_v1','holding_world_clock_v1',
+  'COMPANY_90_GAME_DAY_AGE_NOT_VERIFIED',
+  'NINETY_DAY_OPERATING_COST_RESERVE_NOT_VERIFIED',
+  'CRITICAL_MAINTENANCE_CLEARANCE_NOT_VERIFIED',
+  'ACTIVE_OWN_AOC_NOT_VERIFIED','READ_ONLY_PREAPPLICATION_ASSESSMENT']){
+  assert.ok(s.includes(phrase),phrase);
+ }
+ assert.match(s,/rightsGranted',false/);
+ assert.match(s,/feeCharged',false/);
+ assert.match(s,/revoke all on function airlinerra_game\.licence2_application_readiness_v1/);
+});
+test('owner draft application is idempotent and cannot be issued or charged as a draft',async()=>{
+ const s=await read('supabase/migrations/20261118120500_licence2_owner_application_draft_ledger.sql');
+ assert.match(s,/licence2_market_applications_v1/);
+ assert.match(s,/licence2_one_open_application_per_market_v1/);
+ assert.match(s,/a\.owner_player_id=p_player/);
+ assert.match(s,/wm\.state='active'/);
+ assert.match(s,/current_user is distinct from 'postgres'/);
+ assert.match(s,/LICENCE2_SUBMISSION_REVIEW_APPROVAL_NOT_RELEASED/);
+ assert.match(s,/on conflict \(world_id,airline_id,market_code\)/);
+ assert.match(s,/feeCharged',false/);
+ assert.match(s,/enable row level security/);
+ assert.match(s,/revoke all on airlinerra_game\.licence2_market_applications_v1/);
+});
