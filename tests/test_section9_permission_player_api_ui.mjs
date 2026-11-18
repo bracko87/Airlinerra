@@ -66,6 +66,12 @@ function database({list=owned,policies=[policy()],blockedSubmit=null,
       {const e=Error('SECTION9_PERMISSION_APPLICATION_LIST_NOT_OWNED');e.code='42501';throw e;}
      if(sql.includes('section9_owned_game_permission_applications'))
       return {rowCount:1,rows:[{result:list}]};
+     if(sql.includes('licence2_refresh_owner_draft_v1'))
+      return {rowCount:1,rows:[{result:{
+       status:'DRAFT_READINESS_REFRESHED',refreshed:true,
+       applicationId:REQUEST,eligible:false,
+       issues:['ACTIVE_OWN_AOC_NOT_VERIFIED'],
+       feeCharged:false,rightsGranted:false,flightsActivated:false}}]};
      if(sql.includes('licence2_withdraw_owner_draft_v1'))
       return {rowCount:1,rows:[{result:{
        status:'DRAFT_WITHDRAWN',withdrawn:true,applicationId:REQUEST,
@@ -479,4 +485,50 @@ test('browser prevents forged Licence 2 withdrawal grants',async()=>{
  });
  await assert.rejects(bad.withdrawLicence2Draft({airlineId:AIRLINE,applicationId:REQUEST}),
   /Unsafe Licence 2 withdrawal response/);
+});
+
+test('Licence 2 draft requirement refresh is authenticated, owner-only and non-financial',async()=>{
+ const db=database();
+ const response=await handler(db.database)(req({
+  action:'licence2_refresh',airlineId:AIRLINE,applicationId:REQUEST
+ }));
+ assert.equal(response.status,200);
+ const result=await response.json();
+ assert.deepEqual(result,{
+  status:'DRAFT_READINESS_REFRESHED',refreshed:true,
+  issues:['ACTIVE_OWN_AOC_NOT_VERIFIED'],eligible:false,
+  feeCharged:false,rightsGranted:false,flightsActivated:false
+ });
+ assert.deepEqual(db.calls.at(-1).args,[OWNER,AIRLINE,REQUEST]);
+ assert.match(db.calls.at(-1).sql,/licence2_refresh_owner_draft_v1/);
+ const other=database({ownerDenied:true});
+ assert.equal((await handler(other.database)(req({
+  action:'licence2_refresh',airlineId:AIRLINE,applicationId:REQUEST
+ }))).status,403);
+ assert.equal(other.calls.length,1);
+});
+test('Licence 2 draft refresh rejects spoofed identity and fabricated money or approval',async()=>{
+ const d=database();
+ for(const body of [
+  {action:'licence2_refresh',airlineId:AIRLINE,applicationId:'bad'},
+  {action:'licence2_refresh',airlineId:AIRLINE,applicationId:REQUEST,ownerPlayerId:OWNER}
+ ]){
+  assert.equal((await handler(d.database)(req(body))).status,400);
+ }
+ assert.equal(d.calls.length,0);
+ const safe=createGamePermissionApplicationsClient({
+  auth:{getAccessToken:async()=>TOKEN},origin:ORIGIN,
+  fetchImpl:async()=>Response.json({status:'DRAFT_READINESS_REFRESHED',refreshed:true,
+   issues:['ACTIVE_OWN_AOC_NOT_VERIFIED'],eligible:false,
+   feeCharged:false,rightsGranted:false,flightsActivated:false})
+ });
+ assert.equal((await safe.refreshLicence2Draft({
+  airlineId:AIRLINE,applicationId:REQUEST})).refreshed,true);
+ const forged=createGamePermissionApplicationsClient({
+  auth:{getAccessToken:async()=>TOKEN},origin:ORIGIN,
+  fetchImpl:async()=>Response.json({status:'DRAFT_READINESS_REFRESHED',refreshed:true,
+   issues:[],eligible:true,feeCharged:true,rightsGranted:false,flightsActivated:false})
+ });
+ await assert.rejects(forged.refreshLicence2Draft({
+  airlineId:AIRLINE,applicationId:REQUEST}),/Unsafe Licence 2 refresh response/);
 });
