@@ -169,7 +169,7 @@ export function createGamePermissionApplicationsView({
   l2Markets.replaceChildren();
   const licence2=current?.licence2;
   if(licence2?.readOnly===true&&Array.isArray(licence2.marketLevels)){
-   l2State.textContent='You can save a draft for markets with confirmed levels. Submission and approval are not open. Saving a draft never charges a fee or grants a licence.';
+   l2State.textContent='EU fees and processing times are owner-approved game rules. An upgrade costs the full price of the new level. Drafts can be saved, but submission, payment, licence issuance and flights are not enabled.';
    for(const market of ['L2-EU','L2-US','L2-UK','L2-JP']){
     const levels=licence2.marketLevels.filter(row=>row.marketCode===market);
     if(!levels.length)continue;
@@ -178,8 +178,12 @@ export function createGamePermissionApplicationsView({
     left.append(node(doc,'strong','',levels[0].marketName));
     const capabilities=levels.map(level=>{
       if(!level.quotaApproved)return 'Level '+level.level+': requirements pending';
+      const fee=Number.isFinite(level.approvedInitialFeeUsd)
+       ?' · '+MONEY.format(level.approvedInitialFeeUsd)+
+        ' initial or full-price upgrade · '+level.approvedProcessingGameDays+' game days'
+       :' · Fee not approved';
       return 'Level '+level.level+': '+(level.directedRouteLimit===null?'Unlimited':String(level.directedRouteLimit))+
-        ' directed routes · up to '+level.maxAirportCategory;
+        ' directed routes · up to '+level.maxAirportCategory+fee;
     });
     left.append(node(doc,'small','',capabilities.join(' · ')));
     const right=node(doc,'div','game-licence-application-balance');
