@@ -172,7 +172,7 @@ export function createSection9PermissionPlayerHandler({
   let body;
   try{body=await readBody(req);}
   catch{return response(400,{error:'Invalid application request'});}
-  if(!['status','apply','licence2_draft','licence2_withdraw'].includes(body.action)||!UUID.test(body.airlineId||''))
+  if(!['status','apply','licence2_draft','licence2_withdraw','licence2_refresh'].includes(body.action)||!UUID.test(body.airlineId||''))
    return response(400,{error:'Invalid application request'});
   if(body.action==='status'&&Object.keys(body).sort().join(',')!=='action,airlineId')
    return response(400,{error:'Invalid status request'});
@@ -192,6 +192,36 @@ export function createSection9PermissionPlayerHandler({
    database,identityAuthority:identity
   });
   try{
+   if(body.action==='licence2_refresh'){
+    if(Object.keys(body).sort().join(',')!=='action,airlineId,applicationId'||
+       !UUID.test(body.applicationId||''))
+     return response(400,{error:'Invalid Licence 2 draft refresh'});
+    await service.listApplications({airlineId:body.airlineId});
+    const client=await database.connect();
+    try{
+     const r=await client.query(
+      'SELECT airlinerra_game.licence2_refresh_owner_draft_v1($1::uuid,$2::uuid,$3::uuid) AS result',
+      [playerId,body.airlineId,body.applicationId]);
+     const result=r.rows?.[0]?.result;
+     if(r.rowCount!==1||!result||![
+      'DRAFT_READINESS_REFRESHED','DRAFT_NOT_FOUND',
+      'DRAFT_REFRESH_NOT_ALLOWED','DRAFT_READINESS_UNAVAILABLE'
+     ].includes(result.status)||
+      typeof result.refreshed!=='boolean'||result.feeCharged!==false||
+      result.rightsGranted!==false||result.flightsActivated!==false||
+      (result.refreshed===true&&(
+       !Array.isArray(result.issues)||result.issues.length>20||
+       result.issues.some(issue=>typeof issue!=='string'||! /^[A-Z0-9_]{3,100}$/.test(issue))||
+       typeof result.eligible!=='boolean'||!UUID.test(result.applicationId||''))))
+       throw Error('LICENCE2_UNSAFE_REFRESH_RESULT');
+     return response(200,{
+      status:result.status,refreshed:result.refreshed,
+      issues:result.refreshed?result.issues:[],
+      eligible:result.refreshed?result.eligible:false,
+      feeCharged:false,rightsGranted:false,flightsActivated:false
+     });
+    }finally{client.release();}
+   }
    if(body.action==='licence2_withdraw'){
     if(Object.keys(body).sort().join(',')!=='action,airlineId,applicationId'||
       !UUID.test(body.applicationId||''))return response(400,{error:'Invalid Licence 2 draft withdrawal'});
