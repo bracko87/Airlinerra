@@ -42,6 +42,47 @@ export function checkedGamePermissionStatus(data,airlineId){
     throw Error('Unreleased AOC exposed an unverified rating');
   }
  }
+
+ // Older deployed versions may omit Licence 2. Never invent a permit in that case.
+ if(data.licence2!==undefined){
+  const l2=data.licence2;
+  if(!l2||l2.readOnly!==true||l2.applicationsOpen!==false||
+    !Array.isArray(l2.marketLevels)||l2.marketLevels.length!==12)
+   throw Error('Unverified Licence 2 market status');
+  const expected={'L2-EU':4,'L2-US':4,'L2-UK':2,'L2-JP':2};
+  const seen=new Set(),shared=new Map();
+  const categories=new Set(['Local','Regional','Medium','Large','Major Hub','Mega Hub']);
+  for(const r of l2.marketLevels){
+   if(!Object.hasOwn(expected,r?.marketCode)||!Number.isInteger(r.level)||
+     r.level<1||r.level>expected[r.marketCode]||
+     typeof r.marketName!=='string'||r.marketName.length<3||
+     typeof r.quotaApproved!=='boolean'||
+     (r.directedRouteLimit!==null&&(!Number.isInteger(r.directedRouteLimit)||r.directedRouteLimit<1))||
+     (r.maxAirportCategory!==null&&!categories.has(r.maxAirportCategory))||
+     (r.quotaApproved&&r.maxAirportCategory===null)||
+     (r.permitLevel!==null&&(!Number.isInteger(r.permitLevel)||r.permitLevel<1||r.permitLevel>expected[r.marketCode]))||
+     !Number.isInteger(r.directedRoutesUsed)||r.directedRoutesUsed<0||
+     !['not_issued','draft','pending_review','approved','suspended','revoked'].includes(r.permitStatus)||
+     (r.applicationStatus!==null&&!['draft','submitted','under_review','approved','rejected','withdrawn'].includes(r.applicationStatus))||
+     r.canApply!==false||r.feeUsd!==null||r.processingGameDays!==null)
+    throw Error('Unverified Licence 2 market level');
+   const key=r.marketCode+':'+r.level;
+   if(seen.has(key))throw Error('Duplicate Licence 2 level');
+   seen.add(key);
+   if(!r.quotaApproved&&(r.directedRouteLimit!==null||r.maxAirportCategory!==null))
+    throw Error('Unapproved Licence 2 rules displayed as final');
+   if(r.permitStatus==='not_issued'&&r.permitLevel!==null)
+    throw Error('Unverified Licence 2 permit');
+   const status=[r.permitStatus,r.permitLevel,r.directedRoutesUsed,r.applicationStatus];
+   if(shared.has(r.marketCode)&&JSON.stringify(shared.get(r.marketCode))!==JSON.stringify(status))
+    throw Error('Inconsistent Licence 2 permit status');
+   shared.set(r.marketCode,status);
+  }
+  for(const [market,max] of Object.entries(expected))
+   for(let level=1;level<=max;level++)
+    if(!seen.has(market+':'+level))throw Error('Missing Licence 2 market level');
+ }
+
  const codes=new Set();
  for(const policy of data.policies){
   if(!CODES.has(policy?.code)||codes.has(policy.code)||
