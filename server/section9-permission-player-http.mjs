@@ -49,7 +49,8 @@ const LICENCE2_OWNER_STATUS_SQL=[
  'COALESCE((SELECT count(*)::integer FROM airlinerra_game.licence2_directed_route_allocations_v1 routes',
  'WHERE routes.world_id=1 AND routes.airline_id=a.id AND routes.market_code=m.market_code',
  'AND routes.allocation_state IN (\'reserved\',\'active\')),0) AS "routesUsed",',
- 'latest.status AS "applicationStatus"',
+ 'latest.status AS "applicationStatus", latest.application_id::text AS "draftApplicationId",',
+ 'latest.requested_level AS "requestedLevel", latest.latest_readiness->\'issues\' AS "draftIssues"',
  'FROM airlinerra_game.airlines a',
  'JOIN airlinerra_game.world_memberships w ON w.world_id=a.world_id',
  'AND w.player_id=a.owner_player_id AND w.state=\'active\'',
@@ -57,8 +58,9 @@ const LICENCE2_OWNER_STATUS_SQL=[
  'JOIN airlinerra_game.licence2_market_levels_v1 l ON l.market_code=m.market_code',
  'LEFT JOIN airlinerra_game.licence2_airline_market_permits_v1 permit',
  'ON permit.world_id=a.world_id AND permit.airline_id=a.id AND permit.market_code=m.market_code',
- 'LEFT JOIN LATERAL (SELECT app.status FROM airlinerra_game.licence2_market_applications_v1 app',
+ 'LEFT JOIN LATERAL (SELECT app.status,app.application_id,app.requested_level,app.latest_readiness FROM airlinerra_game.licence2_market_applications_v1 app',
  'WHERE app.world_id=a.world_id AND app.airline_id=a.id AND app.market_code=m.market_code',
+ 'AND app.status IN (\'draft\',\'submitted\',\'under_review\')',
  'ORDER BY app.requested_at DESC,app.application_id DESC LIMIT 1) latest ON true',
  'WHERE a.id=$2::uuid AND a.owner_player_id=$1::uuid AND a.world_id=1',
  'ORDER BY m.market_code,l.level'
@@ -77,10 +79,16 @@ function safeLicence2Rows(rows){
     !Number.isInteger(r.routesUsed)||r.routesUsed<0||
     !['not_issued','draft','pending_review','approved','suspended','revoked'].includes(r.permitStatus)||
     (r.permitLevel!==null&&(!Number.isInteger(r.permitLevel)||r.permitLevel<1||r.permitLevel>L2_MARKETS[r.marketCode]))||
-    (r.applicationStatus!==null&&!['draft','submitted','under_review','approved','rejected','withdrawn'].includes(r.applicationStatus))||
+    (r.applicationStatus!==null&&!['draft','submitted','under_review'].includes(r.applicationStatus))||
+    (r.draftApplicationId!==null&&!UUID.test(r.draftApplicationId))||
+    (r.requestedLevel!==null&&(!Number.isInteger(r.requestedLevel)||r.requestedLevel<1||r.requestedLevel>L2_MARKETS[r.marketCode]))||
+    (r.draftIssues!==null&&(!Array.isArray(r.draftIssues)||r.draftIssues.length>20||r.draftIssues.some(issue=>typeof issue!=='string'||! /^[A-Z0-9_]{3,100}$/.test(issue))))||
     (r.maxDirectedRoutes!==null&&(!Number.isInteger(r.maxDirectedRoutes)||r.maxDirectedRoutes<1))||
     (r.maxAirportCategory!==null&&!L2_CATEGORIES.has(r.maxAirportCategory)))
    throw Error('LICENCE2_INVALID_PRIVATE_MARKET_ROW');
+  if((r.applicationStatus===null)!==(r.draftApplicationId===null)||
+     (r.applicationStatus===null)!==(r.requestedLevel===null)||
+     (r.applicationStatus===null&&r.draftIssues!==null))throw Error('LICENCE2_INVALID_DRAFT_STATUS');
   if(r.permitStatus==='not_issued'&&r.permitLevel!==null)
    throw Error('LICENCE2_INCONSISTENT_PERMIT');
   if(r.quotaApproved&&r.maxAirportCategory===null)
@@ -88,7 +96,7 @@ function safeLicence2Rows(rows){
   const key=r.marketCode+':'+r.level;
   if(counts.has(key))throw Error('LICENCE2_DUPLICATE_MARKET_LEVEL');
   counts.set(key,true);
-  const shared=[r.permitStatus,r.permitLevel,r.routesUsed,r.applicationStatus,r.issuanceEnabled,r.enforcementEnabled];
+  const shared=[r.permitStatus,r.permitLevel,r.routesUsed,r.applicationStatus,r.draftApplicationId,r.requestedLevel,r.draftIssues,r.issuanceEnabled,r.enforcementEnabled];
   if(perMarket.has(r.marketCode)&&JSON.stringify(perMarket.get(r.marketCode))!==JSON.stringify(shared))
    throw Error('LICENCE2_INCONSISTENT_MARKET_STATUS');
   perMarket.set(r.marketCode,shared);
@@ -100,6 +108,8 @@ function safeLicence2Rows(rows){
    quotaApproved:r.quotaApproved,
    permitStatus:r.permitStatus,permitLevel:r.permitLevel,
    directedRoutesUsed:r.routesUsed,applicationStatus:r.applicationStatus,
+   draftApplicationId:r.draftApplicationId,requestedLevel:r.requestedLevel,
+   draftIssues:r.draftIssues,
    canApply:false,feeUsd:null,processingGameDays:null
   };
  });
@@ -162,7 +172,7 @@ export function createSection9PermissionPlayerHandler({
   let body;
   try{body=await readBody(req);}
   catch{return response(400,{error:'Invalid application request'});}
-  if(!['status','apply','licence2_draft'].includes(body.action)||!UUID.test(body.airlineId||''))
+  if(!['status','apply','licence2_draft','licence2_withdraw'].includes(body.action)||!UUID.test(body.airlineId||''))
    return response(400,{error:'Invalid application request'});
   if(body.action==='status'&&Object.keys(body).sort().join(',')!=='action,airlineId')
    return response(400,{error:'Invalid status request'});
@@ -182,6 +192,23 @@ export function createSection9PermissionPlayerHandler({
    database,identityAuthority:identity
   });
   try{
+   if(body.action==='licence2_withdraw'){
+    if(Object.keys(body).sort().join(',')!=='action,airlineId,applicationId'||
+      !UUID.test(body.applicationId||''))return response(400,{error:'Invalid Licence 2 draft withdrawal'});
+    await service.listApplications({airlineId:body.airlineId});
+    const client=await database.connect();
+    try{
+     const r=await client.query(
+      'SELECT airlinerra_game.licence2_withdraw_owner_draft_v1($1::uuid,$2::uuid,$3::uuid) AS result',
+      [playerId,body.airlineId,body.applicationId]);
+     const result=r.rows?.[0]?.result;
+     if(r.rowCount!==1||!result||!['DRAFT_WITHDRAWN','DRAFT_ALREADY_WITHDRAWN','DRAFT_NOT_WITHDRAWABLE','DRAFT_NOT_FOUND'].includes(result.status)||
+       typeof result.withdrawn!=='boolean'||result.feeCharged!==false||result.rightsGranted!==false||result.flightsActivated===true)
+       throw Error('LICENCE2_UNSAFE_WITHDRAWAL_RESULT');
+     return response(200,{status:result.status,withdrawn:result.withdrawn,
+      feeCharged:false,rightsGranted:false,flightsActivated:false});
+    }finally{client.release();}
+   }
    if(body.action==='licence2_draft'){
     if(Object.keys(body).sort().join(',')!=='action,airlineId,level,marketCode'||
        !Object.hasOwn(L2_MARKETS,body.marketCode)||
