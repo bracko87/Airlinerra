@@ -21,6 +21,28 @@ const policy=(released=false,gameDay=null)=>({
  gameFeeUsd:released?'10000.00':null,processingGameDays:released?3:null,
  validityGameDays:released?365:null,gameDay
 });
+
+const L2_MARKETS=[['L2-EU','European Union and EEA',4],['L2-US','United States',4],
+ ['L2-UK','United Kingdom',2],['L2-JP','Japan',2]];
+const licence2Rows=L2_MARKETS.flatMap(([marketCode,marketName,total])=>
+ Array.from({length:total},(_,index)=>{
+  const level=index+1,eu=marketCode==='L2-EU';
+  return {marketCode,marketName,level,
+   maxDirectedRoutes:eu?[20,50,150,null][index]:null,
+   maxAirportCategory:eu?['Medium','Large','Major Hub','Mega Hub'][index]:null,
+   quotaApproved:eu,issuanceEnabled:false,enforcementEnabled:false,
+   permitStatus:'not_issued',permitLevel:null,routesUsed:0,applicationStatus:null};
+ }));
+const licence2Expected={readOnly:true,applicationsOpen:false,
+ marketLevels:licence2Rows.map(r=>({
+  marketCode:r.marketCode,marketName:r.marketName,level:r.level,
+  directedRouteLimit:r.quotaApproved?r.maxDirectedRoutes:null,
+  maxAirportCategory:r.quotaApproved?r.maxAirportCategory:null,
+  quotaApproved:r.quotaApproved,permitStatus:r.permitStatus,permitLevel:r.permitLevel,
+  directedRoutesUsed:r.routesUsed,applicationStatus:r.applicationStatus,
+  canApply:false,feeUsd:null,processingGameDays:null
+ }))};
+
 const owned={
  worldId:1,airlineId:AIRLINE,applications:[],readOnly:true
 };
@@ -31,7 +53,7 @@ const aocStatus={
 const user={user:{id:OWNER,email_confirmed_at:'2026-11-01T00:00:00Z',
  is_anonymous:false},error:null};
 function database({list=owned,policies=[policy()],blockedSubmit=null,
- ownerDenied=false}={}){
+ ownerDenied=false,l2=licence2Rows}={}){
  const calls=[];let connects=0,releases=0;
  return {
   database:{async connect(){
@@ -42,6 +64,8 @@ function database({list=owned,policies=[policy()],blockedSubmit=null,
       {const e=Error('SECTION9_PERMISSION_APPLICATION_LIST_NOT_OWNED');e.code='42501';throw e;}
      if(sql.includes('section9_owned_game_permission_applications'))
       return {rowCount:1,rows:[{result:list}]};
+     if(sql===GAME_PERMISSION_PLAYER_SQL.licence2)
+      return {rowCount:l2.length,rows:l2};
      if(sql===GAME_PERMISSION_PLAYER_SQL.policy)
       return {rowCount:policies.length,rows:policies};
      if(sql.includes('section9_verified_permission_game_day_v1()::text'))
@@ -88,7 +112,7 @@ test('player policy lookup is strictly behind authenticated airline ownership',a
    category:'airline',canApply:false,feeUsd:null,
    processingGameDays:null,validityGameDays:null
   }],
-  applications:[],aocStatus,approvalByPlayer:false,ledgerPosted:false,
+  applications:[],aocStatus,licence2:licence2Expected,approvalByPlayer:false,ledgerPosted:false,
   flightActivated:false
  });
  assert.match(d.calls[0].sql,/section9_owned_game_permission_applications_v1/);
@@ -96,6 +120,8 @@ test('player policy lookup is strictly behind authenticated airline ownership',a
  assert.equal(d.calls[1].sql.includes('section9_verified_permission_game_day_v1'),true);
  assert.deepEqual(d.calls[2].args,[OWNER,AIRLINE,null]);
  assert.equal(d.calls[3].sql,GAME_PERMISSION_PLAYER_SQL.policy);
+ assert.equal(d.calls[4].sql,GAME_PERMISSION_PLAYER_SQL.licence2);
+ assert.deepEqual(d.calls[4].args,[OWNER,AIRLINE]);
  assert.deepEqual(d.counts(),{connects:3,releases:3});
 });
 test('unowned airline gets 403 without reading catalogue',async()=>{
@@ -273,4 +299,53 @@ test('website mounts applications separately from reference-only licence planner
  assert.match(proxy,/GAME_PERMISSION_EDGE_URL/);
  assert.match(edge,/createSection9PermissionPlayerHandler/);
  assert.doesNotMatch(edge,/decide_game_permission_application_v1|independentReviewSecret/);
+});
+
+
+test('Licence 2 status is owner scoped, has EU 20-route Level 1, and hides pending market fees',async()=>{
+ const d=database();
+ const r=await handler(d.database)(req({action:'status',airlineId:AIRLINE}));
+ assert.equal(r.status,200);
+ const x=(await r.json()).licence2;
+ assert.equal(x.readOnly,true);
+ assert.equal(x.applicationsOpen,false);
+ assert.equal(x.marketLevels.length,12);
+ assert.deepEqual(x.marketLevels.find(m=>m.marketCode==='L2-EU'&&m.level===1),{
+  marketCode:'L2-EU',marketName:'European Union and EEA',level:1,
+  directedRouteLimit:20,maxAirportCategory:'Medium',quotaApproved:true,
+  permitStatus:'not_issued',permitLevel:null,directedRoutesUsed:0,
+  applicationStatus:null,canApply:false,feeUsd:null,processingGameDays:null
+ });
+ assert.equal(x.marketLevels.find(m=>m.marketCode==='L2-US'&&m.level===1).quotaApproved,false);
+ assert.match(GAME_PERMISSION_PLAYER_SQL.licence2,/a.owner_player_id=\$1::uuid/);
+ assert.match(GAME_PERMISSION_PLAYER_SQL.licence2,/a.id=\$2::uuid/);
+});
+test('invalid foreign-network rows cause fail-closed response without invented permits',async()=>{
+ for(const l2 of [
+  licence2Rows.slice(0,11),
+  licence2Rows.map((r,i)=>i===0?{...r,permitStatus:'approved',permitLevel:99}:r),
+  licence2Rows.map((r,i)=>i===0?{...r,maxDirectedRoutes:-1}:r),
+  licence2Rows.map((r,i)=>i===0?{...r,marketCode:'L2-XX'}:r)
+ ]){
+  const d=database({l2});
+  const response=await handler(d.database)(req({action:'status',airlineId:AIRLINE}));
+  assert.equal(response.status,503);
+ }
+});
+test('browser refuses fabricated Licence 2 prices and approved limits',()=>{
+ const base={status:'permission_applications_status',airlineId:AIRLINE,
+ worldId:1,gameDay:null,canApply:false,
+ approvalByPlayer:false,ledgerPosted:false,flightActivated:false,
+ policies:[],applications:[],licence2:licence2Expected};
+ assert.equal(checkedGamePermissionStatus(base,AIRLINE).licence2.marketLevels.length,12);
+ for(const row of [
+  {...licence2Expected.marketLevels[0],canApply:true},
+  {...licence2Expected.marketLevels[0],feeUsd:25000},
+  {...licence2Expected.marketLevels[0],directedRouteLimit:-1},
+  {...licence2Expected.marketLevels[0],permitStatus:'approved',permitLevel:99}
+ ]){
+  const bad={...base,licence2:{...licence2Expected,
+   marketLevels:[row,...licence2Expected.marketLevels.slice(1)]}};
+  assert.throws(()=>checkedGamePermissionStatus(bad,AIRLINE),/Licence 2/);
+ }
 });
