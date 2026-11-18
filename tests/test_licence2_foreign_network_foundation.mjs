@@ -209,7 +209,7 @@ test('game-owner approved EU Level 1–4 Licence 2 prices and full-price upgrade
  const sql=await read('supabase/migrations/20261118202000_licence2_eu_owner_approved_full_price_fee_matrix.sql');
  for(const needle of ['25000','75000','200000','500000',
   'processing_game_days=3', "market_code='L2-EU'",
-  "application_kind", "review_state='APPROVED'",
+  "LICENCE2_EU_REQUIRES_ALL_8_PRICING_ROWS", "review_state='APPROVED'",
   'LICENCE2_FEE_POLICY_MUST_NOT_RELEASE_ISSUANCE']){
   // The release assertion deliberately stays in the migration.
   if(needle==='LICENCE2_FEE_POLICY_MUST_NOT_RELEASE_ISSUANCE'){
