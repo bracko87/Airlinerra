@@ -4,6 +4,10 @@ on:
     branches: [main]
     paths:
       - 'website/licensing-planner.mjs'
+      - 'website/game-permission-applications-client.mjs'
+      - 'website/game-permission-applications-view.mjs'
+      - 'server/section9-permission-player-http.mjs'
+      - 'tests/test_section9_permission_player_api_ui.mjs'
       - 'tests/test_licensing_planner.mjs'
       - 'tests/test_licence2_foreign_network_foundation.mjs'
       - 'supabase/migrations/*licence2*.sql'
@@ -24,8 +28,11 @@ jobs:
       - name: Verify correct read-only foreign-network licence planner
         run: |
           node --check website/licensing-planner.mjs
+          node --check server/section9-permission-player-http.mjs
+          node --check website/game-permission-applications-client.mjs
+          node --check website/game-permission-applications-view.mjs
           node --check tests/test_licensing_planner.mjs
-          node --test tests/test_licensing_planner.mjs tests/test_licence2_foreign_network_foundation.mjs
+          node --test tests/test_licensing_planner.mjs tests/test_licence2_foreign_network_foundation.mjs tests/test_section9_permission_player_api_ui.mjs
       - name: Validate website build
         run: |
           cd website
