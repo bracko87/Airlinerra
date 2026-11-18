@@ -31,6 +31,9 @@ const licence2Rows=L2_MARKETS.flatMap(([marketCode,marketName,total])=>
    maxDirectedRoutes:eu?[20,50,150,null][index]:null,
    maxAirportCategory:eu?['Medium','Large','Major Hub','Mega Hub'][index]:null,
    quotaApproved:eu,issuanceEnabled:false,enforcementEnabled:false,
+   initialFeeUsd:eu?['25000.00','75000.00','200000.00','500000.00'][index]:null,
+   upgradeFeeUsd:eu?['25000.00','75000.00','200000.00','500000.00'][index]:null,
+   approvedProcessingGameDays:eu?3:null,
    permitStatus:'not_issued',permitLevel:null,routesUsed:0,applicationStatus:null,
    draftApplicationId:null,requestedLevel:null,draftIssues:null};
  }));
@@ -40,6 +43,9 @@ const licence2Expected={readOnly:true,applicationsOpen:false,
   directedRouteLimit:r.quotaApproved?r.maxDirectedRoutes:null,
   maxAirportCategory:r.quotaApproved?r.maxAirportCategory:null,
   quotaApproved:r.quotaApproved,permitStatus:r.permitStatus,permitLevel:r.permitLevel,
+  approvedInitialFeeUsd:r.initialFeeUsd===null?null:Number(r.initialFeeUsd),
+  approvedUpgradeFeeUsd:r.upgradeFeeUsd===null?null:Number(r.upgradeFeeUsd),
+  approvedProcessingGameDays:r.approvedProcessingGameDays,
   directedRoutesUsed:r.routesUsed,applicationStatus:r.applicationStatus,
   draftApplicationId:r.draftApplicationId,requestedLevel:r.requestedLevel,draftIssues:r.draftIssues,
   canApply:false,feeUsd:null,processingGameDays:null
@@ -331,6 +337,7 @@ test('Licence 2 status is owner scoped, has EU 20-route Level 1, and hides pendi
   marketCode:'L2-EU',marketName:'European Union and EEA',level:1,
   directedRouteLimit:20,maxAirportCategory:'Medium',quotaApproved:true,
   permitStatus:'not_issued',permitLevel:null,directedRoutesUsed:0,
+  approvedInitialFeeUsd:25000,approvedUpgradeFeeUsd:25000,approvedProcessingGameDays:3,
   applicationStatus:null,draftApplicationId:null,requestedLevel:null,draftIssues:null,
   canApply:false,feeUsd:null,processingGameDays:null
  });
@@ -531,4 +538,34 @@ test('Licence 2 draft refresh rejects spoofed identity and fabricated money or a
  });
  await assert.rejects(forged.refreshLicence2Draft({
   airlineId:AIRLINE,applicationId:REQUEST}),/Unsafe Licence 2 refresh response/);
+});
+
+
+test('Owner-approved EU Licence 2 fees are displayed without enabling application or money writes',async()=>{
+ const d=database();
+ const res=await handler(d.database)(req({action:'status',airlineId:AIRLINE}));
+ assert.equal(res.status,200);
+ const data=await res.json();
+ assert.equal(data.licence2.applicationsOpen,false);
+ assert.deepEqual(data.licence2.marketLevels
+  .filter(level=>level.marketCode==='L2-EU')
+  .map(level=>[level.approvedInitialFeeUsd,level.approvedUpgradeFeeUsd,level.approvedProcessingGameDays,level.canApply]),[
+   [25000,25000,3,false],[75000,75000,3,false],
+   [200000,200000,3,false],[500000,500000,3,false]
+  ]);
+ assert.ok(data.licence2.marketLevels.filter(level=>level.marketCode!=='L2-EU')
+  .every(level=>level.approvedInitialFeeUsd===null&&level.approvedProcessingGameDays===null));
+});
+test('browser rejects invalid published fee schedule or discounted EU upgrade',()=>{
+ const base={status:'permission_applications_status',airlineId:AIRLINE,worldId:1,
+  gameDay:null,canApply:false,approvalByPlayer:false,ledgerPosted:false,flightActivated:false,
+  policies:[],applications:[],licence2:licence2Expected};
+ for(const altered of [
+  {approvedInitialFeeUsd:25000,approvedUpgradeFeeUsd:20000,approvedProcessingGameDays:3},
+  {approvedInitialFeeUsd:25000,approvedUpgradeFeeUsd:25000,approvedProcessingGameDays:0},
+  {approvedInitialFeeUsd:null,approvedUpgradeFeeUsd:25000,approvedProcessingGameDays:3}
+ ]){
+  const list=[{...licence2Expected.marketLevels[0],...altered},...licence2Expected.marketLevels.slice(1)];
+  assert.throws(()=>checkedGamePermissionStatus({...base,licence2:{...licence2Expected,marketLevels:list}},AIRLINE),/Licence 2/);
+ }
 });
