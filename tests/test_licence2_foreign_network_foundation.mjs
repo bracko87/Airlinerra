@@ -158,3 +158,25 @@ test('Licence 2 approval preview requires independently reviewed fees and reconc
  assert.doesNotMatch(sql,/update airlinerra_game\.airlines set cash_usd/i);
  assert.doesNotMatch(sql,/insert into airlinerra_game\.airline_ledger/i);
 });
+
+test('Licence 2 fee debit and permit issuance are atomic but production approval remains hard disabled',async()=>{
+ const s=await read('supabase/migrations/20261118172000_licence2_dormant_atomic_approval_writer.sql');
+ const receipt=await read('supabase/migrations/20261118174000_licence2_atomic_review_event_uniqueness.sql');
+ for(const phrase of [
+   'licence2_approval_release_v1','licence2_approval_must_remain_disabled_v1',
+   'licence2_approve_application_atomic_v1',
+   "current_user is distinct from 'postgres'",
+   'LICENCE2_APPROVAL_NOT_RELEASED','licence2_approval_preflight_v1',
+   'for update of a','for update','ledgerEntryId',
+   'airlinerra_game.airline_ledger','EXPENSE','cash_usd=cash_usd-v_fee',
+   'fee_posted_ledger_id=v_entry_id','APPROVED_AND_CHARGED_ONCE',
+   'revoke all on function airlinerra_game.licence2_approve_application_atomic_v1'
+ ])assert.ok(s.includes(phrase),phrase);
+ assert.match(receipt,/review_event_id text primary key/);
+ assert.match(receipt,/application_id uuid not null unique/);
+ assert.match(receipt,/fee_ledger_id bigint not null unique/);
+ assert.match(receipt,/insert into airlinerra_game\.licence2_review_event_receipts_v1/);
+ assert.match(receipt,/enable row level security/);
+ assert.match(receipt,/revoke all on airlinerra_game\.licence2_review_event_receipts_v1/);
+ assert.doesNotMatch(s,/approval_enabled\s*=\s*true\s*,/i);
+});
