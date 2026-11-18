@@ -149,6 +149,20 @@ export function createGamePermissionApplicationsClient({
    return checkedGamePermissionStatus(
     await post({action:'status',airlineId}),airlineId);
   },
+  async refreshLicence2Draft({airlineId,applicationId}={}){
+   if(!UUID.test(airlineId||'')||!UUID.test(applicationId||''))
+    throw Error('Invalid Licence 2 refresh request');
+   const result=await post({action:'licence2_refresh',airlineId,applicationId});
+   if(!['DRAFT_READINESS_REFRESHED','DRAFT_NOT_FOUND',
+      'DRAFT_REFRESH_NOT_ALLOWED','DRAFT_READINESS_UNAVAILABLE'].includes(result.status)||
+      typeof result.refreshed!=='boolean'||result.feeCharged!==false||
+      result.rightsGranted!==false||result.flightsActivated!==false||
+      !Array.isArray(result.issues)||result.issues.length>20||
+      typeof result.eligible!=='boolean'||
+      result.issues.some(issue=>typeof issue!=='string'||! /^[A-Z0-9_]{3,100}$/.test(issue)))
+    throw Error('Unsafe Licence 2 refresh response');
+   return result;
+  },
   async withdrawLicence2Draft({airlineId,applicationId}={}){
    if(!UUID.test(airlineId||'')||!UUID.test(applicationId||''))
     throw Error('Invalid Licence 2 withdrawal request');
