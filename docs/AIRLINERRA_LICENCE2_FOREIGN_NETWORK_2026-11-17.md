@@ -1,6 +1,6 @@
 # Airlinerra Licence 2 — Foreign Network Expansion Rights
 
-**17 November 2026. User-corrected game design; PROPOSAL, not deployed/issued/approved for release.**
+**Updated 18 November 2026. User-approved L2-EU route quotas; issuance and flight enforcement remain separate release stages.**
 
 **This document supersedes both** `AIRLINERRA_LICENCE2_FOREIGN_MARKET_CORRECTION_2026-11-17.md` (wrong: treated every incoming home-to-foreign flight as requiring L2) **and** `AIRLINERRA_LICENCE2_FOUR_LEVEL_DESIGN_2026-11-17.md` (wrong: treated licence as home-company operating licence with worldwide airport caps). Do NOT implement the earlier interpretations.
 
@@ -37,22 +37,22 @@ Company-specific and per-foreign-market, not per holding. Sister companies must 
 - Special EU/EEA home-market rules for EU/EEA registered airlines stay separate: their EU/EEA internal route access is part of their **home market**, not a foreign EU L2 permit. They may still need L2-US, L2-UK or L2-JP for foreign networks.
 - A non-EU airline holding L2-EU cannot use its EU rights to create other unlicensed local-network hubs outside the EU/EEA.
 
-## 4. Levels: EU figures discussed by user; NOT FINAL
+## 4. Levels: EU directed-route ceilings confirmed by user on 18 November 2026
 
-The user requests four levels for the EU; no aircraft-number tier requirements. The proposed numerical EU schedule is:
+The user requests four levels for the EU; no aircraft-number tier requirements. The agreed numerical EU schedule is:
 
 | L2-EU Level | Max concurrent active directed routes powered by L2-EU | Proposed EU/EEA airport category access |
 |---|---:|---|
-| 1 | **10** | Local, Regional, Medium (proposal to avoid only 12 currently-approved Local/Regional airports) |
+| 1 | **20** | Local, Regional, Medium (proposal to avoid only 12 currently-approved Local/Regional airports) |
 | 2 | **50** | Local, Regional, Medium, Large |
 | 3 | **150** | Up to Major Hub |
 | 4 | **Unlimited** | All categories, including Mega Hub; exceptionally hard to obtain |
 
 **Important:** Ljubljana and Zagreb are both **Large** in Airlinerra's currently approved game airport catalogue, so under this proposed category table Ljubljana↔Zagreb would require **L2-EU Level 2**, not Level 1; the example's directional route-count logic still applies at any allowed level. Cairo and Hurghada are **Major Hub** in the game. For an L2-EU route EU↔Egypt, category restrictions are checked against the **EU endpoint licensed under L2-EU**; independent foreign airport operational gates still apply. If the user wants a stricter category check on the non-EU endpoint, settle that separately before implementation.
 
-Airlinerra World 1 combined catalogue EU+EEA: 498 airports (393 existing Group 1; 105 prepared/not commercially admitted Group 2). Current Group 1 low categories Local 8 + Regional 4 = 12; Medium 188; Large 153; Major Hub 36; Mega Hub 4. `airlinerra_game.airport_sections1_8_combined_catalog_v1` as of 17 Nov 2026. There are **200** existing Group 1 airports through Medium; the Level 1 default category suggestion reflects this real game imbalance. **No Group 2 flight access implied**.
+Airlinerra World 1 combined catalogue EU+EEA: 498 airports in the earlier November 17 snapshot (393 Group 1; 105 Group 2). Subsequent Group 2 simulation admission covers 1,116 worldwide candidate airports excluding two documented military airfields; check the live per-market eligible count before using this historical tally. Current Group 1 low categories Local 8 + Regional 4 = 12; Medium 188; Large 153; Major Hub 36; Mega Hub 4. `airlinerra_game.airport_sections1_8_combined_catalog_v1` as of 17 Nov 2026. There are **200** existing Group 1 airports through Medium; the Level 1 default category suggestion reflects this real game imbalance. **No Group 2 flight access implied**.
 
-The USER has not yet set appropriate route limits/number of levels for **US, UK and Japan**. These need market-specific balancing; do **not** assume previous conjectured 4/4/2/2 or universal four levels is already approved.
+US four levels, UK two levels and Japan two levels remain the working design discussed with the user; market-specific numeric quotas and category limits still require explicit approval. Do not silently copy the EU values into those markets.
 
 ## 5. Applicant, level progression and risk (partially discussed)
 
