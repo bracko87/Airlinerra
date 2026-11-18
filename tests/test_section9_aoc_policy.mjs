@@ -244,3 +244,17 @@ test('commercial schedule activation requires AOC at both transaction and trigge
  assert.match(pay,/'charged',false/);
  assert.doesNotMatch(sql,/update airlinerra_game\.section9_aoc_release_policy_v1/i);
 });
+
+test('unsigned inspection evidence cannot improve AOC safety or charge, and reviewer cannot strand airlines',async()=>{
+ const file=await readFile(new URL('../supabase/migrations/20261118234000_section9_aoc_independent_corrective_evidence_release_guard.sql',import.meta.url),'utf8');
+ assert.match(file,/section9_aoc_independent_producer_must_remain_off_v1/);
+ assert.match(file,/CHECK\s*\(verified_producer_enabled=false\)/i);
+ assert.match(file,/section9_aoc_independent_correction_release_v1/);
+ assert.match(file,/r\.receipt_reference=t\.completion_receipt_reference/);
+ assert.match(file,/verified_producer_enabled=true/);
+ assert.match(file,/aoc_independent_correction_producer_not_released/);
+ assert.match(file,/\'charged\',false/);
+ assert.match(file,/\'expired\',0/);
+ assert.match(file,/REVOKE ALL ON airlinerra_game\.section9_aoc_independent_correction_release_v1/);
+ assert.doesNotMatch(file,/UPDATE airlinerra_game\.section9_aoc_release_policy_v1/i);
+});
