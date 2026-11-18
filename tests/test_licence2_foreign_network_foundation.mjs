@@ -204,3 +204,19 @@ test('Licence 2 owner draft stage does not shadow airline alias with PL/pgSQL re
  assert.match(s,/'submitted',false/);
  assert.match(s,/'feeCharged',false/);
 });
+
+test('game-owner approved EU Level 1–4 Licence 2 prices and full-price upgrades remain release gated',async()=>{
+ const sql=await read('supabase/migrations/20261118202000_licence2_eu_owner_approved_full_price_fee_matrix.sql');
+ for(const needle of ['25000','75000','200000','500000',
+  'processing_game_days=3', "market_code='L2-EU'",
+  "application_kind", "review_state='APPROVED'",
+  'LICENCE2_FEE_POLICY_MUST_NOT_RELEASE_ISSUANCE']){
+  // The release assertion deliberately stays in the migration.
+  if(needle==='LICENCE2_FEE_POLICY_MUST_NOT_RELEASE_ISSUANCE'){
+   assert.match(sql,/LICENCE2_FEE_POLICY_MUST_NOT_RELEASE_ISSUANCE/);
+  }else assert.ok(sql.includes(needle),needle);
+ }
+ assert.match(sql,/approved_by='Airlinerra game owner/);
+ assert.doesNotMatch(sql,/UPDATE airlinerra_game\.airlines SET cash_usd/i);
+ assert.doesNotMatch(sql,/INSERT INTO airlinerra_game\.airline_ledger/i);
+});
