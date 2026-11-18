@@ -64,6 +64,11 @@ function database({list=owned,policies=[policy()],blockedSubmit=null,
       {const e=Error('SECTION9_PERMISSION_APPLICATION_LIST_NOT_OWNED');e.code='42501';throw e;}
      if(sql.includes('section9_owned_game_permission_applications'))
       return {rowCount:1,rows:[{result:list}]};
+     if(sql.includes('licence2_stage_owner_application_v1'))
+      return {rowCount:1,rows:[{result:{
+       status:'APPLICATION_DRAFT_STAGED_NOT_SUBMITTED',created:true,
+       applicationId:REQUEST,submitted:false,feeCharged:false,
+       rightsGranted:false,flightsActivated:false}}]};
      if(sql===GAME_PERMISSION_PLAYER_SQL.licence2)
       return {rowCount:l2.length,rows:l2};
      if(sql===GAME_PERMISSION_PLAYER_SQL.policy)
@@ -348,4 +353,69 @@ test('browser refuses fabricated Licence 2 prices and approved limits',()=>{
    marketLevels:[row,...licence2Expected.marketLevels.slice(1)]}};
   assert.throws(()=>checkedGamePermissionStatus(bad,AIRLINE),/Licence 2/);
  }
+});
+
+
+test('owner can save EU Licence 2 draft without submission, charge, grant or supplied player ID',async()=>{
+ const d=database();
+ const r=await handler(d.database)(req({
+  action:'licence2_draft',airlineId:AIRLINE,marketCode:'L2-EU',level:1
+ }));
+ assert.equal(r.status,200);
+ const data=await r.json();
+ assert.equal(data.status,'APPLICATION_DRAFT_STAGED_NOT_SUBMITTED');
+ assert.equal(data.created,true);
+ assert.equal(data.submitted,false);
+ assert.equal(data.feeCharged,false);
+ assert.equal(data.rightsGranted,false);
+ assert.equal(data.flightsActivated,false);
+ assert.match(d.calls[0].sql,/section9_owned_game_permission_applications_v1/);
+ assert.deepEqual(d.calls.at(-1).args,[OWNER,AIRLINE,'L2-EU',1]);
+ assert.match(d.calls.at(-1).sql,/licence2_stage_owner_application_v1/);
+});
+test('Licence 2 draft rejects owner spoof, unsupported markets and invalid levels before any write',async()=>{
+ const d=database();
+ for(const body of [
+  {action:'licence2_draft',airlineId:AIRLINE,marketCode:'L2-XX',level:1},
+  {action:'licence2_draft',airlineId:AIRLINE,marketCode:'L2-UK',level:3},
+  {action:'licence2_draft',airlineId:AIRLINE,marketCode:'L2-EU',level:0},
+  {action:'licence2_draft',airlineId:AIRLINE,marketCode:'L2-EU',level:1,ownerPlayerId:OWNER},
+  {action:'licence2_draft',airlineId:AIRLINE,marketCode:'L2-EU',level:'1'}
+ ]){
+  const r=await handler(d.database)(req(body));
+  assert.equal(r.status,400);
+ }
+ assert.equal(d.calls.length,0);
+ const other=database({ownerDenied:true});
+ const rejected=await handler(other.database)(req({
+  action:'licence2_draft',airlineId:AIRLINE,marketCode:'L2-EU',level:1
+ }));
+ assert.equal(rejected.status,403);
+ assert.equal(other.calls.length,1);
+});
+test('browser Licence 2 draft client uses same-origin verified identity and rejects fabricated fee result',async()=>{
+ const called=[];
+ const client=createGamePermissionApplicationsClient({
+  auth:{getAccessToken:async()=>TOKEN},origin:ORIGIN,
+  fetchImpl:async(url,opts)=>{
+   called.push({url,opts});
+   return Response.json({status:'APPLICATION_DRAFT_STAGED_NOT_SUBMITTED',
+    created:true,submitted:false,feeCharged:false,rightsGranted:false,
+    flightsActivated:false});
+  }
+ });
+ const x=await client.saveLicence2Draft({airlineId:AIRLINE,marketCode:'L2-EU',level:1});
+ assert.equal(x.created,true);
+ assert.deepEqual(JSON.parse(called[0].opts.body),{
+  action:'licence2_draft',airlineId:AIRLINE,marketCode:'L2-EU',level:1});
+ assert.equal(called[0].url,ORIGIN+GAME_PERMISSION_APPLICATIONS_ROUTE);
+ await assert.rejects(client.saveLicence2Draft({airlineId:AIRLINE,marketCode:'L2-JP',level:3}),
+  /Invalid Licence 2 draft request/);
+ const forged=createGamePermissionApplicationsClient({
+  auth:{getAccessToken:async()=>TOKEN},origin:ORIGIN,
+  fetchImpl:async()=>Response.json({status:'APPLICATION_DRAFT_STAGED_NOT_SUBMITTED',
+   created:true,submitted:false,feeCharged:true,rightsGranted:false,flightsActivated:false})
+ });
+ await assert.rejects(forged.saveLicence2Draft({
+  airlineId:AIRLINE,marketCode:'L2-EU',level:1}),/Unsafe Licence 2 draft response/);
 });
