@@ -68,6 +68,14 @@ export function checkedGamePermissionStatus(data,airlineId){
      (r.requestedLevel!==null&&(!Number.isInteger(r.requestedLevel)||r.requestedLevel<1||r.requestedLevel>expected[r.marketCode]))||
      (r.draftIssues!==null&&(!Array.isArray(r.draftIssues)||r.draftIssues.length>20||
       r.draftIssues.some(issue=>typeof issue!=='string'||! /^[A-Z0-9_]{3,100}$/.test(issue))))||
+     (r.approvedInitialFeeUsd===null)!==(r.approvedUpgradeFeeUsd===null)||
+     (r.approvedInitialFeeUsd===null)!==(r.approvedProcessingGameDays===null)||
+     (r.approvedInitialFeeUsd!==null&&(
+      !Number.isFinite(r.approvedInitialFeeUsd)||r.approvedInitialFeeUsd<=0||
+      !Number.isFinite(r.approvedUpgradeFeeUsd)||r.approvedUpgradeFeeUsd<=0||
+      !Number.isInteger(r.approvedProcessingGameDays)||r.approvedProcessingGameDays<1||
+      r.approvedProcessingGameDays>90||
+      (r.marketCode==='L2-EU'&&r.approvedInitialFeeUsd!==r.approvedUpgradeFeeUsd)))||
      r.canApply!==false||r.feeUsd!==null||r.processingGameDays!==null)
     throw Error('Unverified Licence 2 market level');
    const key=r.marketCode+':'+r.level;
