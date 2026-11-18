@@ -31,7 +31,8 @@ const licence2Rows=L2_MARKETS.flatMap(([marketCode,marketName,total])=>
    maxDirectedRoutes:eu?[20,50,150,null][index]:null,
    maxAirportCategory:eu?['Medium','Large','Major Hub','Mega Hub'][index]:null,
    quotaApproved:eu,issuanceEnabled:false,enforcementEnabled:false,
-   permitStatus:'not_issued',permitLevel:null,routesUsed:0,applicationStatus:null};
+   permitStatus:'not_issued',permitLevel:null,routesUsed:0,applicationStatus:null,
+   draftApplicationId:null,requestedLevel:null,draftIssues:null};
  }));
 const licence2Expected={readOnly:true,applicationsOpen:false,
  marketLevels:licence2Rows.map(r=>({
@@ -40,6 +41,7 @@ const licence2Expected={readOnly:true,applicationsOpen:false,
   maxAirportCategory:r.quotaApproved?r.maxAirportCategory:null,
   quotaApproved:r.quotaApproved,permitStatus:r.permitStatus,permitLevel:r.permitLevel,
   directedRoutesUsed:r.routesUsed,applicationStatus:r.applicationStatus,
+  draftApplicationId:r.draftApplicationId,requestedLevel:r.requestedLevel,draftIssues:r.draftIssues,
   canApply:false,feeUsd:null,processingGameDays:null
  }))};
 
@@ -64,6 +66,10 @@ function database({list=owned,policies=[policy()],blockedSubmit=null,
       {const e=Error('SECTION9_PERMISSION_APPLICATION_LIST_NOT_OWNED');e.code='42501';throw e;}
      if(sql.includes('section9_owned_game_permission_applications'))
       return {rowCount:1,rows:[{result:list}]};
+     if(sql.includes('licence2_withdraw_owner_draft_v1'))
+      return {rowCount:1,rows:[{result:{
+       status:'DRAFT_WITHDRAWN',withdrawn:true,applicationId:REQUEST,
+       feeCharged:false,rightsGranted:false,flightsActivated:false}}]};
      if(sql.includes('licence2_stage_owner_application_v1'))
       return {rowCount:1,rows:[{result:{
        status:'APPLICATION_DRAFT_STAGED_NOT_SUBMITTED',created:true,
@@ -319,7 +325,8 @@ test('Licence 2 status is owner scoped, has EU 20-route Level 1, and hides pendi
   marketCode:'L2-EU',marketName:'European Union and EEA',level:1,
   directedRouteLimit:20,maxAirportCategory:'Medium',quotaApproved:true,
   permitStatus:'not_issued',permitLevel:null,directedRoutesUsed:0,
-  applicationStatus:null,canApply:false,feeUsd:null,processingGameDays:null
+  applicationStatus:null,draftApplicationId:null,requestedLevel:null,draftIssues:null,
+  canApply:false,feeUsd:null,processingGameDays:null
  });
  assert.equal(x.marketLevels.find(m=>m.marketCode==='L2-US'&&m.level===1).quotaApproved,false);
  assert.match(GAME_PERMISSION_PLAYER_SQL.licence2,/a.owner_player_id=\$1::uuid/);
@@ -418,4 +425,58 @@ test('browser Licence 2 draft client uses same-origin verified identity and reje
  });
  await assert.rejects(forged.saveLicence2Draft({
   airlineId:AIRLINE,marketCode:'L2-EU',level:1}),/Unsafe Licence 2 draft response/);
+});
+
+
+test('Licence 2 owned draft appears with level and last known eligibility blockers',async()=>{
+ const l2=licence2Rows.map(row=>row.marketCode==='L2-EU'?{
+  ...row,applicationStatus:'draft',draftApplicationId:REQUEST,
+  requestedLevel:2,draftIssues:['ACTIVE_OWN_AOC_NOT_VERIFIED']
+ }:row);
+ const d=database({l2});
+ const response=await handler(d.database)(req({action:'status',airlineId:AIRLINE}));
+ assert.equal(response.status,200);
+ const status=(await response.json()).licence2.marketLevels.find(x=>x.marketCode==='L2-EU'&&x.level===2);
+ assert.equal(status.draftApplicationId,REQUEST);
+ assert.equal(status.requestedLevel,2);
+ assert.deepEqual(status.draftIssues,['ACTIVE_OWN_AOC_NOT_VERIFIED']);
+});
+test('only verified owner can withdraw an unsubmitted Licence 2 draft',async()=>{
+ const d=database();
+ const r=await handler(d.database)(req({action:'licence2_withdraw',airlineId:AIRLINE,applicationId:REQUEST}));
+ assert.equal(r.status,200);
+ const data=await r.json();
+ assert.deepEqual(data,{status:'DRAFT_WITHDRAWN',withdrawn:true,
+  feeCharged:false,rightsGranted:false,flightsActivated:false});
+ assert.deepEqual(d.calls.at(-1).args,[OWNER,AIRLINE,REQUEST]);
+ assert.match(d.calls.at(-1).sql,/licence2_withdraw_owner_draft_v1/);
+ const other=database({ownerDenied:true});
+ const denied=await handler(other.database)(req({action:'licence2_withdraw',airlineId:AIRLINE,applicationId:REQUEST}));
+ assert.equal(denied.status,403);
+});
+test('withdrawal rejects fabricated owner and malformed application IDs before database access',async()=>{
+ const d=database();
+ for(const body of [
+  {action:'licence2_withdraw',airlineId:AIRLINE,applicationId:'not-uuid'},
+  {action:'licence2_withdraw',airlineId:AIRLINE,applicationId:REQUEST,ownerPlayerId:OWNER}
+ ]){
+  const r=await handler(d.database)(req(body));
+  assert.equal(r.status,400);
+ }
+ assert.equal(d.calls.length,0);
+});
+test('browser prevents forged Licence 2 withdrawal grants',async()=>{
+ const c=createGamePermissionApplicationsClient({
+  auth:{getAccessToken:async()=>TOKEN},origin:ORIGIN,
+  fetchImpl:async()=>Response.json({status:'DRAFT_WITHDRAWN',withdrawn:true,
+   feeCharged:false,rightsGranted:false,flightsActivated:false})
+ });
+ assert.equal((await c.withdrawLicence2Draft({airlineId:AIRLINE,applicationId:REQUEST})).withdrawn,true);
+ const bad=createGamePermissionApplicationsClient({
+  auth:{getAccessToken:async()=>TOKEN},origin:ORIGIN,
+  fetchImpl:async()=>Response.json({status:'DRAFT_WITHDRAWN',withdrawn:true,
+   feeCharged:true,rightsGranted:false,flightsActivated:false})
+ });
+ await assert.rejects(bad.withdrawLicence2Draft({airlineId:AIRLINE,applicationId:REQUEST}),
+  /Unsafe Licence 2 withdrawal response/);
 });
