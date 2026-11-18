@@ -180,3 +180,16 @@ test('Licence 2 fee debit and permit issuance are atomic but production approval
  assert.match(receipt,/revoke all on airlinerra_game\.licence2_review_event_receipts_v1/);
  assert.doesNotMatch(s,/approval_enabled\s*=\s*true\s*,/i);
 });
+
+test('Licence 2 approved-status transition requires enabled release and matching unique paid review receipt',async()=>{
+ const s=await read('supabase/migrations/20261118175500_licence2_approval_trigger_matched_review_receipt.sql');
+ assert.match(s,/old.status is distinct from 'submitted'/);
+ assert.match(s,/LICENCE2_APPROVAL_NOT_RELEASED/);
+ assert.match(s,/licence2_review_event_receipts_v1/);
+ assert.match(s,/licence2_airline_market_permits_v1/);
+ assert.match(s,/licence2_approval_release_v1/);
+ assert.match(s,/receipt.fee_ledger_id=new.fee_posted_ledger_id/);
+ assert.match(s,/ledger.entry_kind='EXPENSE'/);
+ assert.match(s,/LICENCE2_APPROVAL_MISSING_MATCHED_FEE_RECEIPT_AND_PERMIT/);
+ assert.match(s,/LICENCE2_APPROVAL_UNEXPECTEDLY_ACTIVE/);
+});
