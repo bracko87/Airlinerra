@@ -141,6 +141,21 @@ export function createGamePermissionApplicationsClient({
    return checkedGamePermissionStatus(
     await post({action:'status',airlineId}),airlineId);
   },
+  async saveLicence2Draft({airlineId,marketCode,level}={}){
+   const levels={'L2-EU':4,'L2-US':4,'L2-UK':2,'L2-JP':2};
+   if(!UUID.test(airlineId||'')||!Object.hasOwn(levels,marketCode)||
+      !Number.isInteger(level)||level<1||level>levels[marketCode])
+    throw Error('Invalid Licence 2 draft request');
+   const result=await post({action:'licence2_draft',airlineId,marketCode,level});
+   if(!['APPLICATION_DRAFT_STAGED_NOT_SUBMITTED','EXISTING_APPLICATION_ALREADY_OPEN',
+     'ALREADY_HOLDS_SUFFICIENT_LEVEL','INVALID_OR_UNSUPPORTED_MARKET_LEVEL']
+      .includes(result.status)||
+      result.submitted!==false||result.feeCharged!==false||
+      result.rightsGranted!==false||result.flightsActivated!==false||
+      typeof result.created!=='boolean')
+    throw Error('Unsafe Licence 2 draft response');
+   return result;
+  },
   async apply({airlineId,requestKey,permissionCode,
      originAirportKey,destinationAirportKey,serviceType}={}){
    if(!UUID.test(airlineId||'')||!UUID.test(requestKey||'')||
