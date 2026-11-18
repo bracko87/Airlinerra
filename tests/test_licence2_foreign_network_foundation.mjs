@@ -193,3 +193,14 @@ test('Licence 2 approved-status transition requires enabled release and matching
  assert.match(s,/LICENCE2_APPROVAL_MISSING_MATCHED_FEE_RECEIPT_AND_PERMIT/);
  assert.match(s,/LICENCE2_APPROVAL_UNEXPECTEDLY_ACTIVE/);
 });
+
+test('Licence 2 owner draft stage does not shadow airline alias with PL/pgSQL record',async()=>{
+ const s=await read('supabase/migrations/20261118183000_licence2_owner_draft_record_alias_fix.sql');
+ assert.match(s,/declare v_airline record/);
+ assert.match(s,/select airline\.id into v_airline from airlinerra_game\.airlines airline/);
+ assert.match(s,/airline\.owner_player_id=p_player/);
+ assert.doesNotMatch(s,/declare a record/);
+ assert.match(s,/on conflict \(world_id,airline_id,market_code\)/);
+ assert.match(s,/'submitted',false/);
+ assert.match(s,/'feeCharged',false/);
+});
