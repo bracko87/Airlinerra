@@ -220,3 +220,13 @@ test('game-owner approved EU Level 1–4 Licence 2 prices and full-price upgrade
  assert.doesNotMatch(sql,/UPDATE airlinerra_game\.airlines SET cash_usd/i);
  assert.doesNotMatch(sql,/INSERT INTO airlinerra_game\.airline_ledger/i);
 });
+
+test('Licence 2 cannot recognize a dormant AOC certificate as flight permission',async()=>{
+ const sql=await read('supabase/migrations/20261118215500_licence2_eligibility_requires_verified_aoc_release.sql');
+ assert.match(sql,/section9_aoc_release_policy_v1/);
+ assert.match(sql,/rp\.issuance_enabled=true/);
+ assert.match(sql,/rp\.flight_enforcement_enabled=true/);
+ assert.match(sql,/AOC_RELEASE_NOT_VERIFIED/);
+ assert.match(sql,/ACTIVE_OWN_AOC_NOT_VERIFIED/);
+ assert.doesNotMatch(sql,/INSERT INTO airlinerra_game\.section9_aoc_certificates_v1/i);
+});
