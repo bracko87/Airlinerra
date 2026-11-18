@@ -105,3 +105,31 @@ test('directional allocation counts direction once, holds quota lock and blocks 
  assert.match(guard,/if tg_op='INSERT' then/);
  assert.match(guard,/v_used>=v_tier.max_active_directed_routes/);
 });
+
+test('licence 2 submission requires fresh owner verified eligibility and never charges at submission',async()=>{
+ const sql=await read('supabase/migrations/20261118153000_licence2_verified_submission_no_fee.sql');
+ for(const term of ['licence2_submit_owner_application_v1','LICENCE2_PRIVATE_OWNER_SERVICE_ONLY',
+  "wm.state='active'","app.owner_player_id=p_player","a.owner_player_id=p_player",
+  "v_readiness->>'eligible' is distinct from 'true'",
+  'LICENCE2_SUBMISSION_REQUIRES_LIVE_VERIFIED_READINESS',
+  'LICENCE2_REVIEW_APPROVAL_NOT_RELEASED',
+  'APPLICATION_SUBMITTED_FOR_REVIEW',"feeCharged',false","rightsGranted',false"]){
+  assert.ok(sql.includes(term),term);
+ }
+ assert.match(sql,/for update of app/);
+ assert.match(sql,/revoke all on function airlinerra_game\.licence2_submit_owner_application_v1/);
+ assert.doesNotMatch(sql,/insert into airlinerra_game\.airline_ledger/i);
+ assert.doesNotMatch(sql,/update airlinerra_game\.airlines set cash_usd/i);
+});
+test('licence 2 uses authoritative paid-correction AOC safety rating and reviewed maintenance evidence',async()=>{
+ const sql=await read('supabase/migrations/20261118155500_licence2_verified_aoc_safety_and_maintenance_check.sql');
+ const evidence=await read('supabase/migrations/20261118154500_licence2_critical_maintenance_review_evidence.sql');
+ assert.match(sql,/section9_aoc_safety_score_v1/);
+ assert.match(sql,/licence2_critical_maintenance_clearance_v1/);
+ assert.match(sql,/UNRESOLVED_MAINTENANCE_JOB_REQUIRES_REVIEW/);
+ assert.match(sql,/CRITICAL_MAINTENANCE_CLEARANCE_NOT_VERIFIED/);
+ assert.doesNotMatch(sql,/100-coalesce\(sum\(penalty_points\)/);
+ assert.match(evidence,/clearance_reference text not null/);
+ assert.match(evidence,/enable row level security/);
+ assert.match(evidence,/revoke all on airlinerra_game\.licence2_critical_maintenance_clearance_v1/);
+});
