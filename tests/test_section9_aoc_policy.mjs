@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
 import {AOC_RULES,aocDayNumber,aocAddDays,aocEligibleBusinessKind,
  aocIssueEligibility,aocSafetySnapshot,aocCorrectionCompleted,
  aocRenewalDecision} from '../server/section9-aoc-policy.mjs';
@@ -194,4 +195,28 @@ test('clock / release / ownership mismatch can never issue, renew, or change mon
   'blocked_unverified_safety_score');
  assert.equal(aocRenewalDecision({...a,companySource:'holding'}).status,
   'blocked_unverified_company_kind');
+});
+
+test('original AOC identity backfill needs owner, one airline, matching registration capital and trusted issuer',async()=>{
+ const migration=await readFile(new URL('../supabase/migrations/20261118212500_section9_aoc_verified_original_registration_identity_staging.sql',import.meta.url),'utf8');
+ const provenance=await readFile(new URL('../supabase/migrations/20261118211000_section9_aoc_original_provenance_and_backfill_preflight.sql',import.meta.url),'utf8');
+ for(const clause of ["current_user is distinct from 'postgres'",
+  "wm.state='active'","entry_kind='STARTING_CAPITAL'",
+  "l.amount_usd=5000000.00","l.recorded_at=a.created_at",
+  "count(*) from airlinerra_game.airlines other",
+  "ORIGINAL_REGISTRATION_LEDGER_NOT_VERIFIED",
+  "ORIGINAL_IDENTITY_STAGED","'certificateIssued',false",
+  "'feeCharged',false"]){
+  if(clause==="ORIGINAL_REGISTRATION_LEDGER_NOT_VERIFIED")
+   assert.match(migration,/ORIGINAL_REGISTRATION_LEDGER_NOT_VERIFIED/);
+  else if(clause==="wm.state='active'")
+   assert.match(migration,/wm.state='active'/);
+  else assert.ok(migration.includes(clause),clause);
+ }
+ assert.match(provenance,/verified-original-airline-registration-v1-/);
+ assert.match(provenance,/READ_ONLY_AOC_ORIGINAL_BACKFILL_CHECK/);
+ assert.match(provenance,/AOC_ISSUANCE_NOT_RELEASED/);
+ assert.match(migration,/REVOKE ALL ON FUNCTION/);
+ assert.doesNotMatch(migration,/INSERT INTO airlinerra_game\.section9_aoc_certificates_v1/i);
+ assert.doesNotMatch(migration,/UPDATE airlinerra_game\.airlines SET cash_usd/i);
 });
