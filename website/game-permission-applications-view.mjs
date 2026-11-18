@@ -241,10 +241,32 @@ export function createGamePermissionApplicationsView({
      }
      if(application.applicationStatus==='draft'&&application.draftApplicationId){
       const tools=node(doc,'div','workspace-actions game-licence-actions');
+      const refresh=node(doc,'button','secondary','Refresh requirements');
+      refresh.type='button';refresh.disabled=busy;
       const withdraw=node(doc,'button','secondary','Withdraw draft');
       withdraw.type='button';
       const info=node(doc,'span','hint','Removes this unfinished application. No payment.');
       info.setAttribute('role','status');
+      refresh.addEventListener('click',async()=>{
+       if(busy||getAirline()?.id!==loadedAirline)return;
+       const api=getClient();
+       if(typeof api?.refreshLicence2Draft!=='function'){
+        info.textContent='Requirements refresh service unavailable.';return;
+       }
+       const expectedId=loadedAirline;
+       busy=true;refresh.disabled=true;withdraw.disabled=true;
+       info.textContent='Checking current requirements…';
+       try{
+        const result=await api.refreshLicence2Draft({
+         airlineId:expectedId,applicationId:application.draftApplicationId});
+        if(getAirline()?.id!==expectedId)return;
+        info.textContent=result.refreshed
+          ?'Requirements updated. No payment or submission.'
+          :'Requirements could not be refreshed: '+result.status.replaceAll('_',' ').toLowerCase()+'.';
+        if(result.refreshed)await load({refresh:true});
+       }catch{info.textContent='Requirements could not be checked. Please retry.';}
+       finally{busy=false;refresh.disabled=false;withdraw.disabled=false;}
+      });
       withdraw.addEventListener('click',async()=>{
        if(busy||getAirline()?.id!==loadedAirline)return;
        const api=getClient();
@@ -263,7 +285,7 @@ export function createGamePermissionApplicationsView({
        }catch{info.textContent='Could not confirm withdrawal. Refresh to check status.';}
        finally{busy=false;withdraw.disabled=false;}
       });
-      tools.append(withdraw,info);left.append(tools);
+      tools.append(refresh,withdraw,info);left.append(tools);
      }
     }
     row.append(left,right);l2Markets.append(row);
