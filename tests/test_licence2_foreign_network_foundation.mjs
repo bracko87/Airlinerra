@@ -133,3 +133,28 @@ test('licence 2 uses authoritative paid-correction AOC safety rating and reviewe
  assert.match(evidence,/enable row level security/);
  assert.match(evidence,/revoke all on airlinerra_game\.licence2_critical_maintenance_clearance_v1/);
 });
+
+test('Licence 2 approval preview requires independently reviewed fees and reconciled real ledger',async()=>{
+ const sql=await read('supabase/migrations/20261118164500_licence2_approval_fee_policy_preflight.sql');
+ for(const phrase of [
+  'licence2_reviewed_fee_policy_v1','application_kind',
+  'review_state', 'fee_usd numeric(18,2)', 'processing_game_days',
+  'APPROVAL_BLOCKED','LICENCE2_ISSUANCE_PAUSED',
+  'FEE_AND_PROCESSING_POLICY_NOT_APPROVED',
+  'APPLICATION_NOT_SUBMITTED','PROCESSING_PERIOD_NOT_FINISHED',
+  'YEARLY_UPGRADE_WINDOW_NOT_REACHED','ALREADY_HAS_THIS_OR_HIGHER_LEVEL',
+  'CURRENT_ELIGIBILITY_NOT_PASSED',
+  'CASH_LEDGER_NOT_RECONCILED_OR_FEE_UNSET',
+  'INSUFFICIENT_COMPANY_FUNDS_FOR_FEE',
+  'FEE_ALREADY_LINKED_TO_APPLICATION',
+  'airlinerra_game.airline_ledger',
+  'airlinerra_game.licence2_application_readiness_v1'
+ ])assert.ok(sql.includes(phrase),phrase);
+ assert.match(sql,/revoke all on airlinerra_game\.licence2_reviewed_fee_policy_v1/);
+ assert.match(sql,/revoke all on function airlinerra_game\.licence2_approval_preflight_v1/);
+ assert.match(sql,/'cashChanged',false/);
+ assert.match(sql,/'feeCharged',false/);
+ assert.match(sql,/'permitIssued',false/);
+ assert.doesNotMatch(sql,/update airlinerra_game\.airlines set cash_usd/i);
+ assert.doesNotMatch(sql,/insert into airlinerra_game\.airline_ledger/i);
+});
