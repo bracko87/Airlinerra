@@ -68,7 +68,7 @@ export const LICENCE_PLAN=Object.freeze([
   ['Licence 1 game rights: home country -> foreign destination -> home country, without buying Licence 2',
    'Licence 2: directed foreign network routes such as Zagreb -> Ljubljana, separate from Ljubljana -> Zagreb',
    'Licence 2: approved foreign hub -> outside destination -> same hub, e.g. Zagreb -> Hurghada and Hurghada -> Zagreb use two directed slots',
-   'EU proposed directed-route ceilings: Level 1 = 10, Level 2 = 50, Level 3 = 150, Level 4 = unlimited'],
+   'EU proposed directed-route ceilings: Level 1 = 20, Level 2 = 50, Level 3 = 150, Level 4 = unlimited'],
   'Expand an airline into a network away from its home market: independently operate approved local/regional flights and outbound/return flights from a licensed foreign hub',
   'No free additional domestic network in Egypt or other markets without such permission; airport categories, slots, service-ready aircraft and route schedule remain independently checked',
   'No periodic renewal; player may request an optional upgrade annually, including a direct jump by multiple levels',
