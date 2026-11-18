@@ -201,7 +201,7 @@ test('original AOC identity backfill needs owner, one airline, matching registra
  const migration=await readFile(new URL('../supabase/migrations/20261118212500_section9_aoc_verified_original_registration_identity_staging.sql',import.meta.url),'utf8');
  const provenance=await readFile(new URL('../supabase/migrations/20261118211000_section9_aoc_original_provenance_and_backfill_preflight.sql',import.meta.url),'utf8');
  for(const clause of ["current_user is distinct from 'postgres'",
-  "wm.state='active'","entry_kind='STARTING_CAPITAL'",
+  "m.state='active'","entry_kind='STARTING_CAPITAL'",
   "l.amount_usd=5000000.00","l.recorded_at=a.created_at",
   "count(*) from airlinerra_game.airlines other",
   "ORIGINAL_REGISTRATION_LEDGER_NOT_VERIFIED",
@@ -209,8 +209,8 @@ test('original AOC identity backfill needs owner, one airline, matching registra
   "'feeCharged',false"]){
   if(clause==="ORIGINAL_REGISTRATION_LEDGER_NOT_VERIFIED")
    assert.match(migration,/ORIGINAL_REGISTRATION_LEDGER_NOT_VERIFIED/);
-  else if(clause==="wm.state='active'")
-   assert.match(migration,/wm.state='active'/);
+  else if(clause==="m.state='active'")
+   assert.match(migration,/m.state='active'/);
   else assert.ok(migration.includes(clause),clause);
  }
  assert.match(provenance,/verified-original-airline-registration-v1-/);
