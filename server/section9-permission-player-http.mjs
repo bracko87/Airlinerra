@@ -43,6 +43,13 @@ const LICENCE2_OWNER_STATUS_SQL=[
  'SELECT m.market_code AS "marketCode",m.market_name AS "marketName",',
  'l.level AS "level",l.max_active_directed_routes AS "maxDirectedRoutes",',
  'l.max_category AS "maxAirportCategory",l.quota_approved AS "quotaApproved",',
+ 'CASE WHEN fee_initial.review_state=\'APPROVED\' AND fee_upgrade.review_state=\'APPROVED\'',
+ 'THEN fee_initial.fee_usd::text ELSE NULL END AS "initialFeeUsd",',
+ 'CASE WHEN fee_initial.review_state=\'APPROVED\' AND fee_upgrade.review_state=\'APPROVED\'',
+ 'THEN fee_upgrade.fee_usd::text ELSE NULL END AS "upgradeFeeUsd",',
+ 'CASE WHEN fee_initial.review_state=\'APPROVED\' AND fee_upgrade.review_state=\'APPROVED\'',
+ 'AND fee_initial.processing_game_days=fee_upgrade.processing_game_days',
+ 'THEN fee_initial.processing_game_days ELSE NULL END AS "approvedProcessingGameDays",',
  'm.issuance_enabled AS "issuanceEnabled",m.enforcement_enabled AS "enforcementEnabled",',
  'COALESCE(permit.status,\'not_issued\') AS "permitStatus",',
  'permit.level AS "permitLevel",',
@@ -56,6 +63,10 @@ const LICENCE2_OWNER_STATUS_SQL=[
  'AND w.player_id=a.owner_player_id AND w.state=\'active\'',
  'CROSS JOIN airlinerra_game.licence2_market_policy_v1 m',
  'JOIN airlinerra_game.licence2_market_levels_v1 l ON l.market_code=m.market_code',
+ 'LEFT JOIN airlinerra_game.licence2_reviewed_fee_policy_v1 fee_initial',
+ 'ON fee_initial.market_code=m.market_code AND fee_initial.level=l.level AND fee_initial.application_kind=\'INITIAL\'',
+ 'LEFT JOIN airlinerra_game.licence2_reviewed_fee_policy_v1 fee_upgrade',
+ 'ON fee_upgrade.market_code=m.market_code AND fee_upgrade.level=l.level AND fee_upgrade.application_kind=\'UPGRADE\'',
  'LEFT JOIN airlinerra_game.licence2_airline_market_permits_v1 permit',
  'ON permit.world_id=a.world_id AND permit.airline_id=a.id AND permit.market_code=m.market_code',
  'LEFT JOIN LATERAL (SELECT app.status,app.application_id,app.requested_level,app.latest_readiness FROM airlinerra_game.licence2_market_applications_v1 app',
@@ -84,7 +95,15 @@ function safeLicence2Rows(rows){
     (r.requestedLevel!==null&&(!Number.isInteger(r.requestedLevel)||r.requestedLevel<1||r.requestedLevel>L2_MARKETS[r.marketCode]))||
     (r.draftIssues!==null&&(!Array.isArray(r.draftIssues)||r.draftIssues.length>20||r.draftIssues.some(issue=>typeof issue!=='string'||! /^[A-Z0-9_]{3,100}$/.test(issue))))||
     (r.maxDirectedRoutes!==null&&(!Number.isInteger(r.maxDirectedRoutes)||r.maxDirectedRoutes<1))||
-    (r.maxAirportCategory!==null&&!L2_CATEGORIES.has(r.maxAirportCategory)))
+    (r.maxAirportCategory!==null&&!L2_CATEGORIES.has(r.maxAirportCategory))||
+    ((r.initialFeeUsd===null)!==(r.upgradeFeeUsd===null))||
+    ((r.initialFeeUsd===null)!==(r.approvedProcessingGameDays===null))||
+    (r.initialFeeUsd!==null&&(
+      !Number.isFinite(Number(r.initialFeeUsd))||Number(r.initialFeeUsd)<=0||
+      !Number.isFinite(Number(r.upgradeFeeUsd))||Number(r.upgradeFeeUsd)<=0||
+      !Number.isInteger(r.approvedProcessingGameDays)||r.approvedProcessingGameDays<1||
+      r.approvedProcessingGameDays>90||
+      (r.marketCode==='L2-EU'&&Number(r.upgradeFeeUsd)!==Number(r.initialFeeUsd)))))
    throw Error('LICENCE2_INVALID_PRIVATE_MARKET_ROW');
   if((r.applicationStatus===null)!==(r.draftApplicationId===null)||
      (r.applicationStatus===null)!==(r.requestedLevel===null)||
@@ -100,7 +119,7 @@ function safeLicence2Rows(rows){
   if(perMarket.has(r.marketCode)&&JSON.stringify(perMarket.get(r.marketCode))!==JSON.stringify(shared))
    throw Error('LICENCE2_INCONSISTENT_MARKET_STATUS');
   perMarket.set(r.marketCode,shared);
-  // Do not leak unfinished/unapproved prices; the fee policy is not displayed.
+  // Display approved design fees only. These are NOT active charges or application permissions.
   return {
    marketCode:r.marketCode,marketName:r.marketName,level:r.level,
    directedRouteLimit:r.quotaApproved?r.maxDirectedRoutes:null,
@@ -108,6 +127,9 @@ function safeLicence2Rows(rows){
    quotaApproved:r.quotaApproved,
    permitStatus:r.permitStatus,permitLevel:r.permitLevel,
    directedRoutesUsed:r.routesUsed,applicationStatus:r.applicationStatus,
+   approvedInitialFeeUsd:r.initialFeeUsd===null?null:Number(r.initialFeeUsd),
+   approvedUpgradeFeeUsd:r.upgradeFeeUsd===null?null:Number(r.upgradeFeeUsd),
+   approvedProcessingGameDays:r.approvedProcessingGameDays,
    draftApplicationId:r.draftApplicationId,requestedLevel:r.requestedLevel,
    draftIssues:r.draftIssues,
    canApply:false,feeUsd:null,processingGameDays:null
