@@ -21,7 +21,9 @@ export function createAocVerifiedCorrectionCommitService({verifier,database}={})
    if(proof?.verified!==true)return denied(proof?.reason??'INDEPENDENT_EVIDENCE_UNAVAILABLE');
    if(!UUID.test(proof.airlineId||'')||!UUID.test(proof.taskId||'')||
       proof.airlineId!==request?.airlineId||proof.taskId!==request?.taskId||
-      proof.eventId!==request?.eventId||proof.receiptReference!==request?.receiptReference||
+      proof.eventId!==request?.eventId||proof.workKind!==request?.workKind||
+      !['safety_inspection','compliance_audit'].includes(proof.workKind)||
+      proof.receiptReference!==request?.receiptReference||
       proof.completedGameDay!==request?.completedGameDay||
       proof.paidLedgerEntryId!==String(request?.paidLedgerEntryId)||
       proof.paidAmountUsdCents!==request?.paidAmountUsdCents||
@@ -39,7 +41,7 @@ export function createAocVerifiedCorrectionCommitService({verifier,database}={})
    const db=await database.connect();
    try{
     const result=await db.query(AOC_VERIFIED_CORRECTION_COMMIT_SQL,[
-     proof.airlineId,proof.taskId,proof.eventId,request.workKind,
+     proof.airlineId,proof.taskId,proof.eventId,proof.workKind,
      proof.receiptReference,proof.completedGameDay,proof.paidLedgerEntryId,
      amountUsd,proof.producerEventId,proof.signedPayloadSha256
     ]);
