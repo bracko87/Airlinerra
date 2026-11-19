@@ -67,6 +67,8 @@ export function createIndependentAocCorrectionVerifier({evidenceSource,verificat
     airlineId,taskId,eventId,workKind,receiptReference,completedGameDay,
     paidLedgerEntryId:String(paidLedgerEntryId),paidAmountUsdCents,
     producerEventId:record.producerEventId,
+    producerReference:record.producerReference,
+    signature:record.signature,
     signedPayloadSha256:createHash('sha256')
      .update(aocCorrectionAttestationPayload(record),'utf8').digest('hex'),
     feeCharged:false,incidentResolved:false,certificateIssued:false,
