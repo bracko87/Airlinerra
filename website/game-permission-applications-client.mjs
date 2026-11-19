@@ -152,6 +152,33 @@ export function createGamePermissionApplicationsClient({
   return result;
  }
  return Object.freeze({
+  async cargoLicence3Status(airlineId){
+   if(!UUID.test(airlineId||''))throw Error('Valid cargo airline required');
+   const x=await post({action:'licence3_status',airlineId});
+   if(x?.status!=='licence3_cargo_status'||x.airlineId!==airlineId||
+      x.worldId!==1||x.readOnly!==true||x.flightActivated!==false||
+      typeof x.issued!=='boolean'||typeof x.canApply!=='boolean'||
+      x.feeUsd!==50000||x.processingGameDays!==3||
+      !Array.isArray(x.issues)||x.issues.length>20||
+      x.issues.some(issue=>typeof issue!=='string'||! /^[A-Z0-9_]{3,100}$/.test(issue))||
+      (x.applicationStatus!==null&&!['submitted','issued','withdrawn'].includes(x.applicationStatus))||
+      (x.dueGameDay!==null&&!DAY.test(x.dueGameDay)))
+     throw Error('Unverified Cargo Licence 3 status');
+   return x;
+  },
+  async submitCargoLicence3({airlineId,requestKey}={}){
+   if(!UUID.test(airlineId||'')||!UUID.test(requestKey||''))
+    throw Error('Invalid Cargo Licence 3 request');
+   const x=await post({action:'licence3_submit',airlineId,requestKey});
+   if(!['NOT_RELEASED','NOT_ELIGIBLE','GAME_TICK_UNVERIFIED','ALREADY_APPROVED',
+         'SUBMITTED','submitted','issued','withdrawn'].includes(x?.status)||
+     typeof x.submitted!=='boolean'||x.feeCharged!==false||
+     x.licenceIssued!==false||x.flightActivated!==false||
+     (x.applicationId!==null&&!UUID.test(x.applicationId||''))||
+     (x.dueGameDay!==null&&!DAY.test(x.dueGameDay)))
+    throw Error('Unsafe Cargo Licence 3 application response');
+   return x;
+  },
   async status(airlineId){
    if(!UUID.test(airlineId||''))throw Error('Valid airline required');
    return checkedGamePermissionStatus(
