@@ -72,6 +72,11 @@ function database({list=owned,policies=[policy()],blockedSubmit=null,
       {const e=Error('SECTION9_PERMISSION_APPLICATION_LIST_NOT_OWNED');e.code='42501';throw e;}
      if(sql.includes('section9_owned_game_permission_applications'))
       return {rowCount:1,rows:[{result:list}]};
+     if(sql.includes('licence2_submit_owner_application_v1'))
+      return {rowCount:1,rows:[{result:{
+       status:'APPLICATION_NOT_ELIGIBLE',submitted:false,
+       readiness:{issues:['APPLICATION_ISSUANCE_NOT_RELEASED','AOC_RELEASE_NOT_VERIFIED']},
+       feeCharged:false,rightsGranted:false,flightsActivated:false}}]};
      if(sql.includes('licence2_refresh_owner_draft_v1'))
       return {rowCount:1,rows:[{result:{
        status:'DRAFT_READINESS_REFRESHED',refreshed:true,
@@ -567,5 +572,60 @@ test('browser rejects invalid published fee schedule or discounted EU upgrade',(
  ]){
   const list=[{...licence2Expected.marketLevels[0],...altered},...licence2Expected.marketLevels.slice(1)];
   assert.throws(()=>checkedGamePermissionStatus({...base,licence2:{...licence2Expected,marketLevels:list}},AIRLINE),/Licence 2/);
+ }
+});
+
+test('Licence 2 submission remains blocked with unreleased AOC and no financial changes',async()=>{
+ const db=database();
+ const result=await handler(db.database)(req({
+  action:'licence2_submit',airlineId:AIRLINE,applicationId:REQUEST
+ }));
+ assert.equal(result.status,200);
+ assert.deepEqual(await result.json(),{
+  status:'APPLICATION_NOT_ELIGIBLE',submitted:false,applicationId:REQUEST,
+  issues:['APPLICATION_ISSUANCE_NOT_RELEASED','AOC_RELEASE_NOT_VERIFIED'],
+  feeCharged:false,rightsGranted:false,flightsActivated:false
+ });
+ assert.match(db.calls[0].sql,/section9_owned_game_permission_applications_v1/);
+ assert.deepEqual(db.calls.at(-1).args,[OWNER,REQUEST]);
+ assert.match(db.calls.at(-1).sql,/licence2_submit_owner_application_v1/);
+});
+test('Licence 2 submission never accepts player-spoofed identity or unknown application',async()=>{
+ const db=database();
+ for(const body of [
+  {action:'licence2_submit',airlineId:AIRLINE,applicationId:'bad'},
+  {action:'licence2_submit',airlineId:AIRLINE,applicationId:REQUEST,ownerPlayerId:OWNER}
+ ]){
+  assert.equal((await handler(db.database)(req(body))).status,400);
+ }
+ assert.equal(db.calls.length,0);
+ const denied=database({ownerDenied:true});
+ assert.equal((await handler(denied.database)(req({
+  action:'licence2_submit',airlineId:AIRLINE,applicationId:REQUEST
+ }))).status,403);
+});
+test('Licence 2 client rejects fabricated approval, charges and malformed submit replies',async()=>{
+ const ok=createGamePermissionApplicationsClient({
+  auth:{getAccessToken:async()=>TOKEN},origin:ORIGIN,
+  fetchImpl:async()=>Response.json({status:'APPLICATION_NOT_ELIGIBLE',submitted:false,
+   issues:['AOC_RELEASE_NOT_VERIFIED'],feeCharged:false,
+   rightsGranted:false,flightsActivated:false})
+ });
+ assert.equal((await ok.submitLicence2Application({
+  airlineId:AIRLINE,applicationId:REQUEST})).submitted,false);
+ for(const fabricated of [
+  {status:'APPLICATION_SUBMITTED_FOR_REVIEW',submitted:true,issues:[],feeCharged:true,
+   rightsGranted:false,flightsActivated:false},
+  {status:'APPLICATION_SUBMITTED_FOR_REVIEW',submitted:true,issues:[],feeCharged:false,
+   rightsGranted:true,flightsActivated:false},
+  {status:'APPLICATION_SUBMITTED_FOR_REVIEW',submitted:false,issues:[],feeCharged:false,
+   rightsGranted:false,flightsActivated:false}
+ ]){
+  const bad=createGamePermissionApplicationsClient({
+   auth:{getAccessToken:async()=>TOKEN},origin:ORIGIN,
+   fetchImpl:async()=>Response.json(fabricated)
+  });
+  await assert.rejects(bad.submitLicence2Application({
+   airlineId:AIRLINE,applicationId:REQUEST}),/Unsafe Licence 2 submission response/);
  }
 });
