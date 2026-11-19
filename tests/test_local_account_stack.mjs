@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { startLocalAccountStack } from '../server/local-account-stack.mjs';
-import { AIRLINE_ACTIVATION_SQL } from '../server/airline-activation.mjs';
+import { AIRLINE_ACTIVATION_SQL, AIRLINE_AOC_REGISTRATION_SQL } from '../server/airline-activation.mjs';
 import {
   READ_PUBLISHED_POLICY_SQL, INSERT_CONSENT_SQL, EXISTING_CONSENT_SQL
 } from '../server/legal-consent-service.mjs';
@@ -20,7 +20,8 @@ const legal = () => JSON.stringify({
 });
 const airline = (worldId=1,homeAirportKey='OURAIRPORTS:101') => JSON.stringify({
   worldId, airlineName: worldId === 1 ? 'Aurelia Airways' : 'Atlantic Routes',
-  homeAirportKey
+  homeAirportKey, icaoCode:worldId===1?'AUR':'ATR',
+  iataCode:worldId===1?'AU':'AT'
 });
 
 function fakeDependencies({verified=VALID_USER}={}) {
@@ -54,13 +55,23 @@ function fakeDependencies({verified=VALID_USER}={}) {
             return {rows:[{accepted_at:'2026-10-26T00:00:00Z'}]};
           }
           if (sql === EXISTING_CONSENT_SQL) return {rows:[]};
+          if (sql === AIRLINE_AOC_REGISTRATION_SQL) {
+            const [owner,world,airlineId]=params;
+            assert.equal(owner,PLAYER);
+            assert.equal(world,1);
+            assert.equal(airlineId,AIRLINE);
+            return {rows:[{aoc:{status:'aoc_not_released',
+              issued:false,charged:false,flightActivated:false}}]};
+          }
           if (sql === AIRLINE_ACTIVATION_SQL) {
             if (state.failActivation) {
               const error = Error('SECRET_DB_AIRPORT_INTERNALS');
               error.code = '23514';
               throw error;
             }
-            const [,world,name,key] = params;
+            const [,world,name,key,icaoCode,iataCode] = params;
+            assert.match(icaoCode,/^[A-Z]{3}$/);
+            assert.match(iataCode,/^[A-Z]{2}$/);
             if (!state.consents || (world === 1 && key !== 'OURAIRPORTS:101') ||
                 (world === 2 && key !== 'FICTIONAL:fictional:RS:LYAL') ||
                 world > 2) {
@@ -143,7 +154,7 @@ test('real airline HTTP and service create one synthetic $5m airline, then safe 
   assert.equal(x.state.rollbacks,0);
   assert.equal(x.state.connects,x.state.releases);
   assert.deepEqual(x.state.queries.filter(q=>q.sql===AIRLINE_ACTIVATION_SQL)[0].params,
-    [PLAYER,1,'Aurelia Airways','OURAIRPORTS:101']);
+    [PLAYER,1,'Aurelia Airways','OURAIRPORTS:101','AUR','AU']);
 });
 
 test('fictional LYAL remains a valid stable key in another world without a second trial',async t=>{
