@@ -64,7 +64,7 @@ export function createIndependentAocCorrectionVerifier({evidenceSource,verificat
     return denied('CORRECTION_SIGNATURE_INVALID');
    return Object.freeze({verified:true,
     evidenceSource:'independent_trusted_game_safety_producer',
-    airlineId,taskId,eventId,receiptReference,completedGameDay,
+    airlineId,taskId,eventId,workKind,receiptReference,completedGameDay,
     paidLedgerEntryId:String(paidLedgerEntryId),paidAmountUsdCents,
     producerEventId:record.producerEventId,
     signedPayloadSha256:createHash('sha256')
