@@ -20,7 +20,8 @@ test('prelaunch operational pages offer controls without enabling game writes',a
  const read=p=>readFile(new URL(p,import.meta.url),'utf8');
  const [html,js,overlay]=await Promise.all([read('../website/private-player-app.html'),read('../website/player-app.mjs'),read('../website/dev-scripts/invited-overlay.mjs')]);
  for(const id of ['setup-save-draft','setup-clear-draft','setup-draft-summary','settings-save'])assert.match(html,new RegExp('id="'+id+'"'));
- assert.match(html,/class="week-grid"/);assert.match(js,/saveLocalDraft\(window\.sessionStorage/);
+ assert.match(html,/data-player-view="routes"/);
+ assert.match(html,/data-player-view="schedule"/);assert.match(js,/saveLocalDraft\(window\.sessionStorage/);
  assert.match(js,/clearLocalDraft\(window\.sessionStorage/);
  assert.match(overlay,/local-onboarding-draft\.mjs/);
  assert.match(html,/disabled>Create airline/);
