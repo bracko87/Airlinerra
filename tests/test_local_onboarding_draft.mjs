@@ -24,7 +24,7 @@ test('prelaunch operational pages offer controls without enabling game writes',a
  assert.match(html,/data-player-view="schedule"/);assert.match(js,/saveLocalDraft\(window\.sessionStorage/);
  assert.match(js,/clearLocalDraft\(window\.sessionStorage/);
  assert.match(overlay,/local-onboarding-draft\.mjs/);
- assert.match(html,/disabled>Create airline/);
+ assert.match(html,/<button[^>]*id="setup-create-airline"[^>]*disabled>Create my airline<\/button>/);
  assert.match(js,/\.createAirline\(/);
  assert.match(js,/\.acceptLegal\(/);
  assert.match(js,/loadRealOnboarding/);
