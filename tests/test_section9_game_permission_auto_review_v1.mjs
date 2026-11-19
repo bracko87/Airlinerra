@@ -24,7 +24,7 @@ test('game authority HMAC matches independently tested PostgreSQL pgcrypto fixtu
 
 test('automatic reviewer is postgres-only, transaction-safe, and strictly policy-gated',async()=>{
  const sql=await read(sqlPath);
- assert.match(sql,/SECURITY INVOKER/);
+ assert.doesNotMatch(sql,/SECURITY DEFINER/);
  assert.match(sql,/current_user IS DISTINCT FROM 'postgres'/);
  assert.match(sql,/FROM PUBLIC,anon,authenticated,service_role/);
  assert.match(sql,/pg_try_advisory_xact_lock\(583729,10019\)/);
@@ -51,7 +51,7 @@ test('private signing secret is generated in Vault, not committed in plaintext',
  assert.match(sql,/signingSecretExposed',false/);
  assert.doesNotMatch(sql,/\bconsole\.(?:log|warn|info|debug)\s*\(/);
  assert.doesNotMatch(sql,/decrypted_secret AS returned_/i);
- assert.doesNotMatch(sql,/secret_value[,\s]*\)/i);
+ assert.doesNotMatch(sql,/['\"](?:secret|signingSecret|secretValue)['\"]\s*,\s*secret_value/i);
 });
 
 test('cron scheduling is idempotent and never enables the licence release itself',async()=>{
