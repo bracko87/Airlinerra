@@ -29,7 +29,7 @@ test('read API remaps territory airports and filters non-country codes before de
  assert.match(PLAYER_READ_SQL.countries,/case country_iso/);
  assert.match(PLAYER_READ_SQL.airports,/case country_iso/);
  assert.match(PLAYER_READ_SQL.airports,/limit 51 offset \$3::integer/);
- assert.match(PLAYER_READ_SQL.airports,/country_iso\s*,?municipality/);
+ assert.match(PLAYER_READ_SQL.airports,/as country_iso,a\.municipality/);
  for(const code of Object.keys(TERRITORY_COUNTRY))
   assert.equal(parentCountryIso(code),TERRITORY_COUNTRY[code]);
 });
