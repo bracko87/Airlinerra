@@ -7,7 +7,7 @@
  *
  * This module DOES NOT sign attestations, mutate the database, or expose HTTP.
  */
-import {createHmac,timingSafeEqual} from 'node:crypto';
+import {createHmac,createHash,timingSafeEqual} from 'node:crypto';
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const DAY=/^\d{4}-\d{2}-\d{2}$/;
 const REFERENCE=/^[a-zA-Z0-9._:-]{12,160}$/;
@@ -67,6 +67,8 @@ export function createIndependentAocCorrectionVerifier({evidenceSource,verificat
     airlineId,taskId,eventId,receiptReference,completedGameDay,
     paidLedgerEntryId:String(paidLedgerEntryId),paidAmountUsdCents,
     producerEventId:record.producerEventId,
+    signedPayloadSha256:createHash('sha256')
+     .update(aocCorrectionAttestationPayload(record),'utf8').digest('hex'),
     feeCharged:false,incidentResolved:false,certificateIssued:false,
     flightActivated:false,ledgerPosted:false});
   }
