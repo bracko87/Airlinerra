@@ -28,7 +28,9 @@ try{
  assert.ok(available,'Built localhost preview failed to start: '+output);
  const page=await request('/player.html');
  assert.equal(page.status,200);
- assert.match(await page.text(),/PRIVATE PRELAUNCH/);
+ const html=await page.text();
+ assert.match(html,/data-player-view="overview"/);
+ assert.match(html,/<meta name="robots" content="noindex,nofollow">/);
  const readiness=await request('/api/v1/registration/readiness');
  assert.equal(readiness.status,403,'Unrelated server endpoints remain inaccessible in read-only preview');
  const unavailable=await request('/api/v1/player/overview',{});
