@@ -47,6 +47,14 @@ export function createGamePermissionApplicationsView({
  const l2Markets=node(doc,'div','game-licence-applications');
  l2Panel.append(l2State,l2Markets);
  section.append(l2Panel);
+ const l3Panel=node(doc,'div','game-aoc-status game-licence-l3');
+ l3Panel.append(
+  node(doc,'h3','','Licence 3 — Cargo Operations Approval'),
+  node(doc,'p','game-licence-status','Planned — applications and approval not enabled'),
+  node(doc,'p','hint','For a separately registered cargo airline subsidiary: own active AOC, at least one in-service cargo or combi aircraft in the same company, and $50,000 company funds. Apply for free; processing takes 3 verified game days. The fee is charged only if approval is issued.'),
+  node(doc,'p','hint','Once issued, this company may offer ordinary cargo services worldwide, but actual flights still require separate market, route, airport, slot and safety permissions. Dangerous goods are not included.')
+ );
+ section.append(l3Panel);
  const metrics=node(doc,'div','game-licence-metrics');
  const fields=[];
  for(const name of ['Current game date','Pending review','Issued permissions']){
