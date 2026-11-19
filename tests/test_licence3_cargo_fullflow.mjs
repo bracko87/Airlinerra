@@ -30,7 +30,7 @@ const mockDb=({notOwned=false,invalid=false}={})=>{
     scope:{authorized:false},released:false,application_status:null,due_game_day:null
    }]};
   throw Error('Unexpected SQL:'+sql);
- }}};}};
+ }};}};
 };
 const request=(body,headers={})=>new Request(ORIGIN+GAME_PERMISSION_PLAYER_PATH,{
  method:'POST',headers:{'origin':ORIGIN,'x-airlinerra-route':GAME_PERMISSION_PLAYER_PATH,
