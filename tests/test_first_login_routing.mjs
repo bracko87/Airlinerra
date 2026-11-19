@@ -39,7 +39,7 @@ test('player waits for verified Auth before routing; API errors never pretend an
  assert.match(script,/Airline data was received but the page could not display it/);
  assert.match(script,/GAME_API_HTTP_/);
  assert.match(script,/if\(readSucceeded\)await loadRealOnboarding\(\)/);
- assert.match(script,/Do not register again or create another airline/);
+ assert.match(script,/No new registration is needed\. Please retry the connection\./);
  assert.match(script,/doc\.getElementById\('player-data-retry'\)/);
  assert.match(html,/id="player-data-retry"[^>]*hidden/);
  assert.match(script,/if\(!readSucceeded&&initialManagerLanding\)/);
