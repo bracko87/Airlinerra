@@ -25,6 +25,7 @@ export function createGamePermissionApplicationsView({
     typeof getAirline!=='function'||typeof getClient!=='function')
   throw Error('Game licence view dependencies are missing');
  let loadedAirline=null,version=0,current=null,busy=false,pendingKey=null;
+ let cargoStatus=null,cargoRequestKey=null;
  const section=node(doc,'article','panel workspace-panel game-licence-panel');
  section.append(node(doc,'span','panel-kicker','YOUR GAME PERMISSIONS'),
   node(doc,'h2','','Licence applications and approval status'),
@@ -48,11 +49,15 @@ export function createGamePermissionApplicationsView({
  l2Panel.append(l2State,l2Markets);
  section.append(l2Panel);
  const l3Panel=node(doc,'div','game-aoc-status game-licence-l3');
+ const l3State=node(doc,'p','game-licence-status','Cargo licence status not yet checked.');
+ const l3Apply=node(doc,'button','secondary','Apply for Cargo Licence 3');
+ l3Apply.type='button';l3Apply.disabled=true;
  l3Panel.append(
   node(doc,'h3','','Licence 3 — Cargo Operations Approval'),
-  node(doc,'p','game-licence-status','Planned — applications and approval not enabled'),
+  l3State,
   node(doc,'p','hint','For a separately registered cargo airline subsidiary: own active AOC, at least one in-service cargo or combi aircraft in the same company, and $50,000 company funds. Apply for free; processing takes 3 verified game days. The fee is charged only if approval is issued.'),
-  node(doc,'p','hint','Once issued, this company may offer ordinary cargo services worldwide, but actual flights still require separate market, route, airport, slot and safety permissions. Dangerous goods are not included.')
+  node(doc,'p','hint','Once issued, this company may offer ordinary cargo services worldwide, but actual flights still require separate market, route, airport, slot and safety permissions. Dangerous goods are not included.'),
+  l3Apply
  );
  section.append(l3Panel);
  const metrics=node(doc,'div','game-licence-metrics');
@@ -122,6 +127,21 @@ export function createGamePermissionApplicationsView({
  };
  type.addEventListener('change',()=>{pendingKey=null;updateForm();});
  const render=()=>{
+  l3Apply.disabled=!cargoStatus?.canApply;
+  if(cargoStatus?.issued===true){
+   l3State.textContent='Cargo operations approval issued for this company';
+   l3Apply.disabled=true;
+  }else if(cargoStatus?.applicationStatus==='submitted'){
+   l3State.textContent='Cargo approval awaiting review'+(cargoStatus.dueGameDay?' · Due '+cargoStatus.dueGameDay:'');
+   l3Apply.disabled=true;
+  }else if(cargoStatus){
+   l3State.textContent=cargoStatus.canApply?'Cargo licence application available':
+    'Cargo licence not available · '+cargoStatus.issues.slice(0,4).map(x=>x.replaceAll('_',' ').toLowerCase()).join('; ');
+   l3Apply.disabled=!cargoStatus.canApply||busy;
+  }else{
+   l3State.textContent='Cargo licence status not connected to the current server.';
+   l3Apply.disabled=true;
+  }
   type.replaceChildren();
   const rows=current?.policies??[];
   for(const policy of rows){
@@ -310,6 +330,23 @@ export function createGamePermissionApplicationsView({
    :'Applications are not open. You may review requirements and your application history; no money will be deducted.';
   updateForm();
  };
+ l3Apply.addEventListener('click',async()=>{
+  if(busy||cargoStatus?.canApply!==true||getAirline()?.id!==loadedAirline)return;
+  const api=getClient();
+  if(typeof api?.submitCargoLicence3!=='function')return;
+  const id=loadedAirline;
+  if(!cargoRequestKey)cargoRequestKey=newRequestKey();
+  busy=true;l3Apply.disabled=true;l3State.textContent='Submitting cargo application…';
+  try{
+   const result=await api.submitCargoLicence3({airlineId:id,requestKey:cargoRequestKey});
+   if(getAirline()?.id!==id)return;
+   if(result.submitted)cargoRequestKey=null;
+   l3State.textContent=result.submitted?'Cargo application recorded. No fee charged.':
+    'Cargo application unavailable: '+result.status.replaceAll('_',' ').toLowerCase();
+   await load({refresh:true});
+  }catch{l3State.textContent='Cargo submission could not be confirmed. Please retry.';}
+  finally{busy=false;l3Apply.disabled=!cargoStatus?.canApply;}
+ });
  form.addEventListener('submit',async event=>{
   event.preventDefault();
   if(busy||!current?.canApply||!selected()?.canApply||
@@ -345,7 +382,7 @@ export function createGamePermissionApplicationsView({
   const client=getClient();
   const id=airline?.id;
   const requestVersion=++version;
-  loadedAirline=id??null;current=null;submit.disabled=true;
+  loadedAirline=id??null;current=null;cargoStatus=null;submit.disabled=true;l3Apply.disabled=true;
   if(!id||!client){
    note.textContent='Select a verified airline to view your game licence applications.';
    aocState.textContent='AOC details unavailable for the selected airline.';
@@ -360,7 +397,13 @@ export function createGamePermissionApplicationsView({
   try{
    const result=await client.status(id);
    if(requestVersion!==version||getAirline()?.id!==id)return;
-   current=result;render();
+   current=result;
+   if(typeof client.cargoLicence3Status==='function'){
+    try{cargoStatus=await client.cargoLicence3Status(id);}
+    catch{cargoStatus=null;}
+   }
+   if(requestVersion!==version||getAirline()?.id!==id)return;
+   render();
   }catch{
    if(requestVersion!==version)return;
    note.textContent='Permission status is temporarily unavailable. No licence or fee can be assumed.';
