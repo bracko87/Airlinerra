@@ -7,6 +7,7 @@ on:
       - 'server/section9-independent-aoc-correction-verifier.mjs'
       - 'server/section9-aoc-verified-correction-commit-service.mjs'
       - 'server/section9-aoc-independent-attestation-reader.mjs'
+      - 'server/section9-aoc-signed-attestation-publisher.mjs'
       - 'server/section9-aoc-read-service.mjs'
       - 'server/section9-permission-player-http.mjs'
       - 'server/airline-activation.mjs'
@@ -20,6 +21,7 @@ on:
       - 'tests/test_section9_independent_aoc_correction_verifier.mjs'
       - 'tests/test_section9_aoc_verified_correction_commit_service.mjs'
       - 'tests/test_section9_aoc_independent_attestation_reader.mjs'
+      - 'tests/test_section9_aoc_signed_attestation_publisher.mjs'
       - 'tests/test_section9_aoc_read_service.mjs'
       - 'docs/sql/AIRLINERRA_AOC_*.sql'
       - 'supabase/migrations/*aoc*'
@@ -42,6 +44,8 @@ jobs:
           node --check server/section9-independent-aoc-correction-verifier.mjs
           node --check server/section9-aoc-verified-correction-commit-service.mjs
           node --check server/section9-aoc-independent-attestation-reader.mjs
+          node --check server/section9-aoc-signed-attestation-publisher.mjs
+          node --check tests/test_section9_aoc_signed_attestation_publisher.mjs
           node --check tests/test_section9_aoc_independent_attestation_reader.mjs
           node --check tests/test_section9_aoc_verified_correction_commit_service.mjs
           node --check tests/test_section9_independent_aoc_correction_verifier.mjs
@@ -56,7 +60,7 @@ jobs:
           node --check tests/test_section9_aoc_licence_ui.mjs
           node --check tests/test_section9_permission_player_api_ui.mjs
       - name: Prove AOC scoring and renewal rules without database writes
-        run: node --test tests/test_section9_aoc_verified_correction_commit_service.mjsnode --test tests/test_section9_aoc_independent_attestation_reader.mjs tests/test_section9_aoc_verified_correction_commit_service.mjs tests/test_section9_independent_aoc_correction_verifier.mjs tests/test_section9_aoc_policy.mjs tests/test_section9_aoc_read_service.mjs tests/test_section9_aoc_licence_ui.mjs tests/test_section9_permission_player_api_ui.mjs tests/test_airline_activation.mjs
+        run: node --test tests/test_section9_aoc_signed_attestation_publisher.mjs tests/test_section9_aoc_independent_attestation_reader.mjs tests/test_section9_aoc_verified_correction_commit_service.mjs tests/test_section9_independent_aoc_correction_verifier.mjs tests/test_section9_aoc_policy.mjs tests/test_section9_aoc_read_service.mjs tests/test_section9_aoc_licence_ui.mjs tests/test_section9_permission_player_api_ui.mjs tests/test_airline_activation.mjs
       - name: Build the protected player website
         run: |
           cd website
