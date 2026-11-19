@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'server/section9-aoc-policy.mjs'
+      - 'server/section9-independent-aoc-correction-verifier.mjs'
       - 'server/section9-aoc-read-service.mjs'
       - 'server/section9-permission-player-http.mjs'
       - 'server/airline-activation.mjs'
@@ -14,6 +15,7 @@ on:
       - 'tests/test_section9_permission_player_api_ui.mjs'
       - 'tests/test_section9_aoc_licence_ui.mjs'
       - 'tests/test_section9_aoc_policy.mjs'
+      - 'tests/test_section9_independent_aoc_correction_verifier.mjs'
       - 'tests/test_section9_aoc_read_service.mjs'
       - 'docs/sql/AIRLINERRA_AOC_*.sql'
       - 'supabase/migrations/*aoc*'
@@ -33,6 +35,8 @@ jobs:
       - name: Validate pure server decision rules and test syntax
         run: |
           node --check server/section9-aoc-policy.mjs
+          node --check server/section9-independent-aoc-correction-verifier.mjs
+          node --check tests/test_section9_independent_aoc_correction_verifier.mjs
           node --check server/section9-aoc-read-service.mjs
           node --check server/section9-permission-player-http.mjs
           node --check server/airline-activation.mjs
@@ -44,7 +48,7 @@ jobs:
           node --check tests/test_section9_aoc_licence_ui.mjs
           node --check tests/test_section9_permission_player_api_ui.mjs
       - name: Prove AOC scoring and renewal rules without database writes
-        run: node --test tests/test_section9_aoc_policy.mjs tests/test_section9_aoc_read_service.mjs tests/test_section9_aoc_licence_ui.mjs tests/test_section9_permission_player_api_ui.mjs tests/test_airline_activation.mjs
+        run: node --test tests/test_section9_independent_aoc_correction_verifier.mjs tests/test_section9_aoc_policy.mjs tests/test_section9_aoc_read_service.mjs tests/test_section9_aoc_licence_ui.mjs tests/test_section9_permission_player_api_ui.mjs tests/test_airline_activation.mjs
       - name: Build the protected player website
         run: |
           cd website
