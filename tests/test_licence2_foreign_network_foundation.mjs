@@ -230,3 +230,13 @@ test('Licence 2 cannot recognize a dormant AOC certificate as flight permission'
  assert.match(sql,/ACTIVE_OWN_AOC_NOT_VERIFIED/);
  assert.doesNotMatch(sql,/INSERT INTO airlinerra_game\.section9_aoc_certificates_v1/i);
 });
+
+test('Licence 2 owner-approved full-price upgrade has no arbitrary 365-game-day cooldown',async()=>{
+ const sql=await read('supabase/migrations/20261119093000_licence2_remove_unapproved_upgrade_cooldown.sql');
+ assert.match(sql,/application_kind=kind/);
+ assert.match(sql,/PROCESSING_PERIOD_NOT_FINISHED/);
+ assert.match(sql,/fee_policy\.fee_usd/);
+ assert.match(sql,/ALREADY_HAS_THIS_OR_HIGHER_LEVEL/);
+ assert.doesNotMatch(sql,/YEARLY_UPGRADE_WINDOW_NOT_REACHED|UPGRADE_HISTORY_NOT_VERIFIED/);
+ assert.doesNotMatch(sql,/last_upgrade_game_date\s*<|game_day-existing_permit\.last_upgrade_game_date/);
+});
