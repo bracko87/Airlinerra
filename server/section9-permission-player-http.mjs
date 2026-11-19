@@ -194,7 +194,7 @@ export function createSection9PermissionPlayerHandler({
   let body;
   try{body=await readBody(req);}
   catch{return response(400,{error:'Invalid application request'});}
-  if(!['status','apply','licence2_draft','licence2_withdraw','licence2_refresh'].includes(body.action)||!UUID.test(body.airlineId||''))
+  if(!['status','apply','licence2_draft','licence2_withdraw','licence2_refresh','licence2_submit'].includes(body.action)||!UUID.test(body.airlineId||''))
    return response(400,{error:'Invalid application request'});
   if(body.action==='status'&&Object.keys(body).sort().join(',')!=='action,airlineId')
    return response(400,{error:'Invalid status request'});
@@ -214,6 +214,36 @@ export function createSection9PermissionPlayerHandler({
    database,identityAuthority:identity
   });
   try{
+   if(body.action==='licence2_submit'){
+    if(Object.keys(body).sort().join(',')!=='action,airlineId,applicationId'||
+       !UUID.test(body.applicationId||''))
+      return response(400,{error:'Invalid Licence 2 application submission'});
+    // Authenticate the owner before the private submission procedure independently
+    // rechecks membership, eligibility, and the verified world game date.
+    await service.listApplications({airlineId:body.airlineId});
+    const client=await database.connect();
+    try{
+     const r=await client.query(
+      'SELECT airlinerra_game.licence2_submit_owner_application_v1($1::uuid,$2::uuid) AS result',
+      [playerId,body.applicationId]);
+     const x=r.rows?.[0]?.result;
+     if(r.rowCount!==1||!x||![
+       'APPLICATION_SUBMITTED_FOR_REVIEW','ALREADY_SUBMITTED',
+       'APPLICATION_NOT_SUBMITTABLE','APPLICATION_NOT_ELIGIBLE','GAME_DATE_UNVERIFIED'
+      ].includes(x.status)||
+      typeof x.submitted!=='boolean'||x.feeCharged!==false||
+      x.rightsGranted!==false||x.flightsActivated===true||
+      ((x.status==='APPLICATION_SUBMITTED_FOR_REVIEW'||x.status==='ALREADY_SUBMITTED')&&x.submitted!==true))
+      throw Error('LICENCE2_UNSAFE_SUBMISSION_RESULT');
+     return response(200,{
+      status:x.status,submitted:x.submitted,
+      applicationId:body.applicationId,
+      issues:Array.isArray(x.readiness?.issues)?x.readiness.issues.slice(0,20)
+       .filter(issue=>typeof issue==='string'&&/^[A-Z0-9_]{3,100}$/.test(issue)):[],
+      feeCharged:false,rightsGranted:false,flightsActivated:false
+     });
+    }finally{client.release();}
+   }
    if(body.action==='licence2_refresh'){
     if(Object.keys(body).sort().join(',')!=='action,airlineId,applicationId'||
        !UUID.test(body.applicationId||''))
