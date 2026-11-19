@@ -240,3 +240,13 @@ test('Licence 2 owner-approved full-price upgrade has no arbitrary 365-game-day 
  assert.doesNotMatch(sql,/YEARLY_UPGRADE_WINDOW_NOT_REACHED|UPGRADE_HISTORY_NOT_VERIFIED/);
  assert.doesNotMatch(sql,/last_upgrade_game_date\s*<|game_day-existing_permit\.last_upgrade_game_date/);
 });
+
+test('atomic Licence 2 payment uses independent verified game day, not raw clock fields',async()=>{
+ const sql=await read('supabase/migrations/20261119143500_licence2_atomic_approval_verified_game_day.sql');
+ assert.match(sql,/v_game_day:=airlinerra_game\.section9_verified_permission_game_day_v1\(\)/);
+ assert.match(sql,/APPROVAL_GAME_DAY_UNVERIFIED/);
+ assert.match(sql,/APPROVAL_CASH_LEDGER_BLOCKED/);
+ assert.match(sql,/LICENCE2_APPLICATION_STATUS_CHANGED/);
+ assert.match(sql,/licence2_review_event_receipts_v1/);
+ assert.doesNotMatch(sql,/select confirmed_game_date into v_game_day from airlinerra_game\.holding_world_clock_v1/i);
+});
