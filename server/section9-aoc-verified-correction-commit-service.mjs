@@ -53,12 +53,13 @@ export function createAocVerifiedCorrectionCommitService({verifier,database}={})
          'AOC_CORRECTION_PROOF_REPLAY',
          'INDEPENDENT_AOC_CORRECTION_STAGED'].includes(out.status)||
        typeof out.staged!=='boolean'||out.charged!==false||
-       out.incidentResolved!==false||out.certificateIssued===true||
+       typeof out.incidentResolved!=='boolean'||out.certificateIssued===true||
        out.flightActivated===true||
-       (out.status==='INDEPENDENT_AOC_CORRECTION_STAGED')!==out.staged)
+       (out.status==='INDEPENDENT_AOC_CORRECTION_STAGED')!==out.staged||
+       (!out.staged&&out.incidentResolved!==false))
       throw Error('AOC_UNSAFE_CORRECTION_DB_RESULT');
     return Object.freeze({status:out.status,staged:out.staged,
-     charged:false,incidentResolved:false,
+     charged:false,incidentResolved:out.incidentResolved,
      certificateIssued:false,flightActivated:false});
    }finally{db.release();}
   }
