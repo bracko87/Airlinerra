@@ -8,7 +8,9 @@ on:
       - 'website/game-permission-applications-view.mjs'
       - 'server/section9-permission-player-http.mjs'
       - 'server/licence2-independent-review-commit-service.mjs'
+      - 'server/licence2-game-review-processor.mjs'
       - 'tests/test_licence2_independent_review_commit_service.mjs'
+      - 'tests/test_licence2_game_review_processor.mjs'
       - 'tests/test_section9_permission_player_api_ui.mjs'
       - 'tests/test_licensing_planner.mjs'
       - 'tests/test_licence2_foreign_network_foundation.mjs'
@@ -32,11 +34,13 @@ jobs:
           node --check website/licensing-planner.mjs
           node --check server/section9-permission-player-http.mjs
           node --check server/licence2-independent-review-commit-service.mjs
+          node --check server/licence2-game-review-processor.mjs
+          node --check tests/test_licence2_game_review_processor.mjs
           node --check tests/test_licence2_independent_review_commit_service.mjs
           node --check website/game-permission-applications-client.mjs
           node --check website/game-permission-applications-view.mjs
           node --check tests/test_licensing_planner.mjs
-          node --test tests/test_licensing_planner.mjs tests/test_licence2_foreign_network_foundation.mjs tests/test_section9_permission_player_api_ui.mjs tests/test_licence2_independent_review_commit_service.mjs
+          node --test tests/test_licensing_planner.mjs tests/test_licence2_foreign_network_foundation.mjs tests/test_section9_permission_player_api_ui.mjs tests/test_licence2_independent_review_commit_service.mjs tests/test_licence2_game_review_processor.mjs
       - name: Validate website build
         run: |
           cd website
