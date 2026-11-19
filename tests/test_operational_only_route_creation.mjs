@@ -35,6 +35,33 @@ function handler(query,verifyUserToken=async()=>({user:{id:USER}})){
  });
  return {h,statements};
 }
+// The route API now requires three independent read-only maintenance/slot
+// evidence queries before returning its safe 409. No fabricated approval.
+function readOnlyUnreleasedRouteEvidence(sql){
+ if(sql===SCHEDULE_SQL.maintenanceReadiness)return {rowCount:1,rows:[{
+  result:{status:'maintenance_evidence_unavailable',readOnly:true,
+   maintenanceReady:false,dispatchApproved:false,
+   flightActivated:false,ledgerPosted:false,
+   blockers:['AIRCRAFT_MAINTENANCE_EVIDENCE_NOT_VERIFIED']}
+ }]};
+ if(sql===SCHEDULE_SQL.maintenanceGameDue)return {rowCount:1,rows:[{
+  result:{status:'game_maintenance_evidence_unavailable',
+   readOnly:true,maintenanceReady:false,dispatchApproved:false,
+   flightActivated:false,ledgerPosted:false,gameMaintenanceGrounded:true,
+   hourlyGroundingEnforced:false,maintenanceCompletionSchedulingConnected:false}
+ }]};
+ if(sql===SCHEDULE_SQL.candidateSlotRights)return {rowCount:1,rows:[{
+  result:{status:'candidate_operating_route_preflight_only',
+   readOnly:true,worldId:1,operatingScheduleCreated:false,
+   airportSlotsReserved:false,operatorLicenceOperationallyVerified:false,
+   operationallyApproved:false,trafficRightsOperationallyApproved:false,
+   flightActivated:false,passengerBookingsCreated:false,ledgerPosted:false,
+   blockers:['AOC_ISSUANCE_NOT_RELEASED','LICENCE2_ISSUANCE_NOT_RELEASED'],
+   airportSlotCapacityPreviewAvailable:false,verifiedGameTrafficGrants:0,
+   requiredServiceTypes:['scheduled_passenger']}
+ }]};
+ return null;
+}
 test('new operational-create request validates owner, airline, airport, aircraft and passenger package fields',()=>{
  assert.equal(validateFlightSchedulePayload(payload),true);
  for(const bad of [
@@ -70,6 +97,8 @@ test('operational create fails closed, owner verified, without ANY schedule, slo
     fuelDispatchModelApproved:false,fuelAccountingModelApproved:false,
     maintenanceBaselineVerified:false}]};
   }
+  const readonly=readOnlyUnreleasedRouteEvidence(sql);
+  if(readonly)return readonly;
   throw Error('Any other SQL is an unauthorized operational write');
  });
  const res=await h(req(payload));
@@ -93,8 +122,11 @@ test('operational create fails closed, owner verified, without ANY schedule, slo
  assert.match(out.blockingRequirements.join(' '),/TRUSTED_AIRCRAFT_EXECUTION_NOT_CONNECTED/);
  assert.match(out.blockingRequirements.join(' '),/SEVEN_DAY_PASSENGER_BOOKING_NOT_CONNECTED/);
  assert.match(out.blockingRequirements.join(' '),/FLIGHT_FINANCIAL_SETTLEMENT_NOT_CONNECTED/);
- assert.equal(statements.length,3,'owner, readiness and aircraft SELECT only');
- assert.ok(statements.every(x=>[SCHEDULE_SQL.owner,SCHEDULE_SQL.operationalReadiness,SCHEDULE_SQL.aircraftPrerequisites].includes(x.sql)));
+ assert.equal(statements.length,6,'owner, readiness, aircraft, independent maintenance and slot SELECT only');
+ assert.ok(statements.every(x=>x.sql.trim().toUpperCase().startsWith('SELECT')));
+ assert.ok(statements.some(x=>x.sql===SCHEDULE_SQL.maintenanceReadiness));
+ assert.ok(statements.some(x=>x.sql===SCHEDULE_SQL.maintenanceGameDue));
+ assert.ok(statements.some(x=>x.sql===SCHEDULE_SQL.candidateSlotRights));
 });
 test('unowned airline or invalid auth never reveals readiness and writes nothing',async()=>{
  const foreign=handler((sql)=>{
@@ -194,6 +226,8 @@ test('a verified starter aircraft at the correct origin is not misdiagnosed as l
     maintenanceBaselineVerified:false
    }]};
   }
+  const readonly=readOnlyUnreleasedRouteEvidence(sql);
+  if(readonly)return readonly;
   throw Error('Unexpected SQL / unauthorized write');
  });
  const response=await h(req(payload));
@@ -210,7 +244,7 @@ test('a verified starter aircraft at the correct origin is not misdiagnosed as l
  assert.equal(result.gameFuelEstimateReady,true);
  assert.equal(result.maintenanceUsageTrackingStarted,true);
  assert.equal(result.crewRequired,false);
- assert.equal(statements.length,3);
+ assert.equal(statements.length,6);
  assert.ok(statements.every(x=>x.sql.trim().startsWith('SELECT')));
 });
 test('server position resolver explicitly favors signed movements over the original starter allocation',async()=>{
