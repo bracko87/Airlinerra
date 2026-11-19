@@ -33,7 +33,8 @@ test('atomic roundtrip accepts exactly two complete proposed schedules',()=>{
 });
 test('atomic writer is private and rolls back unless BOTH certified and booked',async()=>{
  const sql=await read('supabase/migrations/20261113215000_section9_atomic_roundtrip_operational_boundary_v1.sql');
- assert.match(sql,/SECURITY INVOKER/);
+ // PostgreSQL functions default to SECURITY INVOKER when not declared otherwise.
+ assert.doesNotMatch(sql,/SECURITY DEFINER/);
  assert.match(sql,/section9_owned_roundtrip_candidate_preview_v1/);
  assert.match(sql,/section6_save_owned_aircraft_schedule_with_slots_v1[\s\S]*section6_save_owned_aircraft_schedule_with_slots_v1/);
  assert.match(sql,/section9_commit_certified_schedule_activation_v1[\s\S]*section9_commit_certified_schedule_activation_v1/);
