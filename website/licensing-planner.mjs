@@ -75,7 +75,7 @@ export const LICENCE_PLAN=Object.freeze([
   'Financial, AOC, safety and critical maintenance problems may require correction, warnings or suspension; exact windows not finalized',
   'Verified corrective actions restore the qualifying rights without recreating airline accounts; exact downgrade rules under discussion',
   'NOT LIVE. Specific fictional commercial/network rights, not actual legal permissions. See docs/AIRLINERRA_LICENCE2_FOREIGN_NETWORK_2026-11-17.md. The previously stated automatic L2 award and worldwide airport-count quotas are wrong.'),
- define('CARGO_OPERATIONS_SCOPE','airline','Cargo operations approval','$50,000 game fee at approval','3 verified game days',
+ define('CARGO_OPERATIONS_SCOPE','airline','Cargo operations approval','$50,000 game fee at approval','3 game days (verified game clock)',
   'Apply: no extra aircraft purchase required. Final approval: at least one in-service cargo or combi aircraft in this cargo company fleet; an existing suitable aircraft counts',
   ['A holding may register a separate cargo airline subsidiary without this licence, but the company cannot operate cargo flights before approval','The applicant must be a verified cargo airline subsidiary, not a holding or unrelated passenger airline','The cargo company must have its own active AOC (Licence 1)','Submitting an application is free'],
   ['At approval, verify at least one in-service cargo-capable aircraft owned or leased by this company','Confirm sufficient funds in the cargo company account for the $50,000 fee','Charge the fee once only in the same trusted transaction that issues the approval after 3 verified game days'],
