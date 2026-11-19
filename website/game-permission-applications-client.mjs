@@ -157,6 +157,22 @@ export function createGamePermissionApplicationsClient({
    return checkedGamePermissionStatus(
     await post({action:'status',airlineId}),airlineId);
   },
+  async submitLicence2Application({airlineId,applicationId}={}){
+   if(!UUID.test(airlineId||'')||!UUID.test(applicationId||''))
+    throw Error('Invalid Licence 2 submission request');
+   const result=await post({action:'licence2_submit',airlineId,applicationId});
+   if(!['APPLICATION_SUBMITTED_FOR_REVIEW','ALREADY_SUBMITTED',
+      'APPLICATION_NOT_SUBMITTABLE','APPLICATION_NOT_ELIGIBLE','GAME_DATE_UNVERIFIED']
+      .includes(result.status)||
+      typeof result.submitted!=='boolean'||
+      !Array.isArray(result.issues)||result.issues.length>20||
+      result.issues.some(issue=>typeof issue!=='string'||! /^[A-Z0-9_]{3,100}$/.test(issue))||
+      result.feeCharged!==false||result.rightsGranted!==false||
+      result.flightsActivated!==false||
+      (['APPLICATION_SUBMITTED_FOR_REVIEW','ALREADY_SUBMITTED'].includes(result.status)&&result.submitted!==true))
+     throw Error('Unsafe Licence 2 submission response');
+   return result;
+  },
   async refreshLicence2Draft({airlineId,applicationId}={}){
    if(!UUID.test(airlineId||'')||!UUID.test(applicationId||''))
     throw Error('Invalid Licence 2 refresh request');
