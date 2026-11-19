@@ -55,7 +55,7 @@ test('SQL aggregates outbound and return requests and remains read-only',async()
 });
 test('the private API calls only the two-leg read-only query',async()=>{
  const src=await read('server/flight-schedule-service.mjs');
- assert.match(SCHEDULE_SQL.roundtripPreview,/section9_owned_roundtrip_candidate_preview_v1/);
+ assert.match(SCHEDULE_SQL.roundtripPreview,/section9_owned_roundtrip_launch_readiness_v1/);
  assert.match(src,/body\.action==='roundtrip-preview'/);
  assert.match(src,/SCHEDULE_SQL\.owner/);
  assert.match(src,/SCHEDULE_SQL\.roundtripPreview/);
