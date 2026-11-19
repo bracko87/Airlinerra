@@ -250,3 +250,28 @@ test('atomic Licence 2 payment uses independent verified game day, not raw clock
  assert.match(sql,/licence2_review_event_receipts_v1/);
  assert.doesNotMatch(sql,/select confirmed_game_date into v_game_day from airlinerra_game\.holding_world_clock_v1/i);
 });
+
+test('signed EU game reviewer only runs after all independent release gates, verified date, approved fee and 3 days',async()=>{
+ const sql=await read('supabase/migrations/20261119163500_licence2_private_signed_eu_automatic_review.sql');
+ assert.match(sql,/current_user IS DISTINCT FROM 'postgres'/);
+ assert.match(sql,/licence2_review_due_eu_game_applications_auto_v1/);
+ assert.match(sql,/section9_verified_permission_game_day_v1/);
+ assert.match(sql,/section9_verified_game_tick_receipts_v1/);
+ assert.match(sql,/a\.submitted_game_date<=now_day-3/);
+ assert.match(sql,/approval_enabled=true AND/);
+ assert.match(sql,/reviewer_integration_verified=true AND fee_ledger_integration_verified=true/);
+ assert.match(sql,/market_code='L2-EU' AND issuance_enabled=true/);
+ assert.match(sql,/processingGameDays'\)::integer IS DISTINCT FROM 3/);
+ for(const fee of ['25000','75000','200000','500000'])
+  assert.match(sql,new RegExp('fee<>'+fee));
+ assert.match(sql,/licence2_approval_preflight_v1/);
+ assert.match(sql,/licence2_approve_application_atomic_v1/);
+ assert.match(sql,/licence2_private_auto_review_audit_v1/);
+ assert.match(sql,/vault\.create_secret\(/);
+ assert.match(sql,/extensions\.hmac\(/);
+ assert.match(sql,/pg_try_advisory_xact_lock/);
+ assert.match(sql,/airlinerra-licence2-eu-auto-review-v1/);
+ assert.match(sql,/REVOKE ALL ON FUNCTION/);
+ assert.doesNotMatch(sql,/SET\s+(?:approval_enabled|issuance_enabled|flight_enforcement_enabled)\s*=\s*true/i);
+ assert.doesNotMatch(sql,/SECURITY DEFINER/);
+});
