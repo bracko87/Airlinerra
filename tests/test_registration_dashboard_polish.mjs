@@ -69,6 +69,6 @@ test('Dashboard is a standalone first navigation link, not a Manager submenu ent
  assert.match(script,/renderOverviewState\(hasRealAirline\)/);
  assert.match(script,/formatWholeUsd\(first\.cashUsd\)/);
  assert.match(css,/\.nav-direct\[aria-current="page"\]/);
- for(const id of ['player-airline-note','player-cash-note','overview-progress-title',
-  'overview-home-progress','overview-activation-progress'])assert.match(html,new RegExp('id="'+id+'"'));
+ for(const id of ['player-airline-note','player-cash-note','overview-subtitle',
+  'player-airline-name','player-cash'])assert.match(html,new RegExp('id="'+id+'"'));
 });
