@@ -77,3 +77,17 @@ test('fake positive DB result is rejected and connection is returned',async()=>{
   assert.equal(calls.at(-1),'release');
  }
 });
+
+test('atomic writer reports resolved incident only after all paid corrections complete',async()=>{
+ const yes=setup(undefined,{status:'INDEPENDENT_AOC_CORRECTION_STAGED',
+  staged:true,charged:false,incidentResolved:true,
+  certificateIssued:false,flightActivated:false});
+ const actual=await yes.service.commit(request);
+ assert.equal(actual.staged,true);
+ assert.equal(actual.incidentResolved,true);
+ assert.equal(actual.charged,false);
+ const no=setup(undefined,{status:'INDEPENDENT_AOC_CORRECTION_STAGED',
+  staged:true,charged:false,incidentResolved:false,
+  certificateIssued:false,flightActivated:false});
+ assert.equal((await no.service.commit(request)).incidentResolved,false);
+});
