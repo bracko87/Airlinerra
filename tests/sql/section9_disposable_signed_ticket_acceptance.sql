@@ -14,7 +14,7 @@ BEGIN
  RAISE EXCEPTION 'Real signed departure and arrival rejected: %',x;END IF;
  x:=airlinerra_game.section9_postarrival_ticket_reconciliation_v1(fid);
  IF x->>'status'<>'postarrival_ticket_totals_reconciled'
- OR x->>'ticketPassengers'<>'20' OR x->>'ticketIncomeUsd'<>'1000' THEN
+ OR x->>'ticketPassengers'<>'20' OR (x->>'ticketIncomeUsd')::numeric<>1000 THEN
  RAISE EXCEPTION 'Real booking receipts failed reconciliation: %',x;END IF;
 
  SELECT event_hmac_sha256 INTO previous_sig
@@ -48,7 +48,7 @@ BEGIN
  IF x->>'signatureVerified'<>'true' THEN
   RAISE EXCEPTION 'Restored real signatures should verify: %',x;END IF;
  x:=airlinerra_game.section9_postarrival_ticket_reconciliation_v1(fid);
- IF x->>'ticketPassengers'<>'20' OR x->>'ticketIncomeUsd'<>'1000'
+ IF x->>'ticketPassengers'<>'20' OR (x->>'ticketIncomeUsd')::numeric<>1000
  THEN RAISE EXCEPTION 'Restored real tickets should reconcile: %',x;END IF;
  RAISE NOTICE 'PASS signed HMAC, real 20 ticket receipts, tamper and mismatches blocked; ready for six parallel real posting attempts';
 END $test$;
