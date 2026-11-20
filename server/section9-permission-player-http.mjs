@@ -280,7 +280,8 @@ export function createSection9PermissionPlayerHandler({
       minimumSafetyRating:50,safetyRating:x.health.safetyRating,
       aircraftGraceDaysRemaining:x.health.aircraftGraceDaysRemaining,
       operationsAuthorized:x.health.operationsAuthorized,
-      canApply:x.released===true&&x.readiness.eligible===true,
+      canApply:x.released===true&&x.readiness.eligible===true&&
+        (!x.health.licenceRecorded||x.health.revoked),
       applicationStatus:x.application_status,dueGameDay:x.due_game_day,
       issues:Array.isArray(x.readiness.issues)?x.readiness.issues.slice(0,20):[],
       feeUsd:50000,processingGameDays:3,
@@ -353,7 +354,8 @@ export function createSection9PermissionPlayerHandler({
       minimumSafetyRating:70,safetyRating:x.health.safetyRating,
       aircraftGraceDaysRemaining:x.health.aircraftGraceDaysRemaining,
       operationsAuthorized:x.health.operationsAuthorized,
-      canApply:x.released===true&&x.readiness.eligible===true,
+      canApply:x.released===true&&x.readiness.eligible===true&&
+        (!x.health.licenceRecorded||x.health.revoked),
       applicationStatus:x.application_status,dueGameDay:x.due_game_day,
       issues:Array.isArray(x.readiness.issues)?x.readiness.issues.slice(0,20):[],
       feeUsd:40000,processingGameDays:3,
