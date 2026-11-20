@@ -6,6 +6,9 @@ on:
       - 'server/section9-roundtrip-certification-coordinator.mjs'
       - 'tests/test_section9_roundtrip_certification_coordinator.mjs'
       - 'tests/test_section9_unreleased_certification_fail_closed.mjs'
+      - 'server/section9-unreleased-certificate-source-reader.mjs'
+      - 'tests/test_section9_unreleased_certificate_source_reader.mjs'
+      - 'supabase/migrations/20261120215500_section9_execution_finance_source_preflight_readonly.sql'
       - 'supabase/migrations/20261120211500_section9_unreleased_execution_finance_certification_fail_closed.sql'
       - 'server/section9-game-permission-verifier-issuer.mjs'
       - 'server/section9-game-slot-clearance-issuer.mjs'
@@ -29,4 +32,4 @@ jobs:
           node --check tests/test_section9_roundtrip_certification_coordinator.mjs
       - name: Verify issuer HMACs with mirrored route identities and denial cases
         run: |
-          node --test tests/test_section9_roundtrip_certification_coordinator.mjs tests/test_section9_game_permission_verifier_issuer.mjs tests/test_section9_game_slot_clearance_issuer.mjs tests/test_section9_signed_certification_ingress.mjs tests/test_section9_unreleased_certification_fail_closed.mjs
+          node --test tests/test_section9_roundtrip_certification_coordinator.mjs tests/test_section9_game_permission_verifier_issuer.mjs tests/test_section9_game_slot_clearance_issuer.mjs tests/test_section9_signed_certification_ingress.mjs tests/test_section9_unreleased_certification_fail_closed.mjs tests/test_section9_unreleased_certificate_source_reader.mjs
