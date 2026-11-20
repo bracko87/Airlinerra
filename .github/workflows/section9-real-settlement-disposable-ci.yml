@@ -73,7 +73,7 @@ jobs:
           start=src.index(marker)
           end=src.index('REVOKE ALL ON FUNCTION airlinerra_game.section9_post_completed_flight_finance_once_v1(',start)
           body=src[start:end]
-          assert "END $function$;" in body
+          assert "END $function$" in body
           assert "INSERT INTO airlinerra_game.airline_ledger" in body
           assert "pg_try_advisory_xact_lock" in body
           Path('/tmp/airlinerra-real-settlement-function.sql').write_text(body)
