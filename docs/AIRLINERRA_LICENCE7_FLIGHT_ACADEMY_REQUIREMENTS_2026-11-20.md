@@ -1,5 +1,5 @@
 # Airlinerra — Licence 7: Flight Academy / Training Organization Approval
-**Status: DESIGN PROPOSAL — not yet approved for live issuance or commercial training**
+**Status: DESIGN — financial terms confirmed by user on 2026-11-20; NOT IMPLEMENTED or released for live issuance/training**
 **2026-11-20. After Licence 6 MRO.**
 
 ## Purpose and single-licence decision
@@ -7,15 +7,15 @@ One player-facing **Licence 7 — Flight Academy / Training Organization Approva
 
 IMPORTANT CURRENT SYSTEM GAP: The existing `holding_subsidiaries_v1.company_kind` check currently allows regional_airline, passenger_airline, cargo_airline, charter_airline and maintenance_mro only; it **does not include flight_academy**. A future company-model migration and actual subsidiary-registration flow will be needed before this licence can ever issue. The current aircraft crew roster and payroll systems are not academy infrastructure.
 
-## Proposed commercial terms for user review
+## Commercial terms (fee and processing time confirmed by user)
 | Topic | Game design |
 | --- | --- |
 | Eligible organization | Registered `flight_academy` subsidiary under an eligible holding |
 | Holding eligibility | Existing holding creation requirements are unchanged |
 | Minimum age of academy | **None**; may apply immediately after registration once all later-defined training requirements are met |
 | Application fee | **Free** |
-| Proposed approval fee | **$40,000**, charged exactly once when approved |
-| Processing time | **7 verified game days**, with final readiness recheck |
+| Approval fee — CONFIRMED | **$40,000**, charged exactly once when approved |
+| Processing time — CONFIRMED | **7 verified game days**, with final readiness recheck |
 | Licence duration | Indefinite while compliant; periodic quality/safety inspection proposed every 365 game days |
 | Customer scope | Internal group trainees and external player airlines under the **same Licence 7** |
 | External marketplace | Optional, private/unlisted by default |
@@ -23,7 +23,7 @@ IMPORTANT CURRENT SYSTEM GAP: The existing `holding_subsidiaries_v1.company_kind
 | Training aircraft requirement | **At least one purchased and operational small training aircraft, assigned to the academy, before Licence 7 can be approved**; not required merely to register the subsidiary |
 | Renewal fee | None automatically; no duplicate external-service or programme licence fee |
 
-The $40,000 price and 7-day review are existing planner **proposals**, not verified regulator prices and not activated.
+**User approval recorded on 2026-11-20:** $40,000 initial approval fee and 7 verified game days processing. These are in-game policy decisions, not regulator prices. No charge, application review, academy infrastructure or live licence issuance has been implemented.
 
 ## Programmes and licensing boundary
 Potential future course categories, **not yet approved game curriculum**:
@@ -65,7 +65,7 @@ Potential future course categories, **not yet approved game curriculum**:
 - **Recovery:** fix the deficiency, verify all prerequisites and complete a reinspection/revalidation. Restore the same licence when appropriate, without an unnecessary second $40,000 initial issuance charge.
 - **Expiry/lapse:** if the compliance inspection is overdue, place the academy under an auditable restricted/suspended state, not instantly delete its records. Define exact notice and grace period later.
 - **Revocation:** reserve for serious fraud, falsified training completions or instructor qualifications, grave/repeated safety issues, intentional operation while suspended, or permanent loss/closure of the company. Require an independently reviewed reason and audit record, plus controlled notice and appeal workflow.
-- **Reapplication:** after a final revocation, a new application and approval can be required, with the normal $40,000 proposed approval fee; do not permit direct self-reactivation.
+- **Reapplication:** after a final revocation, a new application and approval can be required, with the normal $40,000 approval fee; do not permit direct self-reactivation.
 - **Marketplace:** unpublishing a provider or its courses is a voluntary commercial choice and must **never count as a suspension or revocation**.
 - The exact inspection notice timing, suspension grace periods, fines, appeals and recurring operating charges will be specified in a later policy review before live activation.
 
