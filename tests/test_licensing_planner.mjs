@@ -7,7 +7,7 @@ const expectedCodes=[
  'HOLDING_FORMATION','SUBSIDIARY_FORMATION','AIR_OPERATOR_CERTIFICATE',
  'EU_AIRLINE_OPERATING_LICENCE','FOREIGN_NETWORK_LICENCE_2','CARGO_OPERATIONS_SCOPE',
  'CHARTER_VIP_SCOPE','DANGEROUS_GOODS','DOMESTIC_TRAFFIC',
- 'INTEGRATED_MARKET','THIRD_FOURTH_FREEDOM','FIFTH_FREEDOM',
+ 'INTEGRATED_MARKET','THIRD_FOURTH_FREEDOM',
  'SEVENTH_FREEDOM','CABOTAGE','FOREIGN_BASE_PERMIT',
  'PART145_MAINTENANCE','NON_EU_MAINTENANCE'
 ];
@@ -15,7 +15,7 @@ const expectedCodes=[
 test('planner covers every installed reference type plus labelled future concepts',()=>{
  const codes=LICENCE_PLAN.map(x=>x.code);
  assert.equal(new Set(codes).size,codes.length,'no duplicated game permission codes');
- assert.equal(codes.length,19);
+ assert.equal(codes.length,18);
  for(const code of expectedCodes)assert.ok(codes.includes(code),code);
  for(const future of ['AIRPORT_SLOTS','FLIGHT_ACADEMY'])
   assert.ok(codes.includes(future),'future concept '+future);
@@ -125,11 +125,11 @@ test('ticket-style licence planner uses selects, preserves checks, and remains r
  const category=first(root,'select',x=>x.attrs['aria-label']==='Permission category');
  category.value='market';category.listeners.change();
  assert.equal(licence.children.some(x=>x.value==='CARGO_OPERATIONS_SCOPE'),false);
- assert.ok(licence.children.some(x=>x.value==='FIFTH_FREEDOM'));
+ assert.ok(licence.children.some(x=>x.value==='FOREIGN_NETWORK_LICENCE_2'));
  const search=first(root,'input',x=>x.attrs['aria-label']==='Search licences and requirements');
  search.value='cabotage';search.listeners.input();
  assert.ok(licence.children.some(x=>x.value==='CABOTAGE'));
- assert.equal(licence.children.some(x=>x.value==='FIFTH_FREEDOM'),false);
+ assert.equal(licence.children.some(x=>x.value==='FOREIGN_NETWORK_LICENCE_2'),false);
  search.value='not-existing';search.listeners.input();
  assert.match(flatText(root),/No permission matches these filters/);
  search.value='';search.listeners.input();
