@@ -34,7 +34,39 @@ export function createGamePermissionApplicationsView({
  const note=node(doc,'p','game-licence-state','Select your airline to check the game licence status.');
  note.setAttribute('role','status');note.setAttribute('aria-live','polite');
  section.append(note);
+ // All eight player-approved licence families are always discoverable here.
+ // Navigation is informational only; it must never infer issued permissions.
+ const coreLicences=[
+  ['1','Air Operator Certificate'],
+  ['2','Foreign Network Expansion'],
+  ['3','Cargo Operations'],
+  ['4','Charter / VIP'],
+  ['5','Dangerous Goods'],
+  ['6','Maintenance Organization'],
+  ['7','Flight Academy'],
+  ['8','Aircraft Leasing']
+ ];
+ const overview=node(doc,'nav','game-licence-overview');
+ overview.setAttribute('aria-label','Eight Airlinerra licences');
+ overview.append(node(doc,'h3','','Your eight Airlinerra licences'),
+  node(doc,'p','hint','Open a licence below to review the rules and its current availability. An information panel is not proof of approval.'));
+ const overviewGrid=node(doc,'div','game-licence-overview-grid');
+ for(const [number,title] of coreLicences){
+  const control=node(doc,'button','game-licence-overview-item',number+' · '+title);
+  control.type='button';
+  control.setAttribute('aria-controls','game-licence-core-'+number);
+  control.addEventListener('click',()=>{
+   const target=doc.getElementById('game-licence-core-'+number);
+   if(!target)return;
+   target.scrollIntoView?.({block:'start',behavior:'smooth'});
+   target.focus?.({preventScroll:true});
+  });
+  overviewGrid.append(control);
+ }
+ overview.append(overviewGrid);
+ section.append(overview);
  const aocPanel=node(doc,'div','game-aoc-status');
+ aocPanel.id='game-licence-core-1';aocPanel.tabIndex=-1;
  const aocTitle=node(doc,'h3','','Air Operator Certificate (AOC)');
  const aocState=node(doc,'p','game-aoc-status-text',
   'Checking the selected airline’s AOC record…');
@@ -43,6 +75,7 @@ export function createGamePermissionApplicationsView({
  aocPanel.append(aocTitle,aocState,aocDetail);
  section.append(aocPanel);
  const l2Panel=node(doc,'div','game-aoc-status game-licence-l2');
+ l2Panel.id='game-licence-core-2';l2Panel.tabIndex=-1;
  l2Panel.append(node(doc,'h3','','Licence 2 — Foreign network expansion'),
   node(doc,'p','hint','Licence 1 covers normal flights to and from your home market. Licence 2 covers additional foreign-network routes, including eligible onward flights between foreign countries. Fifth Freedom is included here; there is no separate Licence 6 application or fee. International traffic rights, route allocation, slots and aircraft checks still apply. Each route direction counts separately.'));
  const l2State=node(doc,'p','hint','Checking foreign-market licence limits…');
@@ -50,6 +83,7 @@ export function createGamePermissionApplicationsView({
  l2Panel.append(l2State,l2Markets);
  section.append(l2Panel);
  const l3Panel=node(doc,'div','game-aoc-status game-licence-l3');
+ l3Panel.id='game-licence-core-3';l3Panel.tabIndex=-1;
  const l3State=node(doc,'p','game-licence-status','Cargo licence status not yet checked.');
  const l3Apply=node(doc,'button','secondary','Apply for Cargo Licence 3');
  l3Apply.type='button';l3Apply.disabled=true;
@@ -63,6 +97,7 @@ export function createGamePermissionApplicationsView({
  );
  section.append(l3Panel);
  const l4Panel=node(doc,'div','game-aoc-status game-licence-l4');
+ l4Panel.id='game-licence-core-4';l4Panel.tabIndex=-1;
  const l4State=node(doc,'p','game-licence-status','Charter/VIP licence status not yet checked.');
  const l4Apply=node(doc,'button','secondary','Apply for Charter/VIP Licence 4');
  l4Apply.type='button';l4Apply.disabled=true;
@@ -76,6 +111,7 @@ export function createGamePermissionApplicationsView({
  );
  section.append(l4Panel);
  const l5Panel=node(doc,'div','game-aoc-status game-licence-l5');
+ l5Panel.id='game-licence-core-5';l5Panel.tabIndex=-1;
  const l5State=node(doc,'p','game-licence-status','Dangerous goods licence status not yet checked.');
  const l5Apply=node(doc,'button','secondary','Apply for Dangerous Goods Licence 5');
  l5Apply.type='button';l5Apply.disabled=true;
@@ -87,6 +123,46 @@ export function createGamePermissionApplicationsView({
   l5Apply
  );
  section.append(l5Panel);
+ const futureCompanyLicences=[
+  {
+   number:'6',title:'Maintenance Organization Approval (MRO)',
+   status:'Under development — applications not available',
+   scope:'One registered maintenance subsidiary may eventually perform approved maintenance for its holding and external airlines under the same licence.',
+   terms:'Free application; $200,000 only on approval; 10 verified game days. Optional public maintenance-service listing with company-set prices for each approved service.',
+   limitation:'Actual company facilities, maintenance qualifications, staffing and payment controls are not yet ready. This licence cannot be issued or used.'
+  },
+  {
+   number:'7',title:'Flight Academy / Training Organization Approval',
+   status:'Under development — applications not available',
+   scope:'One registered academy subsidiary may eventually train its holding employees and external airline customers under one licence.',
+   terms:'Free application; $40,000 only on approval; 7 verified game days. At least one purchased, delivered and operational small training aircraft is required before approval.',
+   limitation:'Training programmes, approved instructors, aircraft, simulators and payment controls are not ready. Future public courses will be optional and priced individually.'
+  },
+  {
+   number:'8',title:'Aircraft Leasing Company Approval',
+   status:'Under development — applications not available',
+   scope:'One registered aircraft-leasing subsidiary may eventually dry-lease owned aircraft to airlines in its holding or to other players.',
+   terms:'Free application; $100,000 only on approval; 7 verified game days. Public aircraft offers are optional and private by default, with player-defined lease terms.',
+   limitation:'Lease contracts, company asset ownership, finances and double-lease protection are not live. Wet leasing / ACMI is not authorized by Licence 8.'
+  }
+ ];
+ for(const licence of futureCompanyLicences){
+  const panel=node(doc,'div','game-aoc-status game-licence-future');
+  panel.id='game-licence-core-'+licence.number;
+  panel.tabIndex=-1;
+  panel.append(
+   node(doc,'h3','','Licence '+licence.number+' — '+licence.title),
+   node(doc,'p','game-licence-status',licence.status),
+   node(doc,'p','hint',licence.scope),
+   node(doc,'p','hint',licence.terms),
+   node(doc,'p','hint',licence.limitation)
+  );
+  const locked=node(doc,'button','secondary','Applications not available');
+  locked.type='button';
+  locked.disabled=true;
+  panel.append(locked);
+  section.append(panel);
+ }
  const metrics=node(doc,'div','game-licence-metrics');
  const fields=[];
  for(const name of ['Current game date','Pending review','Issued permissions']){
