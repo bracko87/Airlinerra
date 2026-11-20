@@ -1,0 +1,117 @@
+name: Isolated real completed-flight financial settlement concurrency
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tests/sql/section9_disposable_real_settlement_bootstrap.sql'
+      - 'tests/sql/section9_disposable_real_settlement_negative.sql'
+      - 'tests/sql/section9_disposable_real_settlement_postconditions.sql'
+      - 'supabase/migrations/20261117095000_section9_once_only_final_flight_finance_guarded_v1.sql'
+      - '.github/workflows/section9-real-settlement-disposable-ci.yml'
+  pull_request:
+    paths:
+      - 'tests/sql/section9_disposable_real_settlement_bootstrap.sql'
+      - 'tests/sql/section9_disposable_real_settlement_negative.sql'
+      - 'tests/sql/section9_disposable_real_settlement_postconditions.sql'
+      - 'supabase/migrations/20261117095000_section9_once_only_final_flight_finance_guarded_v1.sql'
+      - '.github/workflows/section9-real-settlement-disposable-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-settlement-postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable-ci-only
+          POSTGRES_DB: airlinerra_disposable
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d airlinerra_disposable"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 8
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: disposable-ci-only
+      PGDATABASE: airlinerra_disposable
+      PGOPTIONS: -c statement_timeout=30000 -c lock_timeout=10000
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: |
+          if ! command -v psql >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y postgresql-client
+          fi
+      - name: Verify disposable DB before any schema changes
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = "127.0.0.1"
+          test "$PGPORT" = "5432"
+          test "$PGDATABASE" = "airlinerra_disposable"
+          test "$PGUSER" = "postgres"
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/disposable_database_preflight.sql
+      - name: Install isolated tables and separately identified proof stubs
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_real_settlement_bootstrap.sql
+      - name: Extract EXACT production financial posting function source
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          src=Path('supabase/migrations/20261117095000_section9_once_only_final_flight_finance_guarded_v1.sql').read_text()
+          marker='CREATE OR REPLACE FUNCTION airlinerra_game.section9_post_completed_flight_finance_once_v1('
+          start=src.index(marker)
+          end=src.index('REVOKE ALL ON FUNCTION airlinerra_game.section9_post_completed_flight_finance_once_v1(',start)
+          body=src[start:end]
+          assert "END $function$;" in body
+          assert "INSERT INTO airlinerra_game.airline_ledger" in body
+          assert "pg_try_advisory_xact_lock" in body
+          Path('/tmp/airlinerra-real-settlement-function.sql').write_text(body)
+          print('Exact production function extracted; SQL checksum cannot be altered by test fixture.')
+          PY
+          psql -X -v ON_ERROR_STOP=1 -f /tmp/airlinerra-real-settlement-function.sql
+      - name: Verify real function rejects missing releases proofs cash and ledger drift
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_real_settlement_negative.sql
+      - name: Race six independent connections on one completed flight
+        shell: bash
+        run: |
+          set -euo pipefail
+          fid='44444444-4444-4444-8444-444444444444:2026-11-20:5'
+          pids=()
+          for n in $(seq 1 6); do
+            psql -X -qAt -v ON_ERROR_STOP=1 -c "SELECT (airlinerra_game.section9_post_completed_flight_finance_once_v1('$fid')->>'status');" > "$RUNNER_TEMP/flight_settlement_$n.txt" 2>&1 &
+            pids+=("$!")
+          done
+          status=0
+          for pid in "${pids[@]}"; do
+            wait "$pid" || status=1
+          done
+          cat "$RUNNER_TEMP"/flight_settlement_*.txt
+          test "$status" -eq 0
+          posted=$(grep -hxc 'verified_complete_flight_finance_posted_once' "$RUNNER_TEMP"/flight_settlement_*.txt | awk '{s+=$1}END{print s+0}')
+          test "$posted" -eq 1
+          for file in "$RUNNER_TEMP"/flight_settlement_*.txt; do
+            grep -Eq '^(verified_complete_flight_finance_posted_once|game_flight_finance_posting_busy|complete_game_flight_finance_already_posted)$' "$file"
+          done
+      - name: Verify exactly-once money cash integrity and replay
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_real_settlement_postconditions.sql
+      - name: Report isolation and proof limitations
+        if: always()
+        run: |
+          echo "### Real settlement function — isolated PostgreSQL 17" >> "$GITHUB_STEP_SUMMARY"
+          echo "Database: disposable, localhost only. Actual financial posting function from migration is used unchanged." >> "$GITHUB_STEP_SUMMARY"
+          echo "Signed movement, game hour and ticket reconciliation dependencies are strictly disposable stand-ins; this does not verify real cryptographic or production end-to-end flight releases." >> "$GITHUB_STEP_SUMMARY"
