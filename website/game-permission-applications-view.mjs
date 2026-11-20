@@ -44,7 +44,7 @@ export function createGamePermissionApplicationsView({
  section.append(aocPanel);
  const l2Panel=node(doc,'div','game-aoc-status game-licence-l2');
  l2Panel.append(node(doc,'h3','','Licence 2 — Foreign network expansion'),
-  node(doc,'p','hint','Licence 1 covers normal flights to and from your home market. Licence 2 is for additional foreign-network routes. Each direction counts separately; repeat flights on the same directed route use one slot.'));
+  node(doc,'p','hint','Licence 1 covers normal flights to and from your home market. Licence 2 covers additional foreign-network routes, including eligible onward flights between foreign countries. Fifth Freedom is included here; there is no separate Licence 6 application or fee. International traffic rights, route allocation, slots and aircraft checks still apply. Each route direction counts separately.'));
  const l2State=node(doc,'p','hint','Checking foreign-market licence limits…');
  const l2Markets=node(doc,'div','game-licence-applications');
  l2Panel.append(l2State,l2Markets);
