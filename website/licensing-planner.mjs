@@ -221,6 +221,27 @@ export const LICENCE_PLAN=Object.freeze([
   'Loss of essential aircraft, equipment, safety or instructors suspends training; serious fraud or repeated safety violations can trigger reviewed revocation. Existing individual pilot qualifications are not automatically erased',
   'Restore missing capabilities and pass reinspection; annual revalidation is not a new paid licence. Pilot qualifications are separately renewed after recurrent training; revoked academies must reapply',
   'DESIGN ONLY. Future infrastructure includes 10–20 purchasable small training-aircraft models, simulators, course-specific pilot ratings, conflict-free ATR 72/airliner training reservations and academy compliance. No academy issuance or booking systems are live. See docs/AIRLINERRA_LICENCE7_FLIGHT_ACADEMY_REQUIREMENTS_2026-11-20.md.')
+,
+ define('AIRCRAFT_LEASING','special','Licence 8 — Aircraft Leasing Company Approval','$100,000 once on approval; free application','7 verified game days',
+  'A leasing subsidiary owns aircraft for future dry-lease contracts; minimum aircraft assets, reserve and actual title verification will be defined later',
+  ['Registered aircraft_leasing subsidiary under an eligible holding with no minimum leasing-company age',
+   'One company licence covers dry leasing to its own holding airlines and to other players',
+   'Free application; ownership, registration, finances, leasing compliance and insurance must be verified before licence approval',
+   'No additional commercial leasing licence; the future company must have independently auditable finances'],
+  ['After 7 verified game days recheck genuine eligibility; charge exactly $100,000 only in the same transaction as issuance',
+   'Proposed inspection every 365 verified game days; no automatic renewal fee',
+   'Dry lease ownership stays with lessor, while exclusive operating use is granted to the lessee airline under contract',
+   'The lease contract and aircraft operating use must enforce no double leasing or concurrent incompatible operations'],
+  ['Publish Aircraft for Lease is OFF by default; owners can select aircraft and set monthly prices and conditions per offer',
+   'A dry lease does not confer AOC, route access, aircraft serviceability or permission to fly without operator checks',
+   'Wet lease / ACMI (aircraft plus crew/maintenance/insurance) remains with licensed operating airline permissions and is not authorized by Licence 8',
+   'Confirmed contracts retain agreed terms despite future repricing or unpublishing'],
+  'Operate a dry-aircraft leasing business for own-group and external airline customers under a single Licence 8',
+  'No wet lease / ACMI, AOC, route rights or automatic flight scheduling permission, and no double lease of the same aircraft',
+  'Continuing while compliant, with inspection every 365 game days and no automatic annual approval charge',
+  'Suspend new leasing for material compliance failure; fraud, repeated violations or duplicate aircraft leasing can cause revocation after review. Existing contracts must be preserved and resolved',
+  'Correct issues and pass reinspection; revocation requires new approval. Existing accepted lease obligations cannot disappear silently',
+  'PHASE 1 FOUNDATION ONLY. Company formation, leasing marketplace, aircraft purchase/transfer, leases, billing and licence issuance remain disabled. See docs/AIRLINERRA_LICENCE8_AIRCRAFT_LEASING_REQUIREMENTS_2026-11-20.md.')
 
 ]);
 const GROUPS=Object.freeze([
