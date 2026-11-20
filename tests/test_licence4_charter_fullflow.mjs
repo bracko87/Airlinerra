@@ -98,8 +98,8 @@ test('charter browser client refuses fabricated fees and issuance',async()=>{
    return {ok:true,status:200,json:async()=>replies.shift()};
   }
  });
- assert.equal((await c.charterLicence3Status(AIRLINE)).canApply,false);
- assert.equal((await c.submitCharter/VIPLicence3({airlineId:AIRLINE,requestKey:REQUEST})).feeCharged,false);
+ assert.equal((await c.charterLicence4Status(AIRLINE)).canApply,false);
+ assert.equal((await c.submitCharterLicence4({airlineId:AIRLINE,requestKey:REQUEST})).feeCharged,false);
  assert.deepEqual(seen[0],{action:'licence4_status',airlineId:AIRLINE});
  assert.deepEqual(seen[1],{action:'licence4_submit',airlineId:AIRLINE,requestKey:REQUEST});
  const unsafe=createGamePermissionApplicationsClient({
@@ -109,7 +109,7 @@ test('charter browser client refuses fabricated fees and issuance',async()=>{
    feeCharged:true,licenceIssued:true,flightActivated:false
   })})
  });
- await assert.rejects(()=>unsafe.submitCharter/VIPLicence3({airlineId:AIRLINE,requestKey:REQUEST}),
+ await assert.rejects(()=>unsafe.submitCharterLicence4({airlineId:AIRLINE,requestKey:REQUEST}),
  /Unsafe Charter/VIP Licence 4/);
 });
 test('Charter/VIP licence migration preserves one-time fee, 3 game days and flight gating',async()=>{
@@ -123,7 +123,7 @@ test('Charter/VIP licence migration preserves one-time fee, 3 game days and flig
  assert.match(issue,/UNIQUE REFERENCES airlinerra_game.airline_ledger/);
  assert.match(issue,/issuance_enabled AND fee_ledger_verified AND reviewer_verified/);
  assert.match(issue,/current_user IS DISTINCT FROM 'postgres'/);
- assert.match(guard,/CHARTER_VIP_OPERATIONS_LICENCE3_REQUIRED_FOR_ACTIVATION/);
+ assert.match(guard,/CHARTER_VIP_OPERATIONS_LICENCE4_REQUIRED_FOR_ACTIVATION/);
  assert.match(guard,/licence4_charter_schedule_activation_guard_v1/);
  assert.match(guard,/licence4_review_due_charter_game_applications_v1\(25\)/);
 });
