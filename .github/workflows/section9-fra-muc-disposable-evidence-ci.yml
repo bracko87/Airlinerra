@@ -1,0 +1,71 @@
+name: Isolated FRA-MUC flight evidence and replay acceptance
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tests/sql/section9_disposable_evidence_chain_bootstrap.sql'
+      - 'tests/sql/section9_disposable_fra_muc_evidence_chain_acceptance.sql'
+      - 'supabase/migrations/20261120184000_section9_completed_flight_chain_reservation_reconciliation.sql'
+      - '.github/workflows/section9-fra-muc-disposable-evidence-ci.yml'
+  pull_request:
+    paths:
+      - 'tests/sql/section9_disposable_evidence_chain_bootstrap.sql'
+      - 'tests/sql/section9_disposable_fra_muc_evidence_chain_acceptance.sql'
+      - 'supabase/migrations/20261120184000_section9_completed_flight_chain_reservation_reconciliation.sql'
+      - '.github/workflows/section9-fra-muc-disposable-evidence-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  disposable-flight-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable-ci-only
+          POSTGRES_DB: airlinerra_disposable
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d airlinerra_disposable"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 8
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: disposable-ci-only
+      PGDATABASE: airlinerra_disposable
+      PGOPTIONS: -c statement_timeout=30000 -c lock_timeout=10000
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client if missing
+        run: |
+          if ! command -v psql >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y postgresql-client
+          fi
+      - name: Strict disposable target preflight
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = '127.0.0.1'
+          test "$PGDATABASE" = 'airlinerra_disposable'
+          test "$PGUSER" = 'postgres'
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/disposable_database_preflight.sql
+      - name: Install minimal synthetic flight tables and real read-only inspector
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_evidence_chain_bootstrap.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261120184000_section9_completed_flight_chain_reservation_reconciliation.sql
+      - name: Exercise FRA-MUC evidence, reservation and replay failures
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_fra_muc_evidence_chain_acceptance.sql
+      - name: Confirm rollback left no synthetic flight or money records
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -c "DO \$\$ BEGIN IF EXISTS (SELECT 1 FROM airlinerra_game.section9_dated_flight_occurrences_v1) OR EXISTS (SELECT 1 FROM airlinerra_game.section9_route_posted_flight_financials_v1) THEN RAISE EXCEPTION 'Test fixture persisted after rollback'; END IF; END \$\$;"
