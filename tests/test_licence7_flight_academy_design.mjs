@@ -26,7 +26,7 @@ test('academy publication is optional and pricing is set for each programme',asy
 });
 test('academy infrastructure remains deferred and not represented as live or registered',async()=>{
  const doc=await read('docs/AIRLINERRA_LICENCE7_FLIGHT_ACADEMY_REQUIREMENTS_2026-11-20.md');
- assert.match(doc,/does not yet support|does not include flight_academy/i);
+ assert.match(doc,/Actual live company registration is still unavailable/i);
  assert.match(doc,/not live/i);
  assert.match(doc,/future prerequisites/i);
 });
