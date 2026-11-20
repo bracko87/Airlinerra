@@ -11,19 +11,21 @@ const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]
 const TYPES=Object.freeze([
  'operator_licence','route_traffic_rights','airport_slot_capacity'
 ]);
-const allTypes=Object.freeze([...TYPES,'trusted_flight_execution','commercial_finance']);
+const MISSING=Object.freeze(['trusted_flight_execution','commercial_finance']);
+const allTypes=Object.freeze([...TYPES,...MISSING]);
 const validDay=s=>typeof s==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(s)&&
  !Number.isNaN(Date.parse(s+'T00:00:00Z'))&&
  new Date(s+'T00:00:00Z').toISOString().slice(0,10)===s;
-const closed=(status,results=[])=>Object.freeze({
+const closed=(status,results=[],sourceInspections=[])=>Object.freeze({
  status,readOnly:false,certificationComplete:false,
  scheduleActivated:false,flightActivated:false,bookingsCreated:false,
  ledgerPosted:false,confirmedCertificates:results.length,
  verifiedClearances:results,
- remainingClearanceTypes:['trusted_flight_execution','commercial_finance']
+ sourceInspections:Object.freeze(sourceInspections),
+ remainingClearanceTypes:[...MISSING]
 });
 export function createSection9RoundtripCertificationCoordinator({
- operatorIssuer,routeRightsIssuer,slotIssuer
+ operatorIssuer,routeRightsIssuer,slotIssuer,executionFinanceSourceReader
 }={}){
  if(operatorIssuer?.clearanceType!=='operator_licence'||
   typeof operatorIssuer.verifyAndCertify!=='function'||
@@ -32,6 +34,9 @@ export function createSection9RoundtripCertificationCoordinator({
   slotIssuer?.clearanceType!=='airport_slot_capacity'||
   typeof slotIssuer.certifyCurrentSlotReservation!=='function')
   throw Error('SECTION9_THREE_INDEPENDENT_CERTIFICATION_ISSUERS_REQUIRED');
+ if(executionFinanceSourceReader!==undefined&&
+  typeof executionFinanceSourceReader?.inspect!=='function')
+  throw Error('SECTION9_PRIVATE_EXECUTION_FINANCE_SOURCE_READER_REQUIRED');
  return Object.freeze({
   async certifyPreparedPair({
    airlineId,outboundScheduleId,returnScheduleId,
@@ -80,10 +85,45 @@ export function createSection9RoundtripCertificationCoordinator({
      }));
     }
    }
-   // No final authorization without two ADDITIONAL independent proofs per
-   // leg; this service deliberately has no activate/commit method.
+   // Inspect the two additional sources independently for EACH leg.
+   // These are deliberately NOT certificate issuers and can never finish
+   // the activation. Source inspectors only report why proofs are missing.
+   const inspections=[];
+   if(executionFinanceSourceReader){
+    for(const leg of legs){
+     for(const clearanceType of MISSING){
+      let response;
+      try{
+       response=await executionFinanceSourceReader.inspect({
+        airlineId,...leg,gameDate,clearanceType
+       });
+      }catch{
+       return closed('roundtrip_future_source_inspection_failed',
+        results,inspections);
+      }
+      if(!response||response.scheduleId!==leg.scheduleId||
+        response.clearanceType!==clearanceType||
+        response.sourceAuthorityReleased!==false||
+        response.certificateIssued!==false||
+        response.certificationComplete!==false||
+        response.scheduleActivated!==false||
+        response.flightActivated!==false||
+        response.bookingsCreated!==false||
+        response.ledgerPosted!==false||
+        !Array.isArray(response.blockers))
+       return closed('roundtrip_future_source_inspection_untrusted',
+        results,inspections);
+      inspections.push(Object.freeze({
+       scheduleId:leg.scheduleId,clearanceType,status:response.status,
+       blockers:Object.freeze([...response.blockers])
+      }));
+     }
+    }
+   }
+   // 6 existing signed clearances can be recorded, but the other 4
+   // must be independently issued and rechecked in the SQL sink.
    return closed('roundtrip_three_of_five_clearance_types_verified_per_leg',
-     results);
+     results,inspections);
   }
  });
 }
