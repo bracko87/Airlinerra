@@ -13,6 +13,8 @@ on:
       - "website/licensing-planner.mjs"
       - "website/dev-scripts/invited-overlay.mjs"
       - "tests/test_licensing_planner.mjs"
+      - "tests/test_eight_core_licences_frontend.mjs"
+      - "website/game-permission-applications-view.mjs"
       - "tests/test_licence6_mro_design_contract.mjs"
       - "tests/test_licence7_flight_academy_design.mjs"
       - "tests/test_licence7_academy_phase1_foundation.mjs"
@@ -50,6 +52,8 @@ jobs:
           node --check website/player-app.mjs
           node --check website/licensing-planner.mjs
           node --check tests/test_licensing_planner.mjs
+          node --check tests/test_eight_core_licences_frontend.mjs
+          node --check website/game-permission-applications-view.mjs
           node --check tests/test_licence6_mro_design_contract.mjs
           node --check tests/test_licence7_flight_academy_design.mjs
           node --check tests/test_licence7_academy_phase1_foundation.mjs
@@ -62,6 +66,7 @@ jobs:
             tests/test_strategic_navigation.mjs \
             tests/test_operations_center_navigation.mjs \
             tests/test_licensing_planner.mjs \
+            tests/test_eight_core_licences_frontend.mjs \
             tests/test_licence6_mro_design_contract.mjs \
             tests/test_licence7_flight_academy_design.mjs \
             tests/test_licence7_academy_phase1_foundation.mjs \
