@@ -194,7 +194,7 @@ export function createSection9PermissionPlayerHandler({
   let body;
   try{body=await readBody(req);}
   catch{return response(400,{error:'Invalid application request'});}
-  if(!['status','apply','licence2_draft','licence2_withdraw','licence2_refresh','licence2_submit','licence3_status','licence3_submit','licence4_status','licence4_submit','licence5_status','licence5_submit','licence6_preview'].includes(body.action)||!UUID.test(body.airlineId||''))
+  if(!['status','apply','licence2_draft','licence2_withdraw','licence2_refresh','licence2_submit','licence3_status','licence3_submit','licence4_status','licence4_submit','licence5_status','licence5_submit','licence6_preview','licence6_submit'].includes(body.action)||!UUID.test(body.airlineId||''))
    return response(400,{error:'Invalid application request'});
   if(body.action==='status'&&Object.keys(body).sort().join(',')!=='action,airlineId')
    return response(400,{error:'Invalid status request'});
@@ -421,10 +421,12 @@ export function createSection9PermissionPlayerHandler({
       flightActivated:false});
     }finally{client.release();}
    }
-   if(body.action==='licence6_preview'){
+   if(body.action==='licence6_preview'||body.action==='licence6_submit'){
+    const isSubmit=body.action==='licence6_submit';
     if(Object.keys(body).sort().join(',')!==
-      'action,airlineId,foreignDestination,foreignStop,homeAirport,serviceType'
-      || !['passenger','cargo'].includes(body.serviceType)
+      (isSubmit?'action,airlineId,foreignDestination,foreignStop,homeAirport,requestKey,serviceType':
+       'action,airlineId,foreignDestination,foreignStop,homeAirport,serviceType')
+      ||(isSubmit&&!UUID.test(body.requestKey||''))|| !['passenger','cargo'].includes(body.serviceType)
       || ![body.homeAirport,body.foreignStop,body.foreignDestination]
         .every(v=>typeof v==='string'&&/^[A-Z0-9:_-]{3,120}$/.test(v)))
      return response(400,{error:'Invalid Fifth Freedom route preview'});
@@ -432,6 +434,28 @@ export function createSection9PermissionPlayerHandler({
     await service.listApplications({airlineId:body.airlineId});
     const client=await database.connect();
     try{
+     if(isSubmit){
+      const r=await client.query(
+       'SELECT airlinerra_game.licence6_submit_fifth_application_v1($1::uuid,$2::uuid,$3::text,$4::text,$5::text,$6::text,$7::uuid) AS result',
+       [playerId,body.airlineId,body.homeAirport,body.foreignStop,
+        body.foreignDestination,body.serviceType,body.requestKey]);
+      const x=r.rows?.[0]?.result;
+      if(r.rowCount!==1||!x||
+       !['NOT_RELEASED','NOT_ELIGIBLE','GAME_CLOCK_UNVERIFIED',
+       'NO_APPROVED_MARKET_FEE','ALREADY_APPROVED','ALREADY_SUBMITTED',
+       'SUBMITTED','submitted','issued','withdrawn'].includes(x.status)||
+       typeof x.submitted!=='boolean'||x.charged!==false||
+       x.issued!==false||x.flightActivated!==false||
+       (x.applicationId!==undefined&&!UUID.test(x.applicationId))||
+       (x.status==='SUBMITTED'&&(!UUID.test(x.applicationId||'')||
+        x.feeOnApprovalUsd<100000||x.feeOnApprovalUsd>250000)))
+       throw Error('LICENCE6_UNSAFE_APPLICATION_RESPONSE');
+      return response(200,{status:x.status,applicationId:x.applicationId??null,
+       dueGameDay:x.dueGameDay??null,submitted:x.submitted,
+       feeOnApprovalUsd:x.feeOnApprovalUsd??null,
+       feeCharged:false,licenceIssued:false,foreignSegmentAuthorized:false,
+       flightActivated:false});
+     }
      const r=await client.query(
       `SELECT airlinerra_game.licence6_fifth_readiness_v1(
         $2::uuid,$3::text,$4::text,$5::text,$6::text) AS result
@@ -446,7 +470,8 @@ export function createSection9PermissionPlayerHandler({
        x.status!=='LICENCE6_FIFTH_FREEDOM_READINESS'||
        !Array.isArray(x.issues)||x.issues.length>20||
        x.issues.some(issue=>typeof issue!=='string'||! /^[A-Z0-9_]{3,100}$/.test(issue))||
-       x.canApply!==false||x.routeAuthorized!==false||
+       typeof x.canApply!=='boolean'||x.canApply!==x.eligible||
+       x.routeAuthorized!==false||
        x.foreignSegmentAuthorized!==false||x.flightActivated!==false||
        x.processingGameDays!==7||x.proposedFeeMinUsd!==100000||
        x.proposedFeeMaxUsd!==250000||
@@ -459,7 +484,7 @@ export function createSection9PermissionPlayerHandler({
       firstForeignCountry:x.firstForeignCountry,
       secondForeignCountry:x.secondForeignCountry,serviceType:x.serviceType,
       gameDay:x.gameDay,feeUsd:x.feeUsd,proposedFeeMinUsd:100000,
-      proposedFeeMaxUsd:250000,processingGameDays:7,canApply:false,
+      proposedFeeMaxUsd:250000,processingGameDays:7,canApply:x.canApply,
       issues:x.issues,routeAuthorized:false,foreignSegmentAuthorized:false,
       flightActivated:false});
     }finally{client.release();}
