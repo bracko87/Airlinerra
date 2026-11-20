@@ -15,6 +15,8 @@ on:
       - "tests/test_licensing_planner.mjs"
       - "tests/test_licence6_mro_design_contract.mjs"
       - "tests/test_licence7_flight_academy_design.mjs"
+      - "tests/test_licence7_academy_phase1_foundation.mjs"
+      - "supabase/migrations/*licence7_academy_phase1_foundation.sql"
       - "docs/AIRLINERRA_LICENCE7_FLIGHT_ACADEMY_REQUIREMENTS_2026-11-20.md"
       - "docs/AIRLINERRA_LICENCE6_MRO_REQUIREMENTS_2026-11-20.md"
       - "supabase/migrations/*licence6_mro*.sql"
@@ -47,6 +49,7 @@ jobs:
           node --check tests/test_licensing_planner.mjs
           node --check tests/test_licence6_mro_design_contract.mjs
           node --check tests/test_licence7_flight_academy_design.mjs
+          node --check tests/test_licence7_academy_phase1_foundation.mjs
           node --check website/player-app-model.mjs
       - name: Test authenticated read endpoint and navigation
         run: |
@@ -56,7 +59,8 @@ jobs:
             tests/test_operations_center_navigation.mjs \
             tests/test_licensing_planner.mjs \
             tests/test_licence6_mro_design_contract.mjs \
-            tests/test_licence7_flight_academy_design.mjs
+            tests/test_licence7_flight_academy_design.mjs \
+            tests/test_licence7_academy_phase1_foundation.mjs
       - name: Verify protected player build includes licence workspace
         run: |
           cd website
