@@ -61,6 +61,7 @@ export function createSection9GameSlotClearanceIssuer({
   throw Error('SECTION9_MATCHING_SLOT_CERTIFICATION_INGRESS_REQUIRED');
  const secret=Buffer.from(slotAuthoritySecret,'utf8');
  return Object.freeze({
+  clearanceType:'airport_slot_capacity',
   async certifyCurrentSlotReservation({
    airlineId,scheduleId,scheduleVersion,gameDate
   }={}){
