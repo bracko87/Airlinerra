@@ -44,11 +44,11 @@ BEGIN
  THEN RAISE EXCEPTION 'Premature paid booking incorrectly settled: %',x;END IF;
  UPDATE airlinerra_game.section9_passenger_reservation_batches_v1
  SET paid_upfront=false WHERE id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
- x:=airlinerra_game.section9_post_completed_flight_finance_once_v1(fid);
- IF x->>'status'<>'verified_complete_flight_finance_posted_once'
- THEN RAISE EXCEPTION 'Real signed + ticket settlement failed: %',x;END IF;
- SELECT count(*)::text INTO bad_code
- FROM airlinerra_game.section9_route_posted_flight_financials_v1;
- IF bad_code<>'1' THEN RAISE EXCEPTION 'Wrong posted-flight count: %',bad_code;END IF;
- RAISE NOTICE 'PASS signed HMAC, real 20 ticket receipts, tamper and mismatches blocked; single real posting';
+ x:=airlinerra_game.section9_verify_operated_flight_hmac_pair_v1(fid);
+ IF x->>'signatureVerified'<>'true' THEN
+  RAISE EXCEPTION 'Restored real signatures should verify: %',x;END IF;
+ x:=airlinerra_game.section9_postarrival_ticket_reconciliation_v1(fid);
+ IF x->>'ticketPassengers'<>'20' OR x->>'ticketIncomeUsd'<>'1000'
+ THEN RAISE EXCEPTION 'Restored real tickets should reconcile: %',x;END IF;
+ RAISE NOTICE 'PASS signed HMAC, real 20 ticket receipts, tamper and mismatches blocked; ready for six parallel real posting attempts';
 END $test$;
