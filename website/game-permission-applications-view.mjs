@@ -25,7 +25,7 @@ export function createGamePermissionApplicationsView({
     typeof getAirline!=='function'||typeof getClient!=='function')
   throw Error('Game licence view dependencies are missing');
  let loadedAirline=null,version=0,current=null,busy=false,pendingKey=null;
- let cargoStatus=null,cargoRequestKey=null;
+ let cargoStatus=null,cargoRequestKey=null,charterStatus=null,charterRequestKey=null;
  const section=node(doc,'article','panel workspace-panel game-licence-panel');
  section.append(node(doc,'span','panel-kicker','YOUR GAME PERMISSIONS'),
   node(doc,'h2','','Licence applications and approval status'),
@@ -60,6 +60,18 @@ export function createGamePermissionApplicationsView({
   l3Apply
  );
  section.append(l3Panel);
+ const l4Panel=node(doc,'div','game-aoc-status game-licence-l4');
+ const l4State=node(doc,'p','game-licence-status','Charter/VIP licence status not yet checked.');
+ const l4Apply=node(doc,'button','secondary','Apply for Charter/VIP Licence 4');
+ l4Apply.type='button';l4Apply.disabled=true;
+ l4Panel.append(
+  node(doc,'h3','','Licence 4 — Charter / VIP Operating Approval'),
+  l4State,
+  node(doc,'p','hint','For a separately registered charter airline subsidiary: own active AOC, at least one in-service passenger or combi aircraft in the same company, and $40,000 company funds. Apply for free; processing takes 3 verified game days. The fee is charged only if approval is issued.'),
+  node(doc,'p','hint','Once issued, this company may offer commercial charter or VIP passenger services, subject to route rights, but actual flights still require separate market, route, airport, slot and safety permissions. No automatic foreign route rights or airport permissions are granted.'),
+  l4Apply
+ );
+ section.append(l4Panel);
  const metrics=node(doc,'div','game-licence-metrics');
  const fields=[];
  for(const name of ['Current game date','Pending review','Issued permissions']){
@@ -141,6 +153,21 @@ export function createGamePermissionApplicationsView({
   }else{
    l3State.textContent='Cargo licence status not connected to the current server.';
    l3Apply.disabled=true;
+  }
+  l4Apply.disabled=!charterStatus?.canApply;
+  if(charterStatus?.issued===true){
+   l4State.textContent='Charter/VIP operations approval issued for this company';
+   l4Apply.disabled=true;
+  }else if(charterStatus?.applicationStatus==='submitted'){
+   l4State.textContent='Charter/VIP approval awaiting review'+(charterStatus.dueGameDay?' · Due '+charterStatus.dueGameDay:'');
+   l4Apply.disabled=true;
+  }else if(charterStatus){
+   l4State.textContent=charterStatus.canApply?'Charter/VIP licence application available':
+    'Charter/VIP licence not available · '+charterStatus.issues.slice(0,4).map(x=>x.replaceAll('_',' ').toLowerCase()).join('; ');
+   l4Apply.disabled=!charterStatus.canApply||busy;
+  }else{
+   l4State.textContent='Charter/VIP licence status not connected to the current server.';
+   l4Apply.disabled=true;
   }
   type.replaceChildren();
   const rows=current?.policies??[];
@@ -347,6 +374,23 @@ export function createGamePermissionApplicationsView({
   }catch{l3State.textContent='Cargo submission could not be confirmed. Please retry.';}
   finally{busy=false;l3Apply.disabled=!cargoStatus?.canApply;}
  });
+ l4Apply.addEventListener('click',async()=>{
+  if(busy||charterStatus?.canApply!==true||getAirline()?.id!==loadedAirline)return;
+  const api=getClient();
+  if(typeof api?.submitCharterLicence4!=='function')return;
+  const id=loadedAirline;
+  if(!charterRequestKey)charterRequestKey=newRequestKey();
+  busy=true;l4Apply.disabled=true;l4State.textContent='Submitting charter application…';
+  try{
+   const result=await api.submitCharterLicence4({airlineId:id,requestKey:charterRequestKey});
+   if(getAirline()?.id!==id)return;
+   if(result.submitted)charterRequestKey=null;
+   l4State.textContent=result.submitted?'Charter/VIP application recorded. No fee charged.':
+    'Charter/VIP application unavailable: '+result.status.replaceAll('_',' ').toLowerCase();
+   await load({refresh:true});
+  }catch{l4State.textContent='Charter/VIP submission could not be confirmed. Please retry.';}
+  finally{busy=false;l4Apply.disabled=!charterStatus?.canApply;}
+ });
  form.addEventListener('submit',async event=>{
   event.preventDefault();
   if(busy||!current?.canApply||!selected()?.canApply||
@@ -382,7 +426,7 @@ export function createGamePermissionApplicationsView({
   const client=getClient();
   const id=airline?.id;
   const requestVersion=++version;
-  loadedAirline=id??null;current=null;cargoStatus=null;submit.disabled=true;l3Apply.disabled=true;
+  loadedAirline=id??null;current=null;cargoStatus=null;charterStatus=null;submit.disabled=true;l3Apply.disabled=true;l4Apply.disabled=true;
   if(!id||!client){
    note.textContent='Select a verified airline to view your game licence applications.';
    aocState.textContent='AOC details unavailable for the selected airline.';
@@ -401,6 +445,10 @@ export function createGamePermissionApplicationsView({
    if(typeof client.cargoLicence3Status==='function'){
     try{cargoStatus=await client.cargoLicence3Status(id);}
     catch{cargoStatus=null;}
+   }
+   if(typeof client.charterLicence4Status==='function'){
+    try{charterStatus=await client.charterLicence4Status(id);}
+    catch{charterStatus=null;}
    }
    if(requestVersion!==version||getAirline()?.id!==id)return;
    render();
