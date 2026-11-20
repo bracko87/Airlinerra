@@ -1,0 +1,72 @@
+name: Disposable positive execution and finance source snapshots
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tests/sql/section9_disposable_source_snapshot_positive_bootstrap.sql'
+      - 'tests/sql/section9_disposable_source_snapshot_positive_acceptance.sql'
+      - 'supabase/migrations/20261120215500_section9_execution_finance_source_preflight_readonly.sql'
+      - 'supabase/migrations/20261120224500_section9_execution_finance_source_snapshot_candidates.sql'
+      - '.github/workflows/section9-source-snapshot-positive-disposable-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  positive-source-snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable-ci-only
+          POSTGRES_DB: airlinerra_disposable
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d airlinerra_disposable"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 8
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: disposable-ci-only
+      PGDATABASE: airlinerra_disposable
+      PGOPTIONS: -c statement_timeout=30000 -c lock_timeout=10000
+    steps:
+      - uses: actions/checkout@v4
+      - name: PostgreSQL client
+        run: |
+          if ! command -v psql >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y postgresql-client
+          fi
+      - name: Strict disposable database check before schema changes
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = "127.0.0.1"
+          test "$PGDATABASE" = "airlinerra_disposable"
+          test "$PGUSER" = "postgres"
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/disposable_database_preflight.sql
+      - name: Install synthetic consistent route schedule, policy, clock, and older certification rows
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_source_snapshot_positive_bootstrap.sql
+      - name: Install EXACT production PostgreSQL source preflight and fingerprint function
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261120215500_section9_execution_finance_source_preflight_readonly.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261120224500_section9_execution_finance_source_snapshot_candidates.sql
+      - name: Verify positive fingerprint changes and negative release gates
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_source_snapshot_positive_acceptance.sql
+      - name: Summarize trust boundary
+        if: always()
+        run: |
+          echo '### Real source snapshot functions — disposable PostgreSQL 17' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Actual production SQL installed unchanged with controlled synthetic airline, aircraft, signed-clock fixture, certificates and policy rows.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'No independent HMAC signers or full live certification sink issued an execution or commercial-finance certificate; production release flags unchanged.' >> "$GITHUB_STEP_SUMMARY"
