@@ -133,7 +133,7 @@ test('Licence 6 private application and fee ledger remain route-scoped and atomi
  assert.match(s,/due_game_day=applied_game_day\+7/);
  assert.match(s,/CHECK\(expires_game_day IS NULL OR expires_game_day=issued_game_day\+365\)/);
  assert.match(s,/cash_usd=cash_usd-app.fee_usd/);
- assert.match(s,/ledger_entry_id/);
+ assert.match(s,/fee_ledger_id/);
  assert.match(s,/foreignSegmentAuthorized',false/);
  assert.match(s,/licence6_review_due_fifth_applications_v1\(25\)/);
  const home=await readFile(new URL('../supabase/migrations/20261120132000_licence6_requires_home_leg_proof.sql',import.meta.url),'utf8');
