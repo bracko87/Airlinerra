@@ -5,7 +5,7 @@
 ## Purpose and single-licence decision
 One player-facing **Licence 7 — Flight Academy / Training Organization Approval** belongs to a dedicated **flight_academy** operating subsidiary under an eligible holding. It covers training for the holding's own airlines **and** training sold to other players' airlines. **No second licence for public/commercial training.** The licence is company-specific, not shared across airlines, the holding, or other subsidiaries. It is a game certificate, not a real aviation training authorization.
 
-IMPORTANT CURRENT SYSTEM GAP: The existing `holding_subsidiaries_v1.company_kind` check currently allows regional_airline, passenger_airline, cargo_airline, charter_airline and maintenance_mro only; it **does not include flight_academy**. A future company-model migration and actual subsidiary-registration flow will be needed before this licence can ever issue. The current aircraft crew roster and payroll systems are not academy infrastructure.
+PHASE 1 STATUS: The planning-only `holding_subsidiaries_v1.company_kind` check now includes `flight_academy`. Actual live company registration is still unavailable, and current aircraft crew roster and payroll systems do not establish academy infrastructure or instructors.
 
 ## Commercial terms (fee and processing time confirmed by user)
 | Topic | Game design |
@@ -112,6 +112,30 @@ These remain decisions for the user. **Do not introduce fictional exact staff he
 - [ ] Build private/public academy listings, programme-specific prices, booking and billing for other players' airlines.
 - [ ] Add game and security tests, keep issuance and marketplace closed until independent end-to-end review.
 
+## Phase 1 implementation status — 2026-11-20
+**FOUNDATION INSTALLED; LIVE LICENCE NOT ISSUABLE.** Migration `20261120150000_licence7_academy_phase1_foundation.sql` is applied to Supabase and stored in the GitHub repository.
+
+Implemented:
+- The future `flight_academy` company-kind value is accepted by the existing **planning-only** subsidiary table. Existing holding/company formation and treasury release restrictions are unchanged; no player-facing academy registration is enabled.
+- A catalogue row for `FLIGHT_ACADEMY` advertises game-policy parameters: **$0 application, $40,000 on successful approval only, 7 verified game days**, with `enabled_in_game=false`.
+- Private company-scoped Licence 7 application records, approval/status records and per-course price-draft tables exist. Application dates require exactly 7 game days between submission and due date. Status model includes active, suspended and revoked; next inspection must be 365 game days after the most recent inspection.
+- Future public course offers are database-restricted to **unlisted** and **not accepting bookings**. No marketplace is publicly available.
+- Row-level security is enabled and public/anonymous/authenticated/service-role table access is explicitly revoked.
+- Trusted readiness, application and review functions exist. Readiness documents the missing mandatory small aircraft and infrastructure. **Application and review functions return NOT_RELEASED without inserting applications, issuing approvals or charging money.**
+- Release table has a hard database constraint keeping company registration, application acceptance, licence issuance, fee collection, public listings and unverified dependency gates all **false**.
+- Verification: 0 real applications, 0 approvals, 0 course offers, 0 registered subsidiaries; no changes to airline funds. Automated Licence 7 foundation regression included in the licences CI.
+
+Still required before any live cutover:
+- Company operational registration and independent academy account/ledger (there is no working academy money account or atomic $40,000 fee charge yet).
+- Training aircraft catalog, purchase/delivery/assignment and operational evidence; at least one small trainer.
+- Instructor/facility/programme competence and compliance inspections.
+- A trusted, independently reviewed application service with genuine 7-day maturation, secure owner authorization and exactly-once fee posting **in the same transaction** as approval.
+- Actual course-offer owner controls, public opt-in listings, per-course pricing workflows and booking/payment validation.
+- Crew qualification, simulator and aircraft-calendar exclusive training reservations.
+- Tests proving eligibility, ownership, economic integrity, no fee duplication, suspension and reactivation, and denial of unsafe/unqualified flight or training bookings.
+
+**Do not describe Phase 1 as the functional/licensed academy feature.** It is a release-locked schema and service contract only.
+
 ## Existing Airlinerra context
 - The current game planner has `FLIGHT_ACADEMY` as a future concept, with **$40,000** and **7 game days**, but suggests an airline training department rather than a dedicated subsidiary. This specification proposes updating that to one dedicated commercial subsidiary model consistent with Licence 6.
-- The DB permission catalog currently has **no** `FLIGHT_ACADEMY` row and the holding's subsidiary type validation does not yet allow an academy; therefore this design is deliberately **not live**.
+- A Phase 1 `FLIGHT_ACADEMY` catalog row and `flight_academy` planning-only subsidiary kind now exist, but company registration, approval fees, training and academy licence issuance remain hard-locked and **not live**.
