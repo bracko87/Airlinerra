@@ -79,7 +79,7 @@ export function createGamePermissionApplicationsView({
  const l5Apply=node(doc,'button','secondary','Apply for Dangerous Goods Licence 5');
  l5Apply.type='button';l5Apply.disabled=true;
  l5Panel.append(
-  node(doc,'h3','','Licence 4 — Dangerous Goods Transport Approval'),
+  node(doc,'h3','','Licence 5 — Dangerous Goods Transport Approval'),
   l5State,
   node(doc,'p','hint','Requires a registered cargo airline, valid own AOC, active Cargo Licence 3, safety rating 70+, an in-service cargo aircraft, and $60,000 available for the approval fee. Applications are free, reviewed after five verified game days.'),
   node(doc,'p','hint','This authorizes the operating company only. Individual dangerous-goods classes, shipments, airports, crews, packaging and routes remain separately restricted; no shipment classes are enabled yet.'),
