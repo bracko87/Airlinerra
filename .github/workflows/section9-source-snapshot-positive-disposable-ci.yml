@@ -5,6 +5,8 @@ on:
     paths:
       - 'tests/sql/section9_disposable_source_snapshot_positive_bootstrap.sql'
       - 'tests/sql/section9_disposable_source_snapshot_positive_acceptance.sql'
+      - 'tests/sql/section9_disposable_execution_finance_recheck_acceptance.sql'
+      - 'supabase/migrations/20261120232000_section9_execution_finance_same_transaction_source_recheck.sql'
       - 'supabase/migrations/20261120215500_section9_execution_finance_source_preflight_readonly.sql'
       - 'supabase/migrations/20261120224500_section9_execution_finance_source_snapshot_candidates.sql'
       - '.github/workflows/section9-source-snapshot-positive-disposable-ci.yml'
@@ -60,10 +62,15 @@ jobs:
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261120215500_section9_execution_finance_source_preflight_readonly.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261120224500_section9_execution_finance_source_snapshot_candidates.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261120232000_section9_execution_finance_same_transaction_source_recheck.sql
       - name: Verify positive fingerprint changes and negative release gates
         run: |
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_source_snapshot_positive_acceptance.sql
+      - name: Verify locked source reference, independent reviewer, tampering, revocation and release changes
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_execution_finance_recheck_acceptance.sql
       - name: Summarize trust boundary
         if: always()
         run: |
