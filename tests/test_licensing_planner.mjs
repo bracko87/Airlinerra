@@ -60,7 +60,7 @@ test('company formation and application do not demand an aircraft purchase',()=>
  assert.match(l2.operation.join(' '),/Zagreb -> Hurghada/);
  assert.match(l2.operation.join(' '),/two directed slots/);
  assert.match(l2.operation.join(' '),/Level 1 = 20, Level 2 = 50, Level 3 = 150, Level 4 = unlimited/);
- assert.match(l2.limits,/No free additional domestic network in Egypt/);
+ assert.match(l2.limits,/Foreign-to-foreign routes, including home-connected onward segments/);
  assert.match(l2.validity,/No periodic renewal/);
  assert.match(l2.notes,/NOT LIVE/);
  assert.match(LICENCE_PLAN.find(x=>x.code==='HOLDING_FORMATION').notes,/calendar days/);
