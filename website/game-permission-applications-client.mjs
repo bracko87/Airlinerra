@@ -159,6 +159,15 @@ export function createGamePermissionApplicationsClient({
       x.worldId!==1||x.readOnly!==true||x.flightActivated!==false||
       typeof x.issued!=='boolean'||typeof x.canApply!=='boolean'||
       x.feeUsd!==50000||x.processingGameDays!==3||
+      x.minimumSafetyRating!==50||
+      !['NOT_ISSUED','REVOKED','SUSPENDED_UNVERIFIED_GAME_CLOCK',
+        'SUSPENDED_SAFETY','SUSPENDED_NO_AIRCRAFT','ACTIVE',
+        'SUSPENDED_OTHER_REQUIREMENTS'].includes(x.lifecycleStatus)||
+      typeof x.operationsAuthorized!=='boolean'||
+      (x.safetyRating!==null&&(!Number.isInteger(x.safetyRating)||x.safetyRating<0||x.safetyRating>100))||
+      (x.aircraftGraceDaysRemaining!==null&&
+        (!Number.isInteger(x.aircraftGraceDaysRemaining)||x.aircraftGraceDaysRemaining<0||
+          x.aircraftGraceDaysRemaining>90))||
       !Array.isArray(x.issues)||x.issues.length>20||
       x.issues.some(issue=>typeof issue!=='string'||! /^[A-Z0-9_]{3,100}$/.test(issue))||
       (x.applicationStatus!==null&&!['submitted','issued','withdrawn'].includes(x.applicationStatus))||
@@ -186,6 +195,15 @@ export function createGamePermissionApplicationsClient({
       x.worldId!==1||x.readOnly!==true||x.flightActivated!==false||
       typeof x.issued!=='boolean'||typeof x.canApply!=='boolean'||
       x.feeUsd!==40000||x.processingGameDays!==3||
+      x.minimumSafetyRating!==70||
+      !['NOT_ISSUED','REVOKED','SUSPENDED_UNVERIFIED_GAME_CLOCK',
+        'SUSPENDED_SAFETY','SUSPENDED_NO_AIRCRAFT','ACTIVE',
+        'SUSPENDED_OTHER_REQUIREMENTS'].includes(x.lifecycleStatus)||
+      typeof x.operationsAuthorized!=='boolean'||
+      (x.safetyRating!==null&&(!Number.isInteger(x.safetyRating)||x.safetyRating<0||x.safetyRating>100))||
+      (x.aircraftGraceDaysRemaining!==null&&
+        (!Number.isInteger(x.aircraftGraceDaysRemaining)||x.aircraftGraceDaysRemaining<0||
+          x.aircraftGraceDaysRemaining>90))||
       !Array.isArray(x.issues)||x.issues.length>20||
       x.issues.some(issue=>typeof issue!=='string'||! /^[A-Z0-9_]{3,100}$/.test(issue))||
       (x.applicationStatus!==null&&!['submitted','issued','withdrawn'].includes(x.applicationStatus))||
