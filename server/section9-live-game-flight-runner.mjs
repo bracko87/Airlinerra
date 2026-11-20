@@ -23,8 +23,8 @@ export const SECTION9_GAME_FLIGHT_RUN_SQL=Object.freeze({
  lock:'SELECT pg_try_advisory_lock(9427,91) AS acquired',
  unlock:'SELECT pg_advisory_unlock(9427,91) AS released',
  readiness:'SELECT * FROM airlinerra_game.section9_flight_engine_readiness_audit_v1 WHERE world_id=1',
- now:`SELECT to_char(clock_timestamp() AT TIME ZONE 'UTC',
- 'YYYY-MM-DD') AS utc_date`,
+ now:`SELECT airlinerra_game.section9_verified_berlin_game_hour_v1()
+ AS result`,
  fleet:`WITH active AS MATERIALIZED(
  SELECT DISTINCT airline_id::text AS "airlineId",
  aircraft_inventory_id::text AS "aircraftId"
@@ -90,9 +90,26 @@ export function createSection9LiveGameFlightRunner({
     if(readiness.rowCount!==1||!safeReady(readiness.rows?.[0]))
      return blocked('flight_execution_not_ready');
     const current=await client.query(SECTION9_GAME_FLIGHT_RUN_SQL.now);
-    const utcDate=current.rows?.[0]?.utc_date;
-    if(current.rowCount!==1||!validDay(utcDate))
-     throw Error('SECTION9_AUTHORITATIVE_SERVER_DATE_UNAVAILABLE');
+    const verifiedHour=current.rows?.[0]?.result;
+    // Require an independently signed Berlin game-day receipt before
+    // querying due UTC-date occurrences or issuing operation attestations.
+    // The UTC date can differ from Berlin's local game date near midnight.
+    const verifiedUtc=verifiedHour?.gameHourUtc;
+    const utcDate=typeof verifiedUtc==='string' &&
+     /^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})$/.test(verifiedUtc)
+      ?new Date(verifiedUtc).toISOString().slice(0,10):null;
+    if(current.rowCount!==1||
+       verifiedHour?.status!=='verified_berlin_realtime_hour'||
+       verifiedHour?.worldId!==1||
+       verifiedHour?.authoritativeGameHourAvailable!==true||
+       verifiedHour?.readOnly!==true||
+       verifiedHour?.flightActivated!==false||
+       verifiedHour?.movementRecorded!==false||
+       verifiedHour?.ledgerPosted!==false||
+       !validDay(verifiedHour?.gameDate)||
+       verifiedHour.gameDate!==verifiedHour.berlinDate||
+       !validDay(utcDate))
+     return blocked('flight_execution_unverified_game_hour');
     const previous=new Date(Date.parse(utcDate+'T00:00:00Z')-86400000)
       .toISOString().slice(0,10);
     const fleet=await client.query(SECTION9_GAME_FLIGHT_RUN_SQL.fleet,
