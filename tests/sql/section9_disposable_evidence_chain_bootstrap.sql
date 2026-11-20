@@ -17,7 +17,8 @@ CREATE TABLE airlinerra_game.section9_dated_flight_occurrences_v1(
  id uuid primary key, world_id smallint not null, schedule_id uuid not null,
  airline_id uuid not null, aircraft_inventory_id uuid not null,
  schedule_version integer not null, weekly_entry integer not null,
- flight_local_date date not null, booked_seats integer not null,
+ flight_local_date date not null, origin_airport_key text not null,
+ destination_airport_key text not null, booked_seats integer not null,
  verified_passenger_seats integer not null,
  UNIQUE(schedule_id,flight_local_date,weekly_entry));
 CREATE TABLE airlinerra_game.section9_passenger_reservation_batches_v1(
