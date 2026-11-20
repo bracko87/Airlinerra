@@ -1,0 +1,36 @@
+name: Airlinerra Fifth Freedom Licence 6 (isolated)
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'server/section9-permission-player-http.mjs'
+      - 'website/game-permission-applications-client.mjs'
+      - 'website/game-permission-applications-view.mjs'
+      - 'website/licensing-planner.mjs'
+      - 'supabase/migrations/*licence6*'
+      - 'tests/test_licence6_fifth_freedom_preview.mjs'
+      - '.github/workflows/airlinerra-licence6-fifth-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  fifth-freedom-licence6:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check source syntax
+        run: |
+          node --check server/section9-permission-player-http.mjs
+          node --check website/game-permission-applications-client.mjs
+          node --check website/game-permission-applications-view.mjs
+          node --check tests/test_licence6_fifth_freedom_preview.mjs
+      - name: Verify Fifth Freedom owner controls and no-issuance policy
+        run: node --test tests/test_licence6_fifth_freedom_preview.mjs
+      - name: Build player website
+        run: |
+          cd website
+          npm run build
