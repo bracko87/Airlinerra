@@ -1,0 +1,30 @@
+name: Isolated independent FRA-MUC roundtrip certificate orchestration
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'server/section9-roundtrip-certification-coordinator.mjs'
+      - 'tests/test_section9_roundtrip_certification_coordinator.mjs'
+      - 'server/section9-game-permission-verifier-issuer.mjs'
+      - 'server/section9-game-slot-clearance-issuer.mjs'
+      - 'server/section9-signed-certification-ingress.mjs'
+      - '.github/workflows/section9-roundtrip-certification-issuers-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  independent-certification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify certificate coordinator syntax
+        run: |
+          node --check server/section9-roundtrip-certification-coordinator.mjs
+          node --check tests/test_section9_roundtrip_certification_coordinator.mjs
+      - name: Verify issuer HMACs with mirrored route identities and denial cases
+        run: |
+          node --test tests/test_section9_roundtrip_certification_coordinator.mjs tests/test_section9_game_permission_verifier_issuer.mjs tests/test_section9_game_slot_clearance_issuer.mjs tests/test_section9_signed_certification_ingress.mjs
