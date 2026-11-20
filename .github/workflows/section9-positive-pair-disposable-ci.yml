@@ -1,0 +1,82 @@
+name: Disposable positive FRA-MUC certified pair activation
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tests/sql/section9_disposable_positive_fra_muc_pair_bootstrap.sql'
+      - 'tests/sql/section9_disposable_positive_fra_muc_pair_acceptance.sql'
+      - 'supabase/migrations/20261117130000_section9_atomic_certified_pair_ticket_activation_v1.sql'
+      - '.github/workflows/section9-positive-pair-disposable-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  fra-muc-positive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable-ci-only
+          POSTGRES_DB: airlinerra_disposable
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d airlinerra_disposable"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 8
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: disposable-ci-only
+      PGDATABASE: airlinerra_disposable
+      PGOPTIONS: -c statement_timeout=30000 -c lock_timeout=10000
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ensure PostgreSQL client
+        run: |
+          if ! command -v psql >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y postgresql-client
+          fi
+      - name: Verify fresh disposable Postgres before DDL
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = '127.0.0.1'
+          test "$PGPORT" = '5432'
+          test "$PGUSER" = 'postgres'
+          test "$PGDATABASE" = 'airlinerra_disposable'
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/disposable_database_preflight.sql
+      - name: Bootstrap controlled FRA-MUC reciprocal route, certification and inventory fixtures
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_positive_fra_muc_pair_bootstrap.sql
+      - name: Extract and install unchanged production roundtrip activation SQL
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('supabase/migrations/20261117130000_section9_atomic_certified_pair_ticket_activation_v1.sql').read_text()
+          start=s.index('CREATE OR REPLACE FUNCTION airlinerra_game.section9_commit_certified_pair_and_ticket_inventory_v1(')
+          end=s.index('REVOKE ALL ON FUNCTION airlinerra_game.section9_commit_certified_pair_and_ticket_inventory_v1(',start)
+          source=s[start:end]
+          assert 'END $function$' in source
+          assert 'SECTION9_PAIR_TICKET_INVENTORY_FAILED_FULL_ROLLBACK' in source
+          Path('/tmp/section9-pair-actual.sql').write_text(source)
+          print('Unchanged production pair-activation function extracted')
+          PY
+          psql -X -v ON_ERROR_STOP=1 -f /tmp/section9-pair-actual.sql
+      - name: Test positive dual-leg activation, three atomic rollbacks, capacity and replay
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_positive_fra_muc_pair_acceptance.sql
+      - name: Summary of isolation
+        if: always()
+        run: |
+          echo '### FRA-MUC positive atomic activation on disposable PostgreSQL 17' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Real pair-activation SQL used unchanged. Aircraft, 10 signed certification records, slot windows and ticket gateway are synthetic fixtures.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'No production schema, player aircraft, airline balances, real licences, signed source certifications, bookings, or flight movements changed.' >> "$GITHUB_STEP_SUMMARY"
