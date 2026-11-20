@@ -55,7 +55,7 @@ test('Academy organisation and individual pilot qualification lifecycle are sepa
  assert.match(entry,/inspection\/revalidation every 365 verified game days/);
  assert.match(entry,/Pilot qualifications are separately renewed/);
  assert.match(doc,/company's Licence 7.*individual pilot's qualifications/);
- assert.match(doc,/does not automatically erase already issued pilots/);
+ assert.match(doc,/not automatically erase\\*\\* already issued pilots/);
  assert.match(doc,/Temporary suspension/);
  assert.match(doc,/Revocation/);
 });
