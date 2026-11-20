@@ -56,6 +56,7 @@ export function createGamePermissionApplicationsView({
   node(doc,'h3','','Licence 3 — Cargo Operations Approval'),
   l3State,
   node(doc,'p','hint','For a separately registered cargo airline subsidiary: own active AOC, at least one in-service cargo or combi aircraft in the same company, and $50,000 company funds. Apply for free; processing takes 3 verified game days. The fee is charged only if approval is issued.'),
+  node(doc,'p','hint','Minimum safety rating: 50/100. If no operational cargo aircraft remains, the licence is retained for up to 90 consecutive game days; flights stop immediately. After more than 90 days, the licence is revoked and must be purchased again.'),
   node(doc,'p','hint','Once issued, this company may offer ordinary cargo services worldwide, but actual flights still require separate market, route, airport, slot and safety permissions. Dangerous goods are not included.'),
   l3Apply
  );
@@ -68,6 +69,7 @@ export function createGamePermissionApplicationsView({
   node(doc,'h3','','Licence 4 — Charter / VIP Operating Approval'),
   l4State,
   node(doc,'p','hint','For a separately registered charter airline subsidiary: own active AOC, at least one in-service passenger or combi aircraft in the same company, and $40,000 company funds. Apply for free; processing takes 3 verified game days. The fee is charged only if approval is issued.'),
+  node(doc,'p','hint','Minimum safety rating: 70/100. If no operational charter/VIP aircraft remains, the licence is retained for up to 90 consecutive game days; flights stop immediately. After more than 90 days, the licence is revoked and must be purchased again.'),
   node(doc,'p','hint','Once issued, this company may offer commercial charter or VIP passenger services, subject to route rights, but actual flights still require separate market, route, airport, slot and safety permissions. No automatic foreign route rights or airport permissions are granted.'),
   l4Apply
  );
@@ -140,7 +142,18 @@ export function createGamePermissionApplicationsView({
  type.addEventListener('change',()=>{pendingKey=null;updateForm();});
  const render=()=>{
   l3Apply.disabled=!cargoStatus?.canApply;
-  if(cargoStatus?.issued===true){
+  if(cargoStatus?.lifecycleStatus==='REVOKED'){
+   l3State.textContent='Licence revoked after more than 90 consecutive game days without a suitable operational aircraft. A new application and full fee are required.';
+  }else if(cargoStatus?.lifecycleStatus==='SUSPENDED_NO_AIRCRAFT'){
+   l3State.textContent='Licence retained, flights suspended — no suitable operational aircraft.'+
+    (cargoStatus.aircraftGraceDaysRemaining===null?' Grace period awaiting verified game date.':
+     ' '+cargoStatus.aircraftGraceDaysRemaining+' game days of the 90-day grace period remaining.');
+   l3Apply.disabled=true;
+  }else if(cargoStatus?.lifecycleStatus==='SUSPENDED_SAFETY'){
+   l3State.textContent='Licence retained, flights suspended — safety rating '+
+    cargoStatus.safetyRating+'/100. Minimum: 50/100.';
+   l3Apply.disabled=true;
+  }else if(cargoStatus?.issued===true){
    l3State.textContent='Cargo operations approval issued for this company';
    l3Apply.disabled=true;
   }else if(cargoStatus?.applicationStatus==='submitted'){
@@ -155,7 +168,18 @@ export function createGamePermissionApplicationsView({
    l3Apply.disabled=true;
   }
   l4Apply.disabled=!charterStatus?.canApply;
-  if(charterStatus?.issued===true){
+  if(charterStatus?.lifecycleStatus==='REVOKED'){
+   l4State.textContent='Licence revoked after more than 90 consecutive game days without a suitable operational aircraft. A new application and full fee are required.';
+  }else if(charterStatus?.lifecycleStatus==='SUSPENDED_NO_AIRCRAFT'){
+   l4State.textContent='Licence retained, flights suspended — no suitable operational aircraft.'+
+    (charterStatus.aircraftGraceDaysRemaining===null?' Grace period awaiting verified game date.':
+     ' '+charterStatus.aircraftGraceDaysRemaining+' game days of the 90-day grace period remaining.');
+   l4Apply.disabled=true;
+  }else if(charterStatus?.lifecycleStatus==='SUSPENDED_SAFETY'){
+   l4State.textContent='Licence retained, flights suspended — safety rating '+
+    charterStatus.safetyRating+'/100. Minimum: 70/100.';
+   l4Apply.disabled=true;
+  }else if(charterStatus?.issued===true){
    l4State.textContent='Charter/VIP operations approval issued for this company';
    l4Apply.disabled=true;
   }else if(charterStatus?.applicationStatus==='submitted'){
