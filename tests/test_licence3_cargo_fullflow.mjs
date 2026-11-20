@@ -27,7 +27,11 @@ const mockDb=({notOwned=false,invalid=false}={})=>{
   if(sql.includes('licence3_cargo_readiness_v1')&&sql.includes('licence3_cargo_flight_scope_v1'))
    return {rowCount:1,rows:[{
     readiness:{airlineId:AIRLINE,issues:['CARGO_LICENCE_ISSUANCE_NOT_RELEASED'],eligible:false},
-    scope:{authorized:false},released:false,application_status:null,due_game_day:null
+    scope:{authorized:false},health:{
+     airlineId:AIRLINE,licenceCode:'CARGO_OPERATIONS_SCOPE',minimumSafetyRating:50,
+     licenceRecorded:false,revoked:false,operationsAuthorized:false,
+     status:'NOT_ISSUED',aircraftGraceDaysRemaining:null,safetyRating:100
+    },released:false,application_status:null,due_game_day:null
    }]};
   throw Error('Unexpected SQL:'+sql);
  }};}};
@@ -47,6 +51,8 @@ test('Cargo Licence 3 status is verified-owner scoped and keeps unreleased permi
  assert.deepEqual(await r.json(),{
   status:'licence3_cargo_status',airlineId:AIRLINE,worldId:1,readOnly:true,
   issued:false,canApply:false,applicationStatus:null,dueGameDay:null,
+  lifecycleStatus:'NOT_ISSUED',minimumSafetyRating:50,safetyRating:100,
+  aircraftGraceDaysRemaining:null,operationsAuthorized:false,
   issues:['CARGO_LICENCE_ISSUANCE_NOT_RELEASED'],feeUsd:50000,
   processingGameDays:3,flightActivated:false
  });
@@ -85,6 +91,8 @@ test('cargo browser client refuses fabricated fees and issuance',async()=>{
  const replies=[
   {status:'licence3_cargo_status',airlineId:AIRLINE,worldId:1,readOnly:true,issued:false,
    canApply:false,applicationStatus:null,dueGameDay:null,
+   lifecycleStatus:'NOT_ISSUED',minimumSafetyRating:50,safetyRating:100,
+   aircraftGraceDaysRemaining:null,operationsAuthorized:false,
    issues:['CARGO_LICENCE_ISSUANCE_NOT_RELEASED'],feeUsd:50000,
    processingGameDays:3,flightActivated:false},
   {status:'NOT_RELEASED',applicationId:null,dueGameDay:null,submitted:false,
