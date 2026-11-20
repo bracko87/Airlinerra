@@ -9,6 +9,8 @@ on:
       - 'website/licensing-planner.mjs'
       - 'supabase/migrations/*licence3*'
       - 'tests/test_licence3_cargo_fullflow.mjs'
+      - 'tests/test_licence34_90day_policy.mjs'
+      - 'supabase/migrations/*licence34*'
       - '.github/workflows/airlinerra-licence3-cargo-ci.yml'
   workflow_dispatch:
 permissions:
@@ -29,7 +31,7 @@ jobs:
           node --check website/game-permission-applications-view.mjs
           node --check tests/test_licence3_cargo_fullflow.mjs
       - name: Verify Cargo Licence 3 authentication and safety contracts
-        run: node --test tests/test_licence3_cargo_fullflow.mjs
+        run: node --test tests/test_licence3_cargo_fullflow.mjs tests/test_licence34_90day_policy.mjs
       - name: Build player website
         run: |
           cd website
