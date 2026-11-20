@@ -242,6 +242,7 @@ export function createSection9PermissionPlayerHandler({
      const r=await client.query(
       `SELECT airlinerra_game.licence3_cargo_readiness_v1($2::uuid) AS readiness,
          airlinerra_game.licence3_cargo_flight_scope_v1($2::uuid) AS scope,
+         airlinerra_game.licence34_operator_status_v1($2::uuid,'CARGO_OPERATIONS_SCOPE') AS health,
          EXISTS(SELECT 1 FROM airlinerra_game.licence3_cargo_release_v1
           WHERE world_id=1 AND issuance_enabled AND fee_ledger_verified AND reviewer_verified) AS released,
          (SELECT a.status FROM airlinerra_game.licence3_cargo_applications_v1 a
@@ -255,13 +256,30 @@ export function createSection9PermissionPlayerHandler({
      if(r.rowCount!==1||!x||!x.readiness||
        x.readiness.airlineId!==body.airlineId||
        !x.scope||typeof x.scope.authorized!=='boolean'||
+       !x.health||x.health.airlineId!==body.airlineId||
+       x.health.licenceCode!=='CARGO_OPERATIONS_SCOPE'||
+       x.health.minimumSafetyRating!==50||
+       typeof x.health.licenceRecorded!=='boolean'||
+       typeof x.health.revoked!=='boolean'||
+       typeof x.health.operationsAuthorized!=='boolean'||
+       x.health.operationsAuthorized!==x.scope.authorized||
+       !['NOT_ISSUED','REVOKED','SUSPENDED_UNVERIFIED_GAME_CLOCK',
+       'SUSPENDED_SAFETY','SUSPENDED_NO_AIRCRAFT','ACTIVE',
+       'SUSPENDED_OTHER_REQUIREMENTS'].includes(x.health.status)||
+       (x.health.aircraftGraceDaysRemaining!==null&&
+        (!Number.isInteger(x.health.aircraftGraceDaysRemaining)||
+         x.health.aircraftGraceDaysRemaining<0||x.health.aircraftGraceDaysRemaining>90))||
        typeof x.released!=='boolean'||
        (x.application_status!==null&&
         !['submitted','issued','withdrawn'].includes(x.application_status)))
       throw Error('LICENCE3_UNSAFE_PRIVATE_STATUS');
      return response(200,{status:'licence3_cargo_status',
       airlineId:body.airlineId,worldId:1,readOnly:true,
-      issued:x.scope.authorized===true,
+      issued:x.health.licenceRecorded===true&&!x.health.revoked,
+      lifecycleStatus:x.health.status,
+      minimumSafetyRating:50,safetyRating:x.health.safetyRating,
+      aircraftGraceDaysRemaining:x.health.aircraftGraceDaysRemaining,
+      operationsAuthorized:x.health.operationsAuthorized,
       canApply:x.released===true&&x.readiness.eligible===true,
       applicationStatus:x.application_status,dueGameDay:x.due_game_day,
       issues:Array.isArray(x.readiness.issues)?x.readiness.issues.slice(0,20):[],
@@ -297,6 +315,7 @@ export function createSection9PermissionPlayerHandler({
      const r=await client.query(
       `SELECT airlinerra_game.licence4_charter_readiness_v1($2::uuid) AS readiness,
          airlinerra_game.licence4_charter_flight_scope_v1($2::uuid) AS scope,
+         airlinerra_game.licence34_operator_status_v1($2::uuid,'CHARTER_VIP_SCOPE') AS health,
          EXISTS(SELECT 1 FROM airlinerra_game.licence4_charter_release_v1
           WHERE world_id=1 AND issuance_enabled AND fee_ledger_verified AND reviewer_verified) AS released,
          (SELECT a.status FROM airlinerra_game.licence4_charter_applications_v1 a
@@ -310,13 +329,30 @@ export function createSection9PermissionPlayerHandler({
      if(r.rowCount!==1||!x||!x.readiness||
        x.readiness.airlineId!==body.airlineId||
        !x.scope||typeof x.scope.authorized!=='boolean'||
+       !x.health||x.health.airlineId!==body.airlineId||
+       x.health.licenceCode!=='CHARTER_VIP_SCOPE'||
+       x.health.minimumSafetyRating!==70||
+       typeof x.health.licenceRecorded!=='boolean'||
+       typeof x.health.revoked!=='boolean'||
+       typeof x.health.operationsAuthorized!=='boolean'||
+       x.health.operationsAuthorized!==x.scope.authorized||
+       !['NOT_ISSUED','REVOKED','SUSPENDED_UNVERIFIED_GAME_CLOCK',
+       'SUSPENDED_SAFETY','SUSPENDED_NO_AIRCRAFT','ACTIVE',
+       'SUSPENDED_OTHER_REQUIREMENTS'].includes(x.health.status)||
+       (x.health.aircraftGraceDaysRemaining!==null&&
+        (!Number.isInteger(x.health.aircraftGraceDaysRemaining)||
+         x.health.aircraftGraceDaysRemaining<0||x.health.aircraftGraceDaysRemaining>90))||
        typeof x.released!=='boolean'||
        (x.application_status!==null&&
         !['submitted','issued','withdrawn'].includes(x.application_status)))
       throw Error('LICENCE4_UNSAFE_PRIVATE_STATUS');
      return response(200,{status:'licence4_charter_status',
       airlineId:body.airlineId,worldId:1,readOnly:true,
-      issued:x.scope.authorized===true,
+      issued:x.health.licenceRecorded===true&&!x.health.revoked,
+      lifecycleStatus:x.health.status,
+      minimumSafetyRating:70,safetyRating:x.health.safetyRating,
+      aircraftGraceDaysRemaining:x.health.aircraftGraceDaysRemaining,
+      operationsAuthorized:x.health.operationsAuthorized,
       canApply:x.released===true&&x.readiness.eligible===true,
       applicationStatus:x.application_status,dueGameDay:x.due_game_day,
       issues:Array.isArray(x.readiness.issues)?x.readiness.issues.slice(0,20):[],
