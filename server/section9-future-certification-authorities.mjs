@@ -8,14 +8,10 @@
  * Never use a client request, arbitrary JSON, or the blocked preflight as
  * a positive source proof. Each authority needs a DIFFERENT private HMAC key.
  */
-import {createHmac} from 'node:crypto';
-import {section9CertificationPayload}
- from './section9-signed-certification-ingress.mjs';
 import {SECTION9_UNRELEASED_SOURCE_SQL}
  from './section9-unreleased-certificate-source-reader.mjs';
 
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const HASH=/^[a-f0-9]{32}$/;
 const CATEGORIES=Object.freeze({
  trusted_flight_execution:Object.freeze({
   status:'verified_independent_trusted_flight_execution_source',
@@ -36,8 +32,6 @@ const validDay=d=>typeof d==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(d)&&
  !Number.isNaN(Date.parse(d+'T00:00:00Z'))&&
  new Date(d+'T00:00:00Z').toISOString().slice(0,10)===d&&
  d>='2000-01-01'&&d<='2199-12-01';
-const plus28=d=>new Date(Date.parse(d+'T00:00:00Z')+28*86400000)
- .toISOString().slice(0,10);
 const BLOCKED='blocked_unreleased_execution_finance_source';
 const PREPARED='source_preflight_complete_not_certifiable';
 const safeBlocked=(p,r,type)=>p&&p.worldId===1&&
@@ -67,8 +61,6 @@ export function createSection9FutureCertificationAuthority({
   throw Error('SECTION9_FUTURE_CERTIFICATION_MATCHING_INGRESS_REQUIRED');
  // Retain the key in an isolated instance for eventual independently
  // evidenced issuance. NEVER use it to sign a preflight-only result.
- const secret=Buffer.from(authoritySecret,'utf8');
- const authority=CATEGORIES[clearanceType];
  return Object.freeze({
   clearanceType,
   async inspectForCertification({
