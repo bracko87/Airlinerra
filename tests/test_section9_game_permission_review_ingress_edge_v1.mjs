@@ -31,7 +31,7 @@ test('reviewer uses independent HMAC signature validation, not client-supplied o
 });
 test('player endpoint still cannot approve or revoke permissions',async()=>{
  const source=await read('server/section9-permission-player-http.mjs');
- assert.match(source,/\['status','apply','licence2_draft','licence2_withdraw','licence2_refresh','licence2_submit','licence3_status','licence3_submit','licence4_status','licence4_submit','licence5_status','licence5_submit','licence6_preview'\]/);
+ assert.match(source,/\['status','apply','licence2_draft','licence2_withdraw','licence2_refresh','licence2_submit','licence3_status','licence3_submit','licence4_status','licence4_submit','licence5_status','licence5_submit','licence6_preview','licence6_submit'\]/);
  assert.match(source,/LICENCE3_UNSAFE_APPLICATION_RESPONSE/);
  assert.match(source,/LICENCE4_UNSAFE_APPLICATION_RESPONSE/);
  assert.match(source,/LICENCE5_UNSAFE_APPLICATION_RESPONSE/);
