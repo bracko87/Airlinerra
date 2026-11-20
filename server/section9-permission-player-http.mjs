@@ -194,7 +194,7 @@ export function createSection9PermissionPlayerHandler({
   let body;
   try{body=await readBody(req);}
   catch{return response(400,{error:'Invalid application request'});}
-  if(!['status','apply','licence2_draft','licence2_withdraw','licence2_refresh','licence2_submit','licence3_status','licence3_submit','licence4_status','licence4_submit'].includes(body.action)||!UUID.test(body.airlineId||''))
+  if(!['status','apply','licence2_draft','licence2_withdraw','licence2_refresh','licence2_submit','licence3_status','licence3_submit','licence4_status','licence4_submit','licence5_status','licence5_submit'].includes(body.action)||!UUID.test(body.airlineId||''))
    return response(400,{error:'Invalid application request'});
   if(body.action==='status'&&Object.keys(body).sort().join(',')!=='action,airlineId')
    return response(400,{error:'Invalid status request'});
@@ -359,6 +359,65 @@ export function createSection9PermissionPlayerHandler({
       applicationStatus:x.application_status,dueGameDay:x.due_game_day,
       issues:Array.isArray(x.readiness.issues)?x.readiness.issues.slice(0,20):[],
       feeUsd:40000,processingGameDays:3,
+      flightActivated:false});
+    }finally{client.release();}
+   }
+   if(body.action==='licence5_status'||body.action==='licence5_submit'){
+    const isSubmit=body.action==='licence5_submit';
+    if(Object.keys(body).sort().join(',')!==
+      (isSubmit?'action,airlineId,requestKey':'action,airlineId')||
+      (isSubmit&&!UUID.test(body.requestKey||'')))
+     return response(400,{error:'Invalid Dangerous Goods Licence 5 request'});
+    // The existing authenticated private owner lookup must complete before
+    // accessing company-scoped dg records or attempting submission.
+    await service.listApplications({airlineId:body.airlineId});
+    const client=await database.connect();
+    try{
+     if(isSubmit){
+      const r=await client.query(
+       'SELECT airlinerra_game.licence5_submit_dg_application_v1($1::uuid,$2::uuid,$3::uuid) AS result',
+       [playerId,body.airlineId,body.requestKey]);
+      const x=r.rows?.[0]?.result;
+      if(r.rowCount!==1||!x||!['NOT_RELEASED','NOT_ELIGIBLE','GAME_TICK_UNVERIFIED',
+        'ALREADY_APPROVED','SUBMITTED','submitted','issued','withdrawn'].includes(x.status)||
+        x.charged!==false||typeof x.submitted!=='boolean'||
+        (x.status==='SUBMITTED'&&(!UUID.test(x.applicationId||'')||x.issued!==false)))
+       throw Error('LICENCE5_UNSAFE_APPLICATION_RESPONSE');
+      return response(200,{status:x.status,applicationId:x.applicationId??null,
+       dueGameDay:x.dueGameDay??null,submitted:x.submitted,feeCharged:false,
+       licenceIssued:false,flightActivated:false});
+     }
+     const r=await client.query(
+      `SELECT airlinerra_game.licence5_dg_readiness_v1($2::uuid) AS readiness,
+         airlinerra_game.licence5_dg_operator_scope_v1($2::uuid) AS scope,
+
+         EXISTS(SELECT 1 FROM airlinerra_game.licence5_dg_release_v1
+          WHERE world_id=1 AND issuance_enabled AND fee_ledger_verified AND reviewer_verified) AS released,
+         (SELECT a.status FROM airlinerra_game.licence5_dg_applications_v1 a
+          WHERE a.airline_id=$2::uuid ORDER BY created_at DESC LIMIT 1) AS application_status,
+         (SELECT a.due_game_day::text FROM airlinerra_game.licence5_dg_applications_v1 a
+          WHERE a.airline_id=$2::uuid ORDER BY created_at DESC LIMIT 1) AS due_game_day
+        FROM airlinerra_game.airlines owner
+        WHERE owner.id=$2::uuid AND owner.owner_player_id=$1::uuid AND owner.world_id=1`,
+      [playerId,body.airlineId]);
+     const x=r.rows?.[0];
+     if(r.rowCount!==1||!x||!x.readiness||
+       x.readiness.airlineId!==body.airlineId||
+       !x.scope||typeof x.scope.authorized!=='boolean'||
+       typeof x.released!=='boolean'||
+       (x.application_status!==null&&
+        !['submitted','issued','withdrawn'].includes(x.application_status)))
+      throw Error('LICENCE5_UNSAFE_PRIVATE_STATUS');
+     return response(200,{status:'licence5_dg_status',
+      airlineId:body.airlineId,worldId:1,readOnly:true,
+      issued:x.scope.authorized===true,
+      canApply:x.released===true&&x.readiness.eligible===true&&x.scope.authorized!==true,
+      operatorScopeApproved:x.scope.authorized===true,
+      shipmentAuthorization:false,
+      approvedCommodityClasses:[],
+      applicationStatus:x.application_status,dueGameDay:x.due_game_day,
+      issues:Array.isArray(x.readiness.issues)?x.readiness.issues.slice(0,20):[],
+      feeUsd:60000,processingGameDays:5,
       flightActivated:false});
     }finally{client.release();}
    }
