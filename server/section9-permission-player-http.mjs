@@ -14,7 +14,7 @@ const PROD='https://airlinerra.com';
 const TOKEN=/^Bearer ([A-Za-z0-9._~-]{16,8192})$/u;
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 const POLICY_CODES=new Set(['AIR_OPERATOR_CERTIFICATE','DOMESTIC_TRAFFIC',
- 'INTEGRATED_MARKET','THIRD_FOURTH_FREEDOM','FIFTH_FREEDOM',
+ 'INTEGRATED_MARKET','THIRD_FOURTH_FREEDOM',
  'SEVENTH_FREEDOM','CABOTAGE']);
 const HEADERS={'cache-control':'no-store','content-type':'application/json; charset=utf-8',
  'x-content-type-options':'nosniff','referrer-policy':'no-referrer'};
@@ -34,7 +34,7 @@ const applicationPolicySql=[
  'LEFT JOIN airlinerra_game.section9_game_permission_issuance_policy_v1 p',
  'ON p.permission_code=c.permission_code',
  "WHERE c.permission_code IN ('AIR_OPERATOR_CERTIFICATE','DOMESTIC_TRAFFIC',",
- "'INTEGRATED_MARKET','THIRD_FOURTH_FREEDOM','FIFTH_FREEDOM',",
+ "'INTEGRATED_MARKET','THIRD_FOURTH_FREEDOM',",
  "'SEVENTH_FREEDOM','CABOTAGE')",
  "ORDER BY CASE WHEN c.permission_code='AIR_OPERATOR_CERTIFICATE' THEN 0 ELSE 1 END,c.title"
 ].join(' ');
