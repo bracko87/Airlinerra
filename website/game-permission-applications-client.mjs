@@ -224,6 +224,37 @@ export function createGamePermissionApplicationsClient({
     throw Error('Unsafe Charter/VIP Licence 4 application response');
    return x;
   },
+  async dangerousGoodsLicence5Status(airlineId){
+   if(!UUID.test(airlineId||''))throw Error('Valid cargo airline required');
+   const x=await post({action:'licence5_status',airlineId});
+   if(x?.status!=='licence5_dg_status'||x.airlineId!==airlineId||
+      x.worldId!==1||x.readOnly!==true||x.flightActivated!==false||
+      typeof x.issued!=='boolean'||typeof x.canApply!=='boolean'||
+      x.feeUsd!==60000||x.processingGameDays!==5||
+      typeof x.operatorScopeApproved!=='boolean'||
+      x.operatorScopeApproved!==x.issued||
+      x.shipmentAuthorization!==false||
+      !Array.isArray(x.approvedCommodityClasses)||x.approvedCommodityClasses.length!==0||
+      !Array.isArray(x.issues)||x.issues.length>20||
+      x.issues.some(issue=>typeof issue!=='string'||! /^[A-Z0-9_]{3,100}$/.test(issue))||
+      (x.applicationStatus!==null&&!['submitted','issued','withdrawn'].includes(x.applicationStatus))||
+      (x.dueGameDay!==null&&!DAY.test(x.dueGameDay)))
+     throw Error('Unverified Dangerous Goods Licence 5 status');
+   return x;
+  },
+  async submitDangerousGoodsLicence5({airlineId,requestKey}={}){
+   if(!UUID.test(airlineId||'')||!UUID.test(requestKey||''))
+    throw Error('Invalid Dangerous Goods Licence 5 request');
+   const x=await post({action:'licence5_submit',airlineId,requestKey});
+   if(!['NOT_RELEASED','NOT_ELIGIBLE','GAME_TICK_UNVERIFIED','ALREADY_APPROVED',
+         'SUBMITTED','submitted','issued','withdrawn'].includes(x?.status)||
+     typeof x.submitted!=='boolean'||x.feeCharged!==false||
+     x.licenceIssued!==false||x.flightActivated!==false||
+     (x.applicationId!==null&&!UUID.test(x.applicationId||''))||
+     (x.dueGameDay!==null&&!DAY.test(x.dueGameDay)))
+    throw Error('Unsafe Dangerous Goods Licence 5 application response');
+   return x;
+  },
   async status(airlineId){
    if(!UUID.test(airlineId||''))throw Error('Valid airline required');
    return checkedGamePermissionStatus(
