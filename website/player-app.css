@@ -3093,3 +3093,16 @@ section[data-player-view="aircraft-market"]:has(#workspace-aircraft-market.is-sh
  .used-aircraft-profile-groups,.used-aircraft-profile-cabin-seats{grid-template-columns:1fr}
  .used-aircraft-profile-highlights{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+
+/* Eight core licences: clear, square-edged navigation consistent with the game UI. */
+.game-licence-overview{margin:14px 0 22px;padding:14px;border:1px solid var(--line);background:#fff;border-radius:5px}
+.game-licence-overview h3{font-size:15px;margin:0 0 5px}
+.game-licence-overview>.hint{margin:0 0 12px}
+.game-licence-overview-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.game-licence-overview-item{display:block;width:100%;min-height:44px;padding:10px 12px;text-align:left;font:inherit;font-size:12px;font-weight:600;line-height:1.3;color:var(--navy);background:#fff;border:1px solid var(--line);border-radius:4px;box-shadow:none;cursor:pointer}
+.game-licence-overview-item:hover,.game-licence-overview-item:focus-visible{background:#f3f7fc;border-color:#6b8ab1;outline-offset:2px}
+.game-licence-future{scroll-margin-top:16px}
+.game-licence-future .game-licence-status{font-weight:600;color:var(--muted);margin-bottom:8px}
+.game-licence-future button:disabled{opacity:.75;cursor:not-allowed}
+@media(max-width:980px){.game-licence-overview-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.game-licence-overview-grid{grid-template-columns:1fr}}
