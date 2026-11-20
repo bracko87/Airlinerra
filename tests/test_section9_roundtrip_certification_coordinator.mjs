@@ -171,3 +171,95 @@ test('reject invalid pair and incomplete private dependencies before database re
  assert.throws(()=>createSection9RoundtripCertificationCoordinator(),
   /THREE_INDEPENDENT_CERTIFICATION_ISSUERS_REQUIRED/);
 });
+
+
+test('both unreleased source checks inspect each leg without granting execution or money',async()=>{
+ const db=build();
+ const calls=[];
+ const coordinator=createSection9RoundtripCertificationCoordinator({
+  operatorIssuer:{
+   clearanceType:'operator_licence',
+   verifyAndCertify:db.service?async request=>({
+    status:'certification_event_recorded',scheduleId:request.scheduleId,
+    certificateIssued:true,flightActivated:false,bookingsCreated:false,ledgerPosted:false
+   }):null
+  },
+  routeRightsIssuer:{
+   clearanceType:'route_traffic_rights',verifyAndCertify:async request=>({
+    status:'certification_event_recorded',scheduleId:request.scheduleId,
+    certificateIssued:true,flightActivated:false,bookingsCreated:false,ledgerPosted:false
+   })
+  },
+  slotIssuer:{
+   clearanceType:'airport_slot_capacity',certifyCurrentSlotReservation:async request=>({
+    status:'certification_event_recorded',scheduleId:request.scheduleId,
+    slotCertificateIssued:true,flightActivated:false,bookingsCreated:false,ledgerPosted:false
+   })
+  },
+  executionFinanceSourceReader:{
+   async inspect(request){
+    calls.push(request);
+    return {
+     status:'blocked_unreleased_execution_finance_source',
+     scheduleId:request.scheduleId,
+     clearanceType:request.clearanceType,
+     blockers:['WORLD_1_PAUSED'],
+     sourceAuthorityReleased:false,certificateIssued:false,
+     certificationComplete:false,scheduleActivated:false,
+     flightActivated:false,bookingsCreated:false,ledgerPosted:false
+    };
+   }
+  }
+ });
+ const result=await coordinator.certifyPreparedPair(pair);
+ assert.equal(result.confirmedCertificates,6);
+ assert.equal(result.sourceInspections.length,4);
+ assert.equal(result.certificationComplete,false);
+ assert.equal(result.flightActivated,false);
+ assert.equal(result.ledgerPosted,false);
+ assert.deepEqual(calls.map(x=>[x.scheduleId,x.clearanceType]),[
+  [OUT,'trusted_flight_execution'],[OUT,'commercial_finance'],
+  [BACK,'trusted_flight_execution'],[BACK,'commercial_finance']
+ ]);
+ for(const item of result.sourceInspections)
+  assert.deepEqual(item.blockers,['WORLD_1_PAUSED']);
+});
+test('untrusted positive source assertion never becomes final activation proof',async()=>{
+ const buildIssuer=(type)=>({
+  clearanceType:type,
+  verifyAndCertify:async req=>({
+   status:'certification_event_recorded',scheduleId:req.scheduleId,
+   certificateIssued:true,flightActivated:false,bookingsCreated:false,ledgerPosted:false
+  }),
+  certifyCurrentSlotReservation:async req=>({
+   status:'certification_event_recorded',scheduleId:req.scheduleId,
+   slotCertificateIssued:true,flightActivated:false,bookingsCreated:false,ledgerPosted:false
+  })
+ });
+ const coordinator=createSection9RoundtripCertificationCoordinator({
+  operatorIssuer:buildIssuer('operator_licence'),
+  routeRightsIssuer:buildIssuer('route_traffic_rights'),
+  slotIssuer:buildIssuer('airport_slot_capacity'),
+  executionFinanceSourceReader:{
+   async inspect(req){
+    return {scheduleId:req.scheduleId,clearanceType:req.clearanceType,
+     blockers:[],sourceAuthorityReleased:true,certificateIssued:true,
+     certificationComplete:true,scheduleActivated:true,flightActivated:true,
+     bookingsCreated:true,ledgerPosted:true};
+   }
+  }
+ });
+ const result=await coordinator.certifyPreparedPair(pair);
+ assert.equal(result.status,'roundtrip_future_source_inspection_untrusted');
+ assert.equal(result.certificationComplete,false);
+ assert.equal(result.flightActivated,false);
+ assert.equal(result.ledgerPosted,false);
+ assert.equal(result.sourceInspections.length,0);
+});
+test('missing inspector remains a diagnostic-only six-clearance workflow',async()=>{
+ const b=build();
+ const result=await b.service.certifyPreparedPair(pair);
+ assert.equal(result.confirmedCertificates,6);
+ assert.deepEqual(result.sourceInspections,[]);
+ assert.equal(result.certificationComplete,false);
+});
