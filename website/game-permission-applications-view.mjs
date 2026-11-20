@@ -25,7 +25,7 @@ export function createGamePermissionApplicationsView({
     typeof getAirline!=='function'||typeof getClient!=='function')
   throw Error('Game licence view dependencies are missing');
  let loadedAirline=null,version=0,current=null,busy=false,pendingKey=null;
- let cargoStatus=null,cargoRequestKey=null,charterStatus=null,charterRequestKey=null;
+ let cargoStatus=null,cargoRequestKey=null,charterStatus=null,charterRequestKey=null,dgStatus=null,dgRequestKey=null;
  const section=node(doc,'article','panel workspace-panel game-licence-panel');
  section.append(node(doc,'span','panel-kicker','YOUR GAME PERMISSIONS'),
   node(doc,'h2','','Licence applications and approval status'),
@@ -74,6 +74,18 @@ export function createGamePermissionApplicationsView({
   l4Apply
  );
  section.append(l4Panel);
+ const l5Panel=node(doc,'div','game-aoc-status game-licence-l5');
+ const l5State=node(doc,'p','game-licence-status','Dangerous goods licence status not yet checked.');
+ const l5Apply=node(doc,'button','secondary','Apply for Dangerous Goods Licence 5');
+ l5Apply.type='button';l5Apply.disabled=true;
+ l5Panel.append(
+  node(doc,'h3','','Licence 4 — Dangerous Goods Transport Approval'),
+  l5State,
+  node(doc,'p','hint','Requires a registered cargo airline, valid own AOC, active Cargo Licence 3, safety rating 70+, an in-service cargo aircraft, and $60,000 available for the approval fee. Applications are free, reviewed after five verified game days.'),
+  node(doc,'p','hint','This authorizes the operating company only. Individual dangerous-goods classes, shipments, airports, crews, packaging and routes remain separately restricted; no shipment classes are enabled yet.'),
+  l5Apply
+ );
+ section.append(l5Panel);
  const metrics=node(doc,'div','game-licence-metrics');
  const fields=[];
  for(const name of ['Current game date','Pending review','Issued permissions']){
@@ -192,6 +204,21 @@ export function createGamePermissionApplicationsView({
   }else{
    l4State.textContent='Charter/VIP licence status not connected to the current server.';
    l4Apply.disabled=true;
+  }
+  l5Apply.disabled=!dgStatus?.canApply||busy;
+  if(dgStatus?.issued===true){
+   l5State.textContent='Dangerous-goods operator approval recorded; shipment classes still require separate authorizations.';
+   l5Apply.disabled=true;
+  }else if(dgStatus?.applicationStatus==='submitted'){
+   l5State.textContent='Dangerous-goods application awaiting review'+(dgStatus.dueGameDay?' · Due '+dgStatus.dueGameDay:'');
+   l5Apply.disabled=true;
+  }else if(dgStatus){
+   l5State.textContent=dgStatus.canApply?'Dangerous-goods operator licence application available':
+    'Licence 5 unavailable · '+dgStatus.issues.slice(0,4).map(x=>x.replaceAll('_',' ').toLowerCase()).join('; ');
+   l5Apply.disabled=!dgStatus.canApply||busy;
+  }else{
+   l5State.textContent='Dangerous-goods licence status not connected to this server.';
+   l5Apply.disabled=true;
   }
   type.replaceChildren();
   const rows=current?.policies??[];
@@ -415,6 +442,23 @@ export function createGamePermissionApplicationsView({
   }catch{l4State.textContent='Charter/VIP submission could not be confirmed. Please retry.';}
   finally{busy=false;l4Apply.disabled=!charterStatus?.canApply;}
  });
+ l5Apply.addEventListener('click',async()=>{
+  if(busy||dgStatus?.canApply!==true||getAirline()?.id!==loadedAirline)return;
+  const api=getClient();
+  if(typeof api?.submitDangerousGoodsLicence5!=='function')return;
+  const id=loadedAirline;
+  if(!dgRequestKey)dgRequestKey=newRequestKey();
+  busy=true;l5Apply.disabled=true;l5State.textContent='Submitting dangerous goods application…';
+  try{
+   const result=await api.submitDangerousGoodsLicence5({airlineId:id,requestKey:dgRequestKey});
+   if(getAirline()?.id!==id)return;
+   if(result.submitted)dgRequestKey=null;
+   l5State.textContent=result.submitted?'Dangerous goods application recorded. No fee charged.':
+    'Dangerous goods application unavailable: '+result.status.replaceAll('_',' ').toLowerCase();
+   await load({refresh:true});
+  }catch{l5State.textContent='Dangerous goods submission could not be confirmed. Please retry.';}
+  finally{busy=false;l5Apply.disabled=!dgStatus?.canApply;}
+ });
  form.addEventListener('submit',async event=>{
   event.preventDefault();
   if(busy||!current?.canApply||!selected()?.canApply||
@@ -450,7 +494,7 @@ export function createGamePermissionApplicationsView({
   const client=getClient();
   const id=airline?.id;
   const requestVersion=++version;
-  loadedAirline=id??null;current=null;cargoStatus=null;charterStatus=null;submit.disabled=true;l3Apply.disabled=true;l4Apply.disabled=true;
+  loadedAirline=id??null;current=null;cargoStatus=null;charterStatus=null;dgStatus=null;submit.disabled=true;l3Apply.disabled=true;l4Apply.disabled=true;l5Apply.disabled=true;
   if(!id||!client){
    note.textContent='Select a verified airline to view your game licence applications.';
    aocState.textContent='AOC details unavailable for the selected airline.';
@@ -473,6 +517,10 @@ export function createGamePermissionApplicationsView({
    if(typeof client.charterLicence4Status==='function'){
     try{charterStatus=await client.charterLicence4Status(id);}
     catch{charterStatus=null;}
+   }
+   if(typeof client.dangerousGoodsLicence5Status==='function'){
+    try{dgStatus=await client.dangerousGoodsLicence5Status(id);}
+    catch{dgStatus=null;}
    }
    if(requestVersion!==version||getAirline()?.id!==id)return;
    render();
