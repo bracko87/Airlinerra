@@ -255,6 +255,30 @@ export function createGamePermissionApplicationsClient({
     throw Error('Unsafe Dangerous Goods Licence 5 application response');
    return x;
   },
+  async licence6FifthFreedomPreview({airlineId,homeAirport,foreignStop,foreignDestination,serviceType}={}){
+   if(!UUID.test(airlineId||'')||!['passenger','cargo'].includes(serviceType)
+    ||![homeAirport,foreignStop,foreignDestination].every(
+     v=>typeof v==='string'&&/^[A-Z0-9:_-]{3,120}$/.test(v)))
+    throw Error('Invalid Fifth Freedom route preview');
+   const x=await post({action:'licence6_preview',airlineId,homeAirport,
+    foreignStop,foreignDestination,serviceType});
+   if(x?.status!=='licence6_route_preview'||x.worldId!==1||
+    x.airlineId!==airlineId||x.homeAirport!==homeAirport||
+    x.foreignStop!==foreignStop||x.foreignDestination!==foreignDestination||
+    x.serviceType!==serviceType||
+    x.canApply!==false||x.routeAuthorized!==false||
+    x.foreignSegmentAuthorized!==false||x.flightActivated!==false||
+    x.proposedFeeMinUsd!==100000||x.proposedFeeMaxUsd!==250000||
+    x.processingGameDays!==7||
+    (x.feeUsd!==null&&(!Number.isInteger(x.feeUsd)||
+      x.feeUsd<100000||x.feeUsd>250000))||
+    !Array.isArray(x.issues)||x.issues.length>20||
+    x.issues.some(v=>typeof v!=='string'||! /^[A-Z0-9_]{3,100}$/.test(v))||
+    ![x.homeCountry,x.firstForeignCountry,x.secondForeignCountry].every(
+      v=>typeof v==='string'&&/^[A-Z]{2}$/.test(v)))
+    throw Error('Unsafe Fifth Freedom route preview');
+   return x;
+  },
   async status(airlineId){
    if(!UUID.test(airlineId||''))throw Error('Valid airline required');
    return checkedGamePermissionStatus(
