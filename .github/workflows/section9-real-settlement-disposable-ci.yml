@@ -90,7 +90,7 @@ jobs:
         run: |
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_real_settlement_negative.sql
-      - name: Replace isolated proof stubs with true signed HMAC and ticket inventory
+      - name: Replace isolated proof stubs with production HMAC and ticket functions
         run: |
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_signed_ticket_postlude.sql
@@ -108,44 +108,13 @@ jobs:
             start=src.index('CREATE OR REPLACE FUNCTION airlinerra_game.'+name+'(')
             end=src.index('REVOKE ALL ON FUNCTION airlinerra_game.'+name+'(',start)
             fragment=src[start:end]
-            assert 'END $function
-        shell: bash
-        run: |
-          set -euo pipefail
-          fid='44444444-4444-4444-8444-444444444444:2026-11-20:5'
-          pids=()
-          for n in $(seq 1 6); do
-            psql -X -qAt -v ON_ERROR_STOP=1 -c "SELECT (airlinerra_game.section9_post_completed_flight_finance_once_v1('$fid')->>'status');" > "$RUNNER_TEMP/flight_settlement_$n.txt" 2>&1 &
-            pids+=("$!")
-          done
-          status=0
-          for pid in "${pids[@]}"; do
-            wait "$pid" || status=1
-          done
-          cat "$RUNNER_TEMP"/flight_settlement_*.txt
-          test "$status" -eq 0
-          posted=$(grep -hxc 'verified_complete_flight_finance_posted_once' "$RUNNER_TEMP"/flight_settlement_*.txt | awk '{s+=$1}END{print s+0}')
-          test "$posted" -eq 1
-          for file in "$RUNNER_TEMP"/flight_settlement_*.txt; do
-            grep -Eq '^(verified_complete_flight_finance_posted_once|game_flight_finance_posting_busy|complete_game_flight_finance_already_posted)$' "$file"
-          done
-      - name: Verify exactly-once money cash integrity and replay
-        run: |
-          set -euo pipefail
-          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_real_settlement_postconditions.sql
-      - name: Report isolation and proof limitations
-        if: always()
-        run: |
-          echo "### Real settlement function — isolated PostgreSQL 17" >> "$GITHUB_STEP_SUMMARY"
-          echo "Database: disposable, localhost only. Actual financial posting function from migration is used unchanged." >> "$GITHUB_STEP_SUMMARY"
-          echo "The real production signed-movement HMAC and ticket reconciliation functions run with synthetic signed event and booked-seat records. Independent game clock, certificate authority, airport capacity and cost approvals remain disposable fixtures; not a production end-to-end release." >> "$GITHUB_STEP_SUMMARY"
- in fragment, name
+            assert 'END $function$' in fragment, name
             output.append(fragment)
           Path('/tmp/section9-real-signed-ticket-functions.sql').write_text('\n'.join(output))
-          print('Exact production signed-event and post-arrival ticket functions extracted')
+          print('Extracted production HMAC and ticket reconciliation functions')
           PY
           psql -X -v ON_ERROR_STOP=1 -f /tmp/section9-real-signed-ticket-functions.sql
-      - name: Verify genuine HMAC and booked-seat checks reject tampering
+      - name: Verify signed HMAC and reservation tamper rejection
         run: |
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_signed_ticket_acceptance.sql
