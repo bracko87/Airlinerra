@@ -11,7 +11,7 @@ export const SECTION9_EXECUTION_FINANCE_SNAPSHOT_SQL=
  'SELECT airlinerra_game.section9_execution_finance_source_snapshot_v1('+
  '$1::uuid,$2::uuid,$3::integer,$4::date,$5::text) AS result';
 export function createSection9ExecutionFinanceSnapshotReader({database}={}){
- if(typeof database?.connect!=='function)
+ if(typeof database?.connect!=='function')
   throw Error('SECTION9_PRIVATE_SNAPSHOT_DATABASE_REQUIRED');
  return Object.freeze({
   async inspect({airlineId,scheduleId,scheduleVersion,gameDate,clearanceType}={}){
