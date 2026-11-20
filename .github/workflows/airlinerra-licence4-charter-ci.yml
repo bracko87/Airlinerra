@@ -9,6 +9,8 @@ on:
       - 'website/licensing-planner.mjs'
       - 'supabase/migrations/*licence4*'
       - 'tests/test_licence4_charter_fullflow.mjs'
+      - 'tests/test_licence34_90day_policy.mjs'
+      - 'supabase/migrations/*licence34*'
       - '.github/workflows/airlinerra-licence4-charter-ci.yml'
   workflow_dispatch:
 permissions:
@@ -29,7 +31,7 @@ jobs:
           node --check website/game-permission-applications-view.mjs
           node --check tests/test_licence4_charter_fullflow.mjs
       - name: Verify Charter VIP Licence 4 authentication and safety contracts
-        run: node --test tests/test_licence4_charter_fullflow.mjs
+        run: node --test tests/test_licence4_charter_fullflow.mjs tests/test_licence34_90day_policy.mjs
       - name: Build player website
         run: |
           cd website
