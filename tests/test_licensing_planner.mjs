@@ -9,13 +9,13 @@ const expectedCodes=[
  'CHARTER_VIP_SCOPE','DANGEROUS_GOODS','DOMESTIC_TRAFFIC',
  'INTEGRATED_MARKET','THIRD_FOURTH_FREEDOM',
  'SEVENTH_FREEDOM','CABOTAGE','FOREIGN_BASE_PERMIT',
- 'PART145_MAINTENANCE','NON_EU_MAINTENANCE'
+ 'MAINTENANCE_ORGANIZATION_LICENCE_6'
 ];
 
 test('planner covers every installed reference type plus labelled future concepts',()=>{
  const codes=LICENCE_PLAN.map(x=>x.code);
  assert.equal(new Set(codes).size,codes.length,'no duplicated game permission codes');
- assert.equal(codes.length,18);
+ assert.equal(codes.length,17);
  for(const code of expectedCodes)assert.ok(codes.includes(code),code);
  for(const future of ['AIRPORT_SLOTS','FLIGHT_ACADEMY'])
   assert.ok(codes.includes(future),'future concept '+future);
