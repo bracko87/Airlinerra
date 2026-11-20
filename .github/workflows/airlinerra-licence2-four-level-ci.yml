@@ -14,6 +14,10 @@ on:
       - 'tests/test_section9_permission_player_api_ui.mjs'
       - 'tests/test_licensing_planner.mjs'
       - 'tests/test_licence2_foreign_network_foundation.mjs'
+      - 'tests/test_licence2_fifth_consolidation.mjs'
+      - 'supabase/migrations/*merge_fifth_freedom_into_licence2.sql'
+      - 'supabase/migrations/*retire_standalone_licence6_structures.sql'
+      - 'supabase/migrations/*l2_home_connected_route_no_extra_base.sql'
       - 'supabase/migrations/*licence2*.sql'
       - 'docs/AIRLINERRA_LICENCE2_*'
       - '.github/workflows/airlinerra-licence2-four-level-ci.yml'
@@ -40,7 +44,8 @@ jobs:
           node --check website/game-permission-applications-client.mjs
           node --check website/game-permission-applications-view.mjs
           node --check tests/test_licensing_planner.mjs
-          node --test tests/test_licensing_planner.mjs tests/test_licence2_foreign_network_foundation.mjs tests/test_section9_permission_player_api_ui.mjs tests/test_licence2_independent_review_commit_service.mjs tests/test_licence2_game_review_processor.mjs
+          node --check tests/test_licence2_fifth_consolidation.mjs
+          node --test tests/test_licence2_fifth_consolidation.mjs tests/test_licensing_planner.mjs tests/test_licence2_foreign_network_foundation.mjs tests/test_section9_permission_player_api_ui.mjs tests/test_licence2_independent_review_commit_service.mjs tests/test_licence2_game_review_processor.mjs
       - name: Validate website build
         run: |
           cd website
