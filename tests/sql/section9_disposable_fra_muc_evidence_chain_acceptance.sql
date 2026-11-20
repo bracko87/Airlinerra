@@ -21,9 +21,15 @@ BEGIN
 
  INSERT INTO airlinerra_game.section9_dated_flight_occurrences_v1
  (id,world_id,schedule_id,airline_id,aircraft_inventory_id,
- schedule_version,weekly_entry,flight_local_date,booked_seats,
- verified_passenger_seats)
- VALUES(occ,1,schedule,owner,aircraft,1,5,DATE '2026-11-20',4,100);
+ schedule_version,weekly_entry,flight_local_date,
+ origin_airport_key,destination_airport_key,booked_seats,verified_passenger_seats)
+ VALUES(occ,1,schedule,owner,aircraft,1,5,DATE '2026-11-20',
+ 'OURAIRPORTS:2212','OURAIRPORTS:2218',4,100);
+ IF NOT EXISTS(
+   SELECT 1 FROM airlinerra_game.section9_dated_flight_occurrences_v1
+   WHERE id=occ AND origin_airport_key='OURAIRPORTS:2212'
+   AND destination_airport_key='OURAIRPORTS:2218')
+ THEN RAISE EXCEPTION 'FRA–MUC test route invalid';END IF;
  INSERT INTO airlinerra_game.section9_passenger_reservation_batches_v1
  (id,occurrence_id,seats_requested,reservation_status,paid_upfront,
  recognized_revenue_usd) VALUES
