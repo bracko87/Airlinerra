@@ -26,6 +26,7 @@ export function createGamePermissionApplicationsView({
   throw Error('Game licence view dependencies are missing');
  let loadedAirline=null,version=0,current=null,busy=false,pendingKey=null;
  let cargoStatus=null,cargoRequestKey=null,charterStatus=null,charterRequestKey=null,dgStatus=null,dgRequestKey=null;
+ let l6Readiness=null,l6RequestKey=null;
  const section=node(doc,'article','panel workspace-panel game-licence-panel');
  section.append(node(doc,'span','panel-kicker','YOUR GAME PERMISSIONS'),
   node(doc,'h2','','Licence applications and approval status'),
@@ -111,11 +112,13 @@ export function createGamePermissionApplicationsView({
  }
  const l6Preview=node(doc,'button','secondary','Check Fifth Freedom route eligibility');
  l6Preview.type='button';
+ const l6Apply=node(doc,'button','secondary','Apply for Licence 6');
+ l6Apply.type='button';l6Apply.disabled=true;
  l6Panel.append(
   node(doc,'h3','','Licence 6 — Fifth Freedom Rights'),
   node(doc,'p','hint','For example, a Serbian airline flying Serbia → France → Italy may need specific Fifth Freedom authority to sell France → Italy seats or cargo. Permission is route- and service-specific, never unrestricted foreign-to-foreign access.'),
   node(doc,'p','hint','Enter exact airport IDs from the game flight schedule. The proposed fee is $100,000–$250,000 depending on verified country-pair rules; approval would take 7 game days. No fee is set until the market has been independently reviewed.'),
-  l6Fields,l6State,l6Preview
+  l6Fields,l6State,l6Preview,l6Apply
  );
  section.append(l6Panel);
  l6Preview.addEventListener('click',async()=>{
@@ -127,7 +130,7 @@ export function createGamePermissionApplicationsView({
   const foreignStop=l6Stop.value.trim().toUpperCase();
   const foreignDestination=l6Final.value.trim().toUpperCase();
   const serviceType=l6Service.value;
-  busy=true;l6Preview.disabled=true;
+  busy=true;l6Preview.disabled=true;l6Apply.disabled=true;l6Readiness=null;
   l6State.textContent='Checking this three-country itinerary…';
   try{
    const result=await api.licence6FifthFreedomPreview({
@@ -135,13 +138,50 @@ export function createGamePermissionApplicationsView({
    if(getAirline()?.id!==airline.id)return;
    const route=[result.homeCountry,result.firstForeignCountry,
     result.secondForeignCountry].join(' → ');
+   if(result.canApply===true){
+    l6Readiness={airlineId:airline.id,homeAirport,foreignStop,
+     foreignDestination,serviceType,feeUsd:result.feeUsd};
+    l6Apply.disabled=false;
+   }
    l6State.textContent='Itinerary '+route+'. '+(result.issues.length?
     'Approval unavailable: '+result.issues.slice(0,5)
      .map(v=>v.replaceAll('_',' ').toLowerCase()).join('; '):
-    'Preview eligible for review; licence issuance remains locked.');
+    'Application available; licence fee on approval: '+MONEY.format(result.feeUsd)+'.');
   }catch{
    l6State.textContent='Route eligibility could not be verified. Check the game airport IDs.';
   }finally{busy=false;l6Preview.disabled=false;}
+ });
+ l6Apply.addEventListener('click',async()=>{
+  const airline=getAirline();const api=getClient();
+  if(busy||!l6Readiness||airline?.id!==loadedAirline||
+     airline.id!==l6Readiness.airlineId||
+     typeof api?.submitLicence6FifthFreedom!=='function')return;
+  const fields=[l6Home.value.trim().toUpperCase(),
+   l6Stop.value.trim().toUpperCase(),l6Final.value.trim().toUpperCase(),
+   l6Service.value];
+  if(fields.some((v,i)=>v!==[l6Readiness.homeAirport,
+    l6Readiness.foreignStop,l6Readiness.foreignDestination,
+    l6Readiness.serviceType][i])){
+   l6Readiness=null;l6Apply.disabled=true;
+   l6State.textContent='The route changed. Check eligibility again before applying.';
+   return;
+  }
+  if(!l6RequestKey)l6RequestKey=newRequestKey();
+  const request={...l6Readiness,requestKey:l6RequestKey};
+  delete request.feeUsd;
+  busy=true;l6Apply.disabled=true;l6State.textContent='Submitting the verified route application…';
+  try{
+   const response=await api.submitLicence6FifthFreedom(request);
+   if(getAirline()?.id!==airline.id)return;
+   if(response.submitted)l6RequestKey=null;
+   l6State.textContent=response.submitted?
+    'Fifth Freedom application recorded; no fee charged.':
+    'Application unavailable: '+response.status.replaceAll('_',' ').toLowerCase();
+   l6Readiness=null;
+   await load({refresh:true});
+  }catch{
+   l6State.textContent='Fifth Freedom submission could not be verified. No charge confirmed.';
+  }finally{busy=false;l6Apply.disabled=true;}
  });
  const metrics=node(doc,'div','game-licence-metrics');
  const fields=[];
@@ -551,7 +591,7 @@ export function createGamePermissionApplicationsView({
   const client=getClient();
   const id=airline?.id;
   const requestVersion=++version;
-  loadedAirline=id??null;current=null;cargoStatus=null;charterStatus=null;dgStatus=null;submit.disabled=true;l3Apply.disabled=true;l4Apply.disabled=true;l5Apply.disabled=true;
+  loadedAirline=id??null;current=null;cargoStatus=null;charterStatus=null;dgStatus=null;submit.disabled=true;l3Apply.disabled=true;l4Apply.disabled=true;l5Apply.disabled=true;l6Readiness=null;l6Apply.disabled=true;
   if(!id||!client){
    note.textContent='Select a verified airline to view your game licence applications.';
    aocState.textContent='AOC details unavailable for the selected airline.';
