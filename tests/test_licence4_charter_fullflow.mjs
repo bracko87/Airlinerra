@@ -110,7 +110,7 @@ test('charter browser client refuses fabricated fees and issuance',async()=>{
   })})
  });
  await assert.rejects(()=>unsafe.submitCharterLicence4({airlineId:AIRLINE,requestKey:REQUEST}),
- /Unsafe Charter/VIP Licence 4/);
+ /Unsafe Charter\\/VIP Licence 4/);
 });
 test('Charter/VIP licence migration preserves one-time fee, 3 game days and flight gating',async()=>{
  const read=name=>readFile(new URL('../supabase/migrations/'+name,import.meta.url),'utf8');
