@@ -1,0 +1,94 @@
+name: Isolated real roundtrip activation release gates
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tests/sql/section9_disposable_activation_gate_bootstrap.sql'
+      - 'tests/sql/section9_disposable_real_pair_activation_gate_acceptance.sql'
+      - 'supabase/migrations/20261117130000_section9_atomic_certified_pair_ticket_activation_v1.sql'
+      - '.github/workflows/section9-real-pair-activation-gates-ci.yml'
+  pull_request:
+    paths:
+      - 'tests/sql/section9_disposable_activation_gate_bootstrap.sql'
+      - 'tests/sql/section9_disposable_real_pair_activation_gate_acceptance.sql'
+      - 'supabase/migrations/20261117130000_section9_atomic_certified_pair_ticket_activation_v1.sql'
+      - '.github/workflows/section9-real-pair-activation-gates-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  activation-gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable-ci-only
+          POSTGRES_DB: airlinerra_disposable
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d airlinerra_disposable"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 8
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: disposable-ci-only
+      PGDATABASE: airlinerra_disposable
+      PGOPTIONS: -c statement_timeout=30000 -c lock_timeout=10000
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client if missing
+        run: |
+          if ! command -v psql >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y postgresql-client
+          fi
+      - name: Validate disposable Postgres target before creating schemas
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = "127.0.0.1"
+          test "$PGPORT" = "5432"
+          test "$PGDATABASE" = "airlinerra_disposable"
+          test "$PGUSER" = "postgres"
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/disposable_database_preflight.sql
+      - name: Install isolated activation release and clock fixture
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_activation_gate_bootstrap.sql
+      - name: Install unchanged production roundtrip activation SQL function
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          source=Path('supabase/migrations/20261117130000_section9_atomic_certified_pair_ticket_activation_v1.sql').read_text()
+          marker='CREATE OR REPLACE FUNCTION airlinerra_game.section9_commit_certified_pair_and_ticket_inventory_v1('
+          start=source.index(marker)
+          end=source.index('REVOKE ALL ON FUNCTION airlinerra_game.section9_commit_certified_pair_and_ticket_inventory_v1(',start)
+          func=source[start:end]
+          assert 'END $function$' in func
+          assert 'section9_commit_certified_schedule_activation_v1' in func
+          assert 'blocked_operating_or_finance_release' in func
+          Path('/tmp/section9-production-pair-activation.sql').write_text(func)
+          print('Installing unmodified production pair-activation SQL function')
+          PY
+          psql -X -v ON_ERROR_STOP=1 -f /tmp/section9-production-pair-activation.sql
+      - name: Verify independent release and owner gates with rollback
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_real_pair_activation_gate_acceptance.sql
+      - name: Confirm no synthetic state or real bookings were generated
+        run: |
+          set -euo pipefail
+          psql -X -qAt -v ON_ERROR_STOP=1 -c "SELECT CASE WHEN count(*)=0 THEN 'PASS-no-effects' ELSE 'FAIL-fixture-effects' END FROM airlinerra_game.fixture_effects;" | grep -x 'PASS-no-effects'
+      - name: Summarize boundaries
+        if: always()
+        run: |
+          echo "### Real certified roundtrip activation — disposable PG17" >> "$GITHUB_STEP_SUMMARY"
+          echo "Actual production function executed unchanged; release, engine, clock and ownership fail-closed tests." >> "$GITHUB_STEP_SUMMARY"
+          echo "This test does NOT issue real AOC/traffic rights, certify slots, activate any schedule, or open real tickets." >> "$GITHUB_STEP_SUMMARY"
