@@ -194,7 +194,7 @@ export function createSection9PermissionPlayerHandler({
   let body;
   try{body=await readBody(req);}
   catch{return response(400,{error:'Invalid application request'});}
-  if(!['status','apply','licence2_draft','licence2_withdraw','licence2_refresh','licence2_submit','licence3_status','licence3_submit','licence4_status','licence4_submit','licence5_status','licence5_submit'].includes(body.action)||!UUID.test(body.airlineId||''))
+  if(!['status','apply','licence2_draft','licence2_withdraw','licence2_refresh','licence2_submit','licence3_status','licence3_submit','licence4_status','licence4_submit','licence5_status','licence5_submit','licence6_preview'].includes(body.action)||!UUID.test(body.airlineId||''))
    return response(400,{error:'Invalid application request'});
   if(body.action==='status'&&Object.keys(body).sort().join(',')!=='action,airlineId')
    return response(400,{error:'Invalid status request'});
@@ -418,6 +418,49 @@ export function createSection9PermissionPlayerHandler({
       applicationStatus:x.application_status,dueGameDay:x.due_game_day,
       issues:Array.isArray(x.readiness.issues)?x.readiness.issues.slice(0,20):[],
       feeUsd:60000,processingGameDays:5,
+      flightActivated:false});
+    }finally{client.release();}
+   }
+   if(body.action==='licence6_preview'){
+    if(Object.keys(body).sort().join(',')!==
+      'action,airlineId,foreignDestination,foreignStop,homeAirport,serviceType'
+      || !['passenger','cargo'].includes(body.serviceType)
+      || ![body.homeAirport,body.foreignStop,body.foreignDestination]
+        .every(v=>typeof v==='string'&&/^[A-Z0-9:_-]{3,120}$/.test(v)))
+     return response(400,{error:'Invalid Fifth Freedom route preview'});
+    // Do not reveal company-specific market readiness to nonowners.
+    await service.listApplications({airlineId:body.airlineId});
+    const client=await database.connect();
+    try{
+     const r=await client.query(
+      `SELECT airlinerra_game.licence6_fifth_readiness_v1(
+        $2::uuid,$3::text,$4::text,$5::text,$6::text) AS result
+        FROM airlinerra_game.airlines owner
+        WHERE owner.id=$2::uuid AND owner.owner_player_id=$1::uuid
+         AND owner.world_id=1`,
+      [playerId,body.airlineId,body.homeAirport,body.foreignStop,
+       body.foreignDestination,body.serviceType]);
+     const x=r.rows?.[0]?.result;
+     if(r.rowCount!==1||!x||x.airlineId!==body.airlineId||
+       x.permissionCode!=='FIFTH_FREEDOM'||
+       x.status!=='LICENCE6_FIFTH_FREEDOM_READINESS'||
+       !Array.isArray(x.issues)||x.issues.length>20||
+       x.issues.some(issue=>typeof issue!=='string'||! /^[A-Z0-9_]{3,100}$/.test(issue))||
+       x.canApply!==false||x.routeAuthorized!==false||
+       x.foreignSegmentAuthorized!==false||x.flightActivated!==false||
+       x.processingGameDays!==7||x.proposedFeeMinUsd!==100000||
+       x.proposedFeeMaxUsd!==250000||
+       (x.feeUsd!==null&&(!Number.isInteger(x.feeUsd)||
+        x.feeUsd<100000||x.feeUsd>250000)))
+      throw Error('LICENCE6_UNSAFE_GAME_ROUTE_READINESS');
+     return response(200,{status:'licence6_route_preview',airlineId:body.airlineId,
+      worldId:1,homeAirport:x.homeAirport,foreignStop:x.foreignStop,
+      foreignDestination:x.foreignDestination,homeCountry:x.homeCountry,
+      firstForeignCountry:x.firstForeignCountry,
+      secondForeignCountry:x.secondForeignCountry,serviceType:x.serviceType,
+      gameDay:x.gameDay,feeUsd:x.feeUsd,proposedFeeMinUsd:100000,
+      proposedFeeMaxUsd:250000,processingGameDays:7,canApply:false,
+      issues:x.issues,routeAuthorized:false,foreignSegmentAuthorized:false,
       flightActivated:false});
     }finally{client.release();}
    }
