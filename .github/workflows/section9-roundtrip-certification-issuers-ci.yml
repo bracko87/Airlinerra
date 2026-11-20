@@ -4,6 +4,8 @@ on:
     branches: [main]
     paths:
       - 'server/section9-roundtrip-certification-coordinator.mjs'
+      - 'server/section9-future-certification-authorities.mjs'
+      - 'tests/test_section9_future_certification_authorities.mjs'
       - 'tests/test_section9_roundtrip_certification_coordinator.mjs'
       - 'tests/test_section9_unreleased_certification_fail_closed.mjs'
       - 'server/section9-unreleased-certificate-source-reader.mjs'
@@ -29,6 +31,7 @@ jobs:
       - name: Verify certificate coordinator syntax
         run: |
           node --check server/section9-roundtrip-certification-coordinator.mjs
+          node --check server/section9-future-certification-authorities.mjs
           node --check tests/test_section9_roundtrip_certification_coordinator.mjs
       - name: Verify issuer HMACs with mirrored route identities and denial cases
         run: |
