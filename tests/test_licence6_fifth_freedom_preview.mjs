@@ -41,6 +41,13 @@ const makeDb=({unowned=false,unsafe=false}={})=>{
    return {rowCount:1,rows:[{result:{airlineId:AIRLINE,worldId:1,
     applications:[],readOnly:true}}]};
   }
+  if(sql.includes('licence6_submit_fifth_application_v1'))
+   return {rowCount:1,rows:[{result:unsafe?{
+    status:'SUBMITTED',submitted:true,charged:true,issued:false,flightActivated:false,
+    applicationId:'11111111-1111-4111-8111-111111111111',feeOnApprovalUsd:150000
+   }:{
+    status:'NOT_RELEASED',submitted:false,charged:false,issued:false,flightActivated:false
+   }}]};
   if(sql.includes('licence6_fifth_readiness_v1')){
    return {rowCount:1,rows:[{result:unsafe?{...readiness,routeAuthorized:true}:readiness}]};
   }
@@ -90,6 +97,48 @@ test('Browser rejects fabricated Fifth Freedom rights or fees outside reviewed b
  });
  await assert.rejects(()=>wrong.licence6FifthFreedomPreview(body),
   /Unsafe Fifth Freedom route preview/);
+});
+test('Fifth Freedom route submission requires owner and never charges while unreleased',async()=>{
+ const requestKey='33333333-3333-4333-8333-333333333333';
+ const application={...body,action:'licence6_submit',requestKey};
+ const db=makeDb();const res=await handler(db)(request(application));
+ assert.equal(res.status,200);
+ assert.deepEqual(await res.json(),{
+  status:'NOT_RELEASED',applicationId:null,dueGameDay:null,
+  submitted:false,feeOnApprovalUsd:null,feeCharged:false,
+  licenceIssued:false,foreignSegmentAuthorized:false,flightActivated:false
+ });
+ assert.deepEqual(db.calls[1].args,
+  [OWNER,AIRLINE,HOME,STOP,FINAL,'passenger',requestKey]);
+ const malformed=await handler(makeDb())(request({...application,feeUsd:150000}));
+ assert.equal(malformed.status,400);
+ const foreign=await handler(makeDb({unowned:true}))(request(application));
+ assert.equal(foreign.status,403);
+ const unsafe=await handler(makeDb({unsafe:true}))(request(application));
+ assert.equal(unsafe.status,503);
+ const fake=createGamePermissionApplicationsClient({
+  origin:ORIGIN,auth:{getAccessToken:async()=>'valid-player-access-token-123456789'},
+  fetchImpl:async()=>({ok:true,status:200,json:async()=>({
+   status:'NOT_RELEASED',applicationId:null,dueGameDay:null,
+   submitted:false,feeOnApprovalUsd:null,feeCharged:false,
+   licenceIssued:false,foreignSegmentAuthorized:false,flightActivated:false})})
+ });
+ assert.equal((await fake.submitLicence6FifthFreedom({
+  airlineId:AIRLINE,homeAirport:HOME,foreignStop:STOP,
+  foreignDestination:FINAL,serviceType:'passenger',requestKey})).feeCharged,false);
+});
+test('Licence 6 private application and fee ledger remain route-scoped and atomic',async()=>{
+ const s=await readFile(new URL('../supabase/migrations/20261120131500_licence6_fifth_atomic_route_application.sql',import.meta.url),'utf8');
+ assert.match(s,/fee_usd numeric NOT NULL CHECK\(fee_usd BETWEEN 100000 AND 250000\)/);
+ assert.match(s,/due_game_day=applied_game_day\+7/);
+ assert.match(s,/CHECK\(expires_game_day IS NULL OR expires_game_day=issued_game_day\+365\)/);
+ assert.match(s,/cash_usd=cash_usd-app.fee_usd/);
+ assert.match(s,/ledger_entry_id/);
+ assert.match(s,/foreignSegmentAuthorized',false/);
+ assert.match(s,/licence6_review_due_fifth_applications_v1\(25\)/);
+ const home=await readFile(new URL('../supabase/migrations/20261120132000_licence6_requires_home_leg_proof.sql',import.meta.url),'utf8');
+ assert.match(home,/VERIFIED_HOME_TO_FOREIGN_TRAFFIC_RIGHT_REQUIRED/);
+ assert.match(home,/app.status='issued'/);
 });
 test('Fifth Freedom policies are verified market-specific and issuance hard-locked',async()=>{
  const read=p=>readFile(new URL('../supabase/migrations/'+p,import.meta.url),'utf8');
