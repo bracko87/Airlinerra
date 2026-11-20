@@ -5,6 +5,9 @@ on:
       - 'server/flight-schedule-service.mjs'
       - 'supabase/migrations/*unified*airport*.sql'
       - 'tests/test_unified_airport_route_planning.mjs'
+      - 'tests/test_commercial_airport_release_readiness.mjs'
+      - 'tests/sql/airlinerra_group2_commercial_release_readiness_readonly.sql'
+      - 'docs/AIRLINERRA_COMMERCIAL_FLIGHT_READINESS_2026-11-20.md'
       - '.github/workflows/airlinerra-unified-airport-planning-ci.yml'
   pull_request:
     paths:
@@ -21,4 +24,4 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --test tests/test_unified_airport_route_planning.mjs tests/test_owner_route_planning.mjs tests/test_group2_1118_airport_cohort.mjs
+      - run: node --test tests/test_unified_airport_route_planning.mjs tests/test_owner_route_planning.mjs tests/test_group2_1118_airport_cohort.mjs tests/test_commercial_airport_release_readiness.mjs
