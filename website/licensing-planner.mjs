@@ -200,17 +200,27 @@ export const LICENCE_PLAN=Object.freeze([
   'Affected flights must be rescheduled or cancelled',
   'Request new slots; do not automatically restore old times',
   'Proposed future game layer; airport slot research/allocator must be built.'),
- define('FLIGHT_ACADEMY','special','Flight academy / training approval','$40,000 (future standalone academy)','7 game days',
-  'Training aircraft needed for approved flight programmes, not for academy infrastructure planning',
-  ['Existing airline training department, or separately registered trading academy','Choose training programmes and appropriate jurisdiction','Qualified chief instructor'],
-  ['Required instructor qualifications and training manuals','At least 1 suitable training aircraft for a flight-training programme','Training facilities and approved programme'],
-  ['Training sessions use qualified instructors, available aircraft and approved syllabi'],
-  'Provide the authorised training programme; external sales only for a licensed subsidiary',
-  'No airline AOC or commercial route rights are granted',
-  'Ongoing with annual game compliance review',
-  'Affected training courses stop; other airline services remain unaffected',
-  'Restore instructors, training fleet and procedures; pass reinspection',
-  'The initial academy belongs under airline infrastructure; a separate subsidiary is optional later.')
+ define('FLIGHT_ACADEMY','special','Licence 7 — Flight Academy / Training Organization Approval','$40,000 proposed once on approval; application is free','7 verified game days, subject to final readiness',
+  'Infrastructure, instructors, simulator, aircraft requirements and course economy will be defined later; subsidiary formation does not require immediate aircraft purchase',
+  ['Registered flight_academy subsidiary under an eligible holding; NO minimum academy-company age',
+   'Can apply immediately after registration once the academy meets future-defined training, facility, personnel and financial readiness checks',
+   'One company Licence 7 covers training its holding personnel and external player-airline trainees',
+   'No additional licence for public/commercial training or each individual course'],
+  ['Free application; approve after 7 verified game days only if all academy and course requirements still pass',
+   'Charge $40,000 once in the same transaction as licence issuance',
+   'Course-specific training facilities, instructor roles, equipment, curriculum and financial reserve will be defined later',
+   'New course types are scope approvals under Licence 7, not new separately paid game licences'],
+  ['Public academy listing is optional and OFF by default; private in-group training remains possible',
+   'Players choose which approved courses to publish and set their own price for each programme',
+   'Courses, availability, qualified instructors, equipment and booking capacity are independently verified',
+   'Unpublishing or repricing does not retroactively change already accepted training contracts'],
+  'Provide in-group training and optionally sell approved programmes to other player airlines through one academy licence',
+  'No flight-operating AOC, commercial route rights, instant training certificates or automatic infrastructure',
+  'Indefinite while compliant, with periodic inspection proposed every 365 game days and no automatic renewal fee',
+  'Affected courses stop if safety, curriculum, instructors, location or equipment requirements are lost',
+  'Restore actual readiness and pass an inspection; revoked organisations must reapply',
+  'DESIGN ONLY. The subsidiary type flight_academy is not yet in the holding company model, no academy infrastructure or marketplace is built, and issuance remains disabled. See docs/AIRLINERRA_LICENCE7_FLIGHT_ACADEMY_REQUIREMENTS_2026-11-20.md.')
+
 ]);
 const GROUPS=Object.freeze([
  ['all','All permissions'],['company','Company'],['airline','Airline'],['market','Markets'],['airport','Airports & bases'],['special','Special operations']
