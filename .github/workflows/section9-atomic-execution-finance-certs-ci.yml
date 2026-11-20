@@ -1,0 +1,96 @@
+name: Disposable atomic execution-finance signed certificate sink
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/20261120234000_section9_atomic_execution_finance_certification_sink_integrated.sql'
+      - 'tests/sql/section9_disposable_execution_finance_sink_fixture.sql'
+      - 'tests/sql/section9_disposable_execution_finance_sink_acceptance.sql'
+      - '.github/workflows/section9-atomic-execution-finance-certs-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  atomic-certification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable-ci-only
+          POSTGRES_DB: airlinerra_disposable
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d airlinerra_disposable"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 8
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: disposable-ci-only
+      PGDATABASE: airlinerra_disposable
+      PGOPTIONS: -c statement_timeout=30000 -c lock_timeout=10000
+    steps:
+      - uses: actions/checkout@v4
+      - name: PostgreSQL client
+        run: |
+          if ! command -v psql >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y postgresql-client
+          fi
+      - name: Verify disposable database before DDL
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = "127.0.0.1"
+          test "$PGDATABASE" = "airlinerra_disposable"
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/disposable_database_preflight.sql
+      - name: Populate isolated release/clock/certification fixture and production source readers
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_source_snapshot_positive_bootstrap.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_execution_finance_sink_fixture.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261120215500_section9_execution_finance_source_preflight_readonly.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261120224500_section9_execution_finance_source_snapshot_candidates.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261120232000_section9_execution_finance_same_transaction_source_recheck.sql
+      - name: Extract and install the ORIGINAL full production certification writing function
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          src=Path('supabase/migrations/20261109195500_section9_game_licence_certification_freshness.sql').read_text()
+          marker='CREATE OR REPLACE FUNCTION airlinerra_game.section9_record_verified_certification_event_v1('
+          start=src.index(marker)
+          end=src.index('END $f$;',start)+len('END $f$;')
+          func=src[start:end]
+          assert 'eligible:=true;' in func
+          assert 'section9_verify_game_route_traffic_rights_v1' in func
+          assert 'INSERT INTO airlinerra_game.section9_operational_certification_events_v1' in func
+          Path('/tmp/original_signed_certification_sink.sql').write_text(func)
+          print('Installing exact original production certification function')
+          PY
+          psql -X -v ON_ERROR_STOP=1 -f /tmp/original_signed_certification_sink.sql
+      - name: Install production fail-closed patch, then exact source recheck integration patch
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261120211500_section9_unreleased_execution_finance_certification_fail_closed.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261120234000_section9_atomic_execution_finance_certification_sink_integrated.sql
+      - name: Actual production certification sink atomic-write and denied-proof acceptance
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_execution_finance_sink_acceptance.sql
+      - name: Confirm no activation occurred
+        run: |
+          set -euo pipefail
+          psql -X -qAt -v ON_ERROR_STOP=1 -c "SELECT CASE WHEN count(*)=0 THEN 'PASS-no-active-flights' ELSE 'FAIL-active-flights' END FROM airlinerra_game.airline_flight_schedule_drafts_v1 WHERE status='active';" | grep -x PASS-no-active-flights
+      - name: Explain trust boundary
+        if: always()
+        run: |
+          echo '### Real certification sink — isolated PG17' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Tests the ORIGINAL SQL writing function with only the exact production fail-closed + atomic source-recheck patches.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'The fixture calls SQL as postgres with structurally valid dummy HMAC hex; cryptographic ingress itself is tested separately in Node.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'World 1 production releases and player data are not involved.' >> "$GITHUB_STEP_SUMMARY"
