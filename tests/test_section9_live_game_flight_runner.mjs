@@ -26,11 +26,15 @@ const ready={world_id:1,world_state:'active',
  automatic_flight_and_fuel_settlement_enabled:false,
  fuel_transaction_release:'NOT_ACTIVATED'};
 
+const VERIFIED_HOUR={status:'verified_berlin_realtime_hour',worldId:1,
+ authoritativeGameHourAvailable:true,readOnly:true,
+ flightActivated:false,movementRecorded:false,ledgerPosted:false,
+ gameDate:DAY,berlinDate:DAY,gameHourUtc:DAY+'T12:00:00+00:00'};
 const due=(events=[])=>({status:'verified_due_operation_candidates_only',
  readOnly:true,requiresTrustedOperationDecision:true,
  movementRecorded:false,ledgerPosted:false,dueEvents:events});
 function factory({readiness=ready,events=[event],locked=true,attestorResult=null,
- authorizerResult=null,movementResult=null}={}){
+ authorizerResult=null,movementResult=null,verifiedHour=VERIFIED_HOUR}={}){
  const calls=[];let releases=0,attested=0,authorized=0,moved=0;
  const database={async connect(){return {
   release(){releases++;},
@@ -43,7 +47,7 @@ function factory({readiness=ready,events=[event],locked=true,attestorResult=null
    if(sql===SECTION9_GAME_FLIGHT_RUN_SQL.readiness)
     return {rowCount:1,rows:[readiness]};
    if(sql===SECTION9_GAME_FLIGHT_RUN_SQL.now)
-    return {rowCount:1,rows:[{utc_date:DAY}]};
+    return {rowCount:1,rows:[{result:verifiedHour}]};
    if(sql===SECTION9_GAME_FLIGHT_RUN_SQL.fleet)
     return {rowCount:1,rows:[{airlineId:AIRLINE,aircraftId:AIRCRAFT,
      totalAircraft:1}]};
@@ -134,4 +138,41 @@ test('operation budgets must be bounded',async()=>{
  await assert.rejects(m.runner.runOnce({maxAircraft:500}),/BATCH_LIMITS/);
  await assert.rejects(m.runner.runOnce({maxEvents:0}),/BATCH_LIMITS/);
  assert.equal(m.calls.length,0);
+});
+
+test('unverified or stale game hour blocks fleet scans and signed movements',async()=>{
+ for(const proof of [
+  null,
+  {...VERIFIED_HOUR,authoritativeGameHourAvailable:false},
+  {...VERIFIED_HOUR,status:'blocked_game_day_hour_not_synchronized'},
+  {...VERIFIED_HOUR,gameDate:'2026-11-10'},
+  {...VERIFIED_HOUR,readOnly:false},
+  {...VERIFIED_HOUR,gameHourUtc:'not-a-utc-time'},
+  {...VERIFIED_HOUR,gameHourUtc:'2026-11-11T12:00:00Z',worldId:2}
+ ]){
+  const m=factory({verifiedHour:proof});
+  const r=await m.runner.runOnce();
+  assert.equal(r.status,'flight_execution_unverified_game_hour');
+  assert.equal(m.counts().attested,0);
+  assert.equal(m.counts().moved,0);
+  assert.deepEqual(m.calls.map(x=>x.sql),[
+   SECTION9_GAME_FLIGHT_RUN_SQL.lock,
+   SECTION9_GAME_FLIGHT_RUN_SQL.readiness,
+   SECTION9_GAME_FLIGHT_RUN_SQL.now,
+   SECTION9_GAME_FLIGHT_RUN_SQL.unlock
+  ]);
+  assert.equal(m.released(),1);
+ }
+});
+test('verified game hour allows UTC-date flight scans near Berlin midnight',async()=>{
+ // At Berlin 00:30 in November, the verified local game date is Nov 12,
+ // while the authoritative UTC instant is still Nov 11.
+ const m=factory({verifiedHour:{...VERIFIED_HOUR,
+  gameDate:'2026-11-12',berlinDate:'2026-11-12',
+  gameHourUtc:'2026-11-11T23:30:00+00:00'}});
+ const r=await m.runner.runOnce();
+ assert.equal(r.status,'flight_execution_batch_complete');
+ assert.equal(r.movementsRecorded,1);
+ assert.deepEqual(m.calls.filter(x=>x.sql===SECTION9_GAME_FLIGHT_RUN_SQL.due)
+  .map(x=>x.args[2]),['2026-11-10','2026-11-11']);
 });
