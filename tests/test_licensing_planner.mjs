@@ -15,9 +15,9 @@ const expectedCodes=[
 test('planner covers every installed reference type plus labelled future concepts',()=>{
  const codes=LICENCE_PLAN.map(x=>x.code);
  assert.equal(new Set(codes).size,codes.length,'no duplicated game permission codes');
- assert.equal(codes.length,17);
+ assert.equal(codes.length,18);
  for(const code of expectedCodes)assert.ok(codes.includes(code),code);
- for(const future of ['AIRPORT_SLOTS','FLIGHT_ACADEMY'])
+ for(const future of ['AIRPORT_SLOTS','FLIGHT_ACADEMY','AIRCRAFT_LEASING'])
   assert.ok(codes.includes(future),'future concept '+future);
  for(const entry of LICENCE_PLAN){
   assert.ok(entry.title&&entry.cost&&entry.validity&&entry.loss&&entry.recovery);
