@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {AIRLINERRA_WORLD_NAMES,worldDisplayName,normalizeDashboardLedger,dashboardMoney} from '../website/airline-dashboard.mjs';
+import {AIRLINERRA_WORLD_NAMES,worldDisplayName,normalizeDashboardLedger,dashboardMoney,renderPassengerReputation} from '../website/airline-dashboard.mjs';
 import {PLAYER_READ_SQL} from '../server/player-read-service.mjs';
 const read=p=>readFile(new URL(p,import.meta.url),'utf8');
 test('all worlds have human-readable names without changing IDs or availability',()=>{
@@ -33,4 +33,27 @@ test('overview no longer has onboarding checklist or command-center navigation c
  assert.match(build,/'airline-finance-charts.mjs'/);
  assert.doesNotMatch(section,/Notifications and company news/);
  assert.doesNotMatch(workspace,/Your airline command center/);
+});
+
+test('passenger reputation uses measured data and never invents satisfaction for a new airline',()=>{
+ const ids=['dashboard-reputation','dashboard-satisfaction','dashboard-experience-count','dashboard-reputation-demand','dashboard-reputation-note','dashboard-reputation-meter'];
+ const nodes=Object.fromEntries(ids.map(id=>[id,{}]));
+ const doc={getElementById:id=>nodes[id]||null};
+ renderPassengerReputation(doc,{passengerReputation:{reputation:70,averageSatisfaction:null,passengerExperiences:0,demandEffectEnabled:false,potentialDemandMultiplier:1}});
+ assert.equal(nodes['dashboard-reputation'].textContent,'70 / 100');
+ assert.equal(nodes['dashboard-satisfaction'].textContent,'No experiences yet');
+ assert.equal(nodes['dashboard-reputation-demand'].textContent,'Not activated');
+ assert.equal(nodes['dashboard-reputation-meter'].value,70);
+ renderPassengerReputation(doc,{passengerReputation:{reputation:90,averageSatisfaction:92.5,passengerExperiences:2000,demandEffectEnabled:true,potentialDemandMultiplier:1.1}});
+ assert.equal(nodes['dashboard-satisfaction'].textContent,'92.5 / 100');
+ assert.equal(nodes['dashboard-experience-count'].textContent,'2,000');
+ assert.equal(nodes['dashboard-reputation-demand'].textContent,'+10%');
+ renderPassengerReputation(doc,{passengerReputation:{reputation:40,averageSatisfaction:25,passengerExperiences:1000,demandEffectEnabled:true,potentialDemandMultiplier:0.85}});
+ assert.equal(nodes['dashboard-reputation-demand'].textContent,'-15%');
+ renderPassengerReputation(doc,null);
+ assert.equal(nodes['dashboard-reputation'].textContent,'Not available');
+ assert.equal(nodes['dashboard-satisfaction'].textContent,'Not available');
+ assert.equal(nodes['dashboard-reputation-meter'].hidden,true);
+ assert.match(PLAYER_READ_SQL.airlines,/section9_airline_reputation_v1\(a\.id\)/);
+ assert.match(PLAYER_READ_SQL.airlines,/a\.owner_player_id=\$1::uuid/);
 });
