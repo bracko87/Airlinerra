@@ -220,7 +220,7 @@ const pages=Object.freeze({
  </div>
  <p id="fleet-game-maintenance-status" class="hint" role="status" aria-live="polite"></p>
  <h4>Compare maintenance providers</h4>
- <p class="hint">Compare AI providers and reserve a service at the aircraft's present airport. Future starts require a confirmed ground window. Relocation is not yet available.</p>
+ <p class="hint">Compare AI providers and reserve a service at the aircraft's present airport. Future starts require a confirmed ground window. For another airport, estimate a round-trip relocation before booking becomes available.</p>
  <div id="fleet-maintenance-providers" aria-live="polite"></div>
 </section>`,'AIRCRAFT PROFILE'),
  'aircraft-new-orders':()=>card('New factory aircraft orders',"<p class=\"hint\">Select a current-production aircraft and its cabin or cargo configuration. Delivery depends on available factory stock and manufacturer orders.</p>\n<p id=\"market-state\" class=\"workspace-state\" role=\"status\">Loading factory catalog…</p>\n<div class=\"aircraft-market-filter-grid\" aria-label=\"Choose new aircraft\">\n<label>Manufacturer<select id=\"new-maker\"><option value=\"\">Choose manufacturer</option></select></label>\n<label>Family<select id=\"new-family\" disabled><option value=\"\">Choose family</option></select></label>\n<label>Model<select id=\"new-model\" disabled><option value=\"\">Choose model</option></select></label>\n<label>Configuration<select id=\"new-configuration\" disabled><option value=\"\">Choose configuration</option></select></label>\n</div>\n<div class=\"aircraft-market-finance-row\">\n<label>Payment<select id=\"new-payment\"><option value=\"cash\">Pay cash</option><option value=\"credit\">Buy on credit (not yet active)</option><option value=\"lease\">Lease (not yet active)</option></select></label>\n<label>Aircraft registration<input id=\"market-aircraft-registration\" maxlength=\"20\" autocomplete=\"off\" placeholder=\"e.g. D-ABCD\" aria-describedby=\"market-feedback\"></label>\n</div>\n<div id=\"new-aircraft-quote\" class=\"aircraft-market-quote\" role=\"status\" aria-live=\"polite\">Choose manufacturer, family, model and configuration to see prices and delivery.</div>\n<div id=\"factory-cabin-customizer\" class=\"factory-cabin-customizer\" aria-label=\"Factory cabin preview\"></div>\n<div class=\"workspace-actions aircraft-market-actionbar\"><button type=\"button\" id=\"new-aircraft-view-cabin\" class=\"route-text-action\" disabled>View default cabin layout</button></div>\n<div class=\"workspace-actions aircraft-market-actionbar\">\n<button type=\"button\" class=\"primary aircraft-market-compact-button\" id=\"market-acquire\" disabled>Confirm cash order</button>\n<button type=\"button\" class=\"secondary aircraft-market-compact-button\" data-workspace-go=\"fleet\">My fleet</button>\n<button type=\"button\" class=\"secondary aircraft-market-compact-button\" data-workspace-go=\"aircraft-market\">Used aircraft market</button>\n</div>\n<p id=\"market-feedback\" class=\"hint\" role=\"status\" aria-live=\"polite\"></p>\n<p class=\"hint\">Aircraft prices are game estimates, not manufacturer offers. Credit and lease payment engines are not yet active. No payment or aircraft delivery happens before World 1 opens.</p>\n<div id=\"market-offers\" hidden></div><select id=\"market-offer-select\" hidden aria-label=\"Selected server offer\"><option value=\"\"></option></select>",'NEW AIRCRAFT'),
@@ -995,7 +995,34 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
       if(!r?.saved)throw Error('Not saved');void loadMaintenanceProviderQuotes(aircraftId);
      }catch{feedback.textContent='Automatic policy not confirmed; refresh to verify.';auto.disabled=false;}
     });
-    line.append(name,detail,book,auto);offers.append(line);
+    const relocation=doc.createElement('button');relocation.type='button';relocation.className='secondary';relocation.textContent='Relocation estimate';
+    relocation.addEventListener('click',async()=>{
+     if(relocation.disabled||data.airline?.id!==airlineId||selectedFleetAircraftId!==aircraftId||gameServiceSelectedCheck!==checkCode)return;
+     const stamp=start.value?new Date(start.value):null;
+     if(stamp&&!Number.isFinite(stamp.getTime())){feedback.textContent='Choose a valid departure time.';return;}
+     relocation.disabled=true;feedback.textContent='Calculating empty flights and maintenance…';
+     try{
+      const r=await data.scheduler.maintenanceRelocationQuote({airlineId,aircraftInventoryId:aircraftId,checkCode,airportKey:v.airportKey,providerKey:v.providerKey,startUtc:stamp?stamp.toISOString().replace(/\.\d{3}Z$/,'Z'):null});
+      if(ticket!==providerQuoteVersion||selectedFleetAircraftId!==aircraftId||gameServiceSelectedCheck!==checkCode)return;
+      if(r?.status==='relocation_not_required'){feedback.textContent='Aircraft is already at this airport. Use Reserve instead.';return;}
+      if(r?.status!=='maintenance_relocation_quote'||r.bookable!==false||r.readOnly!==true){feedback.textContent='Relocation estimate unavailable: '+String(r?.status||'unknown').replaceAll('_',' ');return;}
+      const money=n=>'$'+Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+      const duration=n=>Math.floor(n/60)+'h '+(n%60)+'m';
+      const clock=t=>new Date(t).toLocaleString('en-GB',{timeZone:'Europe/Berlin',dateStyle:'short',timeStyle:'short'});
+      feedback.replaceChildren();
+      const parts=[
+       'Relocation estimate only — not reserved. All times Berlin.',
+       'Outbound: '+clock(r.outbound.departureUtc)+' – '+clock(r.outbound.arrivalUtc)+' | '+duration(r.outbound.flightMinutes)+' | Fuel '+money(r.outbound.fuelCostUsd)+' + fees '+money(r.outbound.airportFeesUsd),
+       'Maintenance: '+clock(r.maintenance.startUtc)+' – '+clock(r.maintenance.endUtc)+' | '+money(r.maintenance.priceUsd),
+       'Return: '+clock(r.return.departureUtc)+' – '+clock(r.return.arrivalUtc)+' | '+duration(r.return.flightMinutes)+' | Fuel '+money(r.return.fuelCostUsd)+' + fees '+money(r.return.airportFeesUsd),
+       'Total estimated cost '+money(r.totalEstimatedUsd)+' | Aircraft unavailable '+duration(r.totalDowntimeMinutes)+' | No passengers or ticket revenue.',
+       'Preliminary checks: '+(r.preliminaryBlockers.length?r.preliminaryBlockers.map(x=>x.replaceAll('_',' ').toLowerCase()).join('; '):'no preliminary blockers; slots not reserved.'),
+       'Actual relocation booking and execution are not yet released.'
+      ];
+      for(const part of parts){const p=doc.createElement('span');p.style.display='block';p.textContent=part;feedback.append(p);}
+     }catch{if(ticket===providerQuoteVersion)feedback.textContent='Could not retrieve relocation estimate.';}finally{relocation.disabled=false;}
+    });
+    line.append(name,detail,book,auto,relocation);offers.append(line);
    }};
    select.addEventListener('change',draw);draw();
   }catch{if(ticket===providerQuoteVersion)host.textContent='Provider quotes unavailable.';}
