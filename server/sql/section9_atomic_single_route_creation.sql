@@ -243,6 +243,21 @@ BEGIN
  first_arr:=first_dep+make_interval(mins=>minutes);
  result:=airlinerra_game.section9_create_active_single_route_v1(p_player,p_airline,p_aircraft,p_flight,p_origin,p_destination,first_dep,first_arr,p_weekly,p_depart_stand,p_arrive_stand,p_turnaround,p_fare);
  IF result->>'routeCreated'='true' THEN
+  -- Persist the existing My Routes editor metadata INSIDE the same successful
+  -- transaction. This is not an intermediate route and cannot survive failure.
+  INSERT INTO airlinerra_game.airline_route_planning_drafts_v1 AS meta
+   (world_id,airline_id,aircraft_inventory_id,flight_number,origin_airport_key,destination_airport_key,weekly_schedule,
+    departure_stand_type,arrival_stand_type,turnaround_minutes,planning_options,reference_departure_utc,reference_arrival_utc,created_by_player_id)
+  VALUES (1,p_airline,p_aircraft,p_flight,p_origin,p_destination,p_weekly,p_depart_stand,p_arrive_stand,p_turnaround,
+   jsonb_build_object('fares',jsonb_build_object('economy',p_fare,'premium',NULL,'business',NULL,'first',NULL),
+    'service',jsonb_build_object('onboard','basic','baggage','standard','cargo','none','cabinPackageId','basic'),'launchDelayDays',0),
+   first_dep,first_arr,p_player)
+  ON CONFLICT(airline_id,flight_number) DO UPDATE SET aircraft_inventory_id=excluded.aircraft_inventory_id,
+   origin_airport_key=excluded.origin_airport_key,destination_airport_key=excluded.destination_airport_key,
+   weekly_schedule=excluded.weekly_schedule,departure_stand_type=excluded.departure_stand_type,
+   arrival_stand_type=excluded.arrival_stand_type,turnaround_minutes=excluded.turnaround_minutes,
+   planning_options=excluded.planning_options,reference_departure_utc=excluded.reference_departure_utc,
+   reference_arrival_utc=excluded.reference_arrival_utc,updated_at=now(),version=meta.version+1;
   result:=result||jsonb_build_object('referenceDepartureUtc',first_dep,'referenceArrivalUtc',first_arr,'estimatedDurationMinutes',minutes);
  END IF;
  RETURN result;
