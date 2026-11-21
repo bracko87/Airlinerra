@@ -35,6 +35,7 @@ const CHECK_FIELDS=new Set([...BASE_FIELDS,'scheduleId']);
 const COMMISSIONING_FIELDS=new Set([...BASE_FIELDS,'aircraftInventoryId']);
 const MAINTENANCE_JOB_FIELDS=new Set([...COMMISSIONING_FIELDS,'checkCode']);
 const MAINTENANCE_QUOTE_FIELDS=new Set([...MAINTENANCE_JOB_FIELDS,'airportKey']);
+const MAINTENANCE_PROVIDER_BOOK_FIELDS=new Set([...MAINTENANCE_QUOTE_FIELDS,'providerKey','startUtc']);
 const DEMAND_FIELDS=new Set([...CHECK_FIELDS,'month']);
 const FINANCIAL_FIELDS=new Set([...CHECK_FIELDS,'loadPercent','parkingMinutes']);
 const FEE_PREVIEW_FIELDS=new Set([...BASE_FIELDS,'aircraftInventoryId','originAirportKey',
@@ -144,6 +145,7 @@ export function validateFlightSchedulePayload(body){
   return withinFields(body,COMMISSIONING_FIELDS)&&uuid(body.aircraftInventoryId);
  if(body.action==='maintenance-job-status'||body.action==='maintenance-job-cancel')
   return withinFields(body,COMMISSIONING_FIELDS)&&uuid(body.aircraftInventoryId);
+ if(body.action==='maintenance-provider-book')return withinFields(body,MAINTENANCE_PROVIDER_BOOK_FIELDS)&&uuid(body.aircraftInventoryId)&&['daily','weekly','a','b','c','d'].includes(body.checkCode)&&typeof body.airportKey==='string'&&AIRPORT.test(body.airportKey)&&['economy','standard','express'].some(t=>body.providerKey===body.airportKey+':'+t)&&(body.startUtc==null||utc(body.startUtc));
  if(body.action==='maintenance-provider-quotes')return withinFields(body,MAINTENANCE_QUOTE_FIELDS)&&uuid(body.aircraftInventoryId)&&['daily','weekly','a','b','c','d'].includes(body.checkCode)&&(body.airportKey==null||AIRPORT.test(body.airportKey));
  if(body.action==='maintenance-job-book')
   return withinFields(body,MAINTENANCE_JOB_FIELDS)&&uuid(body.aircraftInventoryId)&&
@@ -246,6 +248,7 @@ export function nextWeeklyDepartureGameDate(gameDate,weeklySchedule,launchDelayD
  return null;
 }
 export const SCHEDULE_SQL=Object.freeze({
+ maintenanceProviderBook:`SELECT airlinerra_game.section9_book_ai_maintenance_v1($1::uuid,$2::uuid,$3::uuid,$4::text,$5::text,$6::text,$7::timestamptz) AS result`,
  maintenanceProviderQuotes:`SELECT airlinerra_game.section9_owned_ai_maintenance_quotes_v1($1::uuid,$2::uuid,$3::uuid,$4::text,$5::text) AS result`,
  aircraftCalendar:`WITH owner AS (
  SELECT a.id FROM airlinerra_game.airlines a JOIN airlinerra_game.world_memberships w ON w.world_id=a.world_id AND w.player_id=a.owner_player_id AND w.state='active'
@@ -582,6 +585,14 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
   let client;
   try{
    client=await database.connect();
+   if(body.action==='maintenance-provider-book'){
+    const q=await client.query(SCHEDULE_SQL.maintenanceProviderBook,[userId,body.airlineId,body.aircraftInventoryId,body.checkCode,body.airportKey,body.providerKey,body.startUtc??null]);
+    const r=q.rows?.[0]?.result;
+    if(q.rowCount!==1||!r||typeof r.status!=='string')return respond(503,{error:'MAINTENANCE_PROVIDER_BOOKING_UNVERIFIED'});
+    if(r.created===false)return respond(200,r);
+    if(r.status!=='scheduled'||r.created!==true||r.providerKey!==body.providerKey||r.airportKey!==body.airportKey||r.checkCode!==body.checkCode||r.chargedNow!==false||r.chargedAtServiceCompletion!==true||r.ledgerPosted!==false||!(Number(r.quotedCostUsd)>0))return respond(503,{error:'MAINTENANCE_PROVIDER_BOOKING_UNVERIFIED'});
+    return respond(200,r);
+   }
    if(body.action==='maintenance-provider-quotes'){
     const r=await client.query(SCHEDULE_SQL.maintenanceProviderQuotes,[userId,body.airlineId,body.aircraftInventoryId,body.checkCode,body.airportKey??null]);
     const q=r.rows?.[0]?.result;
