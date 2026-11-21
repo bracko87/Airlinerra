@@ -29,19 +29,18 @@ export function simulateCabinOnboardPurchases(pkg,{flightEventKey,passengers,
  if(typeof flightEventKey!=='string'||!/^[-A-Za-z0-9:_]{8,150}$/.test(flightEventKey))
   throw Error('Unique verified flight event key required');
  const scenario=forecastCabinServiceFlight(pkg,{passengers,durationMinutes,reputationScore});
- const nextRandom=rngFromSeed(flightEventKey);
  const rows=scenario.rows.map(row=>{
-  if(row.mode!=='onboard')return {...row,actualSales:0};
-  let wants=0;
-  for(let p=0;p<passengers;p++)if(nextRandom()<row.purchaseRate)wants++;
-  const isDigital=['newspaper','wifi','fullwifi','entertainment'].includes(row.id);
-  // Digital services have no physical units; all other products need stock.
-  const actualSales=Math.min(wants,isDigital?passengers:row.loadedUnits);
-  const unitCostCents=row.unitCostCents;
-  const airlineCostCents=isDigital?actualSales*unitCostCents:row.airlineCostCents;
-  return {...row,actualSales,airlineCostCents,
-   onboardRevenueCents:actualSales*row.passengerPriceCents,
-   unsoldUnits:isDigital?0:row.loadedUnits-actualSales};
+  const draw=rngFromSeed(flightEventKey+':v2:'+row.id)();
+  const rate=row.mode==='included'?0.6+0.2*draw:
+   row.mode==='onboard'?Math.min(.65,row.purchaseRate*(.8+.4*draw)):0;
+  const lower=Math.ceil(passengers*.6),upper=Math.floor(passengers*.8);
+  const rounded=Math.min(passengers,Math.round(passengers*rate));
+  const consumedUnits=row.mode==='included'&&lower<=upper?
+   Math.max(lower,Math.min(upper,rounded)):rounded;
+  const actualSales=row.mode==='onboard'?consumedUnits:0;
+  return {...row,consumedUnits,includedUnits:row.mode==='included'?consumedUnits:0,actualSales,
+   airlineCostCents:consumedUnits*row.unitCostCents,
+   onboardRevenueCents:actualSales*row.passengerPriceCents};
  });
  const totalCostCents=rows.reduce((a,r)=>a+r.airlineCostCents,0);
  const onboardRevenueCents=rows.reduce((a,r)=>a+r.onboardRevenueCents,0);
