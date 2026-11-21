@@ -220,7 +220,7 @@ const pages=Object.freeze({
  </div>
  <p id="fleet-game-maintenance-status" class="hint" role="status" aria-live="polite"></p>
  <h4>Compare maintenance providers</h4>
- <p class="hint">Indicative AI service offers. Provider reservations and relocation are not yet available; the existing booking button uses the standard immediate service.</p>
+ <p class="hint">Compare AI providers and reserve a service at the aircraft's present airport. Future starts require a confirmed ground window. Relocation is not yet available.</p>
  <div id="fleet-maintenance-providers" aria-live="polite"></div>
 </section>`,'AIRCRAFT PROFILE'),
  'aircraft-new-orders':()=>card('New factory aircraft orders',"<p class=\"hint\">Select a current-production aircraft and its cabin or cargo configuration. Delivery depends on available factory stock and manufacturer orders.</p>\n<p id=\"market-state\" class=\"workspace-state\" role=\"status\">Loading factory catalog…</p>\n<div class=\"aircraft-market-filter-grid\" aria-label=\"Choose new aircraft\">\n<label>Manufacturer<select id=\"new-maker\"><option value=\"\">Choose manufacturer</option></select></label>\n<label>Family<select id=\"new-family\" disabled><option value=\"\">Choose family</option></select></label>\n<label>Model<select id=\"new-model\" disabled><option value=\"\">Choose model</option></select></label>\n<label>Configuration<select id=\"new-configuration\" disabled><option value=\"\">Choose configuration</option></select></label>\n</div>\n<div class=\"aircraft-market-finance-row\">\n<label>Payment<select id=\"new-payment\"><option value=\"cash\">Pay cash</option><option value=\"credit\">Buy on credit (not yet active)</option><option value=\"lease\">Lease (not yet active)</option></select></label>\n<label>Aircraft registration<input id=\"market-aircraft-registration\" maxlength=\"20\" autocomplete=\"off\" placeholder=\"e.g. D-ABCD\" aria-describedby=\"market-feedback\"></label>\n</div>\n<div id=\"new-aircraft-quote\" class=\"aircraft-market-quote\" role=\"status\" aria-live=\"polite\">Choose manufacturer, family, model and configuration to see prices and delivery.</div>\n<div id=\"factory-cabin-customizer\" class=\"factory-cabin-customizer\" aria-label=\"Factory cabin preview\"></div>\n<div class=\"workspace-actions aircraft-market-actionbar\"><button type=\"button\" id=\"new-aircraft-view-cabin\" class=\"route-text-action\" disabled>View default cabin layout</button></div>\n<div class=\"workspace-actions aircraft-market-actionbar\">\n<button type=\"button\" class=\"primary aircraft-market-compact-button\" id=\"market-acquire\" disabled>Confirm cash order</button>\n<button type=\"button\" class=\"secondary aircraft-market-compact-button\" data-workspace-go=\"fleet\">My fleet</button>\n<button type=\"button\" class=\"secondary aircraft-market-compact-button\" data-workspace-go=\"aircraft-market\">Used aircraft market</button>\n</div>\n<p id=\"market-feedback\" class=\"hint\" role=\"status\" aria-live=\"polite\"></p>\n<p class=\"hint\">Aircraft prices are game estimates, not manufacturer offers. Credit and lease payment engines are not yet active. No payment or aircraft delivery happens before World 1 opens.</p>\n<div id=\"market-offers\" hidden></div><select id=\"market-offer-select\" hidden aria-label=\"Selected server offer\"><option value=\"\"></option></select>",'NEW AIRCRAFT'),
@@ -949,13 +949,30 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    const select=doc.createElement('select');label.append(select);host.append(label);
    const airports=[...new Map(q.quotes.map(v=>[v.airportKey,v])).values()];
    for(const a of airports){const opt=doc.createElement('option');opt.value=a.airportKey;opt.textContent=a.airportName+' ('+a.airportCode+')';select.append(opt);}
+   const when=doc.createElement('label');when.textContent='Start (your local time; blank = now) ';const start=doc.createElement('input');start.type='datetime-local';when.append(start);host.append(when);
+   const feedback=doc.createElement('p');feedback.className='hint';feedback.setAttribute('role','status');host.append(feedback);
    const offers=doc.createElement('div');host.append(offers);
    const draw=()=>{offers.replaceChildren();for(const v of q.quotes.filter(x=>x.airportKey===select.value)){
     const line=doc.createElement('div');line.className='fleet-detail-row';
     const name=doc.createElement('span');name.textContent=v.providerName;
     const detail=doc.createElement('strong');const minutes=Number(v.durationMinutes);
     detail.textContent='$'+Number(v.priceUsd).toLocaleString('en-US')+' / '+Math.floor(minutes/60)+'h '+(minutes%60?minutes%60+'m':'')+' / quality '+v.qualityRating+'%';
-    line.append(name,detail);offers.append(line);
+    const book=doc.createElement('button');book.type='button';book.className='secondary';book.textContent='Reserve';book.disabled=gameServiceHasActive;
+    book.addEventListener('click',async()=>{
+     if(book.disabled||data.airline?.id!==airlineId||selectedFleetAircraftId!==aircraftId||gameServiceSelectedCheck!==checkCode)return;
+     const stamp=start.value?new Date(start.value):null;
+     if(stamp&&!Number.isFinite(stamp.getTime())){feedback.textContent='Choose a valid start time.';return;}
+     book.disabled=true;feedback.textContent='Checking aircraft position, schedule and provider capacity…';
+     try{
+      const r=await data.scheduler.maintenanceProviderBook({airlineId,aircraftInventoryId:aircraftId,checkCode,airportKey:v.airportKey,providerKey:v.providerKey,startUtc:stamp?stamp.toISOString().replace(/\.\d{3}Z$/,'Z'):null});
+      if(r?.status!=='scheduled'||r.created!==true){
+       const reasons={maintenance_relocation_required:'Aircraft needs to travel to this provider first.',future_aircraft_position_not_confirmed:'Future aircraft position is not confirmed; choose an earlier ground window.',maintenance_flight_conflict:'Maintenance overlaps a flight or turnaround.',provider_capacity_unavailable:'Provider is fully booked for this time.',aircraft_already_booked_for_maintenance:'Complete or cancel the existing maintenance booking first.',game_maintenance_insufficient_funds:'Insufficient available airline funds.',invalid_maintenance_start:'Select a start within the next seven days, at least one minute from now.'};
+       feedback.textContent=reasons[r?.status]||'Reservation could not be confirmed.';return;
+      }
+      await loadGameMaintenanceJobs(aircraftId);void loadAirlineSchedule();void loadMaintenancePreview(aircraftId);
+     }catch{feedback.textContent='Provider reservation failed. Refresh to verify booking status.';}finally{book.disabled=gameServiceHasActive;}
+    });
+    line.append(name,detail,book);offers.append(line);
    }};
    select.addEventListener('change',draw);draw();
   }catch{if(ticket===providerQuoteVersion)host.textContent='Provider quotes unavailable.';}
@@ -1010,7 +1027,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
     const label=Number.isFinite(amount)&&amount>0?
       '$'+Math.round(amount).toLocaleString('en-US'):'unknown fee';
     status.textContent=String(active.checkCode||'Maintenance').toUpperCase()+
-     ' — '+String(active.status).replace('_',' ')+
+     (active.providerName?' · '+active.providerName:'')+' — '+String(active.status).replace('_',' ')+
      '. Game service: '+formatGameUtc(active.gameStartUtc)+' to '+
      formatGameUtc(active.gameEndUtc)+'. '+
      (active.status==='payment_required'?
