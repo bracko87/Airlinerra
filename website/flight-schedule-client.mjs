@@ -103,7 +103,7 @@ export function createFlightScheduleClient({auth,origin,fetchImpl=(...args)=>fet
   commissioningRequest:({airlineId,aircraftInventoryId})=>
     post({action:'commissioning-request',airlineId,aircraftInventoryId}),
   maintenancePolicyList:({airlineId,aircraftInventoryId})=>post({action:'maintenance-policy-list',airlineId,aircraftInventoryId}),
-  maintenancePolicySave:({airlineId,aircraftInventoryId,checkCode,airportKey=null,providerKey=null,enabled,maxCostUsd=null})=>post({action:'maintenance-policy-save',airlineId,aircraftInventoryId,checkCode,airportKey,providerKey,enabled,maxCostUsd}),
+  maintenancePolicySave:({airlineId,aircraftInventoryId,checkCode,airportKey=null,providerKey=null,enabled,maxCostUsd=null,allowRelocation=false,maxTripCostUsd=null})=>post({action:'maintenance-policy-save',airlineId,aircraftInventoryId,checkCode,airportKey,providerKey,enabled,maxCostUsd,allowRelocation,maxTripCostUsd}),
   maintenanceRelocationStatus:({airlineId,aircraftInventoryId})=>post({action:'maintenance-relocation-status',airlineId,aircraftInventoryId}),
   maintenanceRelocationReserve:({airlineId,aircraftInventoryId,checkCode,airportKey,providerKey,startUtc,expectedTotalUsd,requestKey})=>post({action:'maintenance-relocation-reserve',airlineId,aircraftInventoryId,checkCode,airportKey,providerKey,startUtc,expectedTotalUsd,requestKey}),
   maintenanceRelocationRecover:({airlineId,aircraftInventoryId,tripId,startUtc})=>post({action:'maintenance-relocation-recover',airlineId,aircraftInventoryId,tripId,startUtc}),
