@@ -1,0 +1,38 @@
+name: Passenger experience SQL regression (disposable)
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'server/sql/section9_passenger_experience*.sql'
+      - 'tests/sql/passenger_experience_isolated.sql'
+      - '.github/workflows/passenger-experience-regression.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: fixture-only-password
+          POSTGRES_DB: experience_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run migration and evidence fixtures in disposable database
+        env:
+          PGHOST: localhost
+          PGPORT: '5432'
+          PGUSER: postgres
+          PGPASSWORD: fixture-only-password
+          PGDATABASE: experience_test
+        run: psql -X -v ON_ERROR_STOP=1 -f tests/sql/passenger_experience_isolated.sql
