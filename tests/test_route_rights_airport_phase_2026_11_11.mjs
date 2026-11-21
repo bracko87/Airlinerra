@@ -248,3 +248,20 @@ test('✓ and ✕ depend on proven decisions or real airport admission blocks',(
  assert.match(strip.children[2].attributes['aria-label'],/Route blocked/);
  assert.match(strip.children[2].attributes['aria-label'],/Traffic-right permission has not been decided/);
 });
+
+test('short airborne sectors reduce climb and descent; heavy aircraft increase taxi time',()=>{
+ const base={originAirportCategory:'Regional',destinationAirportCategory:'Regional',originAirportKey:'A',destinationAirportKey:'B',cruiseSpeedKmh:800};
+ const short=estimateFlightPhaseTiming({...base,distanceKm:200,aircraftMtowKg:70000});
+ const long=estimateFlightPhaseTiming({...base,distanceKm:1000,aircraftMtowKg:70000});
+ assert.ok(short.climbMinutes<long.climbMinutes);
+ assert.ok(short.descentMinutes<long.descentMinutes);
+ const light=estimateFlightPhaseTiming({...base,distanceKm:200,aircraftMtowKg:12000});
+ const heavy=estimateFlightPhaseTiming({...base,distanceKm:200,aircraftMtowKg:250000});
+ assert.ok(heavy.taxiOutMinutes>light.taxiOutMinutes);
+ assert.ok(heavy.taxiInMinutes>light.taxiInMinutes);
+ const fuel=estimateFivePhaseFuel({...base,distanceKm:200,aircraftMtowKg:70000,cruiseFuelKgPerHour:1700});
+ assert.equal(fuel.status,'PLANNING_ESTIMATE');
+ assert.ok(fuel.screeningFuelLoadKg>fuel.tripFuelKg);
+ assert.equal(fuel.ledgerPosted,false);
+ assert.ok(fuel.phases.every(p=>p.minutes>=0&&p.fuelKg>=0));
+});
