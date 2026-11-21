@@ -107,6 +107,9 @@ export function createFlightScheduleClient({auth,origin,fetchImpl=(...args)=>fet
     post({action:'maintenance-job-book',airlineId,aircraftInventoryId,checkCode}),
   maintenanceJobCancel:({airlineId,aircraftInventoryId})=>
     post({action:'maintenance-job-cancel',airlineId,aircraftInventoryId}),
+  routeForecast:({airlineId,aircraftInventoryId,originAirportKey,destinationAirportKey,departureStand,arrivalStand,parkingMinutes,loadPercent=50,economyFareUsd=null})=>
+   post({action:'route-forecast',airlineId,aircraftInventoryId,originAirportKey,destinationAirportKey,departureStand,arrivalStand,parkingMinutes,loadPercent,economyFareUsd}),
+  operationalBookings:({airlineId,scheduleId})=>post({action:'operational-bookings',airlineId,scheduleId}),
   operationalSingleCreate:({airlineId,aircraftInventoryId,flightNumber,originAirportKey,
    destinationAirportKey,weeklySchedule,departureStand=null,arrivalStand='terminal',
    turnaroundMinutes,fares,service,launchDelayDays=0})=>
