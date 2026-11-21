@@ -34,6 +34,15 @@ export function createFlightScheduleClient({auth,origin,fetchImpl=(...args)=>fet
        typeof x==='string'&&/^[A-Z][A-Z0-9_]{3,100}$/.test(x)).slice(0,24):[];
     conflict.isAtomicRoundtrip=true;
    }
+   if(payload.action==='operational-single-create'){
+    const safe=typeof reason.details?.reason==='string'?reason.details.reason:null;
+    conflict.creationReason=typeof reason.reason==='string'?reason.reason:null;
+    conflict.firstDepartureReason=safe;
+    conflict.requiredAirport=typeof reason.details?.requiredAirport==='string'?reason.details.requiredAirport:null;
+    conflict.expectedAirport=typeof reason.details?.expectedAirport==='string'?reason.details.expectedAirport:null;
+    conflict.clearanceType=typeof reason.clearanceType==='string'?reason.clearanceType:null;
+    conflict.operationalBlockers=Array.isArray(reason.details?.blockers)?reason.details.blockers.filter(x=>typeof x==='string'&&/^[A-Z0-9_]{3,100}$/.test(x)).slice(0,20):[];
+   }
    if(payload.action==='operational-roundtrip-stage'){
     conflict.isAtomicRoundtrip=true;
     conflict.launchBlockers=Array.isArray(reason.launchBlockers)?reason.launchBlockers.filter(x=>typeof x==='string'&&/^[A-Z][A-Z0-9_]{3,100}$/.test(x)).slice(0,24):[];
@@ -98,6 +107,12 @@ export function createFlightScheduleClient({auth,origin,fetchImpl=(...args)=>fet
     post({action:'maintenance-job-book',airlineId,aircraftInventoryId,checkCode}),
   maintenanceJobCancel:({airlineId,aircraftInventoryId})=>
     post({action:'maintenance-job-cancel',airlineId,aircraftInventoryId}),
+  operationalSingleCreate:({airlineId,aircraftInventoryId,flightNumber,originAirportKey,
+   destinationAirportKey,weeklySchedule,departureStand=null,arrivalStand='terminal',
+   turnaroundMinutes,fares,service,launchDelayDays=0})=>
+    post({action:'operational-single-create',airlineId,aircraftInventoryId,flightNumber,
+     originAirportKey,destinationAirportKey,weeklySchedule,departureStand,
+     arrivalStand,turnaroundMinutes,fares,service,launchDelayDays}),
   operationalCreate:({airlineId,aircraftInventoryId,flightNumber,originAirportKey,
    destinationAirportKey,weeklySchedule,departureStand=null,arrivalStand='terminal',
    turnaroundMinutes,fares,service,launchDelayDays=0,
