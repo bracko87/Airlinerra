@@ -124,9 +124,9 @@ const routeCheckDetails =
   '<details class="route-rights-info" id="route-rights-info">'+
    '<summary aria-label="Information about the nine freedoms of the air" title="What do these rights mean?">i</summary>'+
    '<div class="route-rights-info-content"><h4>Nine freedoms of the air</h4>'+
-    '<p>International traffic rights depend on the airline’s home country, full itinerary, bilateral rules and verified game grants. The categories do not authorize a flight.</p>'+
+    '<p>These international aviation rights are reference information only. In Airlinerra, Licence 1 covers ordinary passenger flights to or from your home market. Licence 2 governs foreign-network expansion.</p>'+
     '<div id="route-rights-legend"></div>'+
-    '<p>Domestic home-country flights have domestic operating requirements. Passenger and cargo grants may differ.</p>'+
+    '<p>No additional traffic-rights application or fee is required for Licence 1 passenger flights. Cargo requires the applicable separate licence.</p>'+
    '</div></details></div>'+
   '<div id="route-rights-icons" class="route-rights-icons" aria-label="Nine international aviation rights"></div></div>'+
  '<div class="route-hidden-readouts" hidden aria-hidden="true">'+
@@ -1936,7 +1936,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
     blocked_schedule_or_slots:'Airport slots or schedule restrictions prevent this route.',
     blocked_invalid_weekly_schedule:'Check your weekly departure times.',
     blocked_capacity:'Passenger capacity could not be confirmed.',
-    blocked_operational_requirement:({operator_licence:'A valid operator licence is required. Review Licences and Permits.',route_traffic_rights:'The required traffic rights are missing or expired. Apply in Licences and Permits for this direction before creating the route.',airport_slot_capacity:'Airport runway, curfew, noise or slot checks failed. Select a compatible aircraft, time or airport.',trusted_flight_execution:'The selected aircraft or flight execution is not available.',commercial_finance:'The flight cost model is not available for this aircraft.'})[error?.clearanceType]||'A required operational check failed.',
+    blocked_operational_requirement:({operator_licence:'A valid operator licence is required. Review Licences and Permits.',route_traffic_rights:'This route is outside the scope of your current licences. Check Licence 1 and, for foreign-network routes, Licence 2.',airport_slot_capacity:'Airport runway, curfew, noise or slot checks failed. Select a compatible aircraft, time or airport.',trusted_flight_execution:'The selected aircraft or flight execution is not available.',commercial_finance:'The flight cost model is not available for this aircraft.'})[error?.clearanceType]||'A required operational check failed.',
     blocked_activation:'The aircraft, licence, airport or schedule validation failed.',
     blocked_ticket_inventory:'Ticket inventory could not be opened.',
     blocked_no_bookable_departure:'No eligible departure in the booking window.',
