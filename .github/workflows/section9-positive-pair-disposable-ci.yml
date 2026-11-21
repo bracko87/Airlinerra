@@ -98,13 +98,7 @@ jobs:
               end=src.find('REVOKE ALL ON FUNCTION airlinerra_game.'+name+'(',start)
               if end<0: end=len(src)
               body=src[start:end]
-              assert 'END $function
-        if: always()
-        run: |
-          echo '### FRA-MUC positive atomic activation on disposable PostgreSQL 17' >> "$GITHUB_STEP_SUMMARY"
-          echo 'Real pair activation, clock-driven dispatcher, signed movement writer, fuel receipts and usage functions run unchanged in the same database. Clock, authorizations, timetable reader, fuel quote and ticket gateway use controlled fixtures. This is not full commercial production acceptance.' >> "$GITHUB_STEP_SUMMARY"
-          echo 'No production schema, player aircraft, airline balances, real licences, signed source certifications, bookings, or flight movements changed.' >> "$GITHUB_STEP_SUMMARY"
- in body
+              assert 'END $function$' in body
               return body
           out=[
               fuel[:fuel.index('CREATE OR REPLACE FUNCTION airlinerra_game.section9_verify_game_fuel_before_departure_v1')],
@@ -160,5 +154,5 @@ jobs:
         if: always()
         run: |
           echo '### FRA-MUC positive atomic activation on disposable PostgreSQL 17' >> "$GITHUB_STEP_SUMMARY"
-          echo 'Real pair-activation SQL used unchanged. Aircraft, 10 signed certification records, slot windows and ticket gateway are synthetic fixtures.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Actual pair activation, dispatcher, movement, fuel, airframe usage, ticket reconciliation, financial preparation and posting SQL are exercised in one database. Clock, permissions, booking data, fuel planning and tariff quotes are controlled fixtures.' >> "$GITHUB_STEP_SUMMARY"
           echo 'No production schema, player aircraft, airline balances, real licences, signed source certifications, bookings, or flight movements changed.' >> "$GITHUB_STEP_SUMMARY"
