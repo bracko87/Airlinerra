@@ -148,7 +148,7 @@ export function validateFlightSchedulePayload(body){
   return withinFields(body,COMMISSIONING_FIELDS)&&uuid(body.aircraftInventoryId);
  if(body.action==='maintenance-policy-list')return withinFields(body,COMMISSIONING_FIELDS)&&uuid(body.aircraftInventoryId);
  if(body.action==='maintenance-policy-save')return withinFields(body,MAINTENANCE_POLICY_FIELDS)&&uuid(body.aircraftInventoryId)&&['daily','weekly','a','b','c','d'].includes(body.checkCode)&&typeof body.enabled==='boolean'&&(!body.enabled||(typeof body.airportKey==='string'&&AIRPORT.test(body.airportKey)&&['economy','standard','express'].some(t=>body.providerKey===body.airportKey+':'+t)&&typeof body.maxCostUsd==='number'&&Number.isFinite(body.maxCostUsd)&&body.maxCostUsd>0&&body.maxCostUsd<=10000000));
- if(body.action==='maintenance-provider-book')return withinFields(body,MAINTENANCE_PROVIDER_BOOK_FIELDS)&&uuid(body.aircraftInventoryId)&&['daily','weekly','a','b','c','d'].includes(body.checkCode)&&typeof body.airportKey==='string'&&AIRPORT.test(body.airportKey)&&['economy','standard','express'].some(t=>body.providerKey===body.airportKey+':'+t)&&(body.startUtc==null||utc(body.startUtc));
+ if(['maintenance-provider-book','maintenance-relocation-quote'].includes(body.action))return withinFields(body,MAINTENANCE_PROVIDER_BOOK_FIELDS)&&uuid(body.aircraftInventoryId)&&['daily','weekly','a','b','c','d'].includes(body.checkCode)&&typeof body.airportKey==='string'&&AIRPORT.test(body.airportKey)&&['economy','standard','express'].some(t=>body.providerKey===body.airportKey+':'+t)&&(body.startUtc==null||utc(body.startUtc));
  if(body.action==='maintenance-provider-quotes')return withinFields(body,MAINTENANCE_QUOTE_FIELDS)&&uuid(body.aircraftInventoryId)&&['daily','weekly','a','b','c','d'].includes(body.checkCode)&&(body.airportKey==null||AIRPORT.test(body.airportKey));
  if(body.action==='maintenance-job-book')
   return withinFields(body,MAINTENANCE_JOB_FIELDS)&&uuid(body.aircraftInventoryId)&&
@@ -252,6 +252,7 @@ export function nextWeeklyDepartureGameDate(gameDate,weeklySchedule,launchDelayD
 }
 export const SCHEDULE_SQL=Object.freeze({
  maintenancePolicy:`SELECT airlinerra_game.section9_owned_auto_maintenance_policy_v1($1::uuid,$2::uuid,$3::uuid,$4::text,$5::text,$6::text,$7::text,$8::boolean,$9::numeric) AS result`,
+ maintenanceRelocationQuote:`SELECT airlinerra_game.section9_owned_maintenance_relocation_quote_v1($1::uuid,$2::uuid,$3::uuid,$4::text,$5::text,$6::text,$7::timestamptz) AS result`,
  maintenanceProviderBook:`SELECT airlinerra_game.section9_book_ai_maintenance_v1($1::uuid,$2::uuid,$3::uuid,$4::text,$5::text,$6::text,$7::timestamptz) AS result`,
  maintenanceProviderQuotes:`SELECT airlinerra_game.section9_owned_ai_maintenance_quotes_v1($1::uuid,$2::uuid,$3::uuid,$4::text,$5::text) AS result`,
  aircraftCalendar:`WITH owner AS (
@@ -595,6 +596,13 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
     if(q.rowCount!==1||!r)return respond(503,{error:'MAINTENANCE_POLICY_UNVERIFIED'});
     if(r.saved===false&&r.status==='invalid_maintenance_policy_quote')return respond(200,r);
     if(r.status!=='aircraft_auto_maintenance_policies'||r.aircraftInventoryId!==body.aircraftInventoryId||r.ledgerPosted!==false||!Array.isArray(r.policies))return respond(503,{error:'MAINTENANCE_POLICY_UNVERIFIED'});
+    return respond(200,r);
+   }
+   if(body.action==='maintenance-relocation-quote'){
+    const q=await client.query(SCHEDULE_SQL.maintenanceRelocationQuote,[userId,body.airlineId,body.aircraftInventoryId,body.checkCode,body.airportKey,body.providerKey,body.startUtc??null]);
+    const r=q.rows?.[0]?.result;
+    if(q.rowCount!==1||!r||typeof r.status!=='string'||r.readOnly!==true||r.ledgerPosted!==false)return respond(503,{error:'MAINTENANCE_RELOCATION_QUOTE_UNVERIFIED'});
+    if(r.status==='maintenance_relocation_quote'&&(r.aircraftInventoryId!==body.aircraftInventoryId||r.providerAirportKey!==body.airportKey||r.provider?.providerKey!==body.providerKey||r.bookable!==false||r.passengers!==0||r.ticketRevenueUsd!==0||r.airportSlotsReserved!==false||r.providerCapacityReserved!==false||r.positionChanged!==false||!Number.isFinite(Number(r.totalEstimatedUsd))||!Array.isArray(r.preliminaryBlockers)))return respond(503,{error:'MAINTENANCE_RELOCATION_QUOTE_UNVERIFIED'});
     return respond(200,r);
    }
    if(body.action==='maintenance-provider-book'){
