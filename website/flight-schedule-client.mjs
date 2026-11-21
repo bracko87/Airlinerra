@@ -102,6 +102,7 @@ export function createFlightScheduleClient({auth,origin,fetchImpl=(...args)=>fet
     post({action:'commissioning-status',airlineId,aircraftInventoryId}),
   commissioningRequest:({airlineId,aircraftInventoryId})=>
     post({action:'commissioning-request',airlineId,aircraftInventoryId}),
+  maintenanceProviderBook:({airlineId,aircraftInventoryId,checkCode,airportKey,providerKey,startUtc=null})=>post({action:'maintenance-provider-book',airlineId,aircraftInventoryId,checkCode,airportKey,providerKey,startUtc}),
   maintenanceProviderQuotes:({airlineId,aircraftInventoryId,checkCode,airportKey=null})=>post({action:'maintenance-provider-quotes',airlineId,aircraftInventoryId,checkCode,airportKey}),
   maintenanceJobStatus:({airlineId,aircraftInventoryId})=>
     post({action:'maintenance-job-status',airlineId,aircraftInventoryId}),
