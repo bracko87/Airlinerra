@@ -33,8 +33,8 @@ BEGIN
   r:=airlinerra_game.section9_auto_dispatch_due_flight_events_v1(40);
   IF r->>'status'<>'trusted_game_dispatch_cycle_completed'
   OR (r->>'blocked')::int<>0
-  OR (r->>'departuresRecorded')::int<>CASE WHEN n IN(1,3) THEN 1 ELSE 0 END
-  OR (r->>'arrivalsRecorded')::int<>CASE WHEN n IN(2,4) THEN 1 ELSE 0 END
+  OR (r->>'departuresRecorded')::int<>(CASE WHEN n IN(1,3) THEN 1 ELSE 0 END)
+  OR (r->>'arrivalsRecorded')::int<>(CASE WHEN n IN(2,4) THEN 1 ELSE 0 END)
   THEN RAISE EXCEPTION 'CLOCK_STEP % FAILED: %',n,r;END IF;
   IF (SELECT count(*) FROM airlinerra_game.section9_operated_flight_movements_v1)<>n THEN
    RAISE EXCEPTION 'FLIGHT_EVENT_COUNT %',n;END IF;
