@@ -34,6 +34,7 @@ const ROUNDTRIP_STAGE_FIELDS=new Set([...ROUNDTRIP_CREATE_FIELDS,'requestKey','o
 const CHECK_FIELDS=new Set([...BASE_FIELDS,'scheduleId']);
 const COMMISSIONING_FIELDS=new Set([...BASE_FIELDS,'aircraftInventoryId']);
 const MAINTENANCE_JOB_FIELDS=new Set([...COMMISSIONING_FIELDS,'checkCode']);
+const MAINTENANCE_QUOTE_FIELDS=new Set([...MAINTENANCE_JOB_FIELDS,'airportKey']);
 const DEMAND_FIELDS=new Set([...CHECK_FIELDS,'month']);
 const FINANCIAL_FIELDS=new Set([...CHECK_FIELDS,'loadPercent','parkingMinutes']);
 const FEE_PREVIEW_FIELDS=new Set([...BASE_FIELDS,'aircraftInventoryId','originAirportKey',
@@ -143,6 +144,7 @@ export function validateFlightSchedulePayload(body){
   return withinFields(body,COMMISSIONING_FIELDS)&&uuid(body.aircraftInventoryId);
  if(body.action==='maintenance-job-status'||body.action==='maintenance-job-cancel')
   return withinFields(body,COMMISSIONING_FIELDS)&&uuid(body.aircraftInventoryId);
+ if(body.action==='maintenance-provider-quotes')return withinFields(body,MAINTENANCE_QUOTE_FIELDS)&&uuid(body.aircraftInventoryId)&&['daily','weekly','a','b','c','d'].includes(body.checkCode)&&(body.airportKey==null||AIRPORT.test(body.airportKey));
  if(body.action==='maintenance-job-book')
   return withinFields(body,MAINTENANCE_JOB_FIELDS)&&uuid(body.aircraftInventoryId)&&
    ['daily','weekly','a','b','c','d'].includes(body.checkCode);
@@ -244,6 +246,7 @@ export function nextWeeklyDepartureGameDate(gameDate,weeklySchedule,launchDelayD
  return null;
 }
 export const SCHEDULE_SQL=Object.freeze({
+ maintenanceProviderQuotes:`SELECT airlinerra_game.section9_owned_ai_maintenance_quotes_v1($1::uuid,$2::uuid,$3::uuid,$4::text,$5::text) AS result`,
  aircraftCalendar:`WITH owner AS (
  SELECT a.id FROM airlinerra_game.airlines a JOIN airlinerra_game.world_memberships w ON w.world_id=a.world_id AND w.player_id=a.owner_player_id AND w.state='active'
  WHERE a.id=$1::uuid AND a.owner_player_id=$2::uuid AND a.world_id=1
@@ -579,6 +582,12 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
   let client;
   try{
    client=await database.connect();
+   if(body.action==='maintenance-provider-quotes'){
+    const r=await client.query(SCHEDULE_SQL.maintenanceProviderQuotes,[userId,body.airlineId,body.aircraftInventoryId,body.checkCode,body.airportKey??null]);
+    const q=r.rows?.[0]?.result;
+    if(r.rowCount!==1||q?.status!=='ai_maintenance_quote_directory'||q.aircraftInventoryId!==body.aircraftInventoryId||q.checkCode!==body.checkCode||q.readOnly!==true||q.ledgerPosted!==false||!Array.isArray(q.quotes))return respond(409,{error:'MAINTENANCE_PROVIDER_QUOTES_UNAVAILABLE'});
+    return respond(200,q);
+   }
    if(body.action==='aircraft-calendar'){
     const owner=await client.query(SCHEDULE_SQL.owner,[body.airlineId,userId]);
     if(owner.rowCount!==1)return respond(403,{error:'Airline not owned by this account'});
