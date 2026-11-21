@@ -940,12 +940,32 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   host.textContent='Loading provider quotes…';
   if(typeof data.scheduler?.maintenanceProviderQuotes!=='function'||!airlineId||!aircraftId){host.textContent='Provider quotes unavailable.';return;}
   try{
-   const [q,policyReply]=await Promise.all([data.scheduler.maintenanceProviderQuotes({airlineId,aircraftInventoryId:aircraftId,checkCode}),data.scheduler.maintenancePolicyList({airlineId,aircraftInventoryId:aircraftId})]);
+   const [q,policyReply,tripReply]=await Promise.all([data.scheduler.maintenanceProviderQuotes({airlineId,aircraftInventoryId:aircraftId,checkCode}),data.scheduler.maintenancePolicyList({airlineId,aircraftInventoryId:aircraftId}),data.scheduler.maintenanceRelocationStatus({airlineId,aircraftInventoryId:aircraftId}).catch(()=>null)]);
    if(policyReply?.status!=='aircraft_auto_maintenance_policies'||!Array.isArray(policyReply.policies))throw Error('Policy unavailable');
    const policy=policyReply.policies.find(x=>x.checkCode===checkCode);
    if(ticket!==providerQuoteVersion||selectedFleetAircraftId!==aircraftId||data.airline?.id!==airlineId||gameServiceSelectedCheck!==checkCode)return;
    if(q?.status!=='ai_maintenance_quote_directory'||q.readOnly!==true||q.bookable!==false||!Array.isArray(q.quotes))throw Error('Invalid provider directory');
    host.replaceChildren();
+   const tripStatus=doc.createElement('div');host.append(tripStatus);
+   const tripNote=doc.createElement('p');tripNote.className='hint';tripNote.textContent=tripReply?.bookingEnabled?'Maintenance relocation booking available.':'Relocation reservations are not released yet.';tripStatus.append(tripNote);
+   const stillSelected=()=>ticket===providerQuoteVersion&&selectedFleetAircraftId===aircraftId&&data.airline?.id===airlineId&&gameServiceSelectedCheck===checkCode;
+   for(const trip of Array.isArray(tripReply?.trips)?tripReply.trips:[]){
+    const row=doc.createElement('div');row.className='fleet-detail-row';
+    const desc=doc.createElement('span');desc.textContent=trip.providerName+' | '+trip.checkCode.toUpperCase()+' | '+trip.status+(trip.lastResult?' · '+trip.lastResult.replaceAll('_',' '):'')+' | Paid USD '+Number(trip.paidUsd).toLocaleString('en-US');row.append(desc);
+    if(trip.canCancelBeforeDeparture||trip.canCancelReturn){
+     const cancelTrip=doc.createElement('button');cancelTrip.type='button';cancelTrip.className='secondary';cancelTrip.textContent=trip.canCancelReturn?'Cancel return — stay at provider':'Cancel trip';
+     const warning=doc.createElement('span');row.append(cancelTrip,warning);
+     let armed=false;
+     cancelTrip.addEventListener('click',async()=>{
+      if(!stillSelected()||cancelTrip.disabled)return;
+      if(!armed){armed=true;cancelTrip.textContent='Confirm cancellation';warning.textContent=trip.canCancelReturn?'Aircraft will remain at the provider; paid expenses are not refunded.':'All unused airport slots will be released.';return;}
+      cancelTrip.disabled=true;
+      try{const r=await data.scheduler.maintenanceRelocationCancel({airlineId,aircraftInventoryId:aircraftId,tripId:trip.tripId});if(r?.cancelled!==true){warning.textContent=String(r?.status||'Cancellation not confirmed').replaceAll('_',' ');cancelTrip.disabled=false;return;}if(stillSelected()){await loadGameMaintenanceJobs(aircraftId);void loadAirlineSchedule();}}
+      catch{warning.textContent='Cancellation not verified. Refresh the status.';cancelTrip.disabled=false;}
+     });
+    }
+    tripStatus.append(row);
+   }
    if(!q.quotes.length){host.textContent='No compatible providers for this check.';return;}
    const label=doc.createElement('label');label.textContent='Airport ';
    const select=doc.createElement('select');label.append(select);host.append(label);
@@ -1017,9 +1037,22 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
        'Return: '+clock(r.return.departureUtc)+' – '+clock(r.return.arrivalUtc)+' | '+duration(r.return.flightMinutes)+' | Fuel '+money(r.return.fuelCostUsd)+' + fees '+money(r.return.airportFeesUsd),
        'Total estimated cost '+money(r.totalEstimatedUsd)+' | Aircraft unavailable '+duration(r.totalDowntimeMinutes)+' | No passengers or ticket revenue.',
        'Preliminary checks: '+(r.preliminaryBlockers.length?r.preliminaryBlockers.map(x=>x.replaceAll('_',' ').toLowerCase()).join('; '):'no preliminary blockers; slots not reserved.'),
-       'Actual relocation booking and execution are not yet released.'
+       tripReply?.bookingEnabled?'Reconfirm the quoted cost and reserve all four airport slots.':'Actual relocation booking and execution are not yet released.'
       ];
       for(const part of parts){const p=doc.createElement('span');p.style.display='block';p.textContent=part;feedback.append(p);}
+      if(tripReply?.bookingEnabled===true&&r.preliminaryBlockers.length===0&&!tripReply.trips.some(t=>t.status==='reserved')){
+       const confirm=doc.createElement('button');confirm.type='button';confirm.className='secondary';confirm.textContent='Confirm relocation — '+money(r.totalEstimatedUsd);feedback.append(confirm);
+       const key=crypto.randomUUID();
+       confirm.addEventListener('click',async()=>{
+        if(confirm.disabled||!stillSelected())return;
+        confirm.disabled=true;
+        try{
+         const result=await data.scheduler.maintenanceRelocationReserve({airlineId,aircraftInventoryId:aircraftId,checkCode,airportKey:v.airportKey,providerKey:v.providerKey,startUtc:new Date(r.outbound.departureUtc).toISOString().replace(/\.\d{3}Z$/,'Z'),expectedTotalUsd:Number(r.totalEstimatedUsd),requestKey:key});
+         if(result?.status==='reserved'&&(result.created===true||result.replayed===true)){if(stillSelected()){await loadGameMaintenanceJobs(aircraftId);void loadAirlineSchedule();}return;}
+         feedback.textContent='Reservation not confirmed: '+String(result?.status||'unknown').replaceAll('_',' ')+'. Recalculate the quote.';
+        }catch{confirm.disabled=false;confirm.textContent='Retry same reservation';}
+       });
+      }
      }catch{if(ticket===providerQuoteVersion)feedback.textContent='Could not retrieve relocation estimate.';}finally{relocation.disabled=false;}
     });
     line.append(name,detail,book,auto,relocation);offers.append(line);
