@@ -1,11 +1,16 @@
 name: Disposable positive FRA-MUC certified pair activation
 on:
   push:
-    branches: [main]
+    branches: [main, commercial-flight-lifecycle]
     paths:
+      - 'tests/sql/section9_disposable_roundtrip_dispatch_*.sql'
       - 'tests/sql/section9_disposable_positive_fra_muc_pair_bootstrap.sql'
       - 'tests/sql/section9_disposable_positive_fra_muc_pair_acceptance.sql'
       - 'supabase/migrations/20261117130000_section9_atomic_certified_pair_ticket_activation_v1.sql'
+      - '.github/workflows/section9-positive-pair-disposable-ci.yml'
+  pull_request:
+    paths:
+      - 'tests/sql/section9_disposable_roundtrip_dispatch_*.sql'
       - '.github/workflows/section9-positive-pair-disposable-ci.yml'
   workflow_dispatch:
 permissions:
@@ -74,6 +79,44 @@ jobs:
         run: |
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_positive_fra_muc_pair_acceptance.sql
+      - name: Continue the same activated roundtrip through actual flight dispatch
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_roundtrip_dispatch_fixture.sql
+          python3 - <<'PY'
+          from pathlib import Path
+          root=Path('supabase/migrations')
+          fuel=(root/'20261117110000_section9_game_fuel_custody_supply_dispatch_v1.sql').read_text()
+          usage=(root/'20261113233000_section9_once_only_arrival_airframe_hours_cycles_v1.sql').read_text()
+          movement=(root/'20261113232000_section9_private_signed_operated_flight_dispatch_v1.sql').read_text()
+          dispatch=(root/'20261117235500_section9_dispatch_uses_certified_approval_status.sql').read_text()
+          def extract(src,name):
+              marker='CREATE OR REPLACE FUNCTION airlinerra_game.'+name+'('
+              start=src.index(marker)
+              end=src.find('REVOKE ALL ON FUNCTION airlinerra_game.'+name+'(',start)
+              if end<0: end=len(src)
+              body=src[start:end]
+              assert 'END $function
+        if: always()
+        run: |
+          echo '### FRA-MUC positive atomic activation on disposable PostgreSQL 17' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Real pair activation, clock-driven dispatcher, signed movement writer, fuel receipts and usage functions run unchanged in the same database. Clock, authorizations, timetable reader, fuel quote and ticket gateway use controlled fixtures. This is not full commercial production acceptance.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'No production schema, player aircraft, airline balances, real licences, signed source certifications, bookings, or flight movements changed.' >> "$GITHUB_STEP_SUMMARY"
+ in body
+              return body
+          out=[
+              fuel[:fuel.index('CREATE OR REPLACE FUNCTION airlinerra_game.section9_verify_game_fuel_before_departure_v1')],
+              usage[:usage.index('CREATE OR REPLACE FUNCTION airlinerra_game.section9_apply_arrival_airframe_usage_once_v1')],
+              extract(movement,'section9_record_signed_operated_flight_movement_v1'),
+              extract(fuel,'section9_capture_verified_departure_fuel_v1'),
+              extract(fuel,'section9_apply_verified_arrival_fuel_burn_once_v1'),
+              extract(usage,'section9_apply_arrival_airframe_usage_once_v1'),
+              extract(dispatch,'section9_auto_dispatch_due_flight_events_v1')
+          ]
+          Path('/tmp/section9-actual-dispatch.sql').write_text('\n'.join(out))
+          PY
+          psql -X -v ON_ERROR_STOP=1 -f /tmp/section9-actual-dispatch.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_roundtrip_dispatch_acceptance.sql
       - name: Summary of isolation
         if: always()
         run: |
