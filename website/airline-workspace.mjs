@@ -989,7 +989,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    for(const a of airports){const opt=doc.createElement('option');opt.value=a.airportKey;opt.textContent=a.airportName+' ('+a.airportCode+')';select.append(opt);}
    const when=doc.createElement('label');when.textContent='Start (your local time; blank = now) ';const start=doc.createElement('input');start.type='datetime-local';when.append(start);host.append(when);
    if(policy?.airportKey&&airports.some(a=>a.airportKey===policy.airportKey))select.value=policy.airportKey;
-   const policyStatus=doc.createElement('p');policyStatus.className='hint';policyStatus.textContent=policy?.enabled?'Automatic '+checkCode.toUpperCase()+' maintenance enabled: '+policy.providerKey+' | Maximum $'+Number(policy.maxCostUsd).toLocaleString('en-US')+(policy.lastResult?' | '+policy.lastResult.replaceAll('_',' '):''):'Automatic '+checkCode.toUpperCase()+' maintenance is off.';host.append(policyStatus);
+   const policyStatus=doc.createElement('p');policyStatus.className='hint';policyStatus.textContent=policy?.enabled?'Automatic '+checkCode.toUpperCase()+' maintenance enabled: '+policy.providerKey+' | Maximum $'+Number(policy.maxCostUsd).toLocaleString('en-US')+(policy.allowRelocation?' | Relocation limit USD '+Number(policy.maxTripCostUsd).toLocaleString('en-US'):'')+(policy.lastResult?' | '+policy.lastResult.replaceAll('_',' '):''):'Automatic '+checkCode.toUpperCase()+' maintenance is off.';host.append(policyStatus);
    if(policy?.enabled){
     const disable=doc.createElement('button');disable.type='button';disable.className='secondary';disable.textContent='Disable automatic '+checkCode.toUpperCase();
     disable.addEventListener('click',async()=>{disable.disabled=true;try{
@@ -999,6 +999,10 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
     host.append(disable);
    }
    const maxLabel=doc.createElement('label');maxLabel.textContent='Maximum automatic service cost (USD) ';const maxCost=doc.createElement('input');maxCost.type='number';maxCost.min='1';maxCost.max='10000000';maxCost.step='0.01';maxCost.placeholder='Provider quote if empty';if(policy?.enabled)maxCost.value=String(policy.maxCostUsd);maxLabel.append(maxCost);host.append(maxLabel);
+   const relocationLabel=doc.createElement('label');const allowRelocation=doc.createElement('input');allowRelocation.type='checkbox';allowRelocation.checked=policy?.allowRelocation===true;relocationLabel.append(allowRelocation,doc.createTextNode(' Allow automatic empty relocation flights'));host.append(relocationLabel);
+   const budgetLabel=doc.createElement('label');budgetLabel.textContent='Maximum total cost including outbound, service and return (USD) ';const tripBudget=doc.createElement('input');tripBudget.type='number';tripBudget.min='1';tripBudget.max='10000000';tripBudget.step='0.01';tripBudget.value=policy?.maxTripCostUsd==null?'':String(policy.maxTripCostUsd);budgetLabel.append(tripBudget);host.append(budgetLabel);
+   const syncBudget=()=>{budgetLabel.hidden=!allowRelocation.checked;tripBudget.disabled=!allowRelocation.checked;};allowRelocation.addEventListener('change',syncBudget);syncBudget();
+   const autoHint=doc.createElement('p');autoHint.className='hint';autoHint.textContent='Automatic relocation is optional and may reserve maintenance before it is due. Existing commercial flights are not cancelled. Relocation remains subject to release and aircraft availability.';host.append(autoHint);
    const feedback=doc.createElement('p');feedback.className='hint';feedback.setAttribute('role','status');host.append(feedback);
    const offers=doc.createElement('div');host.append(offers);
    const draw=()=>{offers.replaceChildren();for(const v of q.quotes.filter(x=>x.airportKey===select.value)){
@@ -1026,8 +1030,10 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
      if(auto.disabled||data.airline?.id!==airlineId||selectedFleetAircraftId!==aircraftId||gameServiceSelectedCheck!==checkCode)return;
      const limit=maxCost.value?Number(maxCost.value):Number(v.priceUsd);
      if(!Number.isFinite(limit)||limit<Number(v.priceUsd)||limit>10000000){feedback.textContent='Enter a maximum at least as high as this quote.';return;}
+     const totalLimit=allowRelocation.checked?Number(tripBudget.value):null;
+     if(allowRelocation.checked&&(!Number.isFinite(totalLimit)||totalLimit<limit||totalLimit>10000000)){feedback.textContent='Enter a total-trip budget at least equal to the service limit.';return;}
      auto.disabled=true;
-     try{const r=await data.scheduler.maintenancePolicySave({airlineId,aircraftInventoryId:aircraftId,checkCode,airportKey:v.airportKey,providerKey:v.providerKey,enabled:true,maxCostUsd:limit});
+     try{const r=await data.scheduler.maintenancePolicySave({airlineId,aircraftInventoryId:aircraftId,checkCode,airportKey:v.airportKey,providerKey:v.providerKey,enabled:true,maxCostUsd:limit,allowRelocation:allowRelocation.checked,maxTripCostUsd:totalLimit});
       if(!r?.saved)throw Error('Not saved');void loadMaintenanceProviderQuotes(aircraftId);
      }catch{feedback.textContent='Automatic policy not confirmed; refresh to verify.';auto.disabled=false;}
     });
