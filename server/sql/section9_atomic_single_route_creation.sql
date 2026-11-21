@@ -167,4 +167,85 @@ BEGIN
  END;
 END $fn$;
 REVOKE ALL ON FUNCTION airlinerra_game.section9_create_active_single_route_v1(uuid,uuid,uuid,text,text,text,timestamptz,timestamptz,jsonb,text,text,integer,numeric) FROM PUBLIC,anon,authenticated,service_role;
+
+-- Server-owned timetable derived from actual game time, airport local time and
+-- the same short-sector / aircraft-size model used by the browser forecast.
+CREATE OR REPLACE FUNCTION airlinerra_game.section9_route_timing_pick_v1(p_seed text,p_low int,p_high int)
+RETURNS int LANGUAGE plpgsql IMMUTABLE SECURITY INVOKER SET search_path TO 'pg_catalog' AS $fn$
+DECLARE h bigint:=2166136261;i int;
+BEGIN
+ FOR i IN 1..length(p_seed) LOOP
+  h:=((h # ascii(substr(p_seed,i,1))::bigint)*16777619)%4294967296;
+ END LOOP;
+ RETURN p_low+(h%(p_high-p_low+1))::int;
+END $fn$;
+REVOKE ALL ON FUNCTION airlinerra_game.section9_route_timing_pick_v1(text,int,int) FROM PUBLIC,anon,authenticated,service_role;
+
+CREATE OR REPLACE FUNCTION airlinerra_game.section9_create_active_route_from_weekly_v1(
+ p_player uuid,p_airline uuid,p_aircraft uuid,p_flight text,p_origin text,p_destination text,
+ p_weekly jsonb,p_depart_stand text,p_arrive_stand text,p_turnaround int,p_fare numeric)
+RETURNS jsonb LANGUAGE plpgsql SECURITY INVOKER
+SET search_path TO 'airlinerra_game','airlinerra','pg_catalog' AS $fn$
+DECLARE origin record;destination record;aircraft record;clock_proof jsonb;now_utc timestamptz;
+ first_dep timestamptz;first_arr timestamptz;seed text;km numeric;speed numeric;
+ taxi_factor numeric;climb_factor numeric;climb_base numeric;descent_base numeric;
+ taxi_out numeric;taxi_in numeric;climb numeric;descent numeric;cruise numeric;scale numeric;minutes int;
+ out_low int;out_high int;in_low int;in_high int;result jsonb;
+BEGIN
+ IF current_user IS DISTINCT FROM 'postgres' THEN RAISE EXCEPTION USING ERRCODE='42501',MESSAGE='PRIVATE_GAME_ROUTE_CREATION_ONLY';END IF;
+ IF p_weekly IS NULL OR jsonb_typeof(p_weekly)<>'array' OR jsonb_array_length(p_weekly) NOT BETWEEN 1 AND 7
+ THEN RETURN jsonb_build_object('status','blocked_invalid_weekly_schedule','routeCreated',false);END IF;
+ IF EXISTS(SELECT 1 FROM jsonb_array_elements(p_weekly) w WHERE coalesce(w->>'day','')!~'^[0-6] OR coalesce(w->>'time','')!~'^([01][0-9]|2[0-3]):[0-5][0-9])
+ OR (SELECT count(DISTINCT w->>'day') FROM jsonb_array_elements(p_weekly) w)<>jsonb_array_length(p_weekly)
+ THEN RETURN jsonb_build_object('status','blocked_invalid_weekly_schedule','routeCreated',false);END IF;
+ SELECT a.*,u.game_category INTO origin FROM airlinerra_game.airport_reference_profiles a
+ JOIN airlinerra_game.airport_unified_operations_v1 u ON u.world_id=a.world_id AND u.airport_key=a.airport_key
+ JOIN pg_catalog.pg_timezone_names z ON z.name=a.timezone_iana
+ WHERE a.world_id=1 AND a.airport_key=p_origin;
+ SELECT a.*,u.game_category INTO destination FROM airlinerra_game.airport_reference_profiles a
+ JOIN airlinerra_game.airport_unified_operations_v1 u ON u.world_id=a.world_id AND u.airport_key=a.airport_key
+ JOIN pg_catalog.pg_timezone_names z ON z.name=a.timezone_iana
+ WHERE a.world_id=1 AND a.airport_key=p_destination;
+ IF origin.airport_key IS NULL OR destination.airport_key IS NULL OR origin.latitude_deg IS NULL OR origin.longitude_deg IS NULL OR destination.latitude_deg IS NULL OR destination.longitude_deg IS NULL
+ THEN RETURN jsonb_build_object('status','blocked_airport_reference_unavailable','routeCreated',false);END IF;
+ SELECT f.configuration_id,m.cruise_speed_kmh,c.mtow_kg INTO aircraft
+ FROM airlinerra_game.airline_aircraft_inventory f
+ JOIN airlinerra_game.airlines a ON a.id=f.airline_id AND a.owner_player_id=p_player AND a.world_id=1
+ JOIN airlinerra_game.section9_game_fuel_model_snapshot_v1 m ON m.configuration_id=f.configuration_id
+ LEFT JOIN airlinerra.aircraft_catalog_configuration_inventory c ON c.configuration_id=f.configuration_id
+ WHERE f.id=p_aircraft AND f.airline_id=p_airline AND f.fleet_status='in_service';
+ IF NOT FOUND OR coalesce(aircraft.cruise_speed_kmh,0)<=0 THEN RETURN jsonb_build_object('status','blocked_aircraft_performance_unavailable','routeCreated',false);END IF;
+ speed:=aircraft.cruise_speed_kmh;
+ km:=round((6371.0088*acos(least(1.0,greatest(-1.0,sin(radians(origin.latitude_deg::float8))*sin(radians(destination.latitude_deg::float8))+cos(radians(origin.latitude_deg::float8))*cos(radians(destination.latitude_deg::float8))*cos(radians((destination.longitude_deg-origin.longitude_deg)::float8))))))::numeric);
+ IF km<=0 THEN RETURN jsonb_build_object('status','blocked_invalid_route_distance','routeCreated',false);END IF;
+ seed:=p_origin||'|'||p_destination;
+ SELECT lo,hi INTO out_low,out_high FROM (VALUES ('Local',3,9),('Regional',5,11),('Medium',7,14),('Large',9,17),('Major Hub',12,21),('Mega Hub',15,28)) t(category,lo,hi) WHERE category=origin.game_category;
+ SELECT lo,hi INTO in_low,in_high FROM (VALUES ('Local',3,6),('Regional',4,8),('Medium',5,10),('Large',7,12),('Major Hub',9,15),('Mega Hub',11,19)) t(category,lo,hi) WHERE category=destination.game_category;
+ taxi_factor:=CASE WHEN aircraft.mtow_kg IS NULL OR aircraft.mtow_kg<=0 THEN 1 WHEN aircraft.mtow_kg<20000 THEN .8 WHEN aircraft.mtow_kg<50000 THEN .9 WHEN aircraft.mtow_kg<100000 THEN 1 WHEN aircraft.mtow_kg<200000 THEN 1.15 ELSE 1.3 END;
+ taxi_out:=greatest(1,round(airlinerra_game.section9_route_timing_pick_v1(seed||'|taxi-out',coalesce(out_low,7),coalesce(out_high,14))*taxi_factor));
+ taxi_in:=greatest(1,round(airlinerra_game.section9_route_timing_pick_v1(seed||'|taxi-in',coalesce(in_low,5),coalesce(in_high,10))*taxi_factor));
+ climb_factor:=least(1,greatest(.35,(km/speed*60+10)/45));
+ climb_base:=airlinerra_game.section9_route_timing_pick_v1(seed||'|climb',CASE WHEN km<300 THEN 10 ELSE 12 END,CASE WHEN km<300 THEN 14 ELSE 20 END);
+ descent_base:=airlinerra_game.section9_route_timing_pick_v1(seed||'|descent',CASE WHEN km<300 THEN 10 ELSE 12 END,CASE WHEN km<300 THEN 14 ELSE 20 END);
+ climb:=greatest(3,round(climb_base*climb_factor));descent:=greatest(3,round(descent_base*climb_factor));
+ scale:=least(1,km/((climb+descent)*speed*.65/60));
+ cruise:=greatest(0,km-(climb+descent)*speed*.65/60*scale)/speed*60;
+ minutes:=greatest(1,round(taxi_out+taxi_in+(climb+descent)*scale+cruise)::int);
+ clock_proof:=airlinerra_game.section9_verified_berlin_game_hour_v1();
+ IF clock_proof->>'authoritativeGameHourAvailable' IS DISTINCT FROM 'true' THEN RETURN jsonb_build_object('status','blocked_game_clock','routeCreated',false);END IF;
+ now_utc:=(clock_proof->>'gameHourUtc')::timestamptz;
+ SELECT min((d::date+(w->>'time')::time) AT TIME ZONE origin.timezone_iana) INTO first_dep
+ FROM generate_series((now_utc AT TIME ZONE origin.timezone_iana)::date,(now_utc AT TIME ZONE origin.timezone_iana)::date+7,interval '1 day') d
+ CROSS JOIN LATERAL jsonb_array_elements(p_weekly) w
+ WHERE (w->>'day')::integer=extract(isodow from d)::int-1
+ AND ((d::date+(w->>'time')::time) AT TIME ZONE origin.timezone_iana)>now_utc;
+ IF first_dep IS NULL THEN RETURN jsonb_build_object('status','blocked_no_upcoming_departure','routeCreated',false);END IF;
+ first_arr:=first_dep+make_interval(mins=>minutes);
+ result:=airlinerra_game.section9_create_active_single_route_v1(p_player,p_airline,p_aircraft,p_flight,p_origin,p_destination,first_dep,first_arr,p_weekly,p_depart_stand,p_arrive_stand,p_turnaround,p_fare);
+ IF result->>'routeCreated'='true' THEN
+  result:=result||jsonb_build_object('referenceDepartureUtc',first_dep,'referenceArrivalUtc',first_arr,'estimatedDurationMinutes',minutes);
+ END IF;
+ RETURN result;
+END $fn$;
+REVOKE ALL ON FUNCTION airlinerra_game.section9_create_active_route_from_weekly_v1(uuid,uuid,uuid,text,text,text,jsonb,text,text,int,numeric) FROM PUBLIC,anon,authenticated,service_role;
 COMMIT;
