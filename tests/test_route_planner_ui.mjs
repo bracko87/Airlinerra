@@ -310,7 +310,7 @@ test('My Routes is a plain one-line table with weekday indicators and a text edi
   read('../website/player-app.css')
  ]);
  assert.match(operations,/operations-route-directory-row/);
- assert.match(operations,/const headings=\['Flight','City to city','Departure','Arrival','Aircraft','Weekly days','Saved as','More'\]/);
+ assert.match(operations,/const headings=\['Flight','City to city','Departure','Arrival','Aircraft','Weekly days','Status','More'\]/);
  assert.match(operations,/className='operations-route-open-text'/);
  assert.match(operations,/data[s]et\.opsRouteEdit/);
  assert.match(operations,/goTo\?\.\('routes'\)/);
@@ -343,7 +343,8 @@ test('Step 2 inherits departure stand and keeps arrival stand selector, includin
  assert.ok(markup.includes('id="route-aircraft-position-status"'));
  assert.ok(markup.includes('id="route-aircraft-timeline-content"'));
  assert.match(source,/const timeline=selectedAircraftTimeline\(\)/);
- assert.match(source,/if\(timeline\.errors\.length\)/);
+ assert.match(source,/const blockingTimelineErrors=timeline\.errors\.filter\(issue=>issue\.code!=='AIRCRAFT_WRONG_AIRPORT'\)/);
+ assert.match(source,/if\(blockingTimelineErrors\.length\)/);
  assert.match(source,/Aircraft schedule conflict:/);
  assert.match(source,/departureStand:departureStandFromTimeline\(selectedAircraftTimeline\(\)\)/);
  assert.match(source,/arrivalStand:\$\('route-arrival-stand'\)\?\.value/);
@@ -351,7 +352,7 @@ test('Step 2 inherits departure stand and keeps arrival stand selector, includin
  const office=await read('../website/airline-workspace.mjs');
  assert.match(office,/fleet-detail-name/);
  assert.match(office,/fleet-detail-location/);
- assert.match(office,/buildAirlineWeeklyBoard/);
+ assert.match(office,/buildDatedCalendar\(enriched,scheduleSnapshot\?\.events,selectedDate\.iso\)/);
 });
 
 
