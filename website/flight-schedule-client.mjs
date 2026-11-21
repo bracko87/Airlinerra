@@ -97,6 +97,7 @@ export function createFlightScheduleClient({auth,origin,fetchImpl=(...args)=>fet
  }
  return Object.freeze({
   list:airlineId=>post({action:'list',airlineId}),
+  aircraftCalendar:airlineId=>post({action:'aircraft-calendar',airlineId}),
   commissioningStatus:({airlineId,aircraftInventoryId})=>
     post({action:'commissioning-status',airlineId,aircraftInventoryId}),
   commissioningRequest:({airlineId,aircraftInventoryId})=>
