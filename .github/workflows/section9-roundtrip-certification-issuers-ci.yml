@@ -1,7 +1,7 @@
 name: Isolated independent FRA-MUC roundtrip certificate orchestration
 on:
   push:
-    branches: [main]
+    branches: [main, commercial-flight-lifecycle]
     paths:
       - 'server/section9-roundtrip-certification-coordinator.mjs'
       - 'server/section9-future-certification-authorities.mjs'
