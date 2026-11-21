@@ -195,7 +195,7 @@ BEGIN
  IF current_user IS DISTINCT FROM 'postgres' THEN RAISE EXCEPTION USING ERRCODE='42501',MESSAGE='PRIVATE_GAME_ROUTE_CREATION_ONLY';END IF;
  IF p_weekly IS NULL OR jsonb_typeof(p_weekly)<>'array' OR jsonb_array_length(p_weekly) NOT BETWEEN 1 AND 7
  THEN RETURN jsonb_build_object('status','blocked_invalid_weekly_schedule','routeCreated',false);END IF;
- IF EXISTS(SELECT 1 FROM jsonb_array_elements(p_weekly) w WHERE coalesce(w->>'day','')!~'^[0-6] OR coalesce(w->>'time','')!~'^([01][0-9]|2[0-3]):[0-5][0-9])
+ IF EXISTS(SELECT 1 FROM jsonb_array_elements(p_weekly) w WHERE coalesce(w->>'day','')!~'^[0-6]$' OR coalesce(w->>'time','')!~'^([01][0-9]|2[0-3]):[0-5][0-9]$')
  OR (SELECT count(DISTINCT w->>'day') FROM jsonb_array_elements(p_weekly) w)<>jsonb_array_length(p_weekly)
  THEN RETURN jsonb_build_object('status','blocked_invalid_weekly_schedule','routeCreated',false);END IF;
  SELECT a.*,u.game_category INTO origin FROM airlinerra_game.airport_reference_profiles a
