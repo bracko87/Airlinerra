@@ -38,6 +38,7 @@ const DEMAND_FIELDS=new Set([...CHECK_FIELDS,'month']);
 const FINANCIAL_FIELDS=new Set([...CHECK_FIELDS,'loadPercent','parkingMinutes']);
 const FEE_PREVIEW_FIELDS=new Set([...BASE_FIELDS,'aircraftInventoryId','originAirportKey',
  'destinationAirportKey','departureStand','arrivalStand','parkingMinutes']);
+const ROUTE_FORECAST_FIELDS=new Set([...FEE_PREVIEW_FIELDS,'loadPercent','economyFareUsd']);
 const ROTATION_FIELDS=new Set([...CHECK_FIELDS,'startDate','days']);
 const CREW_PLAN_FIELDS=new Set([...CHECK_FIELDS,'crewId','weeklyEntry','decision']);
 const CREW_HIRE_FIELDS=new Set([...CHECK_FIELDS,'candidateSlot']);
@@ -177,6 +178,8 @@ export function validateFlightSchedulePayload(body){
    ['plan','remove'].includes(body.decision);
  if(body.action==='commercial-read')
   return withinFields(body,CHECK_FIELDS)&&uuid(body.scheduleId);
+ if(body.action==='route-forecast')return withinFields(body,ROUTE_FORECAST_FIELDS)&&Object.keys(body).length===10&&uuid(body.aircraftInventoryId)&&AIRPORT.test(body.originAirportKey||'')&&AIRPORT.test(body.destinationAirportKey||'')&&body.originAirportKey!==body.destinationAirportKey&&['terminal','remote'].includes(body.departureStand)&&['terminal','remote'].includes(body.arrivalStand)&&Number.isInteger(body.parkingMinutes)&&body.parkingMinutes>=0&&body.parkingMinutes<=10080&&Number.isInteger(body.loadPercent)&&body.loadPercent>=0&&body.loadPercent<=100&&(body.economyFareUsd===null||Number.isInteger(body.economyFareUsd)&&body.economyFareUsd>=0&&body.economyFareUsd<=100000);
+ if(body.action==='operational-bookings')return withinFields(body,CHECK_FIELDS)&&uuid(body.scheduleId);
  if(body.action==='fee-preview')
   return withinFields(body,FEE_PREVIEW_FIELDS)&&
    Object.keys(body).length===8&&uuid(body.aircraftInventoryId)&&
@@ -241,6 +244,16 @@ export function nextWeeklyDepartureGameDate(gameDate,weeklySchedule,launchDelayD
  return null;
 }
 export const SCHEDULE_SQL=Object.freeze({
+ routeForecast:`SELECT airlinerra_game.section9_owned_route_commercial_forecast_v1($1::uuid,$2::uuid,$3::uuid,$4::text,$5::text,$6::text,$7::text,$8::int,$9::int,$10::numeric) AS result`,
+ operatingBookings:`SELECT o.flight_local_date AS "flightDate",o.departure_utc AS "departureUtc",o.arrival_utc AS "arrivalUtc",o.booking_status AS "bookingStatus",o.verified_passenger_seats AS "capacity",o.booked_seats AS "bookedSeats",
+ COALESCE((SELECT sum(b.seats_requested*b.quoted_fare_usd) FROM airlinerra_game.section9_passenger_reservation_batches_v1 b WHERE b.occurrence_id=o.id AND b.reservation_status='reserved'),0)::float8 AS "reservedTicketRevenueUsd"
+ FROM airlinerra_game.section9_dated_flight_occurrences_v1 o
+ JOIN airlinerra_game.airline_flight_schedule_drafts_v1 s ON s.id=o.schedule_id AND s.airline_id=o.airline_id AND s.version=o.schedule_version AND s.status='active' AND s.operationally_verified
+ JOIN airlinerra_game.airlines a ON a.id=o.airline_id AND a.owner_player_id=$1::uuid
+ CROSS JOIN LATERAL (SELECT airlinerra_game.section9_verified_berlin_game_hour_v1() AS proof) clk
+ WHERE o.world_id=1 AND o.airline_id=$2::uuid AND o.schedule_id=$3::uuid AND o.source_kind='game_verified_saleable_schedule_v1'
+ AND clk.proof->>'authoritativeGameHourAvailable'='true' AND o.departure_utc>=(clk.proof->>'gameHourUtc')::timestamptz
+ AND o.departure_utc<(clk.proof->>'gameHourUtc')::timestamptz+interval '7 days' ORDER BY o.departure_utc LIMIT 7`,
  singleCreate:`SELECT airlinerra_game.section9_create_active_route_from_weekly_v1($1::uuid,$2::uuid,$3::uuid,$4::text,$5::text,$6::text,$7::jsonb,$8::text,$9::text,$10::integer,$11::numeric) AS result`,
  operationalReadiness:`SELECT world_id,world_state,confirmed_game_date,
   authoritative_clock_connected,clock_producer_enabled,
@@ -1099,6 +1112,18 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
     if(response.rowCount!==1||!response.rows[0]?.result)
      return respond(503,{error:'Commercial plan was not saved'});
     return respond(200,response.rows[0].result);
+   }
+   if(body.action==='route-forecast'){
+    const reply=await client.query(SCHEDULE_SQL.routeForecast,[userId,body.airlineId,body.aircraftInventoryId,body.originAirportKey,body.destinationAirportKey,body.departureStand,body.arrivalStand,body.parkingMinutes,body.loadPercent,body.economyFareUsd]);
+    const q=reply.rows?.[0]?.result;
+    if(reply.rowCount!==1||q?.status!=='route_phase1_forecast'||q.airlineId!==body.airlineId||q.aircraftInventoryId!==body.aircraftInventoryId||q.originAirportKey!==body.originAirportKey||q.destinationAirportKey!==body.destinationAirportKey||q.readOnly!==true||q.ledgerPosted!==false)return respond(409,{error:'ROUTE_FORECAST_UNAVAILABLE'});
+    return respond(200,q);
+   }
+   if(body.action==='operational-bookings'){
+    const owner=await client.query(SCHEDULE_SQL.owner,[body.airlineId,userId]);
+    if(owner.rowCount!==1)return respond(403,{error:'Airline not owned by this account'});
+    const reply=await client.query(SCHEDULE_SQL.operatingBookings,[userId,body.airlineId,body.scheduleId]);
+    return respond(200,{status:'operating_booking_window',readOnly:true,scheduleId:body.scheduleId,occurrences:reply.rows});
    }
    if(body.action==='fee-preview'){
     const owned=await client.query(SCHEDULE_SQL.feeAircraft,[
