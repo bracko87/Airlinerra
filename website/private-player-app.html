@@ -164,6 +164,17 @@
               <p class="dashboard-data-note" id="dashboard-traffic-note">Passenger, cargo and network statistics are awaiting live flight operations.</p>
             </article>
           </div>
+          <article class="panel dashboard-insights-panel">
+            <span class="panel-kicker">PASSENGER EXPERIENCE</span><h2>Airline reputation</h2>
+            <div class="dashboard-stat-list">
+              <div><span>Airline reputation</span><strong id="dashboard-reputation">Not available</strong></div>
+              <meter id="dashboard-reputation-meter" min="0" max="100" low="45" high="75" optimum="100" value="0" aria-label="Airline reputation out of 100" style="width:100%" hidden></meter>
+              <div><span>Average passenger satisfaction</span><strong id="dashboard-satisfaction">Not available</strong></div>
+              <div><span>Passenger experiences (90 game days)</span><strong id="dashboard-experience-count">-</strong></div>
+              <div><span>Reputation effect on new direct bookings</span><strong id="dashboard-reputation-demand">Not available</strong></div>
+            </div>
+            <p id="dashboard-reputation-note" class="dashboard-data-note" aria-live="polite">Waiting for verified reputation data.</p>
+          </article>
           <div class="dashboard-full-flights">
             <article class="panel dashboard-flights-panel dashboard-flights-full">
               <div class="dashboard-section-title">
