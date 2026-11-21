@@ -104,6 +104,7 @@ export function createFlightScheduleClient({auth,origin,fetchImpl=(...args)=>fet
     post({action:'commissioning-request',airlineId,aircraftInventoryId}),
   maintenancePolicyList:({airlineId,aircraftInventoryId})=>post({action:'maintenance-policy-list',airlineId,aircraftInventoryId}),
   maintenancePolicySave:({airlineId,aircraftInventoryId,checkCode,airportKey=null,providerKey=null,enabled,maxCostUsd=null})=>post({action:'maintenance-policy-save',airlineId,aircraftInventoryId,checkCode,airportKey,providerKey,enabled,maxCostUsd}),
+  maintenanceRelocationQuote:({airlineId,aircraftInventoryId,checkCode,airportKey,providerKey,startUtc=null})=>post({action:'maintenance-relocation-quote',airlineId,aircraftInventoryId,checkCode,airportKey,providerKey,startUtc}),
   maintenanceProviderBook:({airlineId,aircraftInventoryId,checkCode,airportKey,providerKey,startUtc=null})=>post({action:'maintenance-provider-book',airlineId,aircraftInventoryId,checkCode,airportKey,providerKey,startUtc}),
   maintenanceProviderQuotes:({airlineId,aircraftInventoryId,checkCode,airportKey=null})=>post({action:'maintenance-provider-quotes',airlineId,aircraftInventoryId,checkCode,airportKey}),
   maintenanceJobStatus:({airlineId,aircraftInventoryId})=>
