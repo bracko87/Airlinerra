@@ -272,7 +272,7 @@ export const SCHEDULE_SQL=Object.freeze({
  CROSS JOIN bounds t
  WHERE o.world_id=1 AND o.source_kind='game_verified_saleable_schedule_v1' AND o.departure_utc<t.start_utc+interval '7 days' AND o.arrival_utc+make_interval(mins=>o.turnaround_minutes)>t.start_utc
  UNION ALL
- SELECT j.job_id::text,j.aircraft_inventory_id::text,'maintenance',upper(j.check_code)||' check',
+ SELECT j.job_id::text,j.aircraft_inventory_id::text,'maintenance',upper(j.check_code)||' check'||CASE WHEN j.provider_name IS NOT NULL THEN ' - '||j.provider_name ELSE '' END,
  j.game_start_utc,NULL::timestamptz,CASE WHEN j.status='payment_required' THEN greatest(j.game_end_utc,t.start_utc+interval '7 days') ELSE j.game_end_utc END,
  0,j.status,coalesce(a.game_lookup_code,j.airport_key),NULL::text,j.quoted_cost_usd
  FROM owner JOIN airlinerra_game.section9_game_maintenance_jobs_v1 j ON j.airline_id=owner.id
