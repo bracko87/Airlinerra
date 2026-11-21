@@ -964,6 +964,22 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
       catch{warning.textContent='Cancellation not verified. Refresh the status.';cancelTrip.disabled=false;}
      });
     }
+    if(trip.canCancelReturn&&tripReply.bookingEnabled){
+     const recoveryTime=doc.createElement('input');recoveryTime.type='datetime-local';recoveryTime.setAttribute('aria-label','Replacement return departure, local time');
+     const recover=doc.createElement('button');recover.type='button';recover.className='secondary';recover.textContent='Reserve replacement return';
+     const recoveryNote=doc.createElement('span');row.append(recoveryTime,recover,recoveryNote);
+     recover.addEventListener('click',async()=>{
+      if(!stillSelected()||recover.disabled)return;
+      const stamp=recoveryTime.value?new Date(recoveryTime.value):null;
+      if(!stamp||!Number.isFinite(stamp.getTime())){recoveryNote.textContent='Select a new departure time.';return;}
+      recover.disabled=true;
+      try{
+       const r=await data.scheduler.maintenanceRelocationRecover({airlineId,aircraftInventoryId:aircraftId,tripId:trip.tripId,startUtc:stamp.toISOString().replace(/\.\d{3}Z$/,'Z')});
+       if(r?.rescheduled!==true){recoveryNote.textContent=String(r?.status||'Return not confirmed').replaceAll('_',' ');recover.disabled=false;return;}
+       if(stillSelected()){await loadGameMaintenanceJobs(aircraftId);void loadAirlineSchedule();}
+      }catch{recoveryNote.textContent='Return rescheduling not verified; refresh status.';recover.disabled=false;}
+     });
+    }
     tripStatus.append(row);
    }
    if(!q.quotes.length){host.textContent='No compatible providers for this check.';return;}
