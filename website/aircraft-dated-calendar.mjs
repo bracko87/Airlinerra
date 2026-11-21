@@ -43,6 +43,8 @@ export function renderDatedCalendar(doc,host,rows,date){
  const body=add(doc,table,'tbody');
  for(const row of rows){
   const tr=add(doc,body,'tr'),id=add(doc,tr,'th',row.registration,'schedule-board-aircraft-col');
+  if(row.nickname)add(doc,id,'div',row.nickname,'schedule-board-nickname');
+  if(row.model)add(doc,id,'div',[row.manufacturer,row.model].filter(Boolean).join(' '),'schedule-board-name');
   add(doc,id,'div',row.usage.percent+'% scheduled utilization'+(row.usage.overloaded?' - overloaded':''),'hint');
   const track=add(doc,add(doc,tr,'td'),'div',null,'schedule-board-day-track');
   if(!row.blocks.length)add(doc,track,'p','No confirmed flights or maintenance on this date.','hint');
