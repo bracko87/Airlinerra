@@ -229,7 +229,7 @@ const pages=Object.freeze({
    button('fleet','Return to my fleet'),'MAINTENANCE NETWORK'),
  'routes':()=>routePlannerMarkup(),
  'schedule':()=>card('Aircraft daily flight schedule',
-   '<p class="hint">Booked flights only · Today and the following six Berlin calendar days. Unconfirmed route plans remain under My Routes and are not shown here.</p>'+ 
+   '<p class="hint">Confirmed flights and maintenance · Today and the next six game dates. Times shown in UTC. Unconfirmed route plans are excluded.</p>'+ 
    '<div class="schedule-board-toolbar">'+
     '<div class="schedule-day-switch" role="group" aria-label="Choose a date in the next seven days">'+
      '<button type="button" class="secondary" id="schedule-day-prev" aria-label="Previous day">◀</button>'+
@@ -240,7 +240,7 @@ const pages=Object.freeze({
      '<button type="button" class="secondary" id="schedule-refresh">Refresh timetable</button>'+
      button('routes','Create a route')+'</div>'+
    '</div>'+
-   '<p id="schedule-status" role="status" class="hint">Loading your aircraft and flight plans…</p>'+
+   '<p id="schedule-status" role="status" class="hint">Loading confirmed flights and maintenance…</p>'+
    '<div id="schedule-aircraft-board" class="schedule-aircraft-board" aria-label="Airline aircraft 24-hour daily flight timetable"></div>'+
    'AIRCRAFT × ONE DAY × 24 HOURS'),
  'finances':()=>card('Financial position',
@@ -587,7 +587,8 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    if(status)status.textContent='The server date is not verified.';
    return;
   }
-  const rows=scheduleReadError?null:buildDatedCalendar(scheduleSnapshot?.fleet,scheduleSnapshot?.events,selectedDate.iso);
+  const enriched=Array.isArray(scheduleSnapshot?.fleet)?scheduleSnapshot.fleet.map(a=>({...marketSnapshot?.fleet?.find(f=>f.id===a.id),...a})):null;
+  const rows=scheduleReadError?null:buildDatedCalendar(enriched,scheduleSnapshot?.events,selectedDate.iso);
   renderDatedCalendar(doc,host,rows,selectedDate.iso);
   const status=$('schedule-status');
   if(status)status.textContent=rows===null?'Verified calendar data unavailable. Refresh to retry.':
