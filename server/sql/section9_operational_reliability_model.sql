@@ -42,7 +42,7 @@ REVOKE ALL ON FUNCTION airlinerra_game.section9_owned_aircraft_reliability_v1(uu
 -- No slot, booking, movement or ledger changes. A cancelled flight never
 -- moves the aircraft. Any following leg at the wrong airport is cancelled.
 CREATE OR REPLACE FUNCTION airlinerra_game.section9_preview_delay_rotation_v1(p_airport text,p_available timestamptz,p_legs jsonb,p_cancellation_minutes integer DEFAULT 180)
-RETURNS jsonb LANGUAGE plpgsql IMMUTABLE SECURITY INVOKER SET search_path TO 'pg_catalog' AS $fn$
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path TO 'pg_catalog' AS $fn$
 DECLARE l jsonb; dep timestamptz; arr timestamptz; actual_dep timestamptz; actual_arr timestamptz; available timestamptz:=p_available; airport text:=p_airport; last_scheduled timestamptz; technical int; buffer int; delay_min int; rows jsonb:='[]'::jsonb; why text; ids text[]:=ARRAY[]::text[];
 BEGIN
  IF p_airport IS NULL OR p_available IS NULL OR jsonb_typeof(p_legs) IS DISTINCT FROM 'array' OR jsonb_array_length(p_legs)>100 OR p_cancellation_minutes IS NULL OR p_cancellation_minutes NOT BETWEEN 30 AND 720 THEN RAISE EXCEPTION 'INVALID_DELAY_SCENARIO';END IF;
