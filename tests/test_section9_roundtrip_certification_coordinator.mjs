@@ -10,6 +10,8 @@ import {createSection9GameSlotClearanceIssuer}
  from '../server/section9-game-slot-clearance-issuer.mjs';
 import {createSection9SignedCertificationIngress}
  from '../server/section9-signed-certification-ingress.mjs';
+import {createSection9ExecutionFinanceEvidenceSigner}
+ from '../server/section9-execution-finance-evidence-signer.mjs';
 const AIRLINE='11111111-1111-4111-8111-111111111111';
 const OUT='44444444-4444-4444-8444-444444444444';
 const BACK='55555555-5555-4555-8555-555555555555';
@@ -33,7 +35,7 @@ const pair={
  airlineId:AIRLINE,outboundScheduleId:OUT,returnScheduleId:BACK,
  outboundVersion:1,returnVersion:1,gameDate:DAY
 };
-function build({deny=null,replay=false,wrongIdentity=false}={}){
+function build({deny=null,replay=false,wrongIdentity=false,full=false}={}){
  const signatures=[],checks=[];
  const issuer=[];
  for(const type of SECTION9_ROUNDTRIP_EXISTING_AUTHORITIES){
@@ -102,9 +104,57 @@ function build({deny=null,replay=false,wrongIdentity=false}={}){
    });
   issuer.push(instance);
  }
+ const extra={};
+ if(full){
+  for(const [name,type] of [
+   ['executionIssuer','trusted_flight_execution'],
+   ['financeIssuer','commercial_finance']
+  ]){
+   const key='test-independent-roundtrip-key-for-'+type;
+   const ingress=createSection9SignedCertificationIngress({
+    clearanceType:type,verifierSecret:key,
+    database:{async connect(){return {
+     release(){},
+     async query(sql,args){
+      signatures.push({type,scheduleId:args[1],eventId:args[5]});
+      assert.equal(args[10].length,64);
+      return {rowCount:1,rows:[{result:{
+       status:replay?'certification_event_replayed':'certification_event_recorded',
+       eventId:args[5],scheduleId:args[1],scheduleVersion:args[2],
+       clearanceType:type,reviewStatus:'certified',replayed:replay,
+       certificateChanged:!replay,activationPreparationInvalidated:true,
+       flightActivated:false,movementRecorded:false,bookingsCreated:false,ledgerPosted:false
+      }}]};
+     }
+    }}}
+   });
+   extra[name]=createSection9ExecutionFinanceEvidenceSigner({
+    clearanceType:type,authoritySecret:key,certificationIngress:ingress,
+    database:{async connect(){return {
+     release(){},
+     async query(sql,args){
+      const [airlineId,scheduleId,scheduleVersion,gameDate]=args;
+      checks.push({type,scheduleId,sql});
+      const blocked=deny?.type===type&&deny.scheduleId===scheduleId;
+      const hash=(scheduleId===OUT?'a':'b').repeat(31)+(type==='commercial_finance'?'c':'d');
+      return {rowCount:1,rows:[{result:{
+       status:blocked?'blocked_unreleased_execution_finance_source_snapshot':'source_snapshot_candidate_not_authorized',
+       worldId:1,airlineId,scheduleId,scheduleVersion,gameDate,clearanceType:type,
+       snapshotVersion:'SECTION9_INDEPENDENT_SOURCE_SNAPSHOT_CANDIDATE_V1',
+       candidateReady:!blocked,sourceFingerprint:blocked?null:hash,
+       sourceReference:blocked?null:'candidate-execution-finance-v1-'+hash,
+       blockers:blocked?['TEST_DENIED_SOURCE']:[],
+       readOnly:true,verified:false,certificateIssued:false,sourceAuthorityReleased:false,
+       flightActivated:false,movementRecorded:false,bookingsCreated:false,ledgerPosted:false
+      }}]};
+     }
+    }}}
+   });
+  }
+ }
  return {
   service:createSection9RoundtripCertificationCoordinator({
-   operatorIssuer:issuer[0],routeRightsIssuer:issuer[1],slotIssuer:issuer[2]}),
+   operatorIssuer:issuer[0],routeRightsIssuer:issuer[1],slotIssuer:issuer[2],...extra}),
   checks,signatures
  };
 }
@@ -262,4 +312,33 @@ test('missing inspector remains a diagnostic-only six-clearance workflow',async(
  assert.equal(result.confirmedCertificates,6);
  assert.deepEqual(result.sourceInspections,[]);
  assert.equal(result.certificationComplete,false);
+});
+
+test('complete reciprocal certification uses all five independently signed issuer paths',async()=>{
+ for(const replay of [false,true]){
+  const b=build({full:true,replay});
+  const r=await b.service.certifyPreparedPair(pair);
+  assert.equal(r.status,'roundtrip_all_five_clearance_types_verified_per_leg');
+  assert.equal(r.certificationComplete,true);
+  assert.equal(r.confirmedCertificates,10);
+  assert.deepEqual(r.remainingClearanceTypes,[]);
+  assert.equal(r.scheduleActivated,false);
+  assert.equal(r.flightActivated,false);
+  assert.equal(r.bookingsCreated,false);
+  assert.equal(r.ledgerPosted,false);
+  assert.equal(new Set(b.signatures.map(x=>x.eventId)).size,10);
+  for(const scheduleId of [OUT,BACK]){
+   assert.deepEqual(b.signatures.filter(x=>x.scheduleId===scheduleId)
+    .map(x=>x.type).sort(),[...SECTION9_ROUNDTRIP_REQUIRED_AUTHORITIES].sort());
+  }
+ }
+});
+test('return commercial finance denial prevents reciprocal certification completion',async()=>{
+ const b=build({full:true,deny:{type:'commercial_finance',scheduleId:BACK}});
+ const r=await b.service.certifyPreparedPair(pair);
+ assert.equal(r.certificationComplete,false);
+ assert.equal(r.confirmedCertificates,9);
+ assert.deepEqual(r.remainingClearanceTypes,['commercial_finance']);
+ assert.equal(r.scheduleActivated,false);
+ assert.equal(r.ledgerPosted,false);
 });
