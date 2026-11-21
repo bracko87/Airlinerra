@@ -137,7 +137,7 @@ export function validateFlightSchedulePayload(body){
   return a<b&&b<c&&c<d&&b-a<=72*3600000&&
     d-c<=72*3600000&&c-a<=72*3600000;
  }
- if(body.action==='list'||body.action==='partner-list')
+ if(body.action==='list'||body.action==='partner-list'||body.action==='aircraft-calendar')
   return withinFields(body,BASE_FIELDS);
  if(body.action==='commissioning-status'||body.action==='commissioning-request')
   return withinFields(body,COMMISSIONING_FIELDS)&&uuid(body.aircraftInventoryId);
@@ -244,6 +244,34 @@ export function nextWeeklyDepartureGameDate(gameDate,weeklySchedule,launchDelayD
  return null;
 }
 export const SCHEDULE_SQL=Object.freeze({
+ aircraftCalendar:`WITH owner AS (
+ SELECT a.id FROM airlinerra_game.airlines a JOIN airlinerra_game.world_memberships w ON w.world_id=a.world_id AND w.player_id=a.owner_player_id AND w.state='active'
+ WHERE a.id=$1::uuid AND a.owner_player_id=$2::uuid AND a.world_id=1
+), bounds AS (
+ SELECT (airlinerra_game.section9_verified_berlin_game_hour_v1()->>'gameDate')::date::timestamp AT TIME ZONE 'UTC' AS start_utc
+), events AS (
+ SELECT o.id::text AS id,o.aircraft_inventory_id::text AS "aircraftInventoryId",'flight'::text AS kind,s.flight_number AS label,
+ o.departure_utc AS "startUtc",o.arrival_utc AS "arrivalUtc",o.arrival_utc+make_interval(mins=>o.turnaround_minutes) AS "endUtc",
+ o.turnaround_minutes AS "turnaroundMinutes",o.booking_status AS status,
+ coalesce(a.game_lookup_code,o.origin_airport_key) AS "fromCode",coalesce(b.game_lookup_code,o.destination_airport_key) AS "toCode",
+ NULL::numeric AS "costUsd"
+ FROM owner JOIN airlinerra_game.section9_dated_flight_occurrences_v1 o ON o.airline_id=owner.id
+ JOIN airlinerra_game.airline_flight_schedule_drafts_v1 s ON s.id=o.schedule_id AND s.airline_id=o.airline_id AND s.version=o.schedule_version AND s.status='active' AND s.operationally_verified
+ LEFT JOIN airlinerra_game.airport_unified_operations_v1 a ON a.world_id=1 AND a.airport_key=o.origin_airport_key
+ LEFT JOIN airlinerra_game.airport_unified_operations_v1 b ON b.world_id=1 AND b.airport_key=o.destination_airport_key
+ CROSS JOIN bounds t
+ WHERE o.world_id=1 AND o.source_kind='game_verified_saleable_schedule_v1' AND o.departure_utc<t.start_utc+interval '7 days' AND o.arrival_utc+make_interval(mins=>o.turnaround_minutes)>t.start_utc
+ UNION ALL
+ SELECT j.job_id::text,j.aircraft_inventory_id::text,'maintenance',upper(j.check_code)||' check',
+ j.game_start_utc,NULL::timestamptz,CASE WHEN j.status='payment_required' THEN greatest(j.game_end_utc,t.start_utc+interval '7 days') ELSE j.game_end_utc END,
+ 0,j.status,coalesce(a.game_lookup_code,j.airport_key),NULL::text,j.quoted_cost_usd
+ FROM owner JOIN airlinerra_game.section9_game_maintenance_jobs_v1 j ON j.airline_id=owner.id
+ LEFT JOIN airlinerra_game.airport_unified_operations_v1 a ON a.world_id=1 AND a.airport_key=j.airport_key
+ CROSS JOIN bounds t
+ WHERE j.world_id=1 AND j.status IN ('scheduled','in_progress','payment_required','completed') AND j.game_start_utc<t.start_utc+interval '7 days'
+ AND (j.game_end_utc>t.start_utc OR j.status='payment_required')
+)
+SELECT * FROM events ORDER BY "startUtc",id`,
  routeForecast:`SELECT airlinerra_game.section9_owned_route_commercial_forecast_v1($1::uuid,$2::uuid,$3::uuid,$4::text,$5::text,$6::text,$7::text,$8::int,$9::int,$10::numeric) AS result`,
  operatingBookings:`SELECT o.flight_local_date AS "flightDate",o.departure_utc AS "departureUtc",o.arrival_utc AS "arrivalUtc",o.booking_status AS "bookingStatus",o.verified_passenger_seats AS "capacity",o.booked_seats AS "bookedSeats",
  COALESCE((SELECT sum(b.seats_requested*b.quoted_fare_usd) FROM airlinerra_game.section9_passenger_reservation_batches_v1 b WHERE b.occurrence_id=o.id AND b.reservation_status='reserved'),0)::float8 AS "reservedTicketRevenueUsd"
@@ -551,6 +579,12 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
   let client;
   try{
    client=await database.connect();
+   if(body.action==='aircraft-calendar'){
+    const owner=await client.query(SCHEDULE_SQL.owner,[body.airlineId,userId]);
+    if(owner.rowCount!==1)return respond(403,{error:'Airline not owned by this account'});
+    const [fleet,events]=await Promise.all([client.query(SCHEDULE_SQL.fleet,[body.airlineId]),client.query(SCHEDULE_SQL.aircraftCalendar,[body.airlineId,userId])]);
+    return respond(200,{status:'verified_aircraft_calendar',readOnly:true,fleet:fleet.rows,events:events.rows});
+   }
    if(body.action==='list'){
     const owner=await client.query(SCHEDULE_SQL.owner,[body.airlineId,userId]);
     if(owner.rowCount!==1)return respond(403,{error:'Airline not owned by this account'});
