@@ -68,7 +68,7 @@ export function validWeeklyFlightSchedule(value){
 export function validateFlightSchedulePayload(body){
  if(!body||typeof body!=='object'||Array.isArray(body)||
     !uuid(body.airlineId)||typeof body.action!=='string')return false;
- if(body.action==='plan-save'||body.action==='operational-create'){
+ if(body.action==='plan-save'||body.action==='operational-create'||body.action==='operational-single-create'){
   if(!withinFields(body,PLAN_FIELDS)||!uuid(body.aircraftInventoryId)||
      !/^[A-Z0-9]{2}[0-9]{1,4}$/.test(body.flightNumber||'')||
      !AIRPORT.test(body.originAirportKey||'')||
@@ -241,6 +241,7 @@ export function nextWeeklyDepartureGameDate(gameDate,weeklySchedule,launchDelayD
  return null;
 }
 export const SCHEDULE_SQL=Object.freeze({
+ singleCreate:`SELECT airlinerra_game.section9_create_active_route_from_weekly_v1($1::uuid,$2::uuid,$3::uuid,$4::text,$5::text,$6::text,$7::jsonb,$8::text,$9::text,$10::integer,$11::numeric) AS result`,
  operationalReadiness:`SELECT world_id,world_state,confirmed_game_date,
   authoritative_clock_connected,clock_producer_enabled,
   operational_certification_records,aircraft_operation_jobs,
@@ -787,6 +788,30 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
         'ROUNDTRIP_TURNAROUND_TOO_SHORT'].includes(result.status))
      return respond(503,{error:'ROUNDTRIP_PREVIEW_NOT_VERIFIED'});
     return respond(200,result);
+   }
+   if(body.action==='operational-single-create'){
+    const owner=await client.query(SCHEDULE_SQL.owner,[body.airlineId,userId]);
+    if(owner.rowCount!==1)return respond(403,{error:'Airline not owned by this account'});
+    // Do not silently discard unsupported fare classes/services or deferred launches.
+    if(!Number.isInteger(body.fares.economy)||body.fares.economy<1||
+       ['premium','business','first'].some(label=>body.fares[label]!==null)||
+       body.service.cargo!=='none'||!['basic','none',undefined].includes(body.service.cabinPackageId)||
+       body.service.onboard!=='basic'||body.service.baggage!=='standard'||(body.launchDelayDays??0)!==0)
+     return respond(409,{error:'SINGLE_ROUTE_PHASE1_OPTIONS_UNSUPPORTED',reason:'SINGLE_ROUTE_PHASE1_OPTIONS_UNSUPPORTED',routeCreated:false});
+    const response=await client.query(SCHEDULE_SQL.singleCreate,[
+     userId,body.airlineId,body.aircraftInventoryId,body.flightNumber,
+     body.originAirportKey,body.destinationAirportKey,JSON.stringify(body.weeklySchedule),
+     body.departureStand??'terminal',body.arrivalStand,body.turnaroundMinutes,body.fares.economy
+    ]);
+    const result=response.rows?.[0]?.result;
+    if(response.rowCount!==1||!result)return respond(503,{error:'SINGLE_ROUTE_RECEIPT_UNAVAILABLE',routeCreated:false});
+    if(result.status==='active'&&result.routeCreated===true&&result.activated===true&&
+       result.slotsReserved===true&&result.bookingEnabled===true&&uuid(result.scheduleId)&&result.ledgerPosted===false)
+     return respond(200,result);
+    if(typeof result.status==='string'&&/^blocked_[a-z_]+$/.test(result.status)&&result.routeCreated===false)
+     return respond(409,{error:'ROUTE_CREATION_BLOCKED',reason:result.status,routeCreated:false,
+      details:result.details||null,clearanceType:result.clearanceType||null});
+    return respond(503,{error:'SINGLE_ROUTE_RECEIPT_UNAVAILABLE',routeCreated:false});
    }
    if(body.action==='operational-create'){
     // Create route never silently saves a planning-only record.
