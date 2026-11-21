@@ -1910,7 +1910,8 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    return;
   }
   const canCreateOperational=typeof data?.scheduler?.operationalCreate==='function';
-  if(!canCreateOperational){
+  const canSavePlanning=typeof data?.scheduler?.planSave==='function';
+  if(!canCreateOperational&&!canSavePlanning){
    message('route-plan-status',
     'NOT CREATED — the operational flight service is not connected. No route or flight was saved.');
    return;
@@ -1924,8 +1925,10 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    return;
   }
   const timeline=selectedAircraftTimeline();
-  if(timeline.errors.length){
-   message('route-plan-status','Aircraft schedule conflict: '+timeline.errors[0].text);
+  const blockingTimelineErrors=timeline.errors.filter(issue=>issue.code!=='AIRCRAFT_WRONG_AIRPORT');
+  const locationWarnings=timeline.errors.filter(issue=>issue.code==='AIRCRAFT_WRONG_AIRPORT');
+  if(blockingTimelineErrors.length){
+   message('route-plan-status','Aircraft schedule conflict: '+blockingTimelineErrors[0].text);
    const details=$('route-aircraft-timeline');if(details)details.open=true;
    return;
   }
@@ -1981,6 +1984,41 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    return;
   }
   const scheduler=data.scheduler;
+  const persistPlannedFlight=async(warning)=>{
+   if(!canSavePlanning){
+    message('route-plan-status','The flight planning service is unavailable. No flight was saved.');return false;
+   }
+   const submit=$('route-plan-save');if(submit)submit.disabled=true;
+   try{
+    const result=await scheduler.planSave({
+     airlineId:data.airline.id,aircraftInventoryId:ownedChoice.id,
+     flightNumber,originAirportKey:from.key,destinationAirportKey:to.key,
+     weeklySchedule:schedule,launchDelayDays,
+     departureStand:operation.departureStand,arrivalStand:operation.arrivalStand,
+     turnaroundMinutes:operation.turnaroundMinutes,fares:operation.fares,service:operation.service,
+     referenceDepartureUtc:draft.referenceDepartureUtc&&draft.referenceArrivalUtc?draft.referenceDepartureUtc:null,
+     referenceArrivalUtc:draft.referenceDepartureUtc&&draft.referenceArrivalUtc?draft.referenceArrivalUtc:null
+    });
+    if(result?.status!=='planning'||typeof result.planId!=='string'||
+       result.slotsReserved!==false||result.passengerBookingsCreated!==false||result.ledgerPosted!==false)
+     throw Error('POSITIONING_PLAN_NOT_CONFIRMED');
+    draft.serverPlanningId=result.planId;draft.status='planning';
+    try{await draftWrite('routes',[...filtered,draft]);await draftWrite('route',draft);}catch{}
+    doc.dispatchEvent(new CustomEvent('airlinerra:route-draft-saved',{detail:{flightNumber,serverSaved:true}}));
+    await loadOwnedScheduleData(data.airline.id);
+    await resetRouteForm({blank:true});
+    message('route-plan-status','Flight '+flightNumber+' saved in My Routes. '+warning+' Ticket sales and operation remain pending until the schedule is cleared.');
+    return true;
+   }catch{message('route-plan-status','The server did not confirm the planned flight. Check My Routes before retrying.');return false;}
+   finally{if(submit)submit.disabled=false;}
+  };
+  if(locationWarnings.length){
+   await persistPlannedFlight('Aircraft positioning warning: '+locationWarnings[0].text);
+   return;
+  }
+  if(!canCreateOperational){
+   await persistPlannedFlight('Awaiting operational clearance.');return;
+  }
   const source=suggestedSourceFlight;
   const matchingReturn=Boolean(source&&source.aircraftId===flightAircraft&&
     source.from?.key===to.key&&source.to?.key===from.key&&
@@ -2049,6 +2087,16 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
   }catch(error){
    const reason=String(error?.message||'');
    const blockers=Array.isArray(error?.operationalBlockers)?error.operationalBlockers:[];
+   // Only a confirmed server conflict is eligible for an independently
+   // validated planning save. Never retry an ambiguous transport failure
+   // or an unauthorized request as a new operational flight.
+   if(canSavePlanning&&reason.startsWith('SCHEDULE_CONFLICT_')&&
+      (error?.aircraftRotationWarning?.returnRequired===true||
+       error?.isAtomicRoundtrip===true||
+       reason.includes('GAME_ENGINE_NOT_READY')||
+       blockers.some(code=>code==='AIRCRAFT_NOT_VERIFIED_AT_ORIGIN'||code==='AIRCRAFT_STARTING_LOCATION_NOT_VERIFIED'))){
+    await persistPlannedFlight('Awaiting rotation or operational clearance.');return;
+   }
    if(error?.isAtomicRoundtrip===true){
     const launch=Array.isArray(error?.launchBlockers)?error.launchBlockers:[];
     const both=[...new Set([...blockers,...launch])];
