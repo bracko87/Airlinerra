@@ -627,7 +627,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
  // The country-picker constructor calls onSelect synchronously. Defer route
  // rendering until all planner callbacks, including preflight, are initialized.
  let plannerInitialized=false;
- const message=(id,value)=>{if($(id)){$(id).textContent=value;if(id==='route-plan-status')$(id).classList.remove('is-success');}};
+ const message=(id,value)=>{const el=$(id);if(el){el.textContent=value;if(id==='route-plan-status'){el.classList.remove('is-success');el.style.removeProperty('color');el.style.removeProperty('font-weight');}}};
  const selectedConfigurationId=()=>{
   const key=$('route-aircraft')?.value||'';
   if(/^catalog:[1-9][0-9]*$/.test(key))return Number(key.slice(8));
@@ -1916,9 +1916,10 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    const confirmation=$('route-plan-status');
    if(confirmation){
     confirmation.classList.add('is-success');
+    confirmation.style.color='#16803c';confirmation.style.fontWeight='600';
     confirmation.textContent='Route '+flightNumber+' successfully created. Active and open for bookings.';
     if(Number(result.futurePositionWarnings)>0){
-     const note=doc.createElement('span');note.className='route-save-warning';
+     const note=doc.createElement('span');note.className='route-save-warning';note.style.display='block';note.style.marginTop='6px';note.style.fontWeight='400';note.style.color='var(--muted, #6b5d36)';
      note.textContent='Future aircraft positioning warning: complete your weekly rotation before the affected departures.';
      confirmation.append(note);
     }
