@@ -30,6 +30,7 @@ const ROUNDTRIP_FIELDS=new Set([...BASE_FIELDS,'aircraftInventoryId',
  'turnaroundMinutes']);
 const ROUNDTRIP_CREATE_FIELDS=new Set([...ROUNDTRIP_FIELDS,'outboundFlightNumber',
  'returnFlightNumber']);
+const ROUNDTRIP_STAGE_FIELDS=new Set([...ROUNDTRIP_CREATE_FIELDS,'requestKey','outboundFareUsd','returnFareUsd']);
 const CHECK_FIELDS=new Set([...BASE_FIELDS,'scheduleId']);
 const COMMISSIONING_FIELDS=new Set([...BASE_FIELDS,'aircraftInventoryId']);
 const MAINTENANCE_JOB_FIELDS=new Set([...COMMISSIONING_FIELDS,'checkCode']);
@@ -106,11 +107,13 @@ export function validateFlightSchedulePayload(body){
   }
   return true;
  }
- if(body.action==='roundtrip-preview'||body.action==='operational-roundtrip-create'){
-  const create=body.action==='operational-roundtrip-create';
-  const fields=create?ROUNDTRIP_CREATE_FIELDS:ROUNDTRIP_FIELDS;
+ if(['roundtrip-preview','operational-roundtrip-create','operational-roundtrip-stage'].includes(body.action)){
+  const stage=body.action==='operational-roundtrip-stage';
+  const create=stage||body.action==='operational-roundtrip-create';
+  const fields=stage?ROUNDTRIP_STAGE_FIELDS:create?ROUNDTRIP_CREATE_FIELDS:ROUNDTRIP_FIELDS;
   if(!withinFields(body,fields)||
     Object.keys(body).length!==fields.size||
+    (stage&&(!uuid(body.requestKey)||![body.outboundFareUsd,body.returnFareUsd].every(v=>Number.isSafeInteger(v)&&v>=1&&v<=100000)||body.turnaroundMinutes<45))||
     (create&&(!/^[A-Z0-9]{2}[0-9]{1,4}$/.test(body.outboundFlightNumber||'')||
       !/^[A-Z0-9]{2}[0-9]{1,4}$/.test(body.returnFlightNumber||'')||
       body.outboundFlightNumber===body.returnFlightNumber))||
@@ -310,6 +313,11 @@ export const SCHEDULE_SQL=Object.freeze({
   $6::timestamptz,$7::timestamptz,$8::timestamptz,$9::timestamptz,
   $10::jsonb,$11::jsonb,$12::text,$13::text,$14::text,$15::text,
   $16::integer,28::integer) AS result`,
+ roundtripStage:`SELECT airlinerra_game.section9_stage_permitted_roundtrip_for_certification_v1(
+  $1::uuid,$2::uuid,$3::uuid,$4::uuid,$5::text,$6::text,$7::text,$8::text,
+  $9::timestamptz,$10::timestamptz,$11::timestamptz,$12::timestamptz,
+  $13::jsonb,$14::jsonb,$15::text,$16::text,$17::text,$18::text,
+  $19::integer,$20::numeric,$21::numeric,28::integer) AS result`,
  roundtripAtomicCreate:`SELECT airlinerra_game.section9_owned_atomic_roundtrip_operational_create_v1(
   $1::uuid,$2::uuid,$3::uuid,$4::text,$5::text,$6::text,$7::text,
   $8::timestamptz,$9::timestamptz,$10::timestamptz,$11::timestamptz,
@@ -696,6 +704,35 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
     if(result.status==='scheduled'||result.status==='game_maintenance_jobs'||
        result.status==='cancelled')return respond(200,result);
     return respond(409,{...result,created:false,aircraftClearedForFlight:false});
+   }
+   if(body.action==='operational-roundtrip-stage'){
+    const owner=await client.query(SCHEDULE_SQL.owner,[body.airlineId,userId]);
+    if(owner.rowCount!==1)return respond(403,{error:'Airline not owned by this account'});
+    const response=await client.query(SCHEDULE_SQL.roundtripStage,[
+      body.requestKey,userId,body.airlineId,body.aircraftInventoryId,
+      body.outboundFlightNumber,body.returnFlightNumber,
+      body.originAirportKey,body.destinationAirportKey,body.referenceDepartureUtc,body.referenceArrivalUtc,
+      body.returnDepartureUtc,body.returnArrivalUtc,JSON.stringify(body.weeklySchedule),
+      JSON.stringify(body.returnWeeklySchedule),body.departureStand,body.arrivalStand,
+      body.returnDepartureStand,body.returnArrivalStand,body.turnaroundMinutes,
+      body.outboundFareUsd,body.returnFareUsd
+    ]);
+    const result=response.rows?.[0]?.result;
+    if(response.rowCount!==1||!result||result.ledgerPosted!==false)
+     return respond(503,{error:'ROUNDTRIP_STAGE_RESPONSE_UNVERIFIED'});
+    if(result.status==='paired_drafts_saved_for_independent_certification'&&
+       result.pairStaged===true&&result.pairKey===body.requestKey&&
+       uuid(result.outboundScheduleId)&&uuid(result.returnScheduleId)&&result.outboundScheduleId!==result.returnScheduleId&&
+       result.operatingRouteCreated===false&&result.ticketSalesAvailable===false)
+      return respond(202,{...result,routeCreated:false,bookingEnabled:false});
+    if(result.status==='certification_pair_already_staged'&&result.replayed===true&&
+       uuid(result.outboundScheduleId)&&uuid(result.returnScheduleId)&&
+       ['awaiting_independent_certification','activated'].includes(result.certificationStatus))
+      return respond(200,{...result,routeCreated:result.certificationStatus==='activated',bookingEnabled:result.certificationStatus==='activated'});
+    if(result.pairStaged===false&&result.operatingRouteCreated===false&&
+       typeof result.status==='string'&&result.status.startsWith('blocked_'))
+      return respond(409,{...result,routeCreated:false,bookingEnabled:false});
+    return respond(503,{error:'ROUNDTRIP_STAGE_RESPONSE_UNVERIFIED'});
    }
    if(body.action==='operational-roundtrip-create'){
     // Atomic owner-scoped DB function. It must NEVER silently retain
