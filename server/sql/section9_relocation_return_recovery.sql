@@ -1,7 +1,7 @@
 BEGIN;
 CREATE OR REPLACE FUNCTION airlinerra_game.section9_reschedule_relocation_return_v1(p_player uuid,p_airline uuid,p_trip uuid,p_departure timestamptz)
 RETURNS jsonb LANGUAGE plpgsql SECURITY INVOKER SET search_path TO 'airlinerra_game','pg_catalog' AS $fn$
-DECLARE t record; j record; pos jsonb; q jsonb; flight jsonb; restriction jsonb; proof jsonb; v_now timestamptz; arr timestamptz; available timestamptz; duration int; turnaround int; config bigint;
+DECLARE t record; svc record; pos jsonb; q jsonb; flight jsonb; restriction jsonb; proof jsonb; v_now timestamptz; arr timestamptz; available timestamptz; duration int; turnaround int; config bigint;
 BEGIN
  IF current_user<>'postgres' THEN RAISE EXCEPTION USING ERRCODE='42501',MESSAGE='PRIVATE_RELOCATION_RECOVERY_ONLY';END IF;
  SELECT r.* INTO t FROM airlinerra_game.section9_maintenance_relocation_trips_v1 r JOIN airlinerra_game.airlines a ON a.id=r.airline_id AND a.owner_player_id=p_player AND a.world_id=1 JOIN airlinerra_game.world_memberships w ON w.world_id=1 AND w.player_id=p_player AND w.state='active' WHERE r.id=p_trip AND r.airline_id=p_airline AND r.owner_player_id=p_player FOR UPDATE OF r;
@@ -10,11 +10,11 @@ BEGIN
  SELECT f.configuration_id INTO config FROM airlinerra_game.airline_aircraft_inventory f WHERE f.id=t.aircraft_inventory_id AND f.airline_id=t.airline_id AND f.fleet_status='in_service' FOR UPDATE;
  IF NOT FOUND THEN RETURN jsonb_build_object('status','aircraft_unavailable','rescheduled',false,'ledgerPosted',false);END IF;
  IF EXISTS(SELECT 1 FROM airlinerra_game.section9_operated_flight_movements_v1 WHERE relocation_trip_id=p_trip AND weekly_entry=2 AND phase='departed') THEN RETURN jsonb_build_object('status','return_already_departed','rescheduled',false,'ledgerPosted',false);END IF;
- SELECT m.game_completed_at_utc,j.engine_completion_observed_at INTO j FROM airlinerra_game.section9_game_maintenance_jobs_v1 j JOIN airlinerra_game.section9_game_maintenance_service_receipts_v1 m ON m.job_id=j.job_id JOIN airlinerra_game.airline_ledger b ON b.id=m.paid_ledger_entry_id AND b.airline_id=t.airline_id AND b.entry_kind='EXPENSE' AND b.amount_usd=-m.settled_cost_usd WHERE j.job_id=t.maintenance_job_id AND j.status='completed' AND j.airline_id=t.airline_id AND j.aircraft_inventory_id=t.aircraft_inventory_id;
+ SELECT m.game_completed_at_utc,j.engine_completion_observed_at INTO svc FROM airlinerra_game.section9_game_maintenance_jobs_v1 j JOIN airlinerra_game.section9_game_maintenance_service_receipts_v1 m ON m.job_id=j.job_id JOIN airlinerra_game.airline_ledger b ON b.id=m.paid_ledger_entry_id AND b.airline_id=t.airline_id AND b.entry_kind='EXPENSE' AND b.amount_usd=-m.settled_cost_usd WHERE j.job_id=t.maintenance_job_id AND j.status='completed' AND j.airline_id=t.airline_id AND j.aircraft_inventory_id=t.aircraft_inventory_id;
  IF NOT FOUND THEN RETURN jsonb_build_object('status','relocation_service_not_completed','rescheduled',false,'ledgerPosted',false);END IF;
  v_now:=airlinerra_game.section9_verified_world_instant_v1();
  turnaround:=(t.quote->>'turnaroundMinutes')::int;duration:=(t.quote#>>'{return,flightMinutes}')::int;
- IF p_departure IS NULL OR p_departure<>date_trunc('second',p_departure) OR p_departure<v_now+interval '1 minute' OR p_departure>v_now+interval '7 days' OR p_departure<greatest(j.game_completed_at_utc,j.engine_completion_observed_at)+make_interval(mins=>turnaround) THEN RETURN jsonb_build_object('status','invalid_recovery_departure','rescheduled',false,'ledgerPosted',false);END IF;
+ IF p_departure IS NULL OR p_departure<>date_trunc('second',p_departure) OR p_departure<v_now+interval '1 minute' OR p_departure>v_now+interval '7 days' OR p_departure<greatest(svc.game_completed_at_utc,svc.engine_completion_observed_at)+make_interval(mins=>turnaround) THEN RETURN jsonb_build_object('status','invalid_recovery_departure','rescheduled',false,'ledgerPosted',false);END IF;
  arr:=p_departure+make_interval(mins=>duration);available:=arr+make_interval(mins=>turnaround);
  pos:=airlinerra_game.section9_owned_aircraft_operational_position_v1(p_player,p_airline,t.aircraft_inventory_id,(v_now AT TIME ZONE 'Europe/Berlin')::date);
  IF pos->>'verified' IS DISTINCT FROM 'true' OR pos->>'atGroundAirport' IS DISTINCT FROM 'true' OR pos->>'airportKey' IS DISTINCT FROM t.provider_airport_key THEN RETURN jsonb_build_object('status','relocation_position_unverified','rescheduled',false,'ledgerPosted',false);END IF;
