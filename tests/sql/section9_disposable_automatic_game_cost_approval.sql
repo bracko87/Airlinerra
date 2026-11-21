@@ -57,10 +57,14 @@ BEGIN
  UPDATE airlinerra_game.section9_game_flight_fuel_arrival_receipts_v1 SET onboard_after_arrival_kg=200;
  IF EXISTS(SELECT 1 FROM airlinerra_game.section9_flight_final_cost_approvals_v1 WHERE physical_flight_id=fid)
  THEN RAISE EXCEPTION 'DENIED_APPROVAL_INSERTED';END IF;
- r:=airlinerra_game.section9_approve_completed_game_flight_cost_v1(fid);
- IF r->>'status'<>'game_flight_cost_approved' OR (r->>'fuelCostUsd')::numeric<>300
- OR (r->>'airportCostUsd')::numeric<>200 OR r->>'ledgerPosted'<>'false'
- THEN RAISE EXCEPTION 'APPROVAL: %',r;END IF;
+ r:=airlinerra_game.section9_auto_approve_completed_game_flight_costs_v1(20);
+ IF r->>'status'<>'game_cost_batch_completed' OR (r->>'approved')::int<>1 OR (r->>'checked')::int<>1
+ THEN RAISE EXCEPTION 'BATCH: %',r;END IF;
+ IF NOT EXISTS(SELECT 1 FROM airlinerra_game.section9_flight_final_cost_approvals_v1
+ WHERE physical_flight_id=fid AND fuel_cost_usd=300 AND airport_navigation_cost_usd=200)
+ THEN RAISE EXCEPTION 'APPROVAL_AMOUNTS_INCORRECT';END IF;
+ r:=airlinerra_game.section9_auto_approve_completed_game_flight_costs_v1(20);
+ IF (r->>'checked')::int<>0 THEN RAISE EXCEPTION 'BATCH_REPEATED: %',r;END IF;
  r:=airlinerra_game.section9_approve_completed_game_flight_cost_v1(fid);
  IF r->>'status'<>'game_flight_cost_approval_replayed' THEN RAISE EXCEPTION 'REPLAY: %',r;END IF;
  IF (SELECT count(*) FROM airlinerra_game.section9_flight_final_cost_approvals_v1 WHERE physical_flight_id=fid)<>1
