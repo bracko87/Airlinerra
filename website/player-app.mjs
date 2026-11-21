@@ -676,7 +676,7 @@ async function loadPlayerReadData({local=false}={}){
     workspaceController?.updateData({connected:true,airline:first||null,worlds:data.worlds,
      countries:data.countries,reader:playerData,scheduler,fleetClient,cabinServiceClient,aircraftMedia:auth,
      playerDraftStore:draftStore});
-    operationsController?.updateData({connected:true,airline:first||null,worlds:data.worlds,countries:data.countries,reader:playerData,scheduler,playerDraftStore:draftStore});
+    operationsController?.updateData({connected:true,airline:first||null,worlds:data.worlds,countries:data.countries,reader:playerData,scheduler,fleetClient,playerDraftStore:draftStore});
   }
   catch{console.warn('Airlinerra secondary workspace failed to display');}
   if(first?.id)void loadManageAirlineLogo();
@@ -716,7 +716,7 @@ async function loadPlayerReadData({local=false}={}){
   playerData=null;
   hasRealAirline=false; // Unknown because the protected read failed - NOT proof no airline exists.
   workspaceController?.updateData({connected:false,airline:null,reader:null,scheduler:null,fleetClient:null,cabinServiceClient:null,aircraftMedia:null});
-  operationsController?.updateData({connected:false,airline:null,reader:null});
+  operationsController?.updateData({connected:false,airline:null,reader:null,fleetClient:null});
   currentAirline=null;
   renderAirlineDashboard(doc,{airline:null,ledgerEntries:null});
   doc.getElementById('top-airline-state').textContent='Airline data unavailable';
