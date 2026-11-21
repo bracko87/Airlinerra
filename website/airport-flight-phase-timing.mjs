@@ -19,15 +19,12 @@ const fingerprint=value=>{
 const pick=(range,key)=>range[0]+fingerprint(key)%(range[1]-range[0]+1);
 export function estimateFlightPhaseTiming({
  originAirportCategory=null,destinationAirportCategory=null,
- originAirportKey=null,destinationAirportKey=null,distanceKm=null
+ originAirportKey=null,destinationAirportKey=null,distanceKm=null,aircraftMtowKg=null,cruiseSpeedKmh=null
 }={}){
  const knownOrigin=Object.prototype.hasOwnProperty.call(TAXI_CATEGORY_MINUTES,originAirportCategory);
  const knownDestination=Object.prototype.hasOwnProperty.call(TAXI_CATEGORY_MINUTES,destinationAirportCategory);
  const anyKnown=knownOrigin||knownDestination;
- if(!anyKnown)return Object.freeze({
-  taxiOutMinutes:15,taxiInMinutes:10,climbMinutes:20,descentMinutes:20,
-  categoryBased:false,originCategoryKnown:false,destinationCategoryKnown:false
- });
+
  const origin=knownOrigin?TAXI_CATEGORY_MINUTES[originAirportCategory]:{out:[7,14]};
  const destination=knownDestination?TAXI_CATEGORY_MINUTES[destinationAirportCategory]:{in:[5,10]};
  const seed=String(originAirportKey||originAirportCategory||'generic')+'|'+
@@ -36,12 +33,24 @@ export function estimateFlightPhaseTiming({
  // Typical 10–20 min climb/descent reference, scaled down only on very
  // short sectors when there is insufficient distance for a normal climb.
  const range=distance<300?[10,14]:[12,20];
+ // Game assumptions: larger aircraft require more ground maneuvering time.
+ const mass=Number(aircraftMtowKg);
+ const taxiMultiplier=aircraftMtowKg==null||!Number.isFinite(mass)||mass<=0?1:
+  mass<20000?.8:mass<50000?.9:mass<100000?1:mass<200000?1.15:1.3;
+ const speed=Number(cruiseSpeedKmh);
+ // Continuous short-sector adjustment. Approximate standard airborne time
+ // before reducing climb/descent; taxi time is deliberately excluded.
+ const cruiseEquivalent=Number.isFinite(speed)&&speed>0?distance/speed*60:null;
+ const nominalAirborne=cruiseEquivalent===null?null:cruiseEquivalent+10;
+ const climbScale=nominalAirborne===null?1:Math.min(1,Math.max(.35,nominalAirborne/45));
+ const climbBase=anyKnown?pick(range,seed+'|climb'):20;
+ const descentBase=anyKnown?pick(range,seed+'|descent'):20;
  return Object.freeze({
-  taxiOutMinutes:pick(origin.out,seed+'|taxi-out'),
-  taxiInMinutes:pick(destination.in,seed+'|taxi-in'),
-  climbMinutes:pick(range,seed+'|climb'),
-  descentMinutes:pick(range,seed+'|descent'),
-  categoryBased:true,originCategoryKnown:knownOrigin,
+  taxiOutMinutes:Math.max(1,Math.round((anyKnown?pick(origin.out,seed+'|taxi-out'):15)*taxiMultiplier)),
+  taxiInMinutes:Math.max(1,Math.round((anyKnown?pick(destination.in,seed+'|taxi-in'):10)*taxiMultiplier)),
+  climbMinutes:Math.max(3,Math.round(climbBase*climbScale)),
+  descentMinutes:Math.max(3,Math.round(descentBase*climbScale)),
+  categoryBased:anyKnown,originCategoryKnown:knownOrigin,
   destinationCategoryKnown:knownDestination
  });
 }
