@@ -5,7 +5,7 @@ import {createAirportCountryPicker,populateAirportCountries,airportFlag,airportC
 import {renderRouteMap,routeDistanceKm} from './route-map.mjs';
 import {estimateFivePhaseFuel} from './flight-fuel-phase-engine.mjs';
 import {renderTrafficRightIndicators} from './route-traffic-rights.mjs';
-import {checkedRouteFeeBaseline} from './route-fee-preview.mjs';
+import {checkedRouteFeeBaseline,FIXED_AIRPORT_FEE_KEYS,VARIABLE_AIRPORT_FEE_KEYS} from './route-fee-preview.mjs';
 import {previewAirportFuelPrice} from './airport-fuel-price-preview.mjs';
 import {buildAircraftWeeklyTimeline,renderAircraftWeeklyTimeline} from './aircraft-weekly-timeline.mjs';
 import {assessAircraftRouteRunways} from './route-aircraft-runway-screen.mjs';
@@ -469,110 +469,62 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
  };
  let feeBaseline=null,feeRequestKey=null,feeRequestSerial=0;
  let displayedFuel=null,displayedPrice=null,feeRequestStatus='Choose a route and airline aircraft';
+ let commercialForecast=null,forecastKey=null,forecastSerial=0;
  const renderCostBreakdown=()=>{
   const host=$('route-cost-breakdown');if(!host)return;
   host.replaceChildren();
-  // After a successful route save the form resets for the next route.
-  // Do not display a wall of missing costs against an empty form.
-  if(!displayedFuel&&!feeBaseline&&feeRequestStatus.startsWith('Choose ')){
-   const note=doc.createElement('p');note.className='hint';
-   note.textContent='Select an aircraft and two airports to see the next route estimate.';
-   host.append(note);return;
-  }
-  const money=value=>typeof value==='number'&&Number.isFinite(value)?
-   '$'+value.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):
-   'Rate unavailable';
-  const fuel=displayedFuel,price=displayedPrice;
-  const items=[
-   ['Trip fuel (neutral 50% load)',fuel?.estimatedBurnCostUsd??null,
-    fuel?.tripFuelKg&&price?.usdPerKg?
-     Math.round(fuel.tripFuelKg).toLocaleString('en-US')+' kg × modelled $'+
-     price.usdPerKg.toFixed(3)+'/kg':'Aircraft or fuel rate pending'],
-   ...(feeBaseline?
-    [...feeBaseline.fixedRows.map(x=>[x.label,x.amountUsd,x.evidence]),
-     ...feeBaseline.unknownRows.map(x=>[x.label,null,x.evidence])]:
-    [['Airport movement, landing, handling and navigation',null,feeRequestStatus],
-     ['Passenger / cargo airport charges',null,'Real passenger/cargo quantities not available']]),
-   ['Aircraft maintenance / wear',null,'Per-flight cost allocation not connected'],
-   ['Onboard service / catering',null,'Final passengers and package costs pending'],
-   ['Aircraft finance / leasing allocation',null,'Per-flight aircraft cost allocation not verified']
-  ];
-  for(const [name,amount,detail] of items){
-   const row=doc.createElement('div');row.className='route-cost-line';
-   const left=doc.createElement('div');
-   const title=doc.createElement('strong');title.textContent=name;
-   const note=doc.createElement('small');note.textContent=detail;
-   left.append(title,note);
-   const value=doc.createElement('span');value.textContent=money(amount);
-   if(amount===null)value.className='is-pending';
-   row.append(left,value);host.append(row);
-  }
-  const footer=doc.createElement('p');footer.className='route-cost-total';
-  if(feeBaseline){
-   const fixed=feeBaseline.fixedSubtotalUsd;
-   const fuelAmount=fuel?.estimatedBurnCostUsd;
-   footer.textContent='Known fixed airport/navigation fees: '+money(fixed)+
-    (typeof fuelAmount==='number'?
-     ' · Plus fuel forecast: '+money(fuelAmount):
-     ' · Fuel forecast pending')+
-    '. NOT the complete flight cost; passenger, cargo, maintenance and '+
-    'other expenses are not included. Crew is excluded from Phase 1 calculations. Airport fees use the verified game '+
-    'calculator with zero passengers/cargo ONLY to isolate fixed costs. No charge.';
-  }else footer.textContent='Complete flight cost unavailable. '+
-   'Airport fees will appear after the server verifies the chosen aircraft, '+
-   'both airports and stand selections. No charge.';
-  host.append(footer);
+  const q=commercialForecast;
+  const money=v=>typeof v==='number'&&Number.isFinite(v)?v.toLocaleString('en-US',{style:'currency',currency:'USD'}):'Enter an economy fare';
+  const row=(label,value,note='')=>{
+   const r=doc.createElement('div');r.className='route-cost-line';
+   const left=doc.createElement('div'),name=doc.createElement('strong'),info=doc.createElement('small'),amount=doc.createElement('span');
+   name.textContent=label;info.textContent=note;amount.textContent=value;left.append(name,info);r.append(left,amount);host.append(r);
+  };
+  if(!q){row('Operating forecast',feeRequestStatus||'Select owned aircraft and airports');return;}
+  row('Estimated passengers',q.estimatedPassengers+' / '+q.passengerCapacity,'Assumed '+q.loadPercent+'% load; not sold tickets');
+  row('Flight duration',q.phases.totalMinutes+' min');
+  row('Trip fuel consumed',Math.round(q.fuel.tripBurnKg).toLocaleString('en-US')+' kg');
+  row('Minimum fuel on board',Math.round(q.fuel.minimumPlannedFuelOnBoardKg).toLocaleString('en-US')+' kg','Includes contingency and reserve');
+  row('Fuel cost',money(q.fuelCostUsd));
+  for(const [key,label] of [...FIXED_AIRPORT_FEE_KEYS,...VARIABLE_AIRPORT_FEE_KEYS])row(label,money(q.feeLinesUsd[key]));
+  row('Total direct operating costs',money(q.directOperatingCostUsd));
+  row('Estimated ticket income',money(q.ticketIncomeUsd));
+  row('Estimated direct profit / loss',money(q.estimatedDirectProfitUsd));
+  const note=doc.createElement('p');note.className='route-cost-total';note.textContent='Economy-only Phase 1 forecast at 50% occupancy. Maintenance and aircraft ownership are separate company expenses; crew and additional cabin/cargo services are excluded. No charge.';host.append(note);
  };
  const updateCostBreakdown=(fuel=null,price=null)=>{
   displayedFuel=fuel;displayedPrice=price;renderCostBreakdown();
  };
  const syncFeeBaseline=()=>{
   const data=getData(),from=selected('from'),to=selected('to');
-  const airframe=$('route-aircraft')?.value||'';
-  const owned=ownedFleet.find(a=>'owned:'+a.id===airframe);
+  const owned=ownedFleet.find(a=>'owned:'+a.id===($('route-aircraft')?.value||''));
   const arrivalStand=$('route-arrival-stand')?.value||'terminal';
+  const departureStand=owned?departureStandFromTimeline(selectedAircraftTimeline())||'terminal':'terminal';
   const parkingMinutes=Number($('route-turnaround')?.value);
-  // The origin stand may follow a previous flight. Never invent its position
-  // or imply that an unsaved route has a verified stand reservation.
-  const actualDepartureStand=owned?
-   departureStandFromTimeline(selectedAircraftTimeline()):null;
-  const departureStand=actualDepartureStand||
-   (arrivalStand==='cargo'?'cargo':'terminal');
-  const scheduler=data?.scheduler;
-  const valid=data?.connected&&data?.airline?.id&&from?.key&&to?.key&&
-   from.key!==to.key&&owned&&['terminal','remote','cargo'].includes(departureStand)&&
-   ['terminal','remote','cargo'].includes(arrivalStand)&&
-   Number.isInteger(parkingMinutes)&&parkingMinutes>=45&&parkingMinutes<=360&&
-   typeof scheduler?.feePreview==='function';
-  if(!valid){
-   feeRequestSerial++;
-   feeBaseline=null;feeRequestKey=null;
-   feeRequestStatus='Choose owned aircraft, both airports and compatible stands';
-   renderCostBreakdown();return;
+  const fareValue=$('route-fare-economy')?.value;
+  const economyFareUsd=fareValue!=null&&fareValue!==''&&Number.isSafeInteger(Number(fareValue))&&Number(fareValue)>=0&&Number(fareValue)<=100000?Number(fareValue):null;
+  if(!data?.connected||!data.airline?.id||!owned||!from?.key||!to?.key||from.key===to.key||!['terminal','remote'].includes(departureStand)||!['terminal','remote'].includes(arrivalStand)||!Number.isInteger(parkingMinutes)||parkingMinutes<45||parkingMinutes>360||typeof data.scheduler?.routeForecast!=='function'){
+   forecastSerial++;forecastKey=null;commercialForecast=null;feeRequestStatus='Select owned passenger aircraft, airports and stands';renderCostBreakdown();return;
   }
-  const key=[data.airline.id,owned.id,from.key,to.key,departureStand,
-   arrivalStand,parkingMinutes].join('|');
-  if(key===feeRequestKey)return;
-  feeRequestKey=key;feeBaseline=null;feeRequestStatus='Loading verified Section 8 game fees…';
-  const ticket=++feeRequestSerial;renderCostBreakdown();
-  void scheduler.feePreview({
-   airlineId:data.airline.id,aircraftInventoryId:owned.id,
-   originAirportKey:from.key,destinationAirportKey:to.key,
-   departureStand,arrivalStand,parkingMinutes
-  }).then(response=>{
-   if(ticket!==feeRequestSerial||key!==feeRequestKey)return;
-   const validated=checkedRouteFeeBaseline(response,{
-    airlineId:data.airline.id,aircraftInventoryId:owned.id
-   });
-   feeBaseline=validated;
-   feeRequestStatus=validated?'Available':'Fee calculator returned an unverified response';
-   renderCostBreakdown();
-  }).catch(()=>{
-   if(ticket!==feeRequestSerial||key!==feeRequestKey)return;
-   feeBaseline=null;
-   feeRequestStatus='Airport fee preview unavailable; no amount was assumed';
-   renderCostBreakdown();
-  });
+  const key=[data.airline.id,owned.id,from.key,to.key,departureStand,arrivalStand,parkingMinutes,economyFareUsd].join('|');
+  if(key===forecastKey)return;
+  forecastKey=key;commercialForecast=null;feeRequestStatus='Calculating flight costs...';const request=++forecastSerial;renderCostBreakdown();
+  void data.scheduler.routeForecast({airlineId:data.airline.id,aircraftInventoryId:owned.id,originAirportKey:from.key,destinationAirportKey:to.key,departureStand,arrivalStand,parkingMinutes,loadPercent:50,economyFareUsd}).then(q=>{
+   if(request!==forecastSerial)return;
+   if(q?.status!=='route_phase1_forecast'||q.readOnly!==true||q.ledgerPosted!==false||q.aircraftInventoryId!==owned.id||q.originAirportKey!==from.key||q.destinationAirportKey!==to.key)throw Error('Unconfirmed forecast');
+   commercialForecast=q;renderCostBreakdown();
+   const phaseHost=$('route-fuel-phases');
+   if(phaseHost){
+    phaseHost.replaceChildren();
+    for(const [label,field] of [['Taxi out','taxiOutMinutes'],['Climb','climbMinutes'],['Cruise','cruiseMinutes'],['Descent','descentMinutes'],['Taxi in','taxiInMinutes']]){
+     const line=doc.createElement('div');line.className='route-fuel-phase-row';line.textContent=label+' - '+q.phases[field]+' min';phaseHost.append(line);
+    }
+   }
+   message('route-fuel-summary',Math.round(q.fuel.tripBurnKg)+' kg trip fuel - '+Math.round(q.fuel.minimumPlannedFuelOnBoardKg)+' kg including reserve');
+   message('route-block-time',q.phases.totalMinutes+' min');
+   message('route-airborne-time',(q.phases.climbMinutes+q.phases.cruiseMinutes+q.phases.descentMinutes)+' min');
+   lastFuelEstimate={aircraftId:owned.id,fromKey:from.key,toKey:to.key,minutes:q.phases.totalMinutes};
+  }).catch(()=>{if(request!==forecastSerial)return;feeRequestStatus='Commercial forecast unavailable';renderCostBreakdown();});
  };
  const updateFuelEstimate=()=>{
   const holder=$('route-fuel-phases'),from=selected('from'),to=selected('to');
@@ -2058,6 +2010,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
   }finally{if(submit)submit.disabled=false;}
 
  });
+ doc.addEventListener('change',event=>{if(event.target?.id==='route-fare-economy')syncFeeBaseline();});
  function updateData(data){
   for(const side of ['from','to'])
    populateAirportCountries($('route-'+side+'-country'),data?.countries||[],doc);
