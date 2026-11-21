@@ -43,7 +43,7 @@ BEGIN
  IF NOT pg_try_advisory_xact_lock(583734,0) THEN RETURN jsonb_build_object('status','already_running','booked',0);END IF;
  FOR pol IN SELECT p.*,a.owner_player_id FROM airlinerra_game.section9_aircraft_auto_maintenance_policies_v1 p JOIN airlinerra_game.airlines a ON a.id=p.airline_id AND a.world_id=1 JOIN airlinerra_game.airline_aircraft_inventory i ON i.id=p.aircraft_inventory_id AND i.airline_id=p.airline_id AND i.fleet_status='in_service' JOIN airlinerra_game.world_memberships w ON w.world_id=1 AND w.player_id=a.owner_player_id AND w.state='active'
  WHERE p.enabled AND (p.last_attempt_at IS NULL OR p.last_attempt_at<=v_now-interval '10 minutes') AND NOT EXISTS(SELECT 1 FROM airlinerra_game.section9_game_maintenance_jobs_v1 j WHERE j.aircraft_inventory_id=p.aircraft_inventory_id AND j.status IN ('scheduled','in_progress','payment_required'))
- ORDER BY p.last_attempt_at NULLS FIRST,p.aircraft_inventory_id,CASE p.check_code WHEN 'd' THEN 1 WHEN 'c' THEN 2 WHEN 'b' THEN 3 WHEN 'a' THEN 4 WHEN 'weekly' THEN 5 ELSE 6 END LIMIT p_limit
+ ORDER BY p.last_attempt_at NULLS FIRST,p.aircraft_inventory_id,CASE p.check_code WHEN 'd' THEN 1 WHEN 'c' THEN 2 WHEN 'b' THEN 3 WHEN 'a' THEN 4 WHEN 'weekly' THEN 5 ELSE 6 END LIMIT p_limit FOR UPDATE OF p SKIP LOCKED
  LOOP
   BEGIN
    checked:=checked+1;
