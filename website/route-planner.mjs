@@ -607,7 +607,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    emptyFuelKgPer100Km:aircraft.emptyFuelKgPer100Km,
    halfFuelKgPer100Km:aircraft.halfFuelKgPer100Km,
    fullFuelKgPer100Km:aircraft.fullFuelKgPer100Km,
-   fuelTankCapacityKg:aircraft.fuelTankCapacityKg,payloadFraction:payload,
+   fuelTankCapacityKg:aircraft.fuelTankCapacityKg,aircraftMtowKg:aircraft.mtowKg,payloadFraction:payload,
    priceUsdPerKg:price.usdPerKg,
    originAirportCategory:originProfile?.category||null,
    destinationAirportCategory:airportProfiles.to?.key===to.key?
@@ -633,7 +633,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    grid.append(line);
   }
   holder.append(heading,grid);
-  setSummary(kg(fuel.tripFuelKg)+' · '+usd(fuel.estimatedBurnCostUsd)+' (forecast)');
+  setSummary(kg(fuel.tripFuelKg)+' trip fuel - '+kg(fuel.screeningReserveFuelKg)+' reserve - '+kg(fuel.screeningFuelLoadKg)+' total required - '+usd(fuel.estimatedBurnCostUsd)+' estimated burn cost');
   message('route-airborne-time',Math.round(fuel.airborneMinutes)+' min (climb + cruise + descent)');
   updateCostBreakdown(fuel,price);
   message('route-block-time',Math.round(fuel.totalMinutes)+' min (phase estimate)');
