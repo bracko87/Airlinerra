@@ -5,6 +5,7 @@ on:
     paths:
       - 'tests/sql/section9_disposable_roundtrip_*.sql'
       - 'server/sql/section9_completed_game_flight_cost_approval.sql'
+      - 'server/sql/section9_commercial_flight_dispatch_fix.sql'
       - 'tests/sql/section9_disposable_positive_fra_muc_pair_bootstrap.sql'
       - 'tests/sql/section9_disposable_positive_fra_muc_pair_acceptance.sql'
       - 'supabase/migrations/20261117130000_section9_atomic_certified_pair_ticket_activation_v1.sql'
@@ -13,6 +14,7 @@ on:
     paths:
       - 'tests/sql/section9_disposable_roundtrip_*.sql'
       - 'server/sql/section9_completed_game_flight_cost_approval.sql'
+      - 'server/sql/section9_commercial_flight_dispatch_fix.sql'
       - '.github/workflows/section9-positive-pair-disposable-ci.yml'
   workflow_dispatch:
 permissions:
@@ -91,7 +93,7 @@ jobs:
           fuel=(root/'20261117110000_section9_game_fuel_custody_supply_dispatch_v1.sql').read_text()
           usage=(root/'20261113233000_section9_once_only_arrival_airframe_hours_cycles_v1.sql').read_text()
           movement=(root/'20261113232000_section9_private_signed_operated_flight_dispatch_v1.sql').read_text()
-          dispatch=(root/'20261117235500_section9_dispatch_uses_certified_approval_status.sql').read_text()
+          dispatch=Path('server/sql/section9_commercial_flight_dispatch_fix.sql').read_text()
           def extract(src,name):
               marker='CREATE OR REPLACE FUNCTION airlinerra_game.'+name+'('
               start=src.index(marker)
