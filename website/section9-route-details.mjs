@@ -42,8 +42,8 @@ export function createSection9RouteDetails({doc,host,getRoutes,getServer}={}){
    (route.from.name||route.from.code||'Origin')+' → '+
    (route.to.name||route.to.code||'Destination')));
   const subtitle=text(doc,'p',
-   route.serverScheduleId?'Protected schedule draft · not an active flight':
-   route.serverPlanningId?'Saved airline planning route · no slots or active flights':
+   route.serverScheduleId?(route.operationallyVerified?'Active route - scheduled for operation':'Saved schedule - awaiting approval'):
+   route.serverPlanningId?'Saved successfully - awaiting operational approval':
    'Local planning draft · not yet saved to airline database','route-details-state');
   host.append(subtitle);
   const top=doc.createElement('div');top.className='route-details-top';
@@ -75,12 +75,12 @@ export function createSection9RouteDetails({doc,host,getRoutes,getServer}={}){
   fact(doc,overview,'Flight status',route.serverScheduleId?
    (route.operationallyVerified?'Active schedule · flight movements not yet confirmed':
     'Server schedule saved · not activated'):
-   'Planning only · not activated');
+   route.serverPlanningId?'Saved - awaiting approval':'Not saved');
   const launch=[0,3,7].includes(route.launchDelayDays)?route.launchDelayDays:0;
   fact(doc,overview,'Preferred launch',
    launch===0?'Next eligible departure after activation':
    'After '+launch+' game days (planning preference)');
-  hint(doc,overview,'Launch preference does not activate flights or start ticket sales.');
+  if(!route.operationallyVerified)hint(doc,overview,'Your route is saved. Ticket sales and flight operation start only after the aircraft rotation and required approvals are confirmed.');
   top.append(mapPanel,overview);
   host.append(top);
 
@@ -130,7 +130,7 @@ export function createSection9RouteDetails({doc,host,getRoutes,getServer}={}){
    hint(doc,schedInfo,
     'This planning route has no saved flight-time estimate. Departure times are saved; arrival and next aircraft availability are not yet known.');
   }
-  fact(doc,schedInfo,'Airport slots','Not reserved for planning routes');
+  fact(doc,schedInfo,'Airport slots',route.slotsReserved===true?'Reserved':route.serverScheduleId?'Awaiting confirmation':'Not reserved yet');
   schedulePanel.append(schedInfo);
   host.append(schedulePanel);
 
@@ -145,7 +145,7 @@ export function createSection9RouteDetails({doc,host,getRoutes,getServer}={}){
   bookingPanel.append(bookingRows);
   host.append(bookingPanel);
   if(!route.serverScheduleId){
-   bookingStatus.textContent='Not open for booking. First complete operational scheduling and certification. No passenger reservations exist for this planning route.';
+   bookingStatus.textContent='Awaiting approval - ticket sales have not started. You can continue editing your weekly schedule.';
   }else if(!server.connected||!server.airline?.id||
     typeof server.scheduler?.bookingWindowPreview!=='function'){
    bookingStatus.textContent='Seven-day departure preview unavailable. Ticket sales remain closed.';
