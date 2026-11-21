@@ -71,13 +71,13 @@ export function createGamePermissionApplicationsView({
  const aocState=node(doc,'p','game-aoc-status-text',
   'Checking the selected airline’s AOC record…');
  const aocDetail=node(doc,'p','hint',
-  'AOC status is company-specific. The holding, academies and maintenance companies do not share an airline AOC.');
+  'A valid Licence 1 covers domestic passenger flights and international passenger flights to or from the airline’s home market. No separate route application or fee is required. The AOC is company-specific.');
  aocPanel.append(aocTitle,aocState,aocDetail);
  section.append(aocPanel);
  const l2Panel=node(doc,'div','game-aoc-status game-licence-l2');
  l2Panel.id='game-licence-core-2';l2Panel.tabIndex=-1;
  l2Panel.append(node(doc,'h3','','Licence 2 — Foreign network expansion'),
-  node(doc,'p','hint','Licence 1 covers normal flights to and from your home market. Licence 2 covers additional foreign-network routes, including eligible onward flights between foreign countries. Fifth Freedom is included here; there is no separate Licence 6 application or fee. International traffic rights, route allocation, slots and aircraft checks still apply. Each route direction counts separately.'));
+  node(doc,'p','hint','Licence 1 covers normal flights to and from your home market. Licence 2 covers additional foreign-network routes, including eligible onward flights between foreign countries. Fifth Freedom is included here; there is no separate Licence 6 application or fee. No separate route permission is required for Licence 1 flights. Expansion route allocation, slots and aircraft checks still apply. Each route direction counts separately.'));
  const l2State=node(doc,'p','hint','Checking foreign-market licence limits…');
  const l2Markets=node(doc,'div','game-licence-applications');
  l2Panel.append(l2State,l2Markets);
@@ -212,7 +212,8 @@ export function createGamePermissionApplicationsView({
   'No applications can be submitted until the game enables the permission.');
  feedback.setAttribute('role','status');feedback.setAttribute('aria-live','polite');
  actions.append(submit,feedback);form.append(actions);
- section.append(form);root.replaceChildren(section);
+ // Retain the historical form bindings for compatibility, but do not expose legacy per-route applications.
+ form.hidden=true;root.replaceChildren(section);
  const selected=()=>current?.policies?.find(p=>p.code===type.value)||null;
  const updateForm=()=>{
   const route=type.value!=='AIR_OPERATOR_CERTIFICATE';
@@ -480,9 +481,7 @@ export function createGamePermissionApplicationsView({
   }else{
    l2State.textContent='Foreign-network licence status is not connected to this server version. No Licence 2 is assumed.';
   }
-  note.textContent=current?.canApply
-   ?'Game applications are enabled for eligible permissions. Issuance still requires independent review.'
-   :'Applications are not open. You may review requirements and your application history; no money will be deducted.';
+  note.textContent='Use the eight licence panels below. Licence 1 already covers normal home-market passenger routes; no separate traffic permission is required.';
   updateForm();
  };
  l3Apply.addEventListener('click',async()=>{
