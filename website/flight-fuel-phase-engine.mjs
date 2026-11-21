@@ -5,7 +5,7 @@
  * Research: EUROCONTROL Standard Inputs edition 10; ICAO LTO reference.
  */
 import {estimateFlightPhaseTiming} from './airport-flight-phase-timing.mjs';
-export const FUEL_PHASE_MODEL_VERSION='airlinerra_fuel_phases_preview_v2_airport_timing';
+export const FUEL_PHASE_MODEL_VERSION='airlinerra_fuel_phases_preview_v3_airport_aircraft_timing';
 export const DEFAULT_FUEL_GAME_PRICE_USD_PER_KG=0.95; // Group 3 historical game assumption, NOT a quote
 export const PHASE_SETTINGS=Object.freeze({
  taxiOut:{minutes:15,factor:.25},climb:{minutes:20,factor:1.35,speedFactor:.65},
@@ -57,7 +57,7 @@ const rateForLoad=(data,loadFraction)=>{
 export function estimateFivePhaseFuel({
  distanceKm,cruiseSpeedKmh,cruiseFuelKgPerHour=null,
  emptyFuelKgPer100Km=null,halfFuelKgPer100Km=null,fullFuelKgPer100Km=null,
- fuelTankCapacityKg=null,payloadFraction=.5,
+ fuelTankCapacityKg=null,aircraftMtowKg=null,payloadFraction=.5,
  priceUsdPerKg=DEFAULT_FUEL_GAME_PRICE_USD_PER_KG,
  routingMultiplier=1,referenceMissionKm=1000,
  originAirportCategory=null,destinationAirportCategory=null,
@@ -76,7 +76,7 @@ export function estimateFivePhaseFuel({
  const normalizedDistance=distance*routingMultiplier;
  const timing=estimateFlightPhaseTiming({
   originAirportCategory,destinationAirportCategory,
-  originAirportKey,destinationAirportKey,distanceKm:normalizedDistance
+  originAirportKey,destinationAirportKey,distanceKm:normalizedDistance,aircraftMtowKg,cruiseSpeedKmh:speed
  });
  const profile=flightProfile(normalizedDistance,speed,timing);
  const weightedHours=stages=>stages.reduce((sum,stage)=>
@@ -87,7 +87,9 @@ export function estimateFivePhaseFuel({
  const rate=rateForLoad(data,loaded);
  let kgPerHour=null,source=null;
  if(rate!==null){
-  const ref=flightProfile(referenceMissionKm*routingMultiplier,speed,timing);
+  const refDistance=referenceMissionKm*routingMultiplier;
+  const referenceTiming=estimateFlightPhaseTiming({originAirportCategory,destinationAirportCategory,originAirportKey,destinationAirportKey,distanceKm:refDistance,aircraftMtowKg,cruiseSpeedKmh:speed});
+  const ref=flightProfile(refDistance,speed,referenceTiming);
   kgPerHour=(rate*referenceMissionKm/100)/weightedHours(ref);
   source='CALIBRATED_PROVISIONAL_MISSION_DISTANCE_RATE';
  }else if(hourly!==null){
