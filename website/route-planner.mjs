@@ -206,7 +206,7 @@ export function routePlannerMarkup(){
     '<option value="0">As soon as operationally ready</option>'+
     '<option value="3">After 3 game days</option>'+
     '<option value="7">After 7 game days</option></select>')+
-  '<p class="route-subtle-note">This saves a launch preference only. Automatic flight activation and ticket sales are not connected yet.</p>'+
+  '<p class="route-subtle-note">The route is created only when all required checks pass. Ticket sales then open automatically.</p>'+
   '<div class="workspace-actions route-apply-actions">'+
    '<button type="button" id="route-plan-save" class="primary">Create new route</button>'+
    '<button type="button" id="route-plan-new" class="secondary">Blank new flight</button>'+
@@ -607,7 +607,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    emptyFuelKgPer100Km:aircraft.emptyFuelKgPer100Km,
    halfFuelKgPer100Km:aircraft.halfFuelKgPer100Km,
    fullFuelKgPer100Km:aircraft.fullFuelKgPer100Km,
-   fuelTankCapacityKg:aircraft.fuelTankCapacityKg,payloadFraction:payload,
+   fuelTankCapacityKg:aircraft.fuelTankCapacityKg,aircraftMtowKg:aircraft.mtowKg,payloadFraction:payload,
    priceUsdPerKg:price.usdPerKg,
    originAirportCategory:originProfile?.category||null,
    destinationAirportCategory:airportProfiles.to?.key===to.key?
@@ -633,7 +633,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    grid.append(line);
   }
   holder.append(heading,grid);
-  setSummary(kg(fuel.tripFuelKg)+' · '+usd(fuel.estimatedBurnCostUsd)+' (forecast)');
+  setSummary(kg(fuel.tripFuelKg)+' trip fuel - '+kg(fuel.screeningReserveFuelKg)+' reserve - '+kg(fuel.screeningFuelLoadKg)+' total required - '+usd(fuel.estimatedBurnCostUsd)+' estimated burn cost');
   message('route-airborne-time',Math.round(fuel.airborneMinutes)+' min (climb + cruise + descent)');
   updateCostBreakdown(fuel,price);
   message('route-block-time',Math.round(fuel.totalMinutes)+' min (phase estimate)');
@@ -671,12 +671,11 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
  let catalogAircraft=[],preflightCache=null,preflightPromise=null;
  let ownedFleet=[],serverDrafts=[],serverPlans=[],fleetTicket=0,fleetReadState='unavailable';
  let suggestedSourceFlight=null;
- let pairSubmissionKey=null;
  const pickers={},selected=side=>pickers[side]?.selected()||null;
  // The country-picker constructor calls onSelect synchronously. Defer route
  // rendering until all planner callbacks, including preflight, are initialized.
  let plannerInitialized=false;
- const message=(id,value)=>{if($(id))$(id).textContent=value;};
+ const message=(id,value)=>{if($(id)){$(id).textContent=value;if(id==='route-plan-status')$(id).classList.remove('is-success');}};
  const selectedConfigurationId=()=>{
   const key=$('route-aircraft')?.value||'';
   if(/^catalog:[1-9][0-9]*$/.test(key))return Number(key.slice(8));
@@ -1105,8 +1104,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    title.textContent=String(draft.flightNumber||'Draft')+' · '+String(draft.originAirportKey||'')+
     ' to '+String(draft.destinationAirportKey||'');
    const subtitle=doc.createElement('small');
-   const active=draft.status==='active'&&draft.operationallyVerified===true;
-   subtitle.textContent=(active?'Active · ticket sales enabled':'Pending approval · weekly airport slots held · not active')+' · '+String(draft.weeklySchedule?.length||0)+' departures per week';
+   subtitle.textContent='Server draft · weekly airport slots held · not active · '+String(draft.weeklySchedule?.length||0)+' departures per week';
    const inspect=doc.createElement('button');
    inspect.type='button';inspect.className='secondary';
    inspect.textContent='Check activation readiness';
@@ -1285,7 +1283,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
   }catch{message('route-feedback','Home airport could not be preselected. Choose an origin manually.');}
  };
  const resetRouteForm=async({blank=false}={})=>{
-  suggestedSourceFlight=null;pairSubmissionKey=null;
+  suggestedSourceFlight=null;
   const serial=++editSerial;
   editingFlightNumber=null;editingLegacyIndex=null;++detailTicket;lastKeys='';airportProfiles={};
   showDetails();
@@ -1337,14 +1335,14 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
   if(serial!==editSerial)return false;
   return pickers[side].choose(airport.key);
  };
- const suggestReturnFromSavedFlight=async(preferredFlightNumber=null,unsavedOutbound=null)=>{
+ const suggestReturnFromSavedFlight=async(preferredFlightNumber=null)=>{
   const data=getData(),prefix=flightPrefixFor(data?.airline).prefix;
   if(!data?.connected||!data.airline?.id||fleetReadState!=='verified'){
    message('route-next-flight-hint','Load your airline and its saved routes before suggesting the next flight.');
    return false;
   }
   const selectedAircraft=$('route-aircraft')?.value||'';
-  const candidates=unsavedOutbound?[unsavedOutbound]:serverPlans.filter(p=>
+  const candidates=serverPlans.filter(p=>
    p&&['planning','active'].includes(p.status)&&
    (!preferredFlightNumber||p.flightNumber===preferredFlightNumber)&&
    (preferredFlightNumber||!selectedAircraft.startsWith('owned:')||
@@ -1404,9 +1402,6 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
     returnFlight.referenceArrivalUtc.slice(0,16);
   show();
   suggestedSourceFlight=source;
-  if(unsavedOutbound){pairSubmissionKey=globalThis.crypto.randomUUID();
-   if($('route-fare-economy'))$('route-fare-economy').value=String(source.operation.fares.economy);}
-
   const label=prefix&&returnFlight.flightNumberDigits?
    prefix+returnFlight.flightNumberDigits:'new flight number';
   message('route-next-flight-hint',
@@ -1914,7 +1909,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    message('route-plan-status','Select an in-service aircraft owned or leased by this company. Test and catalogue aircraft cannot be scheduled.');
    return;
   }
-  const canCreateOperational=typeof data?.scheduler?.operationalRoundtripStage==='function'||typeof data?.scheduler?.planSave==='function';
+  const canCreateOperational=typeof data?.scheduler?.operationalSingleCreate==='function';
   if(!canCreateOperational){
    message('route-plan-status',
     'NOT CREATED — the operational flight service is not connected. No route or flight was saved.');
@@ -1930,7 +1925,8 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
   }
   const timeline=selectedAircraftTimeline();
   const blockingTimelineErrors=timeline.errors.filter(issue=>issue.code!=='AIRCRAFT_WRONG_AIRPORT');
-  const locationWarnings=timeline.errors.filter(issue=>issue.code==='AIRCRAFT_WRONG_AIRPORT');
+  // The authoritative server checks reachability of the first departure.
+  // Later positioning gaps may be displayed as warnings but never save a partial route.
   if(blockingTimelineErrors.length){
    message('route-plan-status','Aircraft schedule conflict: '+blockingTimelineErrors[0].text);
    const details=$('route-aircraft-timeline');if(details)details.open=true;
@@ -1988,205 +1984,77 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    return;
   }
   const scheduler=data.scheduler;
-  // Missing positioning legs are incomplete planning, not an impossible
-  // schedule. Persist the owner's proposed flight without opening tickets
-  // or bypassing actual departure/activation checks.
-  if(locationWarnings.length){
-   if(typeof scheduler?.planSave!=='function'){
-    message('route-plan-status','Aircraft positioning warning. The planning service is unavailable; no schedule was saved.');return;
-   }
-   const submit=$('route-plan-save');if(submit)submit.disabled=true;
-   try{
-    const result=await scheduler.planSave({
-     airlineId:data.airline.id,aircraftInventoryId:ownedChoice.id,
-     flightNumber,originAirportKey:from.key,destinationAirportKey:to.key,
-     weeklySchedule:schedule,launchDelayDays,
-     departureStand:operation.departureStand,arrivalStand:operation.arrivalStand,
-     turnaroundMinutes:operation.turnaroundMinutes,fares:operation.fares,service:operation.service,
-     referenceDepartureUtc:draft.referenceDepartureUtc&&draft.referenceArrivalUtc?draft.referenceDepartureUtc:null,
-     referenceArrivalUtc:draft.referenceDepartureUtc&&draft.referenceArrivalUtc?draft.referenceArrivalUtc:null
-    });
-    if(result?.status!=='planning'||typeof result.planId!=='string'||
-     result.slotsReserved!==false||result.passengerBookingsCreated!==false||result.ledgerPosted!==false)
-     throw Error('POSITIONING_PLAN_NOT_CONFIRMED');
-    draft.serverPlanningId=result.planId;draft.status='planning';
-    try{await draftWrite('routes',[...filtered,draft]);await draftWrite('route',draft);}catch{}
-    doc.dispatchEvent(new CustomEvent('airlinerra:route-draft-saved',{detail:{flightNumber,serverSaved:true}}));
-    await loadOwnedScheduleData(data.airline.id);
-    await resetRouteForm({blank:true});
-    message('route-plan-status','Flight '+flightNumber+' saved — positioning warning: '+locationWarnings[0].text+' Tickets remain closed until the rotation is operationally valid.');
-   }catch{message('route-plan-status','The server did not confirm the planned flight. Check My Routes before retrying.');}
-   finally{if(submit)submit.disabled=false;}
-   return;
+  if(!Number.isSafeInteger(operation.fares.economy)||operation.fares.economy<1){
+   message('route-plan-status','Enter a valid Economy fare before creating this flight.');return;
   }
-  const source=suggestedSourceFlight;
-  const matchingReturn=Boolean(source&&source.aircraftId===flightAircraft&&
-    source.from?.key===to.key&&source.to?.key===from.key&&
-    source.flightNumber!==flightNumber);
-  const fromServerUtc=value=>{
-   const t=Date.parse(value);
-   return Number.isFinite(t)?new Date(t).toISOString().slice(0,19)+'Z':null;
-  };
-  const sourceDeparture=matchingReturn?fromServerUtc(source.referenceDepartureUtc):null;
-  const sourceArrival=matchingReturn?fromServerUtc(source.referenceArrivalUtc):null;
-  const sourceStand=source?.operation?.departureStand;
-  const sourceArrivalStand=source?.operation?.arrivalStand;
-  const sourceTurnaround=source?.operation?.turnaroundMinutes;
-  if(matchingReturn&&(
-    typeof scheduler?.operationalRoundtripStage!=='function'||
-    !sourceDeparture||!sourceArrival||
-    !draft.referenceDepartureUtc||!draft.referenceArrivalUtc||
-    !Array.isArray(source.schedule)||source.schedule.length<1||
-    !['terminal','remote','cargo'].includes(sourceStand)||
-    !['terminal','remote','cargo'].includes(sourceArrivalStand)||
-    !Number.isInteger(sourceTurnaround)||sourceTurnaround<45||sourceTurnaround>360
-  )){
-   message('route-plan-status',
-    'NOT CREATED — the previous flight and suggested return need complete times, stands and a connected two-flight service. You can edit the suggestion or choose Blank new flight.');
-   return;
-  }
-  if(!Number.isSafeInteger(operation.fares.economy)||operation.fares.economy<1||
-     operation.fares.economy>100000){
-   message('route-plan-status','Enter an Economy ticket fare between $1 and $100,000.');return;
+  if(['premium','business','first'].some(label=>operation.fares[label]!==null)||
+      operation.service.cargo!=='none'||!['basic','none'].includes(operation.service.cabinPackageId)||
+      operation.service.baggage!=='standard'){
+   message('route-plan-status','Phase 1 supports economy passenger service with basic cabin service and standard baggage. Remove other fares or unsupported services to create the route.');return;
   }
   if(launchDelayDays!==0){
-   message('route-plan-status','For commercial round trips use the explicit future departure dates and select the immediate launch preference.');return;
+   message('route-plan-status','Choose As soon as operationally ready. Delayed commercial launch is not yet supported.');return;
   }
-  if(!matchingReturn){
-   if(!draft.referenceDepartureUtc||!draft.referenceArrivalUtc){
-    message('route-plan-status','Enter the example UTC departure and arrival in Advanced airport schedule checks to prepare the return.');return;
-   }
-   // First leg remains editable in memory, without reserving any slots.
-   // A reciprocal pair is submitted in one server-side transaction.
-   const outbound={...draft,from:{...from,timezoneIana:airportProfiles.from?.timezoneIana||from.timezoneIana},
-    to:{...to,timezoneIana:airportProfiles.to?.timezoneIana||to.timezoneIana}};
-   if(!suggestNextReturnFlight(outbound,{airlinePrefix:flightPrefixFor(data.airline).prefix,usedFlightNumbers:[]})){
-    message('route-plan-status','The example departure must match the selected local weekday and time. Check both time zones and the arrival time.');return;
-   }
-   if(await suggestReturnFromSavedFlight(flightNumber,outbound)){
-    message('route-plan-status','Outbound prepared (not yet saved). Review the suggested return and its fare, then Create route to submit both flights for automatic approval.');
-   }
-   return;
-  }
-  if(!pairSubmissionKey||!Number.isSafeInteger(source.operation?.fares?.economy)||source.operation.fares.economy<1){
-   message('route-plan-status','Prepare a new outbound flight and return together. Existing routes cannot be submitted again as a new pair.');return;
-  }
-  message('route-plan-status','Submitting both flights together for automatic approval…');
-  const submit=$('route-plan-save');if(submit)submit.disabled=true;
+  const submit=$('route-plan-save');
+  if(submit)submit.disabled=true;
+  message('route-plan-status','Checking route and creating the active flight...');
   try{
-   const result=await scheduler.operationalRoundtripStage({
-    requestKey:pairSubmissionKey,airlineId:data.airline.id,aircraftInventoryId:ownedChoice.id,
-    outboundFlightNumber:source.flightNumber,returnFlightNumber:flightNumber,
-    originAirportKey:source.from.key,destinationAirportKey:source.to.key,
-    referenceDepartureUtc:sourceDeparture,referenceArrivalUtc:sourceArrival,
-    returnDepartureUtc:draft.referenceDepartureUtc,returnArrivalUtc:draft.referenceArrivalUtc,
-    weeklySchedule:source.schedule,returnWeeklySchedule:schedule,
-    departureStand:sourceStand,arrivalStand:sourceArrivalStand,
-    returnDepartureStand:operation.departureStand,returnArrivalStand:operation.arrivalStand,
-    turnaroundMinutes:sourceTurnaround,outboundFareUsd:source.operation.fares.economy,returnFareUsd:operation.fares.economy
+   const result=await scheduler.operationalSingleCreate({
+    airlineId:data.airline.id,aircraftInventoryId:ownedChoice.id,flightNumber,
+    originAirportKey:from.key,destinationAirportKey:to.key,weeklySchedule:schedule,
+    departureStand:operation.departureStand,arrivalStand:operation.arrivalStand,
+    turnaroundMinutes:operation.turnaroundMinutes,fares:operation.fares,service:operation.service,launchDelayDays
    });
-   const staged=result?.status==='paired_drafts_saved_for_independent_certification'&&result.pairStaged===true&&result.pairKey===pairSubmissionKey;
-   const replay=result?.status==='certification_pair_already_staged'&&result.replayed===true;
-   const idPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-   if((!staged&&!replay)||!idPattern.test(result.outboundScheduleId||'')||
-    !idPattern.test(result.returnScheduleId||'')||result.outboundScheduleId===result.returnScheduleId||
-    result.ledgerPosted!==false)throw Error('ROUNDTRIP_SUBMISSION_NOT_CONFIRMED');
-   const active=replay&&result.certificationStatus==='activated';
-   const status=active?'active':'draft';
-   const outbound={...source,serverScheduleId:result.outboundScheduleId,status,operationallyVerified:active,storage:'server-operational'};
-   const inbound={...draft,serverScheduleId:result.returnScheduleId,status,operationallyVerified:active,storage:'server-operational'};
-   const mirror=filtered.filter(r=>r.flightNumber!==source.flightNumber);
-   try{await draftWrite('routes',[...mirror,outbound,inbound]);await draftWrite('route',inbound);}catch{}
+   if(result?.routeCreated!==true||result?.status!=='active'||result.activated!==true||
+     result.slotsReserved!==true||result.bookingEnabled!==true||result.ledgerPosted!==false||
+     !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(result.scheduleId||''))
+    throw Error('OPERATIONAL_ROUTE_NOT_CONFIRMED');
+   draft.serverScheduleId=result.scheduleId;
+   draft.storage='server-operational';
+   draft.status='active';draft.operationallyVerified=true;draft.slotsReserved=true;
+   const iso=value=>Number.isFinite(Date.parse(value))?new Date(value).toISOString():null;
+   draft.referenceDepartureUtc=iso(result.referenceDepartureUtc);
+   draft.referenceArrivalUtc=iso(result.referenceArrivalUtc);
+   if(Number.isInteger(result.estimatedDurationMinutes))draft.estimatedDurationMinutes=result.estimatedDurationMinutes;
+   try{await draftWrite('routes',[...filtered,draft]);await draftWrite('route',draft);}catch{}
    doc.dispatchEvent(new CustomEvent('airlinerra:route-draft-saved',{detail:{flightNumber,serverSaved:true}}));
    await loadOwnedScheduleData(data.airline.id);
    await resetRouteForm({blank:true});
-   message('route-plan-status',active?'Both flights are active.':'Both flights saved together — awaiting automatic approval. Ticket sales open only when both flights are approved. Refresh My Routes to view status.');
-   return;
-  }catch(error){
-   const reason=String(error?.message||'');
-   const blockers=Array.isArray(error?.operationalBlockers)?error.operationalBlockers:[];
-   if(error?.isAtomicRoundtrip===true){
-    const launch=Array.isArray(error?.launchBlockers)?error.launchBlockers:[];
-    const both=[...new Set([...blockers,...launch])];
-    const permissions=both.some(x=>x.startsWith('GAME_PERMISSION_RELEASE_MISSING_')||
-      x.startsWith('GAME_PERMISSION_APPLICATION_NOT_RELEASED_'));
-    const noLicence=both.includes('GAME_OPERATOR_LICENCE_NOT_ISSUED');
-    const noRights=both.includes('OUTBOUND_GAME_TRAFFIC_RIGHTS_NOT_ISSUED')||
-      both.includes('RETURN_GAME_TRAFFIC_RIGHTS_NOT_ISSUED');
-    const noEngine=both.includes('FLIGHT_EXECUTION_AND_SETTLEMENT_NOT_RELEASED')||
-      both.includes('FLIGHT_EXECUTION_AND_FUEL_NOT_RELEASED');
-    const noRelease=both.includes('INDEPENDENT_OPERATIONAL_ACTIVATION_NOT_RELEASED')||
-      both.includes('INDEPENDENT_GAME_ACTIVATION_NOT_RELEASED');
-    const noFinance=both.includes('ONCE_ONLY_FINANCIAL_SETTLEMENT_NOT_RELEASED')||
-      both.includes('AIRCRAFT_GAME_FUEL_DISPATCH_AND_FINANCE_NOT_RELEASED');
-    const noBookingBridge=both.includes('ATOMIC_BOOKING_AND_FLIGHT_BRIDGE_NOT_COMPLETED');
-    const notes=[
-     error.roundtripModelPassed===true?
-      'The outbound and return times passed the timetable check.':null,
-     noEngine?'The flight engine is not released.':null,
-     noRelease?'Independent flight activation is not released.':null,
-     permissions?'Game licence applications are not enabled.':null,
-     noLicence?'The airline operating licence is not issued.':null,
-     noRights?'One or both route traffic permissions are not issued.':null,
-     noFinance?'Fuel or final financial settlement approval is missing.':null,
-     both.includes('AIRPORT_REVIEWS_NOT_COMPLETED')?
-      'Airport reviews are not complete.':null,
-     noBookingBridge?'The verified booking-to-flight connection is not complete.':null
-    ].filter(Boolean);
-    message('route-plan-status','NOT CREATED — neither flight was changed or booked. '+
-     (notes.join(' ')||'The two-flight schedule is not cleared.')+
-     ' No airport slots were reserved and no charge was made.');
-    return;
+   const confirmation=$('route-plan-status');
+   if(confirmation){
+    confirmation.classList.add('is-success');
+    confirmation.textContent='Route '+flightNumber+' successfully created. Active and open for bookings.';
+    if(Number(result.futurePositionWarnings)>0){
+     const note=doc.createElement('span');note.className='route-save-warning';
+     note.textContent='Future aircraft positioning warning: complete your weekly rotation before the affected departures.';
+     confirmation.append(note);
+    }
    }
-   const specific=blockers.includes('AIRCRAFT_NOT_IN_AIRLINE_FLEET')?
-    'The selected aircraft is not in this airline fleet.':
-    blockers.includes('AIRCRAFT_NOT_IN_SERVICE')?
-    'The selected aircraft is not in service.':
-    blockers.includes('AIRCRAFT_STARTING_LOCATION_NOT_VERIFIED')?
-    'The aircraft starting airport has not yet been verified.':
-    blockers.includes('AIRCRAFT_NOT_VERIFIED_AT_ORIGIN')?
-    'The aircraft has not been verified at the departure airport.':
-    blockers.includes('AIRCRAFT_FUEL_DISPATCH_MODEL_NOT_APPROVED')&&
-    blockers.includes('AIRCRAFT_MAINTENANCE_BASELINE_NOT_VERIFIED')?
-    'Aircraft fuel and maintenance information must be verified before it can fly.':
-    blockers.includes('AIRCRAFT_FUEL_DISPATCH_MODEL_NOT_APPROVED')?
-    'The aircraft fuel model is not yet approved for flight operations.':
-    blockers.includes('AIRCRAFT_MAINTENANCE_BASELINE_NOT_VERIFIED')?
-    'Aircraft condition and maintenance tracking are not yet verified.':
-    '';
-   const airportEvidence=error?.operationalAirportFindings;
-   const airportEvidenceNote=side=>{
-    if(!side?.airportCode)return '';
-    const needs=[];
-    if(!side.runwayOperationalStatusVerified)needs.push('runway status');
-    if(!side.aircraftChapterMatched)needs.push('aircraft noise certificate');
-    return needs.length?side.airportCode+(side.runway?' ('+side.runway+')':'')+': '+needs.join(' and ')+' unverified':'';
+  }catch(error){
+   const reason=error?.creationReason||'';
+   const first=error?.firstDepartureReason||'';
+   const texts={
+    blocked_commercial_engine_not_released:'Commercial flight operation is not enabled yet.',
+    blocked_aircraft_not_in_service:'The aircraft is not in service.',
+    blocked_flight_number_exists:'This flight number already exists.',
+    blocked_airport_reference_unavailable:'Airport time zone or coordinates are unavailable.',
+    blocked_aircraft_performance_unavailable:'Aircraft performance data is unavailable.',
+    blocked_schedule_or_slots:'Airport slots or schedule restrictions prevent this route.',
+    blocked_invalid_weekly_schedule:'Check your weekly departure times.',
+    blocked_capacity:'Passenger capacity could not be confirmed.',
+    blocked_operational_requirement:'A required operational check failed: '+String(error?.clearanceType||'unknown')+'.',
+    blocked_activation:'The aircraft, licence, airport or schedule validation failed.',
+    blocked_ticket_inventory:'Ticket inventory could not be opened.',
+    blocked_no_bookable_departure:'No eligible departure in the booking window.',
+    SINGLE_ROUTE_PHASE1_OPTIONS_UNSUPPORTED:'Select supported economy passenger service options.'
    };
-   const unresolvedAirports=blockers.includes('AIRPORT_GAME_RESTRICTIONS_NOT_CLEARED')?
-    [airportEvidenceNote(airportEvidence?.origin),
-     airportEvidenceNote(airportEvidence?.destination)].filter(Boolean):[];
-   const details=unresolvedAirports.length?
-    ' Airport reviews needed — '+unresolvedAirports.join('; ')+'.':'';
-   const statusText=specific?
-    'NOT CREATED — '+specific+' The remaining flight systems are still being connected.':
-    reason.includes('GAME_ENGINE_NOT_READY')?
-     'NOT CREATED — automatic flight activation and bookings are not connected yet. No flight was created.':
-    reason.includes('CABIN_PACKAGE_NOT_SAVED')?
-     'NOT CREATED — save the selected cabin package in Flight Services first.':
-    reason.includes('SCHEDULE_CONFLICT')?
-     'NOT CREATED — the aircraft, airport slots or flight schedule failed verification.':
-     'NOT CREATED — an operational flight could not be verified. No route was saved.';
-   const rotation=error?.aircraftRotationWarning;
-   const rotationNote=rotation?.returnRequired?
-    ' AIRCRAFT ROTATION — The aircraft will still be at the previous destination for '+String(rotation.wrongAirportDepartures)+
-    ' future departure(s) in this schedule. Add a return or repositioning flight before operating this route.':
-    rotation?.overlappingFlights>0?
-    ' AIRCRAFT ROTATION — '+String(rotation.overlappingFlights)+
-    ' overlapping flight(s) were detected. Adjust the schedule before operating this route.':'';
-   const gameOnlyNote=error?.gameModelPreliminarySuitable===true?
-    ' The route passes preliminary GAME runway, rotation, restriction and slot-capacity checks. This is a game estimate, not an operating clearance.':'';
-   message('route-plan-status',statusText+rotationNote+details+gameOnlyNote);
-   return;
+   const why=first==='AIRCRAFT_CANNOT_REACH_FIRST_DEPARTURE'?
+    'The aircraft cannot reach this flight\'s first departure airport. Schedule a valid positioning flight first or choose another aircraft.':
+    first==='FIRST_DEPARTURE_TURNAROUND_CONFLICT'?'Not enough turnaround time before the first departure.':
+    first==='MAINTENANCE_FLIGHT_WINDOW_BLOCKED'?'Aircraft maintenance prevents this departure.':
+    reason==='blocked_first_departure'?'The first departure cannot be verified.':
+    texts[reason]||'The protected flight service did not confirm the route. Check My Routes before retrying.';
+   message('route-plan-status','Route '+flightNumber+' not confirmed. '+why);
   }finally{if(submit)submit.disabled=false;}
 
  });
