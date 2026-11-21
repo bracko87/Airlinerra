@@ -940,7 +940,9 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   host.textContent='Loading provider quotes…';
   if(typeof data.scheduler?.maintenanceProviderQuotes!=='function'||!airlineId||!aircraftId){host.textContent='Provider quotes unavailable.';return;}
   try{
-   const q=await data.scheduler.maintenanceProviderQuotes({airlineId,aircraftInventoryId:aircraftId,checkCode});
+   const [q,policyReply]=await Promise.all([data.scheduler.maintenanceProviderQuotes({airlineId,aircraftInventoryId:aircraftId,checkCode}),data.scheduler.maintenancePolicyList({airlineId,aircraftInventoryId:aircraftId})]);
+   if(policyReply?.status!=='aircraft_auto_maintenance_policies'||!Array.isArray(policyReply.policies))throw Error('Policy unavailable');
+   const policy=policyReply.policies.find(x=>x.checkCode===checkCode);
    if(ticket!==providerQuoteVersion||selectedFleetAircraftId!==aircraftId||data.airline?.id!==airlineId||gameServiceSelectedCheck!==checkCode)return;
    if(q?.status!=='ai_maintenance_quote_directory'||q.readOnly!==true||q.bookable!==false||!Array.isArray(q.quotes))throw Error('Invalid provider directory');
    host.replaceChildren();
@@ -950,6 +952,17 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    const airports=[...new Map(q.quotes.map(v=>[v.airportKey,v])).values()];
    for(const a of airports){const opt=doc.createElement('option');opt.value=a.airportKey;opt.textContent=a.airportName+' ('+a.airportCode+')';select.append(opt);}
    const when=doc.createElement('label');when.textContent='Start (your local time; blank = now) ';const start=doc.createElement('input');start.type='datetime-local';when.append(start);host.append(when);
+   if(policy?.airportKey&&airports.some(a=>a.airportKey===policy.airportKey))select.value=policy.airportKey;
+   const policyStatus=doc.createElement('p');policyStatus.className='hint';policyStatus.textContent=policy?.enabled?'Automatic '+checkCode.toUpperCase()+' maintenance enabled: '+policy.providerKey+' | Maximum $'+Number(policy.maxCostUsd).toLocaleString('en-US')+(policy.lastResult?' | '+policy.lastResult.replaceAll('_',' '):''):'Automatic '+checkCode.toUpperCase()+' maintenance is off.';host.append(policyStatus);
+   if(policy?.enabled){
+    const disable=doc.createElement('button');disable.type='button';disable.className='secondary';disable.textContent='Disable automatic '+checkCode.toUpperCase();
+    disable.addEventListener('click',async()=>{disable.disabled=true;try{
+     const r=await data.scheduler.maintenancePolicySave({airlineId,aircraftInventoryId:aircraftId,checkCode,enabled:false});
+     if(!r?.saved)throw Error('Not saved');void loadMaintenanceProviderQuotes(aircraftId);
+    }catch{policyStatus.textContent='Could not disable policy. Refresh to verify.';disable.disabled=false;}});
+    host.append(disable);
+   }
+   const maxLabel=doc.createElement('label');maxLabel.textContent='Maximum automatic service cost (USD) ';const maxCost=doc.createElement('input');maxCost.type='number';maxCost.min='1';maxCost.max='10000000';maxCost.step='0.01';maxCost.placeholder='Provider quote if empty';if(policy?.enabled)maxCost.value=String(policy.maxCostUsd);maxLabel.append(maxCost);host.append(maxLabel);
    const feedback=doc.createElement('p');feedback.className='hint';feedback.setAttribute('role','status');host.append(feedback);
    const offers=doc.createElement('div');host.append(offers);
    const draw=()=>{offers.replaceChildren();for(const v of q.quotes.filter(x=>x.airportKey===select.value)){
@@ -972,7 +985,17 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
       await loadGameMaintenanceJobs(aircraftId);void loadAirlineSchedule();void loadMaintenancePreview(aircraftId);
      }catch{feedback.textContent='Provider reservation failed. Refresh to verify booking status.';}finally{book.disabled=gameServiceHasActive;}
     });
-    line.append(name,detail,book);offers.append(line);
+    const auto=doc.createElement('button');auto.type='button';auto.className='secondary';auto.textContent=policy?.enabled&&policy.providerKey===v.providerKey?'Update automatic':'Enable automatic';
+    auto.addEventListener('click',async()=>{
+     if(auto.disabled||data.airline?.id!==airlineId||selectedFleetAircraftId!==aircraftId||gameServiceSelectedCheck!==checkCode)return;
+     const limit=maxCost.value?Number(maxCost.value):Number(v.priceUsd);
+     if(!Number.isFinite(limit)||limit<Number(v.priceUsd)||limit>10000000){feedback.textContent='Enter a maximum at least as high as this quote.';return;}
+     auto.disabled=true;
+     try{const r=await data.scheduler.maintenancePolicySave({airlineId,aircraftInventoryId:aircraftId,checkCode,airportKey:v.airportKey,providerKey:v.providerKey,enabled:true,maxCostUsd:limit});
+      if(!r?.saved)throw Error('Not saved');void loadMaintenanceProviderQuotes(aircraftId);
+     }catch{feedback.textContent='Automatic policy not confirmed; refresh to verify.';auto.disabled=false;}
+    });
+    line.append(name,detail,book,auto);offers.append(line);
    }};
    select.addEventListener('change',draw);draw();
   }catch{if(ticket===providerQuoteVersion)host.textContent='Provider quotes unavailable.';}
