@@ -342,3 +342,89 @@ test('return commercial finance denial prevents reciprocal certification complet
  assert.equal(r.scheduleActivated,false);
  assert.equal(r.ledgerPosted,false);
 });
+
+import {createSection9CommercialRouteWorker,SECTION9_COMMERCIAL_ROUTE_SQL}
+ from '../server/section9-commercial-route-worker.mjs';
+import {SECTION9_GAME_PERMISSION_AUTHORITY_SQL}
+ from '../server/section9-game-permission-verifier-issuer.mjs';
+import {SECTION9_SLOT_AUTHORITY_SQL} from '../server/section9-game-slot-clearance-issuer.mjs';
+import {SECTION9_EXECUTION_FINANCE_SNAPSHOT_SQL} from '../server/section9-execution-finance-snapshot-reader.mjs';
+import {SECTION9_CERTIFICATION_SQL} from '../server/section9-signed-certification-ingress.mjs';
+const PAIR='66666666-6666-4666-8666-666666666666';
+function routeWorkerFixture({paused=false,denyReturn=false,finalWaiting=false}={}){
+ const calls=[],writes=[];
+ const flags={flightActivated:false,movementRecorded:false,bookingsCreated:false,ledgerPosted:false};
+ const result=x=>({rowCount:1,rows:[{result:x}]});
+ const keys=Object.fromEntries(SECTION9_ROUNDTRIP_REQUIRED_AUTHORITIES.map(t=>[t,'disposable-route-worker-test-key-'+t]));
+ const database={async connect(){return {
+  release(){},
+  async query(sql,args=[]){
+   calls.push(sql);
+   if(sql===SECTION9_COMMERCIAL_ROUTE_SQL.readiness)return {rowCount:1,rows:[{
+    world_id:1,world_state:'active',authoritative_clock_connected:true,clock_producer_enabled:true,
+    trusted_flight_execution_release:paused?'NOT_ACTIVATED':'ACTIVATED',
+    fuel_transaction_release:paused?'NOT_ACTIVATED':'ACTIVATED',
+    automatic_flight_and_fuel_settlement_enabled:!paused,
+    game_hour:{authoritativeGameHourAvailable:true,gameDate:DAY}
+   }]};
+   if(sql===SECTION9_COMMERCIAL_ROUTE_SQL.queue)return {rowCount:1,rows:[{
+    pair_key:PAIR,airline_id:AIRLINE,outbound_schedule_id:OUT,return_schedule_id:BACK,
+    outbound_version:1,return_version:1
+   }]};
+   if(sql===SECTION9_COMMERCIAL_ROUTE_SQL.finish){
+    assert.equal(args[0],PAIR);
+    assert.equal(writes.length,10);
+    return result(finalWaiting?{status:'certification_pair_waiting_for_independent_approvals',ledgerPosted:false}:
+     {status:'certified_roundtrip_operating_inventory_committed',pairKey:PAIR,operatingRouteCreatedNow:true,
+      ticketSalesOpen:true,outboundSaleableOccurrences:1,returnSaleableOccurrences:1,ledgerPosted:false});
+   }
+   if(sql===SECTION9_CERTIFICATION_SQL.ingest){
+    writes.push(args);
+    return result({status:'certification_event_recorded',eventId:args[5],scheduleId:args[1],
+     scheduleVersion:args[2],clearanceType:args[3],reviewStatus:'certified',replayed:false,
+     certificateChanged:true,activationPreparationInvalidated:true,...flags});
+   }
+   const [airlineId,scheduleId,scheduleVersion,gameDate]=args;
+   const identity={worldId:1,airlineId,scheduleId,scheduleVersion,gameDate};
+   const hash=scheduleId===OUT?'a'.repeat(32):'b'.repeat(32);
+   if(sql===SECTION9_EXECUTION_FINANCE_SNAPSHOT_SQL){
+    const clearanceType=args[4];
+    const blocked=denyReturn&&scheduleId===BACK&&clearanceType==='commercial_finance';
+    return result({...identity,clearanceType,snapshotVersion:'SECTION9_INDEPENDENT_SOURCE_SNAPSHOT_CANDIDATE_V1',
+     status:blocked?'blocked_unreleased_execution_finance_source_snapshot':'source_snapshot_candidate_not_authorized',
+     candidateReady:!blocked,sourceFingerprint:blocked?null:hash,sourceReference:blocked?null:'candidate-execution-finance-v1-'+hash,
+     blockers:blocked?['TEST_DENIED']:[],readOnly:true,verified:false,certificateIssued:false,sourceAuthorityReleased:false,...flags});
+   }
+   const type=sql===SECTION9_SLOT_AUTHORITY_SQL.evidence?'airport_slot_capacity':
+    Object.keys(SECTION9_GAME_PERMISSION_AUTHORITY_SQL).find(k=>SECTION9_GAME_PERMISSION_AUTHORITY_SQL[k]===sql);
+   assert.ok(type,'Unexpected SQL');
+   const fields=source[type];
+   return result({...identity,clearanceType:type,status:fields[0],sourceKind:fields[1],
+    sourceReference:fields[2]+hash,proofFingerprint:hash,reviewerReference:fields[3],
+    validThroughGameDate:TO,verified:true,readOnly:true,...flags,
+    ...(type==='operator_licence'?{gameLicenceOnly:true,jurisdictionIso2:'DE'}:{}),
+    ...(type==='route_traffic_rights'?{gameRightsOnly:true,requiredServiceTypes:['passenger'],verifiedServiceTypes:1}:{}),
+    ...(type==='airport_slot_capacity'?{proposedSlots:2,reservedSlots:2}:{})});
+  }
+ }}};
+ return {worker:createSection9CommercialRouteWorker({database,authoritySecrets:keys}),calls,writes};
+}
+test('commercial worker takes saved reciprocal routes through real signers and finalizer adapter',async()=>{
+ const b=routeWorkerFixture();
+ assert.deepEqual(await b.worker.runBatch(),{status:'commercial_route_batch_completed',checked:1,activated:1,waiting:0});
+ assert.equal(b.writes.length,10);
+ assert.equal(b.calls.at(-1),SECTION9_COMMERCIAL_ROUTE_SQL.finish);
+});
+test('commercial worker never touches queue when production releases are paused',async()=>{
+ const b=routeWorkerFixture({paused:true});
+ assert.deepEqual(await b.worker.runBatch(),{status:'commercial_route_release_blocked',checked:0,activated:0,waiting:0});
+ assert.deepEqual(b.calls,[SECTION9_COMMERCIAL_ROUTE_SQL.readiness]);
+});
+test('return approval refusal never reaches activation and finalizer refusal remains waiting',async()=>{
+ const b=routeWorkerFixture({denyReturn:true});
+ assert.deepEqual(await b.worker.runBatch(),{status:'commercial_route_batch_completed',checked:1,activated:0,waiting:1});
+ assert.equal(b.writes.length,9);
+ assert.ok(!b.calls.includes(SECTION9_COMMERCIAL_ROUTE_SQL.finish));
+ const c=routeWorkerFixture({finalWaiting:true});
+ assert.deepEqual(await c.worker.runBatch(),{status:'commercial_route_batch_completed',checked:1,activated:0,waiting:1});
+});
