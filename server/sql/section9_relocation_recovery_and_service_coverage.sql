@@ -191,11 +191,14 @@ BEGIN
   END IF;
   due:=(due_day IS NOT NULL AND p_game_day>=due_day)
     OR (due_hours IS NOT NULL AND state.tracked_flight_hours>=due_hours);
+  IF has_receipt AND policy.check_code IN ('daily','weekly') AND p_game_day=(airlinerra_game.section9_verified_world_instant_v1() AT TIME ZONE 'Europe/Berlin')::date THEN
+   due:=airlinerra_game.section9_verified_world_instant_v1()>=latest.game_completed_at_utc+make_interval(hours=>policy.calendar_interval_hours);
+  END IF;
   IF due THEN due_count:=due_count+1;END IF;
   checks:=checks||jsonb_build_array(jsonb_build_object(
    'checkCode',policy.check_code,'name',policy.display_name,
    'dueGameDate',due_day,'dueAtSinceAllocationHours',due_hours,
-   'currentlyDue',due,'groundOnDue',true,'lastSatisfyingCheckCode',CASE WHEN has_receipt THEN latest.check_code ELSE NULL END,
+   'currentlyDue',due,'groundOnDue',true,'lastSatisfyingCheckCode',CASE WHEN has_receipt THEN latest.check_code ELSE NULL END,'dueAtUtc',CASE WHEN has_receipt AND policy.check_code IN ('daily','weekly') THEN latest.game_completed_at_utc+make_interval(hours=>policy.calendar_interval_hours) ELSE NULL END,
    'downtimeHours',policy.downtime_hours,
    'airportScope',policy.airport_scope,
    'lastCompletedGameCheck',CASE WHEN has_receipt THEN latest.game_completed_at_utc ELSE NULL END,
