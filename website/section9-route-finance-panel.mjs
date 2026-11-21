@@ -290,7 +290,7 @@ export function createSection9RouteFinancePanel({doc,host,getServer}={}){
     distanceKm:routeDistanceKm({...route.from,...(o||{})},{...route.to,...(d||{})}),
     cruiseSpeedKmh:aircraft.cruiseSpeedKmh,cruiseFuelKgPerHour:aircraft.cruiseFuelKgPerHour,
     emptyFuelKgPer100Km:aircraft.emptyFuelKgPer100Km,halfFuelKgPer100Km:aircraft.halfFuelKgPer100Km,
-    fullFuelKgPer100Km:aircraft.fullFuelKgPer100Km,fuelTankCapacityKg:aircraft.fuelTankCapacityKg,
+    fullFuelKgPer100Km:aircraft.fullFuelKgPer100Km,fuelTankCapacityKg:aircraft.fuelTankCapacityKg,aircraftMtowKg:aircraft.mtowKg,
     payloadFraction:loadPercent/100,priceUsdPerKg:price.usdPerKg,
     originAirportKey:route.from.key,destinationAirportKey:route.to.key,
     originAirportCategory:o?.category,destinationAirportCategory:d?.category
