@@ -3106,3 +3106,6 @@ section[data-player-view="aircraft-market"]:has(#workspace-aircraft-market.is-sh
 .game-licence-future button:disabled{opacity:.75;cursor:not-allowed}
 @media(max-width:980px){.game-licence-overview-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:520px){.game-licence-overview-grid{grid-template-columns:1fr}}
+
+#workspace-routes #route-plan-status .route-save-warning{display:block;margin-top:6px;color:#91500e;font-weight:500}
+:root[data-ui-theme="dark"] #workspace-routes #route-plan-status .route-save-warning{color:#ffca82}
