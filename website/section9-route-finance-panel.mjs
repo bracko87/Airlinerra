@@ -3,6 +3,10 @@
  * The private DB supplies trusted Section8 fees and ledger-backed history.
  * Never label route forecasts as booked revenue or realized net profit.
  */
+import {checkedRouteFeeBaseline} from './route-fee-preview.mjs';
+import {estimateFivePhaseFuel} from './flight-fuel-phase-engine.mjs';
+import {previewAirportFuelPrice} from './airport-fuel-price-preview.mjs';
+import {routeDistanceKm} from './route-map.mjs';
 const DOLLARS=new Intl.NumberFormat('en-US',{
  style:'currency',currency:'USD',minimumFractionDigits:2,maximumFractionDigits:2
 });
@@ -251,21 +255,35 @@ export function createSection9RouteFinancePanel({doc,host,getServer}={}){
   const serial=++version;
   const fn=getServer?.()?.scheduler?.routeFinancials;
   estimate.replaceChildren();historical.replaceChildren();
-  if(!route?.serverScheduleId||!airlineId||typeof fn!=='function'){
-   status.textContent='Planning route · no verified operating costs, passenger sales, slots or completed flights yet. The following cost categories will be calculated by the operational engine.';
-   estimate.append(add(doc,'h4','Planned per-flight income and cost components'));
+  const server=getServer?.()||{};
+  const aircraftId=route?.aircraftInventoryId||String(route?.aircraftId||'').replace(/^owned:/,'');
+  const fare=number(route?.operation?.fares?.economy);
+  const quote=async()=>{
+   if(!server.connected||!airlineId||!aircraftId||!route?.from?.key||!route?.to?.key||typeof server.scheduler?.routeForecast!=='function')return null;
+   return server.scheduler.routeForecast({airlineId,aircraftInventoryId:aircraftId,originAirportKey:route.from.key,destinationAirportKey:route.to.key,departureStand:route.operation?.departureStand||'terminal',arrivalStand:route.operation?.arrivalStand||'terminal',parkingMinutes,loadPercent,economyFareUsd:fare});
+  };
+  const renderQuote=q=>{
+   if(q?.status!=='route_phase1_forecast'||q.ledgerPosted!==false||q.aircraftInventoryId!==aircraftId)return;
+   estimate.replaceChildren();
+   estimate.append(add(doc,'h4','Estimated direct route profitability'));
    const planned=add(doc,'div','','route-finance-estimate-lines');
-   for(const label of ['Passenger ticket revenue','Cargo income','Other flight income'])
-    line(doc,planned,label,'Not calculated');
-   planned.append(add(doc,'h5','Airport, navigation and ground service fees'));
-   for(const [,label] of FEES)line(doc,planned,label,'Pending verified operation');
-   planned.append(add(doc,'h5','Additional operating expenses'));
-   for(const [,label] of OTHER_COSTS)line(doc,planned,label,'Not calculated');
-   line(doc,planned,'Estimated total costs','Not calculated','route-finance-total');
-   line(doc,planned,'Expected profit / loss','Not calculated','route-finance-total');
+   line(doc,planned,'Estimated passengers',q.estimatedPassengers+' / '+q.passengerCapacity);
+   line(doc,planned,'Flight duration',q.phases.totalMinutes+' min');
+   line(doc,planned,'Trip fuel',Math.round(q.fuel.tripBurnKg)+' kg');
+   line(doc,planned,'Fuel on board including reserve',Math.round(q.fuel.minimumPlannedFuelOnBoardKg)+' kg');
+   line(doc,planned,'Fuel cost',money(q.fuelCostUsd));
+   for(const [key,label] of FEES)line(doc,planned,label,money(q.feeLinesUsd[key]));
+   line(doc,planned,'Total direct costs',money(q.directOperatingCostUsd),'route-finance-total');
+   line(doc,planned,'Estimated ticket income',money(q.ticketIncomeUsd));
+   line(doc,planned,'Estimated direct profit / loss',money(q.estimatedDirectProfitUsd),'route-finance-total');
+   planned.append(add(doc,'p','Phase 1 direct flight forecast. Separately booked maintenance and ownership overhead, crew and additional cabin/cargo services are excluded. Actual results appear below.','hint'));
    estimate.append(planned);
+  };
+  if(!route?.serverScheduleId||!airlineId||typeof fn!=='function'){
+   status.textContent='Route forecast - not actual sales or expenses.';
+   try{const q=await quote();if(serial!==version)return;renderQuote(q);if(!q)status.textContent='Route forecast unavailable.';}catch{if(serial===version)status.textContent='Route forecast unavailable.';}
    historical.append(add(doc,'h4','Actual route results'));
-   historical.append(add(doc,'p','Latest 7 completed flights: none. Older settled flight totals: none. This planning route has not operated, and no profit, loss or ledger entry is being invented.','hint'));
+   historical.append(add(doc,'p','No verified completed flights yet.','hint'));
    return;
   }
   const refId=route.serverScheduleId;
@@ -278,6 +296,7 @@ export function createSection9RouteFinancePanel({doc,host,getServer}={}){
    const checked=safeDashboard(v,route,airlineId);
    status.textContent='Planning estimate above · actual history below. No route charge is posted by this view.';
    render(checked);
+   try{const q=await quote();if(serial===version)renderQuote(q);}catch{/* retain verified historical dashboard */}
   }catch{
    if(serial!==version)return;
    status.textContent='Route financial data is unavailable. No cost, revenue or profit has been invented.';
