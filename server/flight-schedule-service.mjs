@@ -281,6 +281,29 @@ export const SCHEDULE_SQL=Object.freeze({
  CROSS JOIN bounds t
  WHERE j.world_id=1 AND j.status IN ('scheduled','in_progress','payment_required','completed') AND j.game_start_utc<t.start_utc+interval '7 days'
  AND (j.game_end_utc>t.start_utc OR j.status='payment_required')
+ UNION ALL
+ SELECT r.id::text||':'||l.leg,r.aircraft_inventory_id::text,'relocation','Maintenance relocation ('||l.leg||')',
+ (r.quote->l.leg->>'departureUtc')::timestamptz,(r.quote->l.leg->>'arrivalUtc')::timestamptz,(r.quote->l.leg->>'availableUtc')::timestamptz,
+ (r.quote->>'turnaroundMinutes')::int,
+ CASE WHEN EXISTS(SELECT 1 FROM airlinerra_game.section9_operated_flight_movements_v1 m WHERE m.relocation_trip_id=r.id AND m.weekly_entry=l.n AND m.phase='arrived') THEN 'arrived'
+ WHEN EXISTS(SELECT 1 FROM airlinerra_game.section9_operated_flight_movements_v1 m WHERE m.relocation_trip_id=r.id AND m.weekly_entry=l.n AND m.phase='departed') THEN 'in_flight'
+ ELSE coalesce(r.last_result,'reserved') END,
+ coalesce(a.game_lookup_code,a.airport_key),coalesce(b.game_lookup_code,b.airport_key),(r.quote->l.leg->>'totalUsd')::numeric
+ FROM owner JOIN airlinerra_game.section9_maintenance_relocation_trips_v1 r ON r.airline_id=owner.id
+ CROSS JOIN (VALUES('outbound',1),('return',2)) l(leg,n)
+ JOIN airlinerra_game.airport_unified_operations_v1 a ON a.world_id=1 AND a.airport_key=CASE WHEN l.n=1 THEN r.origin_airport_key ELSE r.provider_airport_key END
+ JOIN airlinerra_game.airport_unified_operations_v1 b ON b.world_id=1 AND b.airport_key=CASE WHEN l.n=1 THEN r.provider_airport_key ELSE r.origin_airport_key END
+ CROSS JOIN bounds t
+ WHERE r.world_id=1 AND r.status IN ('reserved','completed') AND (r.quote->l.leg->>'departureUtc')::timestamptz<t.start_utc+interval '7 days' AND (r.quote->l.leg->>'availableUtc')::timestamptz>t.start_utc
+ UNION ALL
+ SELECT r.id::text||':maintenance',r.aircraft_inventory_id::text,'maintenance',upper(r.check_code)||' check - '||(r.quote#>>'{provider,providerName}'),
+ (r.quote#>>'{maintenance,startUtc}')::timestamptz,NULL::timestamptz,(r.quote#>>'{maintenance,endUtc}')::timestamptz,0,'reserved',
+ coalesce(a.game_lookup_code,r.provider_airport_key),NULL::text,(r.quote#>>'{maintenance,priceUsd}')::numeric
+ FROM owner JOIN airlinerra_game.section9_maintenance_relocation_trips_v1 r ON r.airline_id=owner.id
+ LEFT JOIN airlinerra_game.airport_unified_operations_v1 a ON a.world_id=1 AND a.airport_key=r.provider_airport_key
+ CROSS JOIN bounds t
+ WHERE r.world_id=1 AND r.status='reserved' AND r.maintenance_job_id IS NULL
+ AND (r.quote#>>'{maintenance,startUtc}')::timestamptz<t.start_utc+interval '7 days' AND (r.quote#>>'{maintenance,endUtc}')::timestamptz>t.start_utc
 )
 SELECT * FROM events ORDER BY "startUtc",id`,
  routeForecast:`SELECT airlinerra_game.section9_owned_route_commercial_forecast_v1($1::uuid,$2::uuid,$3::uuid,$4::text,$5::text,$6::text,$7::text,$8::int,$9::int,$10::numeric) AS result`,
