@@ -1,8 +1,10 @@
 name: Isolated real completed-flight financial settlement concurrency
 on:
   push:
-    branches: [main]
+    branches: [main, commercial-flight-lifecycle]
     paths:
+      - 'server/sql/section9_completed_game_flight_cost_approval.sql'
+      - 'tests/sql/section9_disposable_automatic_game_cost_approval.sql'
       - 'tests/sql/section9_disposable_real_settlement_bootstrap.sql'
       - 'tests/sql/section9_disposable_real_settlement_negative.sql'
       - 'tests/sql/section9_disposable_real_settlement_postconditions.sql'
@@ -13,6 +15,8 @@ on:
       - '.github/workflows/section9-real-settlement-disposable-ci.yml'
   pull_request:
     paths:
+      - 'server/sql/section9_completed_game_flight_cost_approval.sql'
+      - 'tests/sql/section9_disposable_automatic_game_cost_approval.sql'
       - 'tests/sql/section9_disposable_real_settlement_bootstrap.sql'
       - 'tests/sql/section9_disposable_real_settlement_negative.sql'
       - 'tests/sql/section9_disposable_real_settlement_postconditions.sql'
@@ -118,6 +122,10 @@ jobs:
         run: |
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_signed_ticket_acceptance.sql
+      - name: Derive the final cost approval from signed flight and recorded fuel evidence
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_automatic_game_cost_approval.sql
       - name: Race six independent connections on one completed flight
         shell: bash
         run: |
@@ -148,4 +156,4 @@ jobs:
         run: |
           echo "### Real settlement function — isolated PostgreSQL 17" >> "$GITHUB_STEP_SUMMARY"
           echo "Database: disposable, localhost only. Actual financial posting function from migration is used unchanged." >> "$GITHUB_STEP_SUMMARY"
-          echo "Signed movement, game hour and ticket reconciliation dependencies are strictly disposable stand-ins; this does not verify real cryptographic or production end-to-end flight releases." >> "$GITHUB_STEP_SUMMARY"
+          echo "Actual HMAC and ticket reconciliation functions check synthetic signed flight records. Game clock, fuel receipts and tariff calculation use controlled test data. The final cost approval and financial posting use real SQL; production end-to-end flight execution is not verified." >> "$GITHUB_STEP_SUMMARY"

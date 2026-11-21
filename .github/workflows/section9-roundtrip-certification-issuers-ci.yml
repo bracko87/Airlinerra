@@ -1,7 +1,7 @@
 name: Isolated independent FRA-MUC roundtrip certificate orchestration
 on:
   push:
-    branches: [main]
+    branches: [main, commercial-flight-lifecycle]
     paths:
       - 'server/section9-roundtrip-certification-coordinator.mjs'
       - 'server/section9-future-certification-authorities.mjs'
@@ -20,6 +20,12 @@ on:
       - 'server/section9-game-permission-verifier-issuer.mjs'
       - 'server/section9-game-slot-clearance-issuer.mjs'
       - 'server/section9-signed-certification-ingress.mjs'
+      - '.github/workflows/section9-roundtrip-certification-issuers-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'server/section9-*.mjs'
+      - 'tests/test_section9_*.mjs'
       - '.github/workflows/section9-roundtrip-certification-issuers-ci.yml'
   workflow_dispatch:
 permissions:

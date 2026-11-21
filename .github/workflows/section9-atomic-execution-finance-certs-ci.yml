@@ -1,11 +1,18 @@
 name: Disposable atomic execution-finance signed certificate sink
 on:
   push:
-    branches: [main]
+    branches: [main, commercial-flight-lifecycle]
     paths:
       - 'supabase/migrations/20261120234000_section9_atomic_execution_finance_certification_sink_integrated.sql'
+      - 'server/sql/section9_native_commercial_route_certifier.sql'
+      - 'tests/sql/section9_disposable_native_route_certifier.sql'
       - 'tests/sql/section9_disposable_execution_finance_sink_fixture.sql'
       - 'tests/sql/section9_disposable_execution_finance_sink_acceptance.sql'
+      - '.github/workflows/section9-atomic-execution-finance-certs-ci.yml'
+  pull_request:
+    paths:
+      - 'server/sql/section9_native_commercial_route_certifier.sql'
+      - 'tests/sql/section9_disposable_native_route_certifier.sql'
       - '.github/workflows/section9-atomic-execution-finance-certs-ci.yml'
   workflow_dispatch:
 permissions:
@@ -83,6 +90,11 @@ jobs:
         run: |
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_execution_finance_sink_acceptance.sql
+      - name: Native game authority signs verified sources using distinct keys
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f server/sql/section9_native_commercial_route_certifier.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_native_route_certifier.sql
       - name: Confirm no activation occurred
         run: |
           set -euo pipefail

@@ -194,16 +194,16 @@ test('the first outbound plan does not show missing return warning; second route
 });
 test('route creation UI no longer invokes planning-only save or claims unapproved routes exist',async()=>{
  const ui=await readFile(new URL('../website/route-planner.mjs',import.meta.url),'utf8');
- assert.match(ui,/scheduler\.operationalCreate\(/);
+ assert.match(ui,/scheduler\.operationalRoundtripStage\(/);
  assert.doesNotMatch(ui,/scheduler\.planSave\(/);
- assert.match(ui,/result\?\.routeCreated!==true/);
- assert.match(ui,/result\.activated!==true/);
- assert.match(ui,/result\.bookingEnabled!==true/);
+ assert.match(ui,/result\?\.status==='paired_drafts_saved_for_independent_certification'/);
+ assert.match(ui,/const active=replay&&result\.certificationStatus==='activated'/);
+ assert.match(ui,/Ticket sales open only when both flights are approved/);
  assert.match(ui,/NOT CREATED — automatic flight activation/);
  assert.match(ui,/AIRCRAFT_STARTING_LOCATION_NOT_VERIFIED/);
  assert.doesNotMatch(ui,/CREW_ASSIGNMENTS_INCOMPLETE/);
  assert.match(ui,/No flight was created/);
- assert.match(ui,/const text='Route '\+flightNumber\+' created\.'/);
+ assert.match(ui,/Both flights saved together — awaiting automatic approval/);
 });
 
 test('a verified starter aircraft at the correct origin is not misdiagnosed as lacking delivery or location',async()=>{
@@ -266,4 +266,35 @@ test('server position resolver explicitly favors signed movements over the origi
  assert.match(server,/section9_owned_aircraft_operational_position_v1\(/);
  assert.match(server,/startingLocationVerified/);
  assert.doesNotMatch(server,/AIRCRAFT_DELIVERY_LOCATION_NOT_VERIFIED/);
+});
+
+test('normal authenticated pair submission carries actual fares, stable request ID and never claims pending flights active',async()=>{
+ const pair={action:'operational-roundtrip-stage',requestKey:'44444444-4444-4444-8444-444444444444',
+ airlineId:AIRLINE,aircraftInventoryId:AIRCRAFT,outboundFlightNumber:'PA101',returnFlightNumber:'PA102',
+ originAirportKey:'OURAIRPORTS:2212',destinationAirportKey:'OURAIRPORTS:2218',
+ referenceDepartureUtc:'2026-11-23T09:00:00Z',referenceArrivalUtc:'2026-11-23T10:00:00Z',
+ returnDepartureUtc:'2026-11-23T11:00:00Z',returnArrivalUtc:'2026-11-23T12:00:00Z',
+ weeklySchedule:[{day:0,time:'10:00'}],returnWeeklySchedule:[{day:0,time:'12:00'}],
+ departureStand:'terminal',arrivalStand:'terminal',returnDepartureStand:'terminal',returnArrivalStand:'terminal',
+ turnaroundMinutes:60,outboundFareUsd:130,returnFareUsd:140};
+ assert.equal(validateFlightSchedulePayload(pair),true);
+ for(const bad of [{...pair,outboundFareUsd:0},{...pair,requestKey:'bad'},{...pair,forceApproved:true}])
+  assert.equal(validateFlightSchedulePayload(bad),false);
+ const {h,statements}=handler((sql,params)=>{
+  if(sql===SCHEDULE_SQL.owner){assert.deepEqual(params,[AIRLINE,USER]);return {rowCount:1,rows:[{id:AIRLINE}]};}
+  assert.equal(sql,SCHEDULE_SQL.roundtripStage);
+  assert.equal(params[0],pair.requestKey);assert.equal(params[1],USER);
+  assert.deepEqual(params.slice(-2),[130,140]);
+  return {rowCount:1,rows:[{result:{status:'paired_drafts_saved_for_independent_certification',
+   pairKey:pair.requestKey,pairStaged:true,outboundScheduleId:'55555555-5555-4555-8555-555555555555',
+   returnScheduleId:'66666666-6666-4666-8666-666666666666',operatingRouteCreated:false,
+   ticketSalesAvailable:false,ledgerPosted:false}}]};
+ });
+ const client=createFlightScheduleClient({auth:{getAccessToken:async()=>TOKEN},origin:'https://airlinerra.com',
+  fetchImpl:async(url,options)=>h(req(JSON.parse(options.body)))});
+ const result=await client.operationalRoundtripStage(pair);
+ assert.equal(result.pairStaged,true);assert.equal(result.routeCreated,false);
+ assert.equal(result.bookingEnabled,false);assert.equal(statements.length,2);
+ const denied=handler(()=>({rowCount:0,rows:[]}));
+ assert.equal((await denied.h(req(pair))).status,403);assert.equal(denied.statements.length,1);
 });

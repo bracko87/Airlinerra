@@ -34,6 +34,10 @@ export function createFlightScheduleClient({auth,origin,fetchImpl=(...args)=>fet
        typeof x==='string'&&/^[A-Z][A-Z0-9_]{3,100}$/.test(x)).slice(0,24):[];
     conflict.isAtomicRoundtrip=true;
    }
+   if(payload.action==='operational-roundtrip-stage'){
+    conflict.isAtomicRoundtrip=true;
+    conflict.launchBlockers=Array.isArray(reason.launchBlockers)?reason.launchBlockers.filter(x=>typeof x==='string'&&/^[A-Z][A-Z0-9_]{3,100}$/.test(x)).slice(0,24):[];
+   }
    if(payload.action==='operational-create'&&Array.isArray(reason.blockingRequirements))
     conflict.operationalBlockers=reason.blockingRequirements.filter(x=>
       typeof x==='string'&&/^[A-Z][A-Z0-9_]{3,100}$/.test(x)).slice(0,16);
@@ -126,6 +130,14 @@ export function createFlightScheduleClient({auth,origin,fetchImpl=(...args)=>fet
     post({action:'slot-check',airlineId,aircraftInventoryId,originAirportKey,
      destinationAirportKey,referenceDepartureUtc,referenceArrivalUtc,weeklySchedule,
      departureStand,arrivalStand,...(existingId?{existingId}:{})}),
+  operationalRoundtripStage:({requestKey,airlineId,aircraftInventoryId,outboundFlightNumber,
+   returnFlightNumber,originAirportKey,destinationAirportKey,referenceDepartureUtc,referenceArrivalUtc,
+   returnDepartureUtc,returnArrivalUtc,weeklySchedule,returnWeeklySchedule,departureStand,arrivalStand,
+   returnDepartureStand,returnArrivalStand,turnaroundMinutes,outboundFareUsd,returnFareUsd})=>
+   post({action:'operational-roundtrip-stage',requestKey,airlineId,aircraftInventoryId,outboundFlightNumber,
+    returnFlightNumber,originAirportKey,destinationAirportKey,referenceDepartureUtc,referenceArrivalUtc,
+    returnDepartureUtc,returnArrivalUtc,weeklySchedule,returnWeeklySchedule,departureStand,arrivalStand,
+    returnDepartureStand,returnArrivalStand,turnaroundMinutes,outboundFareUsd,returnFareUsd}),
   operationalRoundtripCreate:({airlineId,aircraftInventoryId,outboundFlightNumber,
    returnFlightNumber,originAirportKey,destinationAirportKey,
    referenceDepartureUtc,referenceArrivalUtc,returnDepartureUtc,returnArrivalUtc,
