@@ -45,7 +45,7 @@ BEGIN
  OR proof->>'movementRecorded' IS DISTINCT FROM 'false'
  OR proof->>'bookingsCreated' IS DISTINCT FROM 'false'
  OR proof->>'ledgerPosted' IS DISTINCT FROM 'false'
- THEN RETURN jsonb_build_object('status','game_clearance_source_blocked','clearanceType',p_type,'sourceStatus',proof->>'status');END IF;
+ THEN RETURN jsonb_build_object('status','game_clearance_source_blocked','clearanceType',p_type,'sourceStatus',proof->>'status','blockers',coalesce(proof->'blockers','[]'::jsonb));END IF;
  IF p_type IN ('trusted_flight_execution','commercial_finance') THEN
   fingerprint:=proof->>'sourceFingerprint';
   IF proof->>'candidateReady' IS DISTINCT FROM 'true' OR proof->'blockers' IS DISTINCT FROM '[]'::jsonb
