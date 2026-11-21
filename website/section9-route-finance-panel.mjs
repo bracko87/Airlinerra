@@ -255,61 +255,35 @@ export function createSection9RouteFinancePanel({doc,host,getServer}={}){
   const serial=++version;
   const fn=getServer?.()?.scheduler?.routeFinancials;
   estimate.replaceChildren();historical.replaceChildren();
-  if(!route?.serverScheduleId||!airlineId||typeof fn!=='function'){
-   status.textContent='Saved route forecast - estimates only. No tickets sold or actual costs incurred.';
-   historical.append(add(doc,'h4','Actual route results'));
-   historical.append(add(doc,'p','No completed flights yet. Actual revenue and expenses appear after flight settlement.','hint'));
-   estimate.append(add(doc,'h4','Estimated cost per flight'));
+  const server=getServer?.()||{};
+  const aircraftId=route?.aircraftInventoryId||String(route?.aircraftId||'').replace(/^owned:/,'');
+  const fare=number(route?.operation?.fares?.economy);
+  const quote=async()=>{
+   if(!server.connected||!airlineId||!aircraftId||!route?.from?.key||!route?.to?.key||typeof server.scheduler?.routeForecast!=='function')return null;
+   return server.scheduler.routeForecast({airlineId,aircraftInventoryId:aircraftId,originAirportKey:route.from.key,destinationAirportKey:route.to.key,departureStand:route.operation?.departureStand||'terminal',arrivalStand:route.operation?.arrivalStand||'terminal',parkingMinutes,loadPercent,economyFareUsd:fare});
+  };
+  const renderQuote=q=>{
+   if(q?.status!=='route_phase1_forecast'||q.ledgerPosted!==false||q.aircraftInventoryId!==aircraftId)return;
+   estimate.replaceChildren();
+   estimate.append(add(doc,'h4','Estimated direct route profitability'));
    const planned=add(doc,'div','','route-finance-estimate-lines');
+   line(doc,planned,'Estimated passengers',q.estimatedPassengers+' / '+q.passengerCapacity);
+   line(doc,planned,'Flight duration',q.phases.totalMinutes+' min');
+   line(doc,planned,'Trip fuel',Math.round(q.fuel.tripBurnKg)+' kg');
+   line(doc,planned,'Fuel on board including reserve',Math.round(q.fuel.minimumPlannedFuelOnBoardKg)+' kg');
+   line(doc,planned,'Fuel cost',money(q.fuelCostUsd));
+   for(const [key,label] of FEES)line(doc,planned,label,money(q.feeLinesUsd[key]));
+   line(doc,planned,'Total direct costs',money(q.directOperatingCostUsd),'route-finance-total');
+   line(doc,planned,'Estimated ticket income',money(q.ticketIncomeUsd));
+   line(doc,planned,'Estimated direct profit / loss',money(q.estimatedDirectProfitUsd),'route-finance-total');
+   planned.append(add(doc,'p','Phase 1 direct flight forecast. Separately booked maintenance and ownership overhead, crew and additional cabin/cargo services are excluded. Actual results appear below.','hint'));
    estimate.append(planned);
-   const server=getServer?.()||{};
-   const aircraftId=route?.aircraftInventoryId||String(route?.aircraftId||'').replace(/^owned:/,'');
-   const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-   if(!server.connected||!airlineId||!uuid.test(aircraftId)||!route?.from?.key||!route?.to?.key){
-    planned.append(add(doc,'p','Connect the airline and assign an owned aircraft to calculate the forecast.','hint'));return;
-   }
-   const fare=number(route.operation?.fares?.economy);
-   line(doc,planned,'Saved economy fare',money(fare));
-   const read=(fn)=>Promise.resolve().then(fn).catch(()=>null);
-   const [fees,fleet,origin,destination]=await Promise.all([
-    read(()=>server.scheduler.feePreview({airlineId,aircraftInventoryId:aircraftId,
-     originAirportKey:route.from.key,destinationAirportKey:route.to.key,
-     departureStand:route.operation?.departureStand||'terminal',
-     arrivalStand:route.operation?.arrivalStand||'terminal',parkingMinutes})),
-    read(()=>server.fleetClient.list(airlineId)),
-    read(()=>server.reader.airportProfile(route.from.key)),
-    read(()=>server.reader.airportProfile(route.to.key))
-   ]);
-   if(serial!==version)return;
-   const baseline=checkedRouteFeeBaseline(fees,{airlineId,aircraftInventoryId:aircraftId});
-   const aircraft=fleet?.airlineId===airlineId&&Array.isArray(fleet.fleet)?fleet.fleet.find(x=>x.id===aircraftId):null;
-   const o=origin?.airport?.key===route.from.key?origin.airport:null;
-   const d=destination?.airport?.key===route.to.key?destination.airport:null;
-   const price=previewAirportFuelPrice(o,{fuelFamily:aircraft?.fuelFamily});
-   const fuel=aircraft?estimateFivePhaseFuel({
-    distanceKm:routeDistanceKm({...route.from,...(o||{})},{...route.to,...(d||{})}),
-    cruiseSpeedKmh:aircraft.cruiseSpeedKmh,cruiseFuelKgPerHour:aircraft.cruiseFuelKgPerHour,
-    emptyFuelKgPer100Km:aircraft.emptyFuelKgPer100Km,halfFuelKgPer100Km:aircraft.halfFuelKgPer100Km,
-    fullFuelKgPer100Km:aircraft.fullFuelKgPer100Km,fuelTankCapacityKg:aircraft.fuelTankCapacityKg,aircraftMtowKg:aircraft.mtowKg,
-    payloadFraction:loadPercent/100,priceUsdPerKg:price.usdPerKg,
-    originAirportKey:route.from.key,destinationAirportKey:route.to.key,
-    originAirportCategory:o?.category,destinationAirportCategory:d?.category
-   }):null;
-   const validFuel=fuel?.status==='PLANNING_ESTIMATE';
-   line(doc,planned,'Estimated flight duration',validFuel?Math.round(fuel.totalMinutes)+' min':'Unavailable');
-   line(doc,planned,'Estimated trip fuel',validFuel?Math.round(fuel.tripFuelKg).toLocaleString('en-US')+' kg':'Unavailable');
-   line(doc,planned,'Estimated reserve fuel',validFuel?Math.round(fuel.screeningReserveFuelKg).toLocaleString('en-US')+' kg':'Unavailable');
-   line(doc,planned,'Estimated total fuel required',validFuel?Math.round(fuel.screeningFuelLoadKg).toLocaleString('en-US')+' kg':'Unavailable');
-   line(doc,planned,'Estimated fuel consumed cost',money(validFuel?fuel.estimatedBurnCostUsd:null));
-   planned.append(add(doc,'h5','Airport and navigation fees'));
-   if(baseline){
-    for(const row of baseline.fixedRows)line(doc,planned,row.label,money(row.amountUsd));
-    line(doc,planned,'Fixed airport fees subtotal',money(baseline.fixedSubtotalUsd));
-    for(const row of baseline.unknownRows)line(doc,planned,row.label,'Depends on passengers / cargo');
-   }else{planned.append(add(doc,'p','Airport fee estimate currently unavailable.','hint'));}
-   const fuelCost=validFuel?number(fuel.estimatedBurnCostUsd):null;
-   line(doc,planned,'Known fuel + fixed airport cost',money(baseline&&fuelCost!==null?baseline.fixedSubtotalUsd+fuelCost:null),'route-finance-total');
-   planned.append(add(doc,'p','Forecast varies with selected load and parking time. Passenger charges, catering, maintenance and ownership expenses are not included. Crew is excluded in Phase 1. Final profit requires all costs and actual ticket revenue.','hint'));
+  };
+  if(!route?.serverScheduleId||!airlineId||typeof fn!=='function'){
+   status.textContent='Route forecast - not actual sales or expenses.';
+   try{const q=await quote();if(serial!==version)return;renderQuote(q);if(!q)status.textContent='Route forecast unavailable.';}catch{if(serial===version)status.textContent='Route forecast unavailable.';}
+   historical.append(add(doc,'h4','Actual route results'));
+   historical.append(add(doc,'p','No verified completed flights yet.','hint'));
    return;
   }
   const refId=route.serverScheduleId;
@@ -322,6 +296,7 @@ export function createSection9RouteFinancePanel({doc,host,getServer}={}){
    const checked=safeDashboard(v,route,airlineId);
    status.textContent='Planning estimate above · actual history below. No route charge is posted by this view.';
    render(checked);
+   try{const q=await quote();if(serial===version)renderQuote(q);}catch{/* retain verified historical dashboard */}
   }catch{
    if(serial!==version)return;
    status.textContent='Route financial data is unavailable. No cost, revenue or profit has been invented.';
