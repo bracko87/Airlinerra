@@ -4,8 +4,8 @@
  * open tickets or settle money. Existing independent issuer instances retain
  * separate private HMAC secrets and database source-proof validation.
  *
- * Not complete operational authorization: trusted execution and commercial
- * finance authorities are separate and MUST still issue valid clearances.
+ * All five existing authorities may certify each leg. Certification alone
+ * never authorizes activation: the existing transactional pair gate does that.
  */
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const TYPES=Object.freeze([
@@ -25,7 +25,8 @@ const closed=(status,results=[],sourceInspections=[])=>Object.freeze({
  remainingClearanceTypes:[...MISSING]
 });
 export function createSection9RoundtripCertificationCoordinator({
- operatorIssuer,routeRightsIssuer,slotIssuer,executionFinanceSourceReader
+ operatorIssuer,routeRightsIssuer,slotIssuer,executionFinanceSourceReader,
+ executionIssuer,financeIssuer
 }={}){
  if(operatorIssuer?.clearanceType!=='operator_licence'||
   typeof operatorIssuer.verifyAndCertify!=='function'||
@@ -37,6 +38,13 @@ export function createSection9RoundtripCertificationCoordinator({
  if(executionFinanceSourceReader!==undefined&&
   typeof executionFinanceSourceReader?.inspect!=='function')
   throw Error('SECTION9_PRIVATE_EXECUTION_FINANCE_SOURCE_READER_REQUIRED');
+ const full=executionIssuer!==undefined||financeIssuer!==undefined;
+ if(full&&(
+  executionIssuer?.clearanceType!=='trusted_flight_execution'||
+  typeof executionIssuer.verifyAndCertify!=='function'||
+  financeIssuer?.clearanceType!=='commercial_finance'||
+  typeof financeIssuer.verifyAndCertify!=='function'))
+  throw Error('SECTION9_BOTH_EXECUTION_FINANCE_ISSUERS_REQUIRED');
  return Object.freeze({
   async certifyPreparedPair({
    airlineId,outboundScheduleId,returnScheduleId,
@@ -84,6 +92,40 @@ export function createSection9RoundtripCertificationCoordinator({
       scheduleId:leg.scheduleId,clearanceType:type,status:response.status
      }));
     }
+   }
+   // Both newer authorities use the existing signed ingress and atomic SQL
+   // source recheck. The old diagnostic-only mode remains fail-closed.
+   if(full){
+    const outstanding=()=>allTypes.filter(type=>legs.some(leg=>
+     !results.some(r=>r.scheduleId===leg.scheduleId&&r.clearanceType===type)));
+    const incomplete=(status)=>Object.freeze({
+     ...closed(status,results),remainingClearanceTypes:outstanding()
+    });
+    for(const leg of legs){
+     for(const [type,issuer] of [
+      ['trusted_flight_execution',executionIssuer],
+      ['commercial_finance',financeIssuer]
+     ]){
+      let response;
+      try{response=await issuer.verifyAndCertify({airlineId,...leg,gameDate});}
+      catch{return incomplete('roundtrip_independent_certification_failed');}
+      if(!response||response.scheduleId!==leg.scheduleId||
+       response.clearanceType!==type||
+       !['certification_event_recorded','certification_event_replayed'].includes(response.status)||
+       response.flightActivated!==false||response.movementRecorded!==false||
+       response.bookingsCreated!==false||response.ledgerPosted!==false||
+       (response.status==='certification_event_recorded'?
+        response.certificateIssued!==true:response.replayed!==true))
+       return incomplete('roundtrip_independent_certification_blocked');
+      results.push(Object.freeze({
+       scheduleId:leg.scheduleId,clearanceType:type,status:response.status
+      }));
+     }
+    }
+    return Object.freeze({
+     ...closed('roundtrip_all_five_clearance_types_verified_per_leg',results),
+     certificationComplete:true,remainingClearanceTypes:[]
+    });
    }
    // Inspect the two additional sources independently for EACH leg.
    // These are deliberately NOT certificate issuers and can never finish
