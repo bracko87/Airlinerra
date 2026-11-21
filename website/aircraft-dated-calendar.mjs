@@ -14,15 +14,15 @@ export function buildDatedCalendar(fleet,events,date){
  return fleet.filter(a=>['owned','leased'].includes(a.ownershipType)).map(a=>{
   const blocks=[];
   for(const e of events){
-   if(e.aircraftInventoryId!==a.id||!['flight','maintenance'].includes(e.kind))continue;
+   if(e.aircraftInventoryId!==a.id||!['flight','maintenance','relocation'].includes(e.kind))continue;
    const s=time(e.startUtc),t=time(e.endUtc),arr=time(e.arrivalUtc);
    if(!Number.isFinite(s)||!Number.isFinite(t)||s>=t||s>=end||t<=start)continue;
-   if(e.kind==='flight'&&(!Number.isFinite(arr)||arr<=s||arr>t))continue;
-   blocks.push({...e,begin:(Math.max(s,start)-start)/MINUTE,finish:(Math.min(t,end)-start)/MINUTE,flightMinutes:e.kind==='flight'?clip(s,arr,start,end):0,flightEnd:e.kind==='flight'?Math.max(0,Math.min(1440,(arr-start)/MINUTE)):null});
+   if(e.kind!=='maintenance'&&(!Number.isFinite(arr)||arr<=s||arr>t))continue;
+   blocks.push({...e,begin:(Math.max(s,start)-start)/MINUTE,finish:(Math.min(t,end)-start)/MINUTE,flightMinutes:e.kind!=='maintenance'?clip(s,arr,start,end):0,flightEnd:e.kind!=='maintenance'?Math.max(0,Math.min(1440,(arr-start)/MINUTE)):null});
   }
   blocks.sort((a,b)=>a.begin-b.begin||a.finish-b.finish);
   // Union the operating intervals; overlapping records cannot inflate usage.
-  const intervals=blocks.filter(b=>b.kind==='flight'&&b.flightEnd>b.begin).map(b=>[b.begin,b.flightEnd]).sort((a,b)=>a[0]-b[0]);
+  const intervals=blocks.filter(b=>b.kind!=='maintenance'&&b.flightEnd>b.begin).map(b=>[b.begin,b.flightEnd]).sort((a,b)=>a[0]-b[0]);
   let total=0,last=0;for(const [a,b] of intervals){total+=Math.max(0,b-Math.max(a,last));last=Math.max(last,b);}
   let overlap=false,until=0;for(const b of blocks){if(b.begin<until)overlap=true;until=Math.max(until,b.finish);}
   return {...a,blocks,usage:utilizationForMinutes(total),overlap};
@@ -50,12 +50,12 @@ export function renderDatedCalendar(doc,host,rows,date){
   if(!row.blocks.length)add(doc,track,'p','No confirmed flights or maintenance on this date.','hint');
   for(const b of row.blocks){
    const lane=add(doc,track,'div',null,'schedule-board-track-lane');
-   const title=b.kind==='flight'?b.label+' '+b.fromCode+' - '+b.toCode:b.label+' - '+b.fromCode;
-   const details=b.kind==='flight'?title+' | Departure '+dt(b.startUtc)+' | Arrival '+dt(b.arrivalUtc)+' | Turnaround '+b.turnaroundMinutes+' min | Available '+dt(b.endUtc)+' | Booking '+b.status:title+' | Start '+dt(b.startUtc)+' | End/block until '+dt(b.endUtc)+' | '+b.status+(b.costUsd!=null?' | $'+Number(b.costUsd).toLocaleString('en-US'):'');
+   const title=b.kind!=='maintenance'?b.label+' '+b.fromCode+' - '+b.toCode:b.label+' - '+b.fromCode;
+   const details=b.kind!=='maintenance'?title+' | Departure '+dt(b.startUtc)+' | Arrival '+dt(b.arrivalUtc)+' | Turnaround '+b.turnaroundMinutes+' min | Available '+dt(b.endUtc)+' | Status '+b.status+(b.kind==='relocation'&&b.costUsd!=null?' | USD '+Number(b.costUsd).toLocaleString('en-US'):''):title+' | Start '+dt(b.startUtc)+' | End/block until '+dt(b.endUtc)+' | '+b.status+(b.costUsd!=null?' | $'+Number(b.costUsd).toLocaleString('en-US'):'');
    const band=add(doc,lane,'div',null,'schedule-board-rotation-band is-slot-held');
    band.style.left=b.begin/14.4+'%';band.style.width=(b.finish-b.begin)/14.4+'%';
-   band.style.background=b.kind==='maintenance'?'#8756b8':'#2878c7';
-   if(b.kind==='flight'&&b.finish>b.flightEnd){const p=Math.max(0,Math.min(100,100*(b.flightEnd-b.begin)/(b.finish-b.begin)));band.style.background='linear-gradient(to right,#2878c7 '+p+'%,#205993 '+p+'%)';}
+   band.style.background=b.kind==='maintenance'?'#8756b8':b.kind==='relocation'?'#298c84':'#2878c7';
+   if(b.kind!=='maintenance'&&b.finish>b.flightEnd){const p=Math.max(0,Math.min(100,100*(b.flightEnd-b.begin)/(b.finish-b.begin)));band.style.background='linear-gradient(to right,'+(b.kind==='relocation'?'#298c84':'#2878c7')+' '+p+'%,'+(b.kind==='relocation'?'#1d605a':'#205993')+' '+p+'%)';}
    band.title=details;
    const label=add(doc,lane,'button',title,'schedule-board-inline-flight is-slot-held');
    label.type='button';label.style.left=Math.min(b.begin/14.4,75)+'%';label.title=details;label.setAttribute('aria-label',details);
@@ -64,5 +64,5 @@ export function renderDatedCalendar(doc,host,rows,date){
   }
   if(row.overlap)add(doc,track,'p','Schedule conflict: overlapping confirmed reservations.','hint');
  }
- add(doc,host,'p','Blue: flight including darker turnaround. Purple: maintenance. Utilization excludes turnaround and maintenance.','hint');
+ add(doc,host,'p','Blue: commercial flight. Teal: empty relocation. Purple: maintenance. Darker flight portion: turnaround. Utilization includes all flying but excludes turnaround and maintenance.','hint');
 }
