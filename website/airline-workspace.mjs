@@ -1,6 +1,6 @@
 import {routePlannerMarkup,createRoutePlanner} from './route-planner.mjs';
 import {aircraftDisplayName} from './aircraft-library.mjs';
-import {buildAirlineWeeklyBoard,renderAirlineWeeklyBoard} from './aircraft-weekly-schedule-board.mjs';
+import {buildDatedCalendar,renderDatedCalendar} from './aircraft-dated-calendar.mjs';
 import {berlinSevenDayWindow} from './rolling-flight-calendar.mjs';
 import {WORLD_TIME_URL,verifyWorldTimeResponse} from './world-time-client.mjs';
 import {createCabinServiceManager} from './cabin-services-manager.mjs';
@@ -573,12 +573,6 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
  function renderSchedule(){
   const host=$('schedule-aircraft-board');
   if(!host)return;
-  const board=buildAirlineWeeklyBoard({
-   // The aircraft schedule shows only verified slot-held server schedules.
-   // Browser or server planning drafts must never appear as booked flights.
-   fleet:marketSnapshot?.fleet,serverFleet:scheduleSnapshot?.fleet,
-   drafts:scheduleSnapshot?.drafts,plans:[],localRoutes:[]
-  });
   const selectedDate=scheduleCalendar[scheduleSelectedOffset];
   const caption=$('schedule-selected-day');
   if(caption)caption.textContent=selectedDate?
@@ -593,40 +587,24 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    if(status)status.textContent='The server date is not verified.';
    return;
   }
-  const bookingDataAvailable=!scheduleReadError&&Array.isArray(scheduleSnapshot?.drafts);
-  renderAirlineWeeklyBoard(doc,host,board,{
-   day:selectedDate.weekday,dateLabel:selectedDate.label,
-   bookingsAvailable:bookingDataAvailable
-  });
+  const rows=scheduleReadError?null:buildDatedCalendar(scheduleSnapshot?.fleet,scheduleSnapshot?.events,selectedDate.iso);
+  renderDatedCalendar(doc,host,rows,selectedDate.iso);
   const status=$('schedule-status');
-  if(status){
-   const airplaneCount=board.rows.length;
-   const bookedCount=board.rows.reduce((n,row)=>
-    n+row.days[selectedDate.weekday].events.filter(e=>e.status==='slot-held').length,0);
-   status.textContent=board.status==='unavailable'?
-    'Fleet connection unavailable. Aircraft and bookings cannot be verified.':
-    board.status==='empty'?
-    'No owned or leased aircraft returned by the airline database.':
-    !bookingDataAvailable?
-    airplaneCount+' registered aircraft in fleet. Booking data unavailable: check the schedule API connection.':
-    airplaneCount+' registered aircraft · '+bookedCount+' booked flights on '+
-    selectedDate.label+'.'+
-    (bookedCount===0?' No booked departures on this date.':'');
-  }
+  if(status)status.textContent=rows===null?'Verified calendar data unavailable. Refresh to retry.':
+   rows.length+' registered aircraft - confirmed flights and maintenance on '+selectedDate.label+'.';
  }
  async function loadAirlineSchedule(){
   const ticket=++scheduleFetchVersion;
   const airlineId=data.airline?.id,scheduler=data.scheduler;
   scheduleSnapshot=null;scheduleReadError=false;
   renderSchedule();
-  if(!data.connected||!airlineId||typeof scheduler?.list!=='function'){
+  if(!data.connected||!airlineId||typeof scheduler?.aircraftCalendar!=='function'){
    scheduleReadError=true;renderSchedule();return;
   }
   try{
-   const result=await scheduler.list(airlineId);
+   const result=await scheduler.aircraftCalendar(airlineId);
    if(ticket!==scheduleFetchVersion||data.airline?.id!==airlineId)return;
-   if(!Array.isArray(result?.fleet)||!Array.isArray(result?.plans)||
-      !Array.isArray(result?.drafts))throw Error('Invalid schedule response');
+   if(result?.status!=='verified_aircraft_calendar'||result.readOnly!==true||!Array.isArray(result.fleet)||!Array.isArray(result.events))throw Error('Invalid calendar response');
    scheduleSnapshot=result;scheduleReadError=false;renderSchedule();
   }catch{
    if(ticket!==scheduleFetchVersion)return;
@@ -1740,6 +1718,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
       throw Error('Game maintenance change not confirmed');
     didBook=action==='book';
     await loadGameMaintenanceJobs(aircraftId);
+    void loadAirlineSchedule();
     void loadCommissioningStatus(aircraftId);
    }catch{
     if(message)message.textContent='Game maintenance booking could not be confirmed. Aircraft has not been cleared to fly.';
