@@ -675,7 +675,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
  // The country-picker constructor calls onSelect synchronously. Defer route
  // rendering until all planner callbacks, including preflight, are initialized.
  let plannerInitialized=false;
- const message=(id,value)=>{if($(id))$(id).textContent=value;};
+ const message=(id,value)=>{if($(id)){$(id).textContent=value;if(id==='route-plan-status')$(id).classList.remove('is-success');}};
  const selectedConfigurationId=()=>{
   const key=$('route-aircraft')?.value||'';
   if(/^catalog:[1-9][0-9]*$/.test(key))return Number(key.slice(8));
@@ -2007,7 +2007,14 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
     doc.dispatchEvent(new CustomEvent('airlinerra:route-draft-saved',{detail:{flightNumber,serverSaved:true}}));
     await loadOwnedScheduleData(data.airline.id);
     await resetRouteForm({blank:true});
-    message('route-plan-status','Flight '+flightNumber+' saved in My Routes. '+warning+' Ticket sales and operation remain pending until the schedule is cleared.');
+    const confirmation=$('route-plan-status');
+    if(confirmation){
+     confirmation.classList.add('is-success');
+     confirmation.textContent='Route '+flightNumber+' successfully saved in My Routes.';
+     const note=doc.createElement('span');note.className='route-save-warning';
+     note.textContent=warning+' Ticket sales and operation remain pending until clearance.';
+     confirmation.append(note);
+    }
     return true;
    }catch{message('route-plan-status','The server did not confirm the planned flight. Check My Routes before retrying.');return false;}
    finally{if(submit)submit.disabled=false;}
