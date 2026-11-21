@@ -21,6 +21,12 @@ on:
       - 'server/section9-game-slot-clearance-issuer.mjs'
       - 'server/section9-signed-certification-ingress.mjs'
       - '.github/workflows/section9-roundtrip-certification-issuers-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'server/section9-*.mjs'
+      - 'tests/test_section9_*.mjs'
+      - '.github/workflows/section9-roundtrip-certification-issuers-ci.yml'
   workflow_dispatch:
 permissions:
   contents: read
