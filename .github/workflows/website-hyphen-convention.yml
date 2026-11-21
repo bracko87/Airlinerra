@@ -1,0 +1,39 @@
+name: Site-wide normal hyphen display
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'website/ui-dash-normalizer.js'
+      - 'website/dev-scripts/build.mjs'
+      - '.github/workflows/website-hyphen-convention.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  all-pages:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax and production website build
+        run: |
+          node --check website/ui-dash-normalizer.js
+          cd website
+          npm run build
+      - name: Verify every published HTML page includes the convention
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          root = Path('dist')
+          pages = sorted(root.rglob('*.html'))
+          assert pages
+          for page in pages:
+              text = page.read_text(encoding='utf-8')
+              assert text.count('src="/ui-dash-normalizer.js"') == 1, page
+              print('PASS', page)
+          assert (root/'ui-dash-normalizer.js').read_bytes() == Path('website/ui-dash-normalizer.js').read_bytes()
+          print(f'PASS {len(pages)} published HTML pages covered')
+          PY
