@@ -127,7 +127,7 @@ test('settings and local hypothetical briefs remain separate from owner-scoped p
  assert.match(workspace,/fleet-detail-save/);
  assert.match(html,/data-player-view="fleet-aircraft"/);
  assert.match(workspace,/Route idea saved as a non-operational planning draft in your airline database/);
- assert.match(workspace,/Booked flights only/);
+ assert.match(workspace,/confirmed flights and maintenance/);
  assert.doesNotMatch(workspace,/schedule-board-legend|Departure only:/);
  assert.match(workspace,/cabinConfigurationManager\?\.updateData\(data\)/);
  assert.match(workspace,/factory-cabin-customizer/);
@@ -136,10 +136,11 @@ test('settings and local hypothetical briefs remain separate from owner-scoped p
  assert.match(workspace,/id=\\?"market-acquire\\?"/);
  assert.match(workspace,/role="status"/);
  assert.match(workspace,/id="schedule-aircraft-board"/);
- assert.match(workspace,/buildAirlineWeeklyBoard/);
- assert.match(workspace,/renderAirlineWeeklyBoard/);
+ assert.match(workspace,/buildDatedCalendar\(enriched,scheduleSnapshot\?\.events,selectedDate\.iso\)/);
+ assert.match(workspace,/renderDatedCalendar\(doc,host,rows,selectedDate\.iso\)/);
  assert.doesNotMatch(workspace,/plans:scheduleSnapshot\?\.plans/);
- assert.match(workspace,/scheduleSnapshot\?\.drafts/);
+ assert.match(workspace,/scheduler\.aircraftCalendar\(airlineId\)/);
+ assert.match(workspace,/scheduleSnapshot\?\.events/);
  assert.match(workspace,/cabin-configuration-manager/);
  assert.match(workspace,/mro-directory/);
  assert.match(html,/data-player-view="cabin-configurations"/);
