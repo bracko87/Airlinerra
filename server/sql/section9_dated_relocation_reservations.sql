@@ -64,6 +64,7 @@ RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path TO 'airlinerra
 DECLARE cap record; weekly_hour int; weekly_window int; peak_hour int; peak_window int;
 BEGIN
  IF NEW.stand_type<>'remote' THEN RETURN NEW;END IF;
+ IF NOT EXISTS(SELECT 1 FROM airlinerra_game.section6_dated_relocation_slots_v1 WHERE world_id=NEW.world_id AND airport_key=NEW.airport_key AND stand_type=NEW.stand_type AND direction=NEW.direction AND weekday=NEW.weekday AND minute_of_day/60=NEW.minute_of_day/60) THEN RETURN NEW;END IF;
  SELECT * INTO cap FROM airlinerra_game.section6_airport_slot_capacity_v1 WHERE world_id=NEW.world_id AND airport_key=NEW.airport_key FOR UPDATE;
  IF NOT FOUND THEN RAISE EXCEPTION 'SECTION6_AIRPORT_CAPACITY_NOT_CONFIGURED';END IF;
  SELECT coalesce(max(n),0) INTO peak_hour FROM (SELECT count(*) n FROM airlinerra_game.section6_dated_relocation_slots_v1 WHERE world_id=NEW.world_id AND airport_key=NEW.airport_key AND stand_type=NEW.stand_type AND direction=NEW.direction AND weekday=NEW.weekday AND minute_of_day/60=NEW.minute_of_day/60 AND movement_utc>=airlinerra_game.section9_verified_world_instant_v1() GROUP BY local_date) q;
