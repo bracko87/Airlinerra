@@ -192,10 +192,13 @@ test('the first outbound plan does not show missing return warning; second route
  assert.ok(second.errors.some(e=>e.code==='AIRCRAFT_WRONG_AIRPORT'));
  assert.match(second.warnings.join(' '),/return or repositioning flight/i);
 });
-test('route creation UI no longer invokes planning-only save or claims unapproved routes exist',async()=>{
+test('route creation UI saves unresolved rotation plans without claiming unapproved routes are active',async()=>{
  const ui=await readFile(new URL('../website/route-planner.mjs',import.meta.url),'utf8');
  assert.match(ui,/scheduler\.operationalCreate\(/);
- assert.doesNotMatch(ui,/scheduler\.planSave\(/);
+ assert.match(ui,/scheduler\.planSave\(/);
+ assert.match(ui,/if\(locationWarnings.length\)\{/);
+ assert.match(ui,/result\.passengerBookingsCreated!==false/);
+ assert.match(ui,/draft\.status='planning'/);
  assert.match(ui,/result\?\.routeCreated!==true/);
  assert.match(ui,/result\.activated!==true/);
  assert.match(ui,/result\.bookingEnabled!==true/);
