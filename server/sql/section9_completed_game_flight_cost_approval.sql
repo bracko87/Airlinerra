@@ -135,3 +135,43 @@ BEGIN
  'approved',true,'fuelCostUsd',fuel_cost,'airportCostUsd',fee,'ledgerPosted',false);
 END $function$;
 REVOKE ALL ON FUNCTION airlinerra_game.section9_approve_completed_game_flight_cost_v1(text) FROM PUBLIC,anon,authenticated,service_role;
+
+-- Bounded stage between the existing post-arrival preparation scheduler
+-- and the existing final posting scheduler. No release switches changed.
+CREATE OR REPLACE FUNCTION airlinerra_game.section9_auto_approve_completed_game_flight_costs_v1(p_limit integer DEFAULT 20)
+ RETURNS jsonb LANGUAGE plpgsql
+ SET search_path TO 'airlinerra_game','pg_catalog'
+AS $function$
+DECLARE item record; r jsonb; checked int:=0; approved int:=0; waiting int:=0;
+BEGIN
+ IF current_user IS DISTINCT FROM 'postgres' THEN
+  RAISE EXCEPTION 'SECTION9_PRIVATE_GAME_COST_BATCH_ONLY' USING ERRCODE='42501';END IF;
+ IF p_limit IS NULL OR p_limit NOT BETWEEN 1 AND 100 THEN
+  RAISE EXCEPTION 'SECTION9_GAME_COST_BATCH_LIMIT' USING ERRCODE='22023';END IF;
+ IF NOT EXISTS(SELECT 1 FROM airlinerra_game.section9_flight_engine_readiness_audit_v1
+  WHERE world_id=1 AND trusted_flight_execution_release='ACTIVATED'
+  AND fuel_transaction_release='ACTIVATED' AND automatic_flight_and_fuel_settlement_enabled=true)
+ OR NOT EXISTS(SELECT 1 FROM airlinerra_game.section9_flight_finance_posting_release_v1
+  WHERE world_id=1 AND release_state='approved' AND approved_at IS NOT NULL AND length(approval_reference)>=20)
+ THEN RETURN jsonb_build_object('status','blocked_game_cost_release','checked',0,'approved',0,'waiting',0);END IF;
+ IF NOT pg_try_advisory_xact_lock(583731,10053) THEN
+  RETURN jsonb_build_object('status','game_cost_batch_busy','checked',0,'approved',0,'waiting',0);END IF;
+ FOR item IN SELECT p.physical_flight_id
+  FROM airlinerra_game.section9_actual_ticket_finance_preparations_v1 p
+  WHERE p.preparation_status='UNPOSTED_GAME_ESTIMATE'
+  AND NOT EXISTS(SELECT 1 FROM airlinerra_game.section9_flight_final_cost_approvals_v1 a
+   WHERE a.physical_flight_id=p.physical_flight_id AND a.approval_state='approved')
+  AND NOT EXISTS(SELECT 1 FROM airlinerra_game.section9_route_posted_flight_financials_v1 done
+   WHERE done.physical_flight_id=p.physical_flight_id)
+  ORDER BY p.flight_local_date,p.physical_flight_id LIMIT p_limit
+ LOOP
+  checked:=checked+1;
+  r:=airlinerra_game.section9_approve_completed_game_flight_cost_v1(item.physical_flight_id);
+  IF r->>'status' IN('game_flight_cost_approved','game_flight_cost_approval_replayed') AND r->>'approved'='true'
+   AND r->>'ledgerPosted'='false' THEN approved:=approved+1;
+  ELSIF r->>'approved'='false' THEN waiting:=waiting+1;
+  ELSE RAISE EXCEPTION 'SECTION9_GAME_COST_BATCH_UNEXPECTED_RESULT' USING ERRCODE='42501';END IF;
+ END LOOP;
+ RETURN jsonb_build_object('status','game_cost_batch_completed','checked',checked,'approved',approved,'waiting',waiting);
+END $function$;
+REVOKE ALL ON FUNCTION airlinerra_game.section9_auto_approve_completed_game_flight_costs_v1(integer) FROM PUBLIC,anon,authenticated,service_role;
