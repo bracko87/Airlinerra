@@ -134,6 +134,11 @@ BEGIN
   plan:=airlinerra_game.section9_save_owned_commercial_plan_v1(p_player,p_airline,schedule_id,p_fare,0,0);
   IF (plan->>'economyFareUsd')::numeric IS DISTINCT FROM p_fare OR plan->>'bookingsEnabled' IS DISTINCT FROM 'false'
   THEN failure:=jsonb_build_object('status','blocked_fare_save');RAISE SQLSTATE 'P9001';END IF;
+  -- The slot authority verifies the same version-bound payload row.
+  -- Reserve capacity before signing; it is invisible until this transaction commits.
+  INSERT INTO airlinerra_game.section9_verified_schedule_capacity_v1
+   (schedule_id,airline_id,schedule_version,passenger_seats,cargo_capacity_tonnes,verification_source)
+  VALUES(schedule_id,p_airline,ver,seats,0,'GAME_SIMULTANEOUS_PASSENGER_PAYLOAD_CERTIFIED_V1');
   FOREACH kind IN ARRAY ARRAY['operator_licence','route_traffic_rights','airport_slot_capacity','trusted_flight_execution','commercial_finance'] LOOP
    cert:=airlinerra_game.section9_issue_queued_game_clearance_v1(p_airline,schedule_id,ver,day,kind);
    IF coalesce(cert->>'status','') NOT IN ('certification_event_recorded','certification_event_replayed')
@@ -143,9 +148,7 @@ BEGIN
   activation:=airlinerra_game.section9_commit_certified_schedule_activation_v1(p_player,p_airline,schedule_id,ver,day,28);
   IF activation->>'status' IS DISTINCT FROM 'certified_schedule_activated' OR activation->>'scheduleActivated' IS DISTINCT FROM 'true' OR activation->>'ledgerPosted' IS DISTINCT FROM 'false'
   THEN failure:=jsonb_build_object('status','blocked_activation','details',activation);RAISE SQLSTATE 'P9001';END IF;
-  capacity:=airlinerra_game.section9_register_verified_schedule_capacity_v1(schedule_id,p_airline,seats,0,'GAME_SIMULTANEOUS_PASSENGER_PAYLOAD_CERTIFIED_V1');
-  IF capacity->>'verified' IS DISTINCT FROM 'true' OR (capacity->>'passengerSeats')::int IS DISTINCT FROM seats
-  THEN failure:=jsonb_build_object('status','blocked_capacity');RAISE SQLSTATE 'P9001';END IF;
+  -- Capacity remains identical to the signed slot proof; do not update it here.
   FOR item IN SELECT d::date AS date,w.ordinality::int AS entry
    FROM generate_series(day,day+7,interval '1 day') d
    CROSS JOIN LATERAL jsonb_array_elements(p_weekly) WITH ORDINALITY w(value,ordinality)
