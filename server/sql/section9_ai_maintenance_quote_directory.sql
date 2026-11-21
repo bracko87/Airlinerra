@@ -34,7 +34,7 @@ BEGIN
  ) tier(code,name,price_factor,speed_factor,quality,slots)
  )
  SELECT coalesce(jsonb_agg(jsonb_build_object('providerKey',airport_key||':'||code,'providerName',coalesce(game_lookup_code,airport_key)||' '||name,'airportKey',airport_key,'airportName',airport_name,'airportCode',game_lookup_code,'countryIso',country_iso,'tier',code,'checkCode',p_check,
- 'priceUsd',round(base*location_factor*price_factor,2),'durationMinutes',greatest(15,ceil(policy.downtime_hours*60*speed_factor/15)::int*15),'qualityRating',quality,'designCapacity',slots,'availabilityConfirmed',false,'fictionalGameProvider',true)
+ 'priceUsd',round(base*location_factor*price_factor,2),'durationMinutes',greatest(5,ceil(policy.downtime_hours*60*speed_factor/5)::int*5),'qualityRating',quality,'designCapacity',slots,'availabilityConfirmed',false,'fictionalGameProvider',true)
  ORDER BY airport_name,price_factor),'[]'::jsonb) INTO quotes FROM offers;
  RETURN jsonb_build_object('status','ai_maintenance_quote_directory','readOnly',true,'ledgerPosted',false,'aircraftInventoryId',p_aircraft,'checkCode',p_check,'quotes',quotes,'bookable',false,'note','Indicative provider quotes only; capacity and actual reservations will be connected separately.');
 END $fn$;
