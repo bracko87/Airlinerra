@@ -17,7 +17,7 @@ test('Create new route saves, while Blank new flight clears only the editor',asy
  assert.match(source,/if\(target.id==='route-plan-new'\|\|target.id==='route-plan-blank'\)/);
  assert.match(source,/await resetRouteForm\(\{blank:true\}\)/);
  assert.match(source,/if\(target.id!=='route-plan-save'\)return;/);
- assert.match(source,/await draftWrite\('routes',\[\.\.\.filtered,draft\]\)/);
+ assert.match(source,/await draftWrite\('routes',\[\.\.\.mirror,outbound,inbound\]\)/);
  assert.match(source,/doc\.dispatchEvent\(new CustomEvent\('airlinerra:route-draft-saved'/);
  assert.match(source,/Blank new flight\. The suggestion was cleared/);
  assert.match(css,/#workspace-routes \.route-step1-actions \.primary/);
@@ -58,13 +58,13 @@ test('authenticated route creation requires Supabase and no longer saves browser
  const [route,workspace,directory]=await Promise.all([
   read('route-planner.mjs'),read('airline-workspace.mjs'),read('airline-operations-center.mjs')
  ]);
- assert.match(route,/const canCreateOperational=typeof data\?\.scheduler\?\.operationalCreate==='function'/);
+ assert.match(route,/const canCreateOperational=typeof data\?\.scheduler\?\.operationalRoundtripStage==='function'/);
  assert.match(route,/if\(!canCreateOperational\)\{/);
  assert.match(route,/NOT CREATED — the operational flight service is not connected/);
  assert.match(route,/if\(preflight\?\.gameHardBlocked===true\)/);
- assert.match(route,/await draftWrite\('routes',\[\.\.\.filtered,draft\]\)/);
+ assert.match(route,/await draftWrite\('routes',\[\.\.\.mirror,outbound,inbound\]\)/);
  assert.match(route,/airlinerra:route-draft-saved/);
- assert.match(route,/draft\.storage='server-operational'/);
+ assert.match(route,/storage:'server-operational'/);
  assert.doesNotMatch(route,/scheduler\.planSave\(/);
  assert.doesNotMatch(route,/saved as a LOCAL planning draft/);
  assert.match(workspace,/await database\.update\('workplan'/);
