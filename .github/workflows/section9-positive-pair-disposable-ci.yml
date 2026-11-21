@@ -3,14 +3,16 @@ on:
   push:
     branches: [main, commercial-flight-lifecycle]
     paths:
-      - 'tests/sql/section9_disposable_roundtrip_dispatch_*.sql'
+      - 'tests/sql/section9_disposable_roundtrip_*.sql'
+      - 'server/sql/section9_completed_game_flight_cost_approval.sql'
       - 'tests/sql/section9_disposable_positive_fra_muc_pair_bootstrap.sql'
       - 'tests/sql/section9_disposable_positive_fra_muc_pair_acceptance.sql'
       - 'supabase/migrations/20261117130000_section9_atomic_certified_pair_ticket_activation_v1.sql'
       - '.github/workflows/section9-positive-pair-disposable-ci.yml'
   pull_request:
     paths:
-      - 'tests/sql/section9_disposable_roundtrip_dispatch_*.sql'
+      - 'tests/sql/section9_disposable_roundtrip_*.sql'
+      - 'server/sql/section9_completed_game_flight_cost_approval.sql'
       - '.github/workflows/section9-positive-pair-disposable-ci.yml'
   workflow_dispatch:
 permissions:
@@ -117,6 +119,43 @@ jobs:
           PY
           psql -X -v ON_ERROR_STOP=1 -f /tmp/section9-actual-dispatch.sql
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_roundtrip_dispatch_acceptance.sql
+      - name: Settle the same operated pair using actual preparation and posting functions
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_roundtrip_finance_fixture.sql
+          python3 - <<'PY'
+          from pathlib import Path
+          root=Path('supabase/migrations')
+          fuel=(root/'20261117110000_section9_game_fuel_custody_supply_dispatch_v1.sql').read_text()
+          prep=(root/'20261117093000_section9_actual_ticket_postarrival_unposted_finance_v1.sql').read_text()
+          final=(root/'20261117095000_section9_once_only_final_flight_finance_guarded_v1.sql').read_text()
+          tickets=(root/'20261113225000_section9_postarrival_ticket_revenue_reconciliation_v1.sql').read_text()
+          batch=(root/'20261117094000_section9_auto_prepare_actual_ticket_finance_v1.sql').read_text()
+          fixture=Path('tests/sql/section9_disposable_real_settlement_bootstrap.sql').read_text()
+          def extract(src,name):
+              marker='CREATE OR REPLACE FUNCTION airlinerra_game.'+name+'('
+              start=src.index(marker)
+              end=src.index('REVOKE ALL ON FUNCTION airlinerra_game.'+name+'(',start)
+              return src[start:end]
+          posted=fixture[fixture.index('CREATE TABLE airlinerra_game.section9_route_posted_flight_financials_v1('):]
+          posted=posted[:posted.index(';')+1]
+          approval=final[final.index('CREATE TABLE IF NOT EXISTS airlinerra_game.section9_flight_final_cost_approvals_v1('):final.index('CREATE OR REPLACE FUNCTION airlinerra_game.section9_verify_operated_flight_hmac_pair_v1(')]
+          out=[
+              posted,
+              prep[:prep.index('CREATE OR REPLACE FUNCTION airlinerra_game.section9_prepare_actual_ticket_postarrival_finance_v1(')],
+              approval,
+              extract(tickets,'section9_postarrival_ticket_reconciliation_v1'),
+              extract(fuel,'section9_prepare_actual_ticket_postarrival_finance_v1'),
+              extract(batch,'section9_prepare_arrived_actual_ticket_finance_batch_v1'),
+              extract(final,'section9_verify_operated_flight_hmac_pair_v1'),
+              extract(final,'section9_post_completed_flight_finance_once_v1'),
+              extract(final,'section9_auto_post_complete_game_flights_v1')
+          ]
+          Path('/tmp/section9-pair-finance.sql').write_text('\n'.join(out))
+          PY
+          psql -X -v ON_ERROR_STOP=1 -f /tmp/section9-pair-finance.sql
+          psql -X -v ON_ERROR_STOP=1 -f server/sql/section9_completed_game_flight_cost_approval.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_roundtrip_finance_acceptance.sql
       - name: Summary of isolation
         if: always()
         run: |
