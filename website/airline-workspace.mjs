@@ -197,6 +197,16 @@ const pages=Object.freeze({
 <div class="fleet-detail-row"><span>Current individual aircraft market value</span><strong id="fleet-detail-market-value">—</strong></div>
 <div class="fleet-detail-row"><span>Verified operating cost per flight</span><strong id="fleet-detail-operating-cost">—</strong></div></div></section>
 <p class="hint fleet-detail-disclaimer">Individual aircraft condition, build year, lifecycle and price stay “Not recorded” until verified values are available. Model specifications are reference data, not proof of an individual installed configuration. No invented age, valuation, flight hours or maintenance dates are displayed.</p>
+<section id="fleet-operational-reliability" class="fleet-maintenance-preview" aria-label="Aircraft operational reliability">
+ <h3>Operational reliability</h3>
+ <div class="fleet-detail-grid">
+  <div class="fleet-detail-row"><span>Aircraft condition</span><strong id="fleet-reliability-condition">—</strong></div>
+  <div class="fleet-detail-row"><span>Actual utilization (last 24h)</span><strong id="fleet-reliability-utilization">—</strong></div>
+  <div class="fleet-detail-row"><span>Operational reliability</span><strong id="fleet-reliability-rating">—</strong></div>
+  <div class="fleet-detail-row"><span>Estimated technical-delay risk</span><strong id="fleet-reliability-risk">—</strong></div>
+ </div>
+ <p id="fleet-reliability-notice" class="hint" role="status" aria-live="polite"></p>
+</section>
 <section id="fleet-maintenance-preview" class="fleet-maintenance-preview" aria-label="Aircraft maintenance cycle" aria-live="polite">Maintenance information loads when you open this aircraft.</section>
 <section id="fleet-starter-commissioning" class="fleet-maintenance-preview" aria-label="Starter aircraft commissioning" hidden>
  <h3>Aircraft commissioning</h3>
@@ -907,10 +917,30 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   siteSelect.addEventListener('change',renderQuote);
   quotePanel.append(checkLabel,siteLabel,result);host.append(quotePanel);renderQuote();
   const notice=doc.createElement('p');notice.className='hint';
-  notice.textContent='A–D checks require flying this aircraft to an eligible facility and returning to its hub on verified flights. Booking, maintenance downtime and payment are not activated yet; no flight is automatically moved.';
+  notice.textContent='A–D checks require an eligible maintenance facility. Local maintenance reservations are available below. Relocation reservations remain subject to the release status.';
   host.append(notice);
  }
+ let reliabilityFetchVersion=0;
+ async function loadAircraftReliability(aircraftId){
+  const ticket=++reliabilityFetchVersion,airlineId=data.airline?.id,scheduler=data.scheduler;
+  const host=$('fleet-operational-reliability'),notice=$('fleet-reliability-notice');
+  if(!host||!notice)return;
+  const fields=['condition','utilization','rating','risk'];
+  const write=(key,value)=>{const e=$('fleet-reliability-'+key);if(e)e.textContent=value;};
+  fields.forEach(k=>write(k,'—'));notice.textContent='Loading game reliability…';
+  if(!data.connected||!airlineId||!aircraftId||typeof scheduler?.aircraftReliability!=='function'){notice.textContent='Reliability records unavailable.';return;}
+  try{
+   const r=await scheduler.aircraftReliability({airlineId,aircraftInventoryId:aircraftId});
+   if(ticket!==reliabilityFetchVersion||selectedFleetAircraftId!==aircraftId||data.airline?.id!==airlineId)return;
+   if(r?.status!=='aircraft_reliability_preview'||r.aircraftInventoryId!==aircraftId||r.readOnly!==true||r.dispatchEffectsEnabled!==false||['conditionPct','utilizationPct','operationalReliabilityPct','technicalDelayProbabilityPct'].some(k=>typeof r[k]!=='number'||!Number.isFinite(r[k])||r[k]<0||r[k]>100))throw Error('Reliability unavailable');
+   const pct=x=>Number(x).toLocaleString('en-US',{maximumFractionDigits:2})+'%';
+   write('condition',pct(r.conditionPct));write('utilization',pct(r.utilizationPct)+(r.overloaded?' · Overutilized':''));write('rating',pct(r.operationalReliabilityPct));write('risk',pct(r.technicalDelayProbabilityPct));
+   const condition=$('fleet-detail-condition');if(condition)condition.textContent=pct(r.conditionPct);
+   notice.textContent='Game estimate from actual flight activity and condition. Technical delays are not yet active. Scheduled utilization is shown separately in the aircraft calendar.';
+  }catch{if(ticket===reliabilityFetchVersion)notice.textContent='Reliability records unavailable.';}
+ }
  async function loadMaintenancePreview(aircraftId){
+  void loadAircraftReliability(aircraftId);
   const ticket=++maintenanceFetchVersion;
   const airlineId=data.airline?.id,client=data.fleetClient;
   maintenanceLast=null;renderMaintenancePreview();
