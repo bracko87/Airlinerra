@@ -1085,7 +1085,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    emptyFuelKgPer100Km:aircraft.emptyFuelKgPer100Km,
    halfFuelKgPer100Km:aircraft.halfFuelKgPer100Km,
    fullFuelKgPer100Km:aircraft.fullFuelKgPer100Km,
-   fuelTankCapacityKg:aircraft.fuelTankCapacityKg,payloadFraction:.5
+   fuelTankCapacityKg:aircraft.fuelTankCapacityKg,aircraftMtowKg:aircraft.mtowKg,payloadFraction:.5
   }):null;
   const ids={
    'fleet-detail-name':aircraft?aircraftDisplayName(aircraft.manufacturer,aircraft.model):'Aircraft not available',
