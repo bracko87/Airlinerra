@@ -119,8 +119,8 @@ export function cleanCabinState(value){
  return state;
 }
 /** A deterministic, inspectable forecast, not a passenger purchase or ledger.
- * Airlines pay for all physical items loaded (conservative no-carryover planning).
- * Digital access is licensed only on use and needs hardware on the real flight.
+ * Airlines pay for consumed services only. Free items average 70% uptake.
+ * Digital access needs compatible equipment on the real flight.
  * Flight length/reputation/price influence expected sales; no guaranteed revenue. */
 export function forecastCabinServiceFlight(pkg,{passengers=100,durationMinutes=180,reputationScore=50}={}){
  if(!Number.isSafeInteger(passengers)||passengers<0||passengers>1000||
@@ -146,11 +146,10 @@ export function forecastCabinServiceFlight(pkg,{passengers=100,durationMinutes=1
     Math.pow(item.referencePrice/Math.max(selection.onboardCents,100),.8))):1;
   const purchaseRate=paid?Math.min(.65,item.rate*lengthFactor*reputationFactor*priceFactor):0;
   const expectedWants=paid?Math.min(passengers,Math.round(passengers*purchaseRate)):0;
-  const loadedUnits=included?(item.digital?0:passengers):
-   paid&&!item.digital?Math.ceil(passengers*selection.stockPer100/100):0;
-  const expectedSales=paid?(item.digital?expectedWants:Math.min(expectedWants,loadedUnits)):0;
-  // Physical catering counts loaded units including unsold/expired products.
-  const costUnits=item.digital?(included?passengers:expectedSales):loadedUnits;
+  const expectedSales=paid?expectedWants:0;
+  // Consumption-only model: free uptake averages 70%, and paid goods cost only when sold.
+  const expectedIncludedUnits=included?Math.round(passengers*.7):0;
+  const costUnits=expectedIncludedUnits+expectedSales;
   const airlineCostCents=offered?costUnits*unitCost:0;
   const onboardRevenueCents=paid?expectedSales*selection.onboardCents:0;
   const cannotServeShortMeal=food&&durationMinutes<80;
@@ -158,10 +157,9 @@ export function forecastCabinServiceFlight(pkg,{passengers=100,durationMinutes=1
   if(paid&&expectedSales>0)paidOfferCount++;
   return {
    id:item.id,mode:selection.mode,unitCostCents:unitCost,
-   loadedUnits,costUnits,expectedSales,purchaseRate,
-   stockPer100:selection.stockPer100,passengerPriceCents:paid?selection.onboardCents:0,
+   costUnits,expectedIncludedUnits,expectedSales,purchaseRate,
+   passengerPriceCents:paid?selection.onboardCents:0,
    airlineCostCents,onboardRevenueCents,
-   unsoldUnits:paid&&!item.digital?Math.max(0,loadedUnits-expectedSales):0,
    equipmentRequired:Boolean(item.condition),
    shortFlightIncompatible:cannotServeShortMeal&&included
   };
@@ -189,7 +187,7 @@ export function cabinServiceAttractiveness(pkg){
 }
 /** Pricing facts only; does NOT invent passengers, flight duration or demand.
  * A complimentary item has a one-unit-per-passenger planning allowance.
- * Physical paid goods can still cost money if stocked but unsold. */
+ * Paid services incur their unit cost only when consumed. */
 export function cabinPackageUnitEconomics(pkg){
  const rows=CABIN_SERVICE_CATALOG.map(item=>{
   const offer=cleanItem(pkg?.items?.[item.id],item.id);
@@ -208,7 +206,7 @@ export function cabinPackageUnitEconomics(pkg){
   includedItems:rows.filter(r=>r.mode==='included').length,
   paidItems:rows.filter(r=>r.mode==='onboard').length,
   rows,oneServingEach:true,flightTotalsCalculated:false,
-  excludesWastageAndUnsoldStock:true
+  consumptionOnly:true
  };
 }
 /** Legacy short summary for package directory and compatibility consumers. */
@@ -451,7 +449,7 @@ export function createCabinServiceManager({doc,host,storage,identity}={}){
   }
   editor.append(table);
   editor.append(element(doc,'p','hint',
-   'Airline unit costs are provisional game estimates. Free services count as one unit each in the per-passenger allowance; actual use may differ. Physical paid items cost money when stocked, even if unsold. Unit margin means selling price minus supply cost, before waste and other expenses. Flight totals are calculated only from actual flights.'));
+   'Airline unit costs are provisional game estimates. Free services count as one unit each in the per-passenger allowance; actual use may differ. Free services are consumed by around 60–80% of passengers. Paid items incur supply costs only when sold. Unit margin means selling price minus supply cost. Flight totals are calculated only from actual flights.'));
   body.append(editor);host.append(body);
 
   updateMetrics();
