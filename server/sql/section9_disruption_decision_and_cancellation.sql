@@ -91,4 +91,14 @@ BEGIN
  RETURN jsonb_build_object('status','flight_cancelled','cancelled',true,'replayed',false,'cancelledSeats',seats,'releasedHeldSeats',held,'cancelledHolds',n,'foregoneTicketQuoteUsd',gross,'refundUsd',0,'ledgerPosted',false,'weeklyScheduleRetained',true);
 END $fn$;
 REVOKE ALL ON FUNCTION airlinerra_game.section9_cancel_unflown_occurrence_v1(uuid,text) FROM PUBLIC,anon,authenticated,service_role;
+-- Prevent stale demand allocation plans from refilling cancelled inventory.
+CREATE OR REPLACE FUNCTION airlinerra_game.section9_cancelled_capacity_guard_v1()
+RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path TO 'airlinerra_game','pg_catalog' AS $fn$
+BEGIN
+ IF (NEW.passengers_held>OLD.passengers_held OR NEW.cargo_held_tonnes>OLD.cargo_held_tonnes) AND EXISTS(SELECT 1 FROM airlinerra_game.section9_flight_cancellation_receipts_v1 WHERE physical_flight_id=OLD.physical_flight_id) THEN RAISE EXCEPTION 'SECTION9_CANCELLED_OCCURRENCE_CAPACITY_CLOSED';END IF;
+ RETURN NEW;
+END $fn$;
+REVOKE ALL ON FUNCTION airlinerra_game.section9_cancelled_capacity_guard_v1() FROM PUBLIC,anon,authenticated,service_role;
+DROP TRIGGER IF EXISTS section9_cancelled_capacity_guard ON airlinerra_game.section9_occurrence_capacity_inventory_v1;
+CREATE TRIGGER section9_cancelled_capacity_guard BEFORE UPDATE OF passengers_held,cargo_held_tonnes ON airlinerra_game.section9_occurrence_capacity_inventory_v1 FOR EACH ROW EXECUTE FUNCTION airlinerra_game.section9_cancelled_capacity_guard_v1();
 COMMIT;
