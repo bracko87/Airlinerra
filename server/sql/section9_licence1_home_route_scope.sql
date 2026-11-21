@@ -804,6 +804,6 @@ BEGIN
   'bookingsCreated',false,'ledgerPosted',false);
 END $function$;
 -- Close obsolete paid domestic and third/fourth freedom application paths.
-UPDATE airlinerra_game.section9_game_permission_issuance_policy_v1 SET release_enabled=false WHERE permission_code IN ('DOMESTIC_TRAFFIC','THIRD_FOURTH_FREEDOM');
+UPDATE airlinerra_game.section9_game_permission_issuance_policy_v1 SET release_enabled=false,released_at=NULL WHERE permission_code IN ('DOMESTIC_TRAFFIC','THIRD_FOURTH_FREEDOM');
 UPDATE airlinerra_game.business_permission_catalog_v1 SET enabled_in_game=false,updated_at=now() WHERE permission_code IN ('DOMESTIC_TRAFFIC','THIRD_FOURTH_FREEDOM');
 COMMIT;
