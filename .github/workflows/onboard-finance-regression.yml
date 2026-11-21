@@ -1,0 +1,37 @@
+name: Onboard finance SQL regression (disposable)
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'server/sql/section9_onboard*.sql'
+      - 'server/sql/section9_simplify_onboard_consumption.sql'
+      - 'server/sql/section9_gated_onboard*.sql'
+      - 'tests/sql/onboard_finance_isolated.sql'
+      - '.github/workflows/onboard-finance-regression.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: fixture-only-password
+          POSTGRES_DB: onboard_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify onboard consumption and atomic finance using local evidence fixtures
+        env:
+          PGHOST: localhost
+          PGPORT: '5432'
+          PGUSER: postgres
+          PGPASSWORD: fixture-only-password
+          PGDATABASE: onboard_test
+        run: psql -X -v ON_ERROR_STOP=1 -f tests/sql/onboard_finance_isolated.sql
