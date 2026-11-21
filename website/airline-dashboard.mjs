@@ -58,7 +58,26 @@ export function renderCompanyNews(doc,airline,worlds,entries){
   'Your airline is registered. More company milestones will appear when recorded.';
  row.append(heading,description);root.append(row);
 }
+/** Render only validated, server-generated experience data. Empty history is not a satisfaction score. */
+export function renderPassengerReputation(doc,airline){
+ const $=id=>doc.getElementById(id);
+ const p=airline?.passengerReputation;
+ const valid=p&&typeof p.reputation==='number'&&Number.isFinite(p.reputation)&&p.reputation>=0&&p.reputation<=100&&Number.isSafeInteger(p.passengerExperiences)&&p.passengerExperiences>=0;
+ const format=v=>new Intl.NumberFormat('en-US',{maximumFractionDigits:1}).format(v);
+ const put=(id,value)=>{const node=$(id);if(node)node.textContent=value;};
+ put('dashboard-reputation',valid?format(p.reputation)+' / 100':'Not available');
+ put('dashboard-satisfaction',valid&&p.passengerExperiences>0&&typeof p.averageSatisfaction==='number'&&Number.isFinite(p.averageSatisfaction)&&p.averageSatisfaction>=0&&p.averageSatisfaction<=100?format(p.averageSatisfaction)+' / 100':'No experiences yet');
+ if(!valid)put('dashboard-satisfaction','Not available');
+ put('dashboard-experience-count',valid?new Intl.NumberFormat('en-US').format(p.passengerExperiences):'-');
+ const measured=valid&&p.demandEffectEnabled===true&&typeof p.potentialDemandMultiplier==='number'&&Number.isFinite(p.potentialDemandMultiplier)&&p.potentialDemandMultiplier>=0.75&&p.potentialDemandMultiplier<=1.15;
+ const pct=measured?(p.potentialDemandMultiplier-1)*100:0;
+ put('dashboard-reputation-demand',measured?(Math.abs(pct)<0.005?'Neutral':(pct>0?'+':'')+format(pct)+'%'):valid?'Not activated':'Not available');
+ put('dashboard-reputation-note',!valid?'Reputation data is not available.':p.passengerExperiences===0?'Starting reputation. No recorded passenger experiences yet.': 'Based on passenger-weighted flight and disruption experiences over the last 90 game days.');
+ const meter=$('dashboard-reputation-meter');
+ if(meter){meter.hidden=!valid;if(valid)meter.value=p.reputation;}
+}
 export function renderAirlineDashboard(doc,{airline=null,worlds=[],ledgerEntries=null}={}){
+ renderPassengerReputation(doc,airline);
  const $=id=>doc.getElementById(id);
  if($('dashboard-finance-cash'))
   $('dashboard-finance-cash').textContent=airline?.cashUsd!==undefined?
