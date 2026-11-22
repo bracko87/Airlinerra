@@ -1,4 +1,5 @@
 import {readCachedFleetCrewCapacity} from './fleet-crew-capacity-cache.mjs';
+import {previewExternalCrewPlan} from './external-crew-planning-worker.mjs';
 /** Secure World 1 aircraft purchase/lease market, server-side only.
  * Monetary price, airline ownership and registration checks live in PostgreSQL.
  * This service never activates live flights.
@@ -15,7 +16,7 @@ const uuid=value=>typeof value==='string'&&UUID.test(value);
 export function validateFleetAcquisitionRequest(body){
  if(!body||typeof body!=='object'||Array.isArray(body)||
     typeof body.action!=='string'||!uuid(body.airlineId))return false;
- if(['crew-capacity','management-responsibilities'].includes(body.action))return Object.keys(body).length===2;
+ if(['crew-capacity','management-responsibilities','external-crew-preview'].includes(body.action))return Object.keys(body).length===2;
  if(body.action==='management-responsibilities-save'){
   const keys=['pilots','cabin','station','ground','maintenance','customer','administrative'];
   return Object.keys(body).length===4&&Number.isInteger(body.version)&&body.version>=0&&body.version<2147483647&&body.policies&&typeof body.policies==='object'&&!Array.isArray(body.policies)&&Object.keys(body.policies).length===keys.length&&keys.every(k=>['manual','approval','auto'].includes(body.policies[k]));
@@ -587,6 +588,11 @@ export function createFleetAcquisitionHandler({verifyUserToken,database}={}){
   let client;
   try{
    client=await database.connect();
+   if(body.action==='external-crew-preview'){
+    const owner=await client.query(FLEET_SQL.owner,[body.airlineId,playerId]);
+    if(owner.rowCount!==1)return respond(403,{error:'Airline not owned by this account'});
+    return respond(200,await previewExternalCrewPlan({client,playerId,airlineId:body.airlineId}));
+   }
    if(['crew-capacity','management-responsibilities','management-responsibilities-save'].includes(body.action)){
     const owner=await client.query(FLEET_SQL.owner,[body.airlineId,playerId]);
     if(owner.rowCount!==1)return respond(403,{error:'Airline not owned by this account'});

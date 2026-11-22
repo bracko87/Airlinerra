@@ -1,7 +1,9 @@
 import {planWeeklyCrew} from './weekly-crew-allocation-engine.mjs';
+import {prepareExternalCrewPlan} from './external-crew-planning-worker.mjs';
 // Private worker only. The database independently validates every seat and duty.
 // Saving a preview does not reserve live crew or affect commercial operations.
-export async function preparePersistentCrewPlan({client,playerId,airlineId,planId,windowStartUtc,save=false}){
+export async function preparePersistentCrewPlan({client,playerId,airlineId,planId,windowStartUtc,save=false,externalCrew=false,authorizeExternal=false,maxExternalCostUsd=0}){
+ if(externalCrew===true)return prepareExternalCrewPlan({client,playerId,airlineId,planId,windowStartUtc,save,authorizeExternal,maxExternalCostUsd});
  if(typeof client?.query!=='function'||typeof planId!=='string'||typeof save!=='boolean')throw Error('INVALID_CREW_PLAN_WORKER_INPUT');
  const args=[playerId,airlineId,windowStartUtc];
  const response=await client.query('SELECT airlinerra_game.section9_owned_weekly_crew_input_v1($1::uuid,$2::uuid,$3::timestamptz) AS result',args);
