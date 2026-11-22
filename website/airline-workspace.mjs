@@ -21,7 +21,7 @@ export const AIRLINE_UI_DEFAULTS=Object.freeze({
 });
 export const AIRLINE_UI_VIEWS=Object.freeze([
  'overview','airline','fleet','fleet-aircraft','routes','route-details','schedule','finances','worlds',
- 'airports','staff','rankings','service','cabin-configurations','aircraft-new-orders','aircraft-market','maintenance',
+ 'airports','staff','salary-management','rankings','service','cabin-configurations','aircraft-new-orders','aircraft-market','maintenance',
  'settings','interface','notifications','help'
 ]);
 export function cleanUiPreferences(value){
@@ -405,6 +405,7 @@ export const STAFF_SECTIONS=Object.freeze([
  Object.freeze({id:'pilots',label:'Pilots',groups:Object.freeze(['pilots'])}),
  Object.freeze({id:'other',label:'Other Staff',groups:Object.freeze(['cabin','airport','ramp','operations','technical','cargo','commercial','administration','customer','training'])})
 ]);
+const navigationSalaryLink=()=>'<div class="workspace-actions">'+button('salary-management','Salary Management')+'</div>';
 export function staffCatalogueMarkup(){
  const groupMarkup=group=>'<section class="staff-position-group" data-staff-group="'+group.id+'"><h3>'+group.title+'</h3><p class="hint">'+group.scope+' · '+group.positions.length+' position types</p><div class="workspace-task-list">'+
  group.positions.map(position=>'<div data-staff-position="'+position.id+'"><strong>'+position.title+'</strong><span>'+position.responsibility+'</span></div>').join('')+'</div></section>';
@@ -413,6 +414,31 @@ export function staffCatalogueMarkup(){
  STAFF_SECTIONS.map((section,index)=>'<section id="staff-section-'+section.id+'" data-staff-section-panel="'+section.id+'"'+(index===0?'':' hidden')+'>'+
  (section.id==='management'?'<p class="hint">Holding executives belong to the holding only. The original airline and every airline subsidiary have their own airline management positions.</p>':section.id==='pilots'?'<p class="hint">Individual profiles, flight hours, aircraft qualifications, employment history and career progression will be defined in a later phase.</p>':'<p class="hint">Department and station roles. Employee counts, hiring and staffing rules will be defined later.</p>')+
  section.groups.map(id=>groupMarkup(STAFF_POSITION_GROUPS.find(group=>group.id===id))).join('')+'</section>').join('');
+}
+// Salary planning is deliberately non-persistent until employment mechanics exist.
+export function previewStaffSalary(base,percent){
+ if(base===null||base===undefined||String(base).trim()===''||percent===null||percent===undefined||String(percent).trim()==='')return null;
+ const amount=Number(base),change=Number(percent);
+ if(!Number.isFinite(amount)||amount<0||amount>1000000||!Number.isFinite(change)||change< -100||change>1000)return null;
+ return Math.round(amount*(1+change/100)*100)/100;
+}
+export function salaryManagementMarkup(){
+ const rows=STAFF_POSITION_GROUPS.flatMap(group=>group.positions.map(position=>{
+  const category=STAFF_SECTIONS.find(section=>section.groups.includes(group.id)).id;
+  return '<tr data-salary-row="'+position.id+'" data-salary-category="'+category+'" data-salary-scope="'+(group.id==='holding'?'holding':'airline')+'">'+
+   '<td><strong>'+position.title+'</strong><br><span class="hint">'+group.title+'</span></td>'+
+   '<td><input type="number" min="0" max="1000000" step="0.01" data-salary-base aria-label="Illustrative monthly salary for '+position.title+'" placeholder="Enter USD"></td>'+
+   '<td><input type="number" min="-100" max="1000" step="0.1" value="0" data-salary-adjustment aria-label="Percentage adjustment for '+position.title+'"></td>'+
+   '<td data-salary-result>—</td></tr>';
+ })).join('');
+ return '<p class="hint">Salary planning preview only. Enter illustrative monthly salaries; no employment contracts, real payroll or game balances are changed. The catalogue is shared with Staff &amp; Management.</p>'+
+ '<div class="workspace-money-grid">'+
+ '<label class="workspace-label">Company scope<select id="salary-scope"><option value="all">Entire group (position catalogue)</option><option value="holding">Holding executives</option><option value="airline">Original airline / subsidiary (per airline)</option></select></label>'+
+ '<label class="workspace-label">Staff category<select id="salary-category"><option value="all">All positions</option><option value="management">Board &amp; Management</option><option value="pilots">Pilots</option><option value="other">Other Staff</option></select></label>'+
+ '<label class="workspace-label">Bulk adjustment (%)<input id="salary-bulk-percent" type="number" min="-100" max="1000" step="0.1" value="5"></label></div>'+
+ '<div class="workspace-actions"><button id="salary-apply-preview" type="button" class="primary">Apply to displayed positions</button><button id="salary-reset-preview" type="button" class="secondary">Reset adjustments</button></div>'+
+ '<p id="salary-preview-status" class="hint" role="status" aria-live="polite">Position adjustments are editable individually. Individual employee contracts and actual company payroll will be connected later.</p>'+
+ '<div class="fleet-table-scroll"><table class="salary-planning-table" aria-label="Monthly salary planning by position"><thead><tr><th scope="col">Position</th><th scope="col">Illustrative salary (USD/month)</th><th scope="col">Adjustment (%)</th><th scope="col">New salary (USD/month)</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
 }
 const pages=Object.freeze({
  'airline':()=>card('Company identity',
@@ -618,7 +644,8 @@ const pages=Object.freeze({
    '<div id="budget-result" class="workspace-detail" role="status"></div>'+
    small('The scenario uses user-entered monthly figures and latest displayed cash. It is not the actual income statement, balance sheet or cash flow.'),
    'PLANNING TOOL'),
- 'staff':()=>card('Staff & Management',staffCatalogueMarkup(),'PERSONNEL STRUCTURE'),
+ 'staff':()=>card('Staff & Management',staffCatalogueMarkup()+navigationSalaryLink(),'PERSONNEL STRUCTURE'),
+ 'salary-management':()=>card('Salary Management',salaryManagementMarkup(),'SALARY PLANNING'),
  'rankings':()=>card('World rankings',
    '<p>Compete with airlines in the same world. When the live ranking engine is available, this page will show verified airline positions and performance.</p>'+
    '<div class="workspace-kpis"><div><span>Airlines ranked</span><strong>Not published</strong></div>'+
@@ -2120,7 +2147,26 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   if(selectedUsedProfileId)void loadUsedAircraftDetail(selectedUsedProfileId);
   void loadAirlineSchedule();
  }
+ function updateSalaryPreviewRow(row){
+  const value=previewStaffSalary(row.querySelector('[data-salary-base]').value,row.querySelector('[data-salary-adjustment]').value);
+  row.querySelector('[data-salary-result]').textContent=value===null?'—':new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:2}).format(value);
+ }
+ function filterSalaryPreview(){
+  const host=$('workspace-salary-management');
+  if(!host)return;
+  const scope=$('salary-scope').value,category=$('salary-category').value;
+  for(const row of host.querySelectorAll('[data-salary-row]')){
+   row.hidden=(scope!=='all'&&row.dataset.salaryScope!==scope)||(category!=='all'&&row.dataset.salaryCategory!==category);
+  }
+ }
+ doc.getElementById('player-main')?.addEventListener('input',event=>{
+  if(event.target.matches('[data-salary-base],[data-salary-adjustment]')){
+   const row=event.target.closest('[data-salary-row]');
+   if(row)updateSalaryPreviewRow(row);
+  }
+ });
  doc.getElementById('player-main')?.addEventListener('change',async event=>{
+  if(event.target.id==='salary-scope'||event.target.id==='salary-category'){filterSalaryPreview();return;}
   if(event.target?.id!=='fleet-aircraft-image-file')return;
   const aircraft=marketSnapshot?.fleet?.find(a=>a.id===selectedFleetAircraftId);
   const file=event.target.files?.[0];
@@ -2305,6 +2351,25 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   if(selectedUsed){
    const offer=usedMarketSnapshot?.offers?.find(x=>x.listingId===selectedUsed.dataset.usedMarketSelect);
    showUsedBidPanel(offer);
+   return;
+  }
+  const salaryButton=event.target.closest('#salary-apply-preview, #salary-reset-preview');
+  if(salaryButton){
+   const host=$('workspace-salary-management');
+   if(!host)return;
+   const raw=$('salary-bulk-percent')?.value;
+   const percent=Number(raw);
+   const reset=salaryButton.id==='salary-reset-preview';
+   if(!reset&&(raw===''||!Number.isFinite(percent)||percent< -100||percent>1000)){
+    $('salary-preview-status').textContent='Enter a valid adjustment between -100% and +1000%.';
+    return;
+   }
+   const rows=[...host.querySelectorAll('[data-salary-row]')].filter(row=>!row.hidden);
+   for(const row of rows){
+    row.querySelector('[data-salary-adjustment]').value=reset?'0':String(percent);
+    updateSalaryPreviewRow(row);
+   }
+   $('salary-preview-status').textContent=rows.length+' displayed positions updated in this preview only.';
    return;
   }
   const staffTab=event.target.closest('[data-staff-section]');
