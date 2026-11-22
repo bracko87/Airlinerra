@@ -5,7 +5,7 @@ test('staff structure has exactly three sections and separates holding from airl
  assert.deepEqual(STAFF_SECTIONS.map(s=>s.id),['management','pilots','other']);
  assert.deepEqual(STAFF_SECTIONS[0].groups,['holding','airline']);
  assert.equal(STAFF_POSITION_GROUPS.find(g=>g.id==='holding').positions.length,8);
- assert.equal(STAFF_POSITION_GROUPS.find(g=>g.id==='airline').positions.length,11);
+ assert.equal(STAFF_POSITION_GROUPS.find(g=>g.id==='airline').positions.length,12);
  assert.equal(STAFF_POSITION_GROUPS.find(g=>g.id==='pilots').positions.length,7);
  assert.equal(STAFF_SECTIONS[2].groups.length,8);
  const ids=STAFF_POSITION_GROUPS.flatMap(g=>g.positions.map(p=>p.id));
