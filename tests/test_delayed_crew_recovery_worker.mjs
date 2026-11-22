@@ -12,7 +12,7 @@ const snapshot={status:'rolling_crew_input_preview',windowStartUtc:start,plannin
  pilots:[person('captain','captain'),person('reserve','captain'),person('fo','firstOfficer')],cabinMembers:[person('fa','cabin'),person('extra','cabin')],
  preferredAssignments:[{flightId:'f1',captains:['captain'],firstOfficers:['fo'],cabinCrew:['fa']}],
  invalidOccurrenceCount:0,cabinHeadcountReconciled:true,unboundDeparturesLast7Days:0,unresolvedCaptureIssues:0,alreadyReportedFutureFlights:0};
-const assess=(status,failed=[])=>({status,occurrenceId:'f1',revisedDepartureUtc:'2026-11-24T07:00:00Z',revisedArrivalUtc:'2026-11-24T10:00:00Z',employeesRequiringReplacementOrReview:failed.length,
+const assess=(status,failed=[])=>({status,occurrenceId:'f1',revisedDepartureUtc:'2026-11-24T07:00:00Z',revisedArrivalUtc:'2026-11-24T10:00:00Z',employeesRequiringReplacementOrReview:failed.length,employeesAssessed:3,
  employees:[...['captain','fo','fa'].map(employeeId=>({employeeId,status:failed.includes(employeeId)?'duty_limit_exceeded':'duty_window_fits'}))],
  dispatchEnforced:false,planChanged:false,contractsChanged:false});
 const evidence=(status='delayed_crew_duty_windows_fit',failed=[])=>[{flightId:'f1',originalDepartureUtc:flight.departureUtc,originalArrivalUtc:flight.arrivalUtc,
@@ -28,7 +28,8 @@ test('overtime captain replaced with qualified reserve, not crew teleported acro
  assert.equal(x.contractingPerformed,false);assert.equal(x.financeSettled,false);
 });
 test('all unavailable crew produce external quote requirement but never charges or dispatch',()=>{
- const r=calculateDelayedCrewRecovery(snapshot,evidence('delayed_crew_replacement_required',['captain','fo','fa']));
+ const empty={...snapshot,pilots:snapshot.pilots.filter(x=>x.id!=='reserve'),cabinMembers:snapshot.cabinMembers.filter(x=>x.id!=='extra')};
+ const r=calculateDelayedCrewRecovery(empty,evidence('delayed_crew_replacement_required',['captain','fo','fa']));
  assert.equal(r.externalCrewAssignments.captains,1);assert.equal(r.externalCrewAssignments.firstOfficers,1);assert.equal(r.externalCrewAssignments.cabinCrew,1);
  assert.equal(r.canAutomaticallyDispatch,false);assert.equal(r.requiresIndependentContractRequote,true);
 });
@@ -36,7 +37,7 @@ test('unverified slot, past report, unknown employee and altered assessment reje
  const modified=evidence();modified[0].dispatchAllowed=false;
  assert.equal(calculateDelayedCrewRecovery(snapshot,modified).status,'unverified_or_conflicting_delayed_slot');
  assert.equal(calculateDelayedCrewRecovery({...snapshot,alreadyReportedFutureFlights:1},evidence()).status,'already_reported_duty_protected');
- const x=evidence('delayed_crew_replacement_required',['stranger']);assert.equal(calculateDelayedCrewRecovery(snapshot,x).status,'reported_or_unavailable_crew_requires_protected_review');
+ const x=evidence('delayed_crew_replacement_required',['captain']);x[0].assessment.employees[0].employeeId='stranger';assert.equal(calculateDelayedCrewRecovery(snapshot,x).status,'reported_or_unavailable_crew_requires_protected_review');
  const y=evidence();y[0].assessment.contractsChanged=true;assert.equal(calculateDelayedCrewRecovery(snapshot,y).status,'unverified_or_conflicting_delayed_slot');
 });
 test('owner-scoped recovery only executes SELECT and no client write action',async()=>{

@@ -61,14 +61,14 @@ export function calculateDelayedCrewRecovery(snapshot,evidence){
    a?.occurrenceId!==e.flightId||
    ms(a.revisedDepartureUtc)!==dep||ms(a.revisedArrivalUtc)!==arr||
    a.planChanged!==false||a.contractsChanged!==false||
-   !Array.isArray(a.employees)||!Number.isInteger(a.employeesRequiringReplacementOrReview)||
+   !Array.isArray(a.employees)||a.employeesAssessed!==a.employees.length||!Number.isInteger(a.employeesRequiringReplacementOrReview)||
    a.employeesRequiringReplacementOrReview<0||a.employeesRequiringReplacementOrReview>a.employees.length)
    return hold('unverified_or_conflicting_delayed_slot',{flightId:e?.flightId??null});
   seen.add(e.flightId);
   const failed=a.employees.filter(x=>x.status!=='duty_window_fits');
   if(failed.length!==a.employeesRequiringReplacementOrReview)return hold('delayed_duty_failures_unreconciled',{flightId:e.flightId});
   for(const person of failed){
-   if(typeof person.employeeId!=='string'||!person.employeeId||excluded.has(person.employeeId)&&false)
+   if(typeof person.employeeId!=='string'||!person.employeeId)
     return hold('delayed_crew_employee_unverified',{flightId:e.flightId});
    excluded.add(person.employeeId);
   }
