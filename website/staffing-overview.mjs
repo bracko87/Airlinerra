@@ -81,7 +81,8 @@ export function createStaffingOverview({doc,getData}){
    info.textContent=r.affectedFlights+' delayed flights · '+r.reassignedFlights+' proposed crew changes · '+r.unresolvedInternalShortages+' internal shortages · '+r.externalContractFlightsProposed+' contractor candidates. Preview only.';
    const c=r.externalCrewAssignments||{};
    host.append(node('p',(c.captains||0)+' external captains · '+(c.firstOfficers||0)+' first officers · '+(c.cabinCrew||0)+' cabin assignments proposed; contract prices and revised timings need verification.'));
-   for(const f of r.assessedFlights||[])host.append(node('p','Revised departure '+f.effectiveDepartureUtc+' · '+f.replacementRequired+' original staff need review · '+String(f.action).replace(/_/g,' ')));
+   for(const f of r.assessedFlights||[])host.append(node('p','Revised departure '+f.effectiveDepartureUtc+' · '+f.replacementRequired+' original staff need review · '+String(f.action).replace(/_/g,' ')+(f.rosterValidation?' · '+String(f.rosterValidation).replace(/_/g,' '):'')+(f.estimatedExternalCostUsd==null?'':' · estimated cost '+new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(f.estimatedExternalCostUsd))));
+   if(Number.isInteger(r.rosterValidationPassedFlights))host.append(node('p',r.rosterValidationPassedFlights+' / '+r.affectedFlights+' delayed rosters independently validated. No roster or contract has been authorized.'));
    if(r.deferredFlights)host.append(node('p',r.deferredFlights+' flights shifted beyond the review window and require another review.'));
   }catch{if(ticket===delayedGeneration&&getData().airline?.id===id)info.textContent='Could not verify delayed crew recovery.';}finally{if(ticket===delayedGeneration){delayedBusy=false;btn.disabled=false;}}
  }

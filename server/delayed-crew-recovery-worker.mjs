@@ -7,6 +7,7 @@ import {planWeeklyCrew} from './weekly-crew-allocation-engine.mjs';
 import {previewCrewSubstitutions} from './crew-substitution-engine.mjs';
 
 const SQL={
+ validate:'SELECT airlinerra_game.section9_validate_delayed_crew_roster_v1($1::uuid,$2::uuid,$3::uuid,$4::uuid[],$5::uuid[],$6::uuid[],$7::integer,$8::integer,$9::integer) AS result',
  clock:'SELECT airlinerra_game.section9_verified_world_instant_v1() AS now',
  rolling:'SELECT airlinerra_game.section9_owned_rolling_crew_input_v1($1::uuid,$2::uuid,$3::timestamptz) AS result',
  delays:`SELECT o.id::text AS "flightId",o.departure_utc AS "originalDepartureUtc",
@@ -34,7 +35,7 @@ const iso=v=>new Date(v).toISOString();
 const hold=(status,more={})=>({status,...more,changesPersisted:false,contractingPerformed:false,dispatchEnforced:false,flightCancellationTriggered:false});
 const roleKeys=['captains','firstOfficers','cabinCrew'];
 function counts(contracts){const c={captains:0,firstOfficers:0,cabinCrew:0};for(const x of contracts)for(const key of roleKeys)c[key]+=x[key];return c;}
-export function calculateDelayedCrewRecovery(snapshot,evidence){
+function buildDelayedCrewRecovery(snapshot,evidence,proposals){
  if(snapshot?.status!=='rolling_crew_input_preview'||snapshot.invalidOccurrenceCount!==0||
  snapshot.cabinHeadcountReconciled!==true||!Array.isArray(snapshot.flights)||
  !Array.isArray(snapshot.pilots)||!Array.isArray(snapshot.cabinMembers)||
@@ -102,12 +103,15 @@ export function calculateDelayedCrewRecovery(snapshot,evidence){
    {externalCrewPreview:true});}
   catch{return hold('external_recovery_rotation_invalid',{affectedFlights:assessed.length,assessedFlights:assessed});}
  }
- const byChanges=new Map(substitution.changes.map(c=>[c.flightId,c.replacements]));
+ const finalPlan=mixed||substitution;
+ const priorRoster=new Map(snapshot.preferredAssignments.map(a=>[a.flightId,a]));
+ const finalAssignments=new Map(finalPlan.assignments.map(a=>[a.flightId,a]));
  const byContract=new Map((mixed?.externalContracts||[]).map(c=>[c.flightId,c]));
  const flightsResult=assessed.map(x=>{
-  const changes=byChanges.get(x.flightId)||{};
-  const replacementCount=roleKeys.reduce((n,k)=>n+(changes[k]?.added?.length||0),0);
+  const chosen=finalAssignments.get(x.flightId),before=priorRoster.get(x.flightId);
+  const replacementCount=chosen?roleKeys.reduce((n,k)=>n+chosen[k].filter(id=>!(before?.[k]||[]).includes(id)).length,0):0;
   const newContract=byContract.get(x.flightId);
+  if(chosen)proposals.push({flightId:x.flightId,captains:chosen.captains,firstOfficers:chosen.firstOfficers,cabinCrew:chosen.cabinCrew,externalCaptains:newContract?.captains||0,externalFirstOfficers:newContract?.firstOfficers||0,externalCabin:newContract?.cabinCrew||0});
   return {...x,internalReplacementAssignments:replacementCount,
    proposedExternalCaptains:newContract?.captains||0,
    proposedExternalFirstOfficers:newContract?.firstOfficers||0,
@@ -134,6 +138,7 @@ export function calculateDelayedCrewRecovery(snapshot,evidence){
   // Internal crew identities never leave the private worker through this summary.
   });
 }
+export function calculateDelayedCrewRecovery(snapshot,evidence){return buildDelayedCrewRecovery(snapshot,evidence,[]);}
 export async function prepareDelayedCrewRecovery({client,playerId,airlineId,limit=50}={}){
  if(typeof client?.query!=='function'||!Number.isInteger(limit)||limit<1||limit>100)
  throw Error('INVALID_DELAYED_RECOVERY_REQUEST');
@@ -146,7 +151,29 @@ export async function prepareDelayedCrewRecovery({client,playerId,airlineId,limi
  ]);
  const snapshot=snap.rows?.[0]?.result;
  if(!Array.isArray(slots.rows)||slots.rows.length>limit)
- return hold('delayed_crew_review_limit_exceeded');
- const review=calculateDelayedCrewRecovery(snapshot,slots.rows);
- return {...review,airlineId};
+ return {...hold('delayed_crew_review_limit_exceeded'),airlineId};
+ const proposals=[];
+ const review=buildDelayedCrewRecovery(snapshot,slots.rows,proposals);
+ if(review.status!=='delayed_crew_recovery_preview')return {...review,airlineId};
+ const proposalMap=new Map(proposals.map(p=>[p.flightId,p]));
+ let checked=0,validated=0;
+ // Per occurrence, the database independently reconstructs the proposed crew
+ // and prices the revised slot. These are read-only results; never expose the
+ // private crew IDs or claim that individual fits prove batch affordability.
+ for(const f of review.assessedFlights){
+  const p=proposalMap.get(f.flightId);
+  if(!p){f.rosterValidation='proposal_missing';continue;}
+  const r=(await client.query(SQL.validate,[playerId,airlineId,p.flightId,p.captains,p.firstOfficers,p.cabinCrew,p.externalCaptains,p.externalFirstOfficers,p.externalCabin])).rows?.[0]?.result;
+  checked++;
+  if(typeof r?.status!=='string'){f.rosterValidation='database_validation_unavailable';continue;}
+  const q=r.quote;
+  if(r.status==='delayed_roster_validation_passed'&&r.occurrenceId===p.flightId&&r.rosterPersisted===false&&r.contractChanged===false&&r.ledgerPosted===false&&r.dispatchAuthorizationIssued===false&&r.dispatchEnforced===false&&q?.status==='delayed_external_crew_quote'&&q.occurrenceId===p.flightId&&ms(q.revisedDepartureUtc)===ms(f.effectiveDepartureUtc)&&ms(q.revisedArrivalUtc)===ms(f.effectiveArrivalUtc)&&q.captains===p.externalCaptains&&q.firstOfficers===p.externalFirstOfficers&&q.cabinCrew===p.externalCabin&&q.contractChanged===false&&q.ledgerPosted===false&&q.dispatchEnforced===false&&q.affordable===true&&Number.isFinite(Number(q.estimatedCostUsd))&&Number(q.estimatedCostUsd)>=0){
+   validated++;f.rosterValidation='independent_database_validation_passed';
+   f.estimatedExternalCostUsd=Number(q.estimatedCostUsd);f.frozenRatesUsed=q.frozenRatesUsed===true;
+   f.action='atomic_roster_approval_required';
+  }else f.rosterValidation=r.status==='delayed_roster_validation_passed'?'database_validation_evidence_mismatch':r.status;
+ }
+ return {...review,airlineId,rosterValidationCheckedFlights:checked,rosterValidationPassedFlights:validated,
+  rosterValidatedForRevisedSlot:validated===review.affectedFlights&&validated>0,
+  batchApprovalIssued:false,batchAffordabilityVerified:false};
 }

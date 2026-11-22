@@ -45,11 +45,15 @@ test('owner-scoped recovery only executes SELECT and no client write action',asy
  if(sql.includes('verified_world_instant'))return {rows:[{now:'2026-11-23T00:00:00Z'}]};
  if(sql.includes('owned_rolling_crew_input'))return {rows:[{result:snapshot}]};
  if(sql.includes('replacement_slot_pairs'))return {rows:evidence()};
+ if(sql.includes('validate_delayed_crew_roster'))return {rows:[{result:{status:'delayed_roster_validation_passed',occurrenceId:'f1',rosterPersisted:false,contractChanged:false,ledgerPosted:false,dispatchAuthorizationIssued:false,dispatchEnforced:false,quote:{status:'delayed_external_crew_quote',occurrenceId:'f1',revisedDepartureUtc:'2026-11-24T07:00:00Z',revisedArrivalUtc:'2026-11-24T10:00:00Z',captains:0,firstOfficers:0,cabinCrew:0,estimatedCostUsd:0,affordable:true,contractChanged:false,ledgerPosted:false,dispatchEnforced:false}}}]};
  throw Error('Unexpected SQL');}};
  const r=await prepareDelayedCrewRecovery({client,playerId:id,airlineId:id});
  assert.equal(r.status,'delayed_crew_recovery_preview');assert.equal(r.airlineId,id);
  assert.ok(calls.every(c=>/^\s*SELECT/.test(c.sql)));
- assert.match(calls.at(-1).sql,/owner_player_id=\$1::uuid/);
+ assert.match(calls.find(c=>c.sql.includes('replacement_slot_pairs')).sql,/owner_player_id=\$1::uuid/);
+ assert.equal(r.rosterValidationPassedFlights,1);assert.equal(r.rosterValidatedForRevisedSlot,true);assert.equal(r.batchApprovalIssued,false);
+ assert.deepEqual(calls.at(-1).args,[id,id,'f1',['captain'],['fo'],['fa'],0,0,0]);
+ assert.ok(!JSON.stringify(r).includes('"employeeId"'));
  assert.equal(validateFleetAcquisitionRequest({action:'delayed-crew-recovery-preview',airlineId:id}),true);
  assert.equal(validateFleetAcquisitionRequest({action:'delayed-crew-recovery-preview',airlineId:id,execute:true}),false);
 });
@@ -57,4 +61,17 @@ test('limit overflow and invalid limit fail closed',async()=>{
  await assert.rejects(prepareDelayedCrewRecovery({client:{query:async()=>{}},limit:101}),/INVALID_DELAYED_RECOVERY_REQUEST/);
  const client={async query(sql){if(sql.includes('clock'))return {rows:[{now:'2026-11-23T00:00:00Z'}]};if(sql.includes('verified_world_instant'))return {rows:[{now:'2026-11-23T00:00:00Z'}]};if(sql.includes('owned_rolling_crew_input'))return {rows:[{result:snapshot}]};return {rows:evidence().concat(evidence())};}};
  assert.equal((await prepareDelayedCrewRecovery({client,playerId:id,airlineId:id,limit:1})).status,'delayed_crew_review_limit_exceeded');
+});
+
+test('independent database rejection or stale revised timestamps never authorize dispatch',async()=>{
+ const client={async query(sql){
+  if(sql.includes('verified_world_instant'))return {rows:[{now:'2026-11-23T00:00:00Z'}]};
+  if(sql.includes('owned_rolling_crew_input'))return {rows:[{result:snapshot}]};
+  if(sql.includes('replacement_slot_pairs'))return {rows:evidence()};
+  return {rows:[{result:{status:'reserve_has_other_future_assignment'}}]};
+ }};
+ const r=await prepareDelayedCrewRecovery({client,playerId:id,airlineId:id});
+ assert.equal(r.rosterValidationPassedFlights,0);
+ assert.equal(r.assessedFlights[0].rosterValidation,'reserve_has_other_future_assignment');
+ assert.equal(r.rosterValidatedForRevisedSlot,false);assert.equal(r.batchApprovalIssued,false);assert.equal(r.canAutomaticallyDispatch,false);
 });
