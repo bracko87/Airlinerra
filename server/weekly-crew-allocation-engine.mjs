@@ -6,6 +6,13 @@ export function planWeeklyCrew(input) {
  const time=v=>typeof v==='string'&&/(Z|[+-]\d\d:\d\d)$/.test(v)?Date.parse(v):NaN;
  const start=time(input?.windowStartUtc),end=start+7*DAY;
  if(!Number.isFinite(start)||!Array.isArray(input.flights)||!Array.isArray(input.pilots)||!Array.isArray(input.cabinMembers)||input.flights.length>50000)throw Error('INVALID_WEEKLY_CREW_INPUT');
+ const notBefore=input.planNotBeforeUtc===undefined?null:time(input.planNotBeforeUtc);
+ if(notBefore!==null&&!Number.isFinite(notBefore))throw Error('INVALID_PLANNING_CUTOFF');
+ const preferred=new Map();
+ for(const a of input.preferredAssignments||[]){
+  if(!a||typeof a.flightId!=='string'||preferred.has(a.flightId)||!Array.isArray(a.captains)||!Array.isArray(a.firstOfficers)||!Array.isArray(a.cabinCrew))throw Error('INVALID_PREFERRED_ASSIGNMENT');
+  preferred.set(a.flightId,{captain:new Set(a.captains),firstOfficer:new Set(a.firstOfficers),cabin:new Set(a.cabinCrew)});
+ }
  const iso=t=>new Date(t).toISOString();
  const dateCache=new Map();
  const localDate=(t,z)=>{
@@ -59,7 +66,7 @@ export function planWeeklyCrew(input) {
   // Carry the same duty forward; a turnaround doesn't reset reporting or rest.
   const extend=s.duty&&s.lastArrival<=f.dep&&e-s.duty.start<=720*MIN;
   const ds=extend?s.duty.start:f.dep-120*MIN;
-  if(e-ds>720*MIN||ds<time(s.m.locationEffectiveUtc))return null;
+  if(e-ds>720*MIN||ds<time(s.m.locationEffectiveUtc)||(!extend&&notBefore!==null&&ds<notBefore))return null;
   if(!extend&&s.lastEnd!==null&&ds-s.lastEnd<720*MIN)return null;
   if((s.m.absences||[]).some(a=>time(a.startUtc)<e&&time(a.endUtc)>ds))return null;
   const report=localDate(ds,s.m.baseTimezone);
@@ -71,9 +78,9 @@ export function planWeeklyCrew(input) {
     if(n>5)return null;
    }
   }
-  return {s,ds,e,extend:!!extend,role,report};
+  return {s,ds,e,extend:!!extend,role,report,preferred:preferred.get(f.id)?.[role]?.has(s.m.id)===true};
  };
- const ordered=(a,b)=>Number(b.extend)-Number(a.extend)||a.s.assignedMinutes-b.s.assignedMinutes||a.s.m.id.localeCompare(b.s.m.id);
+ const ordered=(a,b)=>Number(b.preferred)-Number(a.preferred)||Number(b.extend)-Number(a.extend)||a.s.assignedMinutes-b.s.assignedMinutes||a.s.m.id.localeCompare(b.s.m.id);
  const apply=(p,f)=>{
   const s=p.s;
   s.dates.add(p.report);
