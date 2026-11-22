@@ -1,6 +1,6 @@
 -- Section 5+6 actual verifier isolation: no real slot, certification or airline modified.
 DO $slot_fixture$
-DECLARE t text; cols text; fn record; a record; aircraft record; sc uuid; rr record; hmac_payload text; evsign text; revoked_event text; certificate_count integer; blocker jsonb; proof record; game_key text:=repeat('S',70); game_day date; orig text:='OURAIRPORTS:4610'; dest text:='OURAIRPORTS:4612'; dep timestamptz:='2026-11-23T10:00:00Z'; arr timestamptz:='2026-11-23T12:00:00Z'; weekly jsonb:='[{"day":0,"time":"11:00"}]'::jsonb; verdict jsonb; restriction jsonb; result jsonb;
+DECLARE t text; cols text; fn record; a record; aircraft record; sc uuid; rr record; hmac_payload text; evsign text; revoked_event text; certificate_count integer; blocker jsonb; proof record; denied boolean:=false; game_key text:=repeat('S',70); game_day date; orig text:='OURAIRPORTS:4610'; dest text:='OURAIRPORTS:4612'; dep timestamptz:='2026-11-23T10:00:00Z'; arr timestamptz:='2026-11-23T12:00:00Z'; weekly jsonb:='[{"day":0,"time":"11:00"}]'::jsonb; verdict jsonb; restriction jsonb; result jsonb;
 BEGIN
  BEGIN
  CREATE SCHEMA cert_signed_fixture_14aa;
@@ -11,7 +11,7 @@ BEGIN
  ('cert_signed_fixture_14aa_clearance_route_traffic_rights_v1',repeat('T',70)),
  ('cert_signed_fixture_14aa_clearance_airport_slot_capacity_v1',repeat('U',70));
  INSERT INTO cert_signed_fixture_14aa.fixture_worlds VALUES(1,'active',now()-interval '3 days');
- FOREACH t IN ARRAY ARRAY['airlines','airline_aircraft_inventory','airline_flight_schedule_drafts_v1','airport_reference_profiles','section9_maintenance_relocation_trips_v1',
+ FOREACH t IN ARRAY ARRAY['airlines','airline_aircraft_inventory','airline_flight_schedule_drafts_v1','airport_reference_profiles','section9_maintenance_relocation_trips_v1','section9_dated_flight_occurrences_v1','section9_operated_flight_movements_v1',
  'holding_world_clock_v1','section9_verified_game_tick_receipts_v1',
  'section6_airport_slot_capacity_v1','section6_weekly_airport_slot_reservations_v1',
  'section9_verified_schedule_capacity_v1','section9_aoc_operating_companies_v1','section9_aoc_release_policy_v1','section9_aoc_certificates_v1','section9_aoc_safety_incidents_v1','section9_aoc_corrective_tasks_v1','section9_aoc_independent_correction_release_v1','section9_aoc_compliance_receipts_v1','section9_aoc_verified_correction_proofs_v1','section9_game_maintenance_service_receipts_v1','section9_game_permission_applications_v1','section9_operator_licence_evidence_v1','airline_ledger','aviation_countries_v1','airport_offices','licence2_directed_route_allocations_v1','licence2_market_policy_v1','licence2_market_levels_v1','licence2_airline_market_permits_v1','section9_operational_certification_events_v1','section9_schedule_operational_certifications_v1','section9_schedule_activation_preparations_v1','section9_activation_release_policy_v1','section9_weekly_crew_duty_proposals_v1','section9_airline_crew_roster_v1','section9_route_operating_permission_evidence_v1'] LOOP
@@ -37,7 +37,7 @@ BEGIN
  'licence2_foreign_route_preview_v1','licence2_country_market_v1',
  'section9_issue_queued_game_clearance_v1','section9_record_verified_certification_event_v1',
  'section9_prepare_certified_schedule_activation_v1','section9_commit_certified_schedule_activation_v1',
- 'section9_activation_evidence_fingerprint_v1','section9_guard_schedule_activation_update_v1','section9_reject_certificate_audit_mutation_v1'
+ 'section9_activation_evidence_fingerprint_v1','section9_guard_schedule_activation_update_v1','section9_reject_certificate_audit_mutation_v1','section9_cancel_certified_draft_and_release_slots_v1'
  ) LOOP
   EXECUTE replace(replace(replace(fn.def,'airlinerra_game','cert_signed_fixture_14aa'),'public.cert_signed_fixture_14aa_worlds','cert_signed_fixture_14aa.fixture_worlds'),'vault.decrypted_secrets','cert_signed_fixture_14aa.test_signer');
  END LOOP;
@@ -47,6 +47,7 @@ BEGIN
  SELECT jsonb_build_object('readOnly',true,'canActivateNormalFlight',false,'activationChecklist',jsonb_build_object('airportRestrictionPreviewPassed',true,'aircraftRotationPreviewConflictFree',true,'departureArrivalSlotRecordsPresent',true,'aircraftDeliveryAnchorVerified',true,'aircraftInFlight',false,'lastVerifiedGroundAirport','OURAIRPORTS:4610','operatorLicenceEvidenceRecorded',true,'routePermissionEvidenceComplete',true,'worldClockConnected',true),
  'turnaround',jsonb_build_object('shortTurnaroundOccurrences',0,'minimumMinutes',45)) $body$; $stubs$;
  EXECUTE $stubs$CREATE TRIGGER fixture_signed_event_immutable BEFORE DELETE OR UPDATE ON cert_signed_fixture_14aa.section9_operational_certification_events_v1 FOR EACH ROW EXECUTE FUNCTION cert_signed_fixture_14aa.section9_reject_certificate_audit_mutation_v1() $stubs$;
+ EXECUTE $stubs$CREATE TRIGGER fixture_schedule_activation_guard BEFORE INSERT OR UPDATE ON cert_signed_fixture_14aa.airline_flight_schedule_drafts_v1 FOR EACH ROW EXECUTE FUNCTION cert_signed_fixture_14aa.section9_guard_schedule_activation_update_v1() $stubs$;
  SELECT string_agg(quote_ident(column_name),',' ORDER BY ordinal_position) INTO cols FROM information_schema.columns WHERE table_schema='airlinerra_game' AND table_name='airport_reference_profiles' AND is_generated='NEVER';
  EXECUTE format('INSERT INTO cert_signed_fixture_14aa.airport_reference_profiles(%s) SELECT %s FROM airlinerra_game.airport_reference_profiles WHERE world_id=1 AND airport_key=ANY($1)',cols,cols) USING ARRAY[orig,dest];
  INSERT INTO cert_signed_fixture_14aa.airlines SELECT * FROM airlinerra_game.airlines WHERE id=a.id;
@@ -128,6 +129,12 @@ BEGIN
  END LOOP;
  SELECT count(*) INTO certificate_count FROM cert_signed_fixture_14aa.section9_schedule_operational_certifications_v1 WHERE schedule_id=sc AND review_status='certified';
  IF certificate_count<>3 THEN RAISE EXCEPTION 'must have 3 certified source types not %',certificate_count;END IF;
+ -- A direct UPDATE to active must never substitute for a certified commit.
+ denied:=false;
+ BEGIN
+ UPDATE cert_signed_fixture_14aa.airline_flight_schedule_drafts_v1 SET status='active',operationally_verified=true WHERE id=sc;
+ EXCEPTION WHEN insufficient_privilege THEN denied:=true;END;
+ IF NOT denied THEN RAISE EXCEPTION 'direct activation bypassed verified preparation';END IF;
  -- Execution/finance approvals are absent. An otherwise 3-source-verified
  -- flight must never be activated or have a booking created.
  verdict:=cert_signed_fixture_14aa.section9_commit_certified_schedule_activation_v1(a.owner_player_id,a.id,sc,1,game_day,28);
@@ -160,7 +167,37 @@ BEGIN
  IF (SELECT count(*) FROM cert_signed_fixture_14aa.section9_schedule_operational_certifications_v1 WHERE schedule_id=sc AND review_status='certified')<>2
  THEN RAISE EXCEPTION 'revoked state invalid';END IF;
  IF (SELECT status FROM cert_signed_fixture_14aa.airline_flight_schedule_drafts_v1 WHERE id=sc)<>'draft' THEN RAISE EXCEPTION 'certification activated draft';END IF;
- result:=jsonb_build_object('status','passed','actualGameNightAndRunwayRestrictions',true,'actualWeeklySlotProposals',true,'actualHourAndTenMinuteCapacity',true,'matchedReservationsCertified',true,'mismatchedReservationBlocked',true,'zeroStandCapacityBlocked',true,'overbookedStandBlocked',true,'wrongGameDateBlocked',true,'noGameDataMutated',true,'realIndependentCertifierHmac',true,'threeSignedIndependentSources',true,'sourceApprovalIdempotent',true,'revocationInvalidatedPreparation',true,'replayCannotResurrectRevoked',true,'missingFinanceExecutionBlocksActivation',true);
+ -- After immutable events prevent physical deletion, the privileged one-way
+ -- cancellation preserves audit rows and releases the exact schedule slots.
+ denied:=false;
+ BEGIN
+ PERFORM cert_signed_fixture_14aa.section9_cancel_certified_draft_and_release_slots_v1(gen_random_uuid(),a.id,sc,1);
+ EXCEPTION WHEN insufficient_privilege THEN denied:=true;END;
+ IF NOT denied THEN RAISE EXCEPTION 'unowned certified draft cancellation allowed';END IF;
+ verdict:=cert_signed_fixture_14aa.section9_cancel_certified_draft_and_release_slots_v1(a.owner_player_id,a.id,sc,2);
+ IF verdict->>'status'<>'blocked_stale_schedule_version' THEN RAISE EXCEPTION 'stale version cancelled draft %',verdict;END IF;
+ verdict:=cert_signed_fixture_14aa.section9_cancel_certified_draft_and_release_slots_v1(a.owner_player_id,a.id,sc,1);
+ IF verdict->>'status'<>'certified_draft_cancelled' OR verdict->>'scheduleCancelled'<>'true'
+ OR (verdict->>'slotsReleased')::int<>2
+ OR (verdict->>'signedEventsPreserved')::int<>4
+ OR (SELECT status FROM cert_signed_fixture_14aa.airline_flight_schedule_drafts_v1 WHERE id=sc)<>'cancelled'
+ OR EXISTS(SELECT 1 FROM cert_signed_fixture_14aa.section6_weekly_airport_slot_reservations_v1 WHERE schedule_id=sc)
+ OR EXISTS(SELECT 1 FROM cert_signed_fixture_14aa.section9_schedule_activation_preparations_v1 WHERE schedule_id=sc)
+ OR (SELECT count(*) FROM cert_signed_fixture_14aa.section9_operational_certification_events_v1 WHERE schedule_id=sc)<>4
+ THEN RAISE EXCEPTION 'soft cancellation failed audit preservation or slot release %',verdict;END IF;
+ verdict:=cert_signed_fixture_14aa.section9_cancel_certified_draft_and_release_slots_v1(a.owner_player_id,a.id,sc,1);
+ IF verdict->>'status'<>'certified_draft_already_cancelled' OR (verdict->>'slotsReleased')::int<>0
+ THEN RAISE EXCEPTION 'draft cancellation replay unsafe %',verdict;END IF;
+ verdict:=cert_signed_fixture_14aa.section9_commit_certified_schedule_activation_v1(a.owner_player_id,a.id,sc,1,game_day,28);
+ IF verdict->>'status'<>'blocked_schedule_not_draft'
+ THEN RAISE EXCEPTION 'cancelled draft was activated %',verdict;END IF;
+ denied:=false;
+ BEGIN
+ UPDATE cert_signed_fixture_14aa.airline_flight_schedule_drafts_v1 SET status='draft' WHERE id=sc;
+ EXCEPTION WHEN insufficient_privilege THEN denied:=true;END;
+ IF NOT denied THEN RAISE EXCEPTION 'cancelled signed schedule revived';END IF;
+
+ result:=jsonb_build_object('status','passed','actualGameNightAndRunwayRestrictions',true,'actualWeeklySlotProposals',true,'actualHourAndTenMinuteCapacity',true,'matchedReservationsCertified',true,'mismatchedReservationBlocked',true,'zeroStandCapacityBlocked',true,'overbookedStandBlocked',true,'wrongGameDateBlocked',true,'noGameDataMutated',true,'realIndependentCertifierHmac',true,'threeSignedIndependentSources',true,'sourceApprovalIdempotent',true,'revocationInvalidatedPreparation',true,'replayCannotResurrectRevoked',true,'missingFinanceExecutionBlocksActivation',true,'immutableAuditPreservedAfterSoftCancel',true,'signedDraftSlotsReleasedOnce',true,'unauthorizedAndStaleCancelBlocked',true,'cancelledScheduleCannotReactivate',true,'directActivationUpdateRejected',true);
  RAISE EXCEPTION USING ERRCODE='ZX001',MESSAGE=result::text;
  EXCEPTION WHEN SQLSTATE 'ZX001' THEN PERFORM set_config('airlinerra.cert_signed_fixture_14aa',SQLERRM,true);END;
 END $slot_fixture$;
