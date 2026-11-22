@@ -167,6 +167,41 @@ export const STAFF_POSITION_GROUPS=Object.freeze([
     ]
    },
    {
+    "id": "ground_operations_manager",
+    "title": "Ground Operations Manager",
+    "responsibility": "Authorized station and airline-employed ground operations recruitment",
+    "companyTypes": [
+     "pax",
+     "reg",
+     "cgo",
+     "vip"
+    ]
+   },
+   {
+    "id": "customer_service_manager",
+    "title": "Customer Service Manager",
+    "responsibility": "Authorized customer service staffing",
+    "companyTypes": [
+     "pax",
+     "reg",
+     "vip"
+    ]
+   },
+   {
+    "id": "hr_manager",
+    "title": "HR Manager",
+    "responsibility": "Authorized administrative staffing and personnel coordination",
+    "companyTypes": [
+     "pax",
+     "reg",
+     "cgo",
+     "vip",
+     "mro",
+     "aca",
+     "lsg"
+    ]
+   },
+   {
     "id": "crew_staffing_manager",
     "title": "Crew & Staffing Manager",
     "responsibility": "Crew capacity, automatic rotations and authorized operational recruitment",
