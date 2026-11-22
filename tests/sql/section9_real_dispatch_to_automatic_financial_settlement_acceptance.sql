@@ -29,8 +29,6 @@ BEGIN
   EXECUTE format('CREATE TABLE crew_full_settlement_fixture_14x.%I(LIKE airlinerra_game.%I INCLUDING ALL)',tbl,tbl);
  END LOOP;
  CREATE TABLE crew_full_settlement_fixture_14x.test_signer(name text primary key,decrypted_secret text);
- CREATE SEQUENCE crew_full_settlement_fixture_14x.fixture_ledger_seq;
- ALTER TABLE crew_full_settlement_fixture_14x.airline_ledger ALTER COLUMN id SET DEFAULT nextval('crew_full_settlement_fixture_14x.fixture_ledger_seq');
  CREATE TABLE crew_full_settlement_fixture_14x.fixture_worlds(id smallint primary key,state text,opens_at timestamptz);
  INSERT INTO crew_full_settlement_fixture_14x.fixture_worlds VALUES(1,'active',now()-interval '30 days');
  CREATE TABLE crew_full_settlement_fixture_14x.test_supply(physical_flight_id text primary key);
@@ -253,7 +251,7 @@ BEGIN
  THEN RAISE EXCEPTION 'real automatic final finance %',posted_finance;END IF;
  post_replay:=crew_full_settlement_fixture_14x.section9_auto_post_complete_game_flights_v1(40);
  IF (post_replay->>'posted')::int<>0 OR (SELECT count(*) FROM crew_full_settlement_fixture_14x.airline_ledger WHERE airline_id=a.id)<>3 THEN RAISE EXCEPTION 'finance replay charged again %',post_replay;END IF;
- result:=jsonb_build_object('status','passed''realCostApprovalWorker',true,'realFinalPostingWorker',true,'postedNetCashUsd',5300,'realFinancialLedgerAtomic',true,'incorrectCrewCostRejected',true,'replayedFinanceNoCharge',true,,'realPostarrivalFinancePreparation',true,'realTicketReconciliation',true,'financePreparationReplayProtected',true,'ticketMismatchRejected',true,'realMovementWriter',true,'realFuelDepartureCapture',true,'realFuelArrivalBurn',true,'realAirframeUsage',true,'oneCompleteArrival',true,'arrivalFuelBurnCreated',true,'arrivalAirframeUsageCreated',true,'crewArrivalTracked',true,'actualTurnaroundRecorded',true,'arrivalReplayNoDuplicate',true,'isolatedBadFlightRolledBack',true,'unrelatedGoodFlightCommitted',true,'badFuelSupplyRolledBack',true,'badSignedDepartureRolledBack',true,'goodFuelAndCrewCaptured',true,'bookingClosedOnlyForGoodFlight',true,'replayNoDouble',true,'disabledGatePreservesLegacyFailClosed',true,'reportedBlocks',r->'blockerCounts','liveFinancialsUntouched',true);
+ result:=jsonb_build_object('status','passed','realCostApprovalWorker',true,'realFinalPostingWorker',true,'postedNetCashUsd',5300,'realFinancialLedgerAtomic',true,'incorrectCrewCostRejected',true,'replayedFinanceNoCharge',true,'realPostarrivalFinancePreparation',true,'realTicketReconciliation',true,'financePreparationReplayProtected',true,'ticketMismatchRejected',true,'realMovementWriter',true,'realFuelDepartureCapture',true,'realFuelArrivalBurn',true,'realAirframeUsage',true,'oneCompleteArrival',true,'arrivalFuelBurnCreated',true,'arrivalAirframeUsageCreated',true,'crewArrivalTracked',true,'actualTurnaroundRecorded',true,'arrivalReplayNoDuplicate',true,'isolatedBadFlightRolledBack',true,'unrelatedGoodFlightCommitted',true,'badFuelSupplyRolledBack',true,'badSignedDepartureRolledBack',true,'goodFuelAndCrewCaptured',true,'bookingClosedOnlyForGoodFlight',true,'replayNoDouble',true,'disabledGatePreservesLegacyFailClosed',true,'reportedBlocks',r->'blockerCounts','liveFinancialsUntouched',true);
  RAISE EXCEPTION USING ERRCODE='ZX001',MESSAGE=result::text;
  EXCEPTION WHEN SQLSTATE 'ZX001' THEN PERFORM set_config('airlinerra.real_full_settlement_fixture_result',SQLERRM,true);END;
 END $test$;
