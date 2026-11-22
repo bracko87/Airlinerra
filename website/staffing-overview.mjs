@@ -16,12 +16,12 @@ export function createStaffingOverview({doc,getData}){
  function renderCapacity(value){
   const host=$('crew-capacity-families'),summary=$('crew-capacity-summary');if(!host||!summary)return;
   host.replaceChildren();const c=value.cabin;
-  summary.textContent='Shared cabin pool: '+c.available+' available'+(c.required==null?' · minimum not calculated':' / '+c.required+' estimated minimum · '+c.shortage+' additional recommended')+'. '+(value.scheduleCompletenessVerified&&value.dutyHistoryIntegrated?'':'Preview only: complete schedule and actual duty history are not verified. ');
+  summary.textContent='Total employed pilots: '+value.forecast.pilotCount+' · Shared cabin pool: '+c.available+' available'+(c.required==null?' · minimum not calculated':' / '+c.required+' estimated minimum · '+c.shortage+' additional recommended')+'. '+(value.scheduleCompletenessVerified&&value.dutyHistoryIntegrated?'':'Preview only: complete schedule and actual duty history are not verified. ');
   if(value.reason==='no_dated_flights')summary.textContent+='Create routes to calculate weekly staffing needs.';
   if(value.reason==='unresolved_schedule_requirements')summary.textContent+='Schedule requires review before staffing can be estimated.';
   if(!value.families.length)host.append(node('p','No operating aircraft in this company.'));
   for(const f of value.families){
-   const row=node('section');row.className='workspace-task-list';row.append(node('h3',f.label+' family · '+f.aircraftCount+' aircraft'));
+   const row=node('section');row.className='workspace-task-list';row.append(node('h3',f.label+' family · '+f.aircraftCount+' aircraft'),node('p',f.qualifiedPilotCount+' qualified pilots (shared qualifications may overlap between families).'));
    meter(row,'Pilot capacity',f.pilotPct,f.pilotRequired==null?'':f.pilotAvailable+' allocated / '+f.pilotRequired+' estimated minimum');
    meter(row,'Cabin capacity (shared)',f.cabinPct,'');
    meter(row,'Overall capacity',f.overallPct,labels[f.status]||'Not calculated');
