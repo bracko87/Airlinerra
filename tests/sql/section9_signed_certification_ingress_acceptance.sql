@@ -1,180 +1,64 @@
--- Rollback-only Section 9 signed certification event state machine acceptance.
--- Synthetic HMAC strings below are NOT real verifier evidence; this test
--- exercises private SQL state and audit semantics, never production approval.
+-- Phase 14AA regression: legacy fabricated certified events are NO LONGER accepted.
+-- Rollback-only against the connected game schema. Real signed happy-path
+-- and revoked-event acceptance are in section9_actual_signed_certification_activation_gate_acceptance.sql
+-- and section9_complete_five_source_signed_schedule_activation_acceptance.sql.
 BEGIN;
-DO $test$
-DECLARE a uuid;owner_id uuid;code text;home text;plane uuid;draft uuid;
- event1 text:='synthetic-operation-certification-event-0001';
- event2 text:='synthetic-operation-certification-event-0002';
- cert_row record;
- response jsonb;old_ledger bigint;old_movements bigint;old_positions bigint;
- old_drafts bigint;old_certs bigint;old_events bigint;old_preps bigint;
+DO $negative$
+DECLARE a record;plane record;draft uuid;day_now date;denied boolean;kind text;reviewer text;
+ before_events bigint;before_certs bigint;before_moves bigint;before_ledger bigint;
 BEGIN
- IF has_function_privilege('anon',
- 'airlinerra_game.section9_record_verified_certification_event_v1(uuid,uuid,integer,text,text,text,text,text,date,date,text)',
- 'EXECUTE') OR has_function_privilege('authenticated',
- 'airlinerra_game.section9_record_verified_certification_event_v1(uuid,uuid,integer,text,text,text,text,text,date,date,text)',
- 'EXECUTE') OR has_table_privilege('authenticated',
- 'airlinerra_game.section9_operational_certification_events_v1','INSERT')
- THEN RAISE EXCEPTION 'Untrusted browser can issue certificates';END IF;
- SELECT count(*) INTO old_ledger FROM airlinerra_game.airline_ledger;
- SELECT count(*) INTO old_movements FROM airlinerra_game.section9_operated_flight_movements_v1;
- SELECT count(*) INTO old_positions FROM airlinerra_game.section9_aircraft_current_position_v1;
- SELECT count(*) INTO old_drafts FROM airlinerra_game.airline_flight_schedule_drafts_v1;
- SELECT count(*) INTO old_certs FROM airlinerra_game.section9_schedule_operational_certifications_v1;
- SELECT count(*) INTO old_events FROM airlinerra_game.section9_operational_certification_events_v1;
- SELECT count(*) INTO old_preps FROM airlinerra_game.section9_schedule_activation_preparations_v1;
- SELECT id,owner_player_id,iata_code,home_airport_key INTO a,owner_id,code,home
- FROM airlinerra_game.airlines WHERE world_id=1 LIMIT 1;
- IF NOT FOUND THEN RAISE EXCEPTION 'No World 1 test airline';END IF;
- INSERT INTO airlinerra_game.airline_aircraft_inventory(
-  airline_id,configuration_id,registration,ownership_type,fleet_status)
- VALUES(a,3,'S9-CERT-ROLLBACK','owned','in_service')
- RETURNING id INTO plane;
+ IF has_function_privilege('anon','airlinerra_game.section9_record_verified_certification_event_v1(uuid,uuid,integer,text,text,text,text,text,date,date,text)','EXECUTE')
+ OR has_function_privilege('authenticated','airlinerra_game.section9_record_verified_certification_event_v1(uuid,uuid,integer,text,text,text,text,text,date,date,text)','EXECUTE')
+ OR has_function_privilege('service_role','airlinerra_game.section9_record_verified_certification_event_v1(uuid,uuid,integer,text,text,text,text,text,date,date,text)','EXECUTE')
+ THEN RAISE EXCEPTION 'certification sink exposed to browser or service account';END IF;
+ SELECT * INTO STRICT a FROM airlinerra_game.airlines WHERE world_id=1 LIMIT 1;
+ SELECT * INTO STRICT plane FROM airlinerra_game.airline_aircraft_inventory WHERE airline_id=a.id LIMIT 1;
+ day_now:=airlinerra_game.section9_verified_permission_game_day_v1();
+ IF day_now IS NULL THEN RAISE EXCEPTION 'game day unavailable';END IF;
+ SELECT count(*) INTO before_events FROM airlinerra_game.section9_operational_certification_events_v1;
+ SELECT count(*) INTO before_certs FROM airlinerra_game.section9_schedule_operational_certifications_v1;
+ SELECT count(*) INTO before_moves FROM airlinerra_game.section9_operated_flight_movements_v1;
+ SELECT count(*) INTO before_ledger FROM airlinerra_game.airline_ledger;
  INSERT INTO airlinerra_game.airline_flight_schedule_drafts_v1(
-  airline_id,aircraft_inventory_id,configuration_id,flight_number,
-  origin_airport_key,destination_airport_key,reference_departure_utc,
-  reference_arrival_utc,weekly_schedule,restriction_snapshot,
-  created_by_player_id)
- VALUES(a,plane,3,code||'961',home,
-  CASE WHEN home='OURAIRPORTS:2212' THEN 'OURAIRPORTS:4610'
-  ELSE 'OURAIRPORTS:2212' END,
-  '2000-01-03T09:00:00Z','2000-01-03T10:00:00Z',
-  '[{"day":0,"time":"10:00"}]'::jsonb,'{}'::jsonb,owner_id)
+ airline_id,aircraft_inventory_id,configuration_id,flight_number,origin_airport_key,destination_airport_key,
+ reference_departure_utc,reference_arrival_utc,weekly_schedule,restriction_snapshot,created_by_player_id,status,operationally_verified)
+ VALUES(a.id,plane.id,plane.configuration_id,a.iata_code||'975',a.home_airport_key,'OURAIRPORTS:4612',
+ (day_now::timestamp+interval '11 hours') AT TIME ZONE 'Europe/Belgrade',
+ (day_now::timestamp+interval '13 hours') AT TIME ZONE 'Europe/Belgrade',
+ '[{"day":0,"time":"11:00"}]'::jsonb,'{}'::jsonb,a.owner_player_id,'draft',false)
  RETURNING id INTO draft;
-
- BEGIN
-  PERFORM airlinerra_game.section9_record_verified_certification_event_v1(
-   a,draft,3,'trusted_flight_execution','certify',event1,
-   'source-test-operation-001','source-test-reviewer-001',
-   DATE '2000-01-03',DATE '2000-02-05',repeat('a',64));
-  RAISE EXCEPTION 'Stale schedule version accepted';
- EXCEPTION WHEN insufficient_privilege THEN NULL;END;
- BEGIN
-  PERFORM airlinerra_game.section9_record_verified_certification_event_v1(
-   a,draft,1,'operator_licence','certify',
-   'synthetic-missing-operator-licence-001',
-   'source-test-licence-001','source-test-reviewer-001',
-   DATE '2000-01-03',DATE '2000-02-05',repeat('b',64));
-  RAISE EXCEPTION 'Missing game operator evidence accepted';
- EXCEPTION WHEN insufficient_privilege THEN NULL;END;
- BEGIN
-  PERFORM airlinerra_game.section9_record_verified_certification_event_v1(
-   a,draft,1,'trusted_flight_execution','revoke',event2,
-   'source-test-operation-002','source-test-reviewer-002',
-   DATE '2000-01-03',DATE '2000-02-05',repeat('b',64));
-  RAISE EXCEPTION 'Revocation without a certificate accepted';
- EXCEPTION WHEN insufficient_privilege THEN NULL;END;
-
- -- Simulates a trusted source passing server-side HMAC verification.
- -- The private SQL function itself cannot validate the secret.
- response:=airlinerra_game.section9_record_verified_certification_event_v1(
-  a,draft,1,'trusted_flight_execution','certify',event1,
-  'source-test-operation-001','source-test-reviewer-001',
-  DATE '2000-01-03',DATE '2000-02-05',repeat('a',64));
- IF response->>'status'<>'certification_event_recorded'
-  OR response->>'flightActivated'<>'false'
-  OR response->>'activationPreparationInvalidated'<>'true'
- THEN RAISE EXCEPTION 'Synthetic certification write failed: %',response;END IF;
- IF NOT EXISTS(
-  SELECT 1 FROM airlinerra_game.section9_schedule_operational_certifications_v1 c
-  JOIN airlinerra_game.section9_operational_certification_events_v1 e
-   ON e.event_id=c.last_verified_event_id AND e.action='certify'
-  WHERE c.schedule_id=draft AND c.review_status='certified'
-   AND c.last_verified_event_id=event1
- ) THEN RAISE EXCEPTION 'Latest signed event not linked to active certification';END IF;
- response:=airlinerra_game.section9_record_verified_certification_event_v1(
-  a,draft,1,'trusted_flight_execution','certify',event1,
-  'source-test-operation-001','source-test-reviewer-001',
-  DATE '2000-01-03',DATE '2000-02-05',repeat('a',64));
- IF response->>'status'<>'certification_event_replayed'
-  OR response->>'certificateChanged'<>'false'
- THEN RAISE EXCEPTION 'Duplicate event mutated certificate';END IF;
- BEGIN
-  PERFORM airlinerra_game.section9_record_verified_certification_event_v1(
-   a,draft,1,'trusted_flight_execution','certify',event1,
-   'source-test-operation-001','source-test-reviewer-001',
-   DATE '2000-01-03',DATE '2000-02-05',repeat('c',64));
-  RAISE EXCEPTION 'Conflicting event ID accepted';
- EXCEPTION WHEN unique_violation THEN NULL;END;
-
- INSERT INTO airlinerra_game.section9_schedule_activation_preparations_v1(
-  schedule_id,schedule_version,airline_id,aircraft_inventory_id,
-  verified_game_date,certified_horizon_days,fingerprint_md5,release_reference)
- VALUES(draft,1,a,plane,DATE '2000-01-03',28,repeat('f',32),
- 'synthetic-review-approval-001');
- response:=airlinerra_game.section9_record_verified_certification_event_v1(
-  a,draft,1,'trusted_flight_execution','revoke',event2,
-  'source-test-operation-002','source-test-reviewer-002',
-  DATE '2000-01-03',DATE '2000-02-05',repeat('b',64));
- IF response->>'status'<>'certification_revoked'
-  OR response->>'reviewStatus'<>'revoked'
-  OR EXISTS(SELECT 1 FROM airlinerra_game.section9_schedule_activation_preparations_v1
-     WHERE schedule_id=draft)
- THEN RAISE EXCEPTION 'Revocation did not invalidate preparation: %',response;END IF;
- response:=airlinerra_game.section9_record_verified_certification_event_v1(
-  a,draft,1,'trusted_flight_execution','certify',event1,
-  'source-test-operation-001','source-test-reviewer-001',
-  DATE '2000-01-03',DATE '2000-02-05',repeat('a',64));
- IF response->>'status'<>'certification_event_replayed' OR
-  (SELECT review_status FROM airlinerra_game.section9_schedule_operational_certifications_v1
-   WHERE schedule_id=draft AND clearance_type='trusted_flight_execution')<>'revoked'
- THEN RAISE EXCEPTION 'Replay resurrected revoked approval';END IF;
- BEGIN
-  UPDATE airlinerra_game.section9_operational_certification_events_v1
-  SET source_reference='forbidden-audit-change'
-  WHERE event_id=event1;
-  RAISE EXCEPTION 'Audit event mutation succeeded';
- EXCEPTION WHEN insufficient_privilege THEN NULL;END;
- BEGIN
-  DELETE FROM airlinerra_game.section9_operational_certification_events_v1
-  WHERE event_id=event1;
-  RAISE EXCEPTION 'Audit event deletion succeeded';
- EXCEPTION WHEN insufficient_privilege THEN NULL;END;
-
- -- Directly inserted six "certified" rows without matching signed
- -- audit records MUST NOT count toward activation, even to a privileged
- -- backend: only the latest logged independent event can clear the gate.
- FOR cert_row IN
-  SELECT * FROM (VALUES
-   ('crew_duty','verified_crew_duty_engine'),
-   ('operator_licence','verified_game_licence_engine'),
-   ('route_traffic_rights','verified_game_traffic_rights_engine'),
-   ('airport_slot_capacity','verified_airport_slot_engine'),
-   ('trusted_flight_execution','trusted_flight_operations_engine'),
-   ('commercial_finance','verified_commercial_settlement_engine')
-  ) AS x(type_name,source_name)
+ FOR kind,reviewer IN SELECT * FROM (VALUES
+ ('operator_licence','independent-game-licence-authority-v1'),
+ ('route_traffic_rights','independent-game-traffic-rights-v1'),
+ ('airport_slot_capacity','independent-game-slot-authority-v1'),
+ ('trusted_flight_execution','independent-trusted-flight-execution-authority-v1'),
+ ('commercial_finance','independent-commercial-finance-authority-v1')) src(kind,reviewer)
  LOOP
-  INSERT INTO airlinerra_game.section9_schedule_operational_certifications_v1(
-   schedule_id,airline_id,schedule_version,clearance_type,review_status,
-   source_kind,source_reference,reviewer_reference,reviewed_at,
-   valid_from_game_date,valid_to_game_date,last_verified_event_id)
-  VALUES(draft,a,1,cert_row.type_name,'certified',
-   cert_row.source_name,'unsigned-evidence-reference-0001',
-   'unsigned-reviewer-000001',clock_timestamp(),
-   DATE '2000-01-03',DATE '2000-02-05',NULL)
-  ON CONFLICT(schedule_id,schedule_version,clearance_type) DO UPDATE SET
-   review_status='certified',source_kind=EXCLUDED.source_kind,
-   source_reference=EXCLUDED.source_reference,
-   reviewer_reference=EXCLUDED.reviewer_reference,
-   reviewed_at=EXCLUDED.reviewed_at,
-   valid_from_game_date=EXCLUDED.valid_from_game_date,
-   valid_to_game_date=EXCLUDED.valid_to_game_date,
-   last_verified_event_id=NULL;
+  denied:=false;
+  BEGIN
+   PERFORM airlinerra_game.section9_record_verified_certification_event_v1(
+    a.id,draft,1,kind,'certify','synthetic-rejected-14aa-'||replace(draft::text,'-','')||'-'||kind,
+    CASE WHEN kind IN('trusted_flight_execution','commercial_finance')
+     THEN 'candidate-execution-finance-v1-' ELSE 'synthetic-forged-source-v1-' END||repeat('d',32),
+    reviewer,day_now,day_now+28,repeat('f',64));
+  EXCEPTION WHEN insufficient_privilege THEN denied:=true;END;
+  IF NOT denied THEN RAISE EXCEPTION 'legacy synthetic source certificate was accepted: %',kind;END IF;
  END LOOP;
- response:=airlinerra_game.section9_prepare_certified_schedule_activation_v1(
-  owner_id,a,draft,1,DATE '2000-01-03',28);
- IF response->>'status'<>'blocked_activation_preparation'
- OR (response->>'acceptedCertifications')::int<>0
- OR NOT response->'blockers' ? 'SIX_INDEPENDENT_OPERATIONAL_CERTIFICATIONS_MISSING'
- THEN RAISE EXCEPTION 'Unlogged manual certificates counted as signed: %',response;END IF;
-
- IF (SELECT count(*) FROM airlinerra_game.airline_ledger)<>old_ledger
- OR (SELECT count(*) FROM airlinerra_game.section9_operated_flight_movements_v1)<>old_movements
- OR (SELECT count(*) FROM airlinerra_game.section9_aircraft_current_position_v1)<>old_positions
- OR (SELECT status FROM airlinerra_game.airline_flight_schedule_drafts_v1 WHERE id=draft)<>'draft'
- OR (SELECT operationally_verified FROM airlinerra_game.airline_flight_schedule_drafts_v1 WHERE id=draft)
- THEN RAISE EXCEPTION 'Certification audit accidentally operated a flight';END IF;
- RAISE NOTICE 'PASS: source guards, one-use event, immutable audit, revocation, no flights';
-END $test$;
+ denied:=false;
+ BEGIN
+  PERFORM airlinerra_game.section9_record_verified_certification_event_v1(
+   a.id,draft,1,'operator_licence','revoke','synthetic-revoke-without-approval-14aa',
+   'synthetic-unissued-certificate-14aa','independent-game-licence-authority-v1',
+   day_now,day_now+28,repeat('f',64));
+ EXCEPTION WHEN insufficient_privilege THEN denied:=true;END;
+ IF NOT denied THEN RAISE EXCEPTION 'revocation without issued approval was accepted';END IF;
+ IF (SELECT count(*) FROM airlinerra_game.section9_operational_certification_events_v1)<>before_events
+ OR (SELECT count(*) FROM airlinerra_game.section9_schedule_operational_certifications_v1)<>before_certs
+ OR (SELECT count(*) FROM airlinerra_game.section9_operated_flight_movements_v1)<>before_moves
+ OR (SELECT count(*) FROM airlinerra_game.airline_ledger)<>before_ledger
+ THEN RAISE EXCEPTION 'forged certificate test wrote irreversible live records';END IF;
+END $negative$;
 ROLLBACK;
+SELECT jsonb_build_object('status','passed','syntheticFiveSourcesRejected',true,
+ 'revocationWithoutCertificateRejected',true,'privateSinkProtected',true,
+ 'allTestDraftWritesRolledBack',true) result;
