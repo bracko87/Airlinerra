@@ -84,17 +84,20 @@ BEGIN
  'section9_crew_duty_fit_v2','section9_save_owned_crew_plan_preview_v1',
  'section9_record_pilot_departure_manifest_v1','section9_credit_completed_pilot_flight_v1','section9_capture_dispatched_crew_v1','section9_complete_bound_crew_arrival_v1',
  'section9_crew_actual_history_v1','section9_flight_crew_requirements_v1','section9_cabin_composition_valid_v1','section9_verified_external_cabin_input_v1','section9_pilot_counts_valid_v1',
- 'section9_same_duty_prior_sector_v1','section9_downstream_crew_reconciliation_v1') LOOP
+ 'section9_same_duty_prior_sector_v1') LOOP
   fn_def:=replace(fn_def,'airlinerra_game','crew_owned_roster_fixture_14y');
   EXECUTE fn_def;
  END LOOP;
  -- Hire actual qualified internal employees (two independent rotation teams).
- hire:=crew_owned_roster_fixture_14y.section9_confirm_owned_shared_crew_hire_v1(a.owner_player_id,a.id,gen_random_uuid(),a.home_airport_key,grp,2,2,8,100000);
- IF hire->>'status'<>'shared_crew_hired' THEN RAISE EXCEPTION 'actual qualification hire failed %',hire;END IF;
- crew_hiring_invoice:=(hire->>'additionalMonthlySalaryUsd')::numeric;
+
  FOR i IN 1..2 LOOP
   aircraft:=gen_random_uuid();
   INSERT INTO crew_owned_roster_fixture_14y.airline_aircraft_inventory(id,airline_id,configuration_id,registration,ownership_type,fleet_status) VALUES(aircraft,a.id,config,'FIXTURE-14W-'||i,'owned','in_service');
+  IF i=1 THEN
+ hire:=crew_owned_roster_fixture_14y.section9_confirm_owned_shared_crew_hire_v1(a.owner_player_id,a.id,gen_random_uuid(),a.home_airport_key,grp,2,2,8,100000);
+ IF hire->>'status'<>'shared_crew_hired' THEN RAISE EXCEPTION 'actual qualification hire failed %',hire;END IF;
+ crew_hiring_invoice:=(hire->>'additionalMonthlySalaryUsd')::numeric;
+  END IF;
   INSERT INTO crew_owned_roster_fixture_14y.airline_flight_schedule_drafts_v1(world_id,airline_id,aircraft_inventory_id,configuration_id,flight_number,origin_airport_key,destination_airport_key,reference_departure_utc,reference_arrival_utc,weekly_schedule,restriction_snapshot,created_by_player_id,status,operationally_verified,departure_stand_type,arrival_stand_type)
   VALUES(1,a.id,aircraft,config,a.iata_code||(990+i),a.home_airport_key,'OURAIRPORTS:2212',base+make_interval(mins=>i-1),base+make_interval(hours=>3,mins=>i-1),jsonb_build_array(jsonb_build_object('day',extract(isodow FROM base)::int-1,'time',to_char((base+make_interval(mins=>i-1)) AT TIME ZONE 'Europe/Belgrade','HH24:MI'))),'{}',a.owner_player_id,'active',true,'terminal','terminal') RETURNING id INTO sc;
   INSERT INTO crew_owned_roster_fixture_14y.section9_dated_flight_occurrences_v1(world_id,airline_id,schedule_id,aircraft_inventory_id,schedule_version,weekly_entry,flight_local_date,origin_airport_key,destination_airport_key,departure_utc,arrival_utc,turnaround_minutes,verified_passenger_seats,booking_status,booked_seats,recognized_revenue_usd,source_kind)
@@ -126,7 +129,7 @@ BEGIN
   member_captain:=(hire->'pilotIds'->>(i-1))::uuid;
   member_fo:=(hire->'pilotIds'->>(i+1))::uuid;
   member_cabin:=ARRAY[(hire->'cabinIds'->>((i-1)*4))::uuid,(hire->'cabinIds'->>((i-1)*4+1))::uuid,(hire->'cabinIds'->>((i-1)*4+2))::uuid,(hire->'cabinIds'->>((i-1)*4+3))::uuid];
-  SELECT jsonb_agg(jsonb_build_object('employeeId',x.emp,'role',x.seat,'dutyStartUtc',base-interval '2 hours','dutyEndUtc',base+interval '3 hours 32 minutes')) INTO assignment_duties
+  SELECT jsonb_agg(jsonb_build_object('employeeId',x.emp,'role',x.seat,'dutyStartUtc',base+make_interval(mins=>i-1)-interval '2 hours','dutyEndUtc',base+make_interval(hours=>3,mins=>i-1)+interval '30 minutes')) INTO assignment_duties
   FROM (SELECT member_captain emp,'captain' seat UNION ALL SELECT member_fo,'firstOfficer' UNION ALL SELECT unnest(member_cabin),'cabin') x;
   crew_assignments:=crew_assignments||jsonb_build_array(jsonb_build_object('flightId',occ,'aircraftId',aircraft,'departureUtc',base+make_interval(mins=>i-1),'arrivalUtc',base+make_interval(hours=>3,mins=>i-1),'captains',jsonb_build_array(member_captain),'firstOfficers',jsonb_build_array(member_fo),'cabinCrew',to_jsonb(member_cabin),'duties',assignment_duties));
   IF i=1 THEN
@@ -176,6 +179,10 @@ BEGIN
   fn_def:=replace(fn_def,'time_now timestamptz:=clock_timestamp()','time_now timestamptz:=current_setting(''airlinerra.lifecycle_clock'')::timestamptz');
   EXECUTE fn_def;
  END LOOP;
+
+ EXECUTE $ddl$CREATE FUNCTION crew_owned_roster_fixture_14y.fixture_reject_bad_departure_fuel() RETURNS trigger LANGUAGE plpgsql AS $fn$
+ BEGIN IF EXISTS(SELECT 1 FROM crew_owned_roster_fixture_14y.test_bad WHERE physical_flight_id=NEW.physical_flight_id) THEN RAISE EXCEPTION 'FIXTURE_BAD_FUEL_RECEIPT';END IF;RETURN NEW;END $fn$; $ddl$;
+ CREATE TRIGGER fixture_reject_bad_departure_fuel BEFORE INSERT ON crew_owned_roster_fixture_14y.section9_game_flight_fuel_departure_receipts_v1 FOR EACH ROW EXECUTE FUNCTION crew_owned_roster_fixture_14y.fixture_reject_bad_departure_fuel();
  SELECT pg_get_functiondef('airlinerra_game.section9_auto_dispatch_due_flight_events_v1(integer)'::regprocedure) INTO STRICT fn_def;
  fn_def:=replace(fn_def,'airlinerra_game','crew_owned_roster_fixture_14y');
  fn_def:=replace(fn_def,'vault.decrypted_secrets','crew_owned_roster_fixture_14y.test_signer');
