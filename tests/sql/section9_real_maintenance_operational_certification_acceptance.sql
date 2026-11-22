@@ -19,12 +19,13 @@ BEGIN
  'section9_owned_game_maintenance_due_v1','section9_verified_game_maintenance_dispatch_window_v1'
  ) LOOP
  EXECUTE replace(replace(replace(fn.def,'airlinerra_game','cert_maintenance_fixture_14z'),'public.cert_maintenance_fixture_14z_worlds','cert_maintenance_fixture_14z.fixture_worlds'),
- 'time_now timestamptz:=clock_timestamp()','time_now timestamptz:=''2026-11-22T08:00:00Z''::timestamptz');
+ 'time_now timestamptz:=clock_timestamp()','time_now timestamptz:=current_setting(''airlinerra.fixture_maintenance_now'',true)::timestamptz');
  END LOOP;
  SELECT * INTO STRICT a FROM airlinerra_game.airlines WHERE world_id=1 LIMIT 1;
  SELECT id INTO STRICT aircraft FROM airlinerra_game.airline_aircraft_inventory WHERE airline_id=a.id LIMIT 1;
  game_day:=airlinerra_game.section9_verified_permission_game_day_v1();
- IF game_day IS DISTINCT FROM date '2026-11-22' THEN RAISE EXCEPTION 'maintenance fixture clock mismatch %',game_day;END IF;
+ IF game_day IS NULL THEN RAISE EXCEPTION 'verified maintenance game day unavailable';END IF;
+ PERFORM set_config('airlinerra.fixture_maintenance_now',((game_day::timestamp+interval '8 hours') AT TIME ZONE 'Europe/Berlin')::text,true);
  dep:=(game_day::timestamp+interval '9 hours') AT TIME ZONE 'Europe/Berlin';
  arr:=dep+interval '3 hours';
  INSERT INTO cert_maintenance_fixture_14z.airlines SELECT * FROM airlinerra_game.airlines WHERE id=a.id;
