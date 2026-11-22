@@ -329,7 +329,7 @@ SELECT * FROM events ORDER BY "startUtc",id`,
  WHERE o.world_id=1 AND o.airline_id=$2::uuid AND o.schedule_id=$3::uuid AND o.source_kind='game_verified_saleable_schedule_v1'
  AND clk.proof->>'authoritativeGameHourAvailable'='true' AND o.departure_utc>=(clk.proof->>'gameHourUtc')::timestamptz
  AND o.departure_utc<(clk.proof->>'gameHourUtc')::timestamptz+interval '7 days' ORDER BY o.departure_utc LIMIT 7`,
- singleCreate:`SELECT airlinerra_game.section9_create_active_route_from_weekly_v1($1::uuid,$2::uuid,$3::uuid,$4::text,$5::text,$6::text,$7::jsonb,$8::text,$9::text,$10::integer,$11::numeric) AS result`,
+ singleCreate:`SELECT airlinerra_game.section9_create_active_route_with_cabin_v1($1::uuid,$2::uuid,$3::uuid,$4::text,$5::text,$6::text,$7::jsonb,$8::text,$9::text,$10::integer,$11::numeric,$12::text) AS result`,
  operationalReadiness:`SELECT world_id,world_state,confirmed_game_date,
   authoritative_clock_connected,clock_producer_enabled,
   operational_certification_records,aircraft_operation_jobs,
@@ -947,13 +947,13 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
     // Do not silently discard unsupported fare classes/services or deferred launches.
     if(!Number.isInteger(body.fares.economy)||body.fares.economy<1||
        ['premium','business','first'].some(label=>body.fares[label]!==null)||
-       body.service.cargo!=='none'||!['basic','none',undefined].includes(body.service.cabinPackageId)||
+       body.service.cargo!=='none'||
        body.service.onboard!=='basic'||body.service.baggage!=='standard'||(body.launchDelayDays??0)!==0)
      return respond(409,{error:'SINGLE_ROUTE_PHASE1_OPTIONS_UNSUPPORTED',reason:'SINGLE_ROUTE_PHASE1_OPTIONS_UNSUPPORTED',routeCreated:false});
     const response=await client.query(SCHEDULE_SQL.singleCreate,[
      userId,body.airlineId,body.aircraftInventoryId,body.flightNumber,
      body.originAirportKey,body.destinationAirportKey,JSON.stringify(body.weeklySchedule),
-     body.departureStand??'terminal',body.arrivalStand,body.turnaroundMinutes,body.fares.economy
+     body.departureStand??'terminal',body.arrivalStand,body.turnaroundMinutes,body.fares.economy,body.service.cabinPackageId??'basic'
     ]);
     const result=response.rows?.[0]?.result;
     if(response.rowCount!==1||!result)return respond(503,{error:'SINGLE_ROUTE_RECEIPT_UNAVAILABLE',routeCreated:false});
