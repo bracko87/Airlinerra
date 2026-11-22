@@ -825,7 +825,7 @@ const pages=Object.freeze({
     '<div><strong>Optional gallery</strong><span>Aircraft photos managed by the airline owner</span></div></div>'+
     '<p class="hint">The public page will use actual game data. Manager hometown, email and other personal account information remain private.</p>',
     'FUTURE FEATURE'),
-  'fleet':()=>card('Fleet inventory',"<div class=\"workspace-kpis fleet-summary-kpis\">\n<div><span>Owned aircraft</span><strong id=\"fleet-owned-count\">—</strong></div>\n<div><span>Leased aircraft</span><strong id=\"fleet-leased-count\">—</strong></div>\n<div><span>Fleet status</span><strong id=\"fleet-real-status\">Not loaded</strong></div></div>\n<div class=\"fleet-table-scroll\">\n<div class=\"fleet-inventory-table\" role=\"table\" aria-label=\"Owned and leased aircraft\">\n<div class=\"fleet-inventory-row fleet-inventory-head\" role=\"row\"><span role=\"columnheader\">Aircraft / registration</span><span role=\"columnheader\">Passenger seats</span><span role=\"columnheader\">Configuration</span><span role=\"columnheader\">Cargo</span><span role=\"columnheader\">Current location</span><span role=\"columnheader\">Status</span><span role=\"columnheader\">View</span></div>\n<div id=\"fleet-owned-aircraft\" class=\"fleet-inventory-body\" role=\"rowgroup\" aria-live=\"polite\">Loading verified fleet...</div>\n</div></div><p id=\"fleet-delivery-feedback\" class=\"hint\" role=\"status\" aria-live=\"polite\"></p>\n<div class=\"fleet-toolbar\"><button type=\"button\" class=\"secondary\" data-workspace-go=\"aircraft-market\">View market offers</button><button type=\"button\" class=\"secondary\" data-workspace-go=\"maintenance\">Maintenance planning</button></div>",'AIRCRAFT FLEET'),
+  'fleet':()=>card('Fleet inventory',"<div class=\"workspace-kpis fleet-summary-kpis\">\n<div><span>Owned aircraft</span><strong id=\"fleet-owned-count\">—</strong></div>\n<div><span>Leased aircraft</span><strong id=\"fleet-leased-count\">—</strong></div>\n<div><span>Fleet status</span><strong id=\"fleet-real-status\">Not loaded</strong></div></div>\n<div id=\"crew-fleet-alert\" class=\"hint\" role=\"status\" aria-live=\"polite\"></div><div class=\"workspace-actions\"><button type=\"button\" class=\"secondary\" data-workspace-go=\"staff\">Crew recruitment settings</button></div>\n<div class=\"fleet-table-scroll\">\n<div class=\"fleet-inventory-table\" role=\"table\" aria-label=\"Owned and leased aircraft\">\n<div class=\"fleet-inventory-row fleet-inventory-head\" role=\"row\"><span role=\"columnheader\">Aircraft / registration</span><span role=\"columnheader\">Passenger seats</span><span role=\"columnheader\">Configuration</span><span role=\"columnheader\">Cargo</span><span role=\"columnheader\">Current location</span><span role=\"columnheader\">Status</span><span role=\"columnheader\">View</span></div>\n<div id=\"fleet-owned-aircraft\" class=\"fleet-inventory-body\" role=\"rowgroup\" aria-live=\"polite\">Loading verified fleet...</div>\n</div></div><p id=\"fleet-delivery-feedback\" class=\"hint\" role=\"status\" aria-live=\"polite\"></p>\n<div class=\"fleet-toolbar\"><button type=\"button\" class=\"secondary\" data-workspace-go=\"aircraft-market\">View market offers</button><button type=\"button\" class=\"secondary\" data-workspace-go=\"maintenance\">Maintenance planning</button></div>",'AIRCRAFT FLEET'),
  'fleet-aircraft':()=>card('Aircraft details',`<div class="fleet-detail-back"><button type="button" class="secondary" data-workspace-go="fleet">← Back to my fleet</button>
 <button type="button" class="secondary" data-workspace-go="cabin-configurations">Edit cabin configuration</button></div>
 <div class="fleet-aircraft-profile-top">
@@ -999,7 +999,7 @@ const pages=Object.freeze({
    '<div id="budget-result" class="workspace-detail" role="status"></div>'+
    small('The scenario uses user-entered monthly figures and latest displayed cash. It is not the actual income statement, balance sheet or cash flow.'),
    'PLANNING TOOL'),
- 'staff':()=>card('Staff & Management',staffCatalogueMarkup()+navigationSalaryLink(),'PERSONNEL STRUCTURE'),
+ 'staff':()=>card('Staff & Management',"<section class=\"workspace-task-list\" aria-label=\"Crew recruitment\"><h3>Automatic crew recruitment</h3><p class=\"hint\">Save an airline-level preference and monthly additional salary budget. Automatic contracts and payments are not enabled yet.</p><div class=\"workspace-money-grid\"><label class=\"workspace-label\">Recruitment mode<select id=\"crew-recruit-mode\"><option value=\"manual\">Manual recruitment</option><option value=\"automatic_minimum\">Automatic minimum</option><option value=\"automatic_reserves\">Automatic with reserves</option></select></label><label class=\"workspace-label\">Reserve percentage<select id=\"crew-recruit-reserve\"><option value=\"5\">5%</option><option value=\"10\">10%</option><option value=\"15\">15%</option><option value=\"20\">20%</option><option value=\"25\">25%</option><option value=\"30\">30%</option></select></label><label class=\"workspace-label\">Monthly additional salary budget (USD)<input id=\"crew-recruit-budget\" type=\"number\" min=\"0\" max=\"1000000000\" step=\"1\" value=\"0\"></label></div><div class=\"workspace-actions\"><button type=\"button\" class=\"primary\" id=\"crew-recruit-save\" disabled>Save recruitment preferences</button><button type=\"button\" class=\"secondary\" id=\"crew-recruit-refresh\">Refresh</button></div><p id=\"crew-recruit-status\" class=\"hint\" role=\"status\" aria-live=\"polite\">Loading preferences…</p><div id=\"crew-recruit-notices\"></div></section>"+staffCatalogueMarkup()+navigationSalaryLink(),'PERSONNEL STRUCTURE'),
  'salary-management':()=>card('Salary Management',salaryManagementMarkup(),'SALARY PLANNING'),
  'rankings':()=>card('World rankings',
    '<p>Compete with airlines in the same world. When the live ranking engine is available, this page will show verified airline positions and performance.</p>'+
@@ -1096,6 +1096,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
  let data={connected:false,airline:null,countries:[],worlds:[],reader:null},draft={};
  const getDraft=()=>data.playerDraftStore?.snapshot('workplan')||draft;
  const $=id=>doc.getElementById(id);
+ let crewSettings=null,crewFetchVersion=0,crewBusy=false;
  let marketSnapshot=null;
  let usedMarketSnapshot=null;
  let usedMarketFetchVersion=0;
@@ -2429,7 +2430,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    if(version!==marketFetchVersion||data.airline?.id!==airlineId)return;
    if(!result||!Array.isArray(result.fleet)||!Array.isArray(result.offers)||
      result.airlineId!==airlineId)throw Error('Invalid fleet list');
-   renderRealFleetMarket(result);
+   renderRealFleetMarket(result);void loadCrewSettings();
    doc.dispatchEvent(new CustomEvent('airlinerra:fleet-fuel-updated',{detail:{airlineId}}));
   }catch(error){
    if(version!==marketFetchVersion)return;
@@ -2444,6 +2445,41 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    if(holder)holder.textContent='Real company fleet could not be loaded ('+status+
     '). Your aircraft ownership has not been changed. Check the local API connection.';
    console.warn('Airlinerra fleet read',status);
+  }
+ }
+ function renderCrewSettings(value){
+  crewSettings=value;
+  const s=value?.settings,mode=$('crew-recruit-mode'),reserve=$('crew-recruit-reserve'),budget=$('crew-recruit-budget'),save=$('crew-recruit-save');
+  if(s&&mode&&reserve&&budget){mode.value=s.mode;reserve.value=String(s.reservePercent||10);budget.value=String(s.monthlyBudgetUsd);}
+  if(mode)mode.disabled=!s;if(reserve)reserve.disabled=!s||mode?.value!=='automatic_reserves';
+  if(budget)budget.disabled=!s;if(save)save.disabled=!s||crewBusy;
+  const alert=$('crew-fleet-alert');
+  if(alert)alert.textContent=value?(value.pendingNoticeCount?value.pendingNoticeCount+' aircraft require a crew planning review. Open Crew recruitment settings.':'No pending aircraft crew planning notices.'):'Crew recruitment notices unavailable.';
+  const host=$('crew-recruit-notices');
+  if(host){
+   host.replaceChildren();
+   for(const n of value?.notices||[]){
+    const row=doc.createElement('section'),title=doc.createElement('strong'),info=doc.createElement('p'),ack=doc.createElement('button');
+    title.textContent='Crew planning: '+[n.manufacturer,n.model,n.registration].filter(Boolean).join(' ');
+    info.className='hint';info.textContent='Aircraft added to fleet. Review weekly crew requirements for your combined fleet. Hiring is not yet enabled.';
+    ack.type='button';ack.className='secondary';ack.textContent='Acknowledge notice';ack.dataset.crewNoticeAck=n.aircraftId;
+    row.append(title,info,ack);host.append(row);
+   }
+  }
+ }
+ async function loadCrewSettings(){
+  if(crewBusy)return;
+  const version=++crewFetchVersion,airlineId=data.airline?.id,client=data.fleetClient;
+  if(!data.connected||!airlineId||typeof client?.crewSettings!=='function'){renderCrewSettings(null);if($('crew-recruit-status'))$('crew-recruit-status').textContent='Crew recruitment settings unavailable.';return;}
+  try{
+   const value=await client.crewSettings(airlineId);
+   if(version!==crewFetchVersion||data.airline?.id!==airlineId||crewBusy)return;
+   if(value?.status!=='crew_recruitment_settings'||value.airlineId!==airlineId)throw Error('CREW_SETTINGS_MISMATCH');
+   renderCrewSettings(value);
+   if($('crew-recruit-status'))$('crew-recruit-status').textContent='Saved settings loaded. Automatic hiring is not enabled.';
+  }catch{
+   if(version!==crewFetchVersion||data.airline?.id!==airlineId)return;
+   renderCrewSettings(null);if($('crew-recruit-status'))$('crew-recruit-status').textContent='Could not load recruitment settings.';
   }
  }
  function updateData(next={}){
@@ -2471,7 +2507,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    aircraftConfigurationDialog?.close();
    // Never present an earlier airline's inventory or bookings while the
    // new owner's asynchronous authenticated reads are still in progress.
-   marketSnapshot=null;scheduleSnapshot=null;
+   marketSnapshot=null;scheduleSnapshot=null;crewFetchVersion++;crewBusy=false;renderCrewSettings(null);
     usedMarketSnapshot=null;usedMarketFetchVersion++;usedMarketPage=0;
    selectedUsedListingId=null;
    // A user switching companies must not see cached details from another company.
@@ -2524,6 +2560,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   }
  });
  doc.getElementById('player-main')?.addEventListener('change',async event=>{
+  if(event.target.id==='crew-recruit-mode'){if($('crew-recruit-reserve'))$('crew-recruit-reserve').disabled=event.target.value!=='automatic_reserves';return;}
   if(event.target.id==='staff-company-type'){
    const host=$('workspace-staff');
    if(!host)return;
@@ -2764,8 +2801,36 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    if(to==='fleet'||to==='aircraft-new-orders')void loadRealFleetMarket();
    if(to==='aircraft-new-orders'||to==='aircraft-market')void loadUsedMarket();
    return;}
+  const ack=event.target.closest('[data-crew-notice-ack]');
+  if(ack){
+   if(crewBusy||!crewSettings||!data.fleetClient?.acknowledgeCrewNotice)return;
+   const airlineId=data.airline?.id;crewBusy=true;crewFetchVersion++;ack.disabled=true;
+   try{
+    const value=await data.fleetClient.acknowledgeCrewNotice({airlineId,aircraftId:ack.dataset.crewNoticeAck});
+    if(data.airline?.id===airlineId&&value?.airlineId===airlineId){crewBusy=false;renderCrewSettings(value);}
+   }catch{if(data.airline?.id===airlineId&&$('crew-recruit-status'))$('crew-recruit-status').textContent='Notice could not be acknowledged.';}
+   finally{if(data.airline?.id===airlineId)crewBusy=false;ack.disabled=false;}
+   return;
+  }
   const id=event.target.closest('button')?.id;
   if(!id)return;
+  if(id==='crew-recruit-refresh'){await loadCrewSettings();return;}
+  if(id==='crew-recruit-save'){
+   if(crewBusy||!crewSettings||!data.fleetClient?.saveCrewSettings)return;
+   const airlineId=data.airline?.id,mode=$('crew-recruit-mode').value,raw=$('crew-recruit-budget').value;
+   const monthlyBudgetUsd=Number(raw),reservePercent=mode==='automatic_reserves'?Number($('crew-recruit-reserve').value):0;
+   const feedback=$('crew-recruit-status'),save=$('crew-recruit-save');
+   if(!raw.trim()||!Number.isSafeInteger(monthlyBudgetUsd)||monthlyBudgetUsd<0||monthlyBudgetUsd>1000000000){feedback.textContent='Enter a whole-dollar budget between 0 and 1,000,000,000.';return;}
+   crewBusy=true;crewFetchVersion++;save.disabled=true;
+   try{
+    const value=await data.fleetClient.saveCrewSettings({airlineId,mode,reservePercent,monthlyBudgetUsd,version:crewSettings.settings.version});
+    if(data.airline?.id!==airlineId)return;
+    if(value?.airlineId!==airlineId||value.status!=='crew_recruitment_settings')throw Error('CREW_SETTINGS_MISMATCH');
+    crewBusy=false;renderCrewSettings(value);feedback.textContent='Saved. Preferences do not authorize contracts or payments yet.';
+   }catch{if(data.airline?.id===airlineId)feedback.textContent='Not saved. Refresh settings and try again.';}
+   finally{if(data.airline?.id===airlineId){crewBusy=false;save.disabled=!crewSettings;}}
+   return;
+  }
   if(id==='fleet-configuration-change'){
    await aircraftConfigurationDialog?.open();
    return;
