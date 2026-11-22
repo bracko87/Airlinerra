@@ -152,7 +152,7 @@ BEGIN
  INSERT INTO crew_turnaround_fixture_14x.test_crew VALUES(p_physical);
  INSERT INTO crew_turnaround_fixture_14x.section9_operated_crew_bindings_v1(physical_flight_id,airline_id,plan_id,occurrence_id,departure_event_id,cabin_member_ids)
  VALUES(p_physical,p_airline,gen_random_uuid(),o.id,p_event,ARRAY[gen_random_uuid(),gen_random_uuid(),gen_random_uuid(),gen_random_uuid()]);
- RETURN jsonb_build_object('status','crew_departure_bound'); END $fn$ddl$;
+ RETURN jsonb_build_object('status','crew_departure_bound'); END $fn$; $ddl$;
  EXECUTE $ddl$CREATE FUNCTION crew_turnaround_fixture_14x.section9_complete_bound_crew_arrival_v1(p_airline uuid,p_physical text,p_event text) RETURNS jsonb LANGUAGE plpgsql AS $fn$
  BEGIN INSERT INTO crew_turnaround_fixture_14x.test_crew_arrival VALUES(p_physical);
  RETURN jsonb_build_object('status','pilot_experience_credited');END $fn$; $ddl$;
