@@ -108,18 +108,18 @@ BEGIN
  RETURN jsonb_build_object('status','crew_departure_bound'); END $fn$$ddl$;
  EXECUTE $ddl$CREATE FUNCTION crew_lifecycle_fixture_14w.section9_apply_arrival_airframe_usage_once_v1(p_physical text) RETURNS jsonb LANGUAGE plpgsql AS $fn$
  BEGIN INSERT INTO crew_lifecycle_fixture_14w.test_usage VALUES(p_physical);
- RETURN jsonb_build_object('status','arrived_airframe_usage_recorded_once','usageApplied',true,'ledgerPosted',false);END $fn$ddl$;
+ RETURN jsonb_build_object('status','arrived_airframe_usage_recorded_once','usageApplied',true,'ledgerPosted',false);END $fn$; $ddl$;
  EXECUTE $ddl$CREATE FUNCTION crew_lifecycle_fixture_14w.section9_apply_verified_arrival_fuel_burn_once_v1(p_physical text,p_event text) RETURNS jsonb LANGUAGE plpgsql AS $fn$
  BEGIN INSERT INTO crew_lifecycle_fixture_14w.test_fuel_arrival VALUES(p_physical);
- RETURN jsonb_build_object('status','signed_game_arrival_fuel_burn_recorded_once','fuelBurnRecorded',true,'ledgerPosted',false);END $fn$ddl$;
+ RETURN jsonb_build_object('status','signed_game_arrival_fuel_burn_recorded_once','fuelBurnRecorded',true,'ledgerPosted',false);END $fn$; $ddl$;
  EXECUTE $ddl$CREATE FUNCTION crew_lifecycle_fixture_14w.section9_complete_bound_crew_arrival_v1(p_airline uuid,p_physical text,p_event text) RETURNS jsonb LANGUAGE plpgsql AS $fn$
  BEGIN INSERT INTO crew_lifecycle_fixture_14w.test_crew_arrival VALUES(p_physical);
- RETURN jsonb_build_object('status','pilot_experience_credited');END $fn$ddl$;
+ RETURN jsonb_build_object('status','pilot_experience_credited');END $fn$; $ddl$;
  EXECUTE $ddl$CREATE FUNCTION crew_lifecycle_fixture_14w.section9_capture_actual_turnaround_v1(p_airline uuid,p_physical text,p_event text) RETURNS jsonb LANGUAGE plpgsql AS $fn$
  DECLARE arrived timestamptz;
  BEGIN SELECT actual_event_utc INTO STRICT arrived FROM crew_lifecycle_fixture_14w.section9_operated_flight_movements_v1 WHERE engine_event_id=p_event AND airline_id=p_airline AND phase='arrived';
  INSERT INTO crew_lifecycle_fixture_14w.test_turnaround VALUES(p_physical,arrived+interval '50 minutes');
- RETURN jsonb_build_object('status','turnaround_recorded','actualMinutes',50,'availableUtc',arrived+interval '50 minutes');END $fn$ddl$;
+ RETURN jsonb_build_object('status','turnaround_recorded','actualMinutes',50,'availableUtc',arrived+interval '50 minutes');END $fn$; $ddl$;
  SELECT pg_get_functiondef('airlinerra_game.section9_auto_dispatch_due_flight_events_v1(integer)'::regprocedure) INTO STRICT fn_def;
  fn_def:=replace(fn_def,'airlinerra_game','crew_lifecycle_fixture_14w');
  fn_def:=replace(fn_def,'vault.decrypted_secrets','crew_lifecycle_fixture_14w.test_signer');
