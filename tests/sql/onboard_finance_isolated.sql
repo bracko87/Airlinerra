@@ -42,14 +42,14 @@ CREATE FUNCTION section9_postarrival_ticket_reconciliation_v1(text) RETURNS json
 -- Local route-creation test double only: checks wrapper assignment and rollback,
 -- not real licence, runway, slot or movement validation.
 CREATE FUNCTION section9_create_active_route_from_weekly_v1(uuid,uuid,uuid,text,text,text,jsonb,text,text,integer,numeric)
-RETURNS jsonb LANGUAGE plpgsql AS $
+RETURNS jsonb LANGUAGE plpgsql AS $fixture$
 DECLARE sid uuid:=gen_random_uuid();
 BEGIN
  IF $4='BLOCK' THEN RETURN '{"status":"blocked_fixture","routeCreated":false}';END IF;
  INSERT INTO airline_flight_schedule_drafts_v1 VALUES(sid,$2,1,16,'active',true,$4,$3,$5,$6,$7);
  INSERT INTO airline_route_planning_drafts_v1 VALUES($2,$4,$3,$5,$6,$7,'{"service":{"cabinPackageId":"basic"}}');
  RETURN jsonb_build_object('status','active','routeCreated',true,'scheduleId',sid,'scheduleVersion',1);
-END $;
+END $fixture$;
 \ir ../../server/sql/section9_gated_operational_route_cabin_packages.sql
 DO $test$
 DECLARE a uuid:='00000000-0000-4000-8000-000000000001';
