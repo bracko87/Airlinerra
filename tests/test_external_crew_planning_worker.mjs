@@ -12,7 +12,7 @@ function mock({release=true,saveStatus='validated_preview',authorizeStatus='exte
   if(sql.includes(' FOR UPDATE'))return {rowCount:unauthorized?0:1,rows:[]};
   if(sql.includes('verified_world_instant'))return {rows:[{now}]};
   if(sql.includes('owned_weekly_crew_input'))return row(snapshot);
-  if(sql.includes('owned_rolling_crew_input'))return row({...snapshot,status:'rolling_crew_input_preview',windowStartUtc:now,planningCutoffUtc:now,unboundDeparturesLast7Days:history?1:0,unresolvedCaptureIssues:0,alreadyReportedFutureFlights:0});
+  if(sql.includes('owned_rolling_crew_input')){assert.ok(Date.parse(args[2])>Date.parse(now));return row({...snapshot,status:'rolling_crew_input_preview',windowStartUtc:args[2],planningCutoffUtc:now,unboundDeparturesLast7Days:history?1:0,unresolvedCaptureIssues:0,alreadyReportedFutureFlights:0});}
   if(sql.includes('external_crew_quote'))return {rows:[{flightId:flight.id,result:{status:'external_crew_quote',occurrenceId:flight.id,physicalFlightId:'physical-1',qualificationGroup:flight.group,captains:1,firstOfficers:1,cabinCrew:4,plannedDepartureUtc:flight.departureUtc,plannedArrivalUtc:flight.arrivalUtc,estimatedCostUsd:3000,contractingEnabled:release}}]};
   if(sql.includes('external_crew_contracts_v1'))return {rows:[]};
   if(sql.includes('authorize_external_crew'))return row({status:authorizeStatus,physicalFlightId:'physical-1',quotedCostUsd:3000,ledgerPosted:false});

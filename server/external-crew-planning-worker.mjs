@@ -8,7 +8,7 @@ const SQL={
  bootstrap:'SELECT airlinerra_game.section9_owned_weekly_crew_input_v1($1::uuid,$2::uuid,$3::timestamptz) AS result',
  rolling:'SELECT airlinerra_game.section9_owned_rolling_crew_input_v1($1::uuid,$2::uuid,$3::timestamptz) AS result',
  quote:`SELECT x."flightId" AS "flightId",airlinerra_game.section9_external_crew_quote_v1($1::uuid,x."flightId",x.captains,x."firstOfficers",x."cabinCrew") AS result FROM jsonb_to_recordset($2::jsonb) x("flightId" uuid,captains integer,"firstOfficers" integer,"cabinCrew" integer)`,
- authorized:'SELECT occurrence_id AS "flightId",source_reference AS "reference" FROM airlinerra_game.section9_external_crew_contracts_v1 WHERE airline_id=$1::uuid AND occurrence_id=ANY($2::uuid[])',
+ authorized:'SELECT occurrence_id AS "flightId",source_reference AS "reference",quoted_cost_usd AS "quotedCostUsd" FROM airlinerra_game.section9_external_crew_contracts_v1 WHERE airline_id=$1::uuid AND occurrence_id=ANY($2::uuid[])',
  authorize:'SELECT airlinerra_game.section9_authorize_external_crew_v1($1::uuid,$2::uuid,$3::int,$4::int,$5::int,$6::text) AS result',
  save:'SELECT airlinerra_game.section9_save_owned_crew_plan_preview_v1($1::uuid,$2::uuid,$3::uuid,$4::timestamptz,$5::jsonb,$6::jsonb) AS result'
 };
@@ -60,7 +60,9 @@ function summarize(plan,quote,airlineId){
 // No permanent roster IDs, snapshot or write actions are returned to the browser.
 export async function previewExternalCrewPlan({client,playerId,airlineId}){
  if(typeof client?.query!=='function')throw Error('INVALID_EXTERNAL_CREW_CLIENT');
- const now=await clock(client),start=new Date(now).toISOString();
+ // The verified game clock can advance between statements. Leave a small
+ // lead for the rolling-input boundary; flights already reporting are held.
+ const now=await clock(client),start=new Date(now+60000).toISOString();
  const snapshot=result(await client.query(SQL.rolling,[playerId,airlineId,start]));
  if(!inputOkay(snapshot,'rolling_crew_input_preview'))return blocked('external_crew_input_unreconciled',{airlineId});
  if(snapshot.unboundDeparturesLast7Days!==0||snapshot.unresolvedCaptureIssues!==0||snapshot.alreadyReportedFutureFlights!==0)return blocked('external_crew_history_requires_review',{airlineId});
@@ -92,7 +94,7 @@ export async function prepareExternalCrewPlan({client,playerId,airlineId,planId,
   if(plan.externalContracts.length&&(!authorizeExternal||!summary.contractingEnabled||quote.totalCents>cents(maxExternalCostUsd)))return await finish(blocked('external_crew_authorization_not_ready',{plan,summary}));
   const proposed=new Map(quote.quotes.map(q=>[q.flightId,q]));
   const existing=(await client.query(SQL.authorized,[airlineId,plan.assignments.map(a=>a.flightId)])).rows||[];
-  if(existing.some(e=>!proposed.has(e.flightId)||e.reference!==reference(planId,e.flightId)))return await finish(blocked('existing_external_contract_requires_review',{plan,summary}));
+  if(existing.some(e=>!proposed.has(e.flightId)||e.reference!==reference(planId,e.flightId)||cents(e.quotedCostUsd)!==cents(proposed.get(e.flightId).estimatedCostUsd)))return await finish(blocked('existing_external_contract_requires_review',{plan,summary}));
   for(const q of quote.quotes){
    const a=result(await client.query(SQL.authorize,[airlineId,q.flightId,q.captains,q.firstOfficers,q.cabinCrew,reference(planId,q.flightId)]));
    if(!['external_crew_contract_authorized','external_crew_contract_already_authorized'].includes(a?.status)||a.physicalFlightId!==q.physicalFlightId||a.ledgerPosted!==false||
