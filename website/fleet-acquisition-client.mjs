@@ -27,6 +27,9 @@ export function createFleetAcquisitionClient({auth,origin,fetchImpl=(...a)=>fetc
   return data;
  }
  return Object.freeze({
+  crewHireOverview:airlineId=>post({action:'crew-hire-overview',airlineId}),
+  crewHireQuote:({airlineId,baseAirportKey,qualificationGroup,captains,firstOfficers,cabinCrew})=>post({action:'crew-hire-quote',airlineId,baseAirportKey,qualificationGroup,captains,firstOfficers,cabinCrew}),
+  crewHireConfirm:({airlineId,baseAirportKey,qualificationGroup,captains,firstOfficers,cabinCrew,requestId,monthlyLimitUsd})=>post({action:'crew-hire-confirm',airlineId,baseAirportKey,qualificationGroup,captains,firstOfficers,cabinCrew,requestId,monthlyLimitUsd}),
   crewSettings:airlineId=>post({action:'crew-settings',airlineId}),
   saveCrewSettings:({airlineId,mode,reservePercent,monthlyBudgetUsd,version})=>post({action:'crew-settings-save',airlineId,mode,reservePercent,monthlyBudgetUsd,version}),
   acknowledgeCrewNotice:({airlineId,aircraftId})=>post({action:'crew-notice-ack',airlineId,aircraftId}),
