@@ -17,6 +17,7 @@ BEGIN
  'section9_activation_release_policy_v1','section9_trusted_execution_release_policy_v1',
  'section9_flight_engine_readiness_audit_v1','section9_operated_flight_movements_v1',
  'section9_delayed_crew_approvals_v1','section9_delayed_crew_approval_release_v1',
+ 'section9_crew_movement_capture_release_v1',
  'section9_operated_crew_capture_issues_v1'] LOOP
   EXECUTE format('CREATE TABLE crew_lifecycle_fixture_14w.%I(LIKE airlinerra_game.%I INCLUDING ALL)',tbl,tbl);
  END LOOP;
