@@ -7,7 +7,7 @@ const read=path=>readFile(new URL(path,import.meta.url),'utf8');
 
 test('expanded management pages and operations/settings navigation stay linked',async()=>{
  const html=await read('../website/private-player-app.html');
- assert.equal(PLAYER_VIEWS.length,48);
+ assert.equal(PLAYER_VIEWS.length,49);
  assert.equal(new Set(PLAYER_VIEWS).size,PLAYER_VIEWS.length);
  for(const page of PLAYER_VIEWS)
   assert.match(html,new RegExp('data-player-view="'+page+'"'));
@@ -37,7 +37,7 @@ test('real connected views remain while 16 richer section mounts render',async()
   read('../website/dev-scripts/invited-overlay.mjs'),read('../website/airline-workspace.mjs')
  ]);
  for(const view of ['fleet','routes','schedule','finances','worlds','airport-insights',
-  'airline','staff','rankings','service','aircraft-new-orders','aircraft-market','maintenance',
+  'airline','staff','salary-management','rankings','service','aircraft-new-orders','aircraft-market','maintenance',
   'interface','notifications','help'])
   assert.match(html,new RegExp('id="workspace-'+view+'"'));
  assert.match(html,/id="world-directory"/);
