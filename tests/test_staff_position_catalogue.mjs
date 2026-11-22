@@ -1,16 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {STAFF_SECTIONS,STAFF_POSITION_GROUPS,staffCatalogueMarkup,previewStaffSalary,salaryManagementMarkup,AIRLINE_UI_VIEWS} from '../website/airline-workspace.mjs';
+import {STAFF_SECTIONS,STAFF_POSITION_GROUPS,staffCatalogueMarkup,STAFF_COMPANY_TYPES,staffPositionEligible,staffEligibilityReferenceMarkup,previewStaffSalary,salaryManagementMarkup,AIRLINE_UI_VIEWS} from '../website/airline-workspace.mjs';
 test('staff structure has exactly three sections and separates holding from airline management',()=>{
  assert.deepEqual(STAFF_SECTIONS.map(s=>s.id),['management','pilots','other']);
  assert.deepEqual(STAFF_SECTIONS[0].groups,['holding','airline']);
  assert.equal(STAFF_POSITION_GROUPS.find(g=>g.id==='holding').positions.length,8);
- assert.equal(STAFF_POSITION_GROUPS.find(g=>g.id==='airline').positions.length,5);
+ assert.equal(STAFF_POSITION_GROUPS.find(g=>g.id==='airline').positions.length,11);
  assert.equal(STAFF_POSITION_GROUPS.find(g=>g.id==='pilots').positions.length,7);
- assert.equal(STAFF_SECTIONS[2].groups.length,10);
+ assert.equal(STAFF_SECTIONS[2].groups.length,8);
  const ids=STAFF_POSITION_GROUPS.flatMap(g=>g.positions.map(p=>p.id));
  assert.equal(ids.length,new Set(ids).size);
- assert.ok(ids.includes('flight_attendant')&&ids.includes('ramp_agent')&&ids.includes('station_manager'));
+ assert.ok(ids.includes('flight_attendant')&&ids.includes('crew_scheduler')&&ids.includes('maintenance_engineer'));
 });
 test('initial staff markup has three section selectors, a holding scope and no hiring action',()=>{
  const html=staffCatalogueMarkup();
@@ -43,4 +43,30 @@ test('salary management is a separate view with one planning row per position',(
  assert.match(html,/data-salary-row="captain"/);
  assert.match(html,/data-salary-row="flight_attendant"/);
  assert.doesNotMatch(html,/Save salaries|Confirm payroll/);
+});
+
+test('company types have explicit eligibility, shared by salary and staff views',()=>{
+ assert.equal(STAFF_COMPANY_TYPES.length,8);
+ const types=STAFF_COMPANY_TYPES.map(t=>t.id);
+ for(const group of STAFF_POSITION_GROUPS)for(const p of group.positions){
+  assert.ok(p.companyTypes.length>0);
+  assert.ok(p.companyTypes.every(t=>types.includes(t)));
+  assert.equal(staffPositionEligible(p.id,'holding'),group.id==='holding');
+ }
+ assert.equal(staffPositionEligible('flight_attendant','pax'),true);
+ assert.equal(staffPositionEligible('flight_attendant','cgo'),false);
+ assert.equal(staffPositionEligible('crew_scheduler','cgo'),true);
+ assert.equal(staffPositionEligible('crew_scheduler','lsg'),false);
+ assert.equal(staffPositionEligible('maintenance_engineer','lsg'),true);
+ assert.equal(staffPositionEligible('cargo_operations_specialist','pax'),false);
+ assert.equal(staffPositionEligible('cargo_operations_specialist','cgo'),true);
+ assert.equal(staffPositionEligible('leasing_specialist','lsg'),true);
+ for(const id of ['ramp_agent','baggage_handler','checkin_agent','gate_agent','aircraft_cleaner','cargo_handler','station_manager'])
+  assert.equal(staffPositionEligible(id,'all'),false);
+ const reference=staffEligibilityReferenceMarkup();
+ assert.match(reference,/<details/);
+ assert.match(reference,/Position eligibility by company type/);
+ assert.match(reference,/HLD/);
+ assert.ok(staffCatalogueMarkup().includes(reference));
+ assert.ok(salaryManagementMarkup().includes(reference));
 });
