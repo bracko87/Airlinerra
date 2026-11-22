@@ -1,3 +1,4 @@
+import {crewHiringMarkup,createCrewHiringPanel} from './crew-hiring-panel.mjs';
 import {routePlannerMarkup,createRoutePlanner} from './route-planner.mjs';
 import {aircraftDisplayName} from './aircraft-library.mjs';
 import {buildDatedCalendar,renderDatedCalendar} from './aircraft-dated-calendar.mjs';
@@ -999,7 +1000,7 @@ const pages=Object.freeze({
    '<div id="budget-result" class="workspace-detail" role="status"></div>'+
    small('The scenario uses user-entered monthly figures and latest displayed cash. It is not the actual income statement, balance sheet or cash flow.'),
    'PLANNING TOOL'),
- 'staff':()=>card('Staff & Management',"<section class=\"workspace-task-list\" aria-label=\"Crew recruitment\"><h3>Automatic crew recruitment</h3><p class=\"hint\">Save an airline-level preference and monthly additional salary budget. Automatic contracts and payments are not enabled yet.</p><div class=\"workspace-money-grid\"><label class=\"workspace-label\">Recruitment mode<select id=\"crew-recruit-mode\"><option value=\"manual\">Manual recruitment</option><option value=\"automatic_minimum\">Automatic minimum</option><option value=\"automatic_reserves\">Automatic with reserves</option></select></label><label class=\"workspace-label\">Reserve percentage<select id=\"crew-recruit-reserve\"><option value=\"5\">5%</option><option value=\"10\">10%</option><option value=\"15\">15%</option><option value=\"20\">20%</option><option value=\"25\">25%</option><option value=\"30\">30%</option></select></label><label class=\"workspace-label\">Monthly additional salary budget (USD)<input id=\"crew-recruit-budget\" type=\"number\" min=\"0\" max=\"1000000000\" step=\"1\" value=\"0\"></label></div><div class=\"workspace-actions\"><button type=\"button\" class=\"primary\" id=\"crew-recruit-save\" disabled>Save recruitment preferences</button><button type=\"button\" class=\"secondary\" id=\"crew-recruit-refresh\">Refresh</button></div><p id=\"crew-recruit-status\" class=\"hint\" role=\"status\" aria-live=\"polite\">Loading preferences…</p><div id=\"crew-recruit-notices\"></div></section>"+staffCatalogueMarkup()+navigationSalaryLink(),'PERSONNEL STRUCTURE'),
+ 'staff':()=>card('Staff & Management',"<section class=\"workspace-task-list\" aria-label=\"Crew recruitment\"><h3>Automatic crew recruitment</h3><p class=\"hint\">Save an airline-level preference and monthly additional salary budget. Automatic contracts and payments are not enabled yet.</p><div class=\"workspace-money-grid\"><label class=\"workspace-label\">Recruitment mode<select id=\"crew-recruit-mode\"><option value=\"manual\">Manual recruitment</option><option value=\"automatic_minimum\">Automatic minimum</option><option value=\"automatic_reserves\">Automatic with reserves</option></select></label><label class=\"workspace-label\">Reserve percentage<select id=\"crew-recruit-reserve\"><option value=\"5\">5%</option><option value=\"10\">10%</option><option value=\"15\">15%</option><option value=\"20\">20%</option><option value=\"25\">25%</option><option value=\"30\">30%</option></select></label><label class=\"workspace-label\">Monthly additional salary budget (USD)<input id=\"crew-recruit-budget\" type=\"number\" min=\"0\" max=\"1000000000\" step=\"1\" value=\"0\"></label></div><div class=\"workspace-actions\"><button type=\"button\" class=\"primary\" id=\"crew-recruit-save\" disabled>Save recruitment preferences</button><button type=\"button\" class=\"secondary\" id=\"crew-recruit-refresh\">Refresh</button></div><p id=\"crew-recruit-status\" class=\"hint\" role=\"status\" aria-live=\"polite\">Loading preferences…</p><div id=\"crew-recruit-notices\"></div></section>"+crewHiringMarkup()+staffCatalogueMarkup()+navigationSalaryLink(),'PERSONNEL STRUCTURE'),
  'salary-management':()=>card('Salary Management',salaryManagementMarkup(),'SALARY PLANNING'),
  'rankings':()=>card('World rankings',
    '<p>Compete with airlines in the same world. When the live ranking engine is available, this page will show verified airline positions and performance.</p>'+
@@ -1096,6 +1097,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
  let data={connected:false,airline:null,countries:[],worlds:[],reader:null},draft={};
  const getDraft=()=>data.playerDraftStore?.snapshot('workplan')||draft;
  const $=id=>doc.getElementById(id);
+ const crewHiringPanel=createCrewHiringPanel({doc,getData:()=>data});
  let crewSettings=null,crewFetchVersion=0,crewBusy=false;
  let marketSnapshot=null;
  let usedMarketSnapshot=null;
@@ -2430,7 +2432,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    if(version!==marketFetchVersion||data.airline?.id!==airlineId)return;
    if(!result||!Array.isArray(result.fleet)||!Array.isArray(result.offers)||
      result.airlineId!==airlineId)throw Error('Invalid fleet list');
-   renderRealFleetMarket(result);void loadCrewSettings();
+   renderRealFleetMarket(result);void loadCrewSettings();void crewHiringPanel.refresh();
    doc.dispatchEvent(new CustomEvent('airlinerra:fleet-fuel-updated',{detail:{airlineId}}));
   }catch(error){
    if(version!==marketFetchVersion)return;
@@ -2507,7 +2509,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    aircraftConfigurationDialog?.close();
    // Never present an earlier airline's inventory or bookings while the
    // new owner's asynchronous authenticated reads are still in progress.
-   marketSnapshot=null;scheduleSnapshot=null;crewFetchVersion++;crewBusy=false;renderCrewSettings(null);
+   marketSnapshot=null;scheduleSnapshot=null;crewFetchVersion++;crewBusy=false;renderCrewSettings(null);crewHiringPanel.reset(airline?.id||null);
     usedMarketSnapshot=null;usedMarketFetchVersion++;usedMarketPage=0;
    selectedUsedListingId=null;
    // A user switching companies must not see cached details from another company.
