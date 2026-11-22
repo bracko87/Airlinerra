@@ -7,7 +7,8 @@ CREATE ROLE anon NOLOGIN;
 CREATE ROLE authenticated NOLOGIN;
 CREATE ROLE service_role NOLOGIN;
 SET search_path TO airlinerra_game,pg_catalog;
-CREATE TABLE airlines(id uuid PRIMARY KEY,world_id smallint,cash_usd numeric(16,2));
+CREATE TABLE airlines(id uuid PRIMARY KEY,world_id smallint,cash_usd numeric(16,2),owner_player_id uuid);
+CREATE TABLE airline_cabin_service_settings_v1(airline_id uuid PRIMARY KEY,world_id smallint,state jsonb,version int);
 CREATE TABLE airline_ledger(id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,airline_id uuid,entry_kind text,amount_usd numeric(16,2));
 CREATE TABLE section9_dated_flight_occurrences_v1(id uuid PRIMARY KEY,world_id smallint,airline_id uuid,schedule_id uuid,flight_local_date date,weekly_entry int,schedule_version int,booking_status text,booked_seats int);
 CREATE TABLE section9_operated_flight_movements_v1(flight_occurrence_id text,engine_event_id text PRIMARY KEY,schedule_id uuid,airline_id uuid,phase text,actual_event_utc timestamptz);
@@ -38,29 +39,53 @@ CREATE FUNCTION section9_postarrival_ticket_reconciliation_v1(text) RETURNS json
 \ir ../../server/sql/section9_simplify_onboard_consumption.sql
 \ir ../../server/sql/section9_gated_onboard_flight_financial_settlement.sql
 \ir ../../server/sql/section9_onboard_passenger_experience_integration.sql
+-- Local route-creation test double only: checks wrapper assignment and rollback,
+-- not real licence, runway, slot or movement validation.
+CREATE FUNCTION section9_create_active_route_from_weekly_v1(uuid,uuid,uuid,text,text,text,jsonb,text,text,integer,numeric)
+RETURNS jsonb LANGUAGE plpgsql AS $
+DECLARE sid uuid:=gen_random_uuid();
+BEGIN
+ IF $4='BLOCK' THEN RETURN '{"status":"blocked_fixture","routeCreated":false}';END IF;
+ INSERT INTO airline_flight_schedule_drafts_v1 VALUES(sid,$2,1,16,'active',true,$4,$3,$5,$6,$7);
+ INSERT INTO airline_route_planning_drafts_v1 VALUES($2,$4,$3,$5,$6,$7,'{"service":{"cabinPackageId":"basic"}}');
+ RETURN jsonb_build_object('status','active','routeCreated',true,'scheduleId',sid,'scheduleVersion',1);
+END $;
+\ir ../../server/sql/section9_gated_operational_route_cabin_packages.sql
 DO $test$
 DECLARE a uuid:='00000000-0000-4000-8000-000000000001';
  s uuid; o uuid; physical text; i int; r jsonb; c jsonb; posted record; receipt record; opening numeric; before_count int; expected_revenue numeric;expected_cost numeric; dep timestamptz:='2026-11-21 12:00:00+00'; fees jsonb;
 BEGIN
- INSERT INTO airlines VALUES(a,1,100000);
+ INSERT INTO airlines VALUES(a,1,100000,a);
+ INSERT INTO airline_cabin_service_settings_v1 VALUES(a,1,'{"packages":[{"id":"pkg-1","items":{"water":{"mode":"included"},"coffee":{"mode":"onboard","onboardCents":500},"alcohol":{"mode":"included"}}},{"id":"pkg-2","items":{"wifi":{"mode":"included"}}}]}',7);
+ IF section9_resolve_route_onboard_package_v1(a,a,'pkg-1')->>'status'<>'blocked_custom_cabin_packages_not_released' THEN RAISE EXCEPTION 'custom gate not respected';END IF;
  INSERT INTO airline_ledger(airline_id,entry_kind,amount_usd) VALUES(a,'STARTING_CAPITAL',100000);
- -- A gate-off case, an actual basic-package snapshot case, and a paid-package
- -- synthetic snapshot case (custom route selection is not yet released).
+ -- Gate-off, basic, and custom package cases using the actual assignment wrapper.
  SELECT jsonb_object_agg(k,CASE WHEN k='departureAirportMovementUsd' THEN 500 ELSE 0 END) INTO fees FROM unnest(ARRAY['departureAirportMovementUsd','arrivalLandingUsd','departureGroundHandlingUsd','arrivalStandParkingUsd','departureTerminalAirTrafficControlUsd','enrouteAirTrafficControlUsd','departingPassengerFacilityUsd','departingPassengerSecurityUsd','internationalPassengerProcessingUsd','originCargoHandlingUsd','destinationCargoHandlingUsd']) k;
  FOR i IN 1..3 LOOP
   s:=gen_random_uuid();o:=gen_random_uuid();physical:=s::text||':2026-11-21:1';
   UPDATE section9_onboard_service_release_v1 SET snapshot_enabled=(i>1),settlement_enabled=(i>1);
-  INSERT INTO airline_flight_schedule_drafts_v1 VALUES(s,a,1,16,'active',true,'ZZ'||i,a,'BEG','BUD','[{"day":5,"time":"12:00"}]');
-  INSERT INTO airline_route_planning_drafts_v1 VALUES(a,'ZZ'||i,a,'BEG','BUD','[{"day":5,"time":"12:00"}]','{"service":{"cabinPackageId":"basic"}}');
+
+  IF i=3 THEN
+   UPDATE section9_onboard_service_release_v1 SET custom_route_packages_enabled=true;
+   IF section9_resolve_route_onboard_package_v1(gen_random_uuid(),a,'pkg-1')->>'status'<>'blocked_airline_not_owned' OR section9_resolve_route_onboard_package_v1(a,a,'pkg-2')->>'status'<>'blocked_cabin_service_not_supported' OR section9_resolve_route_onboard_package_v1(a,a,'pkg-3')->>'status'<>'blocked_cabin_package_not_saved' THEN RAISE EXCEPTION 'invalid custom package allowed';END IF;
+   r:=section9_create_active_route_with_cabin_v1(a,a,a,'BLOCK','BEG','BUD','[{"day":5,"time":"12:00"}]','terminal','terminal',45,50,'pkg-1');
+   IF r->>'routeCreated'<>'false' OR EXISTS(SELECT 1 FROM section9_route_onboard_packages_v1) THEN RAISE EXCEPTION 'blocked route saved package';END IF;
+   r:=section9_create_active_route_with_cabin_v1(a,a,a,'ZZ3','BEG','BUD','[{"day":5,"time":"12:00"}]','terminal','terminal',45,50,'pkg-1');
+   IF r->>'routeCreated'<>'true' OR r->>'cabinPackageVersion'<>'7' THEN RAISE EXCEPTION 'route package creation failed %',r;END IF;
+   s:=(r->>'scheduleId')::uuid;physical:=s::text||':2026-11-21:1';
+   IF NOT EXISTS(SELECT 1 FROM section9_route_onboard_packages_v1 WHERE schedule_id=s AND package_items->'coffee'->>'onboardCents'='500') THEN RAISE EXCEPTION 'route package terms missing';END IF;
+   -- Change the saved design after route creation; departure must retain original terms.
+   UPDATE airline_cabin_service_settings_v1 SET state=jsonb_set(state,'{packages,0,items,coffee,onboardCents}','900'),version=8 WHERE airline_id=a;
+  ELSE
+   INSERT INTO airline_flight_schedule_drafts_v1 VALUES(s,a,1,16,'active',true,'ZZ'||i,a,'BEG','BUD','[{"day":5,"time":"12:00"}]');
+   INSERT INTO airline_route_planning_drafts_v1 VALUES(a,'ZZ'||i,a,'BEG','BUD','[{"day":5,"time":"12:00"}]','{"service":{"cabinPackageId":"basic"}}');
+  END IF;
   INSERT INTO section9_dated_flight_occurrences_v1 VALUES(o,1,a,s,'2026-11-21',1,1,'open',100);
   INSERT INTO section9_operated_flight_movements_v1 VALUES(physical,physical||':d',s,a,'departed',dep),(physical,physical||':a',s,a,'arrived',dep+interval '3 hours');
   UPDATE section9_dated_flight_occurrences_v1 SET booking_status='closed' WHERE id=o;
   IF i=1 AND EXISTS(SELECT 1 FROM section9_onboard_departure_snapshots_v1 WHERE physical_flight_id=physical) THEN RAISE EXCEPTION 'gate-off snapshot'; END IF;
   IF i>1 AND NOT EXISTS(SELECT 1 FROM section9_onboard_departure_snapshots_v1 WHERE physical_flight_id=physical AND model_version='GAME_CABIN_SERVICE_V2' AND passengers=100) THEN RAISE EXCEPTION 'snapshot missing'; END IF;
-  IF i=3 THEN
-   -- Paid service financial arithmetic test, not an active custom route test.
-   UPDATE section9_onboard_departure_snapshots_v1 SET package_id='pkg-1',package_items='{"water":{"mode":"included"},"coffee":{"mode":"onboard","onboardCents":500}}' WHERE physical_flight_id=physical;
-  END IF;
+  IF i=3 AND NOT EXISTS(SELECT 1 FROM section9_onboard_departure_snapshots_v1 WHERE physical_flight_id=physical AND package_id='pkg-1' AND package_version=7 AND package_items->'coffee'->>'onboardCents'='500' AND package_items->'alcohol'->>'mode'='included') THEN RAISE EXCEPTION 'departure snapshot did not retain route terms';END IF;
   INSERT INTO section9_actual_ticket_finance_preparations_v1 VALUES(physical,a,s,'2026-11-21',physical||':a',100,5000,'ACTUAL_TICKET_POSTARRIVAL_PREP_V1','UNPOSTED_GAME_ESTIMATE');
   INSERT INTO section9_flight_final_cost_approvals_v1 VALUES(physical,a,physical||':a',1000,500,fees,0,0,0,0,100,true,'fixture-fuel-reference','fixture-tariff-model','fixture-tariff-reference','approved',now(),'fixture-approval-reference');
   expected_revenue:=0;expected_cost:=0;
