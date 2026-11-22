@@ -1881,9 +1881,9 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    message('route-plan-status','Enter a valid Economy fare before creating this flight.');return;
   }
   if(['premium','business','first'].some(label=>operation.fares[label]!==null)||
-      operation.service.cargo!=='none'||!['basic','none'].includes(operation.service.cabinPackageId)||
+      operation.service.cargo!=='none'||
       operation.service.baggage!=='standard'){
-   message('route-plan-status','Phase 1 supports economy passenger service with basic cabin service and standard baggage. Remove other fares or unsupported services to create the route.');return;
+   message('route-plan-status','Phase 1 supports economy passenger service and standard baggage. Remove other fares or cargo to create the route.');return;
   }
   if(launchDelayDays!==0){
    message('route-plan-status','Choose As soon as operationally ready. Delayed commercial launch is not yet supported.');return;
@@ -1940,6 +1940,10 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
     blocked_activation:'The aircraft, licence, airport or schedule validation failed.',
     blocked_ticket_inventory:'Ticket inventory could not be opened.',
     blocked_no_bookable_departure:'No eligible departure in the booking window.',
+    blocked_cabin_package_not_saved:'This cabin package is no longer saved. Choose another saved package.',
+    blocked_invalid_cabin_package:'Check the selected cabin package and onboard prices.',
+    blocked_custom_cabin_packages_not_released:'Custom operational cabin packages are not released yet. Choose Basic or No services.',
+    blocked_cabin_service_not_supported:'The selected package includes equipment-dependent services that are not yet supported. Choose a package with supported services.',
     SINGLE_ROUTE_PHASE1_OPTIONS_UNSUPPORTED:'Select supported economy passenger service options.'
    };
    const why=first==='AIRCRAFT_CANNOT_REACH_FIRST_DEPARTURE'?
