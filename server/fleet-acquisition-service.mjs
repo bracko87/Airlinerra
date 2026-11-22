@@ -1,4 +1,4 @@
-import {buildFleetCrewCapacity} from './fleet-crew-capacity-engine.mjs';
+import {readCachedFleetCrewCapacity} from './fleet-crew-capacity-cache.mjs';
 /** Secure World 1 aircraft purchase/lease market, server-side only.
  * Monetary price, airline ownership and registration checks live in PostgreSQL.
  * This service never activates live flights.
@@ -591,7 +591,12 @@ export function createFleetAcquisitionHandler({verifyUserToken,database}={}){
     const owner=await client.query(FLEET_SQL.owner,[body.airlineId,playerId]);
     if(owner.rowCount!==1)return respond(403,{error:'Airline not owned by this account'});
     const params=[playerId,body.airlineId];
-    let sql=body.action==='crew-capacity'?'SELECT airlinerra_game.section9_owned_fleet_crew_capacity_input_v1($1::uuid,$2::uuid) AS result':'SELECT airlinerra_game.section9_owned_management_responsibilities_v1($1::uuid,$2::uuid) AS result';
+    if(body.action==='crew-capacity'){
+     const capacity=await readCachedFleetCrewCapacity(client,playerId,body.airlineId);
+     if(capacity.status==='capacity_changed_retry')return respond(409,{reason:'CAPACITY_CHANGED_RETRY'});
+     return respond(200,capacity);
+    }
+    let sql='SELECT airlinerra_game.section9_owned_management_responsibilities_v1($1::uuid,$2::uuid) AS result';
     if(body.action==='management-responsibilities-save'){
      sql='SELECT airlinerra_game.section9_save_owned_management_responsibilities_v1($1::uuid,$2::uuid,$3::int,$4::jsonb) AS result';
      params.push(body.version,JSON.stringify(body.policies));
@@ -599,7 +604,7 @@ export function createFleetAcquisitionHandler({verifyUserToken,database}={}){
     const r=await client.query(sql,params),value=r.rows?.[0]?.result;
     if(value?.status==='management_version_conflict')return respond(409,{reason:'MANAGEMENT_VERSION_CONFLICT'});
     if(value?.airlineId!==body.airlineId)return respond(503,{error:'Staffing data unavailable'});
-    return respond(200,body.action==='crew-capacity'?buildFleetCrewCapacity(value):value);
+    return respond(200,value);
    }
    if(['crew-hire-overview','crew-hire-quote','crew-hire-confirm'].includes(body.action)){
     const owner=await client.query(FLEET_SQL.owner,[body.airlineId,playerId]);
