@@ -1,6 +1,6 @@
 -- Section 5+6 actual verifier isolation: no real slot, certification or airline modified.
 DO $slot_fixture$
-DECLARE t text; cols text; fn record; a record; aircraft record; sc uuid; rr record; hmac_payload text; evsign text; revoked_event text; certificate_count integer; blocker jsonb; proof record; denied boolean:=false; game_key text:=repeat('S',70); game_day date; orig text:='OURAIRPORTS:4610'; dest text:='OURAIRPORTS:4612'; dep timestamptz:='2026-11-23T10:00:00Z'; arr timestamptz:='2026-11-23T12:00:00Z'; weekly jsonb:='[{"day":0,"time":"11:00"}]'::jsonb; verdict jsonb; restriction jsonb; result jsonb;
+DECLARE t text; cols text; fn record; a record; aircraft record; sc uuid; rr record; hmac_payload text; evsign text; revoked_event text; certificate_count integer; blocker jsonb; proof record; denied boolean:=false; game_key text:=repeat('S',70); game_day date; orig text:='OURAIRPORTS:4610'; dest text:='OURAIRPORTS:4612'; dep timestamptz; arr timestamptz; weekly jsonb:='[{"day":0,"time":"11:00"}]'::jsonb; verdict jsonb; restriction jsonb; result jsonb;
 BEGIN
  BEGIN
  CREATE SCHEMA cert_full_fixture_14aa;
@@ -20,7 +20,9 @@ BEGIN
  SELECT * INTO STRICT a FROM airlinerra_game.airlines WHERE world_id=1 LIMIT 1;
  SELECT * INTO STRICT aircraft FROM airlinerra_game.airline_aircraft_inventory WHERE airline_id=a.id LIMIT 1;
  game_day:=airlinerra_game.section9_verified_permission_game_day_v1();
- IF game_day IS DISTINCT FROM date '2026-11-22' THEN RAISE EXCEPTION 'fixture date must match verification day';END IF;
+ IF game_day IS NULL THEN RAISE EXCEPTION 'verified game-day fixture unavailable';END IF;
+ dep:=((game_day+((8-extract(isodow FROM game_day)::integer)%7))::timestamp+interval '11 hours') AT TIME ZONE 'Europe/Belgrade';
+ arr:=dep+interval '2 hours';
  FOREACH t IN ARRAY ARRAY['airport_unified_operations_v1','section5_airport_operating_policy_v1','section5_airport_simplified_game_rules_v1',
  'airport_runway_inventory','airport_runway_source_status_evidence','airport_sections1_8_combined_members_v1','section5_airport_batch50_screen_v1',
  'section5_airport_icao_chapter_policy_v2','section5_airport_official_noise_rules_v2','section5_airport_time_restrictions_v1',
