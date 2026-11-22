@@ -72,6 +72,7 @@ const navigation=()=>[
  ,'</div>'].join('');
 // Provisional position catalogue. Definitions only: no appointments, contracts,
 // payroll, staffing minima or dispatch restrictions are created by this UI.
+export const STAFF_COMPANY_TYPES=Object.freeze([{"id":"holding","label":"Holding","code":"HLD"},{"id":"pax","label":"Passenger airline","code":"PAX"},{"id":"reg","label":"Regional / low-cost airline","code":"REG"},{"id":"cgo","label":"Cargo airline","code":"CGO"},{"id":"vip","label":"Charter / VIP airline","code":"VIP"},{"id":"mro","label":"Maintenance company","code":"MRO"},{"id":"aca","label":"Flight academy (future subsidiary)","code":"ACA"},{"id":"lsg","label":"Aircraft leasing company (future subsidiary)","code":"LSG"}].map(Object.freeze));
 export const STAFF_POSITION_GROUPS=Object.freeze([
  {
   "id": "holding",
@@ -81,335 +82,689 @@ export const STAFF_POSITION_GROUPS=Object.freeze([
    {
     "id": "ceo",
     "title": "Chief Executive Officer (CEO)",
-    "responsibility": "Group leadership"
+    "responsibility": "Group leadership",
+    "companyTypes": [
+     "holding"
+    ]
    },
    {
     "id": "cfo",
     "title": "Chief Financial Officer (CFO)",
-    "responsibility": "Group finances"
+    "responsibility": "Group finances",
+    "companyTypes": [
+     "holding"
+    ]
    },
    {
     "id": "coo",
     "title": "Chief Operating Officer (COO)",
-    "responsibility": "Group operations"
+    "responsibility": "Group operations",
+    "companyTypes": [
+     "holding"
+    ]
    },
    {
     "id": "cco",
     "title": "Chief Commercial Officer (CCO)",
-    "responsibility": "Commercial strategy"
+    "responsibility": "Commercial strategy",
+    "companyTypes": [
+     "holding"
+    ]
    },
    {
     "id": "chro",
     "title": "Chief Human Resources Officer (CHRO)",
-    "responsibility": "Group personnel"
+    "responsibility": "Group personnel",
+    "companyTypes": [
+     "holding"
+    ]
    },
    {
     "id": "cto",
     "title": "Chief Technical Officer (CTO)",
-    "responsibility": "Technical strategy"
+    "responsibility": "Technical strategy",
+    "companyTypes": [
+     "holding"
+    ]
    },
    {
     "id": "cso",
     "title": "Chief Strategy Officer (CSO)",
-    "responsibility": "Group development"
+    "responsibility": "Group development",
+    "companyTypes": [
+     "holding"
+    ]
    },
    {
     "id": "csao",
     "title": "Chief Safety Officer (CSaO)",
-    "responsibility": "Safety oversight"
+    "responsibility": "Safety oversight",
+    "companyTypes": [
+     "holding"
+    ]
    }
   ]
  },
  {
   "id": "airline",
-  "title": "Airline management",
-  "scope": "Original airline and each airline subsidiary",
+  "title": "Company management",
+  "scope": "Original airline and each airline subsidiary; specialist companies have their own management",
   "positions": [
    {
     "id": "managing_director",
     "title": "Managing Director",
-    "responsibility": "Overall airline management"
+    "responsibility": "Company leadership",
+    "companyTypes": [
+     "pax",
+     "reg",
+     "cgo",
+     "vip",
+     "mro",
+     "aca",
+     "lsg"
+    ]
    },
    {
     "id": "flight_operations_manager",
     "title": "Flight Operations Manager",
-    "responsibility": "Flight operations and crew"
+    "responsibility": "Flight operations and crew",
+    "companyTypes": [
+     "pax",
+     "reg",
+     "cgo",
+     "vip"
+    ]
    },
    {
     "id": "commercial_manager",
     "title": "Commercial Manager",
-    "responsibility": "Revenue, routes and passenger demand"
+    "responsibility": "Commercial performance",
+    "companyTypes": [
+     "pax",
+     "reg",
+     "cgo",
+     "vip",
+     "mro"
+    ]
    },
    {
     "id": "technical_manager",
     "title": "Technical Manager",
-    "responsibility": "Fleet and maintenance"
+    "responsibility": "Fleet and technical oversight",
+    "companyTypes": [
+     "pax",
+     "reg",
+     "cgo",
+     "vip",
+     "aca",
+     "lsg"
+    ]
    },
    {
-    "id": "ground_operations_manager",
-    "title": "Ground Operations Manager",
-    "responsibility": "Airports and station operations"
+    "id": "cargo_operations_manager",
+    "title": "Cargo Operations Manager",
+    "responsibility": "Cargo operations",
+    "companyTypes": [
+     "cgo"
+    ]
+   },
+   {
+    "id": "maintenance_manager",
+    "title": "Maintenance Manager",
+    "responsibility": "Maintenance delivery",
+    "companyTypes": [
+     "mro"
+    ]
+   },
+   {
+    "id": "quality_manager",
+    "title": "Quality Manager",
+    "responsibility": "Maintenance quality",
+    "companyTypes": [
+     "mro"
+    ]
+   },
+   {
+    "id": "training_manager",
+    "title": "Training Manager",
+    "responsibility": "Academy training",
+    "companyTypes": [
+     "aca"
+    ]
+   },
+   {
+    "id": "chief_flight_instructor",
+    "title": "Chief Flight Instructor",
+    "responsibility": "Instructor supervision",
+    "companyTypes": [
+     "aca"
+    ]
+   },
+   {
+    "id": "asset_manager",
+    "title": "Asset Manager",
+    "responsibility": "Aircraft assets",
+    "companyTypes": [
+     "lsg"
+    ]
+   },
+   {
+    "id": "leasing_manager",
+    "title": "Leasing Manager",
+    "responsibility": "Lease portfolio",
+    "companyTypes": [
+     "lsg"
+    ]
    }
   ]
  },
  {
   "id": "pilots",
   "title": "Pilot positions",
-  "scope": "Airline level; individual career profiles planned",
+  "scope": "Individual career profiles planned",
   "positions": [
    {
     "id": "captain",
     "title": "Captain",
-    "responsibility": "Aircraft commander"
+    "responsibility": "Aircraft commander",
+    "companyTypes": [
+     "pax",
+     "reg",
+     "cgo",
+     "vip"
+    ]
    },
    {
     "id": "first_officer",
     "title": "First Officer",
-    "responsibility": "Co-pilot"
+    "responsibility": "Co-pilot",
+    "companyTypes": [
+     "pax",
+     "reg",
+     "cgo",
+     "vip"
+    ]
    },
    {
     "id": "senior_first_officer",
     "title": "Senior First Officer",
-    "responsibility": "Experienced co-pilot"
+    "responsibility": "Experienced co-pilot",
+    "companyTypes": [
+     "pax",
+     "reg",
+     "cgo",
+     "vip"
+    ]
    },
    {
     "id": "second_officer",
     "title": "Second Officer",
-    "responsibility": "Additional junior pilot"
+    "responsibility": "Additional junior pilot",
+    "companyTypes": [
+     "pax",
+     "reg",
+     "cgo",
+     "vip"
+    ]
    },
    {
     "id": "training_captain",
     "title": "Training Captain",
-    "responsibility": "Pilot training"
+    "responsibility": "Pilot training",
+    "companyTypes": [
+     "pax",
+     "reg",
+     "cgo",
+     "vip",
+     "aca"
+    ]
    },
    {
     "id": "flight_instructor",
     "title": "Flight Instructor",
-    "responsibility": "Flight instruction"
+    "responsibility": "Flight instruction",
+    "companyTypes": [
+     "pax",
+     "reg",
+     "cgo",
+     "vip",
+     "aca"
+    ]
    },
    {
     "id": "examiner",
     "title": "Examiner",
-    "responsibility": "Qualification assessment"
+    "responsibility": "Qualification assessment",
+    "companyTypes": [
+     "pax",
+     "reg",
+     "cgo",
+     "vip",
+     "aca"
+    ]
    }
   ]
  },
  {
   "id": "cabin",
-  "title": "Cabin crew",
-  "scope": "Airline level",
+  "title": "Cabin crew and services",
+  "scope": "Passenger-carrying companies",
   "positions": [
    {
     "id": "flight_attendant",
     "title": "Flight Attendant",
-    "responsibility": "Cabin service and safety"
+    "responsibility": "Cabin service and safety",
+    "companyTypes": [
+     "pax",
+     "reg",
+     "vip"
+    ]
    },
    {
     "id": "cabin_supervisor",
     "title": "Cabin Supervisor",
-    "responsibility": "Cabin crew coordination"
+    "responsibility": "Cabin crew coordination",
+    "companyTypes": [
+     "pax",
+     "reg",
+     "vip"
+    ]
    },
    {
     "id": "purser",
     "title": "Purser",
-    "responsibility": "Lead cabin service"
-   }
-  ]
- },
- {
-  "id": "airport",
-  "title": "Airport services",
-  "scope": "Airline stations",
-  "positions": [
-   {
-    "id": "station_manager",
-    "title": "Station Manager",
-    "responsibility": "Local station operations"
+    "responsibility": "Lead cabin service",
+    "companyTypes": [
+     "pax",
+     "reg",
+     "vip"
+    ]
    },
    {
-    "id": "checkin_agent",
-    "title": "Check-in Agent",
-    "responsibility": "Passenger check-in"
+    "id": "cabin_service_coordinator",
+    "title": "Cabin Service Coordinator",
+    "responsibility": "Onboard service coordination",
+    "companyTypes": [
+     "pax",
+     "reg",
+     "vip"
+    ]
    },
    {
-    "id": "gate_agent",
-    "title": "Gate Agent",
-    "responsibility": "Boarding"
-   },
-   {
-    "id": "passenger_service_agent",
-    "title": "Passenger Service Agent",
-    "responsibility": "Passenger assistance"
-   }
-  ]
- },
- {
-  "id": "ramp",
-  "title": "Ramp operations",
-  "scope": "Airline stations",
-  "positions": [
-   {
-    "id": "ramp_agent",
-    "title": "Ramp Agent",
-    "responsibility": "Aircraft ground handling"
-   },
-   {
-    "id": "baggage_handler",
-    "title": "Baggage Handler",
-    "responsibility": "Baggage handling"
-   },
-   {
-    "id": "aircraft_cleaner",
-    "title": "Aircraft Cleaner",
-    "responsibility": "Cabin cleaning"
+    "id": "flight_catering_coordinator",
+    "title": "Flight Catering Coordinator",
+    "responsibility": "Catering supplier coordination",
+    "companyTypes": [
+     "pax",
+     "reg",
+     "vip"
+    ]
    }
   ]
  },
  {
   "id": "operations",
   "title": "Flight operations",
-  "scope": "Airline level",
+  "scope": "Flight operators and training",
   "positions": [
    {
     "id": "flight_dispatcher",
     "title": "Flight Dispatcher",
-    "responsibility": "Flight planning and release"
+    "responsibility": "Flight planning and release",
+    "companyTypes": [
+     "pax",
+     "reg",
+     "cgo",
+     "vip",
+     "aca"
+    ]
    },
    {
     "id": "crew_scheduler",
     "title": "Crew Scheduler",
-    "responsibility": "Crew rosters"
+    "responsibility": "Crew rosters",
+    "companyTypes": [
+     "pax",
+     "reg",
+     "cgo",
+     "vip",
+     "aca"
+    ]
    },
    {
     "id": "operations_controller",
     "title": "Operations Controller",
-    "responsibility": "Operational monitoring"
+    "responsibility": "Operational monitoring",
+    "companyTypes": [
+     "pax",
+     "reg",
+     "cgo",
+     "vip"
+    ]
    }
   ]
  },
  {
   "id": "technical",
   "title": "Technical services",
-  "scope": "Airline level",
+  "scope": "Aircraft and maintenance companies",
   "positions": [
-   {
-    "id": "aircraft_mechanic",
-    "title": "Aircraft Mechanic",
-    "responsibility": "Aircraft maintenance"
-   },
    {
     "id": "maintenance_engineer",
     "title": "Maintenance Engineer",
-    "responsibility": "Engineering"
+    "responsibility": "Engineering",
+    "companyTypes": [
+     "pax",
+     "reg",
+     "cgo",
+     "vip",
+     "mro",
+     "aca",
+     "lsg"
+    ]
+   },
+   {
+    "id": "aircraft_mechanic",
+    "title": "Aircraft Mechanic",
+    "responsibility": "Aircraft maintenance",
+    "companyTypes": [
+     "pax",
+     "reg",
+     "cgo",
+     "vip",
+     "mro",
+     "aca"
+    ]
    },
    {
     "id": "maintenance_technician",
     "title": "Maintenance Technician",
-    "responsibility": "Technical inspections"
+    "responsibility": "Technical inspections",
+    "companyTypes": [
+     "pax",
+     "reg",
+     "cgo",
+     "vip",
+     "mro",
+     "aca"
+    ]
+   },
+   {
+    "id": "maintenance_planner",
+    "title": "Maintenance Planner",
+    "responsibility": "Maintenance planning",
+    "companyTypes": [
+     "pax",
+     "reg",
+     "cgo",
+     "vip",
+     "mro",
+     "aca",
+     "lsg"
+    ]
+   },
+   {
+    "id": "technical_records_specialist",
+    "title": "Technical Records Specialist",
+    "responsibility": "Technical records",
+    "companyTypes": [
+     "pax",
+     "reg",
+     "cgo",
+     "vip",
+     "mro",
+     "aca",
+     "lsg"
+    ]
+   },
+   {
+    "id": "avionics_technician",
+    "title": "Avionics Technician",
+    "responsibility": "Avionics maintenance",
+    "companyTypes": [
+     "mro"
+    ]
+   },
+   {
+    "id": "parts_materials_specialist",
+    "title": "Parts & Materials Specialist",
+    "responsibility": "Parts inventory",
+    "companyTypes": [
+     "pax",
+     "reg",
+     "cgo",
+     "vip",
+     "mro",
+     "aca"
+    ]
+   },
+   {
+    "id": "aircraft_asset_specialist",
+    "title": "Aircraft Asset Specialist",
+    "responsibility": "Aircraft asset oversight",
+    "companyTypes": [
+     "lsg"
+    ]
    }
   ]
  },
  {
   "id": "cargo",
   "title": "Cargo operations",
-  "scope": "Airline stations",
+  "scope": "Cargo airline",
   "positions": [
    {
-    "id": "cargo_agent",
-    "title": "Cargo Agent",
-    "responsibility": "Cargo processing"
-   },
-   {
-    "id": "cargo_handler",
-    "title": "Cargo Handler",
-    "responsibility": "Cargo handling"
+    "id": "cargo_operations_specialist",
+    "title": "Cargo Operations Specialist",
+    "responsibility": "Cargo business coordination",
+    "companyTypes": [
+     "cgo"
+    ]
    }
   ]
  },
  {
   "id": "commercial",
   "title": "Commercial",
-  "scope": "Airline level",
+  "scope": "Company commercial activities",
   "positions": [
    {
     "id": "sales_agent",
-    "title": "Sales Agent",
-    "responsibility": "Sales"
+    "title": "Sales Specialist",
+    "responsibility": "Sales",
+    "companyTypes": [
+     "pax",
+     "reg",
+     "cgo",
+     "vip",
+     "mro",
+     "aca",
+     "lsg"
+    ]
    },
    {
     "id": "marketing_specialist",
     "title": "Marketing Specialist",
-    "responsibility": "Marketing"
+    "responsibility": "Marketing",
+    "companyTypes": [
+     "pax",
+     "reg",
+     "cgo",
+     "vip",
+     "mro",
+     "aca",
+     "lsg"
+    ]
    },
    {
     "id": "revenue_analyst",
     "title": "Revenue Management Analyst",
-    "responsibility": "Revenue analysis"
+    "responsibility": "Revenue analysis",
+    "companyTypes": [
+     "pax",
+     "reg",
+     "cgo",
+     "vip"
+    ]
+   },
+   {
+    "id": "network_planning_analyst",
+    "title": "Network Planning Analyst",
+    "responsibility": "Route planning",
+    "companyTypes": [
+     "pax",
+     "reg",
+     "cgo",
+     "vip"
+    ]
+   },
+   {
+    "id": "leasing_specialist",
+    "title": "Leasing Specialist",
+    "responsibility": "Lease contracts",
+    "companyTypes": [
+     "lsg"
+    ]
    }
   ]
  },
  {
   "id": "administration",
-  "title": "Administration",
-  "scope": "Airline level",
+  "title": "Administration and compliance",
+  "scope": "Company support",
   "positions": [
    {
     "id": "accountant",
     "title": "Accountant",
-    "responsibility": "Accounting"
+    "responsibility": "Accounting",
+    "companyTypes": [
+     "pax",
+     "reg",
+     "cgo",
+     "vip",
+     "mro",
+     "aca",
+     "lsg"
+    ]
    },
    {
     "id": "hr_specialist",
     "title": "HR Specialist",
-    "responsibility": "Human resources"
+    "responsibility": "Human resources",
+    "companyTypes": [
+     "pax",
+     "reg",
+     "cgo",
+     "vip",
+     "mro",
+     "aca",
+     "lsg"
+    ]
    },
    {
     "id": "admin_assistant",
     "title": "Administrative Assistant",
-    "responsibility": "Administration"
+    "responsibility": "Administration",
+    "companyTypes": [
+     "pax",
+     "reg",
+     "cgo",
+     "vip",
+     "mro",
+     "aca",
+     "lsg"
+    ]
+   },
+   {
+    "id": "safety_compliance_specialist",
+    "title": "Safety & Compliance Specialist",
+    "responsibility": "Safety and compliance support",
+    "companyTypes": [
+     "pax",
+     "reg",
+     "cgo",
+     "vip",
+     "mro",
+     "aca",
+     "lsg"
+    ]
    }
   ]
  },
  {
   "id": "customer",
   "title": "Customer service",
-  "scope": "Airline level",
+  "scope": "Company customer support",
   "positions": [
    {
     "id": "customer_support_agent",
     "title": "Customer Support Agent",
-    "responsibility": "Customer support"
+    "responsibility": "Customer support",
+    "companyTypes": [
+     "pax",
+     "reg",
+     "cgo",
+     "vip",
+     "mro",
+     "aca",
+     "lsg"
+    ]
    }
   ]
  },
  {
   "id": "training",
   "title": "Training",
-  "scope": "Airline level",
+  "scope": "Crew and technical training",
   "positions": [
    {
     "id": "cabin_crew_instructor",
     "title": "Cabin Crew Instructor",
-    "responsibility": "Cabin training"
+    "responsibility": "Cabin training",
+    "companyTypes": [
+     "pax",
+     "reg",
+     "vip",
+     "aca"
+    ]
    },
    {
-    "id": "ground_staff_instructor",
-    "title": "Ground Staff Instructor",
-    "responsibility": "Ground staff training"
+    "id": "training_coordinator",
+    "title": "Training Coordinator",
+    "responsibility": "Training administration",
+    "companyTypes": [
+     "pax",
+     "reg",
+     "cgo",
+     "vip",
+     "mro",
+     "aca"
+    ]
    }
   ]
  }
-].map(group=>Object.freeze({...group,positions:Object.freeze(group.positions.map(position=>Object.freeze(position)))})));
+].map(group=>Object.freeze({...group,positions:Object.freeze(group.positions.map(position=>Object.freeze({...position,companyTypes:Object.freeze(position.companyTypes)})))})));
 export const STAFF_SECTIONS=Object.freeze([
  Object.freeze({id:'management',label:'Board & Management',groups:Object.freeze(['holding','airline'])}),
  Object.freeze({id:'pilots',label:'Pilots',groups:Object.freeze(['pilots'])}),
- Object.freeze({id:'other',label:'Other Staff',groups:Object.freeze(['cabin','airport','ramp','operations','technical','cargo','commercial','administration','customer','training'])})
+ Object.freeze({id:'other',label:'Other Staff',groups:Object.freeze(['cabin','operations','technical','cargo','commercial','administration','customer','training'])})
 ]);
+export function staffPositionEligible(positionId,companyType){
+ const position=STAFF_POSITION_GROUPS.flatMap(group=>group.positions).find(p=>p.id===positionId);
+ return !!position&&(companyType==='all'||position.companyTypes.includes(companyType));
+}
+const staffTypeOptions=()=>'<option value="all">All company types (reference)</option>'+STAFF_COMPANY_TYPES.map(t=>'<option value="'+t.id+'">'+t.label+'</option>').join('');
+export function staffEligibilityReferenceMarkup(){
+ return '<details class="staff-eligibility-reference"><summary>ⓘ Position eligibility by company type</summary><p class="hint">✓ = applicable position. — = not applicable. This is a game design catalogue, not a list of mandatory hires. Future subsidiary types are shown for reference only. Airport-provided ramp, baggage, check-in, gate, cleaning and handling services are covered separately.</p>'+
+ '<div class="fleet-table-scroll"><table class="salary-planning-table staff-eligibility-table" aria-label="Staff position eligibility by company type"><thead><tr><th scope="col">Position</th>'+STAFF_COMPANY_TYPES.map(t=>'<th scope="col" title="'+t.label+'">'+t.code+'</th>').join('')+'</tr></thead><tbody>'+
+ STAFF_POSITION_GROUPS.map(g=>'<tr><th scope="rowgroup" colspan="'+(STAFF_COMPANY_TYPES.length+1)+'">'+g.title+'</th></tr>'+g.positions.map(p=>'<tr><th scope="row">'+p.title+'</th>'+STAFF_COMPANY_TYPES.map(t=>'<td aria-label="'+(p.companyTypes.includes(t.id)?'Applicable':'Not applicable')+'">'+(p.companyTypes.includes(t.id)?'✓':'—')+'</td>').join('')+'</tr>').join('')).join('')+
+ '</tbody></table></div><p class="hint">'+STAFF_COMPANY_TYPES.map(t=>t.code+' = '+t.label).join(' · ')+'</p></details>';
+}
 const navigationSalaryLink=()=>'<div class="workspace-actions">'+button('salary-management','Salary Management')+'</div>';
 export function staffCatalogueMarkup(){
- const groupMarkup=group=>'<section class="staff-position-group" data-staff-group="'+group.id+'"><h3>'+group.title+'</h3><p class="hint">'+group.scope+' · '+group.positions.length+' position types</p><div class="workspace-task-list">'+
+ const groupMarkup=group=>'<section class="staff-position-group" data-staff-group="'+group.id+'"><h3>'+group.title+'</h3><p class="hint">'+group.scope+'</p><div class="workspace-task-list">'+
  group.positions.map(position=>'<div data-staff-position="'+position.id+'"><strong>'+position.title+'</strong><span>'+position.responsibility+'</span></div>').join('')+'</div></section>';
- return '<p class="hint">Initial staff structure. Position definitions are provisional; hiring, salaries, staffing requirements and career mechanics are not activated here.</p>'+
+ return '<label class="workspace-label">Company type<select id="staff-company-type">'+staffTypeOptions()+'</select></label>'+staffEligibilityReferenceMarkup()+'<p class="hint">Initial staff structure. Position definitions are provisional; hiring, salaries, staffing requirements and career mechanics are not activated here.</p>'+
  '<div class="workspace-quick-links" role="group" aria-label="Staff sections">'+STAFF_SECTIONS.map((section,index)=>'<button type="button" class="'+(index===0?'primary':'secondary')+'" data-staff-section="'+section.id+'" aria-pressed="'+(index===0)+'" aria-controls="staff-section-'+section.id+'">'+section.label+'</button>').join('')+'</div>'+
  STAFF_SECTIONS.map((section,index)=>'<section id="staff-section-'+section.id+'" data-staff-section-panel="'+section.id+'"'+(index===0?'':' hidden')+'>'+
  (section.id==='management'?'<p class="hint">Holding executives belong to the holding only. The original airline and every airline subsidiary have their own airline management positions.</p>':section.id==='pilots'?'<p class="hint">Individual profiles, flight hours, aircraft qualifications, employment history and career progression will be defined in a later phase.</p>':'<p class="hint">Department and station roles. Employee counts, hiring and staffing rules will be defined later.</p>')+
@@ -432,8 +787,8 @@ export function salaryManagementMarkup(){
    '<td data-salary-result>—</td></tr>';
  })).join('');
  return '<p class="hint">Salary planning preview only. Enter illustrative monthly salaries; no employment contracts, real payroll or game balances are changed. The catalogue is shared with Staff &amp; Management.</p>'+
- '<div class="workspace-money-grid">'+
- '<label class="workspace-label">Company scope<select id="salary-scope"><option value="all">Entire group (position catalogue)</option><option value="holding">Holding executives</option><option value="airline">Original airline / subsidiary (per airline)</option></select></label>'+
+ staffEligibilityReferenceMarkup()+'<div class="workspace-money-grid">'+
+ '<label class="workspace-label">Company type<select id="salary-scope">'+staffTypeOptions()+'</select></label>'+
  '<label class="workspace-label">Staff category<select id="salary-category"><option value="all">All positions</option><option value="management">Board &amp; Management</option><option value="pilots">Pilots</option><option value="other">Other Staff</option></select></label>'+
  '<label class="workspace-label">Bulk adjustment (%)<input id="salary-bulk-percent" type="number" min="-100" max="1000" step="0.1" value="5"></label></div>'+
  '<div class="workspace-actions"><button id="salary-apply-preview" type="button" class="primary">Apply to displayed positions</button><button id="salary-reset-preview" type="button" class="secondary">Reset adjustments</button></div>'+
@@ -2156,7 +2511,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   if(!host)return;
   const scope=$('salary-scope').value,category=$('salary-category').value;
   for(const row of host.querySelectorAll('[data-salary-row]')){
-   row.hidden=(scope!=='all'&&row.dataset.salaryScope!==scope)||(category!=='all'&&row.dataset.salaryCategory!==category);
+   row.hidden=!staffPositionEligible(row.dataset.salaryRow,scope)||(category!=='all'&&row.dataset.salaryCategory!==category);
   }
  }
  doc.getElementById('player-main')?.addEventListener('input',event=>{
@@ -2166,6 +2521,16 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   }
  });
  doc.getElementById('player-main')?.addEventListener('change',async event=>{
+  if(event.target.id==='staff-company-type'){
+   const host=$('workspace-staff');
+   if(!host)return;
+   for(const group of host.querySelectorAll('[data-staff-group]')){
+    const positions=[...group.querySelectorAll('[data-staff-position]')];
+    for(const p of positions)p.hidden=!staffPositionEligible(p.dataset.staffPosition,event.target.value);
+    group.hidden=positions.every(p=>p.hidden);
+   }
+   return;
+  }
   if(event.target.id==='salary-scope'||event.target.id==='salary-category'){filterSalaryPreview();return;}
   if(event.target?.id!=='fleet-aircraft-image-file')return;
   const aircraft=marketSnapshot?.fleet?.find(a=>a.id===selectedFleetAircraftId);
