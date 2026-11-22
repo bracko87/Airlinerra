@@ -3117,3 +3117,12 @@ section[data-player-view="aircraft-market"]:has(#workspace-aircraft-market.is-sh
 .salary-planning-table input{width:100%;min-width:105px;box-sizing:border-box}
 .salary-planning-table td:last-child{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .salary-planning-table tr[hidden]{display:none!important}
+
+/* Shared expandable position eligibility matrix. */
+.staff-eligibility-reference{border:1px solid var(--line);border-radius:9px;padding:12px 14px;margin:16px 0}
+.staff-eligibility-reference summary{cursor:pointer;font-weight:600;color:inherit}
+.staff-eligibility-reference summary:focus-visible{outline:2px solid currentColor;outline-offset:4px}
+.staff-eligibility-reference[open] summary{margin-bottom:12px}
+.staff-eligibility-table td{text-align:center!important;min-width:36px}
+.staff-eligibility-table th[scope="rowgroup"]{background:var(--line);color:inherit;text-align:left}
+.staff-position-group[hidden],[data-staff-position][hidden],[data-staff-section-panel][hidden]{display:none!important}
