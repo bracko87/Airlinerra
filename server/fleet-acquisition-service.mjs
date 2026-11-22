@@ -14,6 +14,14 @@ const uuid=value=>typeof value==='string'&&UUID.test(value);
 export function validateFleetAcquisitionRequest(body){
  if(!body||typeof body!=='object'||Array.isArray(body)||
     typeof body.action!=='string'||!uuid(body.airlineId))return false;
+ if(body.action==='crew-settings')return Object.keys(body).length===2;
+ if(body.action==='crew-settings-save')return Object.keys(body).length===6 &&
+  Object.keys(body).every(k=>['action','airlineId','mode','reservePercent','monthlyBudgetUsd','version'].includes(k)) &&
+  ['manual','automatic_minimum','automatic_reserves'].includes(body.mode)&&Number.isInteger(body.reservePercent)&&
+  (body.mode==='automatic_reserves'?[5,10,15,20,25,30].includes(body.reservePercent):body.reservePercent===0)&&
+  Number.isSafeInteger(body.monthlyBudgetUsd)&&body.monthlyBudgetUsd>=0&&body.monthlyBudgetUsd<=1000000000&&
+  Number.isSafeInteger(body.version)&&body.version>=0&&body.version<=2147483646;
+ if(body.action==='crew-notice-ack')return Object.keys(body).length===3&&uuid(body.aircraftId);
  if(body.action==='list')return Object.keys(body).length===2 &&
   Object.keys(body).every(k=>['action','airlineId'].includes(k));
  if(body.action==='list-used')return Object.keys(body).length>=5 &&
@@ -562,6 +570,22 @@ export function createFleetAcquisitionHandler({verifyUserToken,database}={}){
   let client;
   try{
    client=await database.connect();
+   if(['crew-settings','crew-settings-save','crew-notice-ack'].includes(body.action)){
+    const owner=await client.query(FLEET_SQL.owner,[body.airlineId,playerId]);
+    if(owner.rowCount!==1)return respond(403,{error:'Airline not owned by this account'});
+    const sql=body.action==='crew-settings'?
+     'SELECT airlinerra_game.section9_owned_crew_recruitment_settings_v1($1::uuid,$2::uuid) AS result':
+     body.action==='crew-settings-save'?
+     'SELECT airlinerra_game.section9_save_owned_crew_recruitment_settings_v1($1::uuid,$2::uuid,$3::text,$4::integer,$5::bigint,$6::integer) AS result':
+     'SELECT airlinerra_game.section9_ack_owned_crew_acquisition_notice_v1($1::uuid,$2::uuid,$3::uuid) AS result';
+    const params=[playerId,body.airlineId];
+    if(body.action==='crew-settings-save')params.push(body.mode,body.reservePercent,body.monthlyBudgetUsd,body.version);
+    if(body.action==='crew-notice-ack')params.push(body.aircraftId);
+    const r=await client.query(sql,params),value=r.rows?.[0]?.result;
+    if(value?.status==='settings_version_conflict')return respond(409,{reason:'CREW_SETTINGS_VERSION_CONFLICT'});
+    if(value?.airlineId!==body.airlineId||value?.status!=='crew_recruitment_settings')return respond(503,{error:'Crew settings unavailable'});
+    return respond(200,value);
+   }
    if(body.action==='list'){
     const owner=await client.query(FLEET_SQL.owner,[body.airlineId,playerId]);
     if(owner.rowCount!==1)return respond(403,{error:'Airline not owned by this account'});
