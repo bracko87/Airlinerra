@@ -10,7 +10,7 @@ BEGIN
  BEGIN
  CREATE SCHEMA crew_dispatch_fixture_14w;
  FOREACH tbl IN ARRAY ARRAY[
- 'airlines','airline_aircraft_inventory','airline_flight_schedule_drafts_v1',
+ 'airlines','airline_aircraft_inventory','airport_reference_profiles','airline_flight_schedule_drafts_v1',
  'section9_dated_flight_occurrences_v1','section9_occurrence_capacity_inventory_v1',
  'section9_route_commercial_plans_v1','section9_schedule_operational_certifications_v1',
  'section9_schedule_activation_preparations_v1','section6_weekly_airport_slot_reservations_v1',
@@ -26,7 +26,7 @@ BEGIN
  CREATE TABLE crew_dispatch_fixture_14w.test_crew(physical_flight_id text primary key);
  CREATE TABLE crew_dispatch_fixture_14w.test_bad(physical_flight_id text primary key);
  INSERT INTO crew_dispatch_fixture_14w.test_signer VALUES('airlinerra_operated_flight_auto_signing_v1',repeat('isolated-dispatch-key-',5));
- SELECT a.*,f.configuration_id INTO STRICT a FROM airlinerra_game.airlines a JOIN airlinerra_game.airline_aircraft_inventory f ON f.airline_id=a.id JOIN airlinerra.aircraft_catalog_configuration_inventory c ON c.configuration_id=f.configuration_id AND c.use_type='passenger' WHERE a.world_id=1 LIMIT 1;
+ SELECT airline.*,f.configuration_id INTO STRICT a FROM airlinerra_game.airlines airline JOIN airlinerra_game.airline_aircraft_inventory f ON f.airline_id=airline.id JOIN airlinerra.aircraft_catalog_configuration_inventory c ON c.configuration_id=f.configuration_id AND c.use_type='passenger' WHERE airline.world_id=1 LIMIT 1;
  config:=a.configuration_id;
  INSERT INTO crew_dispatch_fixture_14w.airlines SELECT * FROM airlinerra_game.airlines WHERE id=a.id;
  INSERT INTO crew_dispatch_fixture_14w.section9_activation_release_policy_v1(world_id,release_state,release_reference,approved_by,enabled_at,crew_mode) VALUES(1,'enabled','isolated-test-activation-v1','isolated-reviewer',clock_timestamp(),'deferred_phase1');
@@ -45,8 +45,8 @@ BEGIN
   VALUES(sc::text||':'||base::date||':1',sc,a.id,base::date,1,1,1,a.home_airport_key,'OURAIRPORTS:2212',base+make_interval(mins=>i-1),base+make_interval(hours=>3,mins=>i-1),156,0,0);
   INSERT INTO crew_dispatch_fixture_14w.section9_schedule_activation_preparations_v1(schedule_id,schedule_version,airline_id,aircraft_inventory_id,verified_game_date,certified_horizon_days,fingerprint_md5,release_reference)
   VALUES(sc,1,a.id,aircraft,base::date,7,repeat('b',32),'isolated-activation-proof');
-  INSERT INTO crew_dispatch_fixture_14w.section9_schedule_operational_certifications_v1(schedule_id,airline_id,schedule_version,clearance_type,review_status,source_kind,source_reference,reviewer_reference,valid_from_game_date,valid_to_game_date)
-  SELECT sc,a.id,1,v.kind,'certified',v.source,'isolated-verified-source-'||v.kind,'isolated-independent-reviewer',base::date,base::date+7
+  INSERT INTO crew_dispatch_fixture_14w.section9_schedule_operational_certifications_v1(schedule_id,airline_id,schedule_version,clearance_type,review_status,source_kind,source_reference,reviewer_reference,reviewed_at,valid_from_game_date,valid_to_game_date)
+  SELECT sc,a.id,1,v.kind,'certified',v.source,'isolated-verified-source-'||v.kind,'isolated-independent-reviewer',clock_timestamp(),base::date,base::date+7
   FROM (VALUES
   ('crew_duty','verified_crew_duty_engine'),
   ('operator_licence','verified_game_licence_engine'),
