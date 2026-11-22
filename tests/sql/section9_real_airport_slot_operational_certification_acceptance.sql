@@ -39,11 +39,11 @@ BEGIN
  VALUES(1,a.id,aircraft.id,aircraft.configuration_id,a.iata_code||'973',orig,dest,dep,arr,weekly,'{}'::jsonb,a.owner_player_id,'draft',false,'terminal','terminal') RETURNING id INTO sc;
  INSERT INTO cert_slots_fixture_14z.section9_verified_schedule_capacity_v1(schedule_id,airline_id,schedule_version,passenger_seats,cargo_capacity_tonnes,verification_source)
  VALUES(sc,a.id,1,156,0,'verified_test_capacity_14z');
- restriction:=cert_slots_fixture_14z.section5_weekly_route_restriction_gate_v1(1,orig,dest,aircraft.configuration_id,dep,arr,weekly);
+ restriction:=cert_slots_fixture_14z.section5_weekly_route_restriction_gate_v1(1::smallint,orig,dest,aircraft.configuration_id,dep,arr,weekly);
  IF NOT cert_slots_fixture_14z.section9_game_route_restrictions_valid_v1(orig,dest,restriction)
  THEN RAISE EXCEPTION 'eligible domestic game airport restrictions rejected %',restriction;END IF;
  INSERT INTO cert_slots_fixture_14z.section6_weekly_airport_slot_reservations_v1(schedule_id,world_id,airport_key,stand_type,direction,weekday,minute_of_day)
- SELECT sc,1,airport_key,stand_type,direction,weekday,minute_of_day FROM cert_slots_fixture_14z.section6_weekly_slot_proposals_v1(1,orig,dest,dep,arr,weekly,'terminal','terminal');
+ SELECT sc,1,airport_key,stand_type,direction,weekday,minute_of_day FROM cert_slots_fixture_14z.section6_weekly_slot_proposals_v1(1::smallint,orig,dest,dep,arr,weekly,'terminal','terminal');
  verdict:=cert_slots_fixture_14z.section9_verify_slot_clearance_source_v1(a.id,sc,1,game_day);
  IF verdict->>'status'<>'verified_game_airport_slots' OR verdict->>'verified'<>'true' OR (verdict->>'reservedSlots')::int<>2
  THEN RAISE EXCEPTION 'actual reserved airport slots rejected %',verdict;END IF;
@@ -53,7 +53,7 @@ BEGIN
  THEN RAISE EXCEPTION 'mismatched slot accepted %',verdict;END IF;
  DELETE FROM cert_slots_fixture_14z.section6_weekly_airport_slot_reservations_v1 WHERE schedule_id=sc;
  INSERT INTO cert_slots_fixture_14z.section6_weekly_airport_slot_reservations_v1(schedule_id,world_id,airport_key,stand_type,direction,weekday,minute_of_day)
- SELECT sc,1,airport_key,stand_type,direction,weekday,minute_of_day FROM cert_slots_fixture_14z.section6_weekly_slot_proposals_v1(1,orig,dest,dep,arr,weekly,'terminal','terminal');
+ SELECT sc,1,airport_key,stand_type,direction,weekday,minute_of_day FROM cert_slots_fixture_14z.section6_weekly_slot_proposals_v1(1::smallint,orig,dest,dep,arr,weekly,'terminal','terminal');
  UPDATE cert_slots_fixture_14z.section6_airport_slot_capacity_v1 SET terminal_stands=0,terminal_per_direction_10m=0 WHERE airport_key=orig;
  verdict:=cert_slots_fixture_14z.section9_verify_slot_clearance_source_v1(a.id,sc,1,game_day);
  IF verdict->>'status'<>'blocked_slot_clearance_evidence' OR NOT verdict->'blockers' ? 'AIRPORT_CAPACITY_RECHECK_FAILED'
