@@ -96,7 +96,7 @@ BEGIN
  ('section9_delayed_turnaround_clear_v1','p_aircraft uuid,p_occurrence uuid,p_departure timestamptz','boolean',$f$SELECT true$f$),
  ('section9_verified_game_maintenance_dispatch_window_v1','p_owner uuid,p_airline uuid,p_aircraft uuid,p_depart_utc timestamptz,p_arrive_utc timestamptz','jsonb',$f$SELECT jsonb_build_object('gameMaintenanceClear',true)$f$),
  ('section9_verify_game_fuel_before_departure_v1','p_physical_flight_id text','jsonb',$f$
- SELECT CASE WHEN EXISTS(SELECT 1 FROM crew_real_engine_fixture_14x.test_bad WHERE physical_flight_id=p_physical_flight_id)
+ SELECT CASE WHEN EXISTS(SELECT 1 FROM crew_real_engine_fixture_14x.test_bad WHERE physical_flight_id=p_physical_flight_id) AND EXISTS(SELECT 1 FROM crew_real_engine_fixture_14x.section9_operated_flight_movements_v1 m WHERE m.flight_occurrence_id=p_physical_flight_id AND m.phase='departed')
  THEN jsonb_build_object('status','blocked_game_fuel_evidence','fuelVerifiedForGame',false,'ledgerPosted',false)
  ELSE jsonb_build_object('status','verified_game_fuel_onboard_available_for_planned_trip','fuelVerifiedForGame',true,'ledgerPosted',false,'airlineId',o.airline_id,'aircraftInventoryId',o.aircraft_inventory_id,'originAirport',o.origin_airport_key,'destinationAirport',o.destination_airport_key,
  'configurationId',sc.configuration_id,'fuelSourceEventId',c.source_event_id,'fuelCustodyRevision',c.revision,'fuelOnBoardKg',c.onboard_kg,'plannedTripBurnKg',4000,'plannedContingencyKg',400,'plannedHoldingReserveKg',600,'minimumPlannedFuelOnBoardKg',5000,'fuelQuoteModelVersion','GAME_FUEL_FIXTURE_14X')
