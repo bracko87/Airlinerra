@@ -96,7 +96,7 @@ export const FLEET_SQL=Object.freeze({
  owner:"SELECT a.id,a.cash_usd::text AS \"cashUsd\" FROM airlinerra_game.airlines a "+
   "JOIN airlinerra_game.world_memberships w ON w.world_id=a.world_id AND w.player_id=a.owner_player_id "+
   "WHERE a.id=$1::uuid AND a.owner_player_id=$2::uuid AND a.world_id=1 AND w.state='active'",
- offers:"SELECT o.offer_id::text AS \"offerId\",o.configuration_id::int AS \"configurationId\", "+
+ offers:"SELECT (SELECT to_jsonb(cp) FROM airlinerra_game.section9_flight_crew_model_policy_v1 cp WHERE cp.configuration_id=o.configuration_id) AS \"crewPolicy\", o.offer_id::text AS \"offerId\",o.configuration_id::int AS \"configurationId\", "+
   "o.transaction_type AS \"transactionType\",o.offer_status AS \"offerStatus\", "+
   "c.configuration_review_status AS \"configurationReviewStatus\", "+
   "o.upfront_price_usd::text AS \"upfrontPriceUsd\", "+
@@ -137,7 +137,7 @@ export const FLEET_SQL=Object.freeze({
   "clock_timestamp() AS \"serverNowUtc\" "+
   "FROM airlinerra_game.aircraft_market_control_v1 m "+
   "JOIN public.airlinerra_game_worlds w ON w.id=m.world_id WHERE m.world_id=1",
- usedLots:"SELECT l.listing_id::text AS \"listingId\", "+
+ usedLots:"SELECT (SELECT to_jsonb(cp) FROM airlinerra_game.section9_flight_crew_model_policy_v1 cp WHERE cp.configuration_id=l.configuration_id) AS \"crewPolicy\", l.listing_id::text AS \"listingId\", "+
   "l.configuration_id::int AS \"configurationId\", "+
   "l.offering_type AS \"offeringType\",l.manufacture_year AS \"manufactureYear\", "+
   "l.condition_pct::text AS \"conditionPct\", "+
@@ -177,7 +177,7 @@ export const FLEET_SQL=Object.freeze({
   "CASE WHEN l.status='bidding' THEN l.close_after_utc END NULLS LAST,"+
   "c.manufacturer_name,c.model_name,l.opening_bid_usd,l.listing_id "+
   "LIMIT 30 OFFSET ($4::integer*30)",
- usedDetail:"SELECT l.listing_id::text AS \"listingId\", "+
+ usedDetail:"SELECT (SELECT to_jsonb(cp) FROM airlinerra_game.section9_flight_crew_model_policy_v1 cp WHERE cp.configuration_id=l.configuration_id) AS \"crewPolicy\", l.listing_id::text AS \"listingId\", "+
   "l.configuration_id::int AS \"configurationId\", "+
   "l.offering_type AS \"offeringType\",l.manufacture_year AS \"manufactureYear\", "+
   "l.condition_pct::text AS \"conditionPct\",l.source_kind AS \"sourceKind\", "+
