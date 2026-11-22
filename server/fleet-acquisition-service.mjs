@@ -1,3 +1,4 @@
+import {buildFleetCrewCapacity} from './fleet-crew-capacity-engine.mjs';
 /** Secure World 1 aircraft purchase/lease market, server-side only.
  * Monetary price, airline ownership and registration checks live in PostgreSQL.
  * This service never activates live flights.
@@ -14,6 +15,11 @@ const uuid=value=>typeof value==='string'&&UUID.test(value);
 export function validateFleetAcquisitionRequest(body){
  if(!body||typeof body!=='object'||Array.isArray(body)||
     typeof body.action!=='string'||!uuid(body.airlineId))return false;
+ if(['crew-capacity','management-responsibilities'].includes(body.action))return Object.keys(body).length===2;
+ if(body.action==='management-responsibilities-save'){
+  const keys=['pilots','cabin','station','ground','maintenance','customer','administrative'];
+  return Object.keys(body).length===4&&Number.isInteger(body.version)&&body.version>=0&&body.version<2147483647&&body.policies&&typeof body.policies==='object'&&!Array.isArray(body.policies)&&Object.keys(body.policies).length===keys.length&&keys.every(k=>['manual','approval','auto'].includes(body.policies[k]));
+ }
  if(body.action==='crew-hire-overview')return Object.keys(body).length===2;
  if(['crew-hire-quote','crew-hire-confirm'].includes(body.action)){
   const confirm=body.action==='crew-hire-confirm';
@@ -581,6 +587,20 @@ export function createFleetAcquisitionHandler({verifyUserToken,database}={}){
   let client;
   try{
    client=await database.connect();
+   if(['crew-capacity','management-responsibilities','management-responsibilities-save'].includes(body.action)){
+    const owner=await client.query(FLEET_SQL.owner,[body.airlineId,playerId]);
+    if(owner.rowCount!==1)return respond(403,{error:'Airline not owned by this account'});
+    const params=[playerId,body.airlineId];
+    let sql=body.action==='crew-capacity'?'SELECT airlinerra_game.section9_owned_fleet_crew_capacity_input_v1($1::uuid,$2::uuid) AS result':'SELECT airlinerra_game.section9_owned_management_responsibilities_v1($1::uuid,$2::uuid) AS result';
+    if(body.action==='management-responsibilities-save'){
+     sql='SELECT airlinerra_game.section9_save_owned_management_responsibilities_v1($1::uuid,$2::uuid,$3::int,$4::jsonb) AS result';
+     params.push(body.version,JSON.stringify(body.policies));
+    }
+    const r=await client.query(sql,params),value=r.rows?.[0]?.result;
+    if(value?.status==='management_version_conflict')return respond(409,{reason:'MANAGEMENT_VERSION_CONFLICT'});
+    if(value?.airlineId!==body.airlineId)return respond(503,{error:'Staffing data unavailable'});
+    return respond(200,body.action==='crew-capacity'?buildFleetCrewCapacity(value):value);
+   }
    if(['crew-hire-overview','crew-hire-quote','crew-hire-confirm'].includes(body.action)){
     const owner=await client.query(FLEET_SQL.owner,[body.airlineId,playerId]);
     if(owner.rowCount!==1)return respond(403,{error:'Airline not owned by this account'});
