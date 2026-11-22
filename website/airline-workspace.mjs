@@ -1,3 +1,4 @@
+import {crewCapacityMarkup,managementResponsibilitiesMarkup,createStaffingOverview} from './staffing-overview.mjs';
 import {crewHiringMarkup,createCrewHiringPanel} from './crew-hiring-panel.mjs';
 import {routePlannerMarkup,createRoutePlanner} from './route-planner.mjs';
 import {aircraftDisplayName} from './aircraft-library.mjs';
@@ -22,7 +23,7 @@ export const AIRLINE_UI_DEFAULTS=Object.freeze({
 });
 export const AIRLINE_UI_VIEWS=Object.freeze([
  'overview','airline','fleet','fleet-aircraft','routes','route-details','schedule','finances','worlds',
- 'airports','staff','salary-management','rankings','service','cabin-configurations','aircraft-new-orders','aircraft-market','maintenance',
+ 'airports','staff','fleet-crew-capacity','management-responsibilities','salary-management','rankings','service','cabin-configurations','aircraft-new-orders','aircraft-market','maintenance',
  'settings','interface','notifications','help'
 ]);
 export function cleanUiPreferences(value){
@@ -164,6 +165,12 @@ export const STAFF_POSITION_GROUPS=Object.freeze([
      "aca",
      "lsg"
     ]
+   },
+   {
+    "id": "crew_staffing_manager",
+    "title": "Crew & Staffing Manager",
+    "responsibility": "Crew capacity, automatic rotations and authorized operational recruitment",
+    "companyTypes": ["pax","reg","cgo","vip"]
    },
    {
     "id": "flight_operations_manager",
@@ -797,6 +804,8 @@ export function salaryManagementMarkup(){
  '<div class="fleet-table-scroll"><table class="salary-planning-table" aria-label="Monthly salary planning by position"><thead><tr><th scope="col">Position</th><th scope="col">Illustrative salary (USD/month)</th><th scope="col">Adjustment (%)</th><th scope="col">New salary (USD/month)</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
 }
 const pages=Object.freeze({
+ 'fleet-crew-capacity':crewCapacityMarkup,
+ 'management-responsibilities':managementResponsibilitiesMarkup,
  'airline':()=>card('Company identity',
    '<div class="detail-row"><span>Airline</span><strong id="office-airline">Not created</strong></div>'+
    '<div class="detail-row"><span>ICAO airline code</span><strong id="office-icao">-</strong></div>'+
@@ -1098,6 +1107,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
  const getDraft=()=>data.playerDraftStore?.snapshot('workplan')||draft;
  const $=id=>doc.getElementById(id);
  const crewHiringPanel=createCrewHiringPanel({doc,getData:()=>data});
+ const staffingOverview=createStaffingOverview({doc,getData:()=>data});
  let crewSettings=null,crewFetchVersion=0,crewBusy=false;
  let marketSnapshot=null;
  let usedMarketSnapshot=null;
@@ -2432,7 +2442,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    if(version!==marketFetchVersion||data.airline?.id!==airlineId)return;
    if(!result||!Array.isArray(result.fleet)||!Array.isArray(result.offers)||
      result.airlineId!==airlineId)throw Error('Invalid fleet list');
-   renderRealFleetMarket(result);void loadCrewSettings();void crewHiringPanel.refresh();
+   renderRealFleetMarket(result);void loadCrewSettings();void crewHiringPanel.refresh();void staffingOverview.refresh();
    doc.dispatchEvent(new CustomEvent('airlinerra:fleet-fuel-updated',{detail:{airlineId}}));
   }catch(error){
    if(version!==marketFetchVersion)return;
@@ -2509,7 +2519,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    aircraftConfigurationDialog?.close();
    // Never present an earlier airline's inventory or bookings while the
    // new owner's asynchronous authenticated reads are still in progress.
-   marketSnapshot=null;scheduleSnapshot=null;crewFetchVersion++;crewBusy=false;renderCrewSettings(null);crewHiringPanel.reset(airline?.id||null);
+   marketSnapshot=null;scheduleSnapshot=null;crewFetchVersion++;crewBusy=false;renderCrewSettings(null);crewHiringPanel.reset(airline?.id||null);staffingOverview.reset(airline?.id||null);
     usedMarketSnapshot=null;usedMarketFetchVersion++;usedMarketPage=0;
    selectedUsedListingId=null;
    // A user switching companies must not see cached details from another company.
