@@ -37,6 +37,7 @@ CREATE FUNCTION section9_postarrival_ticket_reconciliation_v1(text) RETURNS json
 \ir ../../server/sql/section9_onboard_gated_departure_snapshot_hook.sql
 \ir ../../server/sql/section9_simplify_onboard_consumption.sql
 \ir ../../server/sql/section9_gated_onboard_flight_financial_settlement.sql
+\ir ../../server/sql/section9_onboard_passenger_experience_integration.sql
 DO $test$
 DECLARE a uuid:='00000000-0000-4000-8000-000000000001';
  s uuid; o uuid; physical text; i int; r jsonb; c jsonb; posted record; receipt record; opening numeric; before_count int; expected_revenue numeric;expected_cost numeric; dep timestamptz:='2026-11-21 12:00:00+00'; fees jsonb;
@@ -81,6 +82,15 @@ BEGIN
    SELECT * INTO STRICT receipt FROM section9_onboard_finance_receipts_v1 WHERE physical_flight_id=physical;
    IF receipt.onboard_revenue_usd<>expected_revenue OR receipt.onboard_cost_usd<>expected_cost THEN RAISE EXCEPTION 'receipt mismatch';END IF;
   END IF;
+  -- Score only the matching posted receipt, never a quote or cancellation.
+  UPDATE section9_onboard_service_release_v1 SET satisfaction_enabled=false;
+  IF section9_apply_onboard_experience_v1(physical,a,100,'{"score":80,"kind":"arrived"}') IS DISTINCT FROM '{"score":80,"kind":"arrived"}'::jsonb THEN RAISE EXCEPTION 'disabled satisfaction changed score';END IF;
+  UPDATE section9_onboard_service_release_v1 SET satisfaction_enabled=true;
+  c:=section9_apply_onboard_experience_v1(physical,a,100,'{"score":80,"kind":"arrived"}');
+  IF i=1 AND c IS DISTINCT FROM '{"score":80,"kind":"arrived"}'::jsonb THEN RAISE EXCEPTION 'no receipt changed score';END IF;
+  IF i>1 AND (c->>'onboardServiceIncluded' IS DISTINCT FROM 'true' OR (c->>'score')::numeric<>least(100,80+(receipt.calculation->>'satisfactionAdjustment')::numeric)) THEN RAISE EXCEPTION 'satisfaction mismatch %',c;END IF;
+  IF section9_apply_onboard_experience_v1(physical,a,99,'{"score":80,"kind":"arrived"}') IS DISTINCT FROM '{"score":80,"kind":"arrived"}'::jsonb THEN RAISE EXCEPTION 'passenger mismatch changed experience';END IF;
+  IF section9_apply_onboard_experience_v1(physical,a,100,'{"score":15,"kind":"cancelled"}') IS DISTINCT FROM '{"score":15,"kind":"cancelled"}'::jsonb THEN RAISE EXCEPTION 'cancellation score changed';END IF;
   r:=section9_post_completed_flight_finance_once_v1(physical);
   IF r->>'replayed'<>'true' OR (SELECT count(*) FROM airline_ledger)<>before_count+2 THEN RAISE EXCEPTION 'duplicate ledger entries';END IF;
  END LOOP;
