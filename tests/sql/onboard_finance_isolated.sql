@@ -88,7 +88,9 @@ BEGIN
   UPDATE section9_onboard_service_release_v1 SET satisfaction_enabled=true;
   c:=section9_apply_onboard_experience_v1(physical,a,100,'{"score":80,"kind":"arrived"}');
   IF i=1 AND c IS DISTINCT FROM '{"score":80,"kind":"arrived"}'::jsonb THEN RAISE EXCEPTION 'no receipt changed score';END IF;
-  IF i>1 AND (c->>'onboardServiceIncluded' IS DISTINCT FROM 'true' OR (c->>'score')::numeric<>least(100,80+(receipt.calculation->>'satisfactionAdjustment')::numeric)) THEN RAISE EXCEPTION 'satisfaction mismatch %',c;END IF;
+  IF i>1 THEN
+   IF c->>'onboardServiceIncluded' IS DISTINCT FROM 'true' OR (c->>'score')::numeric<>least(100,80+(receipt.calculation->>'satisfactionAdjustment')::numeric) THEN RAISE EXCEPTION 'satisfaction mismatch %',c;END IF;
+  END IF;
   IF section9_apply_onboard_experience_v1(physical,a,99,'{"score":80,"kind":"arrived"}') IS DISTINCT FROM '{"score":80,"kind":"arrived"}'::jsonb THEN RAISE EXCEPTION 'passenger mismatch changed experience';END IF;
   IF section9_apply_onboard_experience_v1(physical,a,100,'{"score":15,"kind":"cancelled"}') IS DISTINCT FROM '{"score":15,"kind":"cancelled"}'::jsonb THEN RAISE EXCEPTION 'cancellation score changed';END IF;
   r:=section9_post_completed_flight_finance_once_v1(physical);
