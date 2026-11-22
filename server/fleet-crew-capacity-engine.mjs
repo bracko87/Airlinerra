@@ -7,7 +7,8 @@ export function buildFleetCrewCapacity(snapshot){
  if(snapshot?.status!=='fleet_crew_capacity_input')throw Error('UNVERIFIED_CAPACITY_INPUT');
  const {fleet,bases,input,forecast,availableFromUtc}=snapshot;
  const baseResult={status:'fleet_crew_capacity',airlineId:snapshot.airlineId,windowStartUtc:input.windowStartUtc,forecast,sharedCabinPool:true,dispatchEnforced:false,scheduleCompletenessVerified:input.scheduleCompletenessVerified===true,dutyHistoryIntegrated:input.dutyHistoryIntegrated===true};
- const unknown=reason=>({...baseResult,reason,families:fleet.map(f=>({...f,pilotRequired:null,pilotAvailable:null,pilotShortage:null,pilotPct:null,cabinPct:null,overallPct:null,...crewCapacityStatus(null)})),cabin:{available:forecast.cabinCrewCount,required:null,shortage:null,percent:null}});
+ const qualifiedCount=f=>input.pilots.filter(p=>p.permissions.some(q=>q.group===f.qualificationGroup&&q.active&&(q.captain||q.firstOfficer)&&q.issued<=input.windowStartUtc.slice(0,10)&&q.expires>input.windowStartUtc.slice(0,10))).length;
+ const unknown=reason=>({...baseResult,reason,families:fleet.map(f=>({...f,qualifiedPilotCount:qualifiedCount(f),pilotRequired:null,pilotAvailable:null,pilotShortage:null,pilotPct:null,cabinPct:null,overallPct:null,...crewCapacityStatus(null)})),cabin:{available:forecast.cabinCrewCount,required:null,shortage:null,percent:null}});
  if(input.invalidOccurrenceCount!==0||input.cabinHeadcountReconciled!==true)return unknown('incomplete_or_unreconciled_data');
  if(!input.flights.length)return unknown('no_dated_flights');
  try{
@@ -36,7 +37,7 @@ export function buildFleetCrewCapacity(snapshot){
   const pilotPct=required?Math.min(100*available/required,shortage?100*Math.max(0,required-shortage)/required:Infinity):null;
   const needsCabin=input.flights.some(x=>x.group===f.qualificationGroup&&x.cabinRequired>0);
   const overall=pilotPct===null?null:needsCabin&&cabinPct!==null?Math.min(pilotPct,cabinPct):pilotPct;
-  return {...f,pilotRequired:required||null,pilotAvailable:required?available:null,pilotShortage:required?Math.max(shortage,required-available,0):null,pilotPct:pct(pilotPct),cabinPct:needsCabin?pct(cabinPct):null,overallPct:pct(overall),...crewCapacityStatus(overall)};
+  return {...f,qualifiedPilotCount:qualifiedCount(f),pilotRequired:required||null,pilotAvailable:required?available:null,pilotShortage:required?Math.max(shortage,required-available,0):null,pilotPct:pct(pilotPct),cabinPct:needsCabin?pct(cabinPct):null,overallPct:pct(overall),...crewCapacityStatus(overall)};
  });
  return {...baseResult,reason:'estimated_weekly_staffing',families,cabin:{available:cabinAvailable,required:cabinRequired,shortage:Math.max(cabinShortage,cabinRequired-cabinAvailable,0),percent:pct(cabinPct)},referenceIsApproximate:true};
  }catch{return unknown('planning_calculation_unavailable');}
