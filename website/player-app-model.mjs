@@ -6,7 +6,7 @@ export const PLAYER_APP_PATH='/player.html';
 export const PLAYER_LOGIN_PATH='/account.html?screen=sign-in';
 export const PLAYER_VIEWS=Object.freeze([
   'overview','onboarding','profile','worlds','airports','aircraft-library','aircraft-profile','airport-profile','fleet','fleet-aircraft',
-  'routes','route-list','route-details','hubs','tickets','cabin-configurations','licenses','schedule','finances','settings','airline','staff','salary-management','rankings',
+  'routes','route-list','route-details','hubs','tickets','cabin-configurations','licenses','schedule','finances','settings','airline','staff','fleet-crew-capacity','management-responsibilities','salary-management','rankings',
   'service','aircraft-new-orders','aircraft-market','maintenance','interface','notifications','help',
   'holding','infrastructure','infrastructure-hq','infrastructure-maintenance','infrastructure-facilities',
   'employees-pilots','employees-cabin','employees-ground','employees-technical','employees-board','employees-payroll',
