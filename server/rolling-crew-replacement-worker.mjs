@@ -1,5 +1,6 @@
 import {planWeeklyCrew} from './weekly-crew-allocation-engine.mjs';
 import {crewCapacityStatus} from './fleet-crew-capacity-engine.mjs';
+import {prepareExternalCrewPlan} from './external-crew-planning-worker.mjs';
 // No live plan writes. Preserve prior roster preferences; all current
 // employment, absence, family, location, rest and duty checks still apply.
 export function previewRollingCrewReplacement(snapshot,{capacityByFamily={}}={}){
@@ -40,4 +41,13 @@ export async function prepareRollingCrewReplacement({client,playerId,airlineId,w
  if(typeof client?.query!=='function')throw Error('INVALID_ROLLING_CREW_WORKER');
  const response=await client.query('SELECT airlinerra_game.section9_owned_rolling_crew_input_v1($1::uuid,$2::uuid,$3::timestamptz) AS result',[playerId,airlineId,windowStartUtc]);
  return previewRollingCrewReplacement(response.rows?.[0]?.result);
+}
+
+// Private cycle entry. A scheduler can invoke it per owned airline, but there
+// is deliberately no cron registration or dispatch activation here.
+// The explicit authorization/budget checks in prepareExternalCrewPlan and
+// the independent SQL validation are mandatory for every saved cycle.
+export async function runRollingCrewReplanning({client,playerId,airlineId,planId,windowStartUtc,execute=false,authorizeExternal=false,maxExternalCostUsd=0}){
+ if(typeof execute!=='boolean'||typeof authorizeExternal!=='boolean')throw Error('INVALID_ROLLING_CREW_CYCLE');
+ return prepareExternalCrewPlan({client,playerId,airlineId,planId,windowStartUtc,save:execute,authorizeExternal,maxExternalCostUsd,rolling:true});
 }
