@@ -32,6 +32,9 @@ BEGIN
  hire:=crew_handover_fixture_14n.section9_confirm_owned_shared_crew_hire_v1(a.owner_player_id,a.id,gen_random_uuid(),a.home_airport_key,grp,1,1,4,22800);
  IF hire->>'status'<>'shared_crew_hired' THEN RAISE EXCEPTION 'hire %',hire;END IF;
 
+ reserve_hire:=crew_handover_fixture_14n.section9_confirm_owned_shared_crew_hire_v1(a.owner_player_id,a.id,gen_random_uuid(),a.home_airport_key,grp,1,0,0,1000000);
+ IF reserve_hire->>'status'<>'shared_crew_hired' THEN RAISE EXCEPTION 'reserve hire %',reserve_hire;END IF;
+ reserve_id:=(reserve_hire->'pilotIds'->>0)::uuid;
  FOR i IN 1..2 LOOP
  dep:=start_at+make_interval(hours=>CASE WHEN i=1 THEN 6 ELSE 12 END);arr:=dep+interval '3 hours';
  orig:=CASE WHEN i=1 THEN a.home_airport_key ELSE 'OURAIRPORTS:2212' END;dest:=CASE WHEN i=1 THEN 'OURAIRPORTS:2212' ELSE a.home_airport_key END;
@@ -108,6 +111,20 @@ BEGIN
  receipt:=crew_handover_fixture_14n.section9_stage_delayed_crew_approval_v1(a.owner_player_id,a.id,second_pf.occurrence_id,approval,revised_dep,revised_arr,1050,'{}',fo,fa,1,0,0);
  IF receipt->>'status'<>'active_duty_release_required' THEN RAISE EXCEPTION 'eligible captain release guard %',receipt;END IF;
  INSERT INTO crew_handover_fixture_14n.section9_crew_unavailability_v1(airline_id,pilot_id,reason,start_utc,end_utc) VALUES(a.id,cp,'sickness',release_at,second_pf.arrival_utc+interval '1 day');
+ receipt:=crew_handover_fixture_14n.section9_validate_delayed_crew_roster_v1(a.owner_player_id,a.id,second_pf.occurrence_id,ARRAY[reserve_id],fo,fa,0,0,0);
+ IF receipt->>'status'<>'reserve_crew_wrong_airport' THEN RAISE EXCEPTION 'wrong airport reserve %',receipt;END IF;
+ BEGIN
+  -- A separate fixture scenario: this reserve was already stationed at
+  -- the intermediate airport. Do not move any employee in real gameplay.
+  INSERT INTO crew_handover_fixture_14n.section9_crew_bases_v1(airline_id,world_id,airport_key) VALUES(a.id,1,second_pf.origin_airport_key) ON CONFLICT DO NOTHING;
+  UPDATE crew_handover_fixture_14n.section9_pilot_base_assignments_v1 SET base_airport_key=second_pf.origin_airport_key,initial_airport_key=second_pf.origin_airport_key WHERE airline_id=a.id AND crew_id=reserve_id;
+  receipt:=crew_handover_fixture_14n.section9_stage_delayed_crew_approval_v1(a.owner_player_id,a.id,second_pf.occurrence_id,approval,revised_dep,revised_arr,0,ARRAY[reserve_id],fo,fa,0,0,0);
+  IF receipt->>'status'<>'delayed_crew_approval_staged' OR receipt->>'activeDutyReleaseCount'<>'1' OR (receipt->>'quotedCostUsd')::numeric<>0 THEN RAISE EXCEPTION 'stationed reserve %',receipt;END IF;
+  PERFORM set_config('airlinerra.requote_fixture_clock',revised_dep::text,true);
+  receipt:=crew_handover_fixture_14n.section9_check_delayed_crew_binding_v1(a.id,second_pf.occurrence_id,revised_dep);
+  IF receipt->>'status'<>'delayed_crew_binding_ready' OR NOT EXISTS(SELECT 1 FROM jsonb_array_elements(receipt->'duties') x WHERE x->>'employeeId'=reserve_id::text AND x->>'continuedDuty'='false' AND x->>'startingAirport'=second_pf.origin_airport_key) THEN RAISE EXCEPTION 'reserve preflight %',receipt;END IF;
+  RAISE EXCEPTION USING ERRCODE='ZX002',MESSAGE='restore reserve scenario';
+ EXCEPTION WHEN SQLSTATE 'ZX002' THEN NULL;END;
  -- Prove missing signed arrival blocks release, independently of illness.
  BEGIN
   DELETE FROM crew_handover_fixture_14n.section9_operated_flight_movements_v1 WHERE engine_event_id=ae;
@@ -141,7 +158,7 @@ BEGIN
  history:=crew_handover_fixture_14n.section9_crew_actual_history_v1(a.id,cp,revised_arr+interval '1 hour');
  IF history->>'lastAirport'<>second_pf.origin_airport_key OR (history->>'lastDutyEndUtc')::timestamptz<>release_at THEN RAISE EXCEPTION 'released crew teleported %',history;END IF;
  IF crew_handover_fixture_14n.section9_completed_external_crew_cost_v1(a.id,ph2,ae2)<>1050 THEN RAISE EXCEPTION 'external cost';END IF;
- result:=jsonb_build_object('status','passed','activeHandoverBound',true,'eligibleCrewNotUnnecessarilyReleased',true,'unverifiedArrivalRejected',true,'budgetFailureRolledBack',true,'releasedCaptainFlightMinutes',195,'retainedFirstOfficerFlightMinutes',375,'releasedAirport',history->>'lastAirport','releasedAtUtc',release_at,'nextRestEndsUtc',release_at+interval '12 hours','externalCrewCostUsd',1050,'originalPlanPreserved',true,'ledgerPosted',false);
+ result:=jsonb_build_object('status','passed','activeHandoverBound',true,'wrongAirportReserveRejected',true,'stationedInternalReserveValidated',true,'eligibleCrewNotUnnecessarilyReleased',true,'unverifiedArrivalRejected',true,'budgetFailureRolledBack',true,'releasedCaptainFlightMinutes',195,'retainedFirstOfficerFlightMinutes',375,'releasedAirport',history->>'lastAirport','releasedAtUtc',release_at,'nextRestEndsUtc',release_at+interval '12 hours','externalCrewCostUsd',1050,'originalPlanPreserved',true,'ledgerPosted',false);
  RAISE EXCEPTION USING ERRCODE='ZX001',MESSAGE=result::text;
  EXCEPTION WHEN SQLSTATE 'ZX001' THEN PERFORM set_config('airlinerra.crew_handover_fixture_result',SQLERRM,true);END;
 END $test$;
