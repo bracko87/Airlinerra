@@ -219,6 +219,16 @@ BEGIN
  THEN RAISE EXCEPTION 'invalid pilot permitted to depart %',invalid_crew;END IF;
  UPDATE crew_strict_roster_fixture_14y.section9_pilot_family_permissions_v1 SET qualification_status='active'
  WHERE airline_id=a.id AND crew_id=(hire->'pilotIds'->>1)::uuid AND qualification_group=grp;
+ INSERT INTO crew_strict_roster_fixture_14y.section9_crew_unavailability_v1(airline_id,cabin_member_id,reason,start_utc,end_utc)
+ VALUES(a.id,(hire->'cabinIds'->>4)::uuid,'sickness',base-interval '1 hour',base+interval '4 hours');
+ invalid_crew:=crew_strict_roster_fixture_14y.section9_auto_dispatch_due_flight_events_v1(40);
+ IF (invalid_crew->>'departuresRecorded')::int<>0
+ OR (invalid_crew->'blockerCounts'->>'SECTION9_NORMAL_CREW_BINDING_ATOMIC_ROLLBACK')::int<>1
+ OR EXISTS(SELECT 1 FROM crew_strict_roster_fixture_14y.section9_operated_flight_movements_v1)
+ OR EXISTS(SELECT 1 FROM crew_strict_roster_fixture_14y.section9_operated_crew_bindings_v1)
+ THEN RAISE EXCEPTION 'unavailable cabin crew permitted to depart %',invalid_crew;END IF;
+ UPDATE crew_strict_roster_fixture_14y.section9_crew_unavailability_v1 SET status='cancelled'
+ WHERE airline_id=a.id AND cabin_member_id=(hire->'cabinIds'->>4)::uuid;
  r:=crew_strict_roster_fixture_14y.section9_auto_dispatch_due_flight_events_v1(40);
  IF r->>'status'<>'trusted_game_dispatch_cycle_completed'
  OR (r->>'candidatesChecked')::int<>2
@@ -317,6 +327,7 @@ BEGIN
  OR (SELECT count(*) FROM crew_strict_roster_fixture_14y.section9_pilot_profiles_v1 WHERE total_flight_minutes=180)<>2
  THEN RAISE EXCEPTION 'real flight experience not credited';END IF;
  result:=jsonb_build_object('status','passed','strictCrewGateTested',true,'missingAtomicGateDenied',true,'missingCaptureGateDenied',true,'suspendedCaptainFlightHeld',true,'crewErrorRollsBackMovementFuelBooking',true,'qualifiedCrewAllowed',true,'crewExperienceOnlyAfterSignedArrival',true,'actualOwnedCrewHired',true,'qualifiedCrewPlanSaved',true,'realDepartureManifest',true,'pilotExperienceCredited',true,'crewPayrollQuoteUsd',crew_hiring_invoice,'realDynamicTurnaround',true,'realFuelPreflight',true,'realAutomaticFuelSupply',true,'failedFuelTopUpRolledBack',true,'realCostApprovalWorker',true,'realFinalPostingWorker',true,'postedNetCashUsd',expected_net,'actualGameTariffQuote',true,'actualReserveAwareFuelQuote',true,'realVerifiedClock',true,'realFinancialLedgerAtomic',true,'incorrectCrewCostRejected',true,'replayedFinanceNoCharge',true,'realPostarrivalFinancePreparation',true,'realTicketReconciliation',true,'financePreparationReplayProtected',true,'ticketMismatchRejected',true,'realMovementWriter',true,'realFuelDepartureCapture',true,'realFuelArrivalBurn',true,'realAirframeUsage',true,'oneCompleteArrival',true,'arrivalFuelBurnCreated',true,'arrivalAirframeUsageCreated',true,'crewArrivalTracked',true,'actualTurnaroundRecorded',true,'arrivalReplayNoDuplicate',true,'isolatedBadFlightRolledBack',true,'unrelatedGoodFlightCommitted',true,'badFuelSupplyRolledBack',true,'badSignedDepartureRolledBack',true,'goodFuelAndCrewCaptured',true,'bookingClosedOnlyForGoodFlight',true,'replayNoDouble',true,'disabledGatePreservesLegacyFailClosed',true,'reportedBlocks',r->'blockerCounts','liveFinancialsUntouched',true);
+ result:=result||jsonb_build_object('sickCabinAttendantFlightHeld',true);
  RAISE EXCEPTION USING ERRCODE='ZX001',MESSAGE=result::text;
  EXCEPTION WHEN SQLSTATE 'ZX001' THEN PERFORM set_config('airlinerra.strict_crew_fixture_result',SQLERRM,true);END;
 END $test$;
