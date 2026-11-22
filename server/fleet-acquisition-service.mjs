@@ -14,6 +14,17 @@ const uuid=value=>typeof value==='string'&&UUID.test(value);
 export function validateFleetAcquisitionRequest(body){
  if(!body||typeof body!=='object'||Array.isArray(body)||
     typeof body.action!=='string'||!uuid(body.airlineId))return false;
+ if(body.action==='crew-hire-overview')return Object.keys(body).length===2;
+ if(['crew-hire-quote','crew-hire-confirm'].includes(body.action)){
+  const confirm=body.action==='crew-hire-confirm';
+  return Object.keys(body).length===(confirm?9:7)&&Object.keys(body).every(k=>['action','airlineId','baseAirportKey','qualificationGroup','captains','firstOfficers','cabinCrew',...(confirm?['requestId','monthlyLimitUsd']:[])].includes(k))&&
+   typeof body.baseAirportKey==='string'&&/^[A-Za-z0-9:_-]{1,100}$/u.test(body.baseAirportKey)&&
+   (body.qualificationGroup===null||typeof body.qualificationGroup==='string'&&/^(family:[0-9]+|atr:42-72)$/u.test(body.qualificationGroup))&&
+   ['captains','firstOfficers','cabinCrew'].every(k=>Number.isInteger(body[k])&&body[k]>=0&&body[k]<=200)&&
+   body.captains+body.firstOfficers+body.cabinCrew>=1&&body.captains+body.firstOfficers+body.cabinCrew<=200&&
+   ((body.captains+body.firstOfficers>0)===(body.qualificationGroup!==null))&&
+   (!confirm||uuid(body.requestId)&&typeof body.monthlyLimitUsd==='string'&&/^(?:0|[1-9][0-9]{0,9})(?:\.[0-9]{1,2})?$/u.test(body.monthlyLimitUsd)&&Number(body.monthlyLimitUsd)<=1000000000);
+ }
  if(body.action==='crew-settings')return Object.keys(body).length===2;
  if(body.action==='crew-settings-save')return Object.keys(body).length===6 &&
   Object.keys(body).every(k=>['action','airlineId','mode','reservePercent','monthlyBudgetUsd','version'].includes(k)) &&
@@ -570,6 +581,23 @@ export function createFleetAcquisitionHandler({verifyUserToken,database}={}){
   let client;
   try{
    client=await database.connect();
+   if(['crew-hire-overview','crew-hire-quote','crew-hire-confirm'].includes(body.action)){
+    const owner=await client.query(FLEET_SQL.owner,[body.airlineId,playerId]);
+    if(owner.rowCount!==1)return respond(403,{error:'Airline not owned by this account'});
+    const params=[playerId,body.airlineId];
+    let sql='SELECT airlinerra_game.section9_owned_shared_crew_hiring_overview_v1($1::uuid,$2::uuid) AS result';
+    if(body.action==='crew-hire-quote'){
+     sql='SELECT airlinerra_game.section9_owned_shared_crew_hire_quote_v1($1::uuid,$2::uuid,$3::text,$4::text,$5::int,$6::int,$7::int) AS result';
+     params.push(body.baseAirportKey,body.qualificationGroup,body.captains,body.firstOfficers,body.cabinCrew);
+    }
+    if(body.action==='crew-hire-confirm'){
+     sql='SELECT airlinerra_game.section9_confirm_owned_shared_crew_hire_v1($1::uuid,$2::uuid,$3::uuid,$4::text,$5::text,$6::int,$7::int,$8::int,$9::numeric) AS result';
+     params.push(body.requestId,body.baseAirportKey,body.qualificationGroup,body.captains,body.firstOfficers,body.cabinCrew,body.monthlyLimitUsd);
+    }
+    const r=await client.query(sql,params),value=r.rows?.[0]?.result;
+    if(!value||typeof value.status!=='string')return respond(503,{error:'Crew hiring unavailable'});
+    return respond(200,{...value,airlineId:body.airlineId});
+   }
    if(['crew-settings','crew-settings-save','crew-notice-ack'].includes(body.action)){
     const owner=await client.query(FLEET_SQL.owner,[body.airlineId,playerId]);
     if(owner.rowCount!==1)return respond(403,{error:'Airline not owned by this account'});
