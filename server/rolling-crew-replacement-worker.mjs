@@ -51,3 +51,28 @@ export async function runRollingCrewReplanning({client,playerId,airlineId,planId
  if(typeof execute!=='boolean'||typeof authorizeExternal!=='boolean')throw Error('INVALID_ROLLING_CREW_CYCLE');
  return prepareExternalCrewPlan({client,playerId,airlineId,planId,windowStartUtc,save:execute,authorizeExternal,maxExternalCostUsd,rolling:true});
 }
+
+// Read-only disruption-cycle preflight. Do not treat a duty-fit result as
+// dispatch authorization: revised roster persistence and contractor retiming
+// must be validated separately. Review only verified, unflown delayed legs.
+export async function reviewDelayedCrewRotations({client,playerId,airlineId,limit=50}){
+ if(typeof client?.query!=='function'||!Number.isInteger(limit)||limit<1||limit>100)throw Error('INVALID_DELAYED_CREW_REVIEW');
+ const response=await client.query(`
+ SELECT o.id AS "occurrenceId",
+ airlinerra_game.section9_assess_delayed_crew_rotation_v1($1::uuid,$2::uuid,o.id) AS result
+ FROM airlinerra_game.section9_replacement_slot_pairs_v1 p
+ JOIN airlinerra_game.section9_dated_flight_occurrences_v1 o ON o.id=p.occurrence_id AND o.aircraft_inventory_id=p.aircraft_inventory_id
+ JOIN airlinerra_game.airlines a ON a.id=o.airline_id AND a.owner_player_id=$1::uuid AND a.world_id=1
+ WHERE o.airline_id=$2::uuid AND o.world_id=1 AND o.booking_status<>'cancelled'
+ AND NOT EXISTS(SELECT 1 FROM airlinerra_game.section9_operated_flight_movements_v1 m
+ WHERE m.airline_id=o.airline_id AND m.flight_occurrence_id=o.schedule_id::text||':'||o.flight_local_date::text||':'||o.weekly_entry::text AND m.phase='departed')
+ ORDER BY p.revised_departure_utc,o.id LIMIT $3::integer
+ `,[playerId,airlineId,limit]);
+ const results=(response.rows||[]).map(row=>{
+  if(typeof row.result?.status!=='string'||row.result.dispatchEnforced!==false)throw Error('DELAYED_CREW_ASSESSMENT_UNVERIFIED');
+  return {occurrenceId:row.occurrenceId,...row.result};
+ });
+ const counts={};
+ for(const r of results)counts[r.status]=(counts[r.status]||0)+1;
+ return {status:'delayed_crew_review_preview',assessedFlights:results.length,counts,results,changesPersisted:false,dispatchEnforced:false,crewCancellationTriggered:false};
+}
