@@ -43,6 +43,21 @@ const cabinCounts=cabin=>['economy','premium','business','first'].every(k=>
   Number.isInteger(Number(cabin?.[k]))&&Number(cabin[k])>=0)?
   ['economy','premium','business','first'].reduce((sum,k)=>sum+Number(cabin[k]),0):null;
 
+// Server-provided game model limits; no inference from an unrelated model.
+export function acquisitionCrewPreview(offer,{used=false}={}){
+ const p=offer?.crewPolicy;
+ if(!p||p.model_version!=='GAME_FLIGHT_CREW_V1'||Number(p.configuration_id)!==Number(offer.configurationId))return 'Crew requirements unavailable for this configuration.';
+ const max=Number(p.maximum_cabin_crew),lo=Number(p.minimum_turnaround_minutes),hi=Number(p.maximum_turnaround_minutes);
+ if(!Number.isInteger(max)||max<0||!Number.isInteger(lo)||!Number.isInteger(hi)||lo<=0||hi<lo)return 'Crew requirements unavailable for this configuration.';
+ const seats=offer.useType==='cargo'?0:used?cabinCounts(offer.cabinSnapshot):
+ known(offer.referenceSeats)&&Number.isInteger(Number(offer.referenceSeats))?Number(offer.referenceSeats):null;
+ const min=seats===null?null:seats<=19?0:Math.ceil(seats/50);
+ const family=p.qualification_group==='atr:42-72'?'ATR 42/72':String(offer.family||p.qualification_group);
+ const cabin=min===null?'Minimum cabin crew unknown (seat layout unavailable); model maximum '+max:
+ min>max?'Cabin crew limits require review for this seating configuration':
+ 'Cabin attendants '+min+'–'+max+' ('+seats+' '+(used?'installed':'reference')+' seats)';
+ return 'Game crew preview · '+family+' qualification · 1 captain + 1 co-pilot (over 6h: 2 + 2) · '+cabin+' · turnaround '+lo+'–'+hi+' min. Crew hiring and clearance are not enforced yet.';
+}
 export function renderUsedAircraftProfile({
  doc,host,offer,marketOpen=false,serverNowUtc=null,
  onBack,onRefresh,onCabin,message='Loading the selected aircraft from the game database…'
@@ -196,6 +211,6 @@ export function renderUsedAircraftProfile({
    ['Flight clearance','Not established by this listing']
   ])
  );
- host.append(specs,node(doc,'p','hint',
+ host.append(group(doc,'Crew and turnaround planning',[['Requirements',acquisitionCrewPreview(offer,{used:true})]]),specs,node(doc,'p','hint',
   'Aircraft specifications are model-level references. Age, condition, maintenance estimate, offer and cabin are attached to this individual game listing. Viewing this page does not reserve, bid on, purchase or change the aircraft.'));
 }
