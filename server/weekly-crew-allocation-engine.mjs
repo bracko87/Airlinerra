@@ -1,7 +1,7 @@
 /** Deterministic server-side weekly allocation preview. Inputs must be assembled
  * from authoritative employment, permission, location and duty records.
  * Greedy feasible allocation, not proof of minimum headcount; no writes. */
-export function planWeeklyCrew(input) {
+export function planWeeklyCrew(input,{externalCrewPreview=false}={}) {
  const MIN=60000,DAY=86400000;
  const time=v=>typeof v==='string'&&/(Z|[+-]\d\d:\d\d)$/.test(v)?Date.parse(v):NaN;
  const start=time(input?.windowStartUtc),end=start+7*DAY;
@@ -87,7 +87,7 @@ export function planWeeklyCrew(input) {
   s.duty={start:p.ds,end:p.e};
   s.lastEnd=p.e;s.lastArrival=f.arr;s.airport=f.destination;s.assignedMinutes+=(f.arr-f.dep)/MIN;
  };
- const assignments=[],shortages=[];
+ const assignments=[],shortages=[],externalContracts=[];
  for(const f of flights){
   const needed=f.arr-f.dep>360*MIN?2:1;
   if(f.arr-f.dep+150*MIN>720*MIN){
@@ -103,13 +103,16 @@ export function planWeeklyCrew(input) {
   const capIds=new Set(chosenCap.map(p=>p.s.m.id));
   const chosenFo=fo.filter(p=>!capIds.has(p.s.m.id)).slice(0,needed);
   if(chosenCap.length<needed||chosenFo.length<needed||fa.length<f.cabinRequired){
-   shortages.push({flightId:f.id,reason:'crew_shortage',requiredCaptains:needed,requiredFirstOfficers:needed,requiredCabinCrew:f.cabinRequired,availableCaptains:cap.length,availableFirstOfficers:fo.length,distinctEligiblePilots:new Set([...cap,...fo].map(p=>p.s.m.id)).size,availableCabinCrew:fa.length,missingCaptains:needed-chosenCap.length,missingFirstOfficers:needed-chosenFo.length,missingCabinCrew:Math.max(0,f.cabinRequired-fa.length)});
-   continue;
+   const shortage={flightId:f.id,reason:'crew_shortage',requiredCaptains:needed,requiredFirstOfficers:needed,requiredCabinCrew:f.cabinRequired,availableCaptains:cap.length,availableFirstOfficers:fo.length,distinctEligiblePilots:new Set([...cap,...fo].map(p=>p.s.m.id)).size,availableCabinCrew:fa.length,missingCaptains:needed-chosenCap.length,missingFirstOfficers:needed-chosenFo.length,missingCabinCrew:Math.max(0,f.cabinRequired-fa.length)};
+   if(externalCrewPreview!==true){shortages.push(shortage);continue;}
+   // A preview may fill only missing seats with contractors. Internal crew
+   // still consume their own duty/rest/location state; no synthetic employee.
+   externalContracts.push({flightId:f.id,qualificationGroup:f.group,origin:f.origin,departureUtc:iso(f.dep),arrivalUtc:iso(f.arr),captains:shortage.missingCaptains,firstOfficers:shortage.missingFirstOfficers,cabinCrew:shortage.missingCabinCrew,authorizationRequired:true});
   }
   const chosenCabin=fa.slice(0,f.cabinRequired);
   const chosen=[...chosenCap,...chosenFo,...chosenCabin];
   for(const p of chosen)apply(p,f);
   assignments.push({flightId:f.id,aircraftId:f.aircraftId,departureUtc:iso(f.dep),arrivalUtc:iso(f.arr),captains:chosenCap.map(p=>p.s.m.id),firstOfficers:chosenFo.map(p=>p.s.m.id),cabinCrew:chosenCabin.map(p=>p.s.m.id),duties:chosen.map(p=>({employeeId:p.s.m.id,role:p.role,dutyStartUtc:iso(p.ds),dutyEndUtc:iso(p.e),continuedDuty:p.extend}))});
  }
- return {status:'weekly_crew_allocation_preview',windowStartUtc:iso(start),windowEndUtc:iso(end),flightCount:flights.length,assignedFlightCount:assignments.length,unassignedFlightCount:shortages.length,assignments,shortages,dispatchEnforced:false,guaranteedOptimal:false,hiringPerformed:false};
+ return {status:externalCrewPreview===true?'weekly_mixed_crew_preview':'weekly_crew_allocation_preview',...(externalCrewPreview===true?{externalContracts,externalContractCount:externalContracts.length,contractingPerformed:false}:{}),windowStartUtc:iso(start),windowEndUtc:iso(end),flightCount:flights.length,assignedFlightCount:assignments.length,unassignedFlightCount:shortages.length,assignments,shortages,dispatchEnforced:false,guaranteedOptimal:false,hiringPerformed:false};
 }
