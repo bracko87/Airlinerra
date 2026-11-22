@@ -1,17 +1,17 @@
 -- Section 5+6 actual verifier isolation: no real slot, certification or airline modified.
 DO $slot_fixture$
-DECLARE t text; fn record; a record; aircraft record; sc uuid; rr record; hmac_payload text; evsign text; revoked_event text; certificate_count integer; blocker jsonb; proof jsonb; game_key text:=repeat('S',70); game_day date; orig text:='OURAIRPORTS:4610'; dest text:='OURAIRPORTS:4612'; dep timestamptz:='2026-11-23T10:00:00Z'; arr timestamptz:='2026-11-23T12:00:00Z'; weekly jsonb:='[{"day":0,"time":"11:00"}]'::jsonb; verdict jsonb; restriction jsonb; result jsonb;
+DECLARE t text; cols text; fn record; a record; aircraft record; sc uuid; rr record; hmac_payload text; evsign text; revoked_event text; certificate_count integer; blocker jsonb; proof record; game_key text:=repeat('S',70); game_day date; orig text:='OURAIRPORTS:4610'; dest text:='OURAIRPORTS:4612'; dep timestamptz:='2026-11-23T10:00:00Z'; arr timestamptz:='2026-11-23T12:00:00Z'; weekly jsonb:='[{"day":0,"time":"11:00"}]'::jsonb; verdict jsonb; restriction jsonb; result jsonb;
 BEGIN
  BEGIN
  CREATE SCHEMA cert_signed_fixture_14aa;
  CREATE TABLE cert_signed_fixture_14aa.fixture_worlds(id smallint primary key,state text,opens_at timestamptz);
  CREATE TABLE cert_signed_fixture_14aa.test_signer(name text primary key,decrypted_secret text not null);
  INSERT INTO cert_signed_fixture_14aa.test_signer(name,decrypted_secret) VALUES
- ('airlinerra_game_clearance_operator_licence_v1',repeat('S',70)),
- ('airlinerra_game_clearance_route_traffic_rights_v1',repeat('T',70)),
- ('airlinerra_game_clearance_airport_slot_capacity_v1',repeat('U',70));
+ ('cert_signed_fixture_14aa_clearance_operator_licence_v1',repeat('S',70)),
+ ('cert_signed_fixture_14aa_clearance_route_traffic_rights_v1',repeat('T',70)),
+ ('cert_signed_fixture_14aa_clearance_airport_slot_capacity_v1',repeat('U',70));
  INSERT INTO cert_signed_fixture_14aa.fixture_worlds VALUES(1,'active',now()-interval '3 days');
- FOREACH t IN ARRAY ARRAY['airlines','airline_aircraft_inventory','airline_flight_schedule_drafts_v1',
+ FOREACH t IN ARRAY ARRAY['airlines','airline_aircraft_inventory','airline_flight_schedule_drafts_v1','airport_reference_profiles','section9_maintenance_relocation_trips_v1',
  'holding_world_clock_v1','section9_verified_game_tick_receipts_v1',
  'section6_airport_slot_capacity_v1','section6_weekly_airport_slot_reservations_v1',
  'section9_verified_schedule_capacity_v1','section9_aoc_operating_companies_v1','section9_aoc_release_policy_v1','section9_aoc_certificates_v1','section9_aoc_safety_incidents_v1','section9_aoc_corrective_tasks_v1','section9_aoc_independent_correction_release_v1','section9_aoc_compliance_receipts_v1','section9_aoc_verified_correction_proofs_v1','section9_game_maintenance_service_receipts_v1','section9_game_permission_applications_v1','section9_operator_licence_evidence_v1','airline_ledger','aviation_countries_v1','airport_offices','licence2_directed_route_allocations_v1','licence2_market_policy_v1','licence2_market_levels_v1','licence2_airline_market_permits_v1','section9_operational_certification_events_v1','section9_schedule_operational_certifications_v1','section9_schedule_activation_preparations_v1','section9_activation_release_policy_v1','section9_weekly_crew_duty_proposals_v1','section9_airline_crew_roster_v1','section9_route_operating_permission_evidence_v1'] LOOP
@@ -47,6 +47,8 @@ BEGIN
  SELECT jsonb_build_object('readOnly',true,'canActivateNormalFlight',false,'activationChecklist',jsonb_build_object('airportRestrictionPreviewPassed',true,'aircraftRotationPreviewConflictFree',true,'departureArrivalSlotRecordsPresent',true,'aircraftDeliveryAnchorVerified',true,'aircraftInFlight',false,'lastVerifiedGroundAirport','OURAIRPORTS:4610','operatorLicenceEvidenceRecorded',true,'routePermissionEvidenceComplete',true,'worldClockConnected',true),
  'turnaround',jsonb_build_object('shortTurnaroundOccurrences',0,'minimumMinutes',45)) $body$; $stubs$;
  EXECUTE $stubs$CREATE TRIGGER fixture_signed_event_immutable BEFORE DELETE OR UPDATE ON cert_signed_fixture_14aa.section9_operational_certification_events_v1 FOR EACH ROW EXECUTE FUNCTION cert_signed_fixture_14aa.section9_reject_certificate_audit_mutation_v1() $stubs$;
+ SELECT string_agg(quote_ident(column_name),',' ORDER BY ordinal_position) INTO cols FROM information_schema.columns WHERE table_schema='airlinerra_game' AND table_name='airport_reference_profiles' AND is_generated='NEVER';
+ EXECUTE format('INSERT INTO cert_signed_fixture_14aa.airport_reference_profiles(%s) SELECT %s FROM airlinerra_game.airport_reference_profiles WHERE world_id=1 AND airport_key=ANY($1)',cols,cols) USING ARRAY[orig,dest];
  INSERT INTO cert_signed_fixture_14aa.airlines SELECT * FROM airlinerra_game.airlines WHERE id=a.id;
  INSERT INTO cert_signed_fixture_14aa.airline_aircraft_inventory SELECT * FROM airlinerra_game.airline_aircraft_inventory WHERE id=aircraft.id;
  INSERT INTO cert_signed_fixture_14aa.holding_world_clock_v1 SELECT * FROM airlinerra_game.holding_world_clock_v1 WHERE world_id=1;
@@ -96,12 +98,17 @@ BEGIN
  IF cert_signed_fixture_14aa.section9_verify_slot_clearance_source_v1(a.id,sc,1,game_day+1)->>'status'<>'blocked_unverified_world_or_game_day'
  THEN RAISE EXCEPTION 'unverified game day approved';END IF;
 
+ -- Restore the actual game capacity values after the negative cases.
+ UPDATE cert_signed_fixture_14aa.section6_airport_slot_capacity_v1 c SET
+ terminal_stands=real.terminal_stands,terminal_per_direction_10m=real.terminal_per_direction_10m
+ FROM airlinerra_game.section6_airport_slot_capacity_v1 real
+ WHERE real.world_id=c.world_id AND real.airport_key=c.airport_key;
  -- Three different independent game source verifiers go through the real
  -- production certificate issuer and the real certification-event sink.
  FOR rr IN SELECT * FROM (VALUES
-  ('operator_licence','airlinerra_game_clearance_operator_licence_v1'),
-  ('route_traffic_rights','airlinerra_game_clearance_route_traffic_rights_v1'),
-  ('airport_slot_capacity','airlinerra_game_clearance_airport_slot_capacity_v1')
+  ('operator_licence','cert_signed_fixture_14aa_clearance_operator_licence_v1'),
+  ('route_traffic_rights','cert_signed_fixture_14aa_clearance_route_traffic_rights_v1'),
+  ('airport_slot_capacity','cert_signed_fixture_14aa_clearance_airport_slot_capacity_v1')
  ) types(clearance_type,key_name) LOOP
   verdict:=cert_signed_fixture_14aa.section9_issue_queued_game_clearance_v1(a.id,sc,1,game_day,rr.clearance_type);
   IF verdict->>'status'<>'certification_event_recorded' OR verdict->>'certificateChanged'<>'true'
