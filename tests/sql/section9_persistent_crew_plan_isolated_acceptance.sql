@@ -19,7 +19,8 @@ BEGIN
  SELECT f.id,f.configuration_id,p.qualification_group INTO STRICT ac,conf,grp FROM airlinerra_game.airline_aircraft_inventory f JOIN airlinerra_game.section9_flight_crew_model_policy_v1 p ON p.configuration_id=f.configuration_id WHERE f.airline_id=a.id AND p.seat_basis<>'cargo_zero' LIMIT 1;
  INSERT INTO crew_plan_fixture_14e.airlines SELECT * FROM airlinerra_game.airlines WHERE id=a.id;
  INSERT INTO crew_plan_fixture_14e.airline_aircraft_inventory SELECT * FROM airlinerra_game.airline_aircraft_inventory WHERE id=ac;
- INSERT INTO crew_plan_fixture_14e.airport_reference_profiles SELECT * FROM airlinerra_game.airport_reference_profiles WHERE world_id=1 AND airport_key IN(a.home_airport_key,'OURAIRPORTS:2212');
+ SELECT string_agg(quote_ident(column_name),',' ORDER BY ordinal_position) INTO tbl FROM information_schema.columns WHERE table_schema='airlinerra_game' AND table_name='airport_reference_profiles' AND is_generated='NEVER';
+ EXECUTE format('INSERT INTO crew_plan_fixture_14e.airport_reference_profiles(%s) SELECT %s FROM airlinerra_game.airport_reference_profiles WHERE world_id=1 AND airport_key=ANY($1)',tbl,tbl) USING ARRAY[a.home_airport_key,'OURAIRPORTS:2212'];
  INSERT INTO crew_plan_fixture_14e.section9_crew_bases_v1 SELECT * FROM airlinerra_game.section9_crew_bases_v1 WHERE airline_id=a.id AND airport_key=a.home_airport_key;
  INSERT INTO crew_plan_fixture_14e.section9_flight_crew_model_policy_v1 SELECT * FROM airlinerra_game.section9_flight_crew_model_policy_v1 WHERE configuration_id=conf;
  INSERT INTO crew_plan_fixture_14e.section9_pilot_qualification_groups_v1 SELECT * FROM airlinerra_game.section9_pilot_qualification_groups_v1 WHERE qualification_group=grp;
