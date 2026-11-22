@@ -54,13 +54,21 @@ BEGIN
  DELETE FROM cert_slots_fixture_14z.section6_weekly_airport_slot_reservations_v1 WHERE schedule_id=sc;
  INSERT INTO cert_slots_fixture_14z.section6_weekly_airport_slot_reservations_v1(schedule_id,world_id,airport_key,stand_type,direction,weekday,minute_of_day)
  SELECT sc,1,airport_key,stand_type,direction,weekday,minute_of_day FROM cert_slots_fixture_14z.section6_weekly_slot_proposals_v1(1::smallint,orig,dest,dep,arr,weekly,'terminal','terminal');
+ UPDATE cert_slots_fixture_14z.section6_airport_slot_capacity_v1 SET terminal_stands=1,terminal_per_direction_10m=1 WHERE airport_key=orig;
+ INSERT INTO cert_slots_fixture_14z.section6_weekly_airport_slot_reservations_v1(schedule_id,world_id,airport_key,stand_type,direction,weekday,minute_of_day)
+ SELECT gen_random_uuid(),world_id,airport_key,stand_type,direction,weekday,minute_of_day FROM cert_slots_fixture_14z.section6_weekly_airport_slot_reservations_v1
+ WHERE schedule_id=sc AND airport_key=orig AND direction='departure';
+ verdict:=cert_slots_fixture_14z.section9_verify_slot_clearance_source_v1(a.id,sc,1,game_day);
+ IF verdict->>'status'<>'blocked_slot_clearance_evidence' OR NOT verdict->'blockers' ? 'AIRPORT_CAPACITY_RECHECK_FAILED'
+ THEN RAISE EXCEPTION 'oversubscribed hour or 10-minute stand accepted %',verdict;END IF;
+ DELETE FROM cert_slots_fixture_14z.section6_weekly_airport_slot_reservations_v1 WHERE schedule_id<>sc;
  UPDATE cert_slots_fixture_14z.section6_airport_slot_capacity_v1 SET terminal_stands=0,terminal_per_direction_10m=0 WHERE airport_key=orig;
  verdict:=cert_slots_fixture_14z.section9_verify_slot_clearance_source_v1(a.id,sc,1,game_day);
  IF verdict->>'status'<>'blocked_slot_clearance_evidence' OR NOT verdict->'blockers' ? 'AIRPORT_CAPACITY_RECHECK_FAILED'
  THEN RAISE EXCEPTION 'airport without capacity approved %',verdict;END IF;
  IF cert_slots_fixture_14z.section9_verify_slot_clearance_source_v1(a.id,sc,1,game_day+1)->>'status'<>'blocked_unverified_world_or_game_day'
  THEN RAISE EXCEPTION 'unverified game day approved';END IF;
- result:=jsonb_build_object('status','passed','actualGameNightAndRunwayRestrictions',true,'actualWeeklySlotProposals',true,'actualHourAndTenMinuteCapacity',true,'matchedReservationsCertified',true,'mismatchedReservationBlocked',true,'zeroStandCapacityBlocked',true,'wrongGameDateBlocked',true,'noGameDataMutated',true);
+ result:=jsonb_build_object('status','passed','actualGameNightAndRunwayRestrictions',true,'actualWeeklySlotProposals',true,'actualHourAndTenMinuteCapacity',true,'matchedReservationsCertified',true,'mismatchedReservationBlocked',true,'zeroStandCapacityBlocked',true,'overbookedStandBlocked',true,'wrongGameDateBlocked',true,'noGameDataMutated',true);
  RAISE EXCEPTION USING ERRCODE='ZX001',MESSAGE=result::text;
  EXCEPTION WHEN SQLSTATE 'ZX001' THEN PERFORM set_config('airlinerra.cert_slots_fixture_14z',SQLERRM,true);END;
 END $slot_fixture$;
