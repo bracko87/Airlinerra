@@ -1,7 +1,7 @@
 -- Phase 14Z game-licence source verifier acceptance. Isolated schema, rolled back.
 DO $fixture$
 DECLARE
- t text; fn record; a record; aircraft record; home_key text; international_key text:='OURAIRPORTS:2212'; foreign_key text:='OURAIRPORTS:2214';
+ t text; cols text; fn record; a record; aircraft record; home_key text; international_key text:='OURAIRPORTS:2212'; foreign_key text:='OURAIRPORTS:2214';
  home_schedule uuid; foreign_schedule uuid; game_day date; result jsonb; aoc jsonb; op jsonb; rights jsonb;
 BEGIN
  BEGIN
@@ -36,7 +36,9 @@ BEGIN
  IF game_day IS NULL THEN RAISE EXCEPTION 'production game-day not verified; cannot fixture';END IF;
  INSERT INTO cert_aoc_fixture_14z.airlines SELECT * FROM airlinerra_game.airlines WHERE id=a.id;
  INSERT INTO cert_aoc_fixture_14z.airline_aircraft_inventory SELECT * FROM airlinerra_game.airline_aircraft_inventory WHERE id=aircraft.id;
- INSERT INTO cert_aoc_fixture_14z.airport_reference_profiles SELECT * FROM airlinerra_game.airport_reference_profiles WHERE world_id=1 AND airport_key IN(home_key,international_key,foreign_key);
+ SELECT string_agg(quote_ident(column_name),',' ORDER BY ordinal_position) INTO cols FROM information_schema.columns WHERE table_schema='airlinerra_game' AND table_name='airport_reference_profiles' AND is_generated='NEVER';
+ EXECUTE format('INSERT INTO cert_aoc_fixture_14z.airport_reference_profiles(%s) SELECT %s FROM airlinerra_game.airport_reference_profiles WHERE world_id=1 AND airport_key=ANY($1)',cols,cols)
+ USING ARRAY[home_key,international_key,foreign_key];
  INSERT INTO cert_aoc_fixture_14z.holding_world_clock_v1 SELECT * FROM airlinerra_game.holding_world_clock_v1 WHERE world_id=1;
  INSERT INTO cert_aoc_fixture_14z.section9_verified_game_tick_receipts_v1 SELECT * FROM airlinerra_game.section9_verified_game_tick_receipts_v1 WHERE world_id=1 AND game_date=game_day;
  INSERT INTO cert_aoc_fixture_14z.section9_aoc_release_policy_v1 SELECT * FROM airlinerra_game.section9_aoc_release_policy_v1 WHERE world_id=1;
@@ -65,8 +67,9 @@ BEGIN
  OR cert_aoc_fixture_14z.section9_verify_game_operator_licence_v1(a.id,home_schedule,1,game_day)->>'verified'<>'false'
  THEN RAISE EXCEPTION 'expired AOC granted flight rights';END IF;
  UPDATE cert_aoc_fixture_14z.section9_aoc_certificates_v1 SET status='active' WHERE airline_id=a.id;
- INSERT INTO cert_aoc_fixture_14z.section9_aoc_safety_incidents_v1(event_id,airline_id,world_id,severity,penalty_points,occurred_game_day,description_code,verified_event_reference,required_action_count)
- VALUES('fixture-major-safety-14z-'||a.id,a.id,1,'major',40,game_day,'GAME_SAFETY_AUDIT','fixture-aoc-independent-safety-review-14z',1);
+ INSERT INTO cert_aoc_fixture_14z.section9_aoc_safety_incidents_v1(event_id,airline_id,world_id,severity,occurred_game_day,description_code,verified_event_reference,required_action_count)
+ VALUES('fixture-major-safety-a-14z-'||a.id,a.id,1,'major',game_day,'GAME_SAFETY_AUDIT','fixture-aoc-independent-safety-review-14z-a',1),
+ ('fixture-major-safety-b-14z-'||a.id,a.id,1,'major',game_day,'GAME_SAFETY_AUDIT','fixture-aoc-independent-safety-review-14z-b',1);
  aoc:=cert_aoc_fixture_14z.section9_aoc_flight_release_readiness_v1(a.id,game_day);
  IF aoc->>'authorized'<>'false' OR NOT aoc->'issues' ? 'AOC_SAFETY_RATING_BELOW_70' THEN RAISE EXCEPTION 'unsafe operator approved %',aoc;END IF;
  DELETE FROM cert_aoc_fixture_14z.section9_aoc_safety_incidents_v1 WHERE airline_id=a.id;
