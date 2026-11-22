@@ -2,8 +2,7 @@
 const MINUTE=60000, DAY=1440*MINUTE, BASELINE=1080;
 export function utilizationForMinutes(minutes){
  if(!Number.isFinite(minutes)||minutes<0)return null;
- return {percent:Math.min(100,Math.round(minutes/BASELINE*100)),overloaded:minutes>BASELINE,
- wearMultiplier:minutes<=BASELINE?1:1+2*Math.pow(Math.min(1,(minutes-BASELINE)/360),1.5)};
+ return {percent:Math.min(100,Math.round(minutes/1440*100)),highUtilization:minutes>BASELINE,occupiedMinutes:Math.min(1440,minutes)};
 }
 const time=x=>Date.parse(x);
 const clip=(a,b,start,end)=>Math.max(0,Math.min(b,end)-Math.max(a,start))/MINUTE;
@@ -22,7 +21,7 @@ export function buildDatedCalendar(fleet,events,date){
   }
   blocks.sort((a,b)=>a.begin-b.begin||a.finish-b.finish);
   // Union the operating intervals; overlapping records cannot inflate usage.
-  const intervals=blocks.filter(b=>b.kind!=='maintenance'&&b.flightEnd>b.begin).map(b=>[b.begin,b.flightEnd]).sort((a,b)=>a[0]-b[0]);
+  const intervals=blocks.filter(b=>b.kind!=='maintenance'&&b.finish>b.begin).map(b=>[b.begin,b.finish]).sort((a,b)=>a[0]-b[0]);
   let total=0,last=0;for(const [a,b] of intervals){total+=Math.max(0,b-Math.max(a,last));last=Math.max(last,b);}
   let overlap=false,until=0;for(const b of blocks){if(b.begin<until)overlap=true;until=Math.max(until,b.finish);}
   return {...a,blocks,usage:utilizationForMinutes(total),overlap};
@@ -45,7 +44,7 @@ export function renderDatedCalendar(doc,host,rows,date){
   const tr=add(doc,body,'tr'),id=add(doc,tr,'th',row.registration,'schedule-board-aircraft-col');
   if(row.nickname)add(doc,id,'div',row.nickname,'schedule-board-nickname');
   if(row.model)add(doc,id,'div',[row.manufacturer,row.model].filter(Boolean).join(' '),'schedule-board-name');
-  add(doc,id,'div',row.usage.percent+'% scheduled utilization'+(row.usage.overloaded?' - overloaded':''),'hint');
+  add(doc,id,'div',row.usage.percent+'% scheduled utilization'+(row.usage.highUtilization?' - high utilization':''),'hint');
   const track=add(doc,add(doc,tr,'td'),'div',null,'schedule-board-day-track');
   if(!row.blocks.length)add(doc,track,'p','No confirmed flights or maintenance on this date.','hint');
   for(const b of row.blocks){
@@ -64,5 +63,5 @@ export function renderDatedCalendar(doc,host,rows,date){
   }
   if(row.overlap)add(doc,track,'p','Schedule conflict: overlapping confirmed reservations.','hint');
  }
- add(doc,host,'p','Blue: commercial flight. Teal: empty relocation. Purple: maintenance. Darker flight portion: turnaround. Utilization includes all flying but excludes turnaround and maintenance.','hint');
+ add(doc,host,'p','Blue: commercial flight. Teal: empty relocation. Purple: maintenance. Darker flight portion: turnaround. Utilization includes flight time and scheduled turnaround as a share of 24 hours. Maintenance is excluded. High utilization is advisory, not a hard limit.','hint');
 }
