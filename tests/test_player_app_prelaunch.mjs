@@ -11,7 +11,7 @@ import {TESTER_ORIGIN,TESTER_AUTH_URL} from '../website/invited-tester-entry.mjs
 
 test('player application has complete distinct navigation and bounded hash routes',()=>{
   assert.equal(PLAYER_APP_PATH,'/player.html');
-  assert.equal(PLAYER_VIEWS.length,48);
+  assert.equal(PLAYER_VIEWS.length,49);
   assert.equal(new Set(PLAYER_VIEWS).size,PLAYER_VIEWS.length);
   for(const route of ['aircraft-library','aircraft-profile','airport-profile','holding','infrastructure','staff','employees-pilots','employees-board','employees-payroll','marketing-reputation','marketing-research','statistics','rankings'])
    assert.ok(PLAYER_VIEWS.includes(route),route);
@@ -96,7 +96,7 @@ test('grouped horizontal dropdowns keep all ten game routes accessible',async()=
     operations:['hubs','route-list','routes','schedule','service','cabin-configurations','licenses'],
     fleet:['fleet','aircraft-new-orders','aircraft-market','maintenance'],
     infrastructure:['infrastructure','infrastructure-hq','infrastructure-maintenance','infrastructure-facilities'],
-    employees:['staff','employees-pilots','employees-cabin','employees-ground','employees-technical','employees-board','employees-payroll'],
+    employees:['staff','salary-management','employees-pilots','employees-cabin','employees-ground','employees-technical','employees-board','employees-payroll'],
     marketing:['marketing-reputation','marketing-campaigns','marketing-research'],
     finance:['finances'],
     statistics:['statistics','statistics-airlines','statistics-airports','statistics-aircraft','rankings'],
