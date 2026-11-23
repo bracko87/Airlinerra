@@ -122,8 +122,8 @@ test('charter browser client refuses fabricated fees and issuance',async()=>{
 });
 test('Charter/VIP licence migration preserves one-time fee, 3 game days and flight gating',async()=>{
  const read=name=>readFile(new URL('../supabase/migrations/'+name,import.meta.url),'utf8');
- const issue=await read('20261120101000_licence4_charter_atomic_application.sql');
- const guard=await read('20261120103000_licence4_charter_activation_guard_cron.sql');
+ const issue=await read('20261120083141_licence4_charter_atomic_application.sql');
+ const guard=await read('20261120083211_licence4_charter_activation_guard_cron.sql');
  assert.match(issue,/fee_usd numeric NOT NULL DEFAULT 40000 CHECK\(fee_usd=40000\)/);
  assert.match(issue,/CHECK\(due_game_day=submitted_game_day\+3\)/);
  assert.match(issue,/cash_usd=cash_usd-40000/);

@@ -5,7 +5,7 @@ import {readFile} from 'node:fs/promises';
 const get=async path=>readFile(new URL(path,import.meta.url),'utf8');
 
 test('Group2 Section1 source chain uses primary operator evidence and limited AirlineSim fallback',async()=>{
- const m=await get('../supabase/migrations/20261110141000_group2_section1_primary_airlinesim_source_audit.sql');
+ const m=await get('../supabase/migrations/20261110110315_group2_section1_primary_airlinesim_source_audit.sql');
  assert.match(m,/CREATE TABLE airlinerra_game\.airport_group2_section1_source_candidates_v1/);
  assert.match(m,/CREATE VIEW airlinerra_game\.airport_group2_section1_identity_quality_v1/);
  assert.match(m,/CREATE VIEW airlinerra_game\.airport_group2_section1_progress_v1/);
@@ -22,7 +22,7 @@ test('Group2 Section1 source chain uses primary operator evidence and limited Ai
  assert.match(m,/operational_or_commercial_authority boolean NOT NULL DEFAULT false/);
 });
 test('Group2 Section1 proposal references have exact airport identity and exclude game-only airport activation',async()=>{
- const m=await get('../supabase/migrations/20261110141000_group2_section1_primary_airlinesim_source_audit.sql');
+ const m=await get('../supabase/migrations/20261110110315_group2_section1_primary_airlinesim_source_audit.sql');
  for(const key of ['OURAIRPORTS:26916','OURAIRPORTS:27866',
   'OURAIRPORTS:26969','OURAIRPORTS:27069','OURAIRPORTS:27152'])
   assert.ok(m.includes(key),'missing source-proposed airport '+key);

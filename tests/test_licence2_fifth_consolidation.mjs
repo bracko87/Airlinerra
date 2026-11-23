@@ -26,8 +26,8 @@ test('No standalone Licence 6 button, price or API endpoint survives',async()=>{
  assert.doesNotMatch(api,/'FIFTH_FREEDOM'/);
 });
 test('Legacy Licence 6 application, reviewer and fee structures are retired under zero-data guard',async()=>{
- const src=await read('supabase/migrations/20261120140000_merge_fifth_freedom_into_licence2.sql');
- const retired=await read('supabase/migrations/20261120140500_retire_standalone_licence6_structures.sql');
+ const src=await read('supabase/migrations/20261120112005_merge_fifth_freedom_into_licence2.sql');
+ const retired=await read('supabase/migrations/20261120112114_retire_standalone_licence6_structures.sql');
  assert.match(src,/cron\.unschedule\('airlinerra-licence6-fifth-review-v1'\)/);
  assert.match(src,/game_fee_usd=NULL,processing_game_days=NULL/);
  assert.match(src,/WHERE permission_code='FIFTH_FREEDOM' AND enabled_in_game=false/);
@@ -37,8 +37,8 @@ test('Legacy Licence 6 application, reviewer and fee structures are retired unde
  assert.match(retired,/DROP TABLE airlinerra_game\.licence6_fifth_approvals_v1/);
 });
 test('The replacement Licence 2 classifier checks three-country home connection and existing L2 market',async()=>{
- const src=await read('supabase/migrations/20261120140000_merge_fifth_freedom_into_licence2.sql');
- const enhancement=await read('supabase/migrations/20261120141000_l2_home_connected_route_no_extra_base.sql');
+ const src=await read('supabase/migrations/20261120112005_merge_fifth_freedom_into_licence2.sql');
+ const enhancement=await read('supabase/migrations/20261120112344_l2_home_connected_route_no_extra_base.sql');
  assert.match(src,/licence2_home_connected_foreign_segment_v1/);
  assert.match(src,/licence2_foreign_route_preview_v1/);
  assert.match(src,/operator_country<>home_country/);

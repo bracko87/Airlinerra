@@ -35,7 +35,7 @@ test('MRO infrastructure and staff details remain explicitly deferred; no live i
  const spec=await read('docs/AIRLINERRA_LICENCE6_MRO_REQUIREMENTS_2026-11-20.md');
  assert.match(spec,/staff job titles, minimum numbers.*remain to be defined/i);
  assert.match(spec,/DESIGN SPECIFICATION ONLY/);
- const db=await read('supabase/migrations/20261120142500_licence6_mro_no_age_private_marketplace_policy.sql');
+ const db=await read('supabase/migrations/20261120120209_licence6_mro_no_age_private_marketplace_policy.sql');
  assert.match(db,/enabled_in_game=false/);
  assert.match(db,/future optional public service listing/);
  assert.doesNotMatch(db,/CREATE TABLE|CREATE FUNCTION|issuance_enabled=true/i);

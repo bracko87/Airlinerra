@@ -92,9 +92,9 @@ test('Licence 5 client rejects forged shipment rights and forged payment',async(
 });
 test('Five-day, single-charge, fail-closed database contracts exist',async()=>{
  const read=name=>readFile(new URL('../supabase/migrations/'+name,import.meta.url),'utf8');
- const app=await read('20261120120000_licence5_dg_atomic_application.sql');
- const eligibility=await read('20261120115500_licence5_dg_readiness.sql');
- const guarded=await read('20261120120500_licence5_dg_no_blanket_rights.sql');
+ const app=await read('20261120091417_licence5_dg_atomic_application.sql');
+ const eligibility=await read('20261120091337_licence5_dg_readiness.sql');
+ const guarded=await read('20261120091509_licence5_dg_no_blanket_rights.sql');
  assert.match(app,/fee_usd numeric NOT NULL DEFAULT 60000 CHECK\(fee_usd=60000\)/);
  assert.match(app,/CHECK\(due_game_day=submitted_game_day\+5\)/);
  assert.match(app,/cash_usd=cash_usd-60000/);

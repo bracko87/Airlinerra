@@ -122,8 +122,8 @@ test('cargo browser client refuses fabricated fees and issuance',async()=>{
 });
 test('Cargo licence migration preserves one-time fee, 3 game days and flight gating',async()=>{
  const read=name=>readFile(new URL('../supabase/migrations/'+name,import.meta.url),'utf8');
- const issue=await read('20261119211500_licence3_cargo_trusted_application_atomic_issue.sql');
- const guard=await read('20261119212500_licence3_cargo_activation_guard_and_cron.sql');
+ const issue=await read('20261119195528_licence3_cargo_trusted_application_atomic_issue.sql');
+ const guard=await read('20261119195601_licence3_cargo_activation_guard_and_cron.sql');
  assert.match(issue,/fee_usd numeric NOT NULL DEFAULT 50000 CHECK\(fee_usd=50000\)/);
  assert.match(issue,/CHECK\(due_game_day=submitted_game_day\+3\)/);
  assert.match(issue,/cash_usd=cash_usd-50000/);

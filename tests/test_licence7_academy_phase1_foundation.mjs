@@ -4,7 +4,7 @@ import {readFile} from 'node:fs/promises';
 import {LICENCE_PLAN} from '../website/licensing-planner.mjs';
 const read=path=>readFile(new URL('../'+path,import.meta.url),'utf8');
 test('Licence 7 company foundation, application and approval records are private and release locked',async()=>{
- const sql=await read('supabase/migrations/20261120150000_licence7_academy_phase1_foundation.sql');
+ const sql=await read('supabase/migrations/20261120140104_licence7_academy_phase1_foundation.sql');
  assert.match(sql,/ADD CONSTRAINT holding_subsidiaries_v1_company_kind_check/);
  assert.match(sql,/'flight_academy'/);
  assert.match(sql,/licence7_academy_release_v1/);
@@ -20,7 +20,7 @@ test('Licence 7 company foundation, application and approval records are private
  assert.match(sql,/FROM PUBLIC,anon,authenticated,service_role/);
 });
 test('Licence 7 never submits, charges, issues, or publicly sells during phase 1',async()=>{
- const sql=await read('supabase/migrations/20261120150000_licence7_academy_phase1_foundation.sql');
+ const sql=await read('supabase/migrations/20261120140104_licence7_academy_phase1_foundation.sql');
  assert.match(sql,/licence7_submit_academy_application_v1/);
  assert.match(sql,/licence7_review_due_academy_applications_v1/);
  assert.match(sql,/'status','NOT_RELEASED'/);
@@ -30,7 +30,7 @@ test('Licence 7 never submits, charges, issues, or publicly sells during phase 1
  assert.match(sql,/accepts_external_bookings boolean NOT NULL DEFAULT false CHECK\(accepts_external_bookings=false\)/);
 });
 test('Phase 1 records agreed $40k fee, zero application fee, 7 game days, one small aircraft prerequisite',async()=>{
- const sql=await read('supabase/migrations/20261120150000_licence7_academy_phase1_foundation.sql');
+ const sql=await read('supabase/migrations/20261120140104_licence7_academy_phase1_foundation.sql');
  assert.match(sql,/game_fee_usd,processing_game_days,enabled_in_game/);
  assert.match(sql,/'reference_only',40000,7,false/);
  assert.match(sql,/CHECK\(fee_on_approval_usd=40000\)/);
