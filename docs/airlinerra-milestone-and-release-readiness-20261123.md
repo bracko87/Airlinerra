@@ -145,3 +145,31 @@ not the entire original signed writer. The candidate remains
 `supabase/migration_candidates/` only; it has **not** been deployed.
 Aircraft/occurrence/capacity lock ordering and complete signed
 movement interactions require additional end-to-end approval.
+
+## Real signed-movement HMAC authorization acceptance (2026-11-23)
+
+The test `tests/sql/section9_disposable_signed_movement_hmac_acceptance.sql`
+now invokes the actual production-derived signed movement function **after**
+the review-only occurrence-row-lock candidate has been compiled into the
+disposable test database. The fixture sets up a synthetic 80-character
+secret in a disposable `vault.decrypted_secrets` view, with `pgcrypto`
+`extensions.hmac` so the function's real canonical event signing path
+executes, not a mocked HMAC procedure.
+
+The regression proves that an event ID changed after signing is rejected
+as `SECTION9_MOVEMENT_EVENT_SIGNATURE_INVALID`, while a correct
+canonical signature is accepted past the HMAC check and receives
+`blocked_unreleased_movement_engine` because the operational release
+remains intentionally disabled. Neither case records any flight movement.
+All readiness regressions and the static website build pass.
+
+Verified CI:
+https://github.com/bracko87/Airlinerra/actions/runs/45214067133
+
+**Remaining limitation:** the release gate is purposely disabled. This
+does not yet run a fully released signed movement through authoritative
+clock, aircraft availability, verified timetable, delivery position,
+movement event insertion or cancellation competition. The candidate
+must not be applied to production solely based on HMAC and source-patch
+tests; a full signed operational acceptance and lock-order review remain
+open release requirements.
