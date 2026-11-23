@@ -106,3 +106,33 @@ test('finance preparation needs signed flight fuel burn but never recognizes rev
  assert.doesNotMatch(s,/UPDATE airlinerra_game\.airlines/i);
  assert.doesNotMatch(s,/SECURITY DEFINER/i);
 });
+
+
+test('fuel preflight, signed dispatch and cancellation retain shared transaction guards',async()=>{
+ const [fuel,cancel,signed]=await Promise.all([
+  source(),
+  readFile(new URL('../server/sql/section9_disruption_decision_and_cancellation.sql',import.meta.url),'utf8'),
+  readFile(new URL('../supabase/migrations/20261113232000_section9_private_signed_operated_flight_dispatch_v1.sql',import.meta.url),'utf8')
+ ]);
+ const dispatch=fuel.slice(fuel.indexOf('CREATE OR REPLACE FUNCTION airlinerra_game.section9_auto_dispatch_due_flight_events_v1('));
+ const cancelFn=cancel.slice(cancel.indexOf('CREATE OR REPLACE FUNCTION airlinerra_game.section9_cancel_unflown_occurrence_v1('),
+  cancel.indexOf('REVOKE ALL ON FUNCTION airlinerra_game.section9_cancel_unflown_occurrence_v1('));
+ assert.match(dispatch,/pg_try_advisory_xact_lock\(583729,10041\)/);
+ assert.match(cancelFn,/pg_advisory_xact_lock\(583729,10041\)/);
+ assert.match(cancelFn,/section9_occurrence_capacity_inventory_v1 WHERE physical_flight_id=physical FOR UPDATE/);
+ assert.match(cancelFn,/section9_dated_flight_occurrences_v1 WHERE id=p_occurrence FOR UPDATE/);
+ assert.match(cancelFn,/o\.booking_status<>'open'/);
+ assert.match(cancelFn,/section9_operated_flight_movements_v1 WHERE flight_occurrence_id=physical/);
+ assert.match(dispatch,/section9_verify_game_fuel_before_departure_v1/);
+ assert.match(dispatch,/section9_record_signed_operated_flight_movement_v1/);
+ assert.match(dispatch,/section9_capture_verified_departure_fuel_v1/);
+ assert.match(dispatch,/UPDATE airlinerra_game\.section9_dated_flight_occurrences_v1\s+SET booking_status='closed' WHERE id=evt\.occurrence_id\s+AND booking_status='open'/);
+ assert.match(dispatch,/IF changed<>1 THEN RAISE EXCEPTION[\s\S]*?SECTION9_DEPARTURE_BOOKING_CLOSE_UNCONFIRMED_ROLLBACK/);
+ assert.match(signed,/SECTION9_OPERATED_EVENT_REPLAY_CONFLICT/);
+ const ixLock=dispatch.indexOf('pg_try_advisory_xact_lock(583729,10041)');
+ const ixMovement=dispatch.indexOf('section9_record_signed_operated_flight_movement_v1(',ixLock);
+ const ixFuelReceipt=dispatch.indexOf('section9_capture_verified_departure_fuel_v1(',ixMovement);
+ const ixClose=dispatch.indexOf("SET booking_status='closed' WHERE id=evt.occurrence_id",ixFuelReceipt);
+ assert.ok(ixLock>=0 && ixMovement>ixLock && ixFuelReceipt>ixMovement && ixClose>ixFuelReceipt,
+  'Dispatch must hold shared cancellation lock through signed movement, fuel receipt and conditional booking close');
+});
