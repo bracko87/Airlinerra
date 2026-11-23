@@ -480,15 +480,18 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
         report.bookingMutation!==false||report.slotMutation!==false||
         report.ledgerPosted!==false||
         report.flightLedgerReconciliationAvailable!==false||
+        report.postedFlightLedgerAttributionIndexAvailable!==true||
         report.quotedFareIsRefundAmount!==false||
         !Array.isArray(report.blockers)||!report.evidence||
         (['reservedSlotCount','flightOccurrenceCount','reservedBookingBatches',
          'reservedPassengerSeats','certificateRecords','operatedMovementCount',
           'actualFinancePreparationCount','preparedSettlementCount',
           'pendingConnectingJourneyLegCount','connectingHoldPlanItemCount',
-          'paidUpfrontReservationCount','nonReservedReservationCount'].some(k=>
+          'paidUpfrontReservationCount','nonReservedReservationCount',
+          'postedFlightFinancialCount','postedFlightLedgerMismatchCount'].some(k=>
           !Number.isSafeInteger(report.evidence[k])||report.evidence[k]<0)||
-         ['recognizedFlightRevenueUsd','recognizedReservationRevenueUsd','quotedReservedFareUsd'].some(k=>
+         ['recognizedFlightRevenueUsd','recognizedReservationRevenueUsd','quotedReservedFareUsd',
+          'postedFlightTicketIncomeUsd'].some(k=>
           typeof report.evidence[k]!=='number'||!Number.isFinite(report.evidence[k])||
           report.evidence[k]<0)))
       throw Error('Unverified schedule change assessment');
@@ -506,13 +509,17 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
       e.pendingConnectingJourneyLegCount+' pending two-leg itinerary records, '+
       e.connectingHoldPlanItemCount+' two-leg allocation items, '+
       e.paidUpfrontReservationCount+' upfront-paid reservation records, '+
-      e.nonReservedReservationCount+' other reservation states, and '+
+      e.nonReservedReservationCount+' other reservation states, '+
+      e.postedFlightFinancialCount+' posted flight finance records ('+
+      e.postedFlightLedgerMismatchCount+' ledger attribution mismatches), '+
+      e.postedFlightTicketIncomeUsd.toLocaleString('en-US',{maximumFractionDigits:2})+
+      ' USD in posted flight ticket income, and '+
       e.quotedReservedFareUsd.toLocaleString('en-US',{maximumFractionDigits:2})+
       ' USD in booked ticket quotes (not a refund amount), plus '+
       (e.recognizedFlightRevenueUsd+
        e.recognizedReservationRevenueUsd).toLocaleString('en-US',{maximumFractionDigits:2})+
        ' USD in recorded revenue fields (which may overlap) require protected reconciliation. '+
-       'The airline ledger cannot be reconciled to this individual flight from the available identifiers. No flights, tickets, airport slots or money were changed.');
+       'Completed flight postings have a ledger attribution index, but refundable passenger payments and cancellation entitlement are not yet reconciled. No flights, tickets, airport slots or money were changed.');
     }catch{
      if(allRoutes()[details.index()]?.serverScheduleId===id)
       message('operations-route-detail-save-status',
