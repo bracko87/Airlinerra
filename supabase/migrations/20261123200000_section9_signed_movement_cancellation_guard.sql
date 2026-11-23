@@ -236,30 +236,30 @@ BEGIN
    'flightActivated',false);
  END IF;
 
- SELECT anchor.airport_key,anchor.anchored_game_date,
+ SELECT delivery.airport_key,delivery.anchored_game_date,
   source.order_status,inspection.inspection_status,
   source.registration AS order_registration,
   source.configuration_id AS order_configuration,
   i.registration AS fleet_registration
  INTO anchor
- FROM airlinerra_game.section9_aircraft_delivery_position_v1 anchor
+ FROM airlinerra_game.section9_aircraft_delivery_position_v1 delivery
  JOIN airlinerra_game.aircraft_acquisition_orders_v1 source
-  ON source.order_id=anchor.acquisition_order_id
-   AND source.airline_id=anchor.airline_id
-   AND source.aircraft_inventory_id=anchor.aircraft_inventory_id
+  ON source.order_id=delivery.acquisition_order_id
+   AND source.airline_id=delivery.airline_id
+   AND source.aircraft_inventory_id=delivery.aircraft_inventory_id
  JOIN airlinerra_game.aircraft_delivery_inspections_v1 inspection
-  ON inspection.inspection_id=anchor.inspection_id
+  ON inspection.inspection_id=delivery.inspection_id
    AND inspection.order_id=source.order_id
    AND inspection.inspection_status='approved'
-   AND inspection.reviewed_at=anchor.inspection_reviewed_at
-   AND inspection.reviewer_reference=anchor.reviewer_reference
+   AND inspection.reviewed_at=delivery.inspection_reviewed_at
+   AND inspection.reviewer_reference=delivery.reviewer_reference
  JOIN airlinerra_game.airline_aircraft_inventory i
-  ON i.id=anchor.aircraft_inventory_id AND i.airline_id=anchor.airline_id
- WHERE anchor.aircraft_inventory_id=s.aircraft_inventory_id
-  AND anchor.airline_id=p_airline
-  AND anchor.anchored_game_date<=
+  ON i.id=delivery.aircraft_inventory_id AND i.airline_id=delivery.airline_id
+ WHERE delivery.aircraft_inventory_id=s.aircraft_inventory_id
+  AND delivery.airline_id=p_airline
+  AND delivery.anchored_game_date<=
    (p_event_utc AT TIME ZONE 'UTC')::date
-  AND source.delivery_home_airport_key=anchor.airport_key
+  AND source.delivery_home_airport_key=delivery.airport_key
   AND source.order_status='delivered_pending_inspection';
  IF NOT FOUND THEN
   starter:=airlinerra_game.section9_starter_origin_evidence_v1(
