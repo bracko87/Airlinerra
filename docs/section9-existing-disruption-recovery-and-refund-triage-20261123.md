@@ -74,3 +74,45 @@ and test monetary authorization separately.
 
 No live database schema, settings, balances, tickets, or flight schedules
 were modified.
+
+## Production recovery writer snapshot and isolated verification (2026-11-23)
+
+The **actual deployed function definition** was fetched read-only with
+`pg_get_functiondef` and checked in as
+`tests/sql/section9_disposable_original_connection_recovery_writer.sql`.
+This is a guarded test snapshot, not a production migration. The function
+explicitly:
+
+- Requires `current_user='postgres'`, validates its wait interval,
+  checks `connecting_recovery_enabled` and uses
+  `pg_try_advisory_xact_lock(583729,10041)`, sharing the disruption lock
+  domain with `section9_cancel_unflown_occurrence_v1`.
+- Returns a previously stored `section9_connection_recovery_receipts_v1`
+  result with `replayed:true` before attempting new passenger changes.
+- Rejects missing, non-preflight or cargo-mixed two-leg holds, and
+  validates both original flight occurrences and transfer policy.
+- Locks affected capacity rows before dated flight rows and checks ticket
+  state. If one leg has a ticket and the other does not, it fails closed.
+- Uses a replacement flight only after readiness checks. If no replacement,
+  it can release eligible unflown seats, preserving the first flown leg.
+- Returns `refundUsd:0`, `additionalChargeUsd:0` and
+  `ledgerPosted:false`. This is **passenger journey recovery**, not a
+  cash refund processing function.
+
+New disposable acceptance
+(`tests/sql/section9_disposable_original_connection_recovery_acceptance.sql`)
+installed that unchanged function and verified release-disabled behavior,
+invalid input refusal, unknown allocation refusal, existing receipt replay,
+zero refund posting and revoked browser-facing execution privileges.
+A separate two-session regression
+(`tests/sql/section9_disposable_original_recovery_disruption_mutex.sh`)
+holds the disruption advisory lock in one session and confirms recovery
+returns `connection_dispatch_busy`; after lock release it replays the
+same previously stored receipt without producing another result or money.
+
+**Scope limitation:** these tests exercise safety gates, concurrency exclusion
+and receipt replay. They do **not** certify a full successful rebooking through
+all actual flight/transfer-policy/dispatch dependencies, simultaneous
+ticket-issuer-versus-recovery races, or cancellation transaction rollback.
+Those remain next acceptance milestones. The connected production database
+was not mutated.
