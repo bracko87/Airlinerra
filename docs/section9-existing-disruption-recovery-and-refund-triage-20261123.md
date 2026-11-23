@@ -116,3 +116,43 @@ all actual flight/transfer-policy/dispatch dependencies, simultaneous
 ticket-issuer-versus-recovery races, or cancellation transaction rollback.
 Those remain next acceptance milestones. The connected production database
 was not mutated.
+
+## Complete second-leg recovery rebooking regression (2026-11-23)
+
+The unchanged, deployed `section9_recover_connecting_passengers_v1` source
+was exercised through a successful rebooking transaction on disposable
+PostgreSQL 17. The new regression creates controlled original
+first/second flight occurrences, a compatible later replacement flight,
+transfer policy, timing proof and held capacity. The tested original
+itinerary already has two-leg tickets alongside another independent itinerary.
+
+The regression tests two paths:
+
+1. A trigger deliberately rejects insertion of the replacement-flight
+   reservation. The original recovery writer raises an exception. PostgreSQL
+   rolls back all of its preceding updates: original two-leg bookings and
+   seat counts survive, replacement held capacity remains unchanged, and
+   no recovery receipt is committed.
+2. With that trigger disabled, the writer successfully returns
+   `connection_rebooked` and preserves the original first-leg booking,
+   cancels only the disrupted second-leg booking, decrements its two
+   booked seats while keeping the unrelated two passengers, and issues
+   one replacement reservation for the two disrupted passengers. A
+   single recovery receipt is stored. Repeating the same allocation
+   returns `replayed:true` without additional ticket changes.
+
+No additional fare, refund or ledger posting is created. The original
+writer's source is unchanged; its timing, transfer and operational
+dependencies are isolated fixtures, not certifications of actual
+flights or game policies.
+
+CI run with both jobs passing:
+https://github.com/bracko87/Airlinerra/actions/runs/45198144160
+
+Files:
+- `tests/sql/section9_disposable_original_recovery_rebooking_acceptance.sql`
+- `.github/workflows/airlinerra-readiness-verification.yml`
+
+**Still outstanding:** competing live ticket writer versus recovery
+(including both lock-order directions), refund/settlement authorization
+and production integration. No live database changes or deployments.
