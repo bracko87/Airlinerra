@@ -159,6 +159,62 @@ PY
   echo "PASS: independently verified private Airlinerra schema via official IPv4 session pooler."
 fi
 
+
+# Some Supabase regions have several IPv4 pooler nodes. If the user's
+# project-qualified URI targets one official pooler node, verify the alternate
+# node privately; accept it ONLY after a successful Airlinerra schema query.
+if [[ "$normalized_source_url" == *'@aws-0-eu-central-1.pooler.supabase.com:5432/'* ||
+      "$normalized_source_url" == *'@aws-1-eu-central-1.pooler.supabase.com:5432/'* ]]; then
+  alt_candidate="$(
+    python3 - <<'PY'
+from urllib.parse import urlsplit, urlunsplit
+import os
+url = os.environ["AIRLINERRA_SCHEMA_READONLY_URL"]
+parts = urlsplit(url)
+assert parts.username == "postgres.hwllkabgzaynalahvkpz"
+assert parts.port == 5432
+assert parts.hostname in (
+    "aws-0-eu-central-1.pooler.supabase.com",
+    "aws-1-eu-central-1.pooler.supabase.com"
+)
+replacement = ("aws-1-eu-central-1.pooler.supabase.com"
+               if parts.hostname.startswith("aws-0-")
+               else "aws-0-eu-central-1.pooler.supabase.com")
+print(urlunsplit((parts.scheme,
+   parts.netloc.replace(parts.hostname, replacement),
+   parts.path, parts.query, parts.fragment)))
+PY
+  )"
+  probe_tmp="$(mktemp -d)"
+  if PGCONNECT_TIMEOUT=8 PGSSLMODE=require \
+     psql "$alt_candidate" -X -v ON_ERROR_STOP=1 -Atqc "
+       SELECT (
+          current_database()='postgres'
+          AND to_regnamespace('airlinerra_game') IS NOT NULL
+          AND to_regnamespace('airlinerra') IS NOT NULL
+          AND to_regclass('airlinerra.airport_expansion_next_eligibility_phase4') IS NOT NULL
+          AND to_regprocedure('airlinerra_game.section9_auto_dispatch_due_flight_events_v1(integer)') IS NOT NULL
+       )::int;" >"$probe_tmp/answer" 2>"$probe_tmp/error"; then
+    if [[ "$(cat "$probe_tmp/answer")" == 1 ]]; then
+      normalized_source_url="$alt_candidate"
+      export AIRLINERRA_SCHEMA_READONLY_URL="$alt_candidate"
+      echo "PASS: alternate official IPv4 session pooler verified against Airlinerra schema identity."
+    fi
+  else
+    reason="other"
+    if grep -Eiq 'password authentication failed|authentication failed|invalid password' "$probe_tmp/error"; then
+      reason="authentication_rejected"
+    elif grep -Eiq 'tenant or user not found|tenant not found|user not found' "$probe_tmp/error"; then
+      reason="tenant_not_found"
+    elif grep -Eiq 'network is unreachable|connection refused|connection timed out|timeout expired' "$probe_tmp/error"; then
+      reason="network_unreachable"
+    fi
+    echo "Alternate official session pooler: $reason (credentials suppressed)." >&2
+  fi
+  rm -rf -- "$probe_tmp"
+  unset alt_candidate
+fi
+
 for command_name in pg_dump psql supabase; do
   command -v "$command_name" >/dev/null || { echo "BLOCKED: missing $command_name" >&2; exit 2; }
 done
