@@ -18,7 +18,7 @@ on:
       - 'website/dev-scripts/invited-overlay.mjs'
       - 'server/production-game-api.mjs'
       - 'website/netlify/functions/airlinerra-game.mjs'
-      - 'supabase/migrations/20261112114500_owner_scoped_player_drafts_database_only_v1.sql'
+      - 'supabase/migrations/20261112114211_owner_scoped_player_drafts_database_only_v1.sql'
       - 'tests/test_player_drafts_db_only.mjs'
       - 'tests/test_no_browser_game_state_contract.mjs'
       - '.github/workflows/player-drafts-database-only-ci.yml'

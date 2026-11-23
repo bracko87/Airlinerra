@@ -5,13 +5,13 @@ on:
     paths:
       - 'tests/sql/section9_disposable_evidence_chain_bootstrap.sql'
       - 'tests/sql/section9_disposable_fra_muc_evidence_chain_acceptance.sql'
-      - 'supabase/migrations/20261120184000_section9_completed_flight_chain_reservation_reconciliation.sql'
+      - 'supabase/migrations/20261120172142_section9_completed_flight_chain_reservation_reconciliation.sql'
       - '.github/workflows/section9-fra-muc-disposable-evidence-ci.yml'
   pull_request:
     paths:
       - 'tests/sql/section9_disposable_evidence_chain_bootstrap.sql'
       - 'tests/sql/section9_disposable_fra_muc_evidence_chain_acceptance.sql'
-      - 'supabase/migrations/20261120184000_section9_completed_flight_chain_reservation_reconciliation.sql'
+      - 'supabase/migrations/20261120172142_section9_completed_flight_chain_reservation_reconciliation.sql'
       - '.github/workflows/section9-fra-muc-disposable-evidence-ci.yml'
   workflow_dispatch:
 permissions:
@@ -60,7 +60,7 @@ jobs:
         run: |
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_evidence_chain_bootstrap.sql
-          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261120184000_section9_completed_flight_chain_reservation_reconciliation.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261120172142_section9_completed_flight_chain_reservation_reconciliation.sql
       - name: Exercise FRA-MUC evidence, reservation and replay failures
         run: |
           set -euo pipefail

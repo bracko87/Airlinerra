@@ -3,7 +3,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'supabase/migrations/20261120234000_section9_atomic_execution_finance_certification_sink_integrated.sql'
+      - 'supabase/migrations/20261120211155_section9_atomic_execution_finance_certification_sink_integrated.sql'
       - 'tests/sql/section9_disposable_execution_finance_sink_fixture.sql'
       - 'tests/sql/section9_disposable_execution_finance_sink_acceptance.sql'
       - '.github/workflows/section9-atomic-execution-finance-certs-ci.yml'
@@ -54,15 +54,15 @@ jobs:
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_source_snapshot_positive_bootstrap.sql
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_execution_finance_sink_fixture.sql
-          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261120215500_section9_execution_finance_source_preflight_readonly.sql
-          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261120224500_section9_execution_finance_source_snapshot_candidates.sql
-          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261120232000_section9_execution_finance_same_transaction_source_recheck.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261120202113_section9_execution_finance_source_preflight_readonly.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261120204252_section9_execution_finance_source_snapshot_candidates.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261120210359_section9_execution_finance_same_transaction_source_recheck.sql
       - name: Extract and install the ORIGINAL full production certification writing function
         run: |
           set -euo pipefail
           python3 - <<'PY'
           from pathlib import Path
-          src=Path('supabase/migrations/20261109195500_section9_game_licence_certification_freshness.sql').read_text()
+          src=Path('supabase/migrations/20261109140221_section9_game_licence_certification_freshness.sql').read_text()
           marker='CREATE OR REPLACE FUNCTION airlinerra_game.section9_record_verified_certification_event_v1('
           start=src.index(marker)
           end=src.index('END $f$;',start)+len('END $f$;')
@@ -77,8 +77,8 @@ jobs:
       - name: Install production fail-closed patch, then exact source recheck integration patch
         run: |
           set -euo pipefail
-          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261120211500_section9_unreleased_execution_finance_certification_fail_closed.sql
-          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261120234000_section9_atomic_execution_finance_certification_sink_integrated.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261120201142_section9_unreleased_execution_finance_certification_fail_closed.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261120211155_section9_atomic_execution_finance_certification_sink_integrated.sql
       - name: Actual production certification sink atomic-write and denied-proof acceptance
         run: |
           set -euo pipefail
