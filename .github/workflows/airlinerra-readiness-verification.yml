@@ -173,8 +173,18 @@ jobs:
             assert patched.count(before)==1, (before,patched.count(before))
             patched=patched.replace(before,after)
           assert patched.count('v_reservation_key')==4
+          # The unchanged writer checks held seats for a new issue BEFORE it
+          # checks whether this reservation was already issued. On replay,
+          # booked+h.passengers double-counts an existing two-leg ticket.
+          before='OR inv.passengers_held<flight.booked_seats+h.passengers'
+          after="""OR (inv.passengers_held<flight.booked_seats+h.passengers
+    AND NOT EXISTS(SELECT 1 FROM airlinerra_game.section9_passenger_reservation_batches_v1 prior_booking
+      WHERE prior_booking.occurrence_id=flight.id
+        AND prior_booking.reservation_key=v_reservation_key))"""
+          assert patched.count(before)==1
+          patched=patched.replace(before,after)
           Path('/tmp/section9-connecting-tickets-disambiguated-lab.sql').write_text(patched)
-          print('Original two-leg writer preserved; isolated candidate changes only reservation variable name')
+          print('Original two-leg writer preserved; isolated candidate fixes ambiguous variable and replay hold check only')
           PY
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_real_connecting_ticket_acceptance.sql
       - name: Verify isolated acceptance remained on disposable Postgres
