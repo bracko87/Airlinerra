@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {summarizeProtectedRouteReadiness} from '../website/section9-route-readiness.mjs';
 import {summarizeRecordedCertifications,CERTIFICATION_SOURCES} from '../website/section9-certification-records.mjs';
+import {summarizeOperationalEvidence} from '../website/section9-operational-evidence.mjs';
 const read=path=>readFile(new URL(path,import.meta.url),'utf8');
 
 test('readiness fails closed on absent or falsely approved server evidence',()=>{
@@ -104,4 +105,41 @@ test('authenticated route certification endpoint has read-only owner-scoped quer
  assert.match(client,/certificationStatus:/);
  assert.match(details,/summarizeRecordedCertifications/);
  assert.match(details,/certificationStatus\(/);
+});
+
+test('operational diagnostics remain read-only and display verified preflight limitations',()=>{
+ const proof={status:'read_only_operational_diagnostics',readOnly:true,
+  canActivateNormalFlight:false,flightActivated:false,
+  scheduleId:'schedule-1',scheduleVersion:2,verifiedGameDate:'2026-11-23',
+  activationChecklist:{worldClockConnected:true,airportRestrictionPreviewPassed:true,
+   aircraftRotationPreviewConflictFree:false,departureArrivalSlotRecordsPresent:false,
+   proposedCrewAssignmentsComplete:false,crewRestPreviewConflictFree:false,
+   operatorLicenceEvidenceRecorded:true,routePermissionEvidenceComplete:false,
+   crewDeferredPhase1:true},
+  activationBlockers:['AIRPORT_SLOT_CAPACITY_NOT_CERTIFIED_FOR_ACTIVATION'],
+  maintenance:{maintenanceReady:false,blockers:['MAINTENANCE_CHECK_HISTORY_INCOMPLETE']}};
+ const result=summarizeOperationalEvidence(proof);
+ assert.equal(result.rows.length,9);
+ assert.equal(result.rows[0].state,'checked');
+ assert.equal(result.rows[2].state,'blocked');
+ assert.equal(result.rows[8].state,'blocked');
+ assert.equal(result.crewDeferred,true);
+ assert.match(result.summary,/preflight diagnostics only/i);
+ assert(result.blockers.some(x=>/Airport slot capacity/i.test(x)));
+ assert.equal(summarizeOperationalEvidence({...proof,canActivateNormalFlight:true}),null);
+ assert.equal(summarizeOperationalEvidence({...proof,readOnly:false}),null);
+ assert.equal(summarizeOperationalEvidence({...proof,flightActivated:true}),null);
+});
+test('operational diagnostics endpoint requires ownership and cannot mutate flight records',async()=>{
+ const server=await read('../server/flight-schedule-service.mjs');
+ const client=await read('../website/flight-schedule-client.mjs');
+ const details=await read('../website/section9-route-details.mjs');
+ assert.match(server,/body\.action==='operational-evidence'/);
+ assert.match(server,/a\.owner_player_id=\$1::uuid/);
+ assert.match(server,/section9_owned_crew_licence_preflight_v1/);
+ assert.match(server,/SCHEDULE_SQL\.maintenanceReadiness/);
+ assert.match(server,/SCHEDULE_SQL\.operationsPreview/);
+ assert.match(client,/operationalEvidence:/);
+ assert.match(details,/summarizeOperationalEvidence/);
+ assert.match(details,/server\.scheduler\.operationalEvidence\(/);
 });
