@@ -4,6 +4,7 @@ import {createSection9RotationReview} from './section9-rotation-review.mjs';
 import {createSection9RouteFinancePanel} from './section9-route-finance-panel.mjs';
 import {renderRouteMap,routeDistanceKm} from './route-map.mjs';
 import {planningClockEstimate} from './route-planning-times.mjs';
+import {summarizeProtectedRouteReadiness} from './section9-route-readiness.mjs';
 const MONTHS=['January','February','March','April','May','June','July','August',
  'September','October','November','December'];
 const DAYS=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
@@ -83,6 +84,80 @@ export function createSection9RouteDetails({doc,host,getRoutes,getServer}={}){
   if(!route.operationallyVerified)hint(doc,overview,'Your route is saved. Ticket sales and flight operation start only after the aircraft rotation and required approvals are confirmed.');
   top.append(mapPanel,overview);
   host.append(top);
+
+  // Read-only source check. It does not issue certificates or activate flights.
+  // The old Section 5 endpoint is never used to judge an active schedule.
+  const readiness=doc.createElement('section');
+  readiness.className='route-detail-section route-detail-readiness';
+  readiness.append(text(doc,'span','FLIGHT READINESS','panel-kicker'),
+   text(doc,'h4','What is still needed before flying?'));
+  const readinessState=hint(doc,readiness,'Checking saved schedule state...');
+  const readinessChecks=doc.createElement('div');
+  readinessChecks.className='route-readiness-checks';
+  readiness.append(readinessChecks);
+  const readinessActions=doc.createElement('div');
+  readinessActions.className='workspace-actions route-readiness-actions';
+  readiness.append(readinessActions);
+  const addNavigation=(page,label)=>{
+   const button=doc.createElement('button');
+   button.type='button';button.className='secondary';
+   button.dataset.workspaceGo=page;button.textContent=label;
+   readinessActions.append(button);
+  };
+  if(!route.serverScheduleId){
+   readinessState.textContent=route.serverPlanningId?
+    'This is a saved planning route, not a registered flight schedule. Use Create a route to run current operational checks.':
+    'This route has not been registered with the airline server. No flight is scheduled or bookable.';
+   addNavigation('routes','Open Create a route');
+  }else if(route.operationallyVerified){
+   readinessState.textContent='The server identifies this timetable as active. This alone does not confirm a departure, booking or financial settlement; see verified bookings below.';
+   addNavigation('schedule','View confirmed schedule');
+  }else if(!server.connected||!server.airline?.id||
+   typeof server.scheduler?.activationCheck!=='function'){
+   readinessState.textContent='The verified airline readiness service is not connected. No flight activation is confirmed.';
+   addNavigation('route-list','Return to My routes');
+  }else{
+   const checkButton=doc.createElement('button');
+   checkButton.type='button';checkButton.className='secondary';
+   checkButton.textContent='Refresh readiness';
+   readinessActions.append(checkButton);
+   let requestNumber=0;
+   const refreshReadiness=async()=>{
+    const request=++requestNumber;
+    checkButton.disabled=true;
+    readinessState.textContent='Checking this saved flight with the airline server...';
+    readinessChecks.replaceChildren();
+    try{
+     const answer=await server.scheduler.activationCheck({
+      airlineId:server.airline.id,scheduleId:route.serverScheduleId
+     });
+     if(mySerial!==serial||request!==requestNumber)return;
+     const report=summarizeProtectedRouteReadiness(answer);
+     readinessState.textContent=report.summary;
+     readinessChecks.append(text(doc,'p',report.title,'route-readiness-title'));
+     for(const check of report.checks){
+      const line=doc.createElement('div');
+      line.className='detail-row route-readiness-check';
+      line.dataset.checkState=check.state;
+      line.append(text(doc,'span',check.label),text(doc,'strong',
+       check.state==='checked'?'Checked':check.state==='blocked'?'Blocked':'Not verified'));
+      readinessChecks.append(line);
+      hint(doc,readinessChecks,check.explanation);
+     }
+     if(report.note)hint(doc,readinessChecks,report.note);
+     readinessActions.querySelectorAll('[data-workspace-go]').forEach(button=>button.remove());
+     for(const action of report.actions)addNavigation(action.page,action.label);
+    }catch{
+     if(mySerial===serial&&request===requestNumber)
+      readinessState.textContent='Readiness is temporarily unavailable. No operational approval was confirmed.';
+    }finally{
+     if(mySerial===serial&&request===requestNumber)checkButton.disabled=false;
+    }
+   };
+   checkButton.addEventListener('click',()=>{void refreshReadiness();});
+   void refreshReadiness();
+  }
+  host.append(readiness);
 
   const schedulePanel=doc.createElement('section');
   schedulePanel.className='route-detail-section route-detail-schedule-panel';
