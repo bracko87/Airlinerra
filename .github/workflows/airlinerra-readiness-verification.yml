@@ -259,6 +259,10 @@ jobs:
         run: |
           set -euo pipefail
           bash tests/sql/section9_disposable_real_final_post_vs_cancellation_race.sh
+      - name: Reproduce signed-movement cancellation stale-read gap and proposed row-lock ordering
+        run: |
+          set -euo pipefail
+          bash tests/sql/section9_disposable_movement_vs_cancellation_gap.sh
       - name: Verify isolated acceptance remained on disposable Postgres
         run: |
           set -euo pipefail
