@@ -207,6 +207,12 @@ jobs:
           test "$PGDATABASE" = 'airlinerra_disposable'
           test "$PGUSER" = 'postgres'
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_recovery_entitlement_journal.sql
+      - name: Test original private connecting-passenger recovery guards and receipt replay
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = '127.0.0.1'
+          test "$PGDATABASE" = 'airlinerra_disposable'
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_original_connection_recovery_acceptance.sql
       - name: Verify isolated acceptance remained on disposable Postgres
         run: |
           set -euo pipefail
