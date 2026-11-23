@@ -234,7 +234,7 @@ test('server persists legroom and rejects tampered high-pitch drafts without mod
  assert.equal(over.status,409);assert.equal(writeArgs,null);
 });
 test('40 options and all 271 default patterns are represented in migration',async()=>{
- const sql=await readFile(new URL('../supabase/migrations/20261110184500_airlinerra_40_real_reference_seats_and_model_geometry_v1.sql',import.meta.url),'utf8');
+ const sql=await readFile(new URL('../supabase/migrations/20261110172004_airlinerra_40_real_reference_seats_and_model_geometry_v1.sql',import.meta.url),'utf8');
  assert.match(sql,/cabin_model_row_geometry_v1/);
  assert.match(sql,/INSERT INTO airlinerra_game.cabin_seat_types_v1/);
  assert.match(sql,/ON CONFLICT\(configuration_id\) DO NOTHING/);
@@ -478,7 +478,7 @@ test('non-owner cabin viewing never provides refit, acquisition or cabin-save ac
 });
 
 test('used-aircraft cabin snapshot is attached to the airframe not the seller label',async()=>{
- const migration=await readFile(new URL('../supabase/migrations/20261113230000_airlinerra_used_aircraft_cabin_snapshots_v1.sql',import.meta.url),'utf8');
+ const migration=await readFile(new URL('../supabase/migrations/20261113122857_airlinerra_used_aircraft_cabin_snapshots_v1.sql',import.meta.url),'utf8');
  const followup=await readFile(new URL('../supabase/migrations/20261113230100_airlinerra_allow_previous_owner_installed_cabin_origin.sql',import.meta.url),'utf8');
  assert.match(migration,/NEW\.source_inventory_id/);
  assert.match(migration,/NEW\.cabin_snapshot=jsonb_build_object/);
@@ -514,7 +514,7 @@ test('factory v2 A330 model mixes four full rows and fills nearly all game cabin
 
 test('factory default migration contains complete row audit and preserves owned/customized cabin',async()=>{
  const migration=await readFile(new URL(
-  '../supabase/migrations/20261113233000_airlinerra_factory_cabin_row_complete_defaults_v2.sql',import.meta.url),'utf8');
+  '../supabase/migrations/20261113125153_airlinerra_factory_cabin_row_complete_defaults_v2.sql',import.meta.url),'utf8');
  const manager=await readFile(new URL('../website/cabin-configuration-manager.mjs',import.meta.url),'utf8');
  const service=await readFile(new URL('../server/fleet-acquisition-service.mjs',import.meta.url),'utf8');
  const library=await readFile(new URL('../server/aircraft-library-query.mjs',import.meta.url),'utf8');
