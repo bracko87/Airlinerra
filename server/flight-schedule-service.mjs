@@ -354,7 +354,11 @@ SELECT * FROM events ORDER BY "startUtc",id`,
  (SELECT coalesce(sum(b.recognized_revenue_usd),0)::float8
   FROM airlinerra_game.section9_passenger_reservation_batches_v1 b
   JOIN airlinerra_game.section9_dated_flight_occurrences_v1 o ON o.id=b.occurrence_id
-  WHERE o.world_id=1 AND o.airline_id=s.airline_id AND o.schedule_id=s.id) AS "recognizedReservationRevenueUsd"
+  WHERE o.world_id=1 AND o.airline_id=s.airline_id AND o.schedule_id=s.id) AS "recognizedReservationRevenueUsd",
+ (SELECT count(*)::int FROM airlinerra_game.section9_actual_ticket_finance_preparations_v1 p
+  WHERE p.schedule_id=s.id AND p.airline_id=s.airline_id) AS "actualFinancePreparationCount",
+ (SELECT count(*)::int FROM airlinerra_game.section9_prepared_occurrence_settlements_v1 p
+  WHERE p.schedule_id=s.id AND p.airline_id=s.airline_id) AS "preparedSettlementCount"
  FROM airlinerra_game.airline_flight_schedule_drafts_v1 s
  JOIN airlinerra_game.airlines a ON a.id=s.airline_id
  JOIN airlinerra_game.world_memberships w ON w.world_id=a.world_id AND w.player_id=a.owner_player_id AND w.state='active'
@@ -1307,7 +1311,7 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
     if(result.rowCount!==1||!row)return respond(404,{error:'Owned schedule not found'});
     const fields=['reservedSlotCount','flightOccurrenceCount','currentVersionOccurrenceCount',
      'reservedBookingBatches','reservedPassengerSeats','certificateRecords',
-     'operatedMovementCount'];
+     'operatedMovementCount','actualFinancePreparationCount','preparedSettlementCount'];
     if(row.scheduleId!==body.scheduleId||
        !Number.isSafeInteger(row.scheduleVersion)||row.scheduleVersion<1||
        !['draft','active'].includes(row.scheduleStatus)||
@@ -1325,6 +1329,8 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
       ['PASSENGER_RESERVATIONS_REQUIRE_PROTECTION']:[]),
      ...(row.certificateRecords>0?['CERTIFICATES_REQUIRE_VERSION_RECONCILIATION']:[]),
      ...(row.operatedMovementCount>0?['OPERATED_MOVEMENTS_MUST_BE_PRESERVED']:[]),
+     ...(row.actualFinancePreparationCount>0||row.preparedSettlementCount>0?
+      ['PREPARED_SETTLEMENTS_REQUIRE_ACCOUNTING_RECONCILIATION']:[]),
      ...(row.recognizedFlightRevenueUsd>0||row.recognizedReservationRevenueUsd>0?
       ['RECOGNIZED_REVENUE_REQUIRES_ACCOUNTING_RECONCILIATION']:[])
     ];
