@@ -24,6 +24,6 @@ test('calendar links send confirmed schedule ID, not only the flight number',asy
  assert.match(workspace,/scheduledFlight\.getAttribute\('data-schedule-id'\)/);
  assert.match(workspace,/detail:\{flightNumber,\.\.\.\(scheduleId\?\{scheduleId\}:\{\}\)\}/);
  assert.match(routes,/x\.serverScheduleId===scheduleId/);
- assert.match(routes,/no matching registered route/);
+ assert.match(routes,/has no matching registered route/);
  assert.match(routes,/Refresh My Routes before retrying/);
 });
