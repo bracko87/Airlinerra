@@ -278,6 +278,25 @@ pg_dump --schema-only --no-owner --no-tablespaces \
     exit 2
   }
 [[ -s "$tmp/schema-only.sql" ]] || { echo "BLOCKED: empty schema dump." >&2; exit 2; }
+# Game relations reference application metadata tables in public, notably
+# public.airlinerra_game_worlds. Restore exactly these three application
+# tables, not the pre-existing Supabase-owned public schema itself.
+pg_dump --schema-only --no-owner --no-tablespaces --no-privileges \
+  --table=public.airlinerra_game_worlds \
+  --table=public.airlinerra_player_profiles \
+  --table=public.airlinerra_site_status \
+  --file="$tmp/airlinerra-public-tables.sql" "$source_url" \
+  2>"$tmp/public-dump.stderr" || {
+    echo "BLOCKED: source public application-table schema dump failed." >&2
+    exit 2
+  }
+[[ -s "$tmp/airlinerra-public-tables.sql" ]] || {
+  echo "BLOCKED: public app-table schema snapshot was empty." >&2; exit 2;
+}
+# Public application table definitions must precede private FK constraints.
+cat "$tmp/airlinerra-public-tables.sql" "$tmp/schema-only.sql" \
+  >"$tmp/ordered-schema.sql"
+mv "$tmp/ordered-schema.sql" "$tmp/schema-only.sql"
 echo "Private schema captured (bytes only): $(wc -c < "$tmp/schema-only.sql")"
 echo "Schema SHA-256: $(sha256sum "$tmp/schema-only.sql" | cut -d' ' -f1)"
 
