@@ -2666,9 +2666,11 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   const scheduledFlight=event.target.closest('[data-schedule-flight]');
   if(scheduledFlight){
    const flightNumber=scheduledFlight.getAttribute('data-schedule-flight');
-   if(/^[A-Z0-9]{2}[0-9]{1,4}$/.test(flightNumber||'')){
+   const scheduleId=scheduledFlight.getAttribute('data-schedule-id');
+   if(/^[A-Z0-9]{2}[0-9]{1,4}$/.test(flightNumber||'')&&
+    (!scheduleId||/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(scheduleId))){
     doc.dispatchEvent(new CustomEvent('airlinerra:schedule-open-flight',{
-     detail:{flightNumber}
+     detail:{flightNumber,...(scheduleId?{scheduleId}:{})}
     }));
    }
    return;
