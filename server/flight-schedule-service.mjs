@@ -1323,6 +1323,11 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
     const blockers=[
      ...(row.scheduleStatus==='active'||row.operationallyVerified?
       ['ACTIVE_SCHEDULE_REQUIRES_TRANSACTIONAL_RELEASE']:[]),
+     // Audited 2026-11-23: real passenger writers lock capacity/occurrence
+     // rows without an explicit shared schedule-row lock. A synthetic lab
+     // that uses schedule-first locking does not prove cancellation safe.
+     ...(row.scheduleStatus==='active'||row.operationallyVerified?
+      ['BOOKING_CANCELLATION_LOCK_PROTOCOL_UNVERIFIED']:[]),
      ...(row.reservedSlotCount>0?['AIRPORT_SLOTS_REQUIRE_ATOMIC_RELEASE']:[]),
      ...(row.flightOccurrenceCount>0?['FLIGHT_OCCURRENCES_REQUIRE_RECONCILIATION']:[]),
      ...(row.reservedBookingBatches>0||row.reservedPassengerSeats>0?
@@ -1341,7 +1346,8 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
      evidence:{...Object.fromEntries(fields.map(field=>[field,row[field]])),
       recognizedFlightRevenueUsd:row.recognizedFlightRevenueUsd,
       recognizedReservationRevenueUsd:row.recognizedReservationRevenueUsd},
-     blockers,canCancelOperationalFlight:false,canRescheduleOperationalFlight:false,
+     blockers,bookingWriterLockProtocolVerified:false,
+     canCancelOperationalFlight:false,canRescheduleOperationalFlight:false,
      bookingMutation:false,slotMutation:false,ledgerPosted:false
     });
    }
