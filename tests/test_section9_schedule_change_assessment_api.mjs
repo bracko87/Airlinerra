@@ -47,6 +47,8 @@ test('active flights always remain locked even with zero bookings',async()=>{
  assert.equal(v.status,'schedule_change_assessment_read_only');
  assert.equal(v.readOnly,true);
  assert.equal(v.canCancelOperationalFlight,false);
+ assert.equal(v.bookingWriterLockProtocolVerified,false);
+ assert.ok(v.blockers.includes('BOOKING_CANCELLATION_LOCK_PROTOCOL_UNVERIFIED'));
  assert.equal(v.canRescheduleOperationalFlight,false);
  assert.equal(v.bookingMutation,false);
  assert.equal(v.slotMutation,false);
@@ -94,4 +96,18 @@ test('a schedule with a past movement remains non-cancellable even without futur
  const result=await r.json();
  assert.equal(result.canCancelOperationalFlight,false);
  assert.ok(result.blockers.includes('OPERATED_MOVEMENTS_MUST_BE_PRESERVED'));
+});
+
+test('active schedule cancellation stays disabled even if all other blockers are absent',async()=>{
+ const row={...defaultEvidence(),reservedSlotCount:0,flightOccurrenceCount:0,
+  currentVersionOccurrenceCount:0,reservedBookingBatches:0,reservedPassengerSeats:0,
+  certificateRecords:0,operatedMovementCount:0,actualFinancePreparationCount:0,
+  preparedSettlementCount:0,recognizedFlightRevenueUsd:0,recognizedReservationRevenueUsd:0};
+ const f=fixture({row}),reply=await f.handler(request());
+ assert.equal(reply.status,200);
+ const value=await reply.json();
+ assert.equal(value.bookingWriterLockProtocolVerified,false);
+ assert.equal(value.canCancelOperationalFlight,false);
+ assert.equal(value.canRescheduleOperationalFlight,false);
+ assert.ok(value.blockers.includes('BOOKING_CANCELLATION_LOCK_PROTOCOL_UNVERIFIED'));
 });
