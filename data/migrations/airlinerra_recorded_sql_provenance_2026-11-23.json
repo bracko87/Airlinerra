@@ -1,0 +1,1213 @@
+{
+  "source": "Airlinerra database migration-history statement[1] SHA1 Git blob equivalence, read-only audited 2026-11-23",
+  "boundary": "Proves exact content equality for these files only. No SQL from production is embedded. 17 same-name content differences and 142 unmatched names remain excluded.",
+  "count": 201,
+  "entries": [
+    {
+      "historical": "20261107234000_section6_stand_based_airport_capacity.sql",
+      "verified": "20261107204530_section6_stand_based_airport_capacity.sql",
+      "blob": "28266fa3efdf3d4b8beeb0b6be280bdfddb09597",
+      "recorded_version": "20261107204530"
+    },
+    {
+      "historical": "20261108143500_section9_market_foundation.sql",
+      "verified": "20261108143927_section9_market_foundation.sql",
+      "blob": "f3304625a651bd1a81ccd8b22ffa87420731dabf",
+      "recorded_version": "20261108143927"
+    },
+    {
+      "historical": "20261108144500_section9_connection_discovery.sql",
+      "verified": "20261108144312_section9_connection_discovery.sql",
+      "blob": "ecca1c5ad372d11cf80c4dc9462633a2c0b9a198",
+      "recorded_version": "20261108144312"
+    },
+    {
+      "historical": "20261108150000_section9_interline_partner_indexes.sql",
+      "verified": "20261108150042_section9_interline_partner_indexes.sql",
+      "blob": "dee9c57d2f2e6ed4a0a4a4da3c0ea77ca7b7f339",
+      "recorded_version": "20261108150042"
+    },
+    {
+      "historical": "20261108170000_section9_commercial_plans_and_partnership_actions.sql",
+      "verified": "20261108163255_section9_commercial_plans_and_partnership_actions.sql",
+      "blob": "b5968efe53cd119cf56c34f4edad72274b1700f8",
+      "recorded_version": "20261108163255"
+    },
+    {
+      "historical": "20261108172000_section9_verified_flight_and_market_batch.sql",
+      "verified": "20261108164535_section9_verified_flight_and_market_batch.sql",
+      "blob": "e369f71c812a48c9a5044a742cf3c2650469ab89",
+      "recorded_version": "20261108164535"
+    },
+    {
+      "historical": "20261108174000_section9_verified_capacity_airline_index.sql",
+      "verified": "20261108165646_section9_verified_capacity_airline_index.sql",
+      "blob": "9913a21dd2aba379186f3101a5f6286d7dc9ce53",
+      "recorded_version": "20261108165646"
+    },
+    {
+      "historical": "20261108203000_section9_durable_forecast_queue.sql",
+      "verified": "20261108192024_section9_durable_forecast_queue.sql",
+      "blob": "153b8635a91c57a8cf9342e76bb7f98af82f0a3f",
+      "recorded_version": "20261108192024"
+    },
+    {
+      "historical": "20261108205000_section9_retry_expiry_alias_live_fix.sql",
+      "verified": "20261108192539_section9_retry_expiry_alias_live_fix.sql",
+      "blob": "2047d790392d125fc04f00d68da7969bd6c35e63",
+      "recorded_version": "20261108192539"
+    },
+    {
+      "historical": "20261108205500_section9_verified_simultaneous_payload.sql",
+      "verified": "20261108192730_section9_verified_simultaneous_payload.sql",
+      "blob": "7757e5ff654eeffc05df0144a4ac9a3c42a23142",
+      "recorded_version": "20261108192730"
+    },
+    {
+      "historical": "20261108210500_section9_occurrence_keyset_paging.sql",
+      "verified": "20261108195043_section9_occurrence_keyset_paging.sql",
+      "blob": "d9156d5232a7f466d8d5d415041dc5063640fd4e",
+      "recorded_version": "20261108195043"
+    },
+    {
+      "historical": "20261108213000_section9_completed_forecast_chunk_reader.sql",
+      "verified": "20261108195721_section9_completed_forecast_chunk_reader.sql",
+      "blob": "ef80c6f63b3cd9c4356526ce59b4fd8c0d079962",
+      "recorded_version": "20261108195721"
+    },
+    {
+      "historical": "20261108214500_section9_completed_flight_contributions.sql",
+      "verified": "20261108200744_section9_completed_flight_contributions.sql",
+      "blob": "200c84ade53194da4eb2926b9bc3bee7705d0fa1",
+      "recorded_version": "20261108200744"
+    },
+    {
+      "historical": "20261108220000_section9_atomic_settlement_preparation.sql",
+      "verified": "20261108201050_section9_atomic_settlement_preparation.sql",
+      "blob": "ea697537d6c77679e56206b9d5eb78ebdb8f0672",
+      "recorded_version": "20261108201050"
+    },
+    {
+      "historical": "20261108222000_section9_prepared_settlement_schedule_fk_index.sql",
+      "verified": "20261108201557_section9_prepared_settlement_schedule_fk_index.sql",
+      "blob": "eeb1c2b8098c493a6e8ea10db5da14c1691418f4",
+      "recorded_version": "20261108201557"
+    },
+    {
+      "historical": "20261108223000_section9_aircraft_rotation_preflight.sql",
+      "verified": "20261108202454_section9_aircraft_rotation_preflight.sql",
+      "blob": "afa65a3fa094192bd8098961418acc6545490ea5",
+      "recorded_version": "20261108202454"
+    },
+    {
+      "historical": "20261108225000_section9_rotation_schedule_indexes.sql",
+      "verified": "20261108202955_section9_rotation_schedule_indexes.sql",
+      "blob": "d44215aa9050c00785f1c29e045f12089e7421a1",
+      "recorded_version": "20261108202955"
+    },
+    {
+      "historical": "20261108231500_section9_atomic_itinerary_capacity_holds.sql",
+      "verified": "20261108211534_section9_atomic_itinerary_capacity_holds.sql",
+      "blob": "bbb0c607277bbe66179716e1c2667ec9cf9c1eb7",
+      "recorded_version": "20261108211534"
+    },
+    {
+      "historical": "20261108234500_section9_durable_preflight_hold_batches.sql",
+      "verified": "20261108214048_section9_durable_preflight_hold_batches.sql",
+      "blob": "9f85fcb3a61796947858d8d15426a058c4b9468c",
+      "recorded_version": "20261108214048"
+    },
+    {
+      "historical": "20261108235000_section9_exclusive_market_windows.sql",
+      "verified": "20261108214433_section9_exclusive_market_windows.sql",
+      "blob": "60295370be2b82096e7b96c4c476a8909637ab8b",
+      "recorded_version": "20261108214433"
+    },
+    {
+      "historical": "20261109090000_section9_operational_evidence_preflight.sql",
+      "verified": "20261109090009_section9_operational_evidence_preflight.sql",
+      "blob": "5adaf2adfe23e7ff28b13a0b3bd8abf8f17affd8",
+      "recorded_version": "20261109090009"
+    },
+    {
+      "historical": "20261109100000_section9_private_crew_and_licence_registry.sql",
+      "verified": "20261109092302_section9_private_crew_and_licence_registry.sql",
+      "blob": "e9e1cad1da78cc51555a97eae18c430583a38078",
+      "recorded_version": "20261109092302"
+    },
+    {
+      "historical": "20261109101500_section9_crew_rights_readiness.sql",
+      "verified": "20261109092305_section9_crew_rights_readiness.sql",
+      "blob": "b5390fe142e05ba7cd23dc2c56497f899b29a799",
+      "recorded_version": "20261109092305"
+    },
+    {
+      "historical": "20261109104000_section9_crew_qualification_fk_index.sql",
+      "verified": "20261109092656_section9_crew_qualification_fk_index.sql",
+      "blob": "86913c62347eb91b973d8fd9e00ecc79f8ffad4d",
+      "recorded_version": "20261109092656"
+    },
+    {
+      "historical": "20261109111500_section9_game_crew_contracts.sql",
+      "verified": "20261109094452_section9_game_crew_contracts.sql",
+      "blob": "416f200d800f1e3b167b4827594993f3b4b7d18c",
+      "recorded_version": "20261109094452"
+    },
+    {
+      "historical": "20261109112500_section9_clock_gated_crew_salary.sql",
+      "verified": "20261109094454_section9_clock_gated_crew_salary.sql",
+      "blob": "834c5ca55c32e9418d4bb29f3ef20daee0ff5c46",
+      "recorded_version": "20261109094454"
+    },
+    {
+      "historical": "20261109113500_section9_game_crew_rest_preflight.sql",
+      "verified": "20261109094457_section9_game_crew_rest_preflight.sql",
+      "blob": "61ccc9f83b46eba5d423bddfb6276aa5d1503931",
+      "recorded_version": "20261109094457"
+    },
+    {
+      "historical": "20261109125000_section9_signed_game_clock_tick_ingress.sql",
+      "verified": "20261109100740_section9_signed_game_clock_tick_ingress.sql",
+      "blob": "c29ecb9e0cfea4ffdf4f4e67c9952f9d64e878fa",
+      "recorded_version": "20261109100740"
+    },
+    {
+      "historical": "20261109133000_section9_clock_producer_schedule.sql",
+      "verified": "20261109102236_section9_clock_producer_schedule.sql",
+      "blob": "527950736dd3a4cc4ee062286f22222e6ee19392",
+      "recorded_version": "20261109102236"
+    },
+    {
+      "historical": "20261109114500_section9_verified_delivery_position.sql",
+      "verified": "20261109104448_section9_verified_delivery_position.sql",
+      "blob": "c57d2426172b7461f786c25ea911b4fa7cdddba0",
+      "recorded_version": "20261109104448"
+    },
+    {
+      "historical": "20261109115000_section9_aircraft_position_readiness.sql",
+      "verified": "20261109104451_section9_aircraft_position_readiness.sql",
+      "blob": "8b4efdd6fc90954239342c2107e280c47b633cc4",
+      "recorded_version": "20261109104451"
+    },
+    {
+      "historical": "20261109115500_section9_delivery_position_airport_fk_idx.sql",
+      "verified": "20261109104915_section9_delivery_position_airport_fk_idx.sql",
+      "blob": "1a8c6cb5a7fc567e5e4a5eb202637ecd4f5cf110",
+      "recorded_version": "20261109104915"
+    },
+    {
+      "historical": "20261109160000_section9_operated_aircraft_movement_schema.sql",
+      "verified": "20261109111043_section9_operated_aircraft_movement_schema.sql",
+      "blob": "7613892329bdf0df72d18624e735e6fded5fda40",
+      "recorded_version": "20261109111043"
+    },
+    {
+      "historical": "20261109161500_section9_operated_flight_movement_ingest.sql",
+      "verified": "20261109111046_section9_operated_flight_movement_ingest.sql",
+      "blob": "85ca0dfec9b68770204b342e866f514b765f0538",
+      "recorded_version": "20261109111046"
+    },
+    {
+      "historical": "20261109162000_section9_aircraft_movement_readiness.sql",
+      "verified": "20261109111048_section9_aircraft_movement_readiness.sql",
+      "blob": "125b1ebb27ce8958635b6065a4407cbbdcbe6096",
+      "recorded_version": "20261109111048"
+    },
+    {
+      "historical": "20261109162500_section9_operated_movement_operations_preview.sql",
+      "verified": "20261109111051_section9_operated_movement_operations_preview.sql",
+      "blob": "40ae4cb3b963d53007669504f033c7d4ef040721",
+      "recorded_version": "20261109111051"
+    },
+    {
+      "historical": "20261109170000_section9_commercial_activation_preflight.sql",
+      "verified": "20261109113059_section9_commercial_activation_preflight.sql",
+      "blob": "e50d3ef3b5df6f4028c35bcfe6ae0b13304a6f43",
+      "recorded_version": "20261109113059"
+    },
+    {
+      "historical": "20261109173000_section9_operated_day_candidates.sql",
+      "verified": "20261109114805_section9_operated_day_candidates.sql",
+      "blob": "ff7d5e15484ff4c5c0bae35e12279ebd797b2a7b",
+      "recorded_version": "20261109114805"
+    },
+    {
+      "historical": "20261109182000_section9_durable_aircraft_operation_jobs.sql",
+      "verified": "20261109123023_section9_durable_aircraft_operation_jobs.sql",
+      "blob": "629d55e9ffb5a94fc1bb08320e8669156cff7529",
+      "recorded_version": "20261109123023"
+    },
+    {
+      "historical": "20261109184500_section9_activation_certification_preparation.sql",
+      "verified": "20261109124734_section9_activation_certification_preparation.sql",
+      "blob": "69ddfa21f1237972ad0ff8952392f3f52da14099",
+      "recorded_version": "20261109124734"
+    },
+    {
+      "historical": "20261109190500_section9_signed_certification_events.sql",
+      "verified": "20261109125816_section9_signed_certification_events.sql",
+      "blob": "5e2b62f6348a491423a8e502d2d78915c174fbc9",
+      "recorded_version": "20261109125816"
+    },
+    {
+      "historical": "20261109191000_section9_activation_requires_signed_proof.sql",
+      "verified": "20261109125837_section9_activation_requires_signed_proof.sql",
+      "blob": "19ff97fd8e2eecc0e205e46a2cac164f4d8153f6",
+      "recorded_version": "20261109125837"
+    },
+    {
+      "historical": "20261109191200_section9_certification_alias_fix.sql",
+      "verified": "20261109130135_section9_certification_alias_fix.sql",
+      "blob": "bbf7d137ab8eb174d91965c42d4986a150a0d25b",
+      "recorded_version": "20261109130135"
+    },
+    {
+      "historical": "20261109192500_section9_game_slot_authority_verification.sql",
+      "verified": "20261109130727_section9_game_slot_authority_verification.sql",
+      "blob": "fffa2a1471d34e576e3dc69923943a0318aab731",
+      "recorded_version": "20261109130727"
+    },
+    {
+      "historical": "20261109193000_section9_slot_certification_freshness_gate.sql",
+      "verified": "20261109130810_section9_slot_certification_freshness_gate.sql",
+      "blob": "f8f836427a77aad613f22276d71dfb6ca8a80767",
+      "recorded_version": "20261109130810"
+    },
+    {
+      "historical": "20261109195000_section9_game_licence_traffic_rights_sources.sql",
+      "verified": "20261109140138_section9_game_licence_traffic_rights_sources.sql",
+      "blob": "5b0fe48aaac9399680467a101c722456fb099719",
+      "recorded_version": "20261109140138"
+    },
+    {
+      "historical": "20261109195500_section9_game_licence_certification_freshness.sql",
+      "verified": "20261109140221_section9_game_licence_certification_freshness.sql",
+      "blob": "21df0347052041fe197d3ae9d4e29f531e874a17",
+      "recorded_version": "20261109140221"
+    },
+    {
+      "historical": "20261109200000_section9_activation_game_permissions_recheck.sql",
+      "verified": "20261109140351_section9_activation_game_permissions_recheck.sql",
+      "blob": "ac8f46ed24f5b32dea57837de3bc0f9093e543a6",
+      "recorded_version": "20261109140351"
+    },
+    {
+      "historical": "20261109195100_section9_game_licence_country_alias_fix.sql",
+      "verified": "20261109140535_section9_game_licence_country_alias_fix.sql",
+      "blob": "0f2bf6dd3e4ebbd8599f75a7ee905183de3d17e1",
+      "recorded_version": "20261109140535"
+    },
+    {
+      "historical": "20261109202500_section9_game_permission_application_foundation.sql",
+      "verified": "20261109143232_section9_game_permission_application_foundation.sql",
+      "blob": "1b200e91e031428d25cbc4057279aea386745f3d",
+      "recorded_version": "20261109143232"
+    },
+    {
+      "historical": "20261109203000_section9_game_permission_settlement_and_expiry.sql",
+      "verified": "20261109143402_section9_game_permission_settlement_and_expiry.sql",
+      "blob": "6a30bed33ad29138b4634d820f5d84a30f4e7fc5",
+      "recorded_version": "20261109143402"
+    },
+    {
+      "historical": "20261109203500_section9_game_permission_evidence_provenance.sql",
+      "verified": "20261109143451_section9_game_permission_evidence_provenance.sql",
+      "blob": "82cce1e961e982232f0d2871c2f41862144354fd",
+      "recorded_version": "20261109143451"
+    },
+    {
+      "historical": "20261109203100_section9_permission_review_alias_fix.sql",
+      "verified": "20261109143635_section9_permission_review_alias_fix.sql",
+      "blob": "b2eb0d6878291034b907aa3fabf36f3a886f7e5e",
+      "recorded_version": "20261109143635"
+    },
+    {
+      "historical": "20261109211500_world1_sections1_to7_game_data_acceptance.sql",
+      "verified": "20261109154637_world1_sections1_to7_game_data_acceptance.sql",
+      "blob": "c99506a0f0cd1034353d681e586081269c712817",
+      "recorded_version": "20261109154637"
+    },
+    {
+      "historical": "20261109215500_section8_airline_operating_tariffs_and_quote.sql",
+      "verified": "20261109161251_section8_airline_operating_tariffs_and_quote.sql",
+      "blob": "4b99aee6df76621c5608a5a5455b8a4bcfe11859",
+      "recorded_version": "20261109161251"
+    },
+    {
+      "historical": "20261109221500_section8_quote_strict_world_guard.sql",
+      "verified": "20261109161702_section8_quote_strict_world_guard.sql",
+      "blob": "5a7f182e43df90d700f49dcbeaee3c199ec4ef72",
+      "recorded_version": "20261109161702"
+    },
+    {
+      "historical": "20261109224500_section9_owned_route_financial_dashboard.sql",
+      "verified": "20261109164732_section9_owned_route_financial_dashboard.sql",
+      "blob": "a395449c1e8170b7f288794dd1a6e33a93aa1542",
+      "recorded_version": "20261109164732"
+    },
+    {
+      "historical": "20261109225000_section9_route_finance_zero_revenue_and_itemization.sql",
+      "verified": "20261109165519_section9_route_finance_zero_revenue_and_itemization.sql",
+      "blob": "b2bb5c78deb25914522206b781b3ae4786fea7d5",
+      "recorded_version": "20261109165519"
+    },
+    {
+      "historical": "20261110104500_world1_panonian_initial_a319_allocation.sql",
+      "verified": "20261110084408_world1_panonian_initial_a319_allocation.sql",
+      "blob": "220db51443081122bc4d485cc8579d30ced01825",
+      "recorded_version": "20261110084408"
+    },
+    {
+      "historical": "20261110102000_group2_owner_preapproved_1118_game_models.sql",
+      "verified": "20261110101021_group2_owner_preapproved_1118_game_models.sql",
+      "blob": "3f18e17295a8a1dceaa4ae05fe7a51810ab23eb4",
+      "recorded_version": "20261110101021"
+    },
+    {
+      "historical": "20261110103500_airport_group1_group2_inventory.sql",
+      "verified": "20261110101210_airport_group1_group2_inventory.sql",
+      "blob": "672fde1d68e133efe263216375c2571ddef62d65",
+      "recorded_version": "20261110101210"
+    },
+    {
+      "historical": "20261110120000_group2_independent_source_admission_gates.sql",
+      "verified": "20261110102806_group2_independent_source_admission_gates.sql",
+      "blob": "dbc52a2a9cf83614f8dd1238002f3da1502bbba8",
+      "recorded_version": "20261110102806"
+    },
+    {
+      "historical": "20261110124500_group2_batch1_50_source_desk_review.sql",
+      "verified": "20261110104243_group2_batch1_50_source_desk_review.sql",
+      "blob": "33ecceb28265a7a42d77692b585c3646dd59465a",
+      "recorded_version": "20261110104243"
+    },
+    {
+      "historical": "20261110130000_airlinerra_owner_route_planning_drafts_v1.sql",
+      "verified": "20261110104505_airlinerra_owner_route_planning_drafts_v1.sql",
+      "blob": "4b9a708b5523dd7ab2124baa1f01c74c7eca9f98",
+      "recorded_version": "20261110104505"
+    },
+    {
+      "historical": "20261110141000_group2_section1_primary_airlinesim_source_audit.sql",
+      "verified": "20261110110315_group2_section1_primary_airlinesim_source_audit.sql",
+      "blob": "26be25a7f8d3839149e8ce1c50d7a275528f3012",
+      "recorded_version": "20261110110315"
+    },
+    {
+      "historical": "20261110151000_group2_section1_official_localities_elevations.sql",
+      "verified": "20261110113955_group2_section1_official_localities_elevations.sql",
+      "blob": "5722fc5795cb176455a3cf0b2f9c68ab27dbd489",
+      "recorded_version": "20261110113955"
+    },
+    {
+      "historical": "20261110152000_group2_section1_timezone_rule_conflicts.sql",
+      "verified": "20261110113958_group2_section1_timezone_rule_conflicts.sql",
+      "blob": "22f563b56a0970a5cd8516cd8296d164bf6e134d",
+      "recorded_version": "20261110113958"
+    },
+    {
+      "historical": "20261110163500_group2_23_fixed_batches_section1_game_completion.sql",
+      "verified": "20261110120222_group2_23_fixed_batches_section1_game_completion.sql",
+      "blob": "3f30b7a6671f184972db8902c05f78cc29fa4002",
+      "recorded_version": "20261110120222"
+    },
+    {
+      "historical": "20261110174500_group2_section2_23_batches_classification_game_closure.sql",
+      "verified": "20261110121634_group2_section2_23_batches_classification_game_closure.sql",
+      "blob": "5798f686658f1de19d871b202185a59917b765cb",
+      "recorded_version": "20261110121634"
+    },
+    {
+      "historical": "20261110180500_group2_section3_23_batches_runway_game_closure.sql",
+      "verified": "20261110122432_group2_section3_23_batches_runway_game_closure.sql",
+      "blob": "af7c17452ae239500a1e8922123f69a9fdc274a1",
+      "recorded_version": "20261110122432"
+    },
+    {
+      "historical": "20261110122949_group2_section4_23_batches_facility_game_closure.sql",
+      "verified": "20261110122949_group2_section4_23_batches_facility_game_closure.sql",
+      "blob": "b57840cefd9eaf9c75bbad9ae18e16ecbaf202b9",
+      "recorded_version": "20261110122949"
+    },
+    {
+      "historical": "20261110190000_group2_section5_23_batches_restriction_review.sql",
+      "verified": "20261110123313_group2_section5_23_batches_restriction_review.sql",
+      "blob": "c00b4ab9948a835293a76a4aa9b2a2da1c3a6624",
+      "recorded_version": "20261110123313"
+    },
+    {
+      "historical": "20261110193500_group2_section6_23_batches_capacity_game_closure.sql",
+      "verified": "20261110123740_group2_section6_23_batches_capacity_game_closure.sql",
+      "blob": "12d2c89fb6c289db2928f2bd76089cd8bdd4e2e3",
+      "recorded_version": "20261110123740"
+    },
+    {
+      "historical": "20261110195000_group2_section7_23_batches_demand_game_closure.sql",
+      "verified": "20261110125213_group2_section7_23_batches_demand_game_closure.sql",
+      "blob": "e928dcb99bf32d7a4b65bf53d99c106a8be04dce",
+      "recorded_version": "20261110125213"
+    },
+    {
+      "historical": "20261110201500_group2_section8_23_batches_economics_game_closure.sql",
+      "verified": "20261110125929_group2_section8_23_batches_economics_game_closure.sql",
+      "blob": "5d84e6ff80aab9795e7d35429ce7694d192829f1",
+      "recorded_version": "20261110125929"
+    },
+    {
+      "historical": "20261110132252_group2_section5_initial_real_source_findings.sql",
+      "verified": "20261110132252_group2_section5_initial_real_source_findings.sql",
+      "blob": "56395d9eed2dbc419b0f885cf92797968011464e",
+      "recorded_version": "20261110132252"
+    },
+    {
+      "historical": "20261110144000_airlinerra_aircraft_maintenance_foundation_v1.sql",
+      "verified": "20261110132735_airlinerra_aircraft_maintenance_foundation_v1.sql",
+      "blob": "e0dd71fad5b23977a3026f9a6fd1b60db78d0232",
+      "recorded_version": "20261110132735"
+    },
+    {
+      "historical": "20261110211500_group2_section5_batch1_two_aip_findings.sql",
+      "verified": "20261110133214_group2_section5_batch1_two_aip_findings.sql",
+      "blob": "59edeecf901b3d51b3799e80a56481f9b6e92496",
+      "recorded_version": "20261110133214"
+    },
+    {
+      "historical": "20261110214500_group2_section5_loxz_omad_source_findings.sql",
+      "verified": "20261110133804_group2_section5_loxz_omad_source_findings.sql",
+      "blob": "05912ac031c08bc43f90ff6bafe97ccafdf4d8dd",
+      "recorded_version": "20261110133804"
+    },
+    {
+      "historical": "20261110215000_group2_section5_source_batch_progress.sql",
+      "verified": "20261110133851_group2_section5_source_batch_progress.sql",
+      "blob": "8e6ed9df812b3937b8d1ae003dd49c9c8c227706",
+      "recorded_version": "20261110133851"
+    },
+    {
+      "historical": "20261110222500_group2_section5_neutral_game_defaults_23_batches.sql",
+      "verified": "20261110135218_group2_section5_neutral_game_defaults_23_batches.sql",
+      "blob": "0e69484cd94707345578266307302c5ce81c219f",
+      "recorded_version": "20261110135218"
+    },
+    {
+      "historical": "20261110135432_group2_section5_batch1_airlinesim_source_overrides.sql",
+      "verified": "20261110135432_group2_section5_batch1_airlinesim_source_overrides.sql",
+      "blob": "4fc6cdfe237fcd328688154de046c5538a127654",
+      "recorded_version": "20261110135432"
+    },
+    {
+      "historical": "20261110225500_group2_medium_section5_targeted_restrictions.sql",
+      "verified": "20261110140644_group2_medium_section5_targeted_restrictions.sql",
+      "blob": "51e220f42ce776843e2bbdba155a54b34858ded6",
+      "recorded_version": "20261110140644"
+    },
+    {
+      "historical": "20261110230000_group2_local_regional_simple_medium_detailed.sql",
+      "verified": "20261110140802_group2_local_regional_simple_medium_detailed.sql",
+      "blob": "aafb31c3ccfc5596e3f9ef4d4d23897d19f997a4",
+      "recorded_version": "20261110140802"
+    },
+    {
+      "historical": "20261110150500_airlinerra_new_aircraft_and_used_auction_market_v1.sql",
+      "verified": "20261110141126_airlinerra_new_aircraft_and_used_auction_market_v1.sql",
+      "blob": "23e936e794c5bbccc3d3a37649320cca205297e9",
+      "recorded_version": "20261110141126"
+    },
+    {
+      "historical": "20261110141358_aircraft_per_tail_private_images.sql",
+      "verified": "20261110141358_aircraft_per_tail_private_images.sql",
+      "blob": "2aecb15bec0a5732694e30d25268ee257728e305",
+      "recorded_version": "20261110141358"
+    },
+    {
+      "historical": "20261110154000_airlinerra_market_atomic_bid_factory_order_and_settlement_v1.sql",
+      "verified": "20261110141849_airlinerra_market_atomic_bid_factory_order_and_settlement_v1.sql",
+      "blob": "83b5102342d98e07d969274dabed2b33fb58f39d",
+      "recorded_version": "20261110141849"
+    },
+    {
+      "historical": "20261110233000_airport_group1_group2_unified_sections1_8_catalog.sql",
+      "verified": "20261110142236_airport_group1_group2_unified_sections1_8_catalog.sql",
+      "blob": "7514efb3b12259143042ebee0aac103707c30d3a",
+      "recorded_version": "20261110142236"
+    },
+    {
+      "historical": "20261110234500_combined_airport_readonly_integration_checks.sql",
+      "verified": "20261110142926_combined_airport_readonly_integration_checks.sql",
+      "blob": "43a43abe2c831f5866f71d4ab9e74cef2f4ee0f7",
+      "recorded_version": "20261110142926"
+    },
+    {
+      "historical": "20261110160500_airlinerra_approved_factory_purchase_publication_v1.sql",
+      "verified": "20261110143500_airlinerra_approved_factory_purchase_publication_v1.sql",
+      "blob": "cb6af225566ebc54ec7951f39e45c1d18dc6fdf4",
+      "recorded_version": "20261110143500"
+    },
+    {
+      "historical": "20261110170000_airlinerra_market_selectors_sellers_factory_queue_v1.sql",
+      "verified": "20261110150631_airlinerra_market_selectors_sellers_factory_queue_v1.sql",
+      "blob": "d48bd00058854e3feffa42d2993c8ac514a98d39",
+      "recorded_version": "20261110150631"
+    },
+    {
+      "historical": "20261110150838_airlinerra_factory_order_stock_queue_reservation_v1.sql",
+      "verified": "20261110150838_airlinerra_factory_order_stock_queue_reservation_v1.sql",
+      "blob": "4f9319e2f722b9344f23e8cafaff43ce6f9dbe95",
+      "recorded_version": "20261110150838"
+    },
+    {
+      "historical": "20261110153500_group2_airport_location_intents_v1.sql",
+      "verified": "20261110151531_group2_airport_location_intents_v1.sql",
+      "blob": "d6110d1a47a3fbe881f1955f1cc90a69a9d3101b",
+      "recorded_version": "20261110151531"
+    },
+    {
+      "historical": "20261110172000_airlinerra_used_market_seller_restocks_v1.sql",
+      "verified": "20261110152143_airlinerra_used_market_seller_restocks_v1.sql",
+      "blob": "bf290c2a029d58958d69f0deee9d8246bc536b75",
+      "recorded_version": "20261110152143"
+    },
+    {
+      "historical": "20261110152703_airlinerra_factory_base_delivery_estimates_v1.sql",
+      "verified": "20261110152703_airlinerra_factory_base_delivery_estimates_v1.sql",
+      "blob": "c0364a97e38008ee92a69a16b91cb61f49c33c1a",
+      "recorded_version": "20261110152703"
+    },
+    {
+      "historical": "20261110164500_group2_section5_6_engine_input_preview.sql",
+      "verified": "20261110153025_group2_section5_6_engine_input_preview.sql",
+      "blob": "a22df4a1a52a59878e4a17f82ccde0ca76165c9c",
+      "recorded_version": "20261110153025"
+    },
+    {
+      "historical": "20261110153827_group2_conditional_restriction_preview.sql",
+      "verified": "20261110153827_group2_conditional_restriction_preview.sql",
+      "blob": "3e0eed0c699ca755ac3885c139215c3086c28d2c",
+      "recorded_version": "20261110153827"
+    },
+    {
+      "historical": "20261110153957_group2_aircraft_airport_readiness_preview.sql",
+      "verified": "20261110153957_group2_aircraft_airport_readiness_preview.sql",
+      "blob": "ddabc2551d1c499328bd24c011719564cb2719a9",
+      "recorded_version": "20261110153957"
+    },
+    {
+      "historical": "20261110181500_airlinerra_cabin_standards_drafts_v1.sql",
+      "verified": "20261110154115_airlinerra_cabin_standards_drafts_v1.sql",
+      "blob": "64ad40c72bf09331657c4b7f39df67fd4a0a4819",
+      "recorded_version": "20261110154115"
+    },
+    {
+      "historical": "20261110183000_airlinerra_six_continent_mro_locations_and_refit_v1.sql",
+      "verified": "20261110154330_airlinerra_six_continent_mro_locations_and_refit_v1.sql",
+      "blob": "dc5ad31be7ef5a596f98d5bf0fe53267bed78eb6",
+      "recorded_version": "20261110154330"
+    },
+    {
+      "historical": "20261110175500_group2_full_weight_slot_leg_preview.sql",
+      "verified": "20261110154714_group2_full_weight_slot_leg_preview.sql",
+      "blob": "aefa1265eeacfa95bdacc6774d94f1d6cca3f47d",
+      "recorded_version": "20261110154714"
+    },
+    {
+      "historical": "20261110181000_group2_weekly_slot_capacity_bridge.sql",
+      "verified": "20261110154934_group2_weekly_slot_capacity_bridge.sql",
+      "blob": "5e60fefe69c4c5ed01d2a99f467ff9e7b88152c7",
+      "recorded_version": "20261110154934"
+    },
+    {
+      "historical": "20261110155455_group2_combined_54week_route_safety_preview.sql",
+      "verified": "20261110155455_group2_combined_54week_route_safety_preview.sql",
+      "blob": "1320de2262aba22ab0f80378eccd20bb94707553",
+      "recorded_version": "20261110155455"
+    },
+    {
+      "historical": "20261110190500_group2_route_safety_timetable_hardening.sql",
+      "verified": "20261110155733_group2_route_safety_timetable_hardening.sql",
+      "blob": "87e2eebeb569b528ae37db2f9aecff6d0b780755",
+      "recorded_version": "20261110155733"
+    },
+    {
+      "historical": "20261110194500_group2_owner_verified_schedule_preflight.sql",
+      "verified": "20261110160515_group2_owner_verified_schedule_preflight.sql",
+      "blob": "a343aa40198ee50f97c19c30d19909ddc3fe9c1b",
+      "recorded_version": "20261110160515"
+    },
+    {
+      "historical": "20261110201000_group2_schedule_save_fail_closed_owner_preflight.sql",
+      "verified": "20261110160722_group2_schedule_save_fail_closed_owner_preflight.sql",
+      "blob": "e32bff24a99422d44732d36128540b9456a5d06e",
+      "recorded_version": "20261110160722"
+    },
+    {
+      "historical": "20261110212500_group2_location_eligibility_separation.sql",
+      "verified": "20261110162005_group2_location_eligibility_separation.sql",
+      "blob": "55fd9a55abe20e22dcd2c276f7266eb358627d62",
+      "recorded_version": "20261110162005"
+    },
+    {
+      "historical": "20261110214000_group2_selectable_hq_onboarding.sql",
+      "verified": "20261110162035_group2_selectable_hq_onboarding.sql",
+      "blob": "dc214f2a1885bcb04a2c02900556ff46aa287855",
+      "recorded_version": "20261110162035"
+    },
+    {
+      "historical": "20261110215500_fix_group2_location_trigger_record_fields.sql",
+      "verified": "20261110162642_fix_group2_location_trigger_record_fields.sql",
+      "blob": "be511dd0a75ca0e74e6ad34137d79791d719bd38",
+      "recorded_version": "20261110162642"
+    },
+    {
+      "historical": "20261110223000_share_location_catalog_across_worlds.sql",
+      "verified": "20261110163959_share_location_catalog_across_worlds.sql",
+      "blob": "7cd895d34cb3ba4de7b617b687f3eb5ec31086a7",
+      "recorded_version": "20261110163959"
+    },
+    {
+      "historical": "20261110164021_open_horizon_world1.sql",
+      "verified": "20261110164021_open_horizon_world1.sql",
+      "blob": "8008e6df63d68d44d6fdf0250c663957e08ad928",
+      "recorded_version": "20261110164021"
+    },
+    {
+      "historical": "20261110172004_airlinerra_40_real_reference_seats_and_model_geometry_v1.sql",
+      "verified": "20261110172004_airlinerra_40_real_reference_seats_and_model_geometry_v1.sql",
+      "blob": "fe57f9d483f5ebc682bfe2bb61c2ec1a5f09c1c1",
+      "recorded_version": "20261110172004"
+    },
+    {
+      "historical": "20261110232000_group2_aviation_display_codes.sql",
+      "verified": "20261110172517_group2_aviation_display_codes.sql",
+      "blob": "392a4f1cbf2c9ed98ad9fd8c8da760202867c84c",
+      "recorded_version": "20261110172517"
+    },
+    {
+      "historical": "20261110185800_airlinerra_cabin_pattern_review_sources_v1.sql",
+      "verified": "20261110172853_airlinerra_cabin_pattern_review_sources_v1.sql",
+      "blob": "a341c91a1ca7350e8174f60d65b3e92edf84603c",
+      "recorded_version": "20261110172853"
+    },
+    {
+      "historical": "20261110235950_section9_flight_engine_readiness_audit_v1.sql",
+      "verified": "20261110174803_section9_flight_engine_readiness_audit_v1.sql",
+      "blob": "9f83159f52f5b6858477b5c094abfb9b72f41d29",
+      "recorded_version": "20261110174803"
+    },
+    {
+      "historical": "20261110190800_airlinerra_cabin_pitch_and_a319_premium_rows_v1.sql",
+      "verified": "20261110174834_airlinerra_cabin_pitch_and_a319_premium_rows_v1.sql",
+      "blob": "ec86ecfe496139e1fb3a9980c434d460a571b9e4",
+      "recorded_version": "20261110174834"
+    },
+    {
+      "historical": "20261110235955_section9_independent_operated_flight_evidence_v1.sql",
+      "verified": "20261110175011_section9_independent_operated_flight_evidence_v1.sql",
+      "blob": "f55b27bb33ee582486df2134c8bd76582ee286e8",
+      "recorded_version": "20261110175011"
+    },
+    {
+      "historical": "20261110184615_airlinerra_installed_cabin_preferences_v1.sql",
+      "verified": "20261110184615_airlinerra_installed_cabin_preferences_v1.sql",
+      "blob": "8ccf208120b98fa3fc0d916b8e2eab6991f5eaa8",
+      "recorded_version": "20261110184615"
+    },
+    {
+      "historical": "20261111000500_section9_guarded_world1_clock_cron.sql",
+      "verified": "20261110185625_section9_guarded_world1_clock_cron.sql",
+      "blob": "05ed27b63bc464f5616faf966b52830129c45706",
+      "recorded_version": "20261110185625"
+    },
+    {
+      "historical": "20261110212000_airlinerra_refit_preparation_quotes_v1.sql",
+      "verified": "20261110200712_airlinerra_refit_preparation_quotes_v1.sql",
+      "blob": "640a0594f7d9daa7b87c8f8b7ae7b8e6f9f1e097",
+      "recorded_version": "20261110200712"
+    },
+    {
+      "historical": "20261111082500_section9_clock_tick_success_receipt_event_id.sql",
+      "verified": "20261111082556_section9_clock_tick_success_receipt_event_id.sql",
+      "blob": "24a5b2995578b3a64ee38534f20296c580e31af2",
+      "recorded_version": "20261111082556"
+    },
+    {
+      "historical": "20261111093000_section9_berlin_realtime_clock.sql",
+      "verified": "20261111083146_section9_berlin_realtime_clock.sql",
+      "blob": "9224d9154275f6ca1176b615d0d726648796ef54",
+      "recorded_version": "20261111083146"
+    },
+    {
+      "historical": "20261111094000_section9_berlin_clock_minutely_dispatch.sql",
+      "verified": "20261111083653_section9_berlin_clock_minutely_dispatch.sql",
+      "blob": "2db8d3fa07798b06a269d5e685411a934df05b9e",
+      "recorded_version": "20261111083653"
+    },
+    {
+      "historical": "20261111150000_section9_starter_origin_evidence_v1.sql",
+      "verified": "20261111143819_section9_starter_origin_evidence_v1.sql",
+      "blob": "3d72593c242cf17465e788d644997a0222f974cf",
+      "recorded_version": "20261111143819"
+    },
+    {
+      "historical": "20261111152000_section9_starter_initial_position_integration_v1.sql",
+      "verified": "20261111144231_section9_starter_initial_position_integration_v1.sql",
+      "blob": "0fc5e7e0a0b9bdb30edca8b4ee0d18b70a58c7e9",
+      "recorded_version": "20261111144231"
+    },
+    {
+      "historical": "20261111154500_section9_due_operational_events_readonly_v1.sql",
+      "verified": "20261111144516_section9_due_operational_events_readonly_v1.sql",
+      "blob": "73d542a99d00beeed2a668320663350840ad26e0",
+      "recorded_version": "20261111144516"
+    },
+    {
+      "historical": "20261111160000_section9_certified_schedule_activation_commit.sql",
+      "verified": "20261111145803_section9_certified_schedule_activation_commit.sql",
+      "blob": "47e5f8b6dc51f9de61a2070e8df9cd347a26f443",
+      "recorded_version": "20261111145803"
+    },
+    {
+      "historical": "20261111161500_section9_block_uncertified_active_schedule_inserts.sql",
+      "verified": "20261111150005_section9_block_uncertified_active_schedule_inserts.sql",
+      "blob": "05b858137754329f2ad4cbb09cddf57dadb9c5eb",
+      "recorded_version": "20261111150005"
+    },
+    {
+      "historical": "20261111151500_airlinerra_named_model_cabin_designs_v1.sql",
+      "verified": "20261111150832_airlinerra_named_model_cabin_designs_v1.sql",
+      "blob": "5c7b07b5668478f8ef7558ab3440d8069f83b547",
+      "recorded_version": "20261111150832"
+    },
+    {
+      "historical": "20261111163500_section9_trusted_execution_release_control.sql",
+      "verified": "20261111153403_section9_trusted_execution_release_control.sql",
+      "blob": "abb24e1ef4880ae3b2a90c2c13a41821c328daa7",
+      "recorded_version": "20261111153403"
+    },
+    {
+      "historical": "20261111165000_section9_independent_game_flight_phase_gate.sql",
+      "verified": "20261111153540_section9_independent_game_flight_phase_gate.sql",
+      "blob": "7ec4a4387f9a53e93da2d1214f1d33e9fa296423",
+      "recorded_version": "20261111153540"
+    },
+    {
+      "historical": "20261111171000_section9_guarded_realtime_execution_cron.sql",
+      "verified": "20261111154401_section9_guarded_realtime_execution_cron.sql",
+      "blob": "719ca35b6c2bfc9f8dc017d56f9523850c3353a3",
+      "recorded_version": "20261111154401"
+    },
+    {
+      "historical": "20261112100704_section9_seven_day_booking_storage_gated_v1.sql",
+      "verified": "20261112100704_section9_seven_day_booking_storage_gated_v1.sql",
+      "blob": "aa08e64ab53d3e1680e0d6f173af6463ba3ac3c7",
+      "recorded_version": "20261112100704"
+    },
+    {
+      "historical": "20261112114500_owner_scoped_player_drafts_database_only_v1.sql",
+      "verified": "20261112114211_owner_scoped_player_drafts_database_only_v1.sql",
+      "blob": "78034195e246155e6afbcc13c252580410fb1960",
+      "recorded_version": "20261112114211"
+    },
+    {
+      "historical": "20261112164500_section9_phase1_no_crew_still_signed_five_certificates.sql",
+      "verified": "20261112163436_section9_phase1_no_crew_still_signed_five_certificates.sql",
+      "blob": "a6e63281eac402c7728c2899d6719b5bdf64e4bc",
+      "recorded_version": "20261112163436"
+    },
+    {
+      "historical": "20261112171500_section5_activation_readiness_excludes_crew_phase1.sql",
+      "verified": "20261112164502_section5_activation_readiness_excludes_crew_phase1.sql",
+      "blob": "afe22b5bc104e0ab07d75d0aff47677a363448d0",
+      "recorded_version": "20261112164502"
+    },
+    {
+      "historical": "20261112182500_section9_aircraft_position_resolver_record_alias_repair.sql",
+      "verified": "20261112165529_section9_aircraft_position_resolver_record_alias_repair.sql",
+      "blob": "32cfdb2a53a830f9e806ddc1864ce09b1a2bb763",
+      "recorded_version": "20261112165529"
+    },
+    {
+      "historical": "20261112184000_section9_noncrew_preflight_verified_game_position.sql",
+      "verified": "20261112170128_section9_noncrew_preflight_verified_game_position.sql",
+      "blob": "a9854a8ad7a2350ad2b0af713d31166906076a32",
+      "recorded_version": "20261112170128"
+    },
+    {
+      "historical": "20261112190000_section9_verified_starter_usage_tracking_baseline_v1.sql",
+      "verified": "20261112171929_section9_verified_starter_usage_tracking_baseline_v1.sql",
+      "blob": "b19c7e1af7a17e3402101e8f210e1202290c4d7b",
+      "recorded_version": "20261112171929"
+    },
+    {
+      "historical": "20261112191500_section9_game_fuel_model_snapshot_v1.sql",
+      "verified": "20261112172218_section9_game_fuel_model_snapshot_v1.sql",
+      "blob": "6e31b506b4f16a5b00a56a35af93904cc219f524",
+      "recorded_version": "20261112172218"
+    },
+    {
+      "historical": "20261113095000_section9_jetstream32_easa_usable_tank_capacity_v1.sql",
+      "verified": "20261113083722_section9_jetstream32_easa_usable_tank_capacity_v1.sql",
+      "blob": "5e7a0b0e2eb73dc6455631dac73d7912e7d9702c",
+      "recorded_version": "20261113083722"
+    },
+    {
+      "historical": "20261113103000_section9_owned_aircraft_maintenance_readiness_v1.sql",
+      "verified": "20261113084622_section9_owned_aircraft_maintenance_readiness_v1.sql",
+      "blob": "f43ffd04b0c71e2889c1608b1a06971e65cc777d",
+      "recorded_version": "20261113084622"
+    },
+    {
+      "historical": "20261113105500_section9_missing_maintenance_state_fails_closed.sql",
+      "verified": "20261113084839_section9_missing_maintenance_state_fails_closed.sql",
+      "blob": "4adadd3e500cf388e9784d16ba9c5a63767df7d9",
+      "recorded_version": "20261113084839"
+    },
+    {
+      "historical": "20261113111500_section9_starter_commissioning_request_workflow_v1.sql",
+      "verified": "20261113085618_section9_starter_commissioning_request_workflow_v1.sql",
+      "blob": "7732d0f54588b9169690d1f19d4832368f90af92",
+      "recorded_version": "20261113085618"
+    },
+    {
+      "historical": "20261113124000_section9_starter_game_data_inspection_v1.sql",
+      "verified": "20261113090839_section9_starter_game_data_inspection_v1.sql",
+      "blob": "ae82ff3c19cdaaf9885347649831f8641dd39213",
+      "recorded_version": "20261113090839"
+    },
+    {
+      "historical": "20261113144500_section9_starter_game_airframe_baseline_v1.sql",
+      "verified": "20261113094200_section9_starter_game_airframe_baseline_v1.sql",
+      "blob": "9d84366d9dd20e76d2342ee6ad95d694e01397a6",
+      "recorded_version": "20261113094200"
+    },
+    {
+      "historical": "20261113150000_section9_game_maintenance_due_preview_v1.sql",
+      "verified": "20261113094318_section9_game_maintenance_due_preview_v1.sql",
+      "blob": "b5dd5c3749c5f8583cd8ffb57e9607a693d7ca88",
+      "recorded_version": "20261113094318"
+    },
+    {
+      "historical": "20261113151500_section9_starter_game_commissioning_date_provenance_fix.sql",
+      "verified": "20261113095055_section9_starter_game_commissioning_date_provenance_fix.sql",
+      "blob": "e728c02b7536fc3f81608bb91768e29e1eb52ea9",
+      "recorded_version": "20261113095055"
+    },
+    {
+      "historical": "20261113170000_section9_hourly_verified_maintenance_jobs_v1.sql",
+      "verified": "20261113101437_section9_hourly_verified_maintenance_jobs_v1.sql",
+      "blob": "5d698901a11a4fa024c772967b610e912e84c125",
+      "recorded_version": "20261113101437"
+    },
+    {
+      "historical": "20261113172000_section9_maintenance_job_aircraft_alias_repair.sql",
+      "verified": "20261113101538_section9_maintenance_job_aircraft_alias_repair.sql",
+      "blob": "13adb5525d82289c47322fe6cb3d1ba68a09a3e2",
+      "recorded_version": "20261113101538"
+    },
+    {
+      "historical": "20261113174000_section9_maintenance_due_uses_game_job_receipts.sql",
+      "verified": "20261113101703_section9_maintenance_due_uses_game_job_receipts.sql",
+      "blob": "1ff8ddcb98a7962174dda79f2695d7087e083bb6",
+      "recorded_version": "20261113101703"
+    },
+    {
+      "historical": "20261113175000_section9_world1_maintenance_minute_cron.sql",
+      "verified": "20261113101725_section9_world1_maintenance_minute_cron.sql",
+      "blob": "3cf1152fd0e30035296f38dc79cd88d7cf3ffb15",
+      "recorded_version": "20261113101725"
+    },
+    {
+      "historical": "20261113180000_section9_hour_level_maintenance_flight_window_gate.sql",
+      "verified": "20261113102706_section9_hour_level_maintenance_flight_window_gate.sql",
+      "blob": "5c8ed90d34cb17a3729731f317b295d857a1bcdd",
+      "recorded_version": "20261113102706"
+    },
+    {
+      "historical": "20261113184000_section9_game_maintenance_price_and_payment_hold.sql",
+      "verified": "20261113103819_section9_game_maintenance_price_and_payment_hold.sql",
+      "blob": "30005d3f001e746639cd01e316a39e9c293b242f",
+      "recorded_version": "20261113103819"
+    },
+    {
+      "historical": "20261113184500_section9_paid_maintenance_engine_settlement.sql",
+      "verified": "20261113103858_section9_paid_maintenance_engine_settlement.sql",
+      "blob": "4dbcd30e3861b2817e01e11197bd72327d32e25a",
+      "recorded_version": "20261113103858"
+    },
+    {
+      "historical": "20261113185000_section9_maintenance_due_requires_settled_game_expense.sql",
+      "verified": "20261113103915_section9_maintenance_due_requires_settled_game_expense.sql",
+      "blob": "193936fb3608024da2d76f715b1d1f3146d9505e",
+      "recorded_version": "20261113103915"
+    },
+    {
+      "historical": "20261113185500_section9_maintenance_ledger_generated_identity_fix.sql",
+      "verified": "20261113104046_section9_maintenance_ledger_generated_identity_fix.sql",
+      "blob": "1380f335bc2c0b17eeb07fd21daaac7c8940cbed",
+      "recorded_version": "20261113104046"
+    },
+    {
+      "historical": "20261113190000_section9_unpaid_maintenance_indefinite_grounding.sql",
+      "verified": "20261113104858_section9_unpaid_maintenance_indefinite_grounding.sql",
+      "blob": "59374c4fd22e3f3f3cf81e4d14190138374f4d55",
+      "recorded_version": "20261113104858"
+    },
+    {
+      "historical": "20261113192000_section9_owned_candidate_slot_rights_preflight_v1.sql",
+      "verified": "20261113105919_section9_owned_candidate_slot_rights_preflight_v1.sql",
+      "blob": "52a68502d7649592439ba608ac643b1ecdb3097c",
+      "recorded_version": "20261113105919"
+    },
+    {
+      "historical": "20261113122857_airlinerra_used_aircraft_cabin_snapshots_v1.sql",
+      "verified": "20261113122857_airlinerra_used_aircraft_cabin_snapshots_v1.sql",
+      "blob": "698bfe27ef192e8a831796bae4851d25168e229b",
+      "recorded_version": "20261113122857"
+    },
+    {
+      "historical": "20261113230100_airlinerra_allow_previous_owner_installed_cabin_origin.sql",
+      "verified": "20261113123453_airlinerra_allow_previous_owner_installed_cabin_origin.sql",
+      "blob": "ae16f7cf3220bcdfbbb70766c0b47706f87aece6",
+      "recorded_version": "20261113123453"
+    },
+    {
+      "historical": "20261113125153_airlinerra_factory_cabin_row_complete_defaults_v2.sql",
+      "verified": "20261113125153_airlinerra_factory_cabin_row_complete_defaults_v2.sql",
+      "blob": "2cab205d2be030004c07a38d38cbb80588771362",
+      "recorded_version": "20261113125153"
+    },
+    {
+      "historical": "20261119173000_section9_aoc_original_registration_handoff_guarded.sql",
+      "verified": "20261119153027_section9_aoc_original_registration_handoff_guarded.sql",
+      "blob": "ed8acb223b9b2ba12caa60e1d6510a62d4965ae8",
+      "recorded_version": "20261119153027"
+    },
+    {
+      "historical": "20261119181500_licence3_cargo_readonly_eligibility.sql",
+      "verified": "20261119171309_licence3_cargo_readonly_eligibility.sql",
+      "blob": "f11a8f12642469dd662eb165072c8b6ca4357eda",
+      "recorded_version": "20261119171309"
+    },
+    {
+      "historical": "20261119211500_licence3_cargo_trusted_application_atomic_issue.sql",
+      "verified": "20261119195528_licence3_cargo_trusted_application_atomic_issue.sql",
+      "blob": "299011e13fa5891c698e930574ff89d58fd6ab82",
+      "recorded_version": "20261119195528"
+    },
+    {
+      "historical": "20261119212500_licence3_cargo_activation_guard_and_cron.sql",
+      "verified": "20261119195601_licence3_cargo_activation_guard_and_cron.sql",
+      "blob": "d795f69e136abf2528ccdd751eaa384dc47e01de",
+      "recorded_version": "20261119195601"
+    },
+    {
+      "historical": "20261119215500_licence3_require_registered_cargo_subsidiary.sql",
+      "verified": "20261119200716_licence3_require_registered_cargo_subsidiary.sql",
+      "blob": "5473ab9a53e23b37abc15967b3849fff4ed25ebd",
+      "recorded_version": "20261119200716"
+    },
+    {
+      "historical": "20261119230000_licence3_cargo_ongoing_operating_scope.sql",
+      "verified": "20261119202144_licence3_cargo_ongoing_operating_scope.sql",
+      "blob": "6b850c21461c3422baecb3217ea501cb72effcf4",
+      "recorded_version": "20261119202144"
+    },
+    {
+      "historical": "20261120100000_licence4_charter_readiness.sql",
+      "verified": "20261120083058_licence4_charter_readiness.sql",
+      "blob": "285e796068515b78c9a7379ffb47fb33473ed895",
+      "recorded_version": "20261120083058"
+    },
+    {
+      "historical": "20261120101000_licence4_charter_atomic_application.sql",
+      "verified": "20261120083141_licence4_charter_atomic_application.sql",
+      "blob": "fb84b0d6b46e0fe61d77d9b312153e6e75f41aa9",
+      "recorded_version": "20261120083141"
+    },
+    {
+      "historical": "20261120102000_licence4_charter_ongoing_flight_scope.sql",
+      "verified": "20261120083156_licence4_charter_ongoing_flight_scope.sql",
+      "blob": "75da8c7f6c94deb8cec673224837d39455a2aa42",
+      "recorded_version": "20261120083156"
+    },
+    {
+      "historical": "20261120103000_licence4_charter_activation_guard_cron.sql",
+      "verified": "20261120083211_licence4_charter_activation_guard_cron.sql",
+      "blob": "092b701c82d87a2f73d0440156e704373b1640e6",
+      "recorded_version": "20261120083211"
+    },
+    {
+      "historical": "20261120103500_licence4_charter_worker_job_name.sql",
+      "verified": "20261120083228_licence4_charter_worker_job_name.sql",
+      "blob": "4d382e50b7907d2481b16983df6e8d6dffd0e1d7",
+      "recorded_version": "20261120083228"
+    },
+    {
+      "historical": "20261120110000_licence34_aircraft_90day_grace_lifecycle.sql",
+      "verified": "20261120085304_licence34_aircraft_90day_grace_lifecycle.sql",
+      "blob": "0ba18dafdc4d04547b8f8786a3e212150c201c12",
+      "recorded_version": "20261120085304"
+    },
+    {
+      "historical": "20261120111000_licence34_safety_thresholds_and_reissue.sql",
+      "verified": "20261120085424_licence34_safety_thresholds_and_reissue.sql",
+      "blob": "74062fbd57dda478a46c12a5cc7e53c78444b06e",
+      "recorded_version": "20261120085424"
+    },
+    {
+      "historical": "20261120112000_licence34_independent_grace_release.sql",
+      "verified": "20261120085510_licence34_independent_grace_release.sql",
+      "blob": "9cc88fdf585da4f6ed36037758b209efec08fd13",
+      "recorded_version": "20261120085510"
+    },
+    {
+      "historical": "20261120113000_licence34_owner_compliance_status.sql",
+      "verified": "20261120085717_licence34_owner_compliance_status.sql",
+      "blob": "42b807f343419a311e1e314d6d5e0798ae24945c",
+      "recorded_version": "20261120085717"
+    },
+    {
+      "historical": "20261120114000_licence34_active_maintenance_grounding.sql",
+      "verified": "20261120090629_licence34_active_maintenance_grounding.sql",
+      "blob": "78da165ff097ae161c7f782547279d57da35f423",
+      "recorded_version": "20261120090629"
+    },
+    {
+      "historical": "20261120115500_licence5_dg_readiness.sql",
+      "verified": "20261120091337_licence5_dg_readiness.sql",
+      "blob": "ada753635e41b30b829560c3a92bbb641c91d092",
+      "recorded_version": "20261120091337"
+    },
+    {
+      "historical": "20261120120000_licence5_dg_atomic_application.sql",
+      "verified": "20261120091417_licence5_dg_atomic_application.sql",
+      "blob": "dff75de19ddfa685e6b02fc9376ad717feaed3d3",
+      "recorded_version": "20261120091417"
+    },
+    {
+      "historical": "20261120120500_licence5_dg_no_blanket_rights.sql",
+      "verified": "20261120091509_licence5_dg_no_blanket_rights.sql",
+      "blob": "50620e3a87e813479147c1c840ee6dc43ef95902",
+      "recorded_version": "20261120091509"
+    },
+    {
+      "historical": "20261120121500_licence5_registered_cargo_requirement.sql",
+      "verified": "20261120092057_licence5_registered_cargo_requirement.sql",
+      "blob": "d4ce7825e629630116635233fc2ecfe285d491ca",
+      "recorded_version": "20261120092057"
+    },
+    {
+      "historical": "20261120130000_licence6_fifth_freedom_readiness.sql",
+      "verified": "20261120100335_licence6_fifth_freedom_readiness.sql",
+      "blob": "d6e929c024093cf10d672f899f7fc2a20360747a",
+      "recorded_version": "20261120100335"
+    },
+    {
+      "historical": "20261120130500_licence6_approved_network_dependency.sql",
+      "verified": "20261120100426_licence6_approved_network_dependency.sql",
+      "blob": "9e16aa31c0b54f5d3fe04eaa2ac42a285e9f8df8",
+      "recorded_version": "20261120100426"
+    },
+    {
+      "historical": "20261120131500_licence6_fifth_atomic_route_application.sql",
+      "verified": "20261120101010_licence6_fifth_atomic_route_application.sql",
+      "blob": "66486fb7cc0b2933a86eb545dc1daabf65d1ef33",
+      "recorded_version": "20261120101010"
+    },
+    {
+      "historical": "20261120132000_licence6_requires_home_leg_proof.sql",
+      "verified": "20261120101045_licence6_requires_home_leg_proof.sql",
+      "blob": "9758e2632219201a262af9a1241a23a041f82428",
+      "recorded_version": "20261120101045"
+    },
+    {
+      "historical": "20261120132500_licence6_eligibility_driven_apply.sql",
+      "verified": "20261120101231_licence6_eligibility_driven_apply.sql",
+      "blob": "9660c48c9d833bfca3be240e12175203046c4900",
+      "recorded_version": "20261120101231"
+    },
+    {
+      "historical": "20261120140000_merge_fifth_freedom_into_licence2.sql",
+      "verified": "20261120112005_merge_fifth_freedom_into_licence2.sql",
+      "blob": "6b7cc6d328285aada108b5dc155a0a2798d7d238",
+      "recorded_version": "20261120112005"
+    },
+    {
+      "historical": "20261120140500_retire_standalone_licence6_structures.sql",
+      "verified": "20261120112114_retire_standalone_licence6_structures.sql",
+      "blob": "e8e6da2814b72fef62512eb4c8cce603fbdaab00",
+      "recorded_version": "20261120112114"
+    },
+    {
+      "historical": "20261120141000_l2_home_connected_route_no_extra_base.sql",
+      "verified": "20261120112344_l2_home_connected_route_no_extra_base.sql",
+      "blob": "07fd3223b6e75dbcf5c7c8517d58f05931efc184",
+      "recorded_version": "20261120112344"
+    },
+    {
+      "historical": "20261120142000_licence6_mro_regional_reference_only.sql",
+      "verified": "20261120114127_licence6_mro_regional_reference_only.sql",
+      "blob": "f22c5db65caf5f80bd134d7482f73b82d696b714",
+      "recorded_version": "20261120114127"
+    },
+    {
+      "historical": "20261120142500_licence6_mro_no_age_private_marketplace_policy.sql",
+      "verified": "20261120120209_licence6_mro_no_age_private_marketplace_policy.sql",
+      "blob": "44ff17c9e7ac75cf47f80879110f1504b2067a6d",
+      "recorded_version": "20261120120209"
+    },
+    {
+      "historical": "20261120150000_licence7_academy_phase1_foundation.sql",
+      "verified": "20261120140104_licence7_academy_phase1_foundation.sql",
+      "blob": "94823185aeca5b5699b4959d3a669ee342ece3f1",
+      "recorded_version": "20261120140104"
+    },
+    {
+      "historical": "20261120152500_licence8_aircraft_leasing_phase1_foundation.sql",
+      "verified": "20261120143002_licence8_aircraft_leasing_phase1_foundation.sql",
+      "blob": "ef64b69be8983f803c3311cb06c6c9cd87931aa9",
+      "recorded_version": "20261120143002"
+    },
+    {
+      "historical": "20261120173500_section9_private_completed_flight_evidence_chain_inspector.sql",
+      "verified": "20261120170101_section9_private_completed_flight_evidence_chain_inspector.sql",
+      "blob": "f63e271f0a08b30467df8bec965d79ec083942da",
+      "recorded_version": "20261120170101"
+    },
+    {
+      "historical": "20261120184000_section9_completed_flight_chain_reservation_reconciliation.sql",
+      "verified": "20261120172142_section9_completed_flight_chain_reservation_reconciliation.sql",
+      "blob": "3d0d7208c4a94fed8c8addeacb1268f1721b49e4",
+      "recorded_version": "20261120172142"
+    },
+    {
+      "historical": "20261120211500_section9_unreleased_execution_finance_certification_fail_closed.sql",
+      "verified": "20261120201142_section9_unreleased_execution_finance_certification_fail_closed.sql",
+      "blob": "ac00796d58594aa023593556008ca12e9901391c",
+      "recorded_version": "20261120201142"
+    },
+    {
+      "historical": "20261120215500_section9_execution_finance_source_preflight_readonly.sql",
+      "verified": "20261120202113_section9_execution_finance_source_preflight_readonly.sql",
+      "blob": "44bdbc6e7e6b86756aae93cfd0e4503df5626515",
+      "recorded_version": "20261120202113"
+    },
+    {
+      "historical": "20261120224500_section9_execution_finance_source_snapshot_candidates.sql",
+      "verified": "20261120204252_section9_execution_finance_source_snapshot_candidates.sql",
+      "blob": "21ea7bb9f0fe277803ade9ae2271d2ae9ed68688",
+      "recorded_version": "20261120204252"
+    },
+    {
+      "historical": "20261120232000_section9_execution_finance_same_transaction_source_recheck.sql",
+      "verified": "20261120210359_section9_execution_finance_same_transaction_source_recheck.sql",
+      "blob": "73d08eb97da8799359c958185de77f50cf680040",
+      "recorded_version": "20261120210359"
+    },
+    {
+      "historical": "20261120234000_section9_atomic_execution_finance_certification_sink_integrated.sql",
+      "verified": "20261120211155_section9_atomic_execution_finance_certification_sink_integrated.sql",
+      "blob": "0f276d7789403624b1a824ab08bc7d4b4da4fd43",
+      "recorded_version": "20261120211155"
+    }
+  ]
+}
