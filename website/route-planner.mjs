@@ -1912,7 +1912,7 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    draft.referenceArrivalUtc=iso(result.referenceArrivalUtc);
    if(Number.isInteger(result.estimatedDurationMinutes))draft.estimatedDurationMinutes=result.estimatedDurationMinutes;
    try{await draftWrite('routes',[...filtered,draft]);await draftWrite('route',draft);}catch{}
-   doc.dispatchEvent(new CustomEvent('airlinerra:route-draft-saved',{detail:{flightNumber,serverSaved:true}}));
+   doc.dispatchEvent(new CustomEvent('airlinerra:route-draft-saved',{detail:{flightNumber,serverSaved:true,operationallyVerified:true,scheduleId:result.scheduleId}}));
    try{await loadOwnedScheduleData(data.airline.id);}catch{/* The route is already committed; refresh is not part of creation. */}
    await resetRouteForm({blank:true});
    const confirmation=$('route-plan-status');
