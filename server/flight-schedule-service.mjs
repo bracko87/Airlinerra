@@ -279,7 +279,7 @@ export const SCHEDULE_SQL=Object.freeze({
  o.departure_utc AS "startUtc",o.arrival_utc AS "arrivalUtc",o.arrival_utc+make_interval(mins=>o.turnaround_minutes) AS "endUtc",
  o.turnaround_minutes AS "turnaroundMinutes",o.booking_status AS status,
  coalesce(a.game_lookup_code,o.origin_airport_key) AS "fromCode",coalesce(b.game_lookup_code,o.destination_airport_key) AS "toCode",
- NULL::numeric AS "costUsd"
+ NULL::numeric AS "costUsd",o.schedule_id::text AS "scheduleId"
  FROM owner JOIN airlinerra_game.section9_dated_flight_occurrences_v1 o ON o.airline_id=owner.id
  JOIN airlinerra_game.airline_flight_schedule_drafts_v1 s ON s.id=o.schedule_id AND s.airline_id=o.airline_id AND s.version=o.schedule_version AND s.status='active' AND s.operationally_verified
  LEFT JOIN airlinerra_game.airport_unified_operations_v1 a ON a.world_id=1 AND a.airport_key=o.origin_airport_key
@@ -289,7 +289,7 @@ export const SCHEDULE_SQL=Object.freeze({
  UNION ALL
  SELECT j.job_id::text,j.aircraft_inventory_id::text,'maintenance',upper(j.check_code)||' check'||CASE WHEN j.provider_name IS NOT NULL THEN ' - '||j.provider_name ELSE '' END,
  j.game_start_utc,NULL::timestamptz,CASE WHEN j.status='payment_required' THEN greatest(j.game_end_utc,t.start_utc+interval '7 days') ELSE j.game_end_utc END,
- 0,j.status,coalesce(a.game_lookup_code,j.airport_key),NULL::text,j.quoted_cost_usd
+ 0,j.status,coalesce(a.game_lookup_code,j.airport_key),NULL::text,j.quoted_cost_usd,NULL::text
  FROM owner JOIN airlinerra_game.section9_game_maintenance_jobs_v1 j ON j.airline_id=owner.id
  LEFT JOIN airlinerra_game.airport_unified_operations_v1 a ON a.world_id=1 AND a.airport_key=j.airport_key
  CROSS JOIN bounds t
@@ -302,7 +302,7 @@ export const SCHEDULE_SQL=Object.freeze({
  CASE WHEN EXISTS(SELECT 1 FROM airlinerra_game.section9_operated_flight_movements_v1 m WHERE m.relocation_trip_id=r.id AND m.weekly_entry=l.n AND m.phase='arrived') THEN 'arrived'
  WHEN EXISTS(SELECT 1 FROM airlinerra_game.section9_operated_flight_movements_v1 m WHERE m.relocation_trip_id=r.id AND m.weekly_entry=l.n AND m.phase='departed') THEN 'in_flight'
  ELSE coalesce(r.last_result,'reserved') END,
- coalesce(a.game_lookup_code,a.airport_key),coalesce(b.game_lookup_code,b.airport_key),(r.quote->l.leg->>'totalUsd')::numeric
+ coalesce(a.game_lookup_code,a.airport_key),coalesce(b.game_lookup_code,b.airport_key),(r.quote->l.leg->>'totalUsd')::numeric,NULL::text
  FROM owner JOIN airlinerra_game.section9_maintenance_relocation_trips_v1 r ON r.airline_id=owner.id
  CROSS JOIN (VALUES('outbound',1),('return',2)) l(leg,n)
  JOIN airlinerra_game.airport_unified_operations_v1 a ON a.world_id=1 AND a.airport_key=CASE WHEN l.n=1 THEN r.origin_airport_key ELSE r.provider_airport_key END
@@ -312,7 +312,7 @@ export const SCHEDULE_SQL=Object.freeze({
  UNION ALL
  SELECT r.id::text||':maintenance',r.aircraft_inventory_id::text,'maintenance',upper(r.check_code)||' check - '||(r.quote#>>'{provider,providerName}'),
  (r.quote#>>'{maintenance,startUtc}')::timestamptz,NULL::timestamptz,(r.quote#>>'{maintenance,endUtc}')::timestamptz,0,'reserved',
- coalesce(a.game_lookup_code,r.provider_airport_key),NULL::text,(r.quote#>>'{maintenance,priceUsd}')::numeric
+ coalesce(a.game_lookup_code,r.provider_airport_key),NULL::text,(r.quote#>>'{maintenance,priceUsd}')::numeric,NULL::text
  FROM owner JOIN airlinerra_game.section9_maintenance_relocation_trips_v1 r ON r.airline_id=owner.id
  LEFT JOIN airlinerra_game.airport_unified_operations_v1 a ON a.world_id=1 AND a.airport_key=r.provider_airport_key
  CROSS JOIN bounds t
