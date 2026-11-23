@@ -344,7 +344,17 @@ SELECT * FROM events ORDER BY "startUtc",id`,
    WHERE o.schedule_id=s.id AND o.airline_id=s.airline_id AND o.world_id=1
      AND b.reservation_status='reserved') AS "reservedPassengerSeats",
  (SELECT count(*)::int FROM airlinerra_game.section9_schedule_operational_certifications_v1 c
-   WHERE c.schedule_id=s.id AND c.airline_id=s.airline_id) AS "certificateRecords"
+   WHERE c.schedule_id=s.id AND c.airline_id=s.airline_id) AS "certificateRecords",
+ (SELECT count(*)::int FROM airlinerra_game.section9_operated_flight_movements_v1 m
+   WHERE m.world_id=1 AND m.airline_id=s.airline_id
+    AND (m.schedule_id=s.id OR m.flight_occurrence_id LIKE s.id::text||':%')) AS "operatedMovementCount",
+ (SELECT coalesce(sum(o.recognized_revenue_usd),0)::float8
+  FROM airlinerra_game.section9_dated_flight_occurrences_v1 o
+  WHERE o.world_id=1 AND o.airline_id=s.airline_id AND o.schedule_id=s.id) AS "recognizedFlightRevenueUsd",
+ (SELECT coalesce(sum(b.recognized_revenue_usd),0)::float8
+  FROM airlinerra_game.section9_passenger_reservation_batches_v1 b
+  JOIN airlinerra_game.section9_dated_flight_occurrences_v1 o ON o.id=b.occurrence_id
+  WHERE o.world_id=1 AND o.airline_id=s.airline_id AND o.schedule_id=s.id) AS "recognizedReservationRevenueUsd"
  FROM airlinerra_game.airline_flight_schedule_drafts_v1 s
  JOIN airlinerra_game.airlines a ON a.id=s.airline_id
  JOIN airlinerra_game.world_memberships w ON w.world_id=a.world_id AND w.player_id=a.owner_player_id AND w.state='active'
@@ -1296,12 +1306,15 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
     const row=result.rows?.[0];
     if(result.rowCount!==1||!row)return respond(404,{error:'Owned schedule not found'});
     const fields=['reservedSlotCount','flightOccurrenceCount','currentVersionOccurrenceCount',
-     'reservedBookingBatches','reservedPassengerSeats','certificateRecords'];
+     'reservedBookingBatches','reservedPassengerSeats','certificateRecords',
+     'operatedMovementCount'];
     if(row.scheduleId!==body.scheduleId||
        !Number.isSafeInteger(row.scheduleVersion)||row.scheduleVersion<1||
        !['draft','active'].includes(row.scheduleStatus)||
        typeof row.operationallyVerified!=='boolean'||
-       fields.some(field=>!Number.isSafeInteger(row[field])||row[field]<0))
+       (fields.some(field=>!Number.isSafeInteger(row[field])||row[field]<0)||
+        ['recognizedFlightRevenueUsd','recognizedReservationRevenueUsd'].some(field=>
+         typeof row[field]!=='number'||!Number.isFinite(row[field])||row[field]<0)))
      return respond(503,{error:'Schedule change evidence unavailable'});
     const blockers=[
      ...(row.scheduleStatus==='active'||row.operationallyVerified?
@@ -1310,13 +1323,18 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
      ...(row.flightOccurrenceCount>0?['FLIGHT_OCCURRENCES_REQUIRE_RECONCILIATION']:[]),
      ...(row.reservedBookingBatches>0||row.reservedPassengerSeats>0?
       ['PASSENGER_RESERVATIONS_REQUIRE_PROTECTION']:[]),
-     ...(row.certificateRecords>0?['CERTIFICATES_REQUIRE_VERSION_RECONCILIATION']:[])
+     ...(row.certificateRecords>0?['CERTIFICATES_REQUIRE_VERSION_RECONCILIATION']:[]),
+     ...(row.operatedMovementCount>0?['OPERATED_MOVEMENTS_MUST_BE_PRESERVED']:[]),
+     ...(row.recognizedFlightRevenueUsd>0||row.recognizedReservationRevenueUsd>0?
+      ['RECOGNIZED_REVENUE_REQUIRES_ACCOUNTING_RECONCILIATION']:[])
     ];
     return respond(200,{
      status:'schedule_change_assessment_read_only',readOnly:true,
      scheduleId:row.scheduleId,scheduleVersion:row.scheduleVersion,
      scheduleStatus:row.scheduleStatus,operationallyVerified:row.operationallyVerified,
-     evidence:Object.fromEntries(fields.map(field=>[field,row[field]])),
+     evidence:{...Object.fromEntries(fields.map(field=>[field,row[field]])),
+      recognizedFlightRevenueUsd:row.recognizedFlightRevenueUsd,
+      recognizedReservationRevenueUsd:row.recognizedReservationRevenueUsd},
      blockers,canCancelOperationalFlight:false,canRescheduleOperationalFlight:false,
      bookingMutation:false,slotMutation:false,ledgerPosted:false
     });
