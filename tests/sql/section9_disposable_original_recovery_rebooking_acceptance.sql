@@ -9,6 +9,7 @@ BEGIN
 END $guard$;
 
 ALTER TABLE airlinerra_game.section9_dated_flight_occurrences_v1
+ ADD COLUMN world_id smallint NOT NULL DEFAULT 1,
  ADD COLUMN origin_airport_key text,
  ADD COLUMN destination_airport_key text,
  ADD COLUMN arrival_utc timestamptz;
