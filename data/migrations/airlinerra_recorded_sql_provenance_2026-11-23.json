@@ -1,7 +1,7 @@
 {
   "source": "Airlinerra database migration-history statement[1] SHA1 Git blob equivalence, read-only audited 2026-11-23",
   "boundary": "Proves exact content equality for these files only. No SQL from production is embedded. 17 same-name content differences and 142 unmatched names remain excluded.",
-  "count": 204,
+  "count": 259,
   "entries": [
     {
       "historical": "20261023130625_airlinerra_private_research_and_public_site_check.sql",
@@ -10,10 +10,340 @@
       "recorded_version": "20261023130625"
     },
     {
+      "historical": "20261023132609_airlinerra_block_unapproved_world_airport_activation.sql",
+      "verified": "20261023132609_airlinerra_block_unapproved_world_airport_activation.sql",
+      "blob": "75d21bed8d6b6d34928cb099d84fa224cbf8fd16",
+      "recorded_version": "20261023132609"
+    },
+    {
+      "historical": "20261023144952_add_private_airlinerra_research_snapshot_catalog.sql",
+      "verified": "20261023144952_add_private_airlinerra_research_snapshot_catalog.sql",
+      "blob": "3306a39e27c16242055e499a8f103d07a7720cc1",
+      "recorded_version": "20261023144952"
+    },
+    {
+      "historical": "20261023145739_add_private_airlinerra_airport_research_overview.sql",
+      "verified": "20261023145739_add_private_airlinerra_airport_research_overview.sql",
+      "blob": "74967d5ae33033f6d9c54f8f563b511d60024d78",
+      "recorded_version": "20261023145739"
+    },
+    {
+      "historical": "20261023150656_record_historical_source_exceptions_without_dropping_rows.sql",
+      "verified": "20261023150656_record_historical_source_exceptions_without_dropping_rows.sql",
+      "blob": "1d782bde467dffb501c7165e9430aaa8057a109e",
+      "recorded_version": "20261023150656"
+    },
+    {
+      "historical": "20261023151311_add_airlinerra_research_backlog_ordering.sql",
+      "verified": "20261023151311_add_airlinerra_research_backlog_ordering.sql",
+      "blob": "e02e02405c1cdb2b0c6ffab04de2de3d26d10062",
+      "recorded_version": "20261023151311"
+    },
+    {
+      "historical": "20261023151534_index_airlinerra_world_activation_airport_fk.sql",
+      "verified": "20261023151534_index_airlinerra_world_activation_airport_fk.sql",
+      "blob": "15e345bc92d177cb964ee7b3ccf9530fc791c8a5",
+      "recorded_version": "20261023151534"
+    },
+    {
+      "historical": "20261023153740_add_private_airlinerra_commercial_verification_queue.sql",
+      "verified": "20261023153740_add_private_airlinerra_commercial_verification_queue.sql",
+      "blob": "9023b0a9ddc438cc7a1756a03b2092a5cc6ca6d5",
+      "recorded_version": "20261023153740"
+    },
+    {
+      "historical": "20261023154142_create_private_us_expansion_commercial_review_view.sql",
+      "verified": "20261023154142_create_private_us_expansion_commercial_review_view.sql",
+      "blob": "30665e01264fbe1e4fa58a45967c10ac4975487b",
+      "recorded_version": "20261023154142"
+    },
+    {
+      "historical": "20261023154929_add_airport_operator_restriction_evidence_json.sql",
+      "verified": "20261023154929_add_airport_operator_restriction_evidence_json.sql",
+      "blob": "247758cf4a8bf4a65c97caed3fb238483989fb4a",
+      "recorded_version": "20261023154929"
+    },
+    {
+      "historical": "20261023155434_show_operator_restrictions_in_airlinerra_airport_review_queue.sql",
+      "verified": "20261023155434_show_operator_restrictions_in_airlinerra_airport_review_queue.sql",
+      "blob": "9fae47e764ae52c8f4f53610546ce96b637a8a73",
+      "recorded_version": "20261023155434"
+    },
+    {
+      "historical": "20261023160921_store_official_faa_part139_2026_certification_source.sql",
+      "verified": "20261023160921_store_official_faa_part139_2026_certification_source.sql",
+      "blob": "d468c18c7f82091c96e88f0944ab069c5c98a979",
+      "recorded_version": "20261023160921"
+    },
+    {
+      "historical": "20261023161332_create_faa_part139_exact_match_research_crosswalk_view.sql",
+      "verified": "20261023161332_create_faa_part139_exact_match_research_crosswalk_view.sql",
+      "blob": "471dd8d385952f2df99f7f5a79df8b997f89768e",
+      "recorded_version": "20261023161332"
+    },
+    {
+      "historical": "20261024140915_create_airport_operational_triage_gate.sql",
+      "verified": "20261024140915_create_airport_operational_triage_gate.sql",
+      "blob": "4db296c9f6534bd412992a5aea58014f738bbf2b",
+      "recorded_version": "20261024140915"
+    },
+    {
+      "historical": "20261024143330_allow_operational_evidence_gap_hold.sql",
+      "verified": "20261024143330_allow_operational_evidence_gap_hold.sql",
+      "blob": "bc6fdd84b74df20f5809aa844f5285a772bc4ab0",
+      "recorded_version": "20261024143330"
+    },
+    {
+      "historical": "20261026082348_airlinerra_phase5_evidence_queue_20261026.sql",
+      "verified": "20261026082348_airlinerra_phase5_evidence_queue_20261026.sql",
+      "blob": "8d8f10e07d260b1143992bff99048e8304bc0dfb",
+      "recorded_version": "20261026082348"
+    },
+    {
+      "historical": "20261026084439_airlinerra_phase5_batch2_directional_source_20261026.sql",
+      "verified": "20261026084439_airlinerra_phase5_batch2_directional_source_20261026.sql",
+      "blob": "e31672fee39ae3e7e704a1f542f317419530cc2c",
+      "recorded_version": "20261026084439"
+    },
+    {
+      "historical": "20261026085701_airlinerra_phase5_batch3_positive_lda_status_20261026.sql",
+      "verified": "20261026085701_airlinerra_phase5_batch3_positive_lda_status_20261026.sql",
+      "blob": "831703b1427f3aa2c87c7997190ba897f04eb504",
+      "recorded_version": "20261026085701"
+    },
+    {
+      "historical": "20261026102105_airlinerra_phase5_batch7_direction_restriction_and_mixed_pavement_20261026.sql",
+      "verified": "20261026102105_airlinerra_phase5_batch7_direction_restriction_and_mixed_pavement_20261026.sql",
+      "blob": "2e9ae44c5a62fca66fad25f77a2a17f7341ff0ae",
+      "recorded_version": "20261026102105"
+    },
+    {
+      "historical": "20261026104355_airlinerra_phase5_batch9_pavement_condition_hold_20261026.sql",
+      "verified": "20261026104355_airlinerra_phase5_batch9_pavement_condition_hold_20261026.sql",
+      "blob": "5d871e08d3371727565868be33388c966e98dc15",
+      "recorded_version": "20261026104355"
+    },
+    {
+      "historical": "20261026130914_airlinerra_phase5_fallon_lda_and_operating_gate_pilot_20261026.sql",
+      "verified": "20261026130914_airlinerra_phase5_fallon_lda_and_operating_gate_pilot_20261026.sql",
+      "blob": "33e57d135251347bcc5a24db75a648b00e3a7c0f",
+      "recorded_version": "20261026130914"
+    },
+    {
+      "historical": "20261026132248_airlinerra_phase5_named_operator_aircraft_date_workflow_20261026.sql",
+      "verified": "20261026132248_airlinerra_phase5_named_operator_aircraft_date_workflow_20261026.sql",
+      "blob": "295403ba3643ac86509e373b3d20403899e863d3",
+      "recorded_version": "20261026132248"
+    },
+    {
+      "historical": "20261026132613_airlinerra_phase5_operation_intake_strict_takeoff_and_expiry_20261026.sql",
+      "verified": "20261026132613_airlinerra_phase5_operation_intake_strict_takeoff_and_expiry_20261026.sql",
+      "blob": "66960da521e8e06f220de0be94218980b6ac8dff",
+      "recorded_version": "20261026132613"
+    },
+    {
+      "historical": "20261026133012_airlinerra_phase5_atomic_research_case_creator_20261026.sql",
+      "verified": "20261026133012_airlinerra_phase5_atomic_research_case_creator_20261026.sql",
+      "blob": "0862c0a3d0edebc8280ca5de5c9c5e7842fc46af",
+      "recorded_version": "20261026133012"
+    },
+    {
+      "historical": "20261026140941_airlinerra_owner_approved_original_3140_game_world1_20261026.sql",
+      "verified": "20261026140941_airlinerra_owner_approved_original_3140_game_world1_20261026.sql",
+      "blob": "d35d3c9a197b6bac76ed310c1f6d7dc59ccf198a",
+      "recorded_version": "20261026140941"
+    },
+    {
+      "historical": "20261026143443_airlinerra_world1_private_registration_source_3140_20261026.sql",
+      "verified": "20261026143443_airlinerra_world1_private_registration_source_3140_20261026.sql",
+      "blob": "2a36c1bec208ef09f3a231cf136f3dd6367c3ce9",
+      "recorded_version": "20261026143443"
+    },
+    {
+      "historical": "20261026151359_airlinerra_expansion_de_independent_runway_evidence_schema_20261026.sql",
+      "verified": "20261026151359_airlinerra_expansion_de_independent_runway_evidence_schema_20261026.sql",
+      "blob": "11c307a65b3ba28da7b3c2eaa18e1f40832c2987",
+      "recorded_version": "20261026151359"
+    },
+    {
+      "historical": "20261026153925_airlinerra_expansion_current_operator_below_1200m_exception_20261026.sql",
+      "verified": "20261026153925_airlinerra_expansion_current_operator_below_1200m_exception_20261026.sql",
+      "blob": "ece6b9793c46128dad46b497c8e0e0931430f0b6",
+      "recorded_version": "20261026153925"
+    },
+    {
+      "historical": "20261026160159_airlinerra_germany_batch05_runway_direction_source_issues_20261026.sql",
+      "verified": "20261026160159_airlinerra_germany_batch05_runway_direction_source_issues_20261026.sql",
+      "blob": "1229387111d3b37b4783fffc0c27e42208aeff7d",
+      "recorded_version": "20261026160159"
+    },
+    {
+      "historical": "20261026161357_airlinerra_germany_batch06_civil_use_runway_direction_holds_20261026.sql",
+      "verified": "20261026161357_airlinerra_germany_batch06_civil_use_runway_direction_holds_20261026.sql",
+      "blob": "1f17dbc66b2446fd54416a44064dbcbef0b3a62c",
+      "recorded_version": "20261026161357"
+    },
+    {
+      "historical": "20261026175554_airlinerra_de_ten_discrepancy_cased_resolution_batch07_20261026.sql",
+      "verified": "20261026175554_airlinerra_de_ten_discrepancy_cased_resolution_batch07_20261026.sql",
+      "blob": "7000ef8d669295b649703ebe9a5f7957e2a23f81",
+      "recorded_version": "20261026175554"
+    },
+    {
+      "historical": "20261026180744_airlinerra_de_runway_multisource_adjudication_batch08_20261026.sql",
+      "verified": "20261026180744_airlinerra_de_runway_multisource_adjudication_batch08_20261026.sql",
+      "blob": "3a067e3e3a781892be2b1336c1b0e24cbe3ba171",
+      "recorded_version": "20261026180744"
+    },
+    {
+      "historical": "20261026190008_airlinerra_de_batch09_timebound_runway_eligibility_20261026.sql",
+      "verified": "20261026190008_airlinerra_de_batch09_timebound_runway_eligibility_20261026.sql",
+      "blob": "091a878311d013fa325768756948f5dc2fd3aa23",
+      "recorded_version": "20261026190008"
+    },
+    {
+      "historical": "20261026192833_airlinerra_de_batch10_multisource_physical_screen_20261026.sql",
+      "verified": "20261026192833_airlinerra_de_batch10_multisource_physical_screen_20261026.sql",
+      "blob": "289384967d034ea8c1ba5a39917a078e7f885b24",
+      "recorded_version": "20261026192833"
+    },
+    {
+      "historical": "20261026194156_airlinerra_german_expansion_specialist_runway_decisions_batch11_20261026.sql",
+      "verified": "20261026194156_airlinerra_german_expansion_specialist_runway_decisions_batch11_20261026.sql",
+      "blob": "acb9d7ef532cc6c246dc75d7ea7e55bf7b4360af",
+      "recorded_version": "20261026194156"
+    },
+    {
       "historical": "20261027072557_airlinerra_prelaunch_private_account_foundation_20261027.sql",
       "verified": "20261027072557_airlinerra_prelaunch_private_account_foundation_20261027.sql",
       "blob": "6d1259765b8ce14b0fc32fdac0dc411aa915f35e",
       "recorded_version": "20261027072557"
+    },
+    {
+      "historical": "20261027072623_airlinerra_prelaunch_private_airline_activation_20261027.sql",
+      "verified": "20261027072623_airlinerra_prelaunch_private_airline_activation_20261027.sql",
+      "blob": "ab1b5d3841cdd6bd317bddc0f3725bdce632a5d4",
+      "recorded_version": "20261027072623"
+    },
+    {
+      "historical": "20261027072656_airlinerra_prelaunch_foundation_3140_game_roster_20261027.sql",
+      "verified": "20261027072656_airlinerra_prelaunch_foundation_3140_game_roster_20261027.sql",
+      "blob": "2d5c50229e6f9ca852a32b3edee497cd7599ee93",
+      "recorded_version": "20261027072656"
+    },
+    {
+      "historical": "20261027094118_airlinerra_private_versioned_runway_research_facts_20261027.sql",
+      "verified": "20261027094118_airlinerra_private_versioned_runway_research_facts_20261027.sql",
+      "blob": "f28f86308ba49c4b964204173851b00b9ffa1c6e",
+      "recorded_version": "20261027094118"
+    },
+    {
+      "historical": "20261027094509_airlinerra_private_runway_research_security_invoker_view_20261027.sql",
+      "verified": "20261027094509_airlinerra_private_runway_research_security_invoker_view_20261027.sql",
+      "blob": "04c8f5c1b63134ce559bc8ed357ec542ef631f0d",
+      "recorded_version": "20261027094509"
+    },
+    {
+      "historical": "20261027094900_airlinerra_private_runway_direction_research_takeoff_landing_gate_20261027.sql",
+      "verified": "20261027094900_airlinerra_private_runway_direction_research_takeoff_landing_gate_20261027.sql",
+      "blob": "ec13ca55abccf28f22ed5861f62831ff6feea19f",
+      "recorded_version": "20261027094900"
+    },
+    {
+      "historical": "20261027102724_airlinerra_private_aircraft_performance_reference_grid_20261027.sql",
+      "verified": "20261027102724_airlinerra_private_aircraft_performance_reference_grid_20261027.sql",
+      "blob": "e2c303a9b48f85427d6a6c59965c6e6585da8fc6",
+      "recorded_version": "20261027102724"
+    },
+    {
+      "historical": "20261027103843_airlinerra_private_aircraft_performance_review_source_constraints_20261027.sql",
+      "verified": "20261027103843_airlinerra_private_aircraft_performance_review_source_constraints_20261027.sql",
+      "blob": "846afea930866a4e6d629b8d81b901a92375a209",
+      "recorded_version": "20261027103843"
+    },
+    {
+      "historical": "20261027113202_airport_remaining_5013_decision_queue.sql",
+      "verified": "20261027113202_airport_remaining_5013_decision_queue.sql",
+      "blob": "69e7b83c6f5c0fec4bf6e70815773158ae83e856",
+      "recorded_version": "20261027113202"
+    },
+    {
+      "historical": "20261027114044_allow_owner_authorized_simulation_only_historical_airports_world1.sql",
+      "verified": "20261027114044_allow_owner_authorized_simulation_only_historical_airports_world1.sql",
+      "blob": "fb335c8bd29ae634c906f3d664bc8d57e6ce7799",
+      "recorded_version": "20261027114044"
+    },
+    {
+      "historical": "20261027120030_create_airport_quality_audit_flags_20261027.sql",
+      "verified": "20261027120030_create_airport_quality_audit_flags_20261027.sql",
+      "blob": "2a41f1f2e2b4fdea607f666af686a25d143766f3",
+      "recorded_version": "20261027120030"
+    },
+    {
+      "historical": "20261027121814_airport_world1_review_20261027_snapshot.sql",
+      "verified": "20261027121814_airport_world1_review_20261027_snapshot.sql",
+      "blob": "bf16e8e0424a1b1e84e8389ab19a5ed48d50f8b5",
+      "recorded_version": "20261027121814"
+    },
+    {
+      "historical": "20261027125014_independent_runway_checks_20261027.sql",
+      "verified": "20261027125014_independent_runway_checks_20261027.sql",
+      "blob": "a14e44d600b75aa7bad83f6fde4506033fe8bf93",
+      "recorded_version": "20261027125014"
+    },
+    {
+      "historical": "20261027131751_separate_airport_runway_validation_from_commercial_access_20261027.sql",
+      "verified": "20261027131751_separate_airport_runway_validation_from_commercial_access_20261027.sql",
+      "blob": "972826512571dd15d6e389be18c3c55094e96668",
+      "recorded_version": "20261027131751"
+    },
+    {
+      "historical": "20261027132833_airport_audit_distinguish_nonfaa_source_corroboration_from_primary_verification.sql",
+      "verified": "20261027132833_airport_audit_distinguish_nonfaa_source_corroboration_from_primary_verification.sql",
+      "blob": "194232bf19b63a2f2765c8f2aea0138d1c7db310",
+      "recorded_version": "20261027132833"
+    },
+    {
+      "historical": "20261027132933_remove_superseded_airport_runway_status_check.sql",
+      "verified": "20261027132933_remove_superseded_airport_runway_status_check.sql",
+      "blob": "2e954eb7f60e342892893304fb48b601e849f913",
+      "recorded_version": "20261027132933"
+    },
+    {
+      "historical": "20261027135708_create_non_foundation_airport_icao_paved_manual_review_queue.sql",
+      "verified": "20261027135708_create_non_foundation_airport_icao_paved_manual_review_queue.sql",
+      "blob": "06ffa2def005383008811aacfbdaae40d27120c2",
+      "recorded_version": "20261027135708"
+    },
+    {
+      "historical": "20261027145713_separate_airport_preapproval_pool_from_live_world_and_add_six_categories_20261027.sql",
+      "verified": "20261027145713_separate_airport_preapproval_pool_from_live_world_and_add_six_categories_20261027.sql",
+      "blob": "e4714da3b0a2e17e531b39d195bf65331f92807b",
+      "recorded_version": "20261027145713"
+    },
+    {
+      "historical": "20261027145824_archive_world1_nonfoundation_preapproval_sep_20261027.sql",
+      "verified": "20261027145824_archive_world1_nonfoundation_preapproval_sep_20261027.sql",
+      "blob": "cc3359277bd4704ccc87ec192cd8666344b73171",
+      "recorded_version": "20261027145824"
+    },
+    {
+      "historical": "20261027150742_add_passenger_cargo_both_to_airport_manual_preapproval_20261027.sql",
+      "verified": "20261027150742_add_passenger_cargo_both_to_airport_manual_preapproval_20261027.sql",
+      "blob": "afddfd65d526b33c6476287bcb0ff1480b07dbb9",
+      "recorded_version": "20261027150742"
+    },
+    {
+      "historical": "20261027150753_require_operation_type_on_preapproved_airport_pool_rows.sql",
+      "verified": "20261027150753_require_operation_type_on_preapproved_airport_pool_rows.sql",
+      "blob": "48eef07ed859f58057cf91fe54ad64c8a3b3cabe",
+      "recorded_version": "20261027150753"
+    },
+    {
+      "historical": "20261028153546_airlinerra_private_one_email_pilot_onboarding_20261028.sql",
+      "verified": "20261028153546_airlinerra_private_one_email_pilot_onboarding_20261028.sql",
+      "blob": "81675143f65cb7e23cd213f81c30008e5e64e505",
+      "recorded_version": "20261028153546"
     },
     {
       "historical": "20261029172212_airlinerra_world1_airport_data_foundation_20261029.sql",

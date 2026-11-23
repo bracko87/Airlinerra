@@ -1,0 +1,2 @@
+alter table airlinerra.research_source_snapshots drop constraint research_source_snapshots_import_status_check;
+alter table airlinerra.research_source_snapshots add constraint research_source_snapshots_import_status_check check(import_status in ('IN_PROGRESS','VERIFIED','VERIFIED_WITH_EXCEPTIONS','FAILED','SUPERSEDED'));

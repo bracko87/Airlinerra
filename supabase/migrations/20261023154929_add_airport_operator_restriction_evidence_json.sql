@@ -1,0 +1,2 @@
+alter table airlinerra.airport_commercial_verification add column if not exists operator_restrictions jsonb not null default '{}'::jsonb;
+comment on column airlinerra.airport_commercial_verification.operator_restrictions is 'Source-dated airport-specific operating constraints; never treat as legal authorization or final player-service permissions.';

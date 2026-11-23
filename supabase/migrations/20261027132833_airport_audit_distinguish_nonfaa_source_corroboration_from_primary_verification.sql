@@ -1,0 +1,11 @@
+ALTER TABLE airlinerra.airport_flagged_review_resolution_20261027
+DROP CONSTRAINT IF EXISTS airport_flagged_review_resolution_20261027_runway_review_status_check;
+ALTER TABLE airlinerra.airport_flagged_review_resolution_20261027
+ADD CONSTRAINT airport_flagged_review_resolution_20261027_runway_review_status_check
+CHECK (runway_review_status IN (
+'FAA_2026_PAVED_LENGTH_VERIFIED',
+'OFFICIAL_NONFAA_PAVED_LENGTH_VERIFIED',
+'OPERATOR_PAVED_LENGTH_VERIFIED',
+'NONFAA_AVIATION_SOURCES_CORROBORATE_PAVED',
+'HISTORICAL_EVIDENCE_REQUIRES_FOLLOWUP'
+));

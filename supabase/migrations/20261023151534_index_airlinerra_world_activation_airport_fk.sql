@@ -1,0 +1,1 @@
+create index if not exists airport_world_activation_airport_key_idx on airlinerra.airport_world_activation(airport_key);

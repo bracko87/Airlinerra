@@ -1,0 +1,1 @@
+ALTER TABLE airlinerra.airport_flagged_review_resolution_20261027 DROP CONSTRAINT IF EXISTS airport_flagged_review_resolution_20_runway_review_status_check;

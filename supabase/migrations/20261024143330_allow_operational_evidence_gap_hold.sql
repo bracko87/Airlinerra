@@ -1,0 +1,5 @@
+ALTER TABLE airlinerra.airport_operational_triage
+DROP CONSTRAINT airport_operational_triage_triage_status_check;
+ALTER TABLE airlinerra.airport_operational_triage
+ADD CONSTRAINT airport_operational_triage_triage_status_check
+CHECK (triage_status IN ('PENDING','CONSTRAINT_CONFIRMED_HOLD','SOURCE_IDENTITY_RECONCILIATION','CURRENT_SCREEN_INELIGIBLE','EVIDENCE_GAP_HOLD'));
