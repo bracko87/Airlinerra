@@ -70,3 +70,18 @@ https://supabase.com/docs/guides/auth/password-security#password-strength-and-le
 5. Obtain explicit production deployment/release approval and verify live changes only after all blockers are closed.
 
 **No paid staging branch was created. No production settings or tables were changed.**
+
+## 23 November 22:01 UTC — latest credential and IPv4 pooler diagnostic
+
+The GitHub secret now passes basic URI formatting validation; local safety scripts pass. The GitHub-hosted runner cannot reach the Direct IPv6 Supabase endpoint. An attempted guarded, schema-identity-verified fallback to officially documented eu-central-1 Supabase Session pooler candidates did **not** authenticate:
+
+- Shared session pooler candidate index 0: other connection failure (raw error/credentials intentionally suppressed).
+- Shared session pooler candidate index 1: authentication rejected.
+- The SQL export and local restore were **not** reached; no production data/DDL changed.
+- The connected Supabase project separately reports `ACTIVE_HEALTHY`; read-only cron check confirms flight dispatch, passenger demand, and final finance workers running successfully.
+
+**Required input:** In Supabase's own **Connect → Session pooler → URI** panel, copy that project's exact session-pooler connection string, replace the database password placeholder with the newly reset password (URL-encode password special characters) and set it as the existing GitHub Actions `AIRLINERRA_SCHEMA_READONLY_URL` secret. Do not simply paste the Direct connection string; do not choose Transaction pooler (port 6543). Never publish the URI or credentials.
+
+**Latest workflow run:** https://github.com/bracko87/Airlinerra/actions/runs/45275280824
+
+This is a connection/authentication prerequisite only, not a schema migration failure. Stop trying blind pooler variants until the authoritative project Session pooler URI is provided.
