@@ -15,7 +15,7 @@ ALTER TABLE airlinerra_game.section9_activation_release_policy_v1
 -- except inside individual test transactions which roll back.
 \i tests/sql/section9_disposable_original_final_finance_writer.sql
 DO $guard_checks$
-DECLARE r jsonb; flight text:='bbbbbbbb-2222-4222-8222-bbbbbbbbbbbb:2026-11-21:1';
+DECLARE r jsonb; flight text:='abababab-1212-4121-8121-abababababab:2026-11-21:1';
 BEGIN
  r:=airlinerra_game.section9_post_completed_flight_finance_once_v1(flight);
  IF r->>'status'<>'blocked_game_financial_or_flight_release'
@@ -47,7 +47,7 @@ UPDATE airlinerra_game.section9_flight_engine_readiness_audit_v1
  fuel_transaction_release='ACTIVATED',
  automatic_flight_and_fuel_settlement_enabled=true WHERE world_id=1;
 DO $missing_preparation$
-DECLARE r jsonb;flight text:='bbbbbbbb-2222-4222-8222-bbbbbbbbbbbb:2026-11-21:1';
+DECLARE r jsonb;flight text:='abababab-1212-4121-8121-abababababab:2026-11-21:1';
 BEGIN
  r:=airlinerra_game.section9_post_completed_flight_finance_once_v1(flight);
  IF r->>'status'<>'blocked_missing_completed_ticket_preparation'
