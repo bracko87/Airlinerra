@@ -90,6 +90,29 @@ INSERT INTO airlinerra_game.section9_capacity_hold_plan_items_v1(
 
 \i /tmp/section9-connecting-tickets-actual.sql
 
+-- Confirm the unchanged production writer fails precisely on the ambiguous
+-- reservation_key identifier, before testing the minimally patched candidate.
+DO $original_failure$
+DECLARE ticket_key text:='s9g1:'||repeat('b',64);
+ caught boolean:=false;
+BEGIN
+ BEGIN
+  PERFORM airlinerra_game.section9_issue_verified_demand_hold_tickets_v1(ticket_key);
+ EXCEPTION WHEN SQLSTATE '42702' THEN caught:=true;
+ END;
+ IF NOT caught THEN RAISE EXCEPTION 'Original production writer did not reproduce ambiguous reservation_key';END IF;
+ IF EXISTS(SELECT 1 FROM airlinerra_game.section9_passenger_reservation_batches_v1
+   WHERE reservation_key='demand.'||ticket_key)
+ OR EXISTS(SELECT 1 FROM airlinerra_game.section9_dated_flight_occurrences_v1
+   WHERE id IN ('eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'::uuid,
+                'ffffffff-ffff-4fff-8fff-ffffffffffff'::uuid)
+   AND booked_seats<>0)
+ THEN RAISE EXCEPTION 'Original writer failure left partial tickets';END IF;
+ RAISE NOTICE 'PASS reproduced unchanged production SQL ambiguous reservation_key fail-closed';
+END $original_failure$;
+-- Not a migration. Install isolated candidate with variable disambiguation only.
+\i /tmp/section9-connecting-tickets-disambiguated-lab.sql
+
 DO $acceptance$
 DECLARE ticket_key text:='s9g1:'||repeat('b',64);
  result jsonb;raised boolean:=false;
