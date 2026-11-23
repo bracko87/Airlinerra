@@ -69,7 +69,7 @@ test('all five source types are displayed without equating records to flight aut
   canActivateNormalFlight:false,certificationRevalidated:false,
   scheduleId:'schedule-1',scheduleVersion:3,verifiedGameDate:'2026-11-23',
   certificates:CERTIFICATION_SOURCES.map(([type])=>({
-   type,status:'certified',scheduleVersion:3,validToGameDate:'2026-12-01'
+   type,status:'certified',scheduleVersion:3,validFromGameDate:'2026-11-01',validToGameDate:'2026-12-01'
   }))};
  const summary=summarizeRecordedCertifications(reply);
  assert.equal(summary.checks.length,5);
@@ -83,12 +83,15 @@ test('missing game clock, expired certificates and mismatched versions fail clos
   canActivateNormalFlight:false,certificationRevalidated:false,
   scheduleId:'schedule-1',scheduleVersion:2,verifiedGameDate:'2026-11-23',
   certificates:[{type:'operator_licence',status:'certified',
-   scheduleVersion:2,validToGameDate:'2026-11-22'}]};
+   scheduleVersion:2,validFromGameDate:'2026-11-01',validToGameDate:'2026-11-22'}]};
  assert.equal(summarizeRecordedCertifications(base).checks[0].state,'unverified');
  assert.equal(summarizeRecordedCertifications({...base,verifiedGameDate:null}).checks[0].state,'unverified');
  assert.equal(summarizeRecordedCertifications({...base,certificates:[{
+  type:'operator_licence',status:'certified',scheduleVersion:2,
+  validFromGameDate:'2026-11-24',validToGameDate:'2026-12-01'}]}).checks[0].state,'unverified');
+ assert.equal(summarizeRecordedCertifications({...base,certificates:[{
   type:'operator_licence',status:'certified',scheduleVersion:1,
-  validToGameDate:'2026-12-01'}]}).checks[0].state,'unverified');
+  validFromGameDate:'2026-11-01',validToGameDate:'2026-12-01'}]}).checks[0].state,'unverified');
 });
 test('authenticated route certification endpoint has read-only owner-scoped query',async()=>{
  const server=await read('../server/flight-schedule-service.mjs');
