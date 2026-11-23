@@ -1,7 +1,7 @@
 -- REVIEW ONLY, NOT A MIGRATION. Do not apply to production without
 -- independent review, signed-movement HMAC acceptance and staging rollout.
 -- Expected deployed original: section9_record_signed_operated_flight_movement_v1
--- Changes exactly the occurrence status read to take a shared row lock
+-- Requires the SHA-like MD5 fingerprint of the complete reviewed function\n-- (pg_get_functiondef output), not merely an unchanged substring.\n-- Changes exactly the occurrence status read to take a shared row lock
 -- until movement insertion commits. PostgreSQL cancellation uses FOR UPDATE.
 --
 -- IMPORTANT: additional fleet/capacity lock-order and release analysis is
@@ -30,6 +30,7 @@ BEGIN
  AND p.proname='section9_record_signed_operated_flight_movement_v1'
  AND p.pronargs=9;
  IF original_source IS NULL
+ OR md5(original_source)<>'b796a2705d3a9eda3de5208cbbd6f77a'
  OR (length(original_source)-length(replace(original_source,original_read,'')))<>length(original_read)
  OR original_source ILIKE '%FOR SHARE OF o;%' THEN
   RAISE EXCEPTION 'REVIEW_CANDIDATE_MOVEMENT_ORIGINAL_SOURCE_MISMATCH';
