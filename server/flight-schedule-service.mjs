@@ -1445,6 +1445,7 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
       airlinerra_game.section9_verified_permission_game_day_v1()::text AS "verifiedGameDate",
       coalesce(jsonb_agg(jsonb_build_object(
         'type',c.clearance_type,'status',c.review_status,
+        'validFromGameDate',c.valid_from_game_date::text,
         'validToGameDate',c.valid_to_game_date::text,
         'scheduleVersion',c.schedule_version
       )) FILTER (WHERE c.schedule_id IS NOT NULL),'[]'::jsonb) AS certificates
