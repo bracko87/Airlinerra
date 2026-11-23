@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/ci/airlinerra_private_schema_baseline.sh'
+      - 'tests/sql/airlinerra_private_schema_fingerprint.sql'
       - '.github/workflows/airlinerra-private-schema-baseline-ci.yml'
   workflow_dispatch:
 permissions:
