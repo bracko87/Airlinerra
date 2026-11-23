@@ -1469,7 +1469,11 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
     if(!op||!cr||!mt||[op,cr,mt].some(x=>x.readOnly!==true)||
        op.canActivateNormalFlight!==false||
        cr.canActivateNormalFlight!==false||
-       mt.flightActivated!==false)
+       mt.flightActivated!==false||
+       String(op.scheduleId)!==body.scheduleId||
+       String(cr.scheduleId)!==body.scheduleId||
+       op.scheduleVersion!==owned.rows[0].scheduleVersion||
+       cr.scheduleVersion!==owned.rows[0].scheduleVersion)
       return respond(503,{error:'Operational evidence contract not verified'});
     return respond(200,{
      status:'read_only_operational_diagnostics',readOnly:true,
