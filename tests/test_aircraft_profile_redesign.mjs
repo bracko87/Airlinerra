@@ -26,7 +26,7 @@ test('Aircraft Profile uses the same main My routes panel and flat rows, not box
 test('aircraft picture is per-tail private and owner-verified, never shared between aircraft',async()=>{
  const [auth,migration,workspace]=await Promise.all([
   read('website/invited-tester-auth.mjs'),
-  read('supabase/migrations/20261110185000_aircraft_per_tail_private_images.sql'),
+  read('supabase/migrations/20261110141358_aircraft_per_tail_private_images.sql'),
   read('website/airline-workspace.mjs')]);
  for(const method of ['uploadAircraftImage','getAircraftImageUrl','removeAircraftImage'])
   assert.ok(auth.includes(method));
