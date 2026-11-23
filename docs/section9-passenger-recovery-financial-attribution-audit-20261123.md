@@ -168,3 +168,56 @@ https://github.com/bracko87/Airlinerra/actions/runs/45201136498
 This is **not** a full live settlement-versus-cancellation transaction
 verification and does not authorize active-route cancellation, refund
 processing, production migration, or deployment.
+
+## Actual finance-preparation row-lock protocol versus cancellation (2026-11-23)
+
+Follow-up inspection found that the private finance-preparation writer
+`section9_prepare_actual_ticket_postarrival_finance_v1(text)`
+acquires an advisory key `(583729,hashtext(physical_flight_id))`, then
+reads the flight occurrence, schedule and flight-capacity inventory with
+`FOR SHARE OF o,s,cap`. It requires the flight's
+`booking_status='closed'` and validated signed arrival, burn,
+postarrival ticket reconciliation and game-cost proof before inserting a
+finance preparation.
+
+The unchanged private cancellation writer uses the independent
+disruption advisory key `(583729,10041)`, locks the capacity and
+occurrence rows `FOR UPDATE`, and permits only open, unflown,
+financially unrecognized, uncharged reservations. Thus *the row locks
+and mutually exclusive booking statuses*, not their advisory keys, form
+the relevant shared safety boundary for these two operations.
+
+The new disposable PostgreSQL regression
+`tests/sql/section9_disposable_finance_preparation_vs_cancellation_race.sh`
+models the finance writer's **exact shared-row-lock and closed-status
+protocol** against the **unchanged cancellation function**, with two
+independent database sessions and a real wait at the contended capacity
+row:
+
+- **Preparation first:** holds `FOR SHARE` on capacity and occurrence
+  while transitioning the synthetic flight to closed and recording a
+  synthetic preparation. Waiting cancellation observes the closed
+  flight and returns `flight_not_cancellable`. The original two seats,
+  reservations and preparation remain; no cancellation receipt appears.
+- **Cancellation first:** holds the capacity row `FOR UPDATE` and
+  executes the unchanged cancellation writer. The preparation protocol
+  waits; after the cancellation commits, it reads the cancelled status,
+  refuses preparation and does not insert a finance record. Original
+  cancellation receipt is present and booked/held seats are zero.
+
+The regression checks both flights' seat counts, reservation statuses,
+finance preparation records and cancellation receipts after commit.
+It does not post money or calculate refunds.
+
+Verified with all other readiness regressions green in
+https://github.com/bracko87/Airlinerra/actions/runs/45204701613
+
+**Important limit:** the finance-preparation side in the new race is a
+faithful, deliberately scoped *row-lock/status simulator*, not a live
+invocation of the complete finance-preparation writer with real signed
+movement, fuel receipts and financial proof. The final
+`section9_post_completed_flight_finance_once_v1` writer uses a
+separate per-flight advisory lock and is not exercised in this test.
+Full real settlement-versus-cancellation and signed movement
+publication races remain open review gates. Production schema, player
+money, bookings and settings were not changed.
