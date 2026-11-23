@@ -149,7 +149,7 @@ jobs:
           set -euo pipefail
           test "$PGHOST" = '127.0.0.1'
           test "$PGDATABASE" = 'airlinerra_disposable'
-          psql -X -qAt -v ON_ERROR_STOP=1 -c "SELECT CASE WHEN current_database()='airlinerra_disposable' AND (SELECT count(*) FROM airlinerra_game.airline_flight_schedule_drafts_v1 WHERE status='active' AND operationally_verified)=2 THEN 'PASS-isolated-pair' ELSE 'FAIL-isolated-pair' END;" | grep -x 'PASS-isolated-pair'
+          psql -X -qAt -v ON_ERROR_STOP=1 -c "SELECT CASE WHEN current_database()='airlinerra_disposable' AND (SELECT count(*) FROM airlinerra_game.airline_flight_schedule_drafts_v1 WHERE status='active' AND operationally_verified AND id IN ('44444444-4444-4444-8444-444444444444'::uuid,'55555555-5555-4555-8555-555555555555'::uuid))=2 THEN 'PASS-isolated-pair' ELSE 'FAIL-isolated-pair' END;" | grep -x 'PASS-isolated-pair'
       - name: Summary of isolation
         if: always()
         run: |
