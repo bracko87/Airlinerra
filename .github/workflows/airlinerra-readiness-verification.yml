@@ -109,6 +109,12 @@ jobs:
         run: |
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_positive_fra_muc_pair_acceptance.sql
+      - name: Exercise isolated cancellation transaction rollback and replay lab
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = '127.0.0.1'
+          test "$PGDATABASE" = 'airlinerra_disposable'
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_cancellation_transaction_lab.sql
       - name: Verify isolated acceptance remained on disposable Postgres
         run: |
           set -euo pipefail
