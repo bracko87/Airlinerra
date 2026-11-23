@@ -186,9 +186,9 @@ BEGIN
    convert_to(repeat('t',80),'UTF8'),'sha256'),'hex');
   v_result:=airlinerra_game.section9_record_signed_operated_flight_movement_v1(
    v_airline,v_schedule,1,'2026-11-21',1,v_phase,v_event,v_event_id,v_sig);
-  IF v_result->>'status'<>CASE WHEN v_phase='departed'
+  IF v_result->>'status'<>(CASE WHEN v_phase='departed'
     THEN 'operated_flight_departure_recorded'
-    ELSE 'operated_flight_arrival_recorded' END
+    ELSE 'operated_flight_arrival_recorded' END)
    OR v_result->>'movementRecorded'<>'true'
   THEN RAISE EXCEPTION 'Actual signed movement failed %: %',v_phase,v_result;END IF;
   v_result:=airlinerra_game.section9_record_signed_operated_flight_movement_v1(
