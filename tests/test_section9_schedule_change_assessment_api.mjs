@@ -13,6 +13,8 @@ const defaultEvidence=()=>({scheduleId,scheduleVersion:2,scheduleStatus:'active'
  reservedSlotCount:6,flightOccurrenceCount:4,currentVersionOccurrenceCount:4,
  reservedBookingBatches:2,reservedPassengerSeats:7,
  paidUpfrontReservationCount:1,nonReservedReservationCount:2,
+ postedFlightFinancialCount:1,postedFlightLedgerMismatchCount:0,
+ postedFlightTicketIncomeUsd:900,
  quotedReservedFareUsd:625,certificateRecords:5,
  operatedMovementCount:1,actualFinancePreparationCount:2,preparedSettlementCount:3,
  pendingConnectingJourneyLegCount:1,connectingHoldPlanItemCount:2,
@@ -73,6 +75,10 @@ test('reserved passengers trigger explicit protection blocker',async()=>{
  assert.ok(v.blockers.includes('HISTORICAL_RESERVATION_STATES_REQUIRE_REVIEW'));
  assert.equal(v.evidence.quotedReservedFareUsd,625);
  assert.equal(v.flightLedgerReconciliationAvailable,false);
+ assert.equal(v.postedFlightLedgerAttributionIndexAvailable,true);
+ assert.equal(v.evidence.postedFlightFinancialCount,1);
+ assert.equal(v.evidence.postedFlightTicketIncomeUsd,900);
+ assert.ok(v.blockers.includes('POSTED_FLIGHT_LEDGER_HISTORY_MUST_BE_PRESERVED'));
  assert.equal(v.quotedFareIsRefundAmount,false);
  assert.ok(v.blockers.includes('OPERATED_MOVEMENTS_MUST_BE_PRESERVED'));
  assert.ok(v.blockers.includes('PREPARED_SETTLEMENTS_REQUIRE_ACCOUNTING_RECONCILIATION'));
@@ -95,6 +101,9 @@ test('invalid evidence never becomes a valid cancellation receipt',async()=>{
   {...defaultEvidence(),paidUpfrontReservationCount:-1},
   {...defaultEvidence(),nonReservedReservationCount:'2'},
   {...defaultEvidence(),quotedReservedFareUsd:Infinity},
+  {...defaultEvidence(),postedFlightFinancialCount:-1},
+  {...defaultEvidence(),postedFlightLedgerMismatchCount:'1'},
+  {...defaultEvidence(),postedFlightTicketIncomeUsd:NaN},
   {...defaultEvidence(),recognizedFlightRevenueUsd:'450'},
   {...defaultEvidence(),recognizedReservationRevenueUsd:Infinity}]){
   const f=fixture({row}),r=await f.handler(request());
@@ -118,7 +127,9 @@ test('active schedule cancellation stays disabled even if all other blockers are
   currentVersionOccurrenceCount:0,reservedBookingBatches:0,reservedPassengerSeats:0,
   certificateRecords:0,operatedMovementCount:0,actualFinancePreparationCount:0,
   preparedSettlementCount:0,paidUpfrontReservationCount:0,
-  nonReservedReservationCount:0,quotedReservedFareUsd:0,pendingConnectingJourneyLegCount:0,
+  nonReservedReservationCount:0,quotedReservedFareUsd:0,
+  postedFlightFinancialCount:0,postedFlightLedgerMismatchCount:0,
+  postedFlightTicketIncomeUsd:0,pendingConnectingJourneyLegCount:0,
   connectingHoldPlanItemCount:0,recognizedFlightRevenueUsd:0,recognizedReservationRevenueUsd:0};
  const f=fixture({row}),reply=await f.handler(request());
  assert.equal(reply.status,200);
@@ -150,4 +161,16 @@ test('paid upfront reservations block payment recovery even with no active booke
  assert.equal(value.quotedFareIsRefundAmount,false);
  assert.ok(value.blockers.includes('UPFRONT_PAID_TICKETS_REQUIRE_PAYMENT_AUDIT'));
  assert.equal(value.canCancelOperationalFlight,false);
+});
+
+test('a posted flight with mismatched ledger attribution is blocked without refund promises',async()=>{
+ const row={...defaultEvidence(),postedFlightFinancialCount:1,
+  postedFlightLedgerMismatchCount:1,postedFlightTicketIncomeUsd:300};
+ const f=fixture({row}),reply=await f.handler(request());
+ assert.equal(reply.status,200);const v=await reply.json();
+ assert.ok(v.blockers.includes('POSTED_FLIGHT_LEDGER_HISTORY_MUST_BE_PRESERVED'));
+ assert.ok(v.blockers.includes('POSTED_LEDGER_ATTRIBUTION_MISMATCH_REQUIRES_REVIEW'));
+ assert.equal(v.postedFlightLedgerAttributionIndexAvailable,true);
+ assert.equal(v.flightLedgerReconciliationAvailable,false);
+ assert.equal(v.canCancelOperationalFlight,false);
 });
