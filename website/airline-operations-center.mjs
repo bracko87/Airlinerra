@@ -80,7 +80,7 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
  if(root['route-list'])root['route-list'].innerHTML=card('My routes',
   '<p class="hint">Inactive route plans are loaded from your airline database. Drafts are not active flights and do not reserve airport slots.</p>'+
   '<div id="operations-route-list" class="operations-route-table"></div>'+
-  '<div class="workspace-actions"><button type="button" class="secondary" data-ops-page="routes">Create a route</button></div>'+
+  '<div class="workspace-actions"><button type="button" class="secondary" data-ops-page="routes">Create a route</button><button type="button" class="secondary" id="operations-routes-refresh">Refresh server routes</button></div>'+
   '<p id="operations-routes-feedback" class="hint" role="status"></p>'+
   '<p id="operations-flight-readiness" class="hint" role="status">Flight readiness will appear after the airline database is checked.</p>'+
   '<div id="operations-partner-console" class="operations-partner-console"></div>',
@@ -411,6 +411,19 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
  main?.addEventListener('click',async e=>{
   const target=e.target.closest('button');if(!target)return;
   if(target.dataset.opsPage){goTo?.(target.dataset.opsPage);return;}
+  if(target.id==='operations-routes-refresh'){
+   if(!server.connected||!server.airline?.id||typeof server.scheduler?.list!=='function'){
+    message('operations-routes-feedback','Airline database unavailable. No server routes were refreshed.');
+    return;
+   }
+   target.disabled=true;
+   message('operations-routes-feedback','Refreshing registered routes from the airline server...');
+   try{
+    await loadRemotePlans();
+    message('operations-routes-feedback','Route refresh finished. Only verified server schedules appear as active flights.');
+   }finally{target.disabled=false;}
+   return;
+  }
   if(target.dataset.opsRouteEdit!==undefined){
    const i=Number(target.dataset.opsRouteEdit);
    const candidates=allRoutes();
