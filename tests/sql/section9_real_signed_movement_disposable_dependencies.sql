@@ -1,3 +1,9 @@
+-- Isolated stand-ins for Supabase roles, never created on production.
+DO $$BEGIN
+ IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='anon') THEN CREATE ROLE anon NOLOGIN; END IF;
+ IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='authenticated') THEN CREATE ROLE authenticated NOLOGIN; END IF;
+ IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='service_role') THEN CREATE ROLE service_role NOLOGIN; END IF;
+END$$;
 -- Additional synthetic dependency tables for executing the unmodified real signed writer.
 CREATE SCHEMA IF NOT EXISTS vault;
 CREATE SCHEMA IF NOT EXISTS extensions;
