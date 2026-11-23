@@ -195,6 +195,11 @@ jobs:
         run: |
           set -euo pipefail
           bash tests/sql/section9_disposable_overlapping_itinerary_issuers.sh
+      - name: Verify posted-flight ledger attribution detects bad amount and ownership
+        run: |
+          set -euo pipefail
+          test "$PGDATABASE" = 'airlinerra_disposable'
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_posted_ledger_attribution_acceptance.sql
       - name: Verify isolated acceptance remained on disposable Postgres
         run: |
           set -euo pipefail
