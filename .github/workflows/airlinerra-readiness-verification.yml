@@ -183,6 +183,10 @@ jobs:
           print('Unchanged original automatic demand conversion worker extracted')
           PY
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_real_automatic_demand_worker_acceptance.sql
+      - name: Confirm overlapping automatic-demand workers cannot duplicate itinerary tickets
+        run: |
+          set -euo pipefail
+          bash tests/sql/section9_disposable_automatic_demand_worker_concurrency.sh
       - name: Verify isolated acceptance remained on disposable Postgres
         run: |
           set -euo pipefail
