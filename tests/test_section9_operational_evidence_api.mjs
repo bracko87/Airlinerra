@@ -19,6 +19,14 @@ function fixture({owner=true,gameDate='2026-11-23',unsafe=false,stale=false}={})
  const database={connect:async()=>({
   query:async(sql,params)=>{
    queries.push({sql,params});
+   if(sql.includes('jsonb_agg(jsonb_build_object(')){
+    const certificate={type:'operator_licence',status:'certified',
+     validFromGameDate:'2026-11-01',validToGameDate:'2026-12-01',scheduleVersion:1};
+    return {rowCount:owner?1:0,rows:owner?[{
+     scheduleId,scheduleVersion:1,scheduleStatus:'draft',
+     operationallyVerified:false,verifiedGameDate:gameDate,
+     certificates:[certificate]}]:[]};
+   }
    if(sql.includes('SELECT s.aircraft_inventory_id::text'))
     return {rowCount:owner?1:0,rows:owner?[{aircraftId,scheduleVersion:1}]:[]};
    if(sql.includes('section9_verified_permission_game_day_v1()::text AS game_day'))
@@ -107,5 +115,31 @@ test('stale schedule-version diagnostics fail closed',async()=>{
  const response=await f.handler(request());
  assert.equal(response.status,503);
  assert.equal((await response.json()).error,'Operational evidence contract not verified');
+ assert.equal(f.released(),true);
+});
+
+test('recorded certification endpoint provides read-only evidence for owned schedule',async()=>{
+ const f=fixture();
+ const response=await f.handler(request('certification-status'));
+ assert.equal(response.status,200);
+ const reply=await response.json();
+ assert.equal(reply.status,'signed_certification_records_read_only');
+ assert.equal(reply.readOnly,true);
+ assert.equal(reply.canActivateNormalFlight,false);
+ assert.equal(reply.certificationRevalidated,false);
+ assert.equal(reply.scheduleId,scheduleId);
+ assert.equal(reply.scheduleVersion,1);
+ assert.equal(reply.certificates[0].type,'operator_licence');
+ assert.equal(reply.certificates[0].validFromGameDate,'2026-11-01');
+ assert.equal(f.queries.length,1);
+ assert.match(f.queries[0].sql,/a.owner_player_id=\$1::uuid/);
+ assert.deepEqual(f.queries[0].params,[userId,airlineId,scheduleId]);
+ assert.equal(f.released(),true);
+});
+test('recorded certification endpoint hides unowned schedules',async()=>{
+ const f=fixture({owner:false});
+ const response=await f.handler(request('certification-status'));
+ assert.equal(response.status,404);
+ assert.equal(f.queries.length,1);
  assert.equal(f.released(),true);
 });
