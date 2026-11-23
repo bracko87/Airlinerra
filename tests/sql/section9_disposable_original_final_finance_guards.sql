@@ -7,6 +7,8 @@ BEGIN
  OR to_regprocedure('airlinerra_game.section9_post_completed_flight_finance_once_v1(text)') IS NOT NULL
  THEN RAISE EXCEPTION 'FINAL_FINANCE_TEST_DISPOSABLE_ONLY';END IF;
 END $guard$;
+ALTER TABLE airlinerra_game.section9_actual_ticket_finance_preparations_v1
+ ADD COLUMN source_version text;
 ALTER TABLE airlinerra_game.section9_flight_finance_posting_release_v1
  ADD COLUMN approval_reference text;
 ALTER TABLE airlinerra_game.section9_activation_release_policy_v1
