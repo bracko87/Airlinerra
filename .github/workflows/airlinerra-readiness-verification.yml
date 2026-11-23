@@ -296,6 +296,10 @@ jobs:
         run: |
           set -euo pipefail
           bash tests/sql/section9_disposable_fleet_lock_vs_signed_movement_cancellation.sh
+      - name: Race fuel custody preflight lock with signed movement and cancellation in both orders
+        run: |
+          set -euo pipefail
+          bash tests/sql/section9_disposable_fuel_custody_vs_signed_movement_cancellation.sh
       - name: Verify isolated acceptance remained on disposable Postgres
         run: |
           set -euo pipefail
