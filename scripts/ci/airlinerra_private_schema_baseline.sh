@@ -66,6 +66,16 @@ SELECT (
 )::int;")"
 [[ "$source_ok" == 1 ]] || { echo "BLOCKED: unexpected database schema identity." >&2; exit 2; }
 
+echo "Hashing remote structural definitions without returning SQL bodies..."
+psql "$source_url" -X -v ON_ERROR_STOP=1 -At \
+  -f tests/sql/airlinerra_private_schema_fingerprint.sql \
+  >"$tmp/source-structure.hashes" 2>"$tmp/source-fingerprint.stderr" || {
+  echo "BLOCKED: read-only source schema signature failed." >&2; exit 2;
+}
+[[ "$(wc -l < "$tmp/source-structure.hashes")" -eq 7 ]] || {
+  echo "BLOCKED: source structural signature has missing categories." >&2; exit 2;
+}
+
 echo "Read-only pg_dump to private ephemeral CI directory..."
 pg_dump --schema-only --no-owner --no-tablespaces \
   --schema=airlinerra --schema=airlinerra_game --schema=public \
@@ -107,6 +117,18 @@ SELECT (
   AND to_regprocedure('airlinerra_game.section9_record_signed_operated_flight_movement_v1(uuid,uuid,integer,date,integer,text,timestamptz,text,text)') IS NOT NULL
 )::int;")"
 [[ "$check" == 1 ]] || { echo "BLOCKED: local schema is missing required objects." >&2; exit 2; }
+
+echo "Comparing live and disposable local schema fingerprints..."
+local_psql -At -f tests/sql/airlinerra_private_schema_fingerprint.sql \
+  >"$tmp/clone-structure.hashes" 2>"$tmp/clone-fingerprint.stderr" || {
+  echo "BLOCKED: local structural signature failed." >&2; exit 2;
+}
+if ! cmp -s "$tmp/source-structure.hashes" "$tmp/clone-structure.hashes"; then
+  echo "BLOCKED: schema-only clone differs structurally from source in one or more categories." >&2
+  echo "Structural signatures not published; no source writes performed." >&2
+  exit 2
+fi
+echo "PASS: seven structural categories match between remote and isolated local database."
 
 echo "Applying repository forward-only corrections to local clone ONLY..."
 local_psql -q -f "$tmp/original-repository-migrations/20261123200000_section9_signed_movement_cancellation_guard.sql" \
