@@ -79,10 +79,10 @@ jobs:
           baseline = Path('supabase/migrations/20261027072557_ci_only_reviewed_account_baseline.sql')
           assert not baseline.exists()
           baseline.write_text(
-              '-- NOT AUTHORITATIVE. Synthetic disposable CI bootstrap.\\n'
-              '-- REVIEWED source: docs/sql/airlinerra_game_identity_schema_prelaunch.sql,\\n'
-              '-- docs/sql/airlinerra_game_activation_prelaunch.sql.\\n'
-              + identity + '\\n' + activation + '\\n' + diagnostic_reservation)
+              '-- NOT AUTHORITATIVE. Synthetic disposable CI bootstrap.\n'
+              '-- REVIEWED source: docs/sql/airlinerra_game_identity_schema_prelaunch.sql,\n'
+              '-- docs/sql/airlinerra_game_activation_prelaunch.sql.\n'
+              + identity + '\n' + activation + '\n' + diagnostic_reservation)
           print('Added temporary no-personal-data game account bootstrap for diagnostic replay')
           for expected in (
             '20261123200000_section9_signed_movement_cancellation_guard.sql',
