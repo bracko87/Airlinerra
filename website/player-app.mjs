@@ -1,5 +1,5 @@
 /** Real, verified manager dashboard and backend-gated onboarding.
- * Gameplay flight operations remain separately disabled.
+ * Operational scheduling is separately certified, not inferred from drafts.
  */
 import {inspectInvitedTesterProvider,TESTER_ORIGIN} from './invited-tester-entry.mjs';
 import {createInvitedTesterAuth,LOCAL_REAL_AUTH_ORIGIN} from './invited-tester-auth.mjs';
