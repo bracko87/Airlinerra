@@ -114,3 +114,34 @@ before it can be approved for production.
 **Release consequence:** signed movement/cancellation consistency is a
 known blocker. Do not enable player active-flight cancellation or
 claim complete live flight publication safety until this is resolved.
+
+## Signed movement candidate: original function compilation verified
+
+Additional verification completed 2026-11-23: the unchanged, read-only
+retrieved production function is preserved in
+`tests/sql/section9_disposable_original_signed_movement_writer.sql`.
+In a disposable PostgreSQL 17 acceptance test,
+`tests/sql/section9_disposable_signed_movement_patch_compile_acceptance.sql`,
+the exact reviewed source patch was applied to that original function.
+The test confirmed:
+
+- The original booking-status SELECT is replaced with exactly one
+  `FOR SHARE OF o` occurrence-row lock.
+- The cancellation exclusion, movement replay conflict and movement
+  storage logic remain present in the patched function.
+- Client-facing `anon`, `authenticated`, and `service_role` roles
+  have no function execution privileges.
+- All previous transactional booking, recovery, accounting and
+  frontend regression suites remain green.
+
+CI: https://github.com/bracko87/Airlinerra/actions/runs/45212956436
+
+**Status:** patch *compilation and original-function source integrity*
+are verified, but this still does **not** exercise an authenticated,
+signed, end-to-end live aircraft departure/arrival with HMAC and
+movement event insertion. The earlier concurrency proof exercises
+the row-lock/INSERT protocol using a simplified movement publisher,
+not the entire original signed writer. The candidate remains
+`supabase/migration_candidates/` only; it has **not** been deployed.
+Aircraft/occurrence/capacity lock ordering and complete signed
+movement interactions require additional end-to-end approval.
