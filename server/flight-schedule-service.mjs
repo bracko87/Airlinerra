@@ -1,7 +1,8 @@
 /**
- * Protected Airlinerra server-owned flight schedule DRAFT API.
- * The owner/aircraft/curfew gate is executed atomically INSIDE PostgreSQL.
- * There is intentionally no flight activation write. Never trust browser owner IDs.
+ * Protected server-owned flight schedules, planning drafts and independently
+ * certified operational route creation. The game engine owns activation and
+ * booking decisions inside PostgreSQL. Never trust browser owner IDs or
+ * treat a saved planning draft as a live flight.
  */
 import {SEVEN_DAY_WINDOW_SQL} from './section9-seven-day-window.mjs';
 export const FLIGHT_SCHEDULE_API_ROUTE='/api/v1/player/flight-schedule-drafts';
