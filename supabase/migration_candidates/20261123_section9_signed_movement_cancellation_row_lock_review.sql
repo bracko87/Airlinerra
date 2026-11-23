@@ -10,17 +10,17 @@ BEGIN;
 DO $review$
 DECLARE original_source text; patched_source text;
  original_read text:=$anchor$
-  SELECT o.id,o.booking_status INTO dated_id,dated_status
-  FROM airlinerra_game.section9_dated_flight_occurrences_v1 o
-  WHERE o.schedule_id=p_schedule AND o.schedule_version=p_schedule_version
-  AND o.flight_local_date=p_local_date AND o.weekly_entry=p_weekly_entry AND o.airline_id=p_airline;
+ SELECT o.id,o.booking_status INTO dated_id,dated_status
+ FROM airlinerra_game.section9_dated_flight_occurrences_v1 o
+ WHERE o.schedule_id=p_schedule AND o.schedule_version=p_schedule_version
+ AND o.flight_local_date=p_local_date AND o.weekly_entry=p_weekly_entry AND o.airline_id=p_airline;
 $anchor$;
  patched_read text:=$patched$
-  SELECT o.id,o.booking_status INTO dated_id,dated_status
-  FROM airlinerra_game.section9_dated_flight_occurrences_v1 o
-  WHERE o.schedule_id=p_schedule AND o.schedule_version=p_schedule_version
-  AND o.flight_local_date=p_local_date AND o.weekly_entry=p_weekly_entry AND o.airline_id=p_airline
-  FOR SHARE OF o;
+ SELECT o.id,o.booking_status INTO dated_id,dated_status
+ FROM airlinerra_game.section9_dated_flight_occurrences_v1 o
+ WHERE o.schedule_id=p_schedule AND o.schedule_version=p_schedule_version
+ AND o.flight_local_date=p_local_date AND o.weekly_entry=p_weekly_entry AND o.airline_id=p_airline
+ FOR SHARE OF o;
 $patched$;
 BEGIN
  SELECT pg_get_functiondef(p.oid) INTO original_source
