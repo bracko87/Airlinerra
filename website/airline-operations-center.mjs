@@ -659,7 +659,7 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
   if(index<0){
    goTo?.('route-list');
    message('operations-routes-feedback',
-    flightNumber+' has no matching saved route details here yet. Flight operation is not activated.');
+    flightNumber+' has no matching registered route. Refresh My Routes before retrying; no other route was opened.');
    return;
   }
   goTo?.('route-details');
