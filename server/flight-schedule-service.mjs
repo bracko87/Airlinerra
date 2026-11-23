@@ -1450,7 +1450,7 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
     const gameDateResult=await client.query(
       'SELECT airlinerra_game.section9_verified_permission_game_day_v1()::text AS game_day');
     const gameDate=gameDateResult.rows?.[0]?.game_day;
-    if(typeof gameDate!=='string'||!/^(20|21)\\d{2}-\\d{2}-\\d{2}$/.test(gameDate))
+    if(typeof gameDate!=='string'||!/^(20|21)\d{2}-\d{2}-\d{2}$/.test(gameDate))
       return respond(200,{status:'operational_evidence_unavailable',readOnly:true,
        canActivateNormalFlight:false,scheduleId:body.scheduleId,
        reason:'Authoritative game date is unavailable'});
