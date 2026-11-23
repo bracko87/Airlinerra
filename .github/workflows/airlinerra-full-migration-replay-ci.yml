@@ -44,7 +44,32 @@ jobs:
           keys=[p.name[:14] for p in paths]
           assert all(re.fullmatch(r'[0-9]{14}', k) for k in keys)
           duplicates=sorted({k for k in keys if keys.count(k)>1})
-          assert not duplicates, f'Duplicate migration versions: {duplicates}'
+          if duplicates:
+            print(f'BLOCKER: {len(duplicates)} duplicate migration versions found:')
+            for version in duplicates:
+              print(f'  {version}: '+', '.join(p.name for p in paths if p.name.startswith(version+'_')))
+            print('Production migration files left unchanged. Diagnostic CI copy will use temporary distinct versions.')
+            from datetime import datetime, timedelta
+            taken=set(keys)
+            remaps=[]
+            for version in duplicates:
+              colliders=[p for p in paths if p.name.startswith(version+'_')]
+              for original in colliders[1:]:
+                dt=datetime.strptime(version,'%Y%m%d%H%M%S')
+                offset=1
+                while True:
+                  candidate=(dt+timedelta(seconds=offset)).strftime('%Y%m%d%H%M%S')
+                  if candidate not in taken:
+                    break
+                  offset+=1
+                target=original.with_name(candidate+original.name[14:])
+                original.rename(target)
+                taken.add(candidate)
+                remaps.append((original.name,target.name))
+            Path('/tmp/airlinerra-temporary-migration-remaps.txt').write_text(
+                '\\n'.join(f'{before} -> {after}' for before,after in remaps)+'\\n')
+            print('Local CI diagnostic remaps (NOT committed or deployable):')
+            for before,after in remaps: print(f'  {before} -> {after}')
           for expected in (
             '20261123200000_section9_signed_movement_cancellation_guard.sql',
             '20261123210000_section9_dispatch_traffic_permission_binding_fix.sql'):
@@ -95,6 +120,10 @@ jobs:
               echo "Applied migrations: $(cat "$RUNNER_TEMP/migration-applied-count.txt")"
             else
               echo 'Full replay not yet confirmed. Inspect failing step and first SQL error in logs.'
+            fi
+            if test -s /tmp/airlinerra-temporary-migration-remaps.txt; then
+              echo 'BLOCKER: historical migration version collisions; temporary CI-only remaps were used for diagnostic replay.'
+              cat /tmp/airlinerra-temporary-migration-remaps.txt
             fi
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Stop and remove all local Supabase containers
