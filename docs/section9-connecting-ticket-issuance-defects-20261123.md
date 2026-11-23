@@ -42,3 +42,14 @@ The underlying flight, inventory, hold and plan objects are synthetic test fixtu
 5. Apply migrations only through the approved release process, with rollback and monitoring.
 
 No production SQL was changed in this investigation.
+
+## Review-only candidate ready for approval (2026-11-23)
+
+- Candidate SQL: `supabase/migration_candidates/20261123_section9_connecting_ticket_issuance_private_worker_review.sql`
+- The candidate is intentionally **outside** `supabase/migrations/` so deployment tooling cannot auto-apply it.
+- It checks the pre-existing worker definition, rejects unexpectedly public/client execution grants, and retains the private `postgres` worker restriction.
+- CI installs the original function first, reproduces the ambiguous identifier, then applies the **checked-in** candidate SQL in disposable PostgreSQL.
+- Candidate verification includes two-leg issuance, deliberate second-leg failure and full rollback, replay without additional tickets, rejection of a modified ticket record, and verification that `anon`, `authenticated`, and `service_role` cannot execute the worker.
+- Verified GitHub Actions run: https://github.com/bracko87/Airlinerra/actions/runs/45182867604 (both jobs successful).
+
+Before release: confirm production function has not drifted, review with database owner, generate the actual migration using the Supabase CLI, evaluate automatic-demand workers and concurrent connecting-journey issuance, and schedule rollout monitoring. Do **not** use the candidate alone as approval for active-flight cancellation.
