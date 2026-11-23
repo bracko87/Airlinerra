@@ -495,7 +495,10 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
       e.flightOccurrenceCount+' flight occurrences, '+e.reservedBookingBatches+
       ' reserved booking batches ('+e.reservedPassengerSeats+' seats), and '+
       e.certificateRecords+' certification records, '+e.operatedMovementCount+
-      ' operated movements, and );
+      ' operated movements, and '+(e.recognizedFlightRevenueUsd+
+       e.recognizedReservationRevenueUsd).toLocaleString('en-US',{maximumFractionDigits:2})+
+       ' USD in recorded revenue fields (which may overlap) require protected reconciliation. '+
+       'No flights, tickets, airport slots or money were changed.');
     }catch{
      if(allRoutes()[details.index()]?.serverScheduleId===id)
       message('operations-route-detail-save-status',
