@@ -59,7 +59,8 @@ jobs:
           # byte-identically restored from the recorded applied SQL.
           for original in (
             '20261023130625_airlinerra_private_research_and_public_site_check.sql',
-            '20261027072557_airlinerra_prelaunch_private_account_foundation_20261027.sql'):
+            '20261027072557_airlinerra_prelaunch_private_account_foundation_20261027.sql',
+            '20261029172212_airlinerra_world1_airport_data_foundation_20261029.sql'):
             assert Path('supabase/migrations',original).is_file(), original
           # The historical owner reservation migration includes a private
           # approved email. Do not publish it to the public repository.
