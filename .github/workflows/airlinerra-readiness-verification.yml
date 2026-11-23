@@ -248,6 +248,13 @@ jobs:
         run: |
           set -euo pipefail
           bash tests/sql/section9_disposable_original_final_finance_mutex.sh
+      - name: Prove original completed-flight settlement actual ledger cash and receipt atomicity
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = '127.0.0.1'
+          test "$PGDATABASE" = 'airlinerra_disposable'
+          test "$PGUSER" = 'postgres'
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_real_final_finance_atomic_acceptance.sql
       - name: Verify isolated acceptance remained on disposable Postgres
         run: |
           set -euo pipefail
