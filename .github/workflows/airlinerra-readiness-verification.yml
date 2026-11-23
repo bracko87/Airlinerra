@@ -234,6 +234,10 @@ jobs:
           test "$PGDATABASE" = 'airlinerra_disposable'
           test "$PGUSER" = 'postgres'
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_real_cancellation_finance_guards.sql
+      - name: Race original cancellation against finance-preparation row locking in both orders
+        run: |
+          set -euo pipefail
+          bash tests/sql/section9_disposable_finance_preparation_vs_cancellation_race.sh
       - name: Verify isolated acceptance remained on disposable Postgres
         run: |
           set -euo pipefail
