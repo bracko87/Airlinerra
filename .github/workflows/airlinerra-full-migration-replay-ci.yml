@@ -1,0 +1,103 @@
+name: Airlinerra full historical migration replay (isolated, no deployment)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/airlinerra-full-migration-replay-ci.yml'
+permissions:
+  contents: read
+concurrency:
+  group: airlinerra-full-migrations-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  replay-all:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      SUPABASE_ACCESS_TOKEN: ''
+      PGHOST: 127.0.0.1
+      PGPORT: '54322'
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v3
+        with:
+          version: 2.122.0
+      - name: Verify local-only target and ordered migration inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = 127.0.0.1
+          test "$PGPORT" = 54322
+          test "$PGDATABASE" = postgres
+          test -z "$SUPABASE_ACCESS_TOKEN"
+          grep -Fqx 'project_id = "airlinerra-local-auth"' supabase/config.toml
+          ! grep -Fq 'hwllkabgzaynalahvkpz' supabase/config.toml
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          paths=sorted(Path('supabase/migrations').glob('*.sql'))
+          assert len(paths)>300, f'Unexpectedly small migration set: {len(paths)}'
+          keys=[p.name[:14] for p in paths]
+          assert all(re.fullmatch(r'[0-9]{14}', k) for k in keys)
+          duplicates=sorted({k for k in keys if keys.count(k)>1})
+          assert not duplicates, f'Duplicate migration versions: {duplicates}'
+          for expected in (
+            '20261123200000_section9_signed_movement_cancellation_guard.sql',
+            '20261123210000_section9_dispatch_traffic_permission_binding_fix.sql'):
+            assert Path('supabase/migrations',expected).is_file(), expected
+          Path('/tmp/airlinerra-migration-list.txt').write_text(
+            '\n'.join(p.name for p in paths)+'\n')
+          print(f'Migration inventory: {len(paths)} uniquely versioned migrations')
+          print('Corrective migrations appear in timestamp order')
+          PY
+          supabase --version
+          docker info >/dev/null
+      - name: Start fresh local Supabase and apply complete migration history
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Supabase CLI runs migrations against ONLY the local Docker database.
+          # No production URL/token is configured or permitted in this job.
+          supabase start -x studio,imgproxy,realtime,storage-api,postgres-meta,edge-runtime,logflare,vector,supavisor 2>&1 | tee "$RUNNER_TEMP/full-migration-replay.log"
+          pg_isready -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE"
+          psql -XAt -v ON_ERROR_STOP=1 -c "select current_database()" | grep -qx postgres
+          psql -XAt -v ON_ERROR_STOP=1 -c "select count(*) from supabase_migrations.schema_migrations" > "$RUNNER_TEMP/migration-applied-count.txt"
+          echo "Fresh local applied migration count: $(cat "$RUNNER_TEMP/migration-applied-count.txt")"
+      - name: Verify real migration history, corrected functions and grants
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql -XAt -v ON_ERROR_STOP=1 -c "select count(*) from supabase_migrations.schema_migrations" | awk '$1>300{ok=1} END{exit !ok}'
+          psql -XAt -v ON_ERROR_STOP=1 -c "select exists(select 1 from supabase_migrations.schema_migrations where version='20261123200000')::int" | grep -qx 1
+          psql -XAt -v ON_ERROR_STOP=1 -c "select exists(select 1 from supabase_migrations.schema_migrations where version='20261123210000')::int" | grep -qx 1
+          psql -XAt -v ON_ERROR_STOP=1 -c "select (to_regprocedure('airlinerra_game.section9_record_signed_operated_flight_movement_v1(uuid,uuid,integer,date,integer,text,timestamptz,text,text)') is not null)::int" | grep -qx 1
+          psql -XAt -v ON_ERROR_STOP=1 -c "select (to_regprocedure('airlinerra_game.section9_auto_dispatch_due_flight_events_v1(integer)') is not null)::int" | grep -qx 1
+          psql -XAt -v ON_ERROR_STOP=1 -c "select (position('SECTION9_SIGNED_DEPARTURE_OCCURRENCE_NOT_OPEN' in pg_get_functiondef('airlinerra_game.section9_record_signed_operated_flight_movement_v1(uuid,uuid,integer,date,integer,text,timestamptz,text,text)'::regprocedure))>0)::int" | grep -qx 1
+          psql -XAt -v ON_ERROR_STOP=1 -c "select (position('required_permission_code' in pg_get_functiondef('airlinerra_game.section9_auto_dispatch_due_flight_events_v1(integer)'::regprocedure))>0)::int" | grep -qx 1
+          for role in anon authenticated service_role; do
+            psql -XAt -v ON_ERROR_STOP=1 -v role="$role" -c "select has_function_privilege(:'role','airlinerra_game.section9_record_signed_operated_flight_movement_v1(uuid,uuid,integer,date,integer,text,timestamptz,text,text)','EXECUTE')::int" | grep -qx 0
+            psql -XAt -v ON_ERROR_STOP=1 -v role="$role" -c "select has_function_privilege(:'role','airlinerra_game.section9_auto_dispatch_due_flight_events_v1(integer)','EXECUTE')::int" | grep -qx 0
+          done
+          echo "All historical migrations and private function guards validated in disposable local Supabase"
+      - name: Final isolated replay report
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo '### Complete fresh-database migration replay — local Supabase only'
+            echo 'Supabase CLI pinned to 2.122.0. No production project token, URL, or deployment.'
+            echo "Repository migrations: $(wc -l < /tmp/airlinerra-migration-list.txt 2>/dev/null || echo unknown)"
+            if [ -f "$RUNNER_TEMP/migration-applied-count.txt" ]; then
+              echo "Applied migrations: $(cat "$RUNNER_TEMP/migration-applied-count.txt")"
+            else
+              echo 'Full replay not yet confirmed. Inspect failing step and first SQL error in logs.'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Stop and remove all local Supabase containers
+        if: always()
+        shell: bash
+        run: supabase stop --no-backup || true
