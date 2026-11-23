@@ -277,6 +277,13 @@ jobs:
           test "$PGDATABASE" = 'airlinerra_disposable'
           test "$PGUSER" = 'postgres'
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_signed_movement_hmac_acceptance.sql
+      - name: Execute original patched signed departure arrival and replay with synthetic evidence
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = '127.0.0.1'
+          test "$PGDATABASE" = 'airlinerra_disposable'
+          test "$PGUSER" = 'postgres'
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_real_signed_departure_arrival_acceptance.sql
       - name: Verify isolated acceptance remained on disposable Postgres
         run: |
           set -euo pipefail
