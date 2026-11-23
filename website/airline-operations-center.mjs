@@ -479,13 +479,16 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
         report.bookingWriterLockProtocolVerified!==false||
         report.bookingMutation!==false||report.slotMutation!==false||
         report.ledgerPosted!==false||
+        report.flightLedgerReconciliationAvailable!==false||
+        report.quotedFareIsRefundAmount!==false||
         !Array.isArray(report.blockers)||!report.evidence||
         (['reservedSlotCount','flightOccurrenceCount','reservedBookingBatches',
          'reservedPassengerSeats','certificateRecords','operatedMovementCount',
           'actualFinancePreparationCount','preparedSettlementCount',
-          'pendingConnectingJourneyLegCount','connectingHoldPlanItemCount'].some(k=>
+          'pendingConnectingJourneyLegCount','connectingHoldPlanItemCount',
+          'paidUpfrontReservationCount','nonReservedReservationCount'].some(k=>
           !Number.isSafeInteger(report.evidence[k])||report.evidence[k]<0)||
-         ['recognizedFlightRevenueUsd','recognizedReservationRevenueUsd'].some(k=>
+         ['recognizedFlightRevenueUsd','recognizedReservationRevenueUsd','quotedReservedFareUsd'].some(k=>
           typeof report.evidence[k]!=='number'||!Number.isFinite(report.evidence[k])||
           report.evidence[k]<0)))
       throw Error('Unverified schedule change assessment');
@@ -501,11 +504,15 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
       ' operated movements, '+e.actualFinancePreparationCount+' actual finance preparations, '+
       e.preparedSettlementCount+' prepared settlements, '+
       e.pendingConnectingJourneyLegCount+' pending two-leg itinerary records, '+
-      e.connectingHoldPlanItemCount+' two-leg allocation items, and '+
+      e.connectingHoldPlanItemCount+' two-leg allocation items, '+
+      e.paidUpfrontReservationCount+' upfront-paid reservation records, '+
+      e.nonReservedReservationCount+' other reservation states, and '+
+      e.quotedReservedFareUsd.toLocaleString('en-US',{maximumFractionDigits:2})+
+      ' USD in booked ticket quotes (not a refund amount), plus '+
       (e.recognizedFlightRevenueUsd+
        e.recognizedReservationRevenueUsd).toLocaleString('en-US',{maximumFractionDigits:2})+
        ' USD in recorded revenue fields (which may overlap) require protected reconciliation. '+
-       'No flights, tickets, airport slots or money were changed.');
+       'The airline ledger cannot be reconciled to this individual flight from the available identifiers. No flights, tickets, airport slots or money were changed.');
     }catch{
      if(allRoutes()[details.index()]?.serverScheduleId===id)
       message('operations-route-detail-save-status',
