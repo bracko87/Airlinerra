@@ -78,3 +78,52 @@ production write was executed. Frontend/API regression tests are in
 
 This audit and response evidence are **not** a refund engine and cannot
 authorize active-flight cancellation or rescheduling.
+
+## Correction: existing flight-to-ledger attribution table found
+
+A subsequent read-only inspection of the actual settled-flight writer,
+`airlinerra_game.section9_post_completed_flight_finance_once_v1(text)`,
+found an existing flight-specific posting index:
+
+`airlinerra_game.section9_route_posted_flight_financials_v1`
+
+For each completed flight, the trusted writer inserts revenue and expense
+entries into `airline_ledger`, then stores their generated IDs in a single
+posted-flight financial record, in the same transaction as the airline cash
+update. That record carries `physical_flight_id`, `schedule_id`,
+`airline_id`, `arrived_event_id`, ticket income and itemized operating
+costs, `revenue_ledger_id` (nullable when no revenue) and the mandatory
+`expense_ledger_id`. Unique constraints protect both ledger ID references
+and the physical flight ID; foreign keys reference `airline_ledger(id)`.
+
+**This corrects the earlier conclusion that no flight-to-ledger link exists.**
+The base ledger has no flight ID, but this protected financial posting table
+provides explicit attribution for completed, posted flights.
+
+The read-only owner-scoped schedule assessment now exposes:
+- `postedFlightFinancialCount`: number of completed flight posting records;
+- `postedFlightTicketIncomeUsd`: ticket-income portion of those records
+  (not cash owed to any particular passenger);
+- `postedFlightLedgerMismatchCount`: checks referenced ledger existence,
+  airline ownership, entry types and expected signed revenue/expense totals.
+
+The review remains *fail closed*: posted history blocks cancellation and a
+posting mismatch triggers a distinct review blocker. The response signals
+`postedFlightLedgerAttributionIndexAvailable:true` while retaining
+`flightLedgerReconciliationAvailable:false`, because cancellation compensation,
+refund eligibility, collection methods and payment attribution are **not**
+established by posted flight financials.
+
+**Validation limits:** the production table had zero posted rows at inspection
+on 2026-11-23, so only schema constraints and SQL compilation were verified on
+the connected database. No actual financial postings, ledger balances or
+customer claims were changed. Full integration needs synthetic nonzero posting
+fixtures and a later real-world data audit.
+
+### Corrected implementation priority
+
+Use the existing `section9_route_posted_flight_financials_v1` attribution
+first rather than immediately introducing another flight posting ledger.
+Verify source-to-payment/refund entitlement independently. Only propose a new
+append-only compensation journal if existing journals cannot represent
+cancelled/passenger-refunded states safely.
