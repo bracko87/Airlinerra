@@ -187,6 +187,10 @@ jobs:
         run: |
           set -euo pipefail
           bash tests/sql/section9_disposable_automatic_demand_worker_concurrency.sh
+      - name: Race two direct issuers of one two-leg connecting itinerary
+        run: |
+          set -euo pipefail
+          bash tests/sql/section9_disposable_concurrent_connecting_issuers.sh
       - name: Verify isolated acceptance remained on disposable Postgres
         run: |
           set -euo pipefail
