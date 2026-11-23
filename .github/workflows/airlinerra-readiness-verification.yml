@@ -109,6 +109,23 @@ jobs:
         run: |
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_positive_fra_muc_pair_acceptance.sql
+      - name: Verify unchanged production direct booking SQL on disposable fixtures
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('supabase/migrations/20261113224000_section9_trusted_demand_hold_to_ticket_bridge_v1.sql').read_text()
+          start=s.index('CREATE OR REPLACE FUNCTION airlinerra_game.section9_reserve_verified_game_passenger_seats_v1(')
+          end=s.index('REVOKE ALL ON FUNCTION airlinerra_game.section9_reserve_verified_game_passenger_seats_v1(',start)
+          source=s[start:end]
+          assert len(source)>8000 and len(source)<12000
+          assert source.index('FOR UPDATE OF cap')<source.index('FOR UPDATE OF o')
+          assert 'SECTION9_PASSENGER_RESERVATION_ENGINE_ONLY' in source
+          assert 'ledgerPosted' in source
+          Path('/tmp/section9-direct-booking-actual.sql').write_text(source)
+          print('Original direct booking migration source extracted without modifications')
+          PY
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_real_booking_acceptance.sql
       - name: Exercise isolated cancellation transaction rollback and replay lab
         run: |
           set -euo pipefail
