@@ -343,6 +343,19 @@ SELECT * FROM events ORDER BY "startUtc",id`,
    JOIN airlinerra_game.section9_dated_flight_occurrences_v1 o ON o.id=b.occurrence_id
    WHERE o.schedule_id=s.id AND o.airline_id=s.airline_id AND o.world_id=1
      AND b.reservation_status='reserved') AS "reservedPassengerSeats",
+ (SELECT count(*)::int FROM airlinerra_game.section9_passenger_reservation_batches_v1 b
+   JOIN airlinerra_game.section9_dated_flight_occurrences_v1 o ON o.id=b.occurrence_id
+   WHERE o.schedule_id=s.id AND o.airline_id=s.airline_id AND o.world_id=1
+     AND b.paid_upfront IS TRUE) AS "paidUpfrontReservationCount",
+ (SELECT count(*)::int FROM airlinerra_game.section9_passenger_reservation_batches_v1 b
+   JOIN airlinerra_game.section9_dated_flight_occurrences_v1 o ON o.id=b.occurrence_id
+   WHERE o.schedule_id=s.id AND o.airline_id=s.airline_id AND o.world_id=1
+     AND b.reservation_status<>'reserved') AS "nonReservedReservationCount",
+ (SELECT coalesce(sum(b.seats_requested*b.quoted_fare_usd),0)::float8
+   FROM airlinerra_game.section9_passenger_reservation_batches_v1 b
+   JOIN airlinerra_game.section9_dated_flight_occurrences_v1 o ON o.id=b.occurrence_id
+   WHERE o.schedule_id=s.id AND o.airline_id=s.airline_id AND o.world_id=1
+     AND b.reservation_status='reserved') AS "quotedReservedFareUsd",
  (SELECT count(*)::int FROM airlinerra_game.section9_schedule_operational_certifications_v1 c
    WHERE c.schedule_id=s.id AND c.airline_id=s.airline_id) AS "certificateRecords",
  (SELECT count(*)::int FROM airlinerra_game.section9_operated_flight_movements_v1 m
@@ -1322,13 +1335,14 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
     const fields=['reservedSlotCount','flightOccurrenceCount','currentVersionOccurrenceCount',
      'reservedBookingBatches','reservedPassengerSeats','certificateRecords',
      'operatedMovementCount','actualFinancePreparationCount','preparedSettlementCount',
-     'pendingConnectingJourneyLegCount','connectingHoldPlanItemCount'];
+     'pendingConnectingJourneyLegCount','connectingHoldPlanItemCount',
+     'paidUpfrontReservationCount','nonReservedReservationCount'];
     if(row.scheduleId!==body.scheduleId||
        !Number.isSafeInteger(row.scheduleVersion)||row.scheduleVersion<1||
        !['draft','active'].includes(row.scheduleStatus)||
        typeof row.operationallyVerified!=='boolean'||
        (fields.some(field=>!Number.isSafeInteger(row[field])||row[field]<0)||
-        ['recognizedFlightRevenueUsd','recognizedReservationRevenueUsd'].some(field=>
+        ['recognizedFlightRevenueUsd','recognizedReservationRevenueUsd','quotedReservedFareUsd'].some(field=>
          typeof row[field]!=='number'||!Number.isFinite(row[field])||row[field]<0)))
      return respond(503,{error:'Schedule change evidence unavailable'});
     const blockers=[
@@ -1343,6 +1357,10 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
      ...(row.flightOccurrenceCount>0?['FLIGHT_OCCURRENCES_REQUIRE_RECONCILIATION']:[]),
      ...(row.reservedBookingBatches>0||row.reservedPassengerSeats>0?
       ['PASSENGER_RESERVATIONS_REQUIRE_PROTECTION']:[]),
+     ...(row.paidUpfrontReservationCount>0?
+      ['UPFRONT_PAID_TICKETS_REQUIRE_PAYMENT_AUDIT']:[]),
+     ...(row.nonReservedReservationCount>0?
+      ['HISTORICAL_RESERVATION_STATES_REQUIRE_REVIEW']:[]),
      ...(row.certificateRecords>0?['CERTIFICATES_REQUIRE_VERSION_RECONCILIATION']:[]),
      ...(row.operatedMovementCount>0?['OPERATED_MOVEMENTS_MUST_BE_PRESERVED']:[]),
      ...(row.actualFinancePreparationCount>0||row.preparedSettlementCount>0?
@@ -1358,8 +1376,11 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
      scheduleStatus:row.scheduleStatus,operationallyVerified:row.operationallyVerified,
      evidence:{...Object.fromEntries(fields.map(field=>[field,row[field]])),
       recognizedFlightRevenueUsd:row.recognizedFlightRevenueUsd,
-      recognizedReservationRevenueUsd:row.recognizedReservationRevenueUsd},
+      recognizedReservationRevenueUsd:row.recognizedReservationRevenueUsd,
+      quotedReservedFareUsd:row.quotedReservedFareUsd},
      blockers,bookingWriterLockProtocolVerified:false,
+     flightLedgerReconciliationAvailable:false,
+     quotedFareIsRefundAmount:false,
      canCancelOperationalFlight:false,canRescheduleOperationalFlight:false,
      bookingMutation:false,slotMutation:false,ledgerPosted:false
     });
