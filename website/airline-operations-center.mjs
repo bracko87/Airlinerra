@@ -6,6 +6,7 @@ import {createAirportOffice} from './airline-airports-office.mjs';
 import {createSection9RouteDetails} from './section9-route-details.mjs';
 import {createSection9PartnerConsole} from './section9-partner-console.mjs';
 import {summarizeSection9FlightReadiness} from './section9-flight-readiness.mjs';
+import {projectOwnedScheduleRoutes} from './section9-owned-schedule-routes.mjs';
 import {ownerPlanningEstimate,planningClockEstimate} from './route-planning-times.mjs';
 export const STAFF_DEPARTMENTS=Object.freeze({
  'Board and Executive':[
@@ -132,7 +133,7 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
   '<p class="hint">Budget estimates only. No employees are hired, no salaries charged, and no staff market orders are placed.</p>',
   'STAFF AND SALARIES');
  let state={},playerStore=null;
- let remotePlans=[],remotePlanTicket=0,loadedPlanAirline=null,loadedPlanScheduler=null;
+ let remotePlans=[],remoteSchedules=[],remoteFleet=[],remotePlanTicket=0,loadedPlanAirline=null,loadedPlanScheduler=null;
  const persist=async(...fields)=>{
   if(!playerStore?.ready('workplan'))return false;
   const patch=Object.fromEntries(fields.map(field=>[field,state[field]??null]));
@@ -140,10 +141,9 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
  };
  const localRoutes=()=>Array.isArray(state.routes)&&state.routes.length?state.routes:
   state.route?[state.route]:[];
- const allRoutes=()=>{
-  const remoteNumbers=new Set(remotePlans.map(x=>x.flightNumber));
-  return [...remotePlans,...localRoutes().filter(x=>!remoteNumbers.has(x?.flightNumber))];
- };
+ const allRoutes=()=>projectOwnedScheduleRoutes({
+  plans:remotePlans,schedules:remoteSchedules,local:localRoutes(),fleet:remoteFleet
+ });
  const normalizePlan=plan=>plan&&typeof plan.planId==='string'&&
   /^[A-Z0-9]{2}[0-9]{1,4}$/.test(plan.flightNumber||'')&&
   typeof plan.from?.key==='string'&&typeof plan.to?.key==='string'&&
@@ -164,7 +164,7 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
   const airlineId=server.airline?.id,scheduler=server.scheduler;
   const ticket=++remotePlanTicket;
   if(!server.connected||!airlineId||typeof scheduler?.list!=='function'){
-   remotePlans=[];
+   remotePlans=[];remoteSchedules=[];remoteFleet=[];
    message('operations-flight-readiness',
     'Airline database is not connected. Flight readiness cannot be verified.');
    renderRoutes();return;
@@ -172,14 +172,16 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
   try{
    const reply=await scheduler.list(airlineId);
    if(ticket!==remotePlanTicket)return;
-   if(!Array.isArray(reply?.plans))throw Error('Plan list unavailable');
+   if(!Array.isArray(reply?.plans)||!Array.isArray(reply?.drafts)||
+      !Array.isArray(reply?.fleet))throw Error('Owned route list unavailable');
    remotePlans=reply.plans.map(normalizePlan).filter(Boolean);
+   remoteSchedules=reply.drafts;remoteFleet=reply.fleet;
    message('operations-flight-readiness',
     summarizeSection9FlightReadiness(reply).text);
    renderRoutes();
   }catch{
    if(ticket!==remotePlanTicket)return;
-   remotePlans=[];
+   remotePlans=[];remoteSchedules=[];remoteFleet=[];
    message('operations-flight-readiness',
     'Airline flight readiness could not be verified. No flight activation was confirmed.');
    renderRoutes();
@@ -655,7 +657,9 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
   state=playerStore?.ready('workplan')?playerStore.snapshot('workplan'):{};renderRoutes();void details.refresh();
   const flight=typeof event?.detail?.flightNumber==='string'?event.detail.flightNumber:'Route';
   message('operations-routes-feedback',event?.detail?.serverSaved?
-   flight+' saved in the airline database as an inactive planning route. No flight or slot was activated.':
+   (event.detail?.operationallyVerified===true?
+    flight+' confirmed active by the airline server. Review My Routes and upcoming departures.':
+    flight+' saved in the airline database. Flight activation is not confirmed.'):
    flight+' saved as a non-operational planning draft in Supabase. No server flight was created.');
   if(event?.detail?.serverSaved)void loadRemotePlans();
  });
