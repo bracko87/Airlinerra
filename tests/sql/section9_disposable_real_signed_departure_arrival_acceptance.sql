@@ -28,6 +28,8 @@ CREATE TABLE airlinerra_game.airport_reference_profiles(
 INSERT INTO airlinerra_game.airport_reference_profiles VALUES
  (1,'OURAIRPORTS:2212','UTC'),(1,'OURAIRPORTS:2218','UTC');
 
+ALTER TABLE airlinerra_game.airline_aircraft_inventory
+ ADD COLUMN registration text;
 ALTER TABLE airlinerra_game.airline_flight_schedule_drafts_v1
  ADD COLUMN reference_departure_utc timestamptz,
  ADD COLUMN reference_arrival_utc timestamptz;
