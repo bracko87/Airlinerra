@@ -284,6 +284,10 @@ jobs:
           test "$PGDATABASE" = 'airlinerra_disposable'
           test "$PGUSER" = 'postgres'
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_real_signed_departure_arrival_acceptance.sql
+      - name: Race actual signed departure against actual cancellation in both occurrence lock orders
+        run: |
+          set -euo pipefail
+          bash tests/sql/section9_disposable_real_signed_departure_vs_cancellation_race.sh
       - name: Verify isolated acceptance remained on disposable Postgres
         run: |
           set -euo pipefail
