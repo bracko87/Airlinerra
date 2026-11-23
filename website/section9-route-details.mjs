@@ -146,8 +146,9 @@ export function createSection9RouteDetails({doc,host,getRoutes,getServer}={}){
       hint(doc,readinessChecks,check.explanation);
      }
      hint(doc,readinessChecks,'Recorded certificates are evidence only. Final flight readiness still requires authoritative signature and operational rechecks.');
+     let diagnostic=null;
      if(typeof server.scheduler?.operationalEvidence==='function'){
-      const operationalTitle=text(doc,'h4','Live operational diagnostics','route-readiness-title');
+      const operationalTitle=text(doc,'h4','Operational preflight diagnostics','route-readiness-title');
       readinessChecks.append(operationalTitle);
       try{
        const proof=await server.scheduler.operationalEvidence({
@@ -155,7 +156,7 @@ export function createSection9RouteDetails({doc,host,getRoutes,getServer}={}){
        });
        if(mySerial!==serial||request!==requestNumber)return;
        if(proof.scheduleId!==route.serverScheduleId)throw Error('Schedule mismatch');
-       const diagnostic=summarizeOperationalEvidence(proof);
+       diagnostic=summarizeOperationalEvidence(proof);
        if(!diagnostic||proof.scheduleVersion!==answer.scheduleVersion)
         throw Error('Unverified diagnostics');
        hint(doc,readinessChecks,diagnostic.summary);
@@ -186,6 +187,13 @@ export function createSection9RouteDetails({doc,host,getRoutes,getServer}={}){
       if(check.state==='recorded')continue;
       if(!readinessActions.querySelector('[data-workspace-go="'+check.page+'"]'))
        addNavigation(check.page,'Review '+check.label);
+     }
+     if(diagnostic){
+      for(const item of diagnostic.rows){
+       if(item.state==='checked')continue;
+       if(!readinessActions.querySelector('[data-workspace-go="'+item.page+'"]'))
+        addNavigation(item.page,'Review '+item.label);
+      }
      }
     }catch{
      if(mySerial===serial&&request===requestNumber){
