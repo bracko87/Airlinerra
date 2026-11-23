@@ -51,7 +51,10 @@ export async function verifyBuiltPlayerModules({distDir}={}){
  for(const mandatory of [
   'player-app.mjs',
   'game-permission-applications-client.mjs',
-  'game-permission-applications-view.mjs'
+  'game-permission-applications-view.mjs',
+  'section9-route-details.mjs',
+  'section9-certification-records.mjs',
+  'section9-operational-evidence.mjs'
  ]){
   if(!visited.has(mandatory))
    throw Error('Required player module not included in verified import graph: '+mandatory);
