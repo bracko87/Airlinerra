@@ -89,7 +89,7 @@ PROVENANCE = [
 ]
 
 def git_blob_sha(contents: bytes) -> str:
-    header = b"blob " + str(len(contents)).encode("ascii") + b"\\0"
+    header = b"blob " + str(len(contents)).encode("ascii") + b"\0"
     return hashlib.sha1(header + contents).hexdigest()
 
 def main() -> int:
@@ -97,7 +97,7 @@ def main() -> int:
     paths = sorted(MIGRATIONS.glob("*.sql"))
     version_map = {}
     for path in paths:
-        if not re.fullmatch(r"\\d{14}_.+\\.sql", path.name):
+        if not re.fullmatch(r"\d{14}_.+\.sql", path.name):
             errors.append(f"Invalid migration filename: {path.name}")
         version_map.setdefault(path.name[:14], []).append(path.name)
     for version, names in version_map.items():
@@ -132,7 +132,7 @@ def main() -> int:
                     errors.append(f"Stale migration filename reference in {file.relative_to(ROOT)}: {entry['historical']}")
 
     if errors:
-        print("\\n".join("BLOCKER: " + s for s in errors))
+        print("\n".join("BLOCKER: " + s for s in errors))
         return 1
     print(f"PASS: {len(paths)} unique migration versions; 14 byte-verified historical SQL bodies preserved")
     print("NOTE: This is provenance/integrity validation, not proof of full local database replay.")
