@@ -52,7 +52,7 @@ CREATE FUNCTION airlinerra_game.section9_prepare_onboard_financials_v1(
  RETURNS jsonb LANGUAGE sql AS $fn$
  SELECT '{"status":"onboard_settlement_not_released"}'::jsonb;
 $fn$;
-CREATE FUNCTION airlinerra_game.section9_verified_berlin_game_hour_v1()
+CREATE OR REPLACE FUNCTION airlinerra_game.section9_verified_berlin_game_hour_v1()
  RETURNS jsonb LANGUAGE sql STABLE AS $fn$
  SELECT '{"authoritativeGameHourAvailable":true,"gameHourUtc":"2026-11-23T14:00:00Z"}'::jsonb;
 $fn$;
