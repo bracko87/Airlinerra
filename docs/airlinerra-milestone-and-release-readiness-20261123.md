@@ -173,3 +173,42 @@ movement event insertion or cancellation competition. The candidate
 must not be applied to production solely based on HMAC and source-patch
 tests; a full signed operational acceptance and lock-order review remain
 open release requirements.
+
+## Signed departure/arrival and actual cancellation concurrency — completed lab milestone
+
+On 2026-11-23 two new disposable PostgreSQL 17 acceptance tests
+successfully invoked the **production-derived private signed movement
+writer** with the review-only occurrence-row-lock correction installed
+in the disposable test schema:
+
+- `tests/sql/section9_disposable_real_signed_departure_arrival_acceptance.sql`
+  supplies only synthetic world clock, airport timezone, approved
+  aircraft-location evidence, capacity verification and flight-dispatch
+  helpers, while the original movement writer itself validates the
+  canonical SHA-256 HMAC and writes **actual two-phase departure and
+  arrival records** and aircraft-position updates. Replays of both
+  signed events produce no duplicate movements; the aircraft ends
+  grounded at its verified synthetic destination.
+- `tests/sql/section9_disposable_real_signed_departure_vs_cancellation_race.sh`
+  exercises the **actual private movement writer and actual private
+  unflown cancellation writer** from separate PostgreSQL connections.
+  Both row-lock orderings were tested. Movement-first records exactly
+  one signed departure and refuses subsequent cancellation as
+  `flight_already_operated_or_settled`. Cancellation-first creates
+  exactly one cancellation receipt, then the signed movement writer
+  raises `SECTION9_CANCELLED_OCCURRENCE_MOVEMENT_FORBIDDEN` and
+  creates **no** signed departure. Final assertions forbid a cancelled
+  and departed state for either test flight.
+
+Both jobs passed in
+https://github.com/bracko87/Airlinerra/actions/runs/45217264962
+
+These tests substantially strengthen confidence in the guarded
+`FOR SHARE OF o` candidate and resolve the previously demonstrated
+protocol gap **under the tested synthetic conditions**. They do not
+make the patch a deployed production migration: full deployment
+approval still needs aircraft/fuel/crew lock ordering review,
+production-schema staging with actual signed sources, operational
+worker replay and rollback strategy, and live-flight diagnostics.
+The reviewed correction remains in `supabase/migration_candidates/`
+and player-initiated active-flight cancellation remains disabled.
