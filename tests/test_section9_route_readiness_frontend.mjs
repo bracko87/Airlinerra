@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {summarizeProtectedRouteReadiness} from '../website/section9-route-readiness.mjs';
+import {summarizeRecordedCertifications,CERTIFICATION_SOURCES} from '../website/section9-certification-records.mjs';
 const read=path=>readFile(new URL(path,import.meta.url),'utf8');
 
 test('readiness fails closed on absent or falsely approved server evidence',()=>{
@@ -61,4 +62,43 @@ test('Route Planner shows human-readable blockers; overview does not invent tick
  assert.match(planner,/This check does not activate a flight/);
  assert.doesNotMatch(overview,/Ticket sales remain disabled/);
  assert.match(overview,/Planning drafts alone do not open passenger sales/);
+});
+
+test('all five source types are displayed without equating records to flight authorization',()=>{
+ const reply={status:'signed_certification_records_read_only',readOnly:true,
+  canActivateNormalFlight:false,certificationRevalidated:false,
+  scheduleId:'schedule-1',scheduleVersion:3,verifiedGameDate:'2026-11-23',
+  certificates:CERTIFICATION_SOURCES.map(([type])=>({
+   type,status:'certified',scheduleVersion:3,validToGameDate:'2026-12-01'
+  }))};
+ const summary=summarizeRecordedCertifications(reply);
+ assert.equal(summary.checks.length,5);
+ assert(summary.checks.every(c=>c.state==='recorded'));
+ assert.match(summary.summary,/does not revalidate/i);
+ assert.equal(summarizeRecordedCertifications({...reply,canActivateNormalFlight:true}),null);
+ assert.equal(summarizeRecordedCertifications({...reply,certificationRevalidated:true}),null);
+});
+test('missing game clock, expired certificates and mismatched versions fail closed',()=>{
+ const base={status:'signed_certification_records_read_only',readOnly:true,
+  canActivateNormalFlight:false,certificationRevalidated:false,
+  scheduleId:'schedule-1',scheduleVersion:2,verifiedGameDate:'2026-11-23',
+  certificates:[{type:'operator_licence',status:'certified',
+   scheduleVersion:2,validToGameDate:'2026-11-22'}]};
+ assert.equal(summarizeRecordedCertifications(base).checks[0].state,'unverified');
+ assert.equal(summarizeRecordedCertifications({...base,verifiedGameDate:null}).checks[0].state,'unverified');
+ assert.equal(summarizeRecordedCertifications({...base,certificates:[{
+  type:'operator_licence',status:'certified',scheduleVersion:1,
+  validToGameDate:'2026-12-01'}]}).checks[0].state,'unverified');
+});
+test('authenticated route certification endpoint has read-only owner-scoped query',async()=>{
+ const server=await read('../server/flight-schedule-service.mjs');
+ const client=await read('../website/flight-schedule-client.mjs');
+ const details=await read('../website/section9-route-details.mjs');
+ assert.match(server,/body\.action==='certification-status'/);
+ assert.match(server,/a\.owner_player_id=\$1::uuid/);
+ assert.match(server,/certificationRevalidated:false/);
+ assert.match(server,/canActivateNormalFlight:false/);
+ assert.match(client,/certificationStatus:/);
+ assert.match(details,/summarizeRecordedCertifications/);
+ assert.match(details,/certificationStatus\(/);
 });
