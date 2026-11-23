@@ -552,7 +552,7 @@ SELECT * FROM events ORDER BY "startUtc",id`,
      FROM airlinerra_game.section6_weekly_airport_slot_reservations_v1 slot
      WHERE slot.schedule_id=s.id) AS "slotsReserved",
    s.departure_stand_type AS "departureStand",s.arrival_stand_type AS "arrivalStand",s.status,
-   s.version,s.updated_at AS "updatedAt"
+   s.version,s.operationally_verified AS "operationallyVerified",s.updated_at AS "updatedAt"
    FROM airlinerra_game.airline_flight_schedule_drafts_v1 s
    WHERE s.airline_id=$1::uuid ORDER BY s.updated_at DESC,s.id LIMIT 50`,
  save:`SELECT airlinerra_game.section6_save_owned_aircraft_schedule_with_slots_v1(
