@@ -358,7 +358,17 @@ SELECT * FROM events ORDER BY "startUtc",id`,
  (SELECT count(*)::int FROM airlinerra_game.section9_actual_ticket_finance_preparations_v1 p
   WHERE p.schedule_id=s.id AND p.airline_id=s.airline_id) AS "actualFinancePreparationCount",
  (SELECT count(*)::int FROM airlinerra_game.section9_prepared_occurrence_settlements_v1 p
-  WHERE p.schedule_id=s.id AND p.airline_id=s.airline_id) AS "preparedSettlementCount"
+  WHERE p.schedule_id=s.id AND p.airline_id=s.airline_id) AS "preparedSettlementCount",
+ (SELECT count(*)::int FROM airlinerra_game.section9_atomic_itinerary_hold_legs_v1 l
+   JOIN airlinerra_game.section9_atomic_itinerary_holds_v1 h
+     ON h.source_allocation_key=l.source_allocation_key
+   WHERE split_part(l.physical_flight_id,':',1)=s.id::text
+     AND cardinality(h.physical_flight_ids)=2
+     AND h.status='preflight_only') AS "pendingConnectingJourneyLegCount",
+ (SELECT count(*)::int FROM airlinerra_game.section9_capacity_hold_plan_items_v1 i
+   WHERE cardinality(i.physical_flight_ids)=2
+     AND EXISTS(SELECT 1 FROM unnest(i.physical_flight_ids) f(flight_id)
+       WHERE split_part(f.flight_id,':',1)=s.id::text)) AS "connectingHoldPlanItemCount"
  FROM airlinerra_game.airline_flight_schedule_drafts_v1 s
  JOIN airlinerra_game.airlines a ON a.id=s.airline_id
  JOIN airlinerra_game.world_memberships w ON w.world_id=a.world_id AND w.player_id=a.owner_player_id AND w.state='active'
@@ -1311,7 +1321,8 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
     if(result.rowCount!==1||!row)return respond(404,{error:'Owned schedule not found'});
     const fields=['reservedSlotCount','flightOccurrenceCount','currentVersionOccurrenceCount',
      'reservedBookingBatches','reservedPassengerSeats','certificateRecords',
-     'operatedMovementCount','actualFinancePreparationCount','preparedSettlementCount'];
+     'operatedMovementCount','actualFinancePreparationCount','preparedSettlementCount',
+     'pendingConnectingJourneyLegCount','connectingHoldPlanItemCount'];
     if(row.scheduleId!==body.scheduleId||
        !Number.isSafeInteger(row.scheduleVersion)||row.scheduleVersion<1||
        !['draft','active'].includes(row.scheduleStatus)||
@@ -1336,6 +1347,8 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
      ...(row.operatedMovementCount>0?['OPERATED_MOVEMENTS_MUST_BE_PRESERVED']:[]),
      ...(row.actualFinancePreparationCount>0||row.preparedSettlementCount>0?
       ['PREPARED_SETTLEMENTS_REQUIRE_ACCOUNTING_RECONCILIATION']:[]),
+     ...(row.pendingConnectingJourneyLegCount>0||row.connectingHoldPlanItemCount>0?
+      ['CONNECTING_JOURNEY_HOLDS_REQUIRE_ATOMIC_RECOVERY']:[]),
      ...(row.recognizedFlightRevenueUsd>0||row.recognizedReservationRevenueUsd>0?
       ['RECOGNIZED_REVENUE_REQUIRES_ACCOUNTING_RECONCILIATION']:[])
     ];
