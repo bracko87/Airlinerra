@@ -115,6 +115,10 @@ jobs:
           test "$PGHOST" = '127.0.0.1'
           test "$PGDATABASE" = 'airlinerra_disposable'
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_cancellation_transaction_lab.sql
+      - name: Race booking and cancellation in both row-lock orders
+        run: |
+          set -euo pipefail
+          bash tests/sql/section9_disposable_cancellation_race_acceptance.sh
       - name: Verify isolated acceptance remained on disposable Postgres
         run: |
           set -euo pipefail
