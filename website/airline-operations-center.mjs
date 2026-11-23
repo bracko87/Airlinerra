@@ -178,13 +178,18 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
    remoteSchedules=reply.drafts;remoteFleet=reply.fleet;
    message('operations-flight-readiness',
     summarizeSection9FlightReadiness(reply).text);
-   renderRoutes();return true;
+   renderRoutes();
+   // Reload details by schedule identity after every verified server-list refresh.
+   // List reordering must never change which flight the player has selected.
+   void details.refresh();
+   return true;
   }catch{
    if(ticket!==remotePlanTicket)return;
    remotePlans=[];remoteSchedules=[];remoteFleet=[];
    message('operations-flight-readiness',
     'Airline flight readiness could not be verified. No flight activation was confirmed.');
    renderRoutes();
+   void details.refresh();
    message('operations-routes-feedback',
     'Server planning routes could not be loaded. Browser drafts are still visible; refresh when connected.');
    return false;
