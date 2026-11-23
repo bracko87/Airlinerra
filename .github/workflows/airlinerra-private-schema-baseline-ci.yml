@@ -1,0 +1,83 @@
+name: Airlinerra private schema-only baseline and restore gate
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/ci/airlinerra_private_schema_baseline.sh'
+      - '.github/workflows/airlinerra-private-schema-baseline-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: airlinerra-private-schema-baseline-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  script-safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate shell script and allowed-source restrictions
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash -n scripts/ci/airlinerra_private_schema_baseline.sh
+          AIRLINERRA_SCHEMA_READONLY_URL='postgresql://postgres:synthetic-only@db.hwllkabgzaynalahvkpz.supabase.co/postgres?sslmode=require' \
+            bash scripts/ci/airlinerra_private_schema_baseline.sh --validate-only
+          if AIRLINERRA_SCHEMA_READONLY_URL='postgresql://postgres:synthetic-only@db.other-project.supabase.co/postgres?sslmode=require' \
+            bash scripts/ci/airlinerra_private_schema_baseline.sh --validate-only; then
+            echo 'CRITICAL: foreign project URL was accepted'; exit 1
+          fi
+          if AIRLINERRA_SCHEMA_READONLY_URL='postgresql://postgres:synthetic-only@db.hwllkabgzaynalahvkpz.supabase.co/postgres?sslmode=disable' \
+            bash scripts/ci/airlinerra_private_schema_baseline.sh --validate-only; then
+            echo 'CRITICAL: insecure connection URL was accepted'; exit 1
+          fi
+          if AIRLINERRA_SCHEMA_READONLY_URL='' \
+            bash scripts/ci/airlinerra_private_schema_baseline.sh --validate-only; then
+            echo 'CRITICAL: missing source secret was accepted'; exit 1
+          fi
+          echo 'Private schema-only runner safety checks passed.' >> "$GITHUB_STEP_SUMMARY"
+  isolated-restore:
+    needs: script-safety
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      AIRLINERRA_SCHEMA_READONLY_URL: ${{ secrets.AIRLINERRA_SCHEMA_READONLY_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check private source availability without printing connection details
+        id: gate
+        shell: bash
+        run: |
+          if [[ -z "$AIRLINERRA_SCHEMA_READONLY_URL" ]]; then
+            echo 'configured=false' >> "$GITHUB_OUTPUT"
+            echo '### BLOCKED: AIRLINERRA_SCHEMA_READONLY_URL not configured' >> "$GITHUB_STEP_SUMMARY"
+            echo 'Only script safety tests ran. No schema dump, live database connection or local restore was performed.' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'configured=true' >> "$GITHUB_OUTPUT"
+          fi
+      - uses: supabase/setup-cli@v3
+        if: steps.gate.outputs.configured == 'true'
+        with:
+          version: 2.122.0
+      - name: Install PostgreSQL 17 client if needed
+        if: steps.gate.outputs.configured == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v pg_dump >/dev/null 2>&1 || [[ "$(pg_dump --version)" != *' 17.'* && "$(pg_dump --version)" != *' 18.'* ]]; then
+            sudo apt-get update -qq
+            sudo apt-get install -y postgresql-client-17
+          fi
+          pg_dump --version
+      - name: Capture private schema only and verify forward-only patches on local clone
+        if: steps.gate.outputs.configured == 'true'
+        shell: bash
+        run: bash scripts/ci/airlinerra_private_schema_baseline.sh
+      - name: Record verification boundary
+        if: always()
+        shell: bash
+        run: |
+          echo '### Production safety boundary' >> "$GITHUB_STEP_SUMMARY"
+          echo 'This workflow never writes to source Supabase, never includes table data and never uploads the SQL dump.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Private source metadata remains only on the ephemeral runner. All production release switches remain untouched.' >> "$GITHUB_STEP_SUMMARY"
