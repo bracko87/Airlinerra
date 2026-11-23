@@ -97,7 +97,7 @@ test('actual player startup connects the local read-only owner fleet to the work
  const [app,overlay,sql]=await Promise.all([
   readFile(new URL('../website/player-app.mjs',import.meta.url),'utf8'),
   readFile(new URL('../website/dev-scripts/invited-overlay.mjs',import.meta.url),'utf8'),
-  readFile(new URL('../supabase/migrations/20261110104500_world1_panonian_initial_a319_allocation.sql',import.meta.url),'utf8')
+  readFile(new URL('../supabase/migrations/20261110084408_world1_panonian_initial_a319_allocation.sql',import.meta.url),'utf8')
  ]);
  assert.match(app,/createLocalOwnerFleetReaders\(/);
  assert.match(app,/fleetClient=localReaders\?\.fleetClient/);

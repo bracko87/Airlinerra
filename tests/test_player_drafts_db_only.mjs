@@ -185,7 +185,7 @@ test('main game screens contain no new browser-only persistence',async()=>{
   read('website/airline-operations-center.mjs'),read('website/airline-airports-office.mjs'),
   read('website/cabin-services-manager.mjs'),read('website/player-app.mjs'),
   read('website/dev-scripts/invited-overlay.mjs'),
-  read('supabase/migrations/20261112114500_owner_scoped_player_drafts_database_only_v1.sql')
+  read('supabase/migrations/20261112114211_owner_scoped_player_drafts_database_only_v1.sql')
  ]);
  for(const [name,source] of [['routes',routes],['workspace',workspace],['operations',operations],
   ['offices',offices],['cabin',cabin]])

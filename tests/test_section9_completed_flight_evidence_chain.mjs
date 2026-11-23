@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 const sql=()=>readFile(new URL(
- '../supabase/migrations/20261120173500_section9_private_completed_flight_evidence_chain_inspector.sql',
+ '../supabase/migrations/20261120170101_section9_private_completed_flight_evidence_chain_inspector.sql',
  import.meta.url),'utf8');
 test('private completed-flight inspector reads all stages but cannot issue a flight or post money',async()=>{
  const s=await sql();

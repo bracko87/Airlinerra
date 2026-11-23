@@ -252,7 +252,7 @@ test('a verified starter aircraft at the correct origin is not misdiagnosed as l
 });
 test('server position resolver explicitly favors signed movements over the original starter allocation',async()=>{
  const migration=await readFile(new URL(
-  '../supabase/migrations/20261112182500_section9_aircraft_position_resolver_record_alias_repair.sql',
+  '../supabase/migrations/20261112165529_section9_aircraft_position_resolver_record_alias_repair.sql',
   import.meta.url),'utf8');
  const server=await readFile(new URL('../server/flight-schedule-service.mjs',import.meta.url),'utf8');
  assert.match(migration,/original_airline_starter_allocation/);

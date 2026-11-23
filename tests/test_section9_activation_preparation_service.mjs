@@ -113,7 +113,7 @@ test('fails closed if DB claims activation, money, or invalid preparation flags'
 });
 test('private SQL contains six gates and does not change flight status checks',async()=>{
  const sql=await readFile(new URL(
-  '../supabase/migrations/20261109184500_section9_activation_certification_preparation.sql',
+  '../supabase/migrations/20261109124734_section9_activation_certification_preparation.sql',
   import.meta.url),'utf8');
  assert.match(sql,/SIX_INDEPENDENT_OPERATIONAL_CERTIFICATIONS_MISSING/);
  assert.match(sql,/COMMERCIAL_ACTIVATION_ADMIN_RELEASE_MISSING/);

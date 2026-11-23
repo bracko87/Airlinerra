@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {LICENCE_PLAN} from '../website/licensing-planner.mjs';
 const read=p=>readFile(new URL('../'+p,import.meta.url),'utf8');
-const sqlPath='supabase/migrations/20261120152500_licence8_aircraft_leasing_phase1_foundation.sql';
+const sqlPath='supabase/migrations/20261120143002_licence8_aircraft_leasing_phase1_foundation.sql';
 test('Licence 8 is one dry aircraft leasing licence, not wet lease or ACMI',async()=>{
  const item=LICENCE_PLAN.find(x=>x.code==='AIRCRAFT_LEASING');
  assert.ok(item);

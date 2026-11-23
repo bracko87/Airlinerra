@@ -140,7 +140,7 @@ test('route detail uses geographic map and organised operational and finance sec
  const [details,operations,planner,css,sql]=await Promise.all([
   read('section9-route-details.mjs'),read('airline-operations-center.mjs'),
   read('route-planner.mjs'),read('player-app.css'),
-  read('../supabase/migrations/20261110130000_airlinerra_owner_route_planning_drafts_v1.sql')
+  read('../supabase/migrations/20261110104505_airlinerra_owner_route_planning_drafts_v1.sql')
  ]);
  assert.match(details,/renderRouteMap\(mapRoot,from,to,\{doc\}\)/);
  assert.match(details,/route-details-top/);

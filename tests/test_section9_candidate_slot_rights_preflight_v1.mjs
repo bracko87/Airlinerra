@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 const read=p=>readFile(new URL('../'+p,import.meta.url),'utf8');
-const path='supabase/migrations/20261113192000_section9_owned_candidate_slot_rights_preflight_v1.sql';
+const path='supabase/migrations/20261113105919_section9_owned_candidate_slot_rights_preflight_v1.sql';
 
 test('owner-scoped candidate route reuses existing airfield slots, restrictions, and issued game grants',async()=>{
  const sql=await read(path);
