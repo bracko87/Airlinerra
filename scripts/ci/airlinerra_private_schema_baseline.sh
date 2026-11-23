@@ -39,7 +39,30 @@ try:
               and parts.port == 5432)
     assert direct or pooled
 except (AssertionError, ValueError, AttributeError):
-    print("BLOCKED: Airlinerra connection-string format is invalid; check password, username, host and database. No URL or credentials displayed.",file=sys.stderr)
+    # Report only booleans / predefined buckets; never log the supplied URL,
+    # the raw hostname, password, username or any unrecognized query value.
+    safe = {}
+    try:
+        pp = urlsplit(raw.replace("[", "%5B").replace("]", "%5D"))
+        h = pp.hostname or ""
+        safe["scheme_ok"] = pp.scheme in ("postgresql", "postgres")
+        safe["host_kind"] = ("direct" if h == "db.hwllkabgzaynalahvkpz.supabase.co"
+                            else "pooler" if h.endswith(".pooler.supabase.com")
+                            else "unknown")
+        safe["db_ok"] = pp.path == "/postgres"
+        safe["user_ok"] = pp.username == (
+            "postgres.hwllkabgzaynalahvkpz" if safe["host_kind"] == "pooler" else "postgres")
+        safe["password_present"] = bool(pp.password)
+        safe["port_kind"] = ("5432" if pp.port == 5432 else
+                             "6543" if pp.port == 6543 else
+                             "omitted" if pp.port is None else "other")
+        requested_ssl = parse_qs(pp.query).get("sslmode", [None])[0]
+        safe["ssl_mode"] = ("secure" if requested_ssl in ("require", "verify-ca", "verify-full")
+                            else "omitted" if requested_ssl is None else "unsupported")
+    except (ValueError, AttributeError):
+        safe = {"uri_parseable": False}
+    print("BLOCKED: Airlinerra connection URI validation failed: " +
+          ", ".join(f"{k}={v}" for k,v in safe.items()),file=sys.stderr)
     sys.exit(2)
 print(url) # Captured by command substitution, NEVER logged.
 PY
