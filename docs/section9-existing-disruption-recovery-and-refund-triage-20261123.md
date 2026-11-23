@@ -156,3 +156,37 @@ Files:
 **Still outstanding:** competing live ticket writer versus recovery
 (including both lock-order directions), refund/settlement authorization
 and production integration. No live database changes or deployments.
+
+## Concurrent recovery versus ticket issuance — both orders (2026-11-23)
+
+A two-session disposable PostgreSQL regression now runs the **original
+private connecting-passenger recovery function** against the separately
+reviewed, **undeployed** connecting-ticket issuance candidate with two
+new allocation keys. The transaction holding the itinerary row lock is
+intentionally delayed while a competing session starts:
+
+- **Recovery first** (itinerary `FOR UPDATE`): recovery releases the two
+  unissued passenger holds and records one recovery receipt. The waiting
+  ticket issuer sees the now-cancelled hold and returns
+  `blocked_missing_or_mixed_cargo_hold`. No reservation is created.
+- **Ticket first** (itinerary `FOR SHARE`): the ticket issuer creates
+  both reservations. The waiting recovery operation subsequently rebooks
+  the second leg, leaves the first leg booked, retains unrelated
+  passengers and records the replacement reservation and recovery
+  receipt exactly once.
+
+The regression checks booked-seat counters, shared capacity-held
+counters, replacement passenger reservations and absence of partial
+journey writes. Original recovery source is unmodified; all passenger
+and flight records are disposable synthetic fixtures.
+
+Green verification (both jobs):
+https://github.com/bracko87/Airlinerra/actions/runs/45200161712
+
+Regression:
+`tests/sql/section9_disposable_recovery_vs_ticket_issuance_race.sh`
+
+**Not certified by this test:** every possible mixed allocation,
+physical-flight capacity lock interleaving, real financial settlement,
+refund authorization, or production deployment. Player-initiated
+active-flight cancellation is still disabled and must remain so.
