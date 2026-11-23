@@ -1,13 +1,14 @@
 -- READ ONLY. Deterministic structural hashes for Airlinerra's two private
 -- schemas. Never exposes table rows or SQL bodies. Run on source and the
 -- isolated schema-only clone BEFORE applying any forward corrections.
--- A hash match is a structural consistency signal, NOT an independent
--- security or data-integrity certification.
+-- Structural hashes intentionally exclude ACLs (pg_dump --no-acl) but
+-- retain RLS-enabled flags, SQL definitions and policy predicates.
+-- Privilege checks are separate; a hash match does NOT certify grants,
+-- security configuration, data integrity or a production release.
 WITH objects AS (
   SELECT 'relation' AS kind,
-    format('rel|%I.%I|%s|rls=%s|force=%s|acl=%s|view=%s',
+    format('rel|%I.%I|%s|rls=%s|force=%s|view=%s',
       n.nspname,c.relname,c.relkind,c.relrowsecurity,c.relforcerowsecurity,
-      coalesce(c.relacl::text,''),
       CASE WHEN c.relkind IN ('v','m') THEN coalesce(pg_get_viewdef(c.oid,true),'') ELSE '' END) AS ddl
   FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
   WHERE n.nspname IN ('airlinerra','airlinerra_game')
@@ -40,8 +41,8 @@ WITH objects AS (
   WHERE n.nspname IN ('airlinerra','airlinerra_game') AND c.relkind='i'
   UNION ALL
   SELECT 'function',
-    format('fn|%I.%I|%s|acl=%s',n.nspname,p.proname,
-      pg_get_functiondef(p.oid),coalesce(p.proacl::text,''))
+    format('fn|%I.%I|%s',n.nspname,p.proname,
+      pg_get_functiondef(p.oid))
   FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
   WHERE n.nspname IN ('airlinerra','airlinerra_game')
   UNION ALL
