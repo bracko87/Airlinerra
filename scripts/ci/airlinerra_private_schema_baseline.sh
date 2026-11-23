@@ -95,6 +95,7 @@ fi
 if [[ "$normalized_source_url" == *'@db.hwllkabgzaynalahvkpz.supabase.co'* ]]; then
   echo "Direct IPv6 URI detected. Checking Supabase's official IPv4 session-pooler endpoints (private, read-only)."
   resolved=''
+  probe_tmp="$(mktemp -d)"
   for pooler_index in 0 1; do
     candidate="$(
       AIRLINERRA_POOLER_INDEX="$pooler_index" python3 - <<'PY'
@@ -121,17 +122,35 @@ PY
             AND to_regnamespace('airlinerra') IS NOT NULL
             AND to_regclass('airlinerra.airport_expansion_next_eligibility_phase4') IS NOT NULL
             AND to_regprocedure('airlinerra_game.section9_auto_dispatch_due_flight_events_v1(integer)') IS NOT NULL
-          )::int;" > /tmp/airlinerra-pooler-probe.result 2>/dev/null; then
-      if [[ "$(cat /tmp/airlinerra-pooler-probe.result)" == 1 ]]; then
+          )::int;" > "$probe_tmp/stdout" 2>"$probe_tmp/stderr"; then
+      if [[ "$(cat "$probe_tmp/stdout")" == 1 ]]; then
         resolved="$candidate"
+        echo "PASS: official session-pooler candidate $pooler_index returned exact Airlinerra schema identity."
         break
       fi
+      echo "POOLER CHECK $pooler_index: connected but wrong schema identity (rejected)." >&2
+    else
+      # Only output a whitelisted diagnosis, never the source/target host
+      # string, username, SQL contents, connection URL or password.
+      reason="other_connection_failure"
+      if grep -Eiq 'password authentication failed|authentication failed|invalid password' "$probe_tmp/stderr"; then
+        reason="authentication_rejected"
+      elif grep -Eiq 'tenant or user not found|tenant not found|user not found' "$probe_tmp/stderr"; then
+        reason="pooler_tenant_not_found"
+      elif grep -Eiq 'could not translate host name|name or service not known|temporary failure in name resolution' "$probe_tmp/stderr"; then
+        reason="pooler_dns_unavailable"
+      elif grep -Eiq 'network is unreachable|connection refused|connection timed out|timeout expired' "$probe_tmp/stderr"; then
+        reason="network_unreachable"
+      elif grep -Eiq 'SSL|TLS|certificate' "$probe_tmp/stderr"; then
+        reason="tls_negotiation_failed"
+      fi
+      echo "POOLER CHECK $pooler_index: $reason (URL and error details suppressed)." >&2
     fi
   done
-  rm -f /tmp/airlinerra-pooler-probe.result
+  rm -rf -- "$probe_tmp"
   unset candidate
   if [[ -z "$resolved" ]]; then
-    echo "BLOCKED: no verified project-specific IPv4 session-pooler connection; use the exact Session pooler URI from Supabase Connect." >&2
+    echo "BLOCKED: no verified project-specific IPv4 session-pooler connection. Use exact Session pooler URI from Supabase Connect." >&2
     exit 2
   fi
   normalized_source_url="$resolved"
