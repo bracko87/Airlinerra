@@ -237,13 +237,13 @@ test('DB failure releases private connection and does not issue a grant',async()
 });
 test('source and fresh certification SQL are private and cannot self-activate',async()=>{
  const source=await readFile(new URL(
-  '../supabase/migrations/20261109195000_section9_game_licence_traffic_rights_sources.sql',
+  '../supabase/migrations/20261109140138_section9_game_licence_traffic_rights_sources.sql',
   import.meta.url),'utf8');
  const sink=await readFile(new URL(
-  '../supabase/migrations/20261109195500_section9_game_licence_certification_freshness.sql',
+  '../supabase/migrations/20261109140221_section9_game_licence_certification_freshness.sql',
   import.meta.url),'utf8');
  const prepare=await readFile(new URL(
-  '../supabase/migrations/20261109200000_section9_activation_game_permissions_recheck.sql',
+  '../supabase/migrations/20261109140351_section9_activation_game_permissions_recheck.sql',
   import.meta.url),'utf8');
  assert.match(source,/GAME_OPERATOR_LICENCE_ISSUANCE_DISABLED/);
  assert.match(source,/GAME_RIGHTS_GRANTS_DISABLED/);

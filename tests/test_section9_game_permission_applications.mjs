@@ -264,13 +264,13 @@ test('expiry worker is bounded and never manipulates money',async()=>{
 });
 test('private permission lifecycle preserves hard disabled catalog and draft constraints',async()=>{
  const init=await readFile(new URL(
-  '../supabase/migrations/20261109202500_section9_game_permission_application_foundation.sql',
+  '../supabase/migrations/20261109143232_section9_game_permission_application_foundation.sql',
   import.meta.url),'utf8');
  const settle=await readFile(new URL(
-  '../supabase/migrations/20261109203000_section9_game_permission_settlement_and_expiry.sql',
+  '../supabase/migrations/20261109143402_section9_game_permission_settlement_and_expiry.sql',
   import.meta.url),'utf8');
  const proof=await readFile(new URL(
-  '../supabase/migrations/20261109203500_section9_game_permission_evidence_provenance.sql',
+  '../supabase/migrations/20261109143451_section9_game_permission_evidence_provenance.sql',
   import.meta.url),'utf8');
  assert.match(init,/section9_one_pending_game_permission_scope_idx/);
  assert.match(init,/business_permission_catalog_v1/);

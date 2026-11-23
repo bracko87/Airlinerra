@@ -174,10 +174,10 @@ test('cannot accept a database result that pretends to activate or credit cash',
 });
 test('slot verifier SQL is private; signed DB sink rechecks source proof',async()=>{
  const sql=await readFile(new URL(
-  '../supabase/migrations/20261109192500_section9_game_slot_authority_verification.sql',
+  '../supabase/migrations/20261109130727_section9_game_slot_authority_verification.sql',
   import.meta.url),'utf8');
  const sink=await readFile(new URL(
-  '../supabase/migrations/20261109193000_section9_slot_certification_freshness_gate.sql',
+  '../supabase/migrations/20261109130810_section9_slot_certification_freshness_gate.sql',
   import.meta.url),'utf8');
  assert.match(sql,/FOR SHARE OF s,f/);
  assert.match(sql,/slot_check/);

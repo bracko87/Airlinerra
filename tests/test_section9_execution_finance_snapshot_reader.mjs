@@ -34,7 +34,7 @@ function make(proof=BLOCKED){
 }
 test('uses the actual private PostgreSQL snapshot and never exposes signing, writes, or release controls',async()=>{
  const sql=await readFile(new URL(
-  '../supabase/migrations/20261120224500_section9_execution_finance_source_snapshot_candidates.sql',
+  '../supabase/migrations/20261120204252_section9_execution_finance_source_snapshot_candidates.sql',
   import.meta.url),'utf8');
  assert.match(sql,/LANGUAGE plpgsql STABLE SECURITY INVOKER/);
  assert.match(sql,/section9_execution_finance_certificate_source_preflight_v1/);

@@ -4,7 +4,7 @@ import {readFile} from 'node:fs/promises';
 const read=path=>readFile(new URL('../'+path,import.meta.url),'utf8');
 
 test('game fuel snapshot is source-labelled, versioned and keeps unknown tank values missing',async()=>{
- const sql=await read('supabase/migrations/20261112191500_section9_game_fuel_model_snapshot_v1.sql');
+ const sql=await read('supabase/migrations/20261112172218_section9_game_fuel_model_snapshot_v1.sql');
  assert.match(sql,/CREATE TABLE airlinerra_game\.section9_game_fuel_model_snapshot_v1/);
  assert.match(sql,/model_version text NOT NULL/);
  assert.match(sql,/EXISTING_PROVISIONAL_DISTANCE_RATE/);
@@ -20,7 +20,7 @@ test('game fuel snapshot is source-labelled, versioned and keeps unknown tank va
  assert.match(sql,/REVOKE ALL ON TABLE/);
 });
 test('game calculations are not aircraft dispatch or refuelling or financial settlement releases',async()=>{
- const sql=await read('supabase/migrations/20261112191500_section9_game_fuel_model_snapshot_v1.sql');
+ const sql=await read('supabase/migrations/20261112172218_section9_game_fuel_model_snapshot_v1.sql');
  assert.match(sql,/operational_dispatch_release text NOT NULL DEFAULT 'NOT_RELEASED'/);
  assert.match(sql,/financial_settlement_release text NOT NULL DEFAULT 'NOT_RELEASED'/);
  assert.doesNotMatch(sql,/operational_dispatch_release\s*=\s*'RELEASED'/);
@@ -36,7 +36,7 @@ test('game calculations are not aircraft dispatch or refuelling or financial set
  assert.match(server,/routeCreated:false/);
 });
 test('original starter usage zero is SINCE assignment only, not a physical maintenance or age estimate',async()=>{
- const sql=await read('supabase/migrations/20261112190000_section9_verified_starter_usage_tracking_baseline_v1.sql');
+ const sql=await read('supabase/migrations/20261112171929_section9_verified_starter_usage_tracking_baseline_v1.sql');
  assert.match(sql,/verified_tracking_started_utc=source_row\.assigned_at/);
  assert.match(sql,/tracking_source='verified_original_starter_allocation_since_assignment'/);
  assert.match(sql,/tracked_flight_hours=0/);

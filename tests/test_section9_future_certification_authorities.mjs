@@ -125,7 +125,7 @@ test('invalid date or schedule never queries, database failures release connecti
 });
 test('the live certification database sink keeps both future types blocked',async()=>{
  const sql=await readFile(new URL(
-  '../supabase/migrations/20261120211500_section9_unreleased_execution_finance_certification_fail_closed.sql',
+  '../supabase/migrations/20261120201142_section9_unreleased_execution_finance_certification_fail_closed.sql',
   import.meta.url),'utf8');
  assert.match(sql,/SECTION9_UNRELEASED_EXECUTION_OR_FINANCE_CERTIFICATION/);
  const source=await readFile(new URL(

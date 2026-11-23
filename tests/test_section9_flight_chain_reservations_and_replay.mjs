@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 const sql=()=>readFile(new URL(
- '../supabase/migrations/20261120184000_section9_completed_flight_chain_reservation_reconciliation.sql',import.meta.url),'utf8');
+ '../supabase/migrations/20261120172142_section9_completed_flight_chain_reservation_reconciliation.sql',import.meta.url),'utf8');
 test('flight chain inspector stays private, stable and cannot post money or open bookings',async()=>{
  const s=await sql();
  assert.match(s,/LANGUAGE plpgsql STABLE SECURITY INVOKER/);

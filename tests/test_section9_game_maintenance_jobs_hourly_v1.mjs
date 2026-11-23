@@ -5,7 +5,7 @@ import {createFlightScheduleClient} from '../website/flight-schedule-client.mjs'
 const read=path=>readFile(new URL('../'+path,import.meta.url),'utf8');
 
 test('game-hour clock requires matching daily signed proof, 1:1 Berlin date and active world',async()=>{
- const sql=await read('supabase/migrations/20261113170000_section9_hourly_verified_maintenance_jobs_v1.sql');
+ const sql=await read('supabase/migrations/20261113101437_section9_hourly_verified_maintenance_jobs_v1.sql');
  assert.match(sql,/CREATE FUNCTION airlinerra_game\.section9_verified_world_instant_v1/);
  assert.match(sql,/c\.confirmed_game_date IS DISTINCT FROM \(x AT TIME ZONE 'Europe\/Berlin'\)::date/);
  assert.match(sql,/section9_verified_game_tick_receipts_v1/);
@@ -17,8 +17,8 @@ test('game-hour clock requires matching daily signed proof, 1:1 Berlin date and 
  assert.match(sql,/SECURITY INVOKER/);
 });
 test('private job ledger enforces one live job per airframe, aircraft position, MRO and no money',async()=>{
- const sql=await read('supabase/migrations/20261113170000_section9_hourly_verified_maintenance_jobs_v1.sql');
- const alias=await read('supabase/migrations/20261113172000_section9_maintenance_job_aircraft_alias_repair.sql');
+ const sql=await read('supabase/migrations/20261113101437_section9_hourly_verified_maintenance_jobs_v1.sql');
+ const alias=await read('supabase/migrations/20261113101538_section9_maintenance_job_aircraft_alias_repair.sql');
  assert.match(sql,/CREATE UNIQUE INDEX section9_one_unfinished_game_maintenance_job_per_aircraft_v1/);
  assert.match(sql,/WHERE status IN \('scheduled','in_progress'\)/);
  assert.match(sql,/FOR UPDATE OF fleet/);
@@ -36,8 +36,8 @@ test('private job ledger enforces one live job per airframe, aircraft position, 
  assert.doesNotMatch(sql,/INSERT INTO\s+airlinerra_game\.section9_route_posted_flight_financials_v1/i);
 });
 test('engine completion is atomic, exactly once, isolated from physical checks and finances',async()=>{
- const sql=await read('supabase/migrations/20261113170000_section9_hourly_verified_maintenance_jobs_v1.sql');
- const cron=await read('supabase/migrations/20261113175000_section9_world1_maintenance_minute_cron.sql');
+ const sql=await read('supabase/migrations/20261113101437_section9_hourly_verified_maintenance_jobs_v1.sql');
+ const cron=await read('supabase/migrations/20261113101725_section9_world1_maintenance_minute_cron.sql');
  assert.match(sql,/CREATE FUNCTION airlinerra_game\.section9_advance_game_maintenance_jobs_v1/);
  assert.match(sql,/FOR UPDATE SKIP LOCKED/);
  assert.match(sql,/status='in_progress',engine_start_observed_at=v_now/);
@@ -49,7 +49,7 @@ test('engine completion is atomic, exactly once, isolated from physical checks a
  assert.match(cron,/section9_advance_game_maintenance_jobs_v1\(\)/);
 });
 test('due evaluator resets from completed game job receipts and grounds while job reserved',async()=>{
- const sql=await read('supabase/migrations/20261113174000_section9_maintenance_due_uses_game_job_receipts.sql');
+ const sql=await read('supabase/migrations/20261113101703_section9_maintenance_due_uses_game_job_receipts.sql');
  assert.match(sql,/section9_game_maintenance_service_receipts_v1/);
  assert.match(sql,/latest\.game_completed_at_utc/);
  assert.match(sql,/last_hours\+policy\.flight_hour_interval/);
@@ -110,7 +110,7 @@ test('aircraft details UI has six small maintenance buttons and no fake clearanc
  assert.match(ui,/has NOT received operational clearance|NOT received operational clearance/);
 });
 test('exact 1:1 flight window checks full UTC maintenance overlap plus overnight due dates',async()=>{
- const sql=await read('supabase/migrations/20261113180000_section9_hour_level_maintenance_flight_window_gate.sql');
+ const sql=await read('supabase/migrations/20261113102706_section9_hour_level_maintenance_flight_window_gate.sql');
  const api=await read('server/flight-schedule-service.mjs');
  assert.match(sql,/CREATE FUNCTION airlinerra_game\.section9_owned_game_maintenance_flight_window_v1/);
  assert.match(sql,/section9_verified_world_instant_v1\(\)/);
@@ -129,10 +129,10 @@ test('exact 1:1 flight window checks full UTC maintenance overlap plus overnight
  assert.match(api,/RECURRING_MAINTENANCE_WINDOW_CERTIFICATION_NOT_CONNECTED/);
 });
 test('financial game maintenance never releases service free or charges twice',async()=>{
- const quote=await read('supabase/migrations/20261113184000_section9_game_maintenance_price_and_payment_hold.sql');
- const engine=await read('supabase/migrations/20261113185500_section9_maintenance_ledger_generated_identity_fix.sql');
- const due=await read('supabase/migrations/20261113185000_section9_maintenance_due_requires_settled_game_expense.sql');
- const unpaid=await read('supabase/migrations/20261113190000_section9_unpaid_maintenance_indefinite_grounding.sql');
+ const quote=await read('supabase/migrations/20261113103819_section9_game_maintenance_price_and_payment_hold.sql');
+ const engine=await read('supabase/migrations/20261113104046_section9_maintenance_ledger_generated_identity_fix.sql');
+ const due=await read('supabase/migrations/20261113103915_section9_maintenance_due_requires_settled_game_expense.sql');
+ const unpaid=await read('supabase/migrations/20261113104858_section9_unpaid_maintenance_indefinite_grounding.sql');
  const ui=await read('website/airline-workspace.mjs');
  assert.match(quote,/quoted_cost_usd/);
  assert.match(quote,/paid_ledger_entry_id/);
