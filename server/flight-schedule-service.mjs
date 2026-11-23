@@ -210,7 +210,7 @@ export function validateFlightSchedulePayload(body){
     Number.isInteger(body.loadPercent)&&body.loadPercent>=0&&body.loadPercent<=100&&
     Number.isInteger(body.parkingMinutes)&&body.parkingMinutes>=0&&
     body.parkingMinutes<=10080;
- if(body.action==='delete'||body.action==='activation-check'||
+ if(body.action==='certification-status'||body.action==='delete'||body.action==='activation-check'||
     body.action==='booking-window-preview')
   return withinFields(body,CHECK_FIELDS)&&uuid(body.scheduleId);
  if(body.action==='rotation-preview'||body.action==='operations-preview'){
@@ -1435,6 +1435,36 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
     if(evidence.canActivateNormalFlight!==false||evidence.readOnly!==true)
      return respond(503,{error:'Operational activation not verified'});
     return respond(200,evidence);
+   }
+   if(body.action==='certification-status'){
+    // Owner-scoped, read-only evidence. A certificate row is not a fresh
+    // cryptographic or operational re-verification and never activates a flight.
+    const evidence=await client.query(`SELECT
+      s.id::text AS "scheduleId",s.version AS "scheduleVersion",
+      s.status AS "scheduleStatus",s.operationally_verified AS "operationallyVerified",
+      airlinerra_game.section9_verified_permission_game_day_v1()::text AS "verifiedGameDate",
+      coalesce(jsonb_agg(jsonb_build_object(
+        'type',c.clearance_type,'status',c.review_status,
+        'validToGameDate',c.valid_to_game_date::text,
+        'scheduleVersion',c.schedule_version
+      )) FILTER (WHERE c.schedule_id IS NOT NULL),'[]'::jsonb) AS certificates
+      FROM airlinerra_game.airline_flight_schedule_drafts_v1 s
+      JOIN airlinerra_game.airlines a ON a.id=s.airline_id
+       AND a.owner_player_id=$1::uuid AND a.world_id=1
+      LEFT JOIN airlinerra_game.section9_schedule_operational_certifications_v1 c
+       ON c.schedule_id=s.id AND c.airline_id=a.id
+      WHERE s.id=$3::uuid AND s.airline_id=$2::uuid AND s.world_id=1
+      GROUP BY s.id,s.version,s.status,s.operationally_verified`,
+      [userId,body.airlineId,body.scheduleId]);
+    if(evidence.rowCount!==1)return respond(404,{error:'Owned flight schedule not found'});
+    const e=evidence.rows[0];
+    return respond(200,{
+     status:'signed_certification_records_read_only',readOnly:true,
+     canActivateNormalFlight:false,certificationRevalidated:false,
+     scheduleId:e.scheduleId,scheduleVersion:e.scheduleVersion,
+     scheduleStatus:e.scheduleStatus,operationallyVerified:e.operationallyVerified,
+     verifiedGameDate:e.verifiedGameDate,certificates:e.certificates
+    });
    }
    if(body.action==='activation-check'){
     const response=await client.query(SCHEDULE_SQL.check,[userId,body.scheduleId]);
