@@ -196,6 +196,7 @@ export function validateFlightSchedulePayload(body){
   return withinFields(body,CHECK_FIELDS)&&uuid(body.scheduleId);
  if(body.action==='route-forecast')return withinFields(body,ROUTE_FORECAST_FIELDS)&&Object.keys(body).length===10&&uuid(body.aircraftInventoryId)&&AIRPORT.test(body.originAirportKey||'')&&AIRPORT.test(body.destinationAirportKey||'')&&body.originAirportKey!==body.destinationAirportKey&&['terminal','remote'].includes(body.departureStand)&&['terminal','remote'].includes(body.arrivalStand)&&Number.isInteger(body.parkingMinutes)&&body.parkingMinutes>=0&&body.parkingMinutes<=10080&&Number.isInteger(body.loadPercent)&&body.loadPercent>=0&&body.loadPercent<=100&&(body.economyFareUsd===null||Number.isInteger(body.economyFareUsd)&&body.economyFareUsd>=0&&body.economyFareUsd<=100000);
  if(body.action==='operational-bookings')return withinFields(body,CHECK_FIELDS)&&uuid(body.scheduleId);
+ if(body.action==='schedule-change-assessment')return withinFields(body,CHECK_FIELDS)&&uuid(body.scheduleId);
  if(body.action==='fee-preview')
   return withinFields(body,FEE_PREVIEW_FIELDS)&&
    Object.keys(body).length===8&&uuid(body.aircraftInventoryId)&&
@@ -321,6 +322,34 @@ export const SCHEDULE_SQL=Object.freeze({
 )
 SELECT * FROM events ORDER BY "startUtc",id`,
  routeForecast:`SELECT airlinerra_game.section9_owned_route_commercial_forecast_v1($1::uuid,$2::uuid,$3::uuid,$4::text,$5::text,$6::text,$7::text,$8::int,$9::int,$10::numeric) AS result`,
+ scheduleChangeAssessment:`SELECT
+ s.id::text AS "scheduleId",
+ s.version AS "scheduleVersion",
+ s.status AS "scheduleStatus",
+ s.operationally_verified AS "operationallyVerified",
+ (SELECT count(*)::int FROM airlinerra_game.section6_weekly_airport_slot_reservations_v1 slot
+   WHERE slot.schedule_id=s.id AND slot.world_id=1) AS "reservedSlotCount",
+ (SELECT count(*)::int FROM airlinerra_game.section9_dated_flight_occurrences_v1 o
+   WHERE o.schedule_id=s.id AND o.airline_id=s.airline_id AND o.world_id=1) AS "flightOccurrenceCount",
+ (SELECT count(*)::int FROM airlinerra_game.section9_dated_flight_occurrences_v1 o
+   WHERE o.schedule_id=s.id AND o.airline_id=s.airline_id AND o.world_id=1
+    AND o.schedule_version=s.version) AS "currentVersionOccurrenceCount",
+ (SELECT count(*)::int FROM airlinerra_game.section9_passenger_reservation_batches_v1 b
+   JOIN airlinerra_game.section9_dated_flight_occurrences_v1 o ON o.id=b.occurrence_id
+   WHERE o.schedule_id=s.id AND o.airline_id=s.airline_id AND o.world_id=1
+     AND b.reservation_status='reserved') AS "reservedBookingBatches",
+ (SELECT coalesce(sum(b.seats_requested),0)::int
+   FROM airlinerra_game.section9_passenger_reservation_batches_v1 b
+   JOIN airlinerra_game.section9_dated_flight_occurrences_v1 o ON o.id=b.occurrence_id
+   WHERE o.schedule_id=s.id AND o.airline_id=s.airline_id AND o.world_id=1
+     AND b.reservation_status='reserved') AS "reservedPassengerSeats",
+ (SELECT count(*)::int FROM airlinerra_game.section9_schedule_operational_certifications_v1 c
+   WHERE c.schedule_id=s.id AND c.airline_id=s.airline_id) AS "certificateRecords"
+ FROM airlinerra_game.airline_flight_schedule_drafts_v1 s
+ JOIN airlinerra_game.airlines a ON a.id=s.airline_id
+ JOIN airlinerra_game.world_memberships w ON w.world_id=a.world_id AND w.player_id=a.owner_player_id AND w.state='active'
+ WHERE s.id=$3::uuid AND s.airline_id=$2::uuid AND s.world_id=1
+ AND a.owner_player_id=$1::uuid AND a.world_id=1`,
  operatingBookings:`SELECT o.flight_local_date AS "flightDate",o.departure_utc AS "departureUtc",o.arrival_utc AS "arrivalUtc",o.booking_status AS "bookingStatus",o.verified_passenger_seats AS "capacity",o.booked_seats AS "bookedSeats",
  COALESCE((SELECT sum(b.seats_requested*b.quoted_fare_usd) FROM airlinerra_game.section9_passenger_reservation_batches_v1 b WHERE b.occurrence_id=o.id AND b.reservation_status='reserved'),0)::float8 AS "reservedTicketRevenueUsd"
  FROM airlinerra_game.section9_dated_flight_occurrences_v1 o
@@ -1258,6 +1287,39 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
     const q=reply.rows?.[0]?.result;
     if(reply.rowCount!==1||q?.status!=='route_phase1_forecast'||q.airlineId!==body.airlineId||q.aircraftInventoryId!==body.aircraftInventoryId||q.originAirportKey!==body.originAirportKey||q.destinationAirportKey!==body.destinationAirportKey||q.readOnly!==true||q.ledgerPosted!==false)return respond(409,{error:'ROUTE_FORECAST_UNAVAILABLE'});
     return respond(200,q);
+   }
+   if(body.action==='schedule-change-assessment'){
+    // Read-only. Never infer cancellation/rescheduling rights from empty bookings.
+    const result=await client.query(SCHEDULE_SQL.scheduleChangeAssessment,[
+     userId,body.airlineId,body.scheduleId
+    ]);
+    const row=result.rows?.[0];
+    if(result.rowCount!==1||!row)return respond(404,{error:'Owned schedule not found'});
+    const fields=['reservedSlotCount','flightOccurrenceCount','currentVersionOccurrenceCount',
+     'reservedBookingBatches','reservedPassengerSeats','certificateRecords'];
+    if(row.scheduleId!==body.scheduleId||
+       !Number.isSafeInteger(row.scheduleVersion)||row.scheduleVersion<1||
+       !['draft','active'].includes(row.scheduleStatus)||
+       typeof row.operationallyVerified!=='boolean'||
+       fields.some(field=>!Number.isSafeInteger(row[field])||row[field]<0))
+     return respond(503,{error:'Schedule change evidence unavailable'});
+    const blockers=[
+     ...(row.scheduleStatus==='active'||row.operationallyVerified?
+      ['ACTIVE_SCHEDULE_REQUIRES_TRANSACTIONAL_RELEASE']:[]),
+     ...(row.reservedSlotCount>0?['AIRPORT_SLOTS_REQUIRE_ATOMIC_RELEASE']:[]),
+     ...(row.flightOccurrenceCount>0?['FLIGHT_OCCURRENCES_REQUIRE_RECONCILIATION']:[]),
+     ...(row.reservedBookingBatches>0||row.reservedPassengerSeats>0?
+      ['PASSENGER_RESERVATIONS_REQUIRE_PROTECTION']:[]),
+     ...(row.certificateRecords>0?['CERTIFICATES_REQUIRE_VERSION_RECONCILIATION']:[])
+    ];
+    return respond(200,{
+     status:'schedule_change_assessment_read_only',readOnly:true,
+     scheduleId:row.scheduleId,scheduleVersion:row.scheduleVersion,
+     scheduleStatus:row.scheduleStatus,operationallyVerified:row.operationallyVerified,
+     evidence:Object.fromEntries(fields.map(field=>[field,row[field]])),
+     blockers,canCancelOperationalFlight:false,canRescheduleOperationalFlight:false,
+     bookingMutation:false,slotMutation:false,ledgerPosted:false
+    });
    }
    if(body.action==='operational-bookings'){
     const owner=await client.query(SCHEDULE_SQL.owner,[body.airlineId,userId]);
