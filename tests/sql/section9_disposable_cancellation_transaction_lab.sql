@@ -72,63 +72,63 @@ DO $tests$
 DECLARE
  owner_id uuid:='11111111-1111-4111-8111-111111111111';
  other_id uuid:='22222222-2222-4222-8222-222222222222';
- schedule_id uuid:='33333333-3333-4333-8333-333333333333';
+ target_schedule uuid:='33333333-3333-4333-8333-333333333333';
  occ_id uuid:='44444444-4444-4444-8444-444444444444';
  action text;failed boolean;
 BEGIN
- INSERT INTO cancellation_lab.schedules VALUES(schedule_id,owner_id,7,'active',true);
- INSERT INTO cancellation_lab.slots VALUES(schedule_id,1),(schedule_id,2);
- INSERT INTO cancellation_lab.occurrences VALUES(occ_id,schedule_id,0,0);
- INSERT INTO cancellation_lab.audit(schedule_id,event) VALUES(schedule_id,'certified');
+ INSERT INTO cancellation_lab.schedules VALUES(target_schedule,owner_id,7,'active',true);
+ INSERT INTO cancellation_lab.slots VALUES(target_schedule,1),(target_schedule,2);
+ INSERT INTO cancellation_lab.occurrences VALUES(occ_id,target_schedule,0,0);
+ INSERT INTO cancellation_lab.audit(schedule_id,event) VALUES(target_schedule,'certified');
  -- Wrong owner and stale version must be no-ops.
- action:=cancellation_lab.try_cancel(other_id,schedule_id,7);
+ action:=cancellation_lab.try_cancel(other_id,target_schedule,7);
  IF action<>'denied_owner' THEN RAISE EXCEPTION 'Owner bypass';END IF;
- action:=cancellation_lab.try_cancel(owner_id,schedule_id,6);
+ action:=cancellation_lab.try_cancel(owner_id,target_schedule,6);
  IF action<>'denied_stale' THEN RAISE EXCEPTION 'Version bypass';END IF;
  INSERT INTO cancellation_lab.reservations VALUES('55555555-5555-4555-8555-555555555555',occ_id,2);
- action:=cancellation_lab.try_cancel(owner_id,schedule_id,7);
+ action:=cancellation_lab.try_cancel(owner_id,target_schedule,7);
  IF action<>'denied_reservations_or_finance' THEN RAISE EXCEPTION 'Reservation bypass';END IF;
  DELETE FROM cancellation_lab.reservations;
  UPDATE cancellation_lab.occurrences SET booked_seats=2;
- action:=cancellation_lab.try_cancel(owner_id,schedule_id,7);
+ action:=cancellation_lab.try_cancel(owner_id,target_schedule,7);
  IF action<>'denied_reservations_or_finance' THEN RAISE EXCEPTION 'Seat evidence bypass';END IF;
  UPDATE cancellation_lab.occurrences SET booked_seats=0,recognized_revenue_usd=125;
- action:=cancellation_lab.try_cancel(owner_id,schedule_id,7);
+ action:=cancellation_lab.try_cancel(owner_id,target_schedule,7);
  IF action<>'denied_reservations_or_finance' THEN RAISE EXCEPTION 'Finance bypass';END IF;
  UPDATE cancellation_lab.occurrences SET recognized_revenue_usd=0;
- INSERT INTO cancellation_lab.movements VALUES('66666666-6666-4666-8666-666666666666',schedule_id);
- action:=cancellation_lab.try_cancel(owner_id,schedule_id,7);
+ INSERT INTO cancellation_lab.movements VALUES('66666666-6666-4666-8666-666666666666',target_schedule);
+ action:=cancellation_lab.try_cancel(owner_id,target_schedule,7);
  IF action<>'denied_operated_movements' THEN RAISE EXCEPTION 'Movement bypass';END IF;
  DELETE FROM cancellation_lab.movements;
  -- An exception after updating all rows MUST roll back the whole subtransaction.
  UPDATE cancellation_lab.failure_switch SET enabled=true;
  failed:=false;
  BEGIN
-  action:=cancellation_lab.try_cancel(owner_id,schedule_id,7);
+  action:=cancellation_lab.try_cancel(owner_id,target_schedule,7);
  EXCEPTION WHEN OTHERS THEN
   IF SQLERRM='CANCELLATION_LAB_DOWNSTREAM_FAILURE' THEN failed:=true; ELSE RAISE;END IF;
  END;
  IF NOT failed
- OR (SELECT status FROM cancellation_lab.schedules WHERE id=schedule_id)<>'active'
- OR (SELECT version FROM cancellation_lab.schedules WHERE id=schedule_id)<>7
- OR (SELECT count(*) FROM cancellation_lab.slots WHERE schedule_id=schedule_id)<>2
- OR (SELECT count(*) FROM cancellation_lab.occurrences WHERE schedule_id=schedule_id)<>1
- OR (SELECT count(*) FROM cancellation_lab.audit WHERE schedule_id=schedule_id)<>1
+ OR (SELECT status FROM cancellation_lab.schedules WHERE id=target_schedule)<>'active'
+ OR (SELECT version FROM cancellation_lab.schedules WHERE id=target_schedule)<>7
+ OR (SELECT count(*) FROM cancellation_lab.slots WHERE schedule_id=target_schedule)<>2
+ OR (SELECT count(*) FROM cancellation_lab.occurrences WHERE schedule_id=target_schedule)<>1
+ OR (SELECT count(*) FROM cancellation_lab.audit WHERE schedule_id=target_schedule)<>1
  THEN RAISE EXCEPTION 'Atomic rollback failed';END IF;
  UPDATE cancellation_lab.failure_switch SET enabled=false;
- action:=cancellation_lab.try_cancel(owner_id,schedule_id,7);
+ action:=cancellation_lab.try_cancel(owner_id,target_schedule,7);
  IF action<>'cancelled_slots_2'
- OR (SELECT status FROM cancellation_lab.schedules WHERE id=schedule_id)<>'cancelled'
- OR (SELECT version FROM cancellation_lab.schedules WHERE id=schedule_id)<>8
- OR EXISTS(SELECT 1 FROM cancellation_lab.slots WHERE schedule_id=schedule_id)
- OR EXISTS(SELECT 1 FROM cancellation_lab.occurrences WHERE schedule_id=schedule_id)
- OR (SELECT count(*) FROM cancellation_lab.audit WHERE schedule_id=schedule_id)<>2
+ OR (SELECT status FROM cancellation_lab.schedules WHERE id=target_schedule)<>'cancelled'
+ OR (SELECT version FROM cancellation_lab.schedules WHERE id=target_schedule)<>8
+ OR EXISTS(SELECT 1 FROM cancellation_lab.slots WHERE schedule_id=target_schedule)
+ OR EXISTS(SELECT 1 FROM cancellation_lab.occurrences WHERE schedule_id=target_schedule)
+ OR (SELECT count(*) FROM cancellation_lab.audit WHERE schedule_id=target_schedule)<>2
  THEN RAISE EXCEPTION 'Candidate cancellation did not commit atomically';END IF;
- action:=cancellation_lab.try_cancel(owner_id,schedule_id,7);
+ action:=cancellation_lab.try_cancel(owner_id,target_schedule,7);
  IF action<>'denied_stale' THEN RAISE EXCEPTION 'Old-version replay bypass';END IF;
- action:=cancellation_lab.try_cancel(owner_id,schedule_id,8);
+ action:=cancellation_lab.try_cancel(owner_id,target_schedule,8);
  IF action<>'already_cancelled' THEN RAISE EXCEPTION 'Same-version replay bypass';END IF;
- IF (SELECT count(*) FROM cancellation_lab.audit WHERE schedule_id=schedule_id)<>2
+ IF (SELECT count(*) FROM cancellation_lab.audit WHERE schedule_id=target_schedule)<>2
  THEN RAISE EXCEPTION 'Replay created extra history';END IF;
  RAISE NOTICE 'PASS synthetic cancellation transaction guards, rollback and replay';
 END $tests$;
