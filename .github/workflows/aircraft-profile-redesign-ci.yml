@@ -8,7 +8,7 @@ on:
       - 'website/player-app.mjs'
       - 'website/invited-tester-auth.mjs'
       - 'server/fleet-acquisition-service.mjs'
-      - 'supabase/migrations/20261110185000_aircraft_per_tail_private_images.sql'
+      - 'supabase/migrations/20261110141358_aircraft_per_tail_private_images.sql'
       - 'tests/test_aircraft_profile_redesign.mjs'
       - 'website/aircraft-configuration-options.mjs'
       - 'website/aircraft-configuration-dialog.mjs'
