@@ -238,6 +238,12 @@ jobs:
         run: |
           set -euo pipefail
           bash tests/sql/section9_disposable_finance_preparation_vs_cancellation_race.sh
+      - name: Verify original completed-flight finance writer fail-closed and private execution
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = '127.0.0.1'
+          test "$PGDATABASE" = 'airlinerra_disposable'
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_original_final_finance_guards.sql
       - name: Verify isolated acceptance remained on disposable Postgres
         run: |
           set -euo pipefail
