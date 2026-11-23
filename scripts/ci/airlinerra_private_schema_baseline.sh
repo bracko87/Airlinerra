@@ -35,7 +35,8 @@ try:
     assert sslmode in (None, "require", "verify-ca", "verify-full")
     direct = parts.hostname == "db.hwllkabgzaynalahvkpz.supabase.co"
     pooled = (parts.hostname.endswith(".pooler.supabase.com")
-              and parts.username == "postgres.hwllkabgzaynalahvkpz")
+              and parts.username == "postgres.hwllkabgzaynalahvkpz"
+              and parts.port == 5432)
     assert direct or pooled
 except (AssertionError, ValueError, AttributeError):
     print("BLOCKED: Airlinerra connection-string format is invalid; check password, username, host and database. No URL or credentials displayed.",file=sys.stderr)
@@ -48,6 +49,15 @@ echo "PASS: Airlinerra source URI validated; raw password brackets normalized; r
 
 if [[ "$#" -gt 0 && "$1" == "--validate-only" ]]; then
   exit 0
+fi
+
+# GitHub-hosted runners are IPv4-only. Supabase Direct URLs commonly
+# resolve to IPv6; the correct session pooler hostname is project-specific
+# and MUST be copied from Supabase Connect (never guessed by region).
+if [[ "$normalized_source_url" == *'@db.hwllkabgzaynalahvkpz.supabase.co'* ]]; then
+  echo "BLOCKED: Direct Supabase connections use IPv6 and cannot be reached from this GitHub runner." >&2
+  echo "Update AIRLINERRA_SCHEMA_READONLY_URL using Supabase Connect > Connection string > Session pooler (port 5432), then rerun." >&2
+  exit 2
 fi
 
 for command_name in pg_dump psql supabase; do
