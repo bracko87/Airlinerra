@@ -29,7 +29,7 @@ const setup=(reply=proof())=>{
 };
 test('production SQL preflight checks real policy and source facts but never issues a certificate',async()=>{
  const s=await readFile(new URL(
- '../supabase/migrations/20261120215500_section9_execution_finance_source_preflight_readonly.sql',
+ '../supabase/migrations/20261120202113_section9_execution_finance_source_preflight_readonly.sql',
  import.meta.url),'utf8');
  assert.match(s,/LANGUAGE plpgsql STABLE SECURITY INVOKER/);
  for(const name of [

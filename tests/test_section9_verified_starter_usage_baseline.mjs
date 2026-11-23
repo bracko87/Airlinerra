@@ -5,7 +5,7 @@ import {readFile} from 'node:fs/promises';
 const read=path=>readFile(new URL('../'+path,import.meta.url),'utf8');
 
 test('starter maintenance tracking starts at signed allocation date, not invented historical hours',async()=>{
- const sql=await read('supabase/migrations/20261112190000_section9_verified_starter_usage_tracking_baseline_v1.sql');
+ const sql=await read('supabase/migrations/20261112171929_section9_verified_starter_usage_tracking_baseline_v1.sql');
  assert.match(sql,/section9_starter_origin_evidence_v1/);
  assert.match(sql,/s\.source_fixture_id IS NOT NULL/);
  assert.match(sql,/s\.registration=f\.registration/);
@@ -25,7 +25,7 @@ test('starter maintenance tracking starts at signed allocation date, not invente
  assert.doesNotMatch(sql,/INSERT INTO airlinerra_game\.section9_operated_flight_movements/);
 });
 test('initializer cannot reset after any operation, verified tracking or competing current-position record',async()=>{
- const sql=await read('supabase/migrations/20261112190000_section9_verified_starter_usage_tracking_baseline_v1.sql');
+ const sql=await read('supabase/migrations/20261112171929_section9_verified_starter_usage_tracking_baseline_v1.sql');
  assert.match(sql,/FOR UPDATE/);
  assert.match(sql,/tracking_row\.verified_tracking_started_utc IS NOT NULL/);
  assert.match(sql,/tracking_row\.tracked_flight_hours IS NOT NULL/);
@@ -44,7 +44,7 @@ test('new baseline does not by itself satisfy operational maintenance condition 
  assert.match(api,/maintenance\.condition_basis NOT IN \('unverified','unknown'\)/);
  assert.match(api,/maintenance\.tracked_flight_hours IS NOT NULL/);
  assert.match(api,/AIRCRAFT_MAINTENANCE_BASELINE_NOT_VERIFIED/);
- const sql=await read('supabase/migrations/20261112190000_section9_verified_starter_usage_tracking_baseline_v1.sql');
+ const sql=await read('supabase/migrations/20261112171929_section9_verified_starter_usage_tracking_baseline_v1.sql');
  assert.match(sql,/flightActivated',false/);
  assert.match(sql,/ledgerPosted',false/);
  assert.match(sql,/maintenanceCompleted',false/);

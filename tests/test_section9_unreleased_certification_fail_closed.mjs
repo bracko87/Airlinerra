@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 
 const read=()=>readFile(new URL(
- '../supabase/migrations/20261120211500_section9_unreleased_execution_finance_certification_fail_closed.sql',
+ '../supabase/migrations/20261120201142_section9_unreleased_execution_finance_certification_fail_closed.sql',
  import.meta.url),'utf8');
 
 test('future trusted execution and finance certifications fail closed in the actual private sink',async()=>{

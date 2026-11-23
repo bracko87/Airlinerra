@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 const read=path=>readFile(new URL('../'+path,import.meta.url),'utf8');
-const baseline='supabase/migrations/20261113144500_section9_starter_game_airframe_baseline_v1.sql';
-const due='supabase/migrations/20261113150000_section9_game_maintenance_due_preview_v1.sql';
+const baseline='supabase/migrations/20261113094200_section9_starter_game_airframe_baseline_v1.sql';
+const due='supabase/migrations/20261113094318_section9_game_maintenance_due_preview_v1.sql';
 
 test('starter game age and condition are explicit game-only assumptions, never real airframe records',async()=>{
  const sql=await read(baseline);
@@ -63,7 +63,7 @@ test('protected schedule endpoint refuses to activate during due game maintenanc
 });
 
 test('corrected game maintenance provenance is anchored to commissioning, not original allocation',async()=>{
- const sql=await read('supabase/migrations/20261113151500_section9_starter_game_commissioning_date_provenance_fix.sql');
+ const sql=await read('supabase/migrations/20261113095055_section9_starter_game_commissioning_date_provenance_fix.sql');
  assert.match(sql,/assumed_current_at_game_commissioning_not_completed/);
  assert.match(sql,/game_assumed_current_at_commissioning_NOT_actual_completion/);
  assert.match(sql,/CREATE OR REPLACE FUNCTION airlinerra_game\.section9_owned_game_maintenance_due_v1/);

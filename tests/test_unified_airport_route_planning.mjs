@@ -30,7 +30,7 @@ test('unified read model cannot silently authorize unverified Group 2 airports',
  assert.match(source,/coalesce\(r\.can_activate_flights,false\)/);
  assert.match(source,/documented_commercial_prohibition/);
  assert.match(source,/game_municipality/);
- const operational=await read('../supabase/migrations/20261110201000_group2_schedule_save_fail_closed_owner_preflight.sql');
+ const operational=await read('../supabase/migrations/20261110160722_group2_schedule_save_fail_closed_owner_preflight.sql');
  assert.match(operational,/SECTION6_GROUP2_NOT_YET_ADMITTED/);
  assert.match(operational,/section6_save_owned_aircraft_schedule_with_slots_v1/);
 });

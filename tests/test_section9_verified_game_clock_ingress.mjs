@@ -165,7 +165,7 @@ test('Supabase Edge can initialize clock ingress without global Buffer',()=>{
 
 test('successful SQL tick receipts include engine event ID for worker confirmation',async()=>{
  const migration=await readFile(new URL(
-  '../supabase/migrations/20261111082500_section9_clock_tick_success_receipt_event_id.sql',
+  '../supabase/migrations/20261111082556_section9_clock_tick_success_receipt_event_id.sql',
   import.meta.url),'utf8');
  assert.match(migration,/CREATE OR REPLACE FUNCTION airlinerra_game\.section9_accept_verified_game_tick_v1/);
  assert.match(migration,/'status','verified_tick_accepted'/);

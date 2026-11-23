@@ -197,7 +197,7 @@ test('candidate SQL remains private and the dispatcher is not wired to a player 
   import.meta.url),'utf8');
  assert.match(src,/requiresTrustedOperationDecision/);
  assert.doesNotMatch(src,/createSection9ClockJobHandler|fetch\(/);
- const sql=await readFile(new URL('../supabase/migrations/20261109173000_section9_operated_day_candidates.sql',
+ const sql=await readFile(new URL('../supabase/migrations/20261109114805_section9_operated_day_candidates.sql',
   import.meta.url),'utf8');
  assert.match(sql,/REVOKE ALL ON FUNCTION/);
  assert.match(sql,/s\.status='active' AND s\.operationally_verified=true/);

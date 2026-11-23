@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 const read=path=>readFile(new URL('../'+path,import.meta.url),'utf8');
-const MIG='supabase/migrations/20261113124000_section9_starter_game_data_inspection_v1.sql';
+const MIG='supabase/migrations/20261113090839_section9_starter_game_data_inspection_v1.sql';
 
 test('game-data commissioning inspection verifies six source-of-truth inputs',async()=>{
  const sql=await read(MIG);
