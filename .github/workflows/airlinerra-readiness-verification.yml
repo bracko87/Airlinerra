@@ -288,6 +288,10 @@ jobs:
         run: |
           set -euo pipefail
           bash tests/sql/section9_disposable_real_signed_departure_vs_cancellation_race.sh
+      - name: Verify movement patch rejects source drift and duplicate application
+        run: |
+          set -euo pipefail
+          bash tests/sql/section9_disposable_signed_movement_source_drift_guard.sh
       - name: Verify isolated acceptance remained on disposable Postgres
         run: |
           set -euo pipefail
