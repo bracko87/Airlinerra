@@ -3126,3 +3126,24 @@ section[data-player-view="aircraft-market"]:has(#workspace-aircraft-market.is-sh
 .staff-eligibility-table td{text-align:center!important;min-width:36px}
 .staff-eligibility-table th[scope="rowgroup"]{background:var(--line);color:inherit;text-align:left}
 .staff-position-group[hidden],[data-staff-position][hidden],[data-staff-section-panel][hidden]{display:none!important}
+
+/* Route Details: read-only owner-scoped readiness. Match existing game cards. */
+.route-detail-readiness .route-readiness-title{
+ font-size:12px;font-weight:650;color:var(--navy);margin:10px 0 8px;
+}
+.route-detail-readiness .route-readiness-checks{display:grid;gap:4px;margin:10px 0}
+.route-detail-readiness .route-readiness-check{
+ border-bottom:1px solid var(--line);padding:8px 0;
+}
+.route-detail-readiness .route-readiness-check[data-check-state="blocked"] strong{
+ color:var(--danger,#a33530)
+}
+.route-detail-readiness .route-readiness-check[data-check-state="checked"] strong{
+ color:var(--navy)
+}
+.route-detail-readiness .route-readiness-checks>.hint{
+ margin:1px 0 7px;font-size:11px;line-height:1.5;color:var(--muted)
+}
+.route-detail-readiness .route-readiness-actions{
+ display:flex;flex-wrap:wrap;gap:8px;margin-top:12px
+}
