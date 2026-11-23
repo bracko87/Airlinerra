@@ -262,3 +262,40 @@ cancellation, and real posting-vs-cancellation interleavings. These
 are not certified by a missing-preparation test or by an advisory
 mutex test. Player-initiated active-flight cancellation remains
 disabled; the reviewed ticket correction remains undeployed.
+
+## Actual completed-flight financial posting, replay and forced rollback (2026-11-23)
+
+The **unchanged original** `section9_post_completed_flight_finance_once_v1(text)`
+was executed to completion with separate synthetic flight records on
+disposable PostgreSQL 17. The test
+`tests/sql/section9_disposable_real_final_finance_atomic_acceptance.sql`
+provides isolated placeholders for source HMAC verification, arrival
+and ticket totals, external crew costs and onboard release; therefore
+this is **an atomicity test, not signed source certification**.
+
+Successful settlement confirms the original function:
+- Inserts a `REVENUE` ledger entry for **USD 300** and an `EXPENSE`
+  ledger entry for **USD -100**, in the same transaction.
+- Changes synthetic airline `cash_usd` by **USD +200** and creates one
+  `section9_route_posted_flight_financials_v1` record holding the
+  actual revenue and expense ledger IDs.
+- On replay returns `complete_game_flight_finance_already_posted`
+  with `cashChangedNow:false` and adds no ledger entries or money.
+
+The rollback test installs a synthetic BEFORE INSERT failure trigger
+on the flight financial receipt for a **second, independently
+prepared and approved** flight. The function attempts to write
+revenue and expense ledger entries and update airline cash, then
+the receipt insertion raises a deliberate exception. PostgreSQL
+rolls back the entire operation; ledger count, airline balance and
+flight posting history are unchanged.
+
+All existing database, API, static website and concurrency tests
+passed in https://github.com/bracko87/Airlinerra/actions/runs/45208816893.
+
+**Still not certified:** actual signed operated events, fuel burn and
+tariff evidence, operational source validation, final settlement racing
+against cancellation in a real game-state transition, cross-airline
+concurrency and passenger-specific refund authorization. The live
+financial tables, money and bookings were not modified. Player
+operational cancellation remains disabled.
