@@ -13,7 +13,7 @@ DECLARE world_state record;clock_row record;s record;
  local_departure timestamp; scheduled_dep timestamptz;
  scheduled_arr timestamptz; occurrence text;
  fleet record; anchor record;pos record; existing record;
- position_exists boolean:=false; resolution jsonb;starter jsonb;
+ position_exists boolean:=false; resolution jsonb;starter jsonb; starter_airport text;
  change_count int; v_signer_secret text; v_expected_sig text; v_signing_payload text;
 BEGIN
  IF p_airline IS NULL OR p_schedule IS NULL
@@ -269,7 +269,11 @@ BEGIN
    RAISE EXCEPTION USING ERRCODE='42501',
     MESSAGE='SECTION9_OPERATED_AIRCRAFT_INITIAL_POSITION_UNVERIFIED';
   END IF;
-  anchor.airport_key:=starter->>'airportKey';
+  starter_airport:=starter->>'airportKey';
+  IF starter_airport IS NULL OR length(starter_airport)<6 THEN
+   RAISE EXCEPTION USING ERRCODE='42501',
+    MESSAGE='SECTION9_OPERATED_AIRCRAFT_STARTER_AIRPORT_MISSING';
+  END IF;
  ELSIF anchor.order_registration IS DISTINCT FROM anchor.fleet_registration
   OR anchor.order_configuration IS DISTINCT FROM s.configuration_id
  THEN
@@ -292,7 +296,7 @@ BEGIN
  resolution:=airlinerra_game.section9_aircraft_movement_decision_v1(
   p_phase,
   CASE WHEN position_exists THEN pos.location_status ELSE 'grounded' END,
-  CASE WHEN position_exists THEN pos.airport_key ELSE anchor.airport_key END,
+  CASE WHEN position_exists THEN pos.airport_key ELSE coalesce(starter_airport,anchor.airport_key) END,
   CASE WHEN position_exists THEN pos.current_flight_occurrence_id ELSE NULL END,
   CASE WHEN position_exists THEN pos.last_event_utc ELSE NULL END,
   CASE WHEN position_exists THEN pos.last_departure_utc ELSE NULL END,
