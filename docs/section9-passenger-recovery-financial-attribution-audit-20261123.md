@@ -127,3 +127,44 @@ first rather than immediately introducing another flight posting ledger.
 Verify source-to-payment/refund entitlement independently. Only propose a new
 append-only compensation journal if existing journals cannot represent
 cancelled/passenger-refunded states safely.
+
+## Original cancellation writer financial exposure acceptance (2026-11-23)
+
+The production source of `section9_cancel_unflown_occurrence_v1(uuid,text)`
+was captured unchanged using read-only `pg_get_functiondef` as
+`tests/sql/section9_disposable_original_unflown_cancellation_writer.sql`.
+A new disposable regression
+`tests/sql/section9_disposable_real_cancellation_finance_guards.sql`
+installs the unchanged function and verifies four **independent** refusal
+scenarios against a synthetic two-seat reservation:
+
+1. A stored actual-ticket finance preparation returns
+   `flight_already_operated_or_settled`;
+2. An operated departure movement returns
+   `flight_already_operated_or_settled`;
+3. Nonzero occurrence recognized revenue returns
+   `flight_not_cancellable`;
+4. An upfront-paid reservation returns
+   `reservation_reconciliation_required`.
+
+For each refusal, the protected fixture keeps both booked seats, both
+held seats, the original reserved batch and zero cancellation receipts.
+These cases produce no finance or ledger mutations.
+
+The **two private writers are not proven mutually serialized**:
+`section9_cancel_unflown_occurrence_v1` uses advisory lock
+`(583729,10041)`, shared with disruption recovery, whereas
+`section9_post_completed_flight_finance_once_v1` uses a
+`(583730,hashtext(physical_flight_id))` advisory lock, and locks
+the finance preparation and approval records. The distinct advisory
+locks do not independently prevent simultaneous settlement/cancellation;
+further tests must model settlement preparation and flight-movement
+publication racing the cancellation's post-lock checks, as well as a
+fully approved completed-flight posting transaction.
+
+Both CI jobs passed in
+https://github.com/bracko87/Airlinerra/actions/runs/45201136498
+
+This is **not** a full live settlement-versus-cancellation transaction
+verification and does not authorize active-route cancellation, refund
+processing, production migration, or deployment.
