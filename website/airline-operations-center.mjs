@@ -167,18 +167,18 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
    remotePlans=[];remoteSchedules=[];remoteFleet=[];
    message('operations-flight-readiness',
     'Airline database is not connected. Flight readiness cannot be verified.');
-   renderRoutes();return;
+   renderRoutes();return false;
   }
   try{
    const reply=await scheduler.list(airlineId);
-   if(ticket!==remotePlanTicket)return;
+   if(ticket!==remotePlanTicket)return false;
    if(!Array.isArray(reply?.plans)||!Array.isArray(reply?.drafts)||
       !Array.isArray(reply?.fleet))throw Error('Owned route list unavailable');
    remotePlans=reply.plans.map(normalizePlan).filter(Boolean);
    remoteSchedules=reply.drafts;remoteFleet=reply.fleet;
    message('operations-flight-readiness',
     summarizeSection9FlightReadiness(reply).text);
-   renderRoutes();
+   renderRoutes();return true;
   }catch{
    if(ticket!==remotePlanTicket)return;
    remotePlans=[];remoteSchedules=[];remoteFleet=[];
@@ -187,6 +187,7 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
    renderRoutes();
    message('operations-routes-feedback',
     'Server planning routes could not be loaded. Browser drafts are still visible; refresh when connected.');
+   return false;
   }
  }
  const message=(id,text)=>{if($(id))$(id).textContent=text};
@@ -419,8 +420,8 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
    target.disabled=true;
    message('operations-routes-feedback','Refreshing registered routes from the airline server...');
    try{
-    await loadRemotePlans();
-    message('operations-routes-feedback','Route refresh finished. Only verified server schedules appear as active flights.');
+    const verified=await loadRemotePlans();
+    if(verified)message('operations-routes-feedback','Route refresh finished. Only verified server schedules appear as active flights.');
    }finally{target.disabled=false;}
    return;
   }
