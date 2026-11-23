@@ -55,7 +55,8 @@ export async function verifyBuiltPlayerModules({distDir}={}){
   'section9-route-details.mjs',
   'section9-owned-schedule-routes.mjs',
   'section9-certification-records.mjs',
-  'section9-operational-evidence.mjs'
+  'section9-operational-evidence.mjs',
+  'section9-booking-window-evidence.mjs'
  ]){
   if(!visited.has(mandatory))
    throw Error('Required player module not included in verified import graph: '+mandatory);
