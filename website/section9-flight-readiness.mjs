@@ -43,5 +43,7 @@ export function summarizeSection9FlightReadiness(result) {
  }
  return Object.freeze({verified:true,stage,
   fleet,planned,registered:registered.length,slotDrafts,active,
-  text:prefix+next+' Ticket sales remain disabled.'});
+  text:prefix+next+(active>0?
+    ' Check Route Details for confirmed bookings; an active timetable alone does not prove seats sold or flights operated.':
+    ' Planning drafts alone do not open passenger sales.')});
 }
