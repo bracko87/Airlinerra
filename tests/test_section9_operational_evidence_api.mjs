@@ -14,7 +14,7 @@ const request=(action='operational-evidence',overrides={})=>new Request(endpoint
   'content-type':'application/json',authorization:'Bearer '+'x'.repeat(32)},
  body:JSON.stringify({action,airlineId,scheduleId,...overrides})
 });
-function fixture({owner=true,gameDate='2026-11-23',unsafe=false}={}){
+function fixture({owner=true,gameDate='2026-11-23',unsafe=false,stale=false}={}){
  const queries=[];let released=false;
  const database={connect:async()=>({
   query:async(sql,params)=>{
@@ -26,10 +26,12 @@ function fixture({owner=true,gameDate='2026-11-23',unsafe=false}={}){
    if(sql.includes('section9_owned_commercial_activation_preflight_v1'))
     return {rowCount:1,rows:[{result:{
      readOnly:!unsafe,canActivateNormalFlight:false,
+     scheduleId,scheduleVersion:stale?0:1,
      activationChecklist:{worldClockConnected:true,crewRequired:true},
      activationBlockers:['AIRPORT_SLOT_CAPACITY_NOT_CERTIFIED_FOR_ACTIVATION']}}]};
    if(sql.includes('section9_owned_crew_licence_preflight_v1'))
     return {rowCount:1,rows:[{result:{readOnly:true,canActivateNormalFlight:false,
+     scheduleId,scheduleVersion:1,
      crew:{registeredEmployeeAssignments:0},permissions:{}}}]};
    if(sql.includes('section9_owned_aircraft_maintenance_readiness_v1'))
     return {rowCount:1,rows:[{result:{readOnly:true,flightActivated:false,
@@ -94,6 +96,14 @@ test('operational evidence fails closed when verified game day is missing',async
 });
 test('unsafe preflight evidence contract is rejected instead of treated as approval',async()=>{
  const f=fixture({unsafe:true});
+ const response=await f.handler(request());
+ assert.equal(response.status,503);
+ assert.equal((await response.json()).error,'Operational evidence contract not verified');
+ assert.equal(f.released(),true);
+});
+
+test('stale schedule-version diagnostics fail closed',async()=>{
+ const f=fixture({stale:true});
  const response=await f.handler(request());
  assert.equal(response.status,503);
  assert.equal((await response.json()).error,'Operational evidence contract not verified');
