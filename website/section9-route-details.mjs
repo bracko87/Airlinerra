@@ -5,6 +5,7 @@ import {createSection9RouteFinancePanel} from './section9-route-finance-panel.mj
 import {renderRouteMap,routeDistanceKm} from './route-map.mjs';
 import {planningClockEstimate} from './route-planning-times.mjs';
 import {summarizeProtectedRouteReadiness} from './section9-route-readiness.mjs';
+import {summarizeRecordedCertifications} from './section9-certification-records.mjs';
 const MONTHS=['January','February','March','April','May','June','July','August',
  'September','October','November','December'];
 const DAYS=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
@@ -112,6 +113,55 @@ export function createSection9RouteDetails({doc,host,getRoutes,getServer}={}){
   }else if(route.operationallyVerified){
    readinessState.textContent='The server identifies this timetable as active. This alone does not confirm a departure, booking or financial settlement; see verified bookings below.';
    addNavigation('schedule','View confirmed schedule');
+  }else if(server.connected&&server.airline?.id&&
+   typeof server.scheduler?.certificationStatus==='function'){
+   const checkButton=doc.createElement('button');
+   checkButton.type='button';checkButton.className='secondary';
+   checkButton.textContent='Refresh certification records';
+   readinessActions.append(checkButton);
+   let requestNumber=0;
+   const refresh=async()=>{
+    const request=++requestNumber;
+    checkButton.disabled=true;
+    readinessState.textContent='Reading recorded certifications from the airline server...';
+    readinessChecks.replaceChildren();
+    try{
+     const answer=await server.scheduler.certificationStatus({
+      airlineId:server.airline.id,scheduleId:route.serverScheduleId
+     });
+     if(mySerial!==serial||request!==requestNumber)return;
+     if(answer.scheduleId!==route.serverScheduleId)throw Error('Schedule mismatch');
+     const report=summarizeRecordedCertifications(answer);
+     if(!report)throw Error('Invalid certification record response');
+     readinessState.textContent=report.summary;
+     if(report.gameDate)hint(doc,readinessChecks,'Verified game date: '+report.gameDate);
+     for(const check of report.checks){
+      const line=doc.createElement('div');
+      line.className='detail-row route-readiness-check';
+      line.dataset.checkState=check.state;
+      line.append(text(doc,'span',check.label),text(doc,'strong',
+       check.state==='recorded'?'Recorded':check.state==='blocked'?'Revoked':'Not verified'));
+      readinessChecks.append(line);
+      hint(doc,readinessChecks,check.explanation);
+     }
+     hint(doc,readinessChecks,'Recorded certificates are evidence only. Final flight readiness still requires authoritative signature and operational rechecks.');
+     readinessActions.querySelectorAll('[data-workspace-go]').forEach(button=>button.remove());
+     for(const check of report.checks){
+      if(check.state==='recorded')continue;
+      if(!readinessActions.querySelector('[data-workspace-go="'+check.page+'"]'))
+       addNavigation(check.page,'Review '+check.label);
+     }
+    }catch{
+     if(mySerial===serial&&request===requestNumber){
+      readinessState.textContent='Certification evidence could not be verified. Flight approval is not confirmed.';
+      readinessChecks.replaceChildren();
+     }
+    }finally{
+     if(mySerial===serial&&request===requestNumber)checkButton.disabled=false;
+    }
+   };
+   checkButton.addEventListener('click',()=>{void refresh();});
+   void refresh();
   }else if(!server.connected||!server.airline?.id||
    typeof server.scheduler?.activationCheck!=='function'){
    readinessState.textContent='The verified airline readiness service is not connected. No flight activation is confirmed.';
