@@ -78,3 +78,13 @@ test('My Routes uses server schedule list and the browser build includes recover
  assert.match(api,/s\.operationally_verified AS "operationallyVerified"/);
  assert.match(build,/'section9-owned-schedule-routes\.mjs'/);
 });
+
+test('My Routes exposes a manual owner-scoped refresh and never reports failed server reload as success',async()=>{
+ const ops=await readFile(new URL('../website/airline-operations-center.mjs',import.meta.url),'utf8');
+ assert.match(ops,/id="operations-routes-refresh"/);
+ assert.match(ops,/target\.id==='operations-routes-refresh'/);
+ assert.match(ops,/const verified=await loadRemotePlans\(\)/);
+ assert.match(ops,/if\(verified\)message\('operations-routes-feedback'/);
+ assert.match(ops,/renderRoutes\(\);return true;/);
+ assert.match(ops,/Server planning routes could not be loaded/);
+});
