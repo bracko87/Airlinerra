@@ -40,6 +40,26 @@ Each pair has the same leading 14-digit version. A supported migration plan must
 
 These facts demonstrate that repository migration files and connected database migration history must be reconciled. They do **not** establish that all 360 repository SQL bodies are absent or should be applied.
 
+## 3a. Complete read-only version/name reconciliation counts
+
+This cross-check compared the *full* connected project's 685 recorded migration entries with all 360 migration filenames in GitHub. It did not execute or download production SQL bodies.
+
+| GitHub migration classification | Count |
+|---|---:|
+| Same recorded version AND same migration name | **8** |
+| Same migration name under a different recorded version | **210** |
+| No recorded migration of that name | **142** |
+| **Total GitHub SQL files** | **360** |
+
+Additional facts:
+- Only 8 repository filenames have exact versions in database migration history. Hence **352 GitHub files do not match a recorded timestamp**, but this does **not** mean 352 changes are absent from the schema.
+- **218** repository filenames have a matching migration name in the live history (8 identical version/name + 210 name-only matches).
+- **467** connected database history entries are not name-matched by a GitHub SQL filename (685 − 218). Some are earlier research, local operations, or follow-up patches and cannot be inferred to be disposable.
+- A same-name migration may have different SQL: version/name mapping alone is **not** a cryptographic or semantic content comparison.
+- Representative different-version example: GitHub `20261108143500_section9_market_foundation.sql` vs database `20261108143927_section9_market_foundation`. Historical version shifts are systematic, not limited to eight duplicate timestamps.
+
+**Consequence:** reconcile baseline and authoritative migration sources and compare actual schema/function definitions before selecting any data-migration action. Do not run `supabase db push` against the connected database using this folder as-is.
+
 ## 4. Finite blockers and acceptance criteria
 
 **B1 — Reconstruct authoritative bootstrap:** Identify the original Supabase game schema and baseline migrations that created `airlinerra_game` and `owner_premium_email_reservations`. Commit a repeatable, explicitly sourced baseline path compatible with local Supabase. Do not replace historical records with synthetic fixtures.
