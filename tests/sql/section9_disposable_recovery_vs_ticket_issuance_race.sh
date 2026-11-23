@@ -7,8 +7,8 @@ test "$PGDATABASE" = 'airlinerra_disposable'
 t="$(mktemp -d)";trap 'rm -rf "$t"' EXIT
 f1='88888888-8888-4888-8888-888888888888:2026-11-21:1'
 f2='99999999-9999-4999-8999-999999999999:2026-11-21:1'
-key_d="s9g1:$(printf '%064d' 0 | tr 0 d)"
-key_e="s9g1:$(printf '%064d' 0 | tr 0 e)"
+key_d="s9g1:$(printf '%064d' 0 | tr 0 f)"
+key_e="s9g1:$(printf '%064d' 0 | tr 0 9)"
 prepare() {
  psql -X -qAt -v ON_ERROR_STOP=1 <<SQL > "$t/prepare.log"
 INSERT INTO airlinerra_game.section9_capacity_hold_plans_v1
