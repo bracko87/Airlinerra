@@ -476,6 +476,7 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
         report.readOnly!==true||report.scheduleId!==id||
         report.canCancelOperationalFlight!==false||
         report.canRescheduleOperationalFlight!==false||
+        report.bookingWriterLockProtocolVerified!==false||
         report.bookingMutation!==false||report.slotMutation!==false||
         report.ledgerPosted!==false||
         !Array.isArray(report.blockers)||!report.evidence||
@@ -492,7 +493,7 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
         server.airline?.id!==airlineId)return;
      const e=report.evidence;
      message('operations-route-detail-save-status',
-      'Operational changes remain locked. '+e.reservedSlotCount+' airport slot records, '+
+      'Operational changes remain locked until booking and cancellation share a verified locking protocol. '+e.reservedSlotCount+' airport slot records, '+
       e.flightOccurrenceCount+' flight occurrences, '+e.reservedBookingBatches+
       ' reserved booking batches ('+e.reservedPassengerSeats+' seats), and '+
       e.certificateRecords+' certification records, '+e.operatedMovementCount+
