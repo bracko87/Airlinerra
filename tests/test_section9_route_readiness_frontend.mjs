@@ -60,5 +60,5 @@ test('Route Planner shows human-readable blockers; overview does not invent tick
  assert.match(planner,/summarizeProtectedRouteReadiness\(result\)/);
  assert.match(planner,/This check does not activate a flight/);
  assert.doesNotMatch(overview,/Ticket sales remain disabled/);
- assert.match(overview,/Drafts alone do not open passenger sales/);
+ assert.match(overview,/Planning drafts alone do not open passenger sales/);
 });
