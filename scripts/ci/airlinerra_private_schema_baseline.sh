@@ -86,13 +86,58 @@ if [[ "$#" -gt 0 && "$1" == "--validate-only" ]]; then
   exit 0
 fi
 
-# GitHub-hosted runners are IPv4-only. Supabase Direct URLs commonly
-# resolve to IPv6; the correct session pooler hostname is project-specific
-# and MUST be copied from Supabase Connect (never guessed by region).
+# GitHub-hosted runners are IPv4-only; Direct Supabase resolves to IPv6.
+# The project is eu-central-1. Supabase documents that shared session
+# poolers use aws-[INDEX]-[REGION].pooler.supabase.com:5432. The precise
+# index is not guaranteed, so test known provider endpoints and accept ONLY
+# one that responds with Airlinerra's specific database schema identity.
+# Never print candidates, URLs, connection errors or credentials.
 if [[ "$normalized_source_url" == *'@db.hwllkabgzaynalahvkpz.supabase.co'* ]]; then
-  echo "BLOCKED: Direct Supabase connections use IPv6 and cannot be reached from this GitHub runner." >&2
-  echo "Update AIRLINERRA_SCHEMA_READONLY_URL using Supabase Connect > Connection string > Session pooler (port 5432), then rerun." >&2
-  exit 2
+  echo "Direct IPv6 URI detected. Checking Supabase's official IPv4 session-pooler endpoints (private, read-only)."
+  resolved=''
+  for pooler_index in 0 1; do
+    candidate="$(
+      AIRLINERRA_POOLER_INDEX="$pooler_index" python3 - <<'PY'
+from urllib.parse import urlsplit, urlunsplit
+import os
+parts = urlsplit(os.environ["AIRLINERRA_SCHEMA_READONLY_URL"])
+assert parts.hostname == "db.hwllkabgzaynalahvkpz.supabase.co"
+assert parts.username == "postgres" and parts.password
+index = os.environ["AIRLINERRA_POOLER_INDEX"]
+assert index in ("0", "1")
+host = "aws-" + index + "-eu-central-1.pooler.supabase.com"
+netloc = "postgres.hwllkabgzaynalahvkpz:" + parts.password + "@" + host + ":5432"
+query = parts.query
+if "sslmode=" not in query:
+    query += ("&" if query else "") + "sslmode=require"
+print(urlunsplit(("postgresql", netloc, "/postgres", query, "")))
+PY
+    )"
+    if PGCONNECT_TIMEOUT=8 PGSSLMODE=require \
+       psql "$candidate" -X -v ON_ERROR_STOP=1 -Atqc "
+          SELECT (
+            current_database()='postgres'
+            AND to_regnamespace('airlinerra_game') IS NOT NULL
+            AND to_regnamespace('airlinerra') IS NOT NULL
+            AND to_regclass('airlinerra.airport_expansion_next_eligibility_phase4') IS NOT NULL
+            AND to_regprocedure('airlinerra_game.section9_auto_dispatch_due_flight_events_v1(integer)') IS NOT NULL
+          )::int;" > /tmp/airlinerra-pooler-probe.result 2>/dev/null; then
+      if [[ "$(cat /tmp/airlinerra-pooler-probe.result)" == 1 ]]; then
+        resolved="$candidate"
+        break
+      fi
+    fi
+  done
+  rm -f /tmp/airlinerra-pooler-probe.result
+  unset candidate
+  if [[ -z "$resolved" ]]; then
+    echo "BLOCKED: no verified project-specific IPv4 session-pooler connection; use the exact Session pooler URI from Supabase Connect." >&2
+    exit 2
+  fi
+  normalized_source_url="$resolved"
+  export AIRLINERRA_SCHEMA_READONLY_URL="$resolved"
+  unset resolved
+  echo "PASS: independently verified private Airlinerra schema via official IPv4 session pooler."
 fi
 
 for command_name in pg_dump psql supabase; do
