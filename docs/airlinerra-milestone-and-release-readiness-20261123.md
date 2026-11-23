@@ -212,3 +212,46 @@ production-schema staging with actual signed sources, operational
 worker replay and rollback strategy, and live-flight diagnostics.
 The reviewed correction remains in `supabase/migration_candidates/`
 and player-initiated active-flight cancellation remains disabled.
+
+## Production-source compatibility and migration drift guard (2026-11-23)
+
+The review-only signed-movement occurrence-lock correction now requires
+the **full original `pg_get_functiondef` MD5 fingerprint**
+`b796a2705d3a9eda3de5208cbbd6f77a` before applying its precisely
+anchored `FOR SHARE OF o` change. This fingerprint was obtained through
+a **read-only** query of the currently deployed original function. It
+does not rely on a target substring alone; any unrelated source change
+must cause the candidate to refuse execution pending review.
+
+The new disposable two-session/DDL safety regression
+`tests/sql/section9_disposable_signed_movement_source_drift_guard.sh`
+confirms that:
+
+- The reviewed original function installs and the patch still applies.
+- Attempting the same patch a second time fails closed, and the
+  previously patched function remains unchanged.
+- An unrelated but syntactically valid edit to the original function
+  outside the targeted cancellation-status `SELECT` is detected and
+  rejected with `REVIEW_CANDIDATE_MOVEMENT_ORIGINAL_SOURCE_MISMATCH`.
+- Rejected patches leave function source untouched. Restoring the
+  expected original source allows the reviewed patch again.
+
+The same CI run passed full synthetic signed departure and arrival,
+HMAC verification, real cancellation-versus-signed-departure races
+in both lock orders, financial settlement and all website/API
+regressions:
+https://github.com/bracko87/Airlinerra/actions/runs/45220614399
+
+Lock ordering inspected from the currently deployed source: the
+signed-movement function takes a verified schedule `FOR SHARE`, then
+the aircraft inventory `FOR UPDATE`, then (with this **candidate**
+only) the dated flight occurrence `FOR SHARE`. Unflown cancellation
+takes the disruption advisory key, capacity inventory `FOR UPDATE`,
+then the dated occurrence `FOR UPDATE`. Their common dated-row lock
+serializes the two direct cases proven by CI. This is **not** a proof
+of an acyclic global lock graph for all dispatch, crew, fuel,
+maintenance and itinerary workers; that review remains outstanding.
+
+The migration candidate and all test-only modifications remain on
+`phase-14h-crew-integration`. No production deployment, activation,
+booking change, cash movement or live cancellation occurred.
