@@ -1,4 +1,4 @@
-name: Airlinerra full historical migration replay (isolated, no deployment)
+name: Airlinerra diagnostic historical migration replay (local, no deployment)
 on:
   workflow_dispatch:
   push:
@@ -40,7 +40,7 @@ jobs:
           from pathlib import Path
           import re
           paths=sorted(Path('supabase/migrations').glob('*.sql'))
-          assert len(paths)>300, f'Unexpectedly small migration set: {len(paths)}'
+          assert len(paths)>410, f'Unexpectedly small migration set: {len(paths)}'
           keys=[p.name[:14] for p in paths]
           assert all(re.fullmatch(r'[0-9]{14}', k) for k in keys)
           duplicates=sorted({k for k in keys if keys.count(k)>1})
@@ -127,6 +127,10 @@ jobs:
             echo '### Complete fresh-database migration replay — local Supabase only'
             echo 'Supabase CLI pinned to 2.122.0. No production project token, URL, or deployment.'\n            echo 'IMPORTANT: Recorded research and account schema baselines are present. Private owner reservation is a sanitized CI-only fixture; replay is DIAGNOSTIC ONLY.'
             echo "Repository migrations: $(wc -l < /tmp/airlinerra-migration-list.txt 2>/dev/null || echo unknown)"
+            if [ -f "$RUNNER_TEMP/full-migration-replay.log" ]; then
+              echo 'Last migration steps and first failure from disposable replay:'
+              grep -E 'Applying migration|ERROR:|SQLSTATE' "$RUNNER_TEMP/full-migration-replay.log" | tail -n 8 || true
+            fi
             if [ -f "$RUNNER_TEMP/migration-applied-count.txt" ]; then
               echo "Applied migrations: $(cat "$RUNNER_TEMP/migration-applied-count.txt")"
             else
