@@ -10,59 +10,41 @@ if [[ -z "$(printenv AIRLINERRA_SCHEMA_READONLY_URL 2>/dev/null || true)" ]]; th
   exit 2
 fi
 
-python3 - <<'PY'
+# Capture the normalized URI only inside the shell variable; never print it.
+# Some legitimate passwords contain raw square brackets, which urllib.parse
+# interprets as IPv6 delimiters before any network operation occurs.
+normalized_source_url="$(python3 - <<'PY'
 from urllib.parse import urlsplit, parse_qs
-import os, sys
-url = os.environ["AIRLINERRA_SCHEMA_READONLY_URL"]
+import os, re, sys
+raw = os.environ["AIRLINERRA_SCHEMA_READONLY_URL"]
 try:
+    if raw != raw.strip():
+        raise ValueError("whitespace")
+    if re.search(r'\\[[^\\]]*(?:YOUR|PASSWORD|PASSWD|SECRET|REPLACE)[^\\]]*\\]', raw, re.I):
+        print("BLOCKED: connection URL still contains a bracketed password placeholder.",file=sys.stderr)
+        sys.exit(2)
+    # Translate valid literal password brackets to their required URI encoding.
+    # The target is a DNS hostname, never an IPv6 address.
+    url = raw.replace("[", "%5B").replace("]", "%5D")
     parts = urlsplit(url)
     q = parse_qs(parts.query)
     assert parts.scheme in ("postgresql", "postgres")
     assert parts.hostname and parts.path == "/postgres"
     assert parts.username and parts.password
-    # Supabase Connect commonly returns a URI without a sslmode query.
-    # PGSSLMODE=require is enforced for *all* remote psql and pg_dump
-    # commands below, so an omitted URL parameter remains TLS-only.
-    # Reject explicit insecure URL overrides (they trump environment).
     sslmode = q.get("sslmode", [None])[0]
     assert sslmode in (None, "require", "verify-ca", "verify-full")
-    assert not (parts.password.startswith("[") or parts.password.startswith("<"))
     direct = parts.hostname == "db.hwllkabgzaynalahvkpz.supabase.co"
     pooled = (parts.hostname.endswith(".pooler.supabase.com")
               and parts.username == "postgres.hwllkabgzaynalahvkpz")
     assert direct or pooled
 except (AssertionError, ValueError, AttributeError):
-    # Diagnostic flags only; NEVER log the host, username, password or URL.
-    try:
-        host = parts.hostname or ""
-        kind = ("project_direct" if host == "db.hwllkabgzaynalahvkpz.supabase.co"
-                else "supabase_pooler" if host.endswith(".pooler.supabase.com")
-                else "other")
-        mode = parse_qs(parts.query).get("sslmode", ["omitted"])[0]
-        mode = "secure" if mode in ("require", "verify-ca", "verify-full") else (
-            "omitted" if mode == "omitted" else "unsupported")
-        print(f"BLOCKED: connection URI validation: host_type={kind}, sslmode={mode}, "
-              f"database_ok={parts.path == '/postgres'}, "
-              f"password_present={bool(parts.password)}, "
-              f"username_valid={parts.username == 'postgres' or parts.username == 'postgres.hwllkabgzaynalahvkpz'}",
-              file=sys.stderr)
-    except Exception:
-        pass
-    # Only boolean format clues. No URL, host, username or password values.
-    markers = ("[YOUR-PASSWORD]", "[YOUR_PASSWORD]", "[PASSWORD]",
-               "<YOUR-PASSWORD>", "<YOUR_PASSWORD>", "<PASSWORD>")
-    has_newline = '\\n' in url or '\\r' in url
-    print("FORMAT CLUES: "
-          f"postgres_scheme={url.lstrip().lower().startswith(('postgresql://', 'postgres://'))}, "
-          f"copied_password_placeholder={any(m in url.upper() for m in markers)}, "
-          f"square_brackets_present={'[' in url or ']' in url}, "
-          f"contains_newline={has_newline}, "
-          f"wrapped_in_quotes={url.startswith((chr(34), chr(39)))}, "
-          f"contains_sslmode_parameter={'sslmode=' in url.lower()}",
-          file=sys.stderr)
+    print("BLOCKED: Airlinerra connection-string format is invalid; check password, username, host and database. No URL or credentials displayed.",file=sys.stderr)
     sys.exit(2)
-print("PASS: Airlinerra source identity validated; TLS forced for every remote connection.")
+print(url) # Captured by command substitution, NEVER logged.
 PY
+)"
+export AIRLINERRA_SCHEMA_READONLY_URL="$normalized_source_url"
+echo "PASS: Airlinerra source URI validated; raw password brackets normalized; remote TLS enforced."
 
 if [[ "$#" -gt 0 && "$1" == "--validate-only" ]]; then
   exit 0
