@@ -119,6 +119,10 @@ jobs:
         run: |
           set -euo pipefail
           bash tests/sql/section9_disposable_cancellation_race_acceptance.sh
+      - name: Test inventory-first booking cancellation races in both orders
+        run: |
+          set -euo pipefail
+          bash tests/sql/section9_disposable_inventory_first_lock_race.sh
       - name: Verify isolated acceptance remained on disposable Postgres
         run: |
           set -euo pipefail
