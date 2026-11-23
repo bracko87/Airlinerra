@@ -6,6 +6,7 @@ import {renderRouteMap,routeDistanceKm} from './route-map.mjs';
 import {planningClockEstimate} from './route-planning-times.mjs';
 import {summarizeProtectedRouteReadiness} from './section9-route-readiness.mjs';
 import {summarizeRecordedCertifications} from './section9-certification-records.mjs';
+import {summarizeOperationalEvidence} from './section9-operational-evidence.mjs';
 const MONTHS=['January','February','March','April','May','June','July','August',
  'September','October','November','December'];
 const DAYS=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
@@ -145,6 +146,41 @@ export function createSection9RouteDetails({doc,host,getRoutes,getServer}={}){
       hint(doc,readinessChecks,check.explanation);
      }
      hint(doc,readinessChecks,'Recorded certificates are evidence only. Final flight readiness still requires authoritative signature and operational rechecks.');
+     if(typeof server.scheduler?.operationalEvidence==='function'){
+      const operationalTitle=text(doc,'h4','Live operational diagnostics','route-readiness-title');
+      readinessChecks.append(operationalTitle);
+      try{
+       const proof=await server.scheduler.operationalEvidence({
+        airlineId:server.airline.id,scheduleId:route.serverScheduleId
+       });
+       if(mySerial!==serial||request!==requestNumber)return;
+       if(proof.scheduleId!==route.serverScheduleId)throw Error('Schedule mismatch');
+       const diagnostic=summarizeOperationalEvidence(proof);
+       if(!diagnostic||proof.scheduleVersion!==answer.scheduleVersion)
+        throw Error('Unverified diagnostics');
+       hint(doc,readinessChecks,diagnostic.summary);
+       for(const item of diagnostic.rows){
+        const row=doc.createElement('div');
+        row.className='detail-row route-readiness-check';
+        row.dataset.checkState=item.state;
+        row.append(text(doc,'span',item.label),text(doc,'strong',
+         item.state==='checked'?'Preview checked':
+         item.state==='blocked'?'Needs attention':'Not verified'));
+        readinessChecks.append(row);
+        hint(doc,readinessChecks,item.detail);
+       }
+       if(diagnostic.blockers.length)
+        hint(doc,readinessChecks,'Reported blockers: '+diagnostic.blockers.slice(0,15).join('; '));
+       if(diagnostic.crewDeferred)
+        hint(doc,readinessChecks,'Crew requirements are deferred by the current phase policy; this is not crew authorization.');
+      }catch{
+       if(mySerial!==serial||request!==requestNumber)return;
+       hint(doc,readinessChecks,'Operational preflight could not be verified. No release is implied.');
+      }
+     }else{
+      hint(doc,readinessChecks,'Operational preflight service is not connected.');
+     }
+
      readinessActions.querySelectorAll('[data-workspace-go]').forEach(button=>button.remove());
      for(const check of report.checks){
       if(check.state==='recorded')continue;
