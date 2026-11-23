@@ -22,9 +22,10 @@ BEGIN
   SELECT 1 FROM pg_proc p
   JOIN pg_namespace n ON n.oid=p.pronamespace
   CROSS JOIN LATERAL aclexplode(coalesce(p.proacl,acldefault('f',p.proowner))) acl
-  JOIN pg_roles role ON role.oid=acl.grantee
   WHERE p.oid='airlinerra_game.section9_issue_verified_demand_hold_tickets_v1(text)'::regprocedure
-    AND role.rolname IN ('anon','authenticated','service_role') AND acl.privilege_type='EXECUTE'
+    AND acl.privilege_type='EXECUTE'
+    AND (acl.grantee=0 OR acl.grantee IN
+      (SELECT oid FROM pg_roles WHERE rolname IN ('anon','authenticated','service_role')))
  ) THEN RAISE EXCEPTION 'CONNECTING_TICKET_PATCH_UNSAFE_EXECUTE_PRIVILEGE';END IF;
 END $guard$;
 
