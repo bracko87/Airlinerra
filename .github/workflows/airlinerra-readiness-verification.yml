@@ -217,6 +217,12 @@ jobs:
         run: |
           set -euo pipefail
           bash tests/sql/section9_disposable_original_recovery_disruption_mutex.sh
+      - name: Exercise unchanged recovery writer actual rebooking and rollback
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = '127.0.0.1'
+          test "$PGDATABASE" = 'airlinerra_disposable'
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_original_recovery_rebooking_acceptance.sql
       - name: Verify isolated acceptance remained on disposable Postgres
         run: |
           set -euo pipefail
