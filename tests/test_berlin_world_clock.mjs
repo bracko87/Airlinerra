@@ -56,7 +56,7 @@ test('Live client calibrates from server time, not from user device wall clock',
 });
 test('Server World 1 time is strictly read-only and private game operations remain off',async()=>{
  const [migration,edge,html,app,overlay]=await Promise.all([
-  'supabase/migrations/20261111093000_section9_berlin_realtime_clock.sql',
+  'supabase/migrations/20261111083146_section9_berlin_realtime_clock.sql',
   'server/section9-world-time-edge-entry.ts',
   'website/private-player-app.html','website/player-app.mjs',
   'website/dev-scripts/invited-overlay.mjs'

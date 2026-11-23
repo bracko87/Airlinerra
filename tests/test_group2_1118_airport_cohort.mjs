@@ -5,7 +5,7 @@ import {readFile} from 'node:fs/promises';
 const get=async file=>readFile(new URL(file,import.meta.url),'utf8');
 
 test('Group 2 airport expansion models the same eight sections as Group 1',async()=>{
- const sql=await get('../supabase/migrations/20261110102000_group2_owner_preapproved_1118_game_models.sql');
+ const sql=await get('../supabase/migrations/20261110101021_group2_owner_preapproved_1118_game_models.sql');
  const suffixes=['identity','classification','runways','facilities',
   'restrictions','capacity','demand','economics'];
  for(let i=1;i<=8;i++){
@@ -21,8 +21,8 @@ test('Group 2 airport expansion models the same eight sections as Group 1',async
 });
 
 test('Group 2 respects real-world evidence gaps, original owner tiers and release protection',async()=>{
- const sql=await get('../supabase/migrations/20261110102000_group2_owner_preapproved_1118_game_models.sql');
- const inventory=await get('../supabase/migrations/20261110103500_airport_group1_group2_inventory.sql');
+ const sql=await get('../supabase/migrations/20261110101021_group2_owner_preapproved_1118_game_models.sql');
+ const inventory=await get('../supabase/migrations/20261110101210_airport_group1_group2_inventory.sql');
  assert.match(sql,/owner_category/);
  assert.match(sql,/game_traffic_type/);
  assert.match(sql,/runway_width_game_basis/);

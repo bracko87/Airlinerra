@@ -4,7 +4,7 @@ import {readFile} from 'node:fs/promises';
 const get=async p=>readFile(new URL(p,import.meta.url),'utf8');
 
 test('Section1 pass2 adds 21 primary served-city and seven official airport elevations, never canonical overwrites',async()=>{
- const s=await get('../supabase/migrations/20261110151000_group2_section1_official_localities_elevations.sql');
+ const s=await get('../supabase/migrations/20261110113955_group2_section1_official_localities_elevations.sql');
  const values=s.slice(s.indexOf('VALUES\n'),s.indexOf('CREATE VIEW'));
  assert.equal((values.match(/'served_city'/g)||[]).length,21);
  assert.equal((values.match(/'elevation_reference'/g)||[]).length,7);
@@ -23,7 +23,7 @@ test('Section1 pass2 adds 21 primary served-city and seven official airport elev
  assert.doesNotMatch(s,/INSERT INTO airlinerra_game\.airport_group2_review_evidence_events_v1/);
 });
 test('Five DST mismatches are source-backed, private, not marked verified or applied to game clock',async()=>{
- const s=await get('../supabase/migrations/20261110152000_group2_section1_timezone_rule_conflicts.sql');
+ const s=await get('../supabase/migrations/20261110113958_group2_section1_timezone_rule_conflicts.sql');
  assert.match(s,/CREATE TABLE airlinerra_game\.airport_group2_section1_timezone_correction_candidates_v1/);
  assert.match(s,/CREATE VIEW airlinerra_game\.airport_group2_section1_timezone_discrepancy_v1/);
  for(const k of ['OURAIRPORTS:27110','OURAIRPORTS:26990','OURAIRPORTS:27094','OURAIRPORTS:27125','OURAIRPORTS:27011'])

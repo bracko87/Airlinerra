@@ -421,7 +421,7 @@ test('protected cabin refit quote is owner-only, price-free, and never a booking
  assert.equal((await blocked.json()).reason,'CABIN_REFIT_SAVE_DESIGN_FIRST');
 });
 test('refit SQL only prepares snapshots; cannot post payments or install seats',async()=>{
- const sql=await readFile(new URL('../supabase/migrations/20261110212000_airlinerra_refit_preparation_quotes_v1.sql',import.meta.url),'utf8');
+ const sql=await readFile(new URL('../supabase/migrations/20261110200712_airlinerra_refit_preparation_quotes_v1.sql',import.meta.url),'utf8');
  assert.match(sql,/CREATE FUNCTION airlinerra_game.prepare_owned_cabin_refit_quote_v1/);
  assert.match(sql,/SECURITY INVOKER/);
  assert.match(sql,/UNIQUE \(airline_id,request_id\)/);

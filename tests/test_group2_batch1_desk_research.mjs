@@ -4,7 +4,7 @@ import {readFile} from 'node:fs/promises';
 const get=async p=>readFile(new URL(p,import.meta.url),'utf8');
 
 test('Batch1 has fifty frozen cases and precisely scoped public source notes',async()=>{
- const m=await get('../supabase/migrations/20261110124500_group2_batch1_50_source_desk_review.sql');
+ const m=await get('../supabase/migrations/20261110104243_group2_batch1_50_source_desk_review.sql');
  assert.match(m,/cohort_review_order BETWEEN 1 AND 50/);
  assert.match(m,/CREATE TABLE airlinerra_game\.airport_group2_batch1_desk_cases_v1/);
  assert.match(m,/CREATE TABLE airlinerra_game\.airport_group2_batch1_public_source_findings_v1/);
@@ -19,7 +19,7 @@ test('Batch1 has fifty frozen cases and precisely scoped public source notes',as
  assert.match(m,/airport_group2_batch1_findings_immutable/);
 });
 test('Seven physical runway measurements remain only public candidate claims and two AIP prohibitions stay blocked',async()=>{
- const m=await get('../supabase/migrations/20261110124500_group2_batch1_50_source_desk_review.sql');
+ const m=await get('../supabase/migrations/20261110104243_group2_batch1_50_source_desk_review.sql');
  for(const source of [
  'OURAIRPORTS:29801','OURAIRPORTS:27866','OURAIRPORTS:21335',
  'OURAIRPORTS:20581','OURAIRPORTS:3403','OURAIRPORTS:21315',

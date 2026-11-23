@@ -479,7 +479,7 @@ test('non-owner cabin viewing never provides refit, acquisition or cabin-save ac
 
 test('used-aircraft cabin snapshot is attached to the airframe not the seller label',async()=>{
  const migration=await readFile(new URL('../supabase/migrations/20261113122857_airlinerra_used_aircraft_cabin_snapshots_v1.sql',import.meta.url),'utf8');
- const followup=await readFile(new URL('../supabase/migrations/20261113230100_airlinerra_allow_previous_owner_installed_cabin_origin.sql',import.meta.url),'utf8');
+ const followup=await readFile(new URL('../supabase/migrations/20261113123453_airlinerra_allow_previous_owner_installed_cabin_origin.sql',import.meta.url),'utf8');
  assert.match(migration,/NEW\.source_inventory_id/);
  assert.match(migration,/NEW\.cabin_snapshot=jsonb_build_object/);
  assert.match(migration,/IF NEW\.awarded_inventory_id IS NULL/);

@@ -4,7 +4,7 @@ import {readFile} from 'node:fs/promises';
 const get=async p=>readFile(new URL(p,import.meta.url),'utf8');
 
 test('Section1 Group2 uses 23 immutable 50-airport batches with 18 final entries',async()=>{
- const sql=await get('../supabase/migrations/20261110163500_group2_23_fixed_batches_section1_game_completion.sql');
+ const sql=await get('../supabase/migrations/20261110120222_group2_23_fixed_batches_section1_game_completion.sql');
  assert.match(sql,/CREATE TABLE airlinerra_game\.airport_group2_fixed_batch_members_v1/);
  assert.match(sql,/review_batch_50/);
  assert.match(sql,/cohort_review_order-1\)%50\+1/);
@@ -19,7 +19,7 @@ test('Section1 Group2 uses 23 immutable 50-airport batches with 18 final entries
  assert.match(sql,/count\(\*\) FROM airlinerra_game\.airport_group2_section1_batch_acceptance_v1\)<>23/);
 });
 test('Section1 game-only registry never fabricates source municipalities/GPS or commercial access',async()=>{
- const sql=await get('../supabase/migrations/20261110163500_group2_23_fixed_batches_section1_game_completion.sql');
+ const sql=await get('../supabase/migrations/20261110120222_group2_23_fixed_batches_section1_game_completion.sql');
  assert.match(sql,/CREATE VIEW airlinerra_game\.airport_group2_section1_game_registry_v1/);
  assert.match(sql,/ORIGINAL_REGISTRY_LOCALITY_UNVERIFIED/);
  assert.match(sql,/OFFICIAL_OPERATOR_SERVED_CITY_CANDIDATE_UNVERIFIED/);
@@ -37,7 +37,7 @@ test('Section1 game-only registry never fabricates source municipalities/GPS or 
  assert.doesNotMatch(sql,/SECURITY DEFINER/);
 });
 test('Five AU corrected game-model timezones never bypass real operational authority',async()=>{
- const sql=await get('../supabase/migrations/20261110163500_group2_23_fixed_batches_section1_game_completion.sql');
+ const sql=await get('../supabase/migrations/20261110120222_group2_23_fixed_batches_section1_game_completion.sql');
  assert.match(sql,/CREATE TABLE airlinerra_game\.airport_group2_section1_game_timezone_overrides_v1/);
  assert.match(sql,/AU_STATE_TIME_RULE_GAME_CORRECTION/);
  assert.match(sql,/rba\.gov\.au\/schedules-events\/daylight-saving\.html/);
