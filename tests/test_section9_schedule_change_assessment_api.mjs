@@ -13,6 +13,7 @@ const defaultEvidence=()=>({scheduleId,scheduleVersion:2,scheduleStatus:'active'
  reservedSlotCount:6,flightOccurrenceCount:4,currentVersionOccurrenceCount:4,
  reservedBookingBatches:2,reservedPassengerSeats:7,certificateRecords:5,
  operatedMovementCount:1,actualFinancePreparationCount:2,preparedSettlementCount:3,
+ pendingConnectingJourneyLegCount:1,connectingHoldPlanItemCount:2,
  recognizedFlightRevenueUsd:450,
  recognizedReservationRevenueUsd:450});
 function fixture({found=true,row=defaultEvidence()}={}){
@@ -68,6 +69,8 @@ test('reserved passengers trigger explicit protection blocker',async()=>{
  assert.ok(v.blockers.includes('PASSENGER_RESERVATIONS_REQUIRE_PROTECTION'));
  assert.ok(v.blockers.includes('OPERATED_MOVEMENTS_MUST_BE_PRESERVED'));
  assert.ok(v.blockers.includes('PREPARED_SETTLEMENTS_REQUIRE_ACCOUNTING_RECONCILIATION'));
+ assert.ok(v.blockers.includes('CONNECTING_JOURNEY_HOLDS_REQUIRE_ATOMIC_RECOVERY'));
+ assert.equal(v.evidence.pendingConnectingJourneyLegCount,1);
  assert.ok(v.blockers.includes('RECOGNIZED_REVENUE_REQUIRES_ACCOUNTING_RECONCILIATION'));
  assert.equal(v.evidence.operatedMovementCount,1);
  assert.equal(v.evidence.recognizedFlightRevenueUsd,450);
@@ -80,6 +83,8 @@ test('invalid evidence never becomes a valid cancellation receipt',async()=>{
   {...defaultEvidence(),operatedMovementCount:-1},
   {...defaultEvidence(),actualFinancePreparationCount:-1},
   {...defaultEvidence(),preparedSettlementCount:'3'},
+  {...defaultEvidence(),pendingConnectingJourneyLegCount:-1},
+  {...defaultEvidence(),connectingHoldPlanItemCount:'2'},
   {...defaultEvidence(),recognizedFlightRevenueUsd:'450'},
   {...defaultEvidence(),recognizedReservationRevenueUsd:Infinity}]){
   const f=fixture({row}),r=await f.handler(request());
@@ -102,7 +107,8 @@ test('active schedule cancellation stays disabled even if all other blockers are
  const row={...defaultEvidence(),reservedSlotCount:0,flightOccurrenceCount:0,
   currentVersionOccurrenceCount:0,reservedBookingBatches:0,reservedPassengerSeats:0,
   certificateRecords:0,operatedMovementCount:0,actualFinancePreparationCount:0,
-  preparedSettlementCount:0,recognizedFlightRevenueUsd:0,recognizedReservationRevenueUsd:0};
+  preparedSettlementCount:0,pendingConnectingJourneyLegCount:0,
+  connectingHoldPlanItemCount:0,recognizedFlightRevenueUsd:0,recognizedReservationRevenueUsd:0};
  const f=fixture({row}),reply=await f.handler(request());
  assert.equal(reply.status,200);
  const value=await reply.json();
@@ -110,4 +116,14 @@ test('active schedule cancellation stays disabled even if all other blockers are
  assert.equal(value.canCancelOperationalFlight,false);
  assert.equal(value.canRescheduleOperationalFlight,false);
  assert.ok(value.blockers.includes('BOOKING_CANCELLATION_LOCK_PROTOCOL_UNVERIFIED'));
+});
+
+test('an outstanding two-leg hold independently blocks cancellation review',async()=>{
+ const row={...defaultEvidence(),reservedBookingBatches:0,reservedPassengerSeats:0,
+  pendingConnectingJourneyLegCount:1,connectingHoldPlanItemCount:1};
+ const f=fixture({row}),reply=await f.handler(request());
+ assert.equal(reply.status,200);
+ const result=await reply.json();
+ assert.equal(result.canCancelOperationalFlight,false);
+ assert.ok(result.blockers.includes('CONNECTING_JOURNEY_HOLDS_REQUIRE_ATOMIC_RECOVERY'));
 });
