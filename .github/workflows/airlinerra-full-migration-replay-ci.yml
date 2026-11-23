@@ -44,32 +44,17 @@ jobs:
           keys=[p.name[:14] for p in paths]
           assert all(re.fullmatch(r'[0-9]{14}', k) for k in keys)
           duplicates=sorted({k for k in keys if keys.count(k)>1})
-          if duplicates:
-            print(f'BLOCKER: {len(duplicates)} duplicate migration versions found:')
-            for version in duplicates:
-              print(f'  {version}: '+', '.join(p.name for p in paths if p.name.startswith(version+'_')))
-            print('Production migration files left unchanged. Diagnostic CI copy will use temporary distinct versions.')
-            from datetime import datetime, timedelta
-            taken=set(keys)
-            remaps=[]
-            for version in duplicates:
-              colliders=[p for p in paths if p.name.startswith(version+'_')]
-              for original in colliders[1:]:
-                dt=datetime.strptime(version,'%Y%m%d%H%M%S')
-                offset=1
-                while True:
-                  candidate=(dt+timedelta(seconds=offset)).strftime('%Y%m%d%H%M%S')
-                  if candidate not in taken:
-                    break
-                  offset+=1
-                target=original.with_name(candidate+original.name[14:])
-                original.rename(target)
-                taken.add(candidate)
-                remaps.append((original.name,target.name))
-            Path('/tmp/airlinerra-temporary-migration-remaps.txt').write_text(
-                '\\n'.join(f'{before} -> {after}' for before,after in remaps)+'\\n')
-            print('Local CI diagnostic remaps (NOT committed or deployable):')
-            for before,after in remaps: print(f'  {before} -> {after}')
+          assert not duplicates, f'Historical migration timestamp collisions: {duplicates}'
+          # The 14 duplicate members with byte-identical production SQL have
+          # been restored to their original recorded Supabase timestamps.
+          verified_versions=[
+            '20261110150838','20261110153827','20261110152703',
+            '20261110153957','20261110172004','20261110122949',
+            '20261110141358','20261110155455','20261110184615',
+            '20261110132252','20261110135432','20261110164021',
+            '20261113122857','20261113125153']
+          assert all(v in keys for v in verified_versions), 'Verified migration provenance missing'
+          print(f'Validated {len(paths)} unique migration file versions; 14 recovered original timestamps')
           # Diagnose the missing 2026-10-27 / 2026-10-28 live-only
           # account foundation using existing reviewed repository SQL.
           # This is NOT an authoritative migration and is NEVER committed.
@@ -133,8 +118,8 @@ jobs:
           psql -XAt -v ON_ERROR_STOP=1 -c "select (position('SECTION9_SIGNED_DEPARTURE_OCCURRENCE_NOT_OPEN' in pg_get_functiondef('airlinerra_game.section9_record_signed_operated_flight_movement_v1(uuid,uuid,integer,date,integer,text,timestamptz,text,text)'::regprocedure))>0)::int" | grep -qx 1
           psql -XAt -v ON_ERROR_STOP=1 -c "select (position('required_permission_code' in pg_get_functiondef('airlinerra_game.section9_auto_dispatch_due_flight_events_v1(integer)'::regprocedure))>0)::int" | grep -qx 1
           for role in anon authenticated service_role; do
-            psql -XAt -v ON_ERROR_STOP=1 -v role="$role" -c "select has_function_privilege(:'role','airlinerra_game.section9_record_signed_operated_flight_movement_v1(uuid,uuid,integer,date,integer,text,timestamptz,text,text)','EXECUTE')::int" | grep -qx 0
-            psql -XAt -v ON_ERROR_STOP=1 -v role="$role" -c "select has_function_privilege(:'role','airlinerra_game.section9_auto_dispatch_due_flight_events_v1(integer)','EXECUTE')::int" | grep -qx 0
+            psql -XAt -v ON_ERROR_STOP=1 -c "select has_function_privilege('$role','airlinerra_game.section9_record_signed_operated_flight_movement_v1(uuid,uuid,integer,date,integer,text,timestamptz,text,text)','EXECUTE')::int" | grep -qx 0
+            psql -XAt -v ON_ERROR_STOP=1 -c "select has_function_privilege('$role','airlinerra_game.section9_auto_dispatch_due_flight_events_v1(integer)','EXECUTE')::int" | grep -qx 0
           done
           echo "All historical migrations and private function guards validated in disposable local Supabase"
       - name: Final isolated replay report
