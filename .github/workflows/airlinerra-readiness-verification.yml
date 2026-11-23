@@ -166,6 +166,23 @@ jobs:
           print('Unchanged production worker extracted; tested review-only candidate is checked into supabase/migration_candidates')
           PY
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_real_connecting_ticket_acceptance.sql
+      - name: Verify unchanged automatic-demand conversion worker on two-leg reservations
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('supabase/migrations/20261113224000_section9_trusted_demand_hold_to_ticket_bridge_v1.sql').read_text()
+          start=s.index('CREATE OR REPLACE FUNCTION airlinerra_game.section9_promote_completed_demand_holds_batch_v1(')
+          end=s.index('REVOKE ALL ON FUNCTION airlinerra_game.section9_promote_completed_demand_holds_batch_v1(',start)
+          source=s[start:end]
+          assert len(source)>4000 and len(source)<10000
+          assert 'pg_try_advisory_xact_lock(583729,10029)' in source
+          assert 'SECTION9_UNSAFE_DEMAND_TICKET_CONVERSION_RESPONSE' in source
+          assert 'section9_issue_verified_demand_hold_tickets_v1' in source
+          Path('/tmp/section9-demand-worker-actual.sql').write_text(source)
+          print('Unchanged original automatic demand conversion worker extracted')
+          PY
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_real_automatic_demand_worker_acceptance.sql
       - name: Verify isolated acceptance remained on disposable Postgres
         run: |
           set -euo pipefail
