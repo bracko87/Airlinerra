@@ -67,3 +67,27 @@ The review-only candidate also passed a two-session test of the **actual correct
 - Verified in disposable PostgreSQL 17: https://github.com/bracko87/Airlinerra/actions/runs/45185102613
 
 This confirms **same-allocation concurrent replay** in the isolated fixture; it does not cover concurrent different allocation keys on overlapping two-leg itineraries, financial settlement/refunds, complete real-world release/certification state, or a production rollout. The candidate remains outside production migrations.
+
+## Distinct overlapping itinerary concurrency (2026-11-23)
+
+An additional disposable PostgreSQL 17 regression now runs two **different**
+two-leg allocation keys concurrently against the same two flight inventories.
+Both completed demand holds already reserve two passengers per physical leg,
+for a total of four held seats per leg. Each issuer uses the reviewed
+connecting-ticket SQL candidate; independent sessions serialize on actual
+capacity-inventory row locks. The test verifies:
+
+- Both distinct itinerary issuances succeed, producing four reserved ticket
+  records (two legs for each itinerary), without upfront money or revenue.
+- Both occurrence booked-seat counters reach four and both shared capacity
+  inventory held-seat counters remain four; issuance does not double-hold.
+- A third itinerary whose seats were **not** added to the inventory hold
+  fails with a capacity-proof conflict and does not mutate either issued pair.
+- Existing regressions and website build remain successful.
+
+GitHub verification: https://github.com/bracko87/Airlinerra/actions/runs/45185778528
+
+This checks two distinct allocations sharing **both** legs under a synthetic
+fixed-capacity booking fixture. It does not establish approval for production
+execution, all possible multi-airline overlaps, refund handling, or live
+cancellation. The corrected ticket SQL remains a review-only candidate.
