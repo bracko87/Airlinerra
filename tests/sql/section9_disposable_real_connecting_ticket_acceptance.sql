@@ -175,5 +175,5 @@ BEGIN
  OR (SELECT count(*) FROM airlinerra_game.section9_passenger_reservation_batches_v1
   WHERE reservation_key='demand.'||ticket_key)<>2
  THEN RAISE EXCEPTION 'Two-leg replay duplicated claims: %',result;END IF;
- RAISE NOTICE 'PASS unchanged two-leg ticket SQL: rollback, both reservations, held-seat reconciliation, replay, no ledger';
+ RAISE NOTICE 'PASS isolated corrected two-leg candidate: rollback, two reservations, held-seat reconciliation, replay, no ledger';
 END $acceptance$;
