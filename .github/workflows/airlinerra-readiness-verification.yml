@@ -163,7 +163,18 @@ jobs:
           assert source.index('FOR UPDATE')<source.index('SECTION9_PARTIALLY_ISSUED_CONNECTING_JOURNEY')
           assert "MESSAGE='SECTION9_ATOMIC_DEMAND_TICKET_ISSUANCE_INCOMPLETE'" in source
           Path('/tmp/section9-connecting-tickets-actual.sql').write_text(source)
-          print('Original two-leg ticket issuance function extracted unchanged')
+          patched=source
+          for before,after in [
+            ('reservation_key text;','v_reservation_key text;'),
+            ("reservation_key:='demand.'","v_reservation_key:='demand.'"),
+            ('b.reservation_key=reservation_key','b.reservation_key=v_reservation_key'),
+            ("VALUES(flight.id,reservation_key,","VALUES(flight.id,v_reservation_key,")
+          ]:
+            assert patched.count(before)==1, (before,patched.count(before))
+            patched=patched.replace(before,after)
+          assert patched.count('v_reservation_key')==4
+          Path('/tmp/section9-connecting-tickets-disambiguated-lab.sql').write_text(patched)
+          print('Original two-leg writer preserved; isolated candidate changes only reservation variable name')
           PY
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_real_connecting_ticket_acceptance.sql
       - name: Verify isolated acceptance remained on disposable Postgres
