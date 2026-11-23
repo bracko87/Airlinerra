@@ -70,13 +70,42 @@ jobs:
                 '\\n'.join(f'{before} -> {after}' for before,after in remaps)+'\\n')
             print('Local CI diagnostic remaps (NOT committed or deployable):')
             for before,after in remaps: print(f'  {before} -> {after}')
+          # Diagnose the missing 2026-10-27 / 2026-10-28 live-only
+          # account foundation using existing reviewed repository SQL.
+          # This is NOT an authoritative migration and is NEVER committed.
+          # Explicitly exclude any real account email/owner reservation data.
+          identity=Path('docs/sql/airlinerra_game_identity_schema_prelaunch.sql').read_text()
+          activation=Path('docs/sql/airlinerra_game_activation_prelaunch.sql').read_text()
+          assert 'create schema if not exists airlinerra_game;' in identity.lower()
+          assert 'owner_premium_email_reservations' not in identity
+          assert 'owner_premium_email_reservations' not in activation
+          diagnostic_reservation = """
+          -- EMPTY, CI-ONLY placeholder for the private owner reservation table.
+          -- No owner email or entitlement is copied from the real database.
+          CREATE TABLE IF NOT EXISTS airlinerra_game.owner_premium_email_reservations(
+            email text PRIMARY KEY,
+            created_at timestamptz NOT NULL DEFAULT now(),
+            source text NOT NULL DEFAULT 'owner_approved_private_invite'
+          );
+          ALTER TABLE airlinerra_game.owner_premium_email_reservations ENABLE ROW LEVEL SECURITY;
+          REVOKE ALL ON airlinerra_game.owner_premium_email_reservations
+            FROM PUBLIC, anon, authenticated;
+          """
+          baseline = Path('supabase/migrations/20261027072557_ci_only_reviewed_account_baseline.sql')
+          assert not baseline.exists()
+          baseline.write_text(
+              '-- NOT AUTHORITATIVE. Synthetic disposable CI bootstrap.\\n'
+              '-- REVIEWED source: docs/sql/airlinerra_game_identity_schema_prelaunch.sql,\\n'
+              '-- docs/sql/airlinerra_game_activation_prelaunch.sql.\\n'
+              + identity + '\\n' + activation + '\\n' + diagnostic_reservation)
+          print('Added temporary no-personal-data game account bootstrap for diagnostic replay')
           for expected in (
             '20261123200000_section9_signed_movement_cancellation_guard.sql',
             '20261123210000_section9_dispatch_traffic_permission_binding_fix.sql'):
             assert Path('supabase/migrations',expected).is_file(), expected
           Path('/tmp/airlinerra-migration-list.txt').write_text(
             '\n'.join(p.name for p in paths)+'\n')
-          print(f'Migration inventory: {len(paths)} uniquely versioned migrations')
+          print(f'Migration inventory: {len(paths)} original SQL files, plus 1 temporary baseline fixture')
           print('Corrective migrations appear in timestamp order')
           PY
           supabase --version
@@ -114,7 +143,7 @@ jobs:
         run: |
           {
             echo '### Complete fresh-database migration replay — local Supabase only'
-            echo 'Supabase CLI pinned to 2.122.0. No production project token, URL, or deployment.'
+            echo 'Supabase CLI pinned to 2.122.0. No production project token, URL, or deployment.'\n            echo 'IMPORTANT: CI uses a temporary reviewed account fixture, not the missing authoritative 2026-10-27 migration; any replay success is DIAGNOSTIC ONLY.'
             echo "Repository migrations: $(wc -l < /tmp/airlinerra-migration-list.txt 2>/dev/null || echo unknown)"
             if [ -f "$RUNNER_TEMP/migration-applied-count.txt" ]; then
               echo "Applied migrations: $(cat "$RUNNER_TEMP/migration-applied-count.txt")"
