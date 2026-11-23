@@ -51,3 +51,24 @@ BEGIN
  END LOOP;
 END $$;
 INSERT INTO airlinerra_game.section9_aircraft_game_fuel_custody_v1 VALUES ('33333333-3333-4333-8333-333333333333',500);
+
+-- Modelled dispatcher used ONLY for competing-lock orchestration. It is NOT
+-- the actual signed-movement function and must never be described as such.
+CREATE FUNCTION airlinerra_game.test_model_signed_dispatch(p_occurrence uuid)
+RETURNS text LANGUAGE plpgsql AS $$
+DECLARE f text; aircraft uuid; changed integer;
+BEGIN
+ IF NOT pg_try_advisory_xact_lock(583729,10041) THEN RETURN 'dispatch_busy'; END IF;
+ SELECT schedule_id::text||':'||flight_local_date::text||':'||weekly_entry::text,
+  aircraft_inventory_id INTO f,aircraft
+ FROM airlinerra_game.section9_dated_flight_occurrences_v1 WHERE id=p_occurrence;
+ PERFORM 1 FROM airlinerra_game.section9_aircraft_game_fuel_custody_v1
+  WHERE aircraft_inventory_id=aircraft FOR UPDATE;
+ INSERT INTO airlinerra_game.section9_operated_flight_movements_v1
+ VALUES(f,'departed','TEST-SYNTHETIC-EVENT-'||p_occurrence::text);
+ UPDATE airlinerra_game.section9_dated_flight_occurrences_v1 SET booking_status='closed'
+ WHERE id=p_occurrence AND booking_status='open';
+ GET DIAGNOSTICS changed=ROW_COUNT;
+ IF changed<>1 THEN RAISE EXCEPTION 'SECTION9_DEPARTURE_BOOKING_CLOSE_UNCONFIRMED_ROLLBACK'; END IF;
+ RETURN 'departed';
+END $$;
