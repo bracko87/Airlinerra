@@ -1,0 +1,49 @@
+name: Airlinerra frontend readiness verification
+
+on:
+  push:
+    branches:
+      - phase-14h-crew-integration
+    paths:
+      - 'website/**'
+      - 'server/**'
+      - 'tests/**'
+      - '.github/workflows/airlinerra-readiness-verification.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  readiness:
+    name: Readiness tests and static build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: website
+    steps:
+      - name: Checkout development source
+        uses: actions/checkout@v4
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+      - name: Install pinned website dependencies
+        run: npm ci
+      - name: Run readiness API and frontend regression tests
+        run: npm run test:route-readiness
+      - name: Run website regression tests
+        run: npm test
+      - name: Verify production-style static build
+        run: npm run build
+      - name: Verify compiled readiness modules
+        run: |
+          test -f ../dist/section9-route-details.mjs
+          test -f ../dist/section9-certification-records.mjs
+          test -f ../dist/section9-operational-evidence.mjs
+
+# Verification only: no database secrets, migrations, Netlify credentials,
+# deploy tokens, operational toggles or real-flight test fixtures.
