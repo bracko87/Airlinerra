@@ -3141,6 +3141,9 @@ section[data-player-view="aircraft-market"]:has(#workspace-aircraft-market.is-sh
 .route-detail-readiness .route-readiness-check[data-check-state="checked"] strong{
  color:var(--navy)
 }
+.route-detail-readiness .route-readiness-check[data-check-state="recorded"] strong{
+ color:var(--navy)
+}
 .route-detail-readiness .route-readiness-checks>.hint{
  margin:1px 0 7px;font-size:11px;line-height:1.5;color:var(--muted)
 }
