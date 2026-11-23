@@ -255,3 +255,63 @@ maintenance and itinerary workers; that review remains outstanding.
 The migration candidate and all test-only modifications remain on
 `phase-14h-crew-integration`. No production deployment, activation,
 booking change, cash movement or live cancellation occurred.
+
+## Aircraft/maintenance-style lock versus signed departure and cancellation (2026-11-23)
+
+A new three-connection disposable PostgreSQL 17 regression
+`tests/sql/section9_disposable_fleet_lock_vs_signed_movement_cancellation.sh`
+exercises a cross-worker ordering not covered by the prior direct
+signed-movement-versus-cancellation races.
+
+An independent transaction simulates an aircraft maintenance writer's
+`airline_aircraft_inventory FOR UPDATE` lock, held through a scheduled
+critical section. The **actual patched signed movement function** is
+then invoked with a canonical synthetic HMAC and valid fixture
+operational evidence; the test observes it **blocked server-side** on
+the aircraft row via `pg_blocking_pids`. While it remains blocked,
+a third connection invokes the **actual private cancellation writer**,
+which succeeds and creates its cancellation receipt. After the fleet
+row lock is released, the original signed-movement writer rechecks
+the occurrence using the reviewed `FOR SHARE OF o` lock and raises
+`SECTION9_CANCELLED_OCCURRENCE_MOVEMENT_FORBIDDEN` without inserting
+a departure record. Final assertions require the flight to be
+cancelled with exactly one cancellation receipt and zero movement
+records.
+
+The same run included all previous signed departure/arrival and
+accounting, booking, recovery and frontend tests, all green:
+
+https://github.com/bracko87/Airlinerra/actions/runs/45222941422
+
+### Source-based lock-order notes
+
+The read-only deployed source review shows:
+
+- `section9_record_signed_operated_flight_movement_v1`: schedule
+  `FOR SHARE`, aircraft inventory `FOR UPDATE`, existing movement
+  replay check, then reviewed candidate occurrence `FOR SHARE`,
+  followed by aircraft-position `FOR UPDATE`.
+- `section9_cancel_unflown_occurrence_v1`: advisory disruption lock
+  `(583729,10041)`, capacity inventory `FOR UPDATE`, occurrence
+  `FOR UPDATE`, and then guarded booking/receipt changes.
+- `section9_verify_game_fuel_before_departure_v1`: locks the
+  aircraft fuel-custody row `FOR UPDATE` after verifying the flight,
+  aircraft and available capacity context; this is called by the
+  automatic dispatch worker prior to movement publication.
+- `section9_capture_dispatched_crew_v1`: locks the airline record
+  `FOR UPDATE` during crew capture. The automatic dispatch worker
+  calls it after signed movement publication within its flight-event
+  workflow.
+- `section9_owned_game_maintenance_job_v1` and
+  `section9_book_ai_maintenance_v1` acquire the aircraft inventory
+  row `FOR UPDATE`. The latter may also lock the airline row.
+
+The maintenance-style row-lock test proves **one actual blocked fleet
+lock order**; the maintenance holder itself is deliberately a row-lock
+simulator, not an invocation of a full paid maintenance job. No real
+crew rotation, refueling, maintenance charge or production movement
+was performed. A complete deadlock graph still requires checking
+nested helper calls, fuel-custody and airline lock interactions,
+rollback triggers and real scheduler transaction boundaries.
+Neither the candidate movement patch nor player-initiated active
+flight cancellation is released to production.
