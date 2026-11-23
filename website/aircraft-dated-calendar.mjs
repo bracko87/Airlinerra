@@ -58,7 +58,12 @@ export function renderDatedCalendar(doc,host,rows,date){
    band.title=details;
    const label=add(doc,lane,'button',title,'schedule-board-inline-flight is-slot-held');
    label.type='button';label.style.left=Math.min(b.begin/14.4,75)+'%';label.title=details;label.setAttribute('aria-label',details);
-   if(b.kind==='flight')label.dataset.scheduleFlight=b.label;
+   if(b.kind==='flight'){
+    label.dataset.scheduleFlight=b.label;
+    if(typeof b.scheduleId==='string'&&
+     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(b.scheduleId))
+     label.dataset.scheduleId=b.scheduleId;
+   }
    else label.addEventListener('click',()=>{const info=lane.querySelector('.schedule-maintenance-detail');if(info)info.remove();else add(doc,lane,'p',details,'schedule-maintenance-detail');});
   }
   if(row.overlap)add(doc,track,'p','Schedule conflict: overlapping confirmed reservations.','hint');
