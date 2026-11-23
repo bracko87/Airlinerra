@@ -50,6 +50,7 @@ test('verified route refresh reconciles details and cancellation reloads server 
  assert.match(details,/This route is no longer in the current airline list/);
  assert.match(operations,/renderRoutes\(\);\s*\/\/ Reload details by schedule identity/);
  assert.match(operations,/void details\.refresh\(\)/);
- assert.match(operations,/Cancellation remains unavailable until passenger and slot release checks are connected/);
+ assert.match(operations,/Operational changes remain locked/);
+ assert.match(operations,/scheduleChangeAssessment\(\{airlineId,scheduleId:id\}\)/);
  assert.match(workspace,/doc\.addEventListener\('airlinerra:route-draft-cancelled',[\s\S]{0,300}void loadAirlineSchedule\(\)/);
 });
