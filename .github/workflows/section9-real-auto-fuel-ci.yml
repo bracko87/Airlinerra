@@ -1,0 +1,112 @@
+name: Actual auto fuel top-up plus real signed automatic departure (disposable)
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tests/sql/section9_real_auto_fuel_disposable_dependencies.sql'
+      - 'tests/sql/section9_real_dispatcher_disposable_dependencies.sql'
+      - 'tests/sql/section9_real_fuel_departure_disposable_dependencies.sql'
+      - 'supabase/migrations/20261117110000_section9_game_fuel_custody_supply_dispatch_v1.sql'
+      - 'supabase/migrations/20261123200000_section9_signed_movement_cancellation_guard.sql'
+      - 'supabase/migrations/20261123210000_section9_dispatch_traffic_permission_binding_fix.sql'
+      - '.github/workflows/section9-real-auto-fuel-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-auto-fuel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable-ci-only
+          POSTGRES_DB: airlinerra_disposable
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d airlinerra_disposable"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: disposable-ci-only
+      PGDATABASE: airlinerra_disposable
+      PGOPTIONS: -c statement_timeout=20000 -c lock_timeout=10000
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: |
+          if ! command -v psql >/dev/null 2>&1; then sudo apt-get update -qq && sudo apt-get install -y postgresql-client; fi
+      - name: Provision disposable flight aircraft fuel and certificate fixtures
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = 127.0.0.1
+          test "$PGDATABASE" = airlinerra_disposable
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/disposable_database_preflight.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_real_cancellation_disposable_bootstrap.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_real_signed_movement_disposable_dependencies.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_real_fuel_departure_disposable_dependencies.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_real_dispatcher_disposable_dependencies.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_real_auto_fuel_disposable_dependencies.sql
+      - name: Install original production preflight supplier receipt and actual dispatcher
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          src=Path('supabase/migrations/20261117110000_section9_game_fuel_custody_supply_dispatch_v1.sql').read_text()
+          names=['section9_verify_game_fuel_before_departure_v1',
+                 'section9_auto_supply_game_only_fuel_v1',
+                 'section9_capture_verified_departure_fuel_v1',
+                 'section9_auto_dispatch_due_flight_events_v1']
+          bodies=[]
+          for name in names:
+            a=src.index('CREATE OR REPLACE FUNCTION airlinerra_game.'+name+'(')
+            b=src.index('REVOKE ALL ON FUNCTION airlinerra_game.'+name+'(',a)
+            body=src[a:b]
+            assert 'END $function$' in body
+            bodies.append(body)
+          Path('/tmp/actual-auto-fuel-dispatch-functions.sql').write_text('\n'.join(bodies))
+          print('Exact production fuel supplier, preflight, departure receipt and dispatcher extracted')
+          PY
+          psql -X -v ON_ERROR_STOP=1 -f /tmp/actual-auto-fuel-dispatch-functions.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261123200000_section9_signed_movement_cancellation_guard.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261123210000_section9_dispatch_traffic_permission_binding_fix.sql
+      - name: Unavailable airport fuel service blocks real automatic supply
+        run: |
+          set -euo pipefail
+          FID='11111111-1111-4111-8111-111111111111:2026-11-23:4'
+          psql -X -v ON_ERROR_STOP=1 -c "UPDATE airlinerra_game.section9_aircraft_game_fuel_custody_v1 SET onboard_kg=100; UPDATE airlinerra_game.section9_game_approved_fuel_load_receipts_v1 SET fuel_after_load_kg=100; UPDATE airlinerra_game.airport_facilities SET fuel_available=false WHERE airport_key='TEST-AAA'"
+          psql -XAt -v ON_ERROR_STOP=1 -c "SELECT airlinerra_game.section9_auto_supply_game_only_fuel_v1('$FID')->>'status'" | grep -qx blocked_no_game_airport_fuel_service
+          psql -XAt -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM airlinerra_game.section9_game_approved_fuel_load_receipts_v1" | grep -qx 1
+          psql -XAt -v ON_ERROR_STOP=1 -c "SELECT airlinerra_game.section9_auto_dispatch_due_flight_events_v1(10)" > "$RUNNER_TEMP/no-fuel.txt"
+          grep -q GAME_AIRPORT_FUEL_TOPUP_NOT_AVAILABLE "$RUNNER_TEMP/no-fuel.txt"
+          psql -XAt -v ON_ERROR_STOP=1 -c "SELECT (SELECT count(*) FROM airlinerra_game.section9_operated_flight_movements_v1)||':'||(SELECT count(*) FROM airlinerra_game.section9_game_flight_fuel_departure_receipts_v1)" | grep -qx '0:0'
+      - name: Actual auto supply fills exact 80 kg gap and dispatcher departs atomically
+        run: |
+          set -euo pipefail
+          FID='11111111-1111-4111-8111-111111111111:2026-11-23:4'
+          psql -X -v ON_ERROR_STOP=1 -c "UPDATE airlinerra_game.airport_facilities SET fuel_available=true WHERE airport_key='TEST-AAA'"
+          psql -XAt -v ON_ERROR_STOP=1 -c "SELECT airlinerra_game.section9_auto_dispatch_due_flight_events_v1(10)" > "$RUNNER_TEMP/auto-fuel-departure.txt"
+          cat "$RUNNER_TEMP/auto-fuel-departure.txt"
+          grep -q '"departuresRecorded": 1' "$RUNNER_TEMP/auto-fuel-departure.txt"
+          psql -XAt -v ON_ERROR_STOP=1 -c "SELECT (SELECT count(*) FROM airlinerra_game.section9_operated_flight_movements_v1 WHERE flight_occurrence_id='$FID' AND phase='departed')||':'||(SELECT count(*) FROM airlinerra_game.section9_game_flight_fuel_departure_receipts_v1 WHERE physical_flight_id='$FID')||':'||(SELECT count(*) FROM airlinerra_game.section9_game_approved_fuel_load_receipts_v1 WHERE source_event_id='game-auto-fuel-v1-'||md5('$FID'))||':'||(SELECT (onboard_kg=180)::int||':'||revision::text FROM airlinerra_game.section9_aircraft_game_fuel_custody_v1)||':'||(SELECT booking_status FROM airlinerra_game.section9_dated_flight_occurrences_v1 WHERE weekly_entry=4)" | grep -qx '1:1:1:1:2:closed'
+          psql -XAt -v ON_ERROR_STOP=1 -c "SELECT load_added_kg::text||':'||fuel_after_load_kg::text||':'||source_status FROM airlinerra_game.section9_game_approved_fuel_load_receipts_v1 WHERE source_event_id='game-auto-fuel-v1-'||md5('$FID')" | grep -Eq '^80(\\.0+)?:180(\\.0+)?:game_authority_approved$'
+      - name: Repeated production auto fuel and dispatcher cannot supply or depart twice
+        run: |
+          set -euo pipefail
+          FID='11111111-1111-4111-8111-111111111111:2026-11-23:4'
+          psql -XAt -v ON_ERROR_STOP=1 -c "SELECT airlinerra_game.section9_auto_dispatch_due_flight_events_v1(10)->>'departuresRecorded'" | grep -qx 0
+          psql -XAt -v ON_ERROR_STOP=1 -c "SELECT airlinerra_game.section9_auto_supply_game_only_fuel_v1('$FID')->>'status'" | grep -qx blocked_nonoperating_or_out_of_window_flight
+          psql -XAt -v ON_ERROR_STOP=1 -c "SELECT (SELECT count(*) FROM airlinerra_game.section9_game_approved_fuel_load_receipts_v1 WHERE source_event_id='game-auto-fuel-v1-'||md5('$FID'))||':'||(SELECT count(*) FROM airlinerra_game.section9_operated_flight_movements_v1 WHERE flight_occurrence_id='$FID' AND phase='departed')||':'||(SELECT onboard_kg::text||':'||revision::text FROM airlinerra_game.section9_aircraft_game_fuel_custody_v1)" | grep -Eq '^1:1:180(\\.0+)?:2$'
+      - name: Declare limits
+        if: always()
+        run: |
+          echo '### Real automatic game-only fuel top-up and actual dispatcher' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Unchanged production auto supplier, preflight, departure receipt and dispatcher executed against synthetic certified inputs. Tests no service, approved exact top-up, once-only operation.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Quote, permissions, airline, clock and airport service input states synthetic. No production, money ledger or actual fuel-grade certification.' >> "$GITHUB_STEP_SUMMARY"
