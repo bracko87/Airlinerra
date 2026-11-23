@@ -255,6 +255,10 @@ jobs:
           test "$PGDATABASE" = 'airlinerra_disposable'
           test "$PGUSER" = 'postgres'
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_real_final_finance_atomic_acceptance.sql
+      - name: Race original final settlement with original cancellation on closed flights
+        run: |
+          set -euo pipefail
+          bash tests/sql/section9_disposable_real_final_post_vs_cancellation_race.sh
       - name: Verify isolated acceptance remained on disposable Postgres
         run: |
           set -euo pipefail
