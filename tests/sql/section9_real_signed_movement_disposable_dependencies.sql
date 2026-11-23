@@ -55,10 +55,10 @@ INSERT INTO airlinerra_game.airport_reference_profiles VALUES(1,'TEST-AAA','UTC'
 CREATE TABLE airlinerra_game.section9_aircraft_delivery_position_v1
  (aircraft_inventory_id uuid,airline_id uuid,airport_key text,anchored_game_date date,
  acquisition_order_id uuid,inspection_id uuid,inspection_reviewed_at timestamptz,reviewer_reference text);
-CREATE TABLE airlinerra_game.aircraft_acquisition_orders
+CREATE TABLE airlinerra_game.aircraft_acquisition_orders_v1
  (order_id uuid,airline_id uuid,aircraft_inventory_id uuid,order_status text,registration text,
  configuration_id bigint,delivery_home_airport_key text);
-CREATE TABLE airlinerra_game.aircraft_delivery_inspections
+CREATE TABLE airlinerra_game.aircraft_delivery_inspections_v1
  (inspection_id uuid,order_id uuid,inspection_status text,reviewed_at timestamptz,reviewer_reference text);
 CREATE TABLE airlinerra_game.section9_aircraft_current_position_v1
  (aircraft_inventory_id uuid PRIMARY KEY,world_id int,airline_id uuid,location_status text,
