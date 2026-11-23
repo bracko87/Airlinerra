@@ -51,3 +51,56 @@ The existing passenger base release policies are already enabled/approved in the
 ## Release acceptance rule
 
 A component is **Backend tested** when its source functions pass; **UI integrated** when the authenticated browser can use the real API; **Player tested** after the complete owner journey; **Production deployed** only after checking the actual website. No single one of these means the others.
+
+## 2026-11-23 controlled integration verification update
+
+The development branch now includes read-only `certification-status` and
+`operational-evidence` actions in the authenticated flight schedule service,
+with matching browser client methods and Route Details views.
+
+- **Certificate evidence:** five recorded source categories with schedule-version
+  and game-date validity checks. Recorded rows are not cryptographically
+  re-verified by this display and cannot authorize dispatch.
+- **Operational evidence:** the existing owner-scoped commercial preflight,
+  crew/permissions preflight and aircraft-maintenance-readiness functions.
+  Results are non-authorizing; schedule IDs and versions must match the
+  requested owned schedule.
+- **User interface:** separate recorded-certificate and operational-preflight
+  sections, actionable navigation for missing/blocked checks, no activation
+  writes or ticket-sales toggle.
+- **Tests committed:** focused summarizer tests and isolated authenticated
+  handler tests (missing bearer, cross-account schedule, unavailable game date,
+  unsafe evidence contract, stale schedule version). These are added to both
+  `npm test` and `npm run test:route-readiness` in `website/`.
+- **Build guard committed:** the built player ESM import graph must include
+  Route Details and both new readiness modules.
+
+### What has actually been verified
+
+- The Supabase production project schema contains the referenced certification
+  columns and operational read-only function signatures.
+- The recorded-certificate SQL query was accepted by PostgreSQL with
+  non-existent, synthetic UUIDs. This was **not** a logged-in API request.
+- The production World 1 read-only inventory showed **zero** schedules,
+  **zero** active schedules, **zero** certificate records and **zero** signed
+  certification events when checked. Thus no actual certified flight can
+  serve as an end-to-end test fixture.
+- JavaScript parsing and focused pure-logic checks were performed via
+  connector-backed inspection. The full Node test runner, `npm run build`
+  and authenticated browser were **not run**.
+- Supabase lists **no existing development database branches**. Do not write
+  synthetic schedules into World 1 or issue signed clearances there merely
+  to complete acceptance tests.
+
+### Pending release gate
+
+1. Run `cd website && npm ci && npm run test:route-readiness && npm test && npm run build`
+   in a checkout of this development branch, and fix any failures.
+2. Create or identify a disposable, isolated game-world database before a
+   genuine route creation -> five-source certificate -> activation -> booking
+   -> aircraft calendar journey. Check any branch/compute cost before creation.
+3. Verify owner-only access, expired/revoked certificates, schedule edits and
+   stale evidence against a real authenticated non-production session.
+4. Review the development branch divergence from `main`, test the proposed
+   merge, and obtain explicit release approval. No Netlify/public deployment
+   or live operational-switch change was made by this integration.
