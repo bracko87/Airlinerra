@@ -89,6 +89,9 @@ INSERT INTO airlinerra_game.section9_capacity_hold_plan_items_v1(
   2,0,'aaaaaaaa-0000-4000-8000-000000000001');
 
 \i /tmp/section9-connecting-tickets-actual.sql
+-- Mirror deployed private-worker permissions before applying the candidate.
+REVOKE ALL ON FUNCTION airlinerra_game.section9_issue_verified_demand_hold_tickets_v1(text)
+ FROM PUBLIC, anon, authenticated, service_role;
 
 -- Confirm the unchanged production writer fails precisely on the ambiguous
 -- reservation_key identifier, before testing the minimally patched candidate.
@@ -111,7 +114,17 @@ BEGIN
  RAISE NOTICE 'PASS reproduced unchanged production SQL ambiguous reservation_key fail-closed';
 END $original_failure$;
 -- Not a migration. Install isolated candidate with variable disambiguation only.
-\i /tmp/section9-connecting-tickets-disambiguated-lab.sql
+\i supabase/migration_candidates/20261123_section9_connecting_ticket_issuance_private_worker_review.sql
+DO $permission_check$
+BEGIN
+ IF has_function_privilege('anon',
+    'airlinerra_game.section9_issue_verified_demand_hold_tickets_v1(text)','EXECUTE')
+ OR has_function_privilege('authenticated',
+    'airlinerra_game.section9_issue_verified_demand_hold_tickets_v1(text)','EXECUTE')
+ OR has_function_privilege('service_role',
+    'airlinerra_game.section9_issue_verified_demand_hold_tickets_v1(text)','EXECUTE')
+ THEN RAISE EXCEPTION 'Corrected worker function exposed to client roles';END IF;
+END $permission_check$;
 
 -- Diagnose all production hold/inventory consistency conditions before issuance.
 SELECT o.schedule_id::text AS schedule,
@@ -177,3 +190,22 @@ BEGIN
  THEN RAISE EXCEPTION 'Two-leg replay duplicated claims: %',result;END IF;
  RAISE NOTICE 'PASS isolated corrected two-leg candidate: rollback, two reservations, held-seat reconciliation, replay, no ledger';
 END $acceptance$;
+
+DO $tampered_replay$
+DECLARE ticket_key text:='s9g1:'||repeat('b',64);
+ caught boolean:=false;
+BEGIN
+ BEGIN
+  UPDATE airlinerra_game.section9_passenger_reservation_batches_v1
+  SET seats_requested=9
+  WHERE reservation_key='demand.'||ticket_key AND occurrence_id=
+    'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'::uuid;
+  PERFORM airlinerra_game.section9_issue_verified_demand_hold_tickets_v1(ticket_key);
+ EXCEPTION WHEN SQLSTATE '23505' THEN caught:=true;
+ END;
+ IF NOT caught THEN RAISE EXCEPTION 'Tampered connecting-ticket replay not rejected';END IF;
+ IF (SELECT count(*) FROM airlinerra_game.section9_passenger_reservation_batches_v1
+    WHERE reservation_key='demand.'||ticket_key AND seats_requested=2)<>2
+ THEN RAISE EXCEPTION 'Tampered replay failed to roll back';END IF;
+ RAISE NOTICE 'PASS private-worker permission and altered replay rejection';
+END $tampered_replay$;
