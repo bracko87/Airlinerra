@@ -7,6 +7,7 @@ import {planningClockEstimate} from './route-planning-times.mjs';
 import {summarizeProtectedRouteReadiness} from './section9-route-readiness.mjs';
 import {summarizeRecordedCertifications} from './section9-certification-records.mjs';
 import {summarizeOperationalEvidence} from './section9-operational-evidence.mjs';
+import {summarizeOwnedBookingWindow} from './section9-booking-window-evidence.mjs';
 const MONTHS=['January','February','March','April','May','June','July','August',
  'September','October','November','December'];
 const DAYS=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
@@ -318,13 +319,25 @@ export function createSection9RouteDetails({doc,host,getRoutes,getServer}={}){
    void (async()=>{try{
     const reply=await server.scheduler.operationalBookings({airlineId:server.airline.id,scheduleId:route.serverScheduleId});
     if(mySerial!==serial)return;
-    if(reply?.status!=='operating_booking_window'||reply.scheduleId!==route.serverScheduleId||!Array.isArray(reply.occurrences))throw Error('Invalid bookings');
-    bookingStatus.textContent=reply.occurrences.length?'Next seven days - live passenger reservations':'No upcoming bookable departures in the next seven days.';
+    const verified=summarizeOwnedBookingWindow(reply,{scheduleId:route.serverScheduleId});
+    if(!verified)throw Error('Invalid booking evidence');
     bookingRows.replaceChildren();
-    for(const item of reply.occurrences){
+    if(!verified.rows.length){
+     bookingStatus.textContent='No verified bookable departures in the next seven game days.';
+    }else{
+     bookingStatus.textContent=verified.rows.length+' verified departures · '+
+      verified.totalBooked+' booked of '+verified.totalCapacity+' seats · '+
+      '$'+verified.totalReservedRevenueUsd.toLocaleString('en-US',{maximumFractionDigits:2})+
+      ' reserved fares (not settled revenue).';
+    }
+    for(const item of verified.rows){
      const row=doc.createElement('div');row.className='route-booking-preview-row';
-     const dep=new Date(item.departureUtc),arr=new Date(item.arrivalUtc);
-     row.append(text(doc,'strong',String(item.flightDate).slice(0,10)+' - '+dep.toISOString().slice(11,16)+' UTC'),text(doc,'span','Arrival '+arr.toISOString().slice(11,16)+' UTC'),text(doc,'span',item.bookedSeats+' / '+item.capacity+' passengers'),text(doc,'span',String(item.bookingStatus)+' - $'+Number(item.reservedTicketRevenueUsd).toLocaleString('en-US')+' reserved fares'));
+     row.append(
+      text(doc,'strong',item.flightDate+' · '+item.departureUtc.slice(11,16)+' UTC'),
+      text(doc,'span','Arrival '+item.arrivalUtc.slice(11,16)+' UTC'),
+      text(doc,'span',item.bookedSeats+' booked / '+item.capacity+' verified seats · '+item.unbookedSeats+' unbooked'),
+      text(doc,'span',item.bookingStatus+' · $'+item.reservedRevenueUsd.toLocaleString('en-US',{maximumFractionDigits:2})+' reserved fares')
+     );
      bookingRows.append(row);
     }
    }catch{if(mySerial===serial)bookingStatus.textContent='Live booking information unavailable.';}})();
