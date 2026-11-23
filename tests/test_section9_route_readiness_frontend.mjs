@@ -143,3 +143,11 @@ test('operational diagnostics endpoint requires ownership and cannot mutate flig
  assert.match(details,/summarizeOperationalEvidence/);
  assert.match(details,/server\.scheduler\.operationalEvidence\(/);
 });
+
+test('Route Details links blocking preflight checks to game pages without activation',async()=>{
+ const details=await read('../website/section9-route-details.mjs');
+ assert.match(details,/Operational preflight diagnostics/);
+ assert.match(details,/for\(const item of diagnostic\.rows\)/);
+ assert.match(details,/addNavigation\(item\.page,'Review '/);
+ assert.doesNotMatch(details,/server\.scheduler\.(?:activate|commitCertified|operationalSingleCreate)\(/);
+});
