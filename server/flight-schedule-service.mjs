@@ -372,6 +372,32 @@ SELECT * FROM events ORDER BY "startUtc",id`,
   WHERE p.schedule_id=s.id AND p.airline_id=s.airline_id) AS "actualFinancePreparationCount",
  (SELECT count(*)::int FROM airlinerra_game.section9_prepared_occurrence_settlements_v1 p
   WHERE p.schedule_id=s.id AND p.airline_id=s.airline_id) AS "preparedSettlementCount",
+ (SELECT count(*)::int
+  FROM airlinerra_game.section9_route_posted_flight_financials_v1 p
+  WHERE p.schedule_id=s.id AND p.airline_id=s.airline_id) AS "postedFlightFinancialCount",
+ (SELECT coalesce(sum(p.ticket_income_usd),0)::float8
+  FROM airlinerra_game.section9_route_posted_flight_financials_v1 p
+  WHERE p.schedule_id=s.id AND p.airline_id=s.airline_id) AS "postedFlightTicketIncomeUsd",
+ (SELECT count(*)::int
+  FROM airlinerra_game.section9_route_posted_flight_financials_v1 p
+  LEFT JOIN airlinerra_game.airline_ledger lr ON lr.id=p.revenue_ledger_id
+  LEFT JOIN airlinerra_game.airline_ledger le ON le.id=p.expense_ledger_id
+  WHERE p.schedule_id=s.id AND p.airline_id=s.airline_id
+    AND (
+      p.record_status IS DISTINCT FROM 'posted_complete'
+      OR (p.revenue_ledger_id IS NULL
+          AND (p.ticket_income_usd+p.cargo_income_usd+p.other_income_usd)<>0)
+      OR (p.revenue_ledger_id IS NOT NULL
+          AND (lr.id IS NULL OR lr.airline_id IS DISTINCT FROM p.airline_id
+           OR lr.entry_kind IS DISTINCT FROM 'REVENUE'
+           OR lr.amount_usd IS DISTINCT FROM
+             p.ticket_income_usd+p.cargo_income_usd+p.other_income_usd))
+      OR le.id IS NULL OR le.airline_id IS DISTINCT FROM p.airline_id
+      OR le.entry_kind IS DISTINCT FROM 'EXPENSE'
+      OR le.amount_usd IS DISTINCT FROM -(
+        p.airport_navigation_cost_usd+p.fuel_cost_usd+p.crew_cost_usd+
+        p.maintenance_cost_usd+p.ownership_cost_usd+p.other_cost_usd)
+    )) AS "postedFlightLedgerMismatchCount",
  (SELECT count(*)::int FROM airlinerra_game.section9_atomic_itinerary_hold_legs_v1 l
    JOIN airlinerra_game.section9_atomic_itinerary_holds_v1 h
      ON h.source_allocation_key=l.source_allocation_key
@@ -1336,13 +1362,15 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
      'reservedBookingBatches','reservedPassengerSeats','certificateRecords',
      'operatedMovementCount','actualFinancePreparationCount','preparedSettlementCount',
      'pendingConnectingJourneyLegCount','connectingHoldPlanItemCount',
-     'paidUpfrontReservationCount','nonReservedReservationCount'];
+     'paidUpfrontReservationCount','nonReservedReservationCount',
+     'postedFlightFinancialCount','postedFlightLedgerMismatchCount'];
     if(row.scheduleId!==body.scheduleId||
        !Number.isSafeInteger(row.scheduleVersion)||row.scheduleVersion<1||
        !['draft','active'].includes(row.scheduleStatus)||
        typeof row.operationallyVerified!=='boolean'||
        (fields.some(field=>!Number.isSafeInteger(row[field])||row[field]<0)||
-        ['recognizedFlightRevenueUsd','recognizedReservationRevenueUsd','quotedReservedFareUsd'].some(field=>
+        ['recognizedFlightRevenueUsd','recognizedReservationRevenueUsd','quotedReservedFareUsd',
+         'postedFlightTicketIncomeUsd'].some(field=>
          typeof row[field]!=='number'||!Number.isFinite(row[field])||row[field]<0)))
      return respond(503,{error:'Schedule change evidence unavailable'});
     const blockers=[
@@ -1365,6 +1393,10 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
      ...(row.operatedMovementCount>0?['OPERATED_MOVEMENTS_MUST_BE_PRESERVED']:[]),
      ...(row.actualFinancePreparationCount>0||row.preparedSettlementCount>0?
       ['PREPARED_SETTLEMENTS_REQUIRE_ACCOUNTING_RECONCILIATION']:[]),
+     ...(row.postedFlightFinancialCount>0?
+      ['POSTED_FLIGHT_LEDGER_HISTORY_MUST_BE_PRESERVED']:[]),
+     ...(row.postedFlightLedgerMismatchCount>0?
+      ['POSTED_LEDGER_ATTRIBUTION_MISMATCH_REQUIRES_REVIEW']:[]),
      ...(row.pendingConnectingJourneyLegCount>0||row.connectingHoldPlanItemCount>0?
       ['CONNECTING_JOURNEY_HOLDS_REQUIRE_ATOMIC_RECOVERY']:[]),
      ...(row.recognizedFlightRevenueUsd>0||row.recognizedReservationRevenueUsd>0?
@@ -1377,9 +1409,11 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
      evidence:{...Object.fromEntries(fields.map(field=>[field,row[field]])),
       recognizedFlightRevenueUsd:row.recognizedFlightRevenueUsd,
       recognizedReservationRevenueUsd:row.recognizedReservationRevenueUsd,
-      quotedReservedFareUsd:row.quotedReservedFareUsd},
+      quotedReservedFareUsd:row.quotedReservedFareUsd,
+      postedFlightTicketIncomeUsd:row.postedFlightTicketIncomeUsd},
      blockers,bookingWriterLockProtocolVerified:false,
      flightLedgerReconciliationAvailable:false,
+     postedFlightLedgerAttributionIndexAvailable:true,
      quotedFareIsRefundAmount:false,
      canCancelOperationalFlight:false,canRescheduleOperationalFlight:false,
      bookingMutation:false,slotMutation:false,ledgerPosted:false
