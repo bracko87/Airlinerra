@@ -20,15 +20,36 @@ try:
     assert parts.scheme in ("postgresql", "postgres")
     assert parts.hostname and parts.path == "/postgres"
     assert parts.username and parts.password
-    assert q.get("sslmode", [""])[0] in ("require", "verify-ca", "verify-full")
+    # Supabase Connect commonly returns a URI without a sslmode query.
+    # PGSSLMODE=require is enforced for *all* remote psql and pg_dump
+    # commands below, so an omitted URL parameter remains TLS-only.
+    # Reject explicit insecure URL overrides (they trump environment).
+    sslmode = q.get("sslmode", [None])[0]
+    assert sslmode in (None, "require", "verify-ca", "verify-full")
+    assert not (parts.password.startswith("[") or parts.password.startswith("<"))
     direct = parts.hostname == "db.hwllkabgzaynalahvkpz.supabase.co"
     pooled = (parts.hostname.endswith(".pooler.supabase.com")
               and parts.username == "postgres.hwllkabgzaynalahvkpz")
     assert direct or pooled
-except (AssertionError, ValueError):
-    print("BLOCKED: URL must point to Airlinerra's own Supabase postgres database with TLS.", file=sys.stderr)
+except (AssertionError, ValueError, AttributeError):
+    # Diagnostic flags only; NEVER log the host, username, password or URL.
+    try:
+        host = parts.hostname or ""
+        kind = ("project_direct" if host == "db.hwllkabgzaynalahvkpz.supabase.co"
+                else "supabase_pooler" if host.endswith(".pooler.supabase.com")
+                else "other")
+        mode = parse_qs(parts.query).get("sslmode", ["omitted"])[0]
+        mode = "secure" if mode in ("require", "verify-ca", "verify-full") else (
+            "omitted" if mode == "omitted" else "unsupported")
+        print(f"BLOCKED: connection URI validation: host_type={kind}, sslmode={mode}, "
+              f"database_ok={parts.path == '/postgres'}, "
+              f"password_present={bool(parts.password)}, "
+              f"username_valid={parts.username == 'postgres' or parts.username == 'postgres.hwllkabgzaynalahvkpz'}",
+              file=sys.stderr)
+    except Exception:
+        print("BLOCKED: malformed connection URI.", file=sys.stderr)
     sys.exit(2)
-print("PASS: source project and TLS URL validated (credentials never displayed)")
+print("PASS: Airlinerra source identity validated; TLS forced for every remote connection.")
 PY
 
 if [[ "$#" -gt 0 && "$1" == "--validate-only" ]]; then
