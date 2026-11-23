@@ -284,10 +284,26 @@ local_psql() {
 }
 
 echo "Restoring schema-only definitions into local Supabase..."
-local_psql -q -f "$tmp/schema-only.sql" >"$tmp/restore.log" 2>&1 || {
-  echo "BLOCKED: local restore rejected a schema dependency (private SQL withheld)." >&2
+# Collect ALL PostgreSQL error SQLSTATE codes from a disposable local restore
+# in one pass, not one error per CI attempt. The complete SQL and diagnostics
+# stay in temporary private runner storage and are destroyed on exit.
+local_psql -q -v ON_ERROR_STOP=0 -v VERBOSITY=verbose \
+  -f "$tmp/schema-only.sql" >"$tmp/restore.log" 2>&1 || true
+if grep -Eq '(ERROR|FATAL): ' "$tmp/restore.log"; then
+  python3 - "$tmp/restore.log" <<'PY'
+from collections import Counter
+from pathlib import Path
+import re,sys
+log=Path(sys.argv[1]).read_text(errors="replace")
+codes=re.findall(r'(?:ERROR|FATAL):\s+([A-Z0-9]{5}):',log)
+counts=Counter(codes)
+print("BLOCKED: source schema-only SQL has local restore errors; classified SQLSTATEs (no SQL text):",file=sys.stderr)
+for code,count in sorted(counts.items(),key=lambda x:(-x[1],x[0]))[:15]:
+    print(f"  SQLSTATE {code}: {count} occurrences",file=sys.stderr)
+print(f"  total_classified={len(codes)}; unclassified_error_lines={len(re.findall(r'(?:ERROR|FATAL): ',log))-len(codes)}",file=sys.stderr)
+PY
   exit 2
-}
+fi
 
 check="$(local_psql -Atqc "
 SELECT (
