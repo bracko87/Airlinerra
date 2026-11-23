@@ -213,6 +213,10 @@ jobs:
           test "$PGHOST" = '127.0.0.1'
           test "$PGDATABASE" = 'airlinerra_disposable'
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_original_connection_recovery_acceptance.sql
+      - name: Verify private recovery and cancellation share disruption mutex
+        run: |
+          set -euo pipefail
+          bash tests/sql/section9_disposable_original_recovery_disruption_mutex.sh
       - name: Verify isolated acceptance remained on disposable Postgres
         run: |
           set -euo pipefail
