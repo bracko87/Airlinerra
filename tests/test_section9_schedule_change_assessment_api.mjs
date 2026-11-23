@@ -12,7 +12,8 @@ const request=(bearer=true)=>new Request(endpoint,{method:'POST',headers:{
 const defaultEvidence=()=>({scheduleId,scheduleVersion:2,scheduleStatus:'active',operationallyVerified:true,
  reservedSlotCount:6,flightOccurrenceCount:4,currentVersionOccurrenceCount:4,
  reservedBookingBatches:2,reservedPassengerSeats:7,certificateRecords:5,
- operatedMovementCount:1,recognizedFlightRevenueUsd:450,
+ operatedMovementCount:1,actualFinancePreparationCount:2,preparedSettlementCount:3,
+ recognizedFlightRevenueUsd:450,
  recognizedReservationRevenueUsd:450});
 function fixture({found=true,row=defaultEvidence()}={}){
  const queries=[],holder={released:false};
@@ -64,6 +65,7 @@ test('reserved passengers trigger explicit protection blocker',async()=>{
  assert.equal(v.evidence.reservedPassengerSeats,7);
  assert.ok(v.blockers.includes('PASSENGER_RESERVATIONS_REQUIRE_PROTECTION'));
  assert.ok(v.blockers.includes('OPERATED_MOVEMENTS_MUST_BE_PRESERVED'));
+ assert.ok(v.blockers.includes('PREPARED_SETTLEMENTS_REQUIRE_ACCOUNTING_RECONCILIATION'));
  assert.ok(v.blockers.includes('RECOGNIZED_REVENUE_REQUIRES_ACCOUNTING_RECONCILIATION'));
  assert.equal(v.evidence.operatedMovementCount,1);
  assert.equal(v.evidence.recognizedFlightRevenueUsd,450);
@@ -74,6 +76,8 @@ test('invalid evidence never becomes a valid cancellation receipt',async()=>{
   {...defaultEvidence(),scheduleId:'44444444-4444-4444-8444-444444444444'},
   {...defaultEvidence(),scheduleVersion:null},
   {...defaultEvidence(),operatedMovementCount:-1},
+  {...defaultEvidence(),actualFinancePreparationCount:-1},
+  {...defaultEvidence(),preparedSettlementCount:'3'},
   {...defaultEvidence(),recognizedFlightRevenueUsd:'450'},
   {...defaultEvidence(),recognizedReservationRevenueUsd:Infinity}]){
   const f=fixture({row}),r=await f.handler(request());
