@@ -25,19 +25,37 @@ const fact=(doc,host,label,value)=>{
 const hint=(doc,host,message)=>{
  const el=text(doc,'p',message,'hint');host.append(el);return el;
 };
+// Reconcile a selected route by persistent identity, never by a stale list index.
+export function section9RouteIdentity(route){
+ if(!route||typeof route!=='object')return null;
+ if(typeof route.serverScheduleId==='string'&&
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(route.serverScheduleId))
+  return 'schedule:'+route.serverScheduleId.toLowerCase();
+ if(typeof route.serverPlanningId==='string'&&route.serverPlanningId.length>0)
+  return 'plan:'+route.serverPlanningId;
+ if(typeof route.flightNumber==='string'&&route.from?.key&&route.to?.key)
+  return 'local:'+JSON.stringify([route.flightNumber,route.from.key,route.to.key]);
+ return null;
+}
+export function findSection9RouteIndex(routes,identity){
+ if(typeof identity!=='string'||!identity||!Array.isArray(routes))return -1;
+ return routes.findIndex(route=>section9RouteIdentity(route)===identity);
+}
 export function createSection9RouteDetails({doc,host,getRoutes,getServer}={}){
  if(!doc||!host)return Object.freeze({open:async()=>{},index:()=>null,refresh:async()=>{}});
- let selectedIndex=null,selectedMonth=null,serial=0;
+ let selectedIndex=null,selectedIdentity=null,selectedMonth=null,serial=0;
  async function open(index,month=null){
   const routes=getRoutes?.()||[];
   const route=routes[index];
   const server=getServer?.()||{};
   const mySerial=++serial;
-  selectedIndex=index;
   host.replaceChildren();
-  if(!route?.from?.key||!route?.to?.key){
-   hint(doc,host,'Route not found in the current session.');return;
+  const identity=section9RouteIdentity(route);
+  if(!route?.from?.key||!route?.to?.key||!identity){
+   selectedIndex=null;selectedIdentity=null;
+   hint(doc,host,'Route not found in the current airline list. Return to My Routes and refresh server routes.');return;
   }
+  selectedIndex=index;selectedIdentity=identity;
   const timestamp=Date.parse(route.referenceDepartureUtc||'');
   const fallbackMonth=Number.isFinite(timestamp)?
    new Date(timestamp).getUTCMonth()+1:new Date().getUTCMonth()+1;
@@ -525,5 +543,15 @@ export function createSection9RouteDetails({doc,host,getRoutes,getServer}={}){
   }
  });
  return Object.freeze({open,index:()=>selectedIndex,
-  refresh:()=>selectedIndex===null?Promise.resolve():open(selectedIndex,selectedMonth)});
+  refresh:()=>{
+   if(selectedIdentity===null)return Promise.resolve();
+   const index=findSection9RouteIndex(getRoutes?.()||[],selectedIdentity);
+   if(index<0){
+    ++serial;selectedIndex=null;selectedIdentity=null;
+    host.replaceChildren();
+    hint(doc,host,'This route is no longer in the current airline list. Open My Routes to select a route again.');
+    return Promise.resolve();
+   }
+   return open(index,selectedMonth);
+  }});
 }
