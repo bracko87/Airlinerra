@@ -299,3 +299,36 @@ against cancellation in a real game-state transition, cross-airline
 concurrency and passenger-specific refund authorization. The live
 financial tables, money and bookings were not modified. Player
 operational cancellation remains disabled.
+
+## Original final settlement versus original cancellation, concurrent on closed flights (2026-11-23)
+
+The disposable PostgreSQL two-session regression
+`tests/sql/section9_disposable_real_final_post_vs_cancellation_race.sh`
+uses two independently **closed and prepared** synthetic flight occurrences
+with valid fixture final-cost approvals. It runs the unchanged
+`section9_post_completed_flight_finance_once_v1` and unchanged
+`section9_cancel_unflown_occurrence_v1` against the same physical flight
+in two scheduling orders:
+
+1. Final finance session begins first, holds the preparation row and
+   posts revenue and expense while a concurrent cancellation request
+   correctly returns `flight_not_cancellable`.
+2. Cancellation attempt begins first, locks the closed occurrence and
+   returns `flight_not_cancellable`; the concurrent final writer still
+   posts the flight once.
+
+The test verifies **two** new posted flight receipts with matching
+USD 300 revenue and USD -100 expense ledger references, original
+closed/2-booked occurrences, two intact reservation batches, zero
+cancellation receipts and exact cash-versus-ledger balance equality.
+All previous full-posting and rollback tests remain green.
+
+CI: https://github.com/bracko87/Airlinerra/actions/runs/45210407030
+
+**Scope:** the original posting and cancellation procedures are executed,
+but their signed flight events, fuel, ticket proof and operational approvals
+are synthetic. Both flights start already closed, so cancellation is
+ineligible from the outset. The test does **not** establish safety for
+signed departure/arrival publication competing with an otherwise valid
+unflown cancellation, or real operational authorization. Player-triggered
+active-flight cancellation stays disabled. No production changes.
