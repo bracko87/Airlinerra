@@ -114,3 +114,26 @@ This means the release switches are **already on**, despite the incomplete relea
 - Diagnostic local migration replay: https://github.com/bracko87/Airlinerra/actions/workflows/airlinerra-full-migration-replay-ci.yml
 
 **Release outcome: not approved. No live production migration or flag change performed.**
+
+
+## 6. Latest replay blocker after bulk original-history restoration
+
+**Disposable run:** https://github.com/bracko87/Airlinerra/actions/runs/45264230869
+
+This CI run applied the recovered, early historical SQL through the 23 October research batches and reached `20261026082348_airlinerra_phase5_evidence_queue_20261026.sql`. It then failed with:
+
+```text
+ERROR: relation "airlinerra.airport_expansion_next_eligibility_phase4" does not exist (SQLSTATE 42P01)
+```
+
+A READ-ONLY live inspection confirms this relation **does exist** in `airlinerra`, as an ordinary table (`relkind='r'`). A search across the stored 685 migration statements found **no direct `CREATE TABLE` or `CREATE VIEW` statement for that named object**. This supports the conclusion that the project has at least some pre-existing/manual historical schema that the checked-in migration scripts do not recreate.
+
+**Do not fabricate that relation as a test fixture and continue one error at a time.** The next accepted step must establish a securely obtained, authoritative **schema-only baseline** of the existing project (including extensions, table definitions, view definitions, roles/grants, functions, RLS and object dependencies), and verify its compatibility with restored migrations in a *private isolated environment*. A schema-only baseline alone may not supply required airport seed data; that is a separate scoped concern.
+
+The connected live database currently contains approximately:
+- `airlinerra`: 117 tables, 47 views and 35 sequences.
+- `airlinerra_game`: 375 tables, 167 views and 14 sequences.
+
+An authoritative snapshot will avoid repeated ad hoc reconstruction across hundreds of objects. Keep private account data out of public GitHub. Do not enable or disable current live operations, migrate existing records, or infer production readiness from the passing static provenance workflow.
+
+**Phase 1 final status for this response: source integrity SUCCESS; full local schema replay BLOCKED by missing authoritative baseline.**
