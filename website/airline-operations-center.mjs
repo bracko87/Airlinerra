@@ -479,9 +479,12 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
         report.bookingMutation!==false||report.slotMutation!==false||
         report.ledgerPosted!==false||
         !Array.isArray(report.blockers)||!report.evidence||
-        ['reservedSlotCount','flightOccurrenceCount','reservedBookingBatches',
-         'reservedPassengerSeats','certificateRecords'].some(k=>
-          !Number.isSafeInteger(report.evidence[k])||report.evidence[k]<0))
+        (['reservedSlotCount','flightOccurrenceCount','reservedBookingBatches',
+         'reservedPassengerSeats','certificateRecords','operatedMovementCount'].some(k=>
+          !Number.isSafeInteger(report.evidence[k])||report.evidence[k]<0)||
+         ['recognizedFlightRevenueUsd','recognizedReservationRevenueUsd'].some(k=>
+          typeof report.evidence[k]!=='number'||!Number.isFinite(report.evidence[k])||
+          report.evidence[k]<0)))
       throw Error('Unverified schedule change assessment');
      // An asynchronous response for an old selection must not overwrite another route.
      if(allRoutes()[details.index()]?.serverScheduleId!==id||
@@ -491,7 +494,251 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
       'Operational changes remain locked. '+e.reservedSlotCount+' airport slot records, '+
       e.flightOccurrenceCount+' flight occurrences, '+e.reservedBookingBatches+
       ' reserved booking batches ('+e.reservedPassengerSeats+' seats), and '+
-      e.certificateRecords+' certification records require protected reconciliation. '+
+      e.certificateRecords+' certification records, '+e.operatedMovementCount+
+      ' operated movements, and );
+    }catch{
+     if(allRoutes()[details.index()]?.serverScheduleId===id)
+      message('operations-route-detail-save-status',
+       'Protected schedule change assessment unavailable. Cancellation and rescheduling remain disabled; nothing changed.');
+    }finally{target.disabled=false;}
+    return;
+   }
+   if(route.serverPlanningId&&
+    (!server.airline?.id||typeof server.scheduler?.planDelete!=='function')){
+    confirmation.hidden=true;
+    message('operations-route-detail-save-status',
+     'Protected planning-route cancellation is not connected. Nothing changed.');
+    return;
+   }
+   confirmation.hidden=false;
+   message('operations-route-cancel-info','Cancel '+String(route.flightNumber||'this route')+
+    '? This is an inactive planning route with no passenger bookings or reserved airport slots. Its planned departures will be removed.');
+   return;
+  }
+  if(target.id==='operations-route-cancel-dismiss'){
+   const confirmation=$('operations-route-cancel-confirm');
+   if(confirmation)confirmation.hidden=true;
+   return;
+  }
+  if(target.id==='operations-route-cancel-confirm-button'){
+   const i=details.index(),route=allRoutes()[i];
+   const confirmation=$('operations-route-cancel-confirm');
+   if(!route||route.serverScheduleId||typeof route.flightNumber!=='string'){
+    if(confirmation)confirmation.hidden=true;
+    message('operations-route-detail-save-status','Cancellation not available. No route changed.');
+    return;
+   }
+   const number=route.flightNumber;
+   const serverPlanningId=route.serverPlanningId||null;
+   if(serverPlanningId){
+    if(!server.airline?.id||typeof server.scheduler?.planDelete!=='function'){
+     message('operations-route-detail-save-status',
+      'Server cancellation connection unavailable. Nothing changed.');return;
+    }
+    target.disabled=true;
+    message('operations-route-detail-save-status','Cancelling inactive server planning route…');
+    try{
+     const response=await server.scheduler.planDelete({
+      airlineId:server.airline.id,planId:serverPlanningId
+     });
+     if(response?.deleted!==true||response.planId!==serverPlanningId)
+      throw Error('Unconfirmed planning route cancellation');
+     remotePlans=remotePlans.filter(p=>p.serverPlanningId!==serverPlanningId);
+    }catch{
+     message('operations-route-detail-save-status',
+      'Cancellation not confirmed by the airline database. No route has been removed locally.');
+     target.disabled=false;return;
+    }
+    target.disabled=false;
+   }
+   const previous=localRoutes(),next=previous.filter(r=>r?.flightNumber!==number);
+   const hadLocal=next.length!==previous.length;
+   if(hadLocal){
+    const oldState=state;
+    state={...state,routes:next,route:state.route?.flightNumber===number?null:state.route};
+    if(!await persist('routes','route')){
+     state=oldState;
+     if(confirmation)confirmation.hidden=true;
+     renderRoutes();
+     message('operations-route-detail-save-status',
+      serverPlanningId?'Server planning route cancelled, but the stored workspace draft could not be updated. Refresh My Routes to reconcile.':
+      'NOT SAVED — Supabase could not confirm draft cancellation.');
+     return;
+    }
+   }else if(!serverPlanningId){
+    if(confirmation)confirmation.hidden=true;
+    message('operations-route-detail-save-status','Draft already unavailable. Nothing changed.');
+    return;
+   }
+   if(confirmation)confirmation.hidden=true;
+   renderRoutes();
+   goTo?.('route-list');
+   message('operations-routes-feedback',number+
+    ' inactive planning route cancelled. Planned departures removed. No booked flights, passengers, airport slots or finances were changed.');
+   doc.dispatchEvent(new CustomEvent('airlinerra:route-draft-cancelled',
+    {detail:{flightNumber:number,serverSaved:Boolean(serverPlanningId)}}));
+   if(serverPlanningId)void loadRemotePlans();
+   return;
+  }
+  if(target.dataset.opsRouteRemove!==undefined){
+   const i=Number(target.dataset.opsRouteRemove);
+   const rows=Array.isArray(state.routes)&&state.routes.length?state.routes:state.route?[state.route]:[];
+   if(!Number.isInteger(i)||i<0||i>=rows.length)return;
+   const previous=state;
+    state={...state,routes:rows.filter((_,n)=>n!==i),route:null};
+    if(!await persist('routes','route')){
+     state=previous;message('operations-routes-feedback','NOT SAVED — database did not confirm draft deletion.');return;
+    }
+    renderRoutes();
+   message('operations-routes-feedback','Route draft deleted from your Supabase workplan.');return;
+  }
+  if(target.id==='operations-route-publish-plan'){
+   const i=details.index(),route=allRoutes()[i];
+   const scheduler=server.scheduler,airlineId=server.airline?.id;
+   if(!route||!airlineId||typeof scheduler?.planSave!=='function'||
+      route.serverPlanningId||route.serverScheduleId)return;
+   if(!route.aircraftId?.startsWith('owned:')||!route.operation||
+      route.from?.key===route.to?.key){
+    message('operations-route-detail-save-status','This workplan draft is missing a verified aircraft, two airports, or operating options.');
+    return;
+   }
+   target.disabled=true;
+   message('operations-route-detail-save-status','Saving your existing route to the airline database...');
+   try{
+    const result=await scheduler.planSave({
+     airlineId,aircraftInventoryId:route.aircraftId.slice(6),
+     flightNumber:route.flightNumber,originAirportKey:route.from.key,
+     destinationAirportKey:route.to.key,weeklySchedule:route.schedule,
+     departureStand:route.operation.departureStand??null,
+     arrivalStand:route.operation.arrivalStand,
+     turnaroundMinutes:route.operation.turnaroundMinutes,
+     fares:route.operation.fares,service:route.operation.service,
+     launchDelayDays:[0,3,7].includes(route.launchDelayDays)?route.launchDelayDays:0,
+     referenceDepartureUtc:route.referenceDepartureUtc&&route.referenceArrivalUtc?
+      route.referenceDepartureUtc:null,
+     referenceArrivalUtc:route.referenceDepartureUtc&&route.referenceArrivalUtc?
+      route.referenceArrivalUtc:null
+    });
+    if(result?.status!=='planning'||typeof result.planId!=='string'||
+       result.canActivateNormalFlight!==false||result.slotsReserved!==false)
+     throw Error('Unverified planning save');
+    const local=localRoutes().map(x=>x.flightNumber===route.flightNumber?{
+     ...x,serverPlanningId:result.planId,storage:'server-planning'
+    }:x);
+    state={...state,routes:local};
+    const mirrored=await persist('routes');
+    await loadRemotePlans();
+    message('operations-route-detail-save-status',
+     route.flightNumber+' is saved in your airline database. '+
+      (mirrored?'Supporting draft details also saved.':'Supporting draft mirror could not be verified.')+
+      ' No slots or flights activated.');
+    target.hidden=true;
+   }catch{
+    message('operations-route-detail-save-status',
+     'NOT SAVED — the airline server rejected this planning route. Review aircraft and airport permissions.');
+    target.disabled=false;
+   }
+   return;
+  }
+  if(target.dataset.opsHubRemove!==undefined){
+   const i=Number(target.dataset.opsHubRemove);
+   const hubs=Array.isArray(state.hubs)?state.hubs:[];
+   if(!Number.isInteger(i)||i<0||i>=hubs.length)return;
+   const previous=state;state={...state,hubs:hubs.filter((_,n)=>n!==i)};
+    if(!await persist('hubs')){state=previous;message('operations-hub-feedback','NOT SAVED — database hub draft deletion failed.');return}
+    renderHubs();return;
+  }
+  const id=target.id;
+  if(id==='operations-hub-find')await findHub();
+  if(id==='operations-hub-save'){
+   const select=$('operations-hub-result'),opt=select?.selectedOptions?.[0];
+   if(!server.connected||!server.airline?.id||!opt||!select.value||select.disabled){
+    message('operations-hub-feedback','Choose an approved airport first.');return;
+   }
+   const hubs=Array.isArray(state.hubs)?state.hubs:[];
+   if(hubs.length>=10){message('operations-hub-feedback','Maximum 10 planned hubs per airline draft.');return;}
+   const hub={key:select.value,name:opt.dataset.name,code:opt.dataset.code};
+   if(hubs.some(x=>x.key===hub.key)||server.airline?.homeAirportKey===hub.key){
+    message('operations-hub-feedback','That airport is already your home airport or planned hub.');return;
+   }
+   state={...state,hubs:[...hubs,hub]};
+   const persisted=await persist('hubs');
+   if(!persisted){state={...state,hubs};message('operations-hub-feedback','NOT SAVED — Supabase did not confirm this hub proposal.');return;}
+   renderHubs();message('operations-hub-feedback','Hub proposal saved in Supabase as a draft. No real hub was opened.');
+  }
+  if(id==='ops-price-calc')priceResults();
+  if(id==='ops-price-save'){
+   const result=priceResults();if(!result)return;
+   const previous=state;state={...state,ticketPrice:result.values};
+    if(!await persist('ticketPrice')){state=previous;message('ops-price-feedback','NOT SAVED — Supabase did not confirm this fare scenario.');return}
+   message('ops-price-feedback','Fare scenario saved in Supabase. No real prices were changed.');
+  }
+  if(id==='ops-staff-save'){
+   const {rows,total}=formPayroll();
+   if(!total){message('ops-staff-feedback','Enter valid non-negative headcounts and salaries.');return;}
+   const previous=state;state={...state,staff:rows};
+    if(!await persist('staff')){state=previous;message('ops-staff-feedback','NOT SAVED — Supabase did not confirm this staffing plan.');return}
+    updateStaffTotals();
+   message('ops-staff-feedback','Staffing plan saved in Supabase as a draft. No employee was hired or paid.');
+  }
+  if(id==='ops-staff-reset'){
+   const previous=state;state={...state,staff:[]};
+    if(!await persist('staff')){state=previous;message('ops-staff-feedback','NOT SAVED — database did not confirm staffing reset.');return}
+   staffRows.forEach((_,i)=>{$('ops-staff-count-'+i).value='0';$('ops-staff-salary-'+i).value='0';});
+   updateStaffTotals();message('ops-staff-feedback','Staffing plan cleared in Supabase.');return;
+  }
+ });
+ // The schedule timetable links to the existing route-details page,
+ // not to an unactivated live-flight simulator.
+ doc.addEventListener('airlinerra:schedule-open-flight',event=>{
+  const flightNumber=event.detail?.flightNumber;
+  const scheduleId=event.detail?.scheduleId;
+  if(!/^[A-Z0-9]{2}[0-9]{1,4}$/.test(flightNumber||''))return;
+  if(scheduleId!==undefined&&
+   (typeof scheduleId!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(scheduleId)))return;
+  const routes=allRoutes();
+  const index=routes.findIndex(x=>x.flightNumber===flightNumber&&
+   (!scheduleId||x.serverScheduleId===scheduleId));
+  if(index<0){
+   goTo?.('route-list');
+   message('operations-routes-feedback',
+    flightNumber+' has no matching registered route. Refresh My Routes before retrying; no other route was opened.');
+   return;
+  }
+  goTo?.('route-details');
+  void details.open(index);
+  const plan=routes[index],saveButton=$('operations-route-publish-plan');
+  if(saveButton){
+   saveButton.hidden=Boolean(plan?.serverPlanningId||plan?.serverScheduleId)||
+    typeof server.scheduler?.planSave!=='function';
+   saveButton.disabled=false;
+  }
+ });
+ doc.addEventListener('airlinerra:route-draft-saved',event=>{
+  state=playerStore?.ready('workplan')?playerStore.snapshot('workplan'):{};renderRoutes();void details.refresh();
+  const flight=typeof event?.detail?.flightNumber==='string'?event.detail.flightNumber:'Route';
+  message('operations-routes-feedback',event?.detail?.serverSaved?
+   (event.detail?.operationallyVerified===true?
+    flight+' confirmed active by the airline server. Review My Routes and upcoming departures.':
+    flight+' saved in the airline database. Flight activation is not confirmed.'):
+   flight+' saved as a non-operational planning draft in Supabase. No server flight was created.');
+  if(event?.detail?.serverSaved)void loadRemotePlans();
+ });
+ const prices=state.ticketPrice;
+ if(prices&&typeof prices==='object'){
+  for(const [id,key] of [['ops-price-seat','seats'],['ops-price-fare','price'],
+   ['ops-price-load','occupancy'],['ops-price-flights','flights'],
+   ['ops-price-cost','cost'],['ops-price-class','cabin']]){
+   if($(id)&&prices[key]!==undefined)$(id).value=String(prices[key]);
+  }
+ }
+ initStaff();renderRoutes();renderHubs();
+ const airportOfficeController=createAirportOffice({doc,identity,session,goTo,getAirlineLogoUrl});
+ return Object.freeze({updateData,openAirport:airport=>airportOfficeController.openAirport(airport),refreshAirlineLogo:()=>airportOfficeController.refreshAirlineLogo()});
+}
++
+      (e.recognizedFlightRevenueUsd+e.recognizedReservationRevenueUsd).toLocaleString('en-US',
+       {maximumFractionDigits:2})+' recorded revenue amounts (sources may overlap) require protected reconciliation. '+
       'No flights, tickets, airport slots or money were changed.');
     }catch{
      if(allRoutes()[details.index()]?.serverScheduleId===id)
