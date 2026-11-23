@@ -113,6 +113,26 @@ END $original_failure$;
 -- Not a migration. Install isolated candidate with variable disambiguation only.
 \i /tmp/section9-connecting-tickets-disambiguated-lab.sql
 
+-- Diagnose all production hold/inventory consistency conditions before issuance.
+SELECT o.schedule_id::text AS schedule,
+ cap.airline_id<>o.airline_id AS wrong_airline,
+ cap.schedule_id<>o.schedule_id AS wrong_schedule,
+ cap.schedule_version<>o.schedule_version AS wrong_version,
+ cap.commercial_version<>plan.version AS wrong_commercial_version,
+ cap.passenger_capacity<>o.verified_passenger_seats AS wrong_capacity,
+ cap.passengers_held<o.booked_seats+2 AS insufficient_hold,
+ o.booked_seats+2>o.verified_passenger_seats AS overbooked,
+ cap.departure_utc<>o.departure_utc AS wrong_departure_time,
+ cap.departure_utc AS inventory_departure,
+ o.departure_utc AS occurrence_departure
+FROM airlinerra_game.section9_dated_flight_occurrences_v1 o
+JOIN airlinerra_game.section9_occurrence_capacity_inventory_v1 cap
+ ON cap.schedule_id=o.schedule_id
+JOIN airlinerra_game.section9_route_commercial_plans_v1 plan
+ ON plan.schedule_id=o.schedule_id
+WHERE o.id IN ('eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'::uuid,
+ 'ffffffff-ffff-4fff-8fff-ffffffffffff'::uuid);
+
 DO $acceptance$
 DECLARE ticket_key text:='s9g1:'||repeat('b',64);
  result jsonb;raised boolean:=false;
