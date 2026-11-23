@@ -8,6 +8,8 @@ BEGIN
  THEN RAISE EXCEPTION 'FULL_RECOVERY_DISPOSABLE_ONLY';END IF;
 END $guard$;
 
+ALTER TABLE airlinerra_game.section9_atomic_itinerary_holds_v1
+ ALTER COLUMN status SET DEFAULT 'preflight_only';
 ALTER TABLE airlinerra_game.section9_dated_flight_occurrences_v1
  ADD COLUMN world_id smallint NOT NULL DEFAULT 1,
  ADD COLUMN origin_airport_key text,
