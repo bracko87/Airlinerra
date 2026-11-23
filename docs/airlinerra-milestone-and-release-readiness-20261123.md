@@ -315,3 +315,40 @@ nested helper calls, fuel-custody and airline lock interactions,
 rollback triggers and real scheduler transaction boundaries.
 Neither the candidate movement patch nor player-initiated active
 flight cancellation is released to production.
+
+## Fuel-custody lock versus signed departure and cancellation (2026-11-23)
+
+A new disposable PostgreSQL 17 regression at
+`tests/sql/section9_disposable_fuel_custody_vs_signed_movement_cancellation.sh`
+holds a **synthetic fuel-custody row** `FOR UPDATE` through a
+transaction that invokes the **actual production-derived signed movement
+function**, patched only in the disposable acceptance environment, while
+a separate connection invokes the **actual unflown cancellation function**.
+
+The test verifies both critical outcomes:
+
+- **Departure first:** fuel-custody and dated-occurrence locks are held
+  across the actual signed movement. Departure commits exactly once;
+  cancellation waits, then returns
+  `flight_already_operated_or_settled`.
+- **Cancellation first:** fuel custody is held before the occurrence is
+  locked. The independent cancellation succeeds, then the signed
+  movement attempt encounters the cancelled occurrence and raises
+  `SECTION9_CANCELLED_OCCURRENCE_MOVEMENT_FORBIDDEN`, inserting no
+  movement event.
+
+Final database assertions confirm each occurrence status, movement
+count, cancellation receipt count and unchanged synthetic fuel balance.
+All existing financial, crew-adjacent, maintenance-style, booking and
+frontend checks passed:
+
+https://github.com/bracko87/Airlinerra/actions/runs/45245001388
+
+**Scope limit:** the custody row is an isolated locking fixture; the
+actual `section9_verify_game_fuel_before_departure_v1`, fuel quote,
+approved fuel-load receipts, fuel burn, fuel auto-supply and posting
+functions are *not* exercised in this regression. The result certifies
+only the tested custody-lock/actual-movement/cancellation orderings.
+Full fuel validation, crew allocation and release approval remain
+outstanding. No production data, player airline balance or live
+flight changed. The movement correction is still review-only.
