@@ -292,6 +292,10 @@ jobs:
         run: |
           set -euo pipefail
           bash tests/sql/section9_disposable_signed_movement_source_drift_guard.sh
+      - name: Race maintenance-held aircraft lock against signed departure and cancellation
+        run: |
+          set -euo pipefail
+          bash tests/sql/section9_disposable_fleet_lock_vs_signed_movement_cancellation.sh
       - name: Verify isolated acceptance remained on disposable Postgres
         run: |
           set -euo pipefail
