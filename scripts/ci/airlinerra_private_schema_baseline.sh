@@ -47,7 +47,19 @@ except (AssertionError, ValueError, AttributeError):
               f"username_valid={parts.username == 'postgres' or parts.username == 'postgres.hwllkabgzaynalahvkpz'}",
               file=sys.stderr)
     except Exception:
-        print("BLOCKED: malformed connection URI.", file=sys.stderr)
+        pass
+    # Only boolean format clues. No URL, host, username or password values.
+    markers = ("[YOUR-PASSWORD]", "[YOUR_PASSWORD]", "[PASSWORD]",
+               "<YOUR-PASSWORD>", "<YOUR_PASSWORD>", "<PASSWORD>")
+    has_newline = '\\n' in url or '\\r' in url
+    print("FORMAT CLUES: "
+          f"postgres_scheme={url.lstrip().lower().startswith(('postgresql://', 'postgres://'))}, "
+          f"copied_password_placeholder={any(m in url.upper() for m in markers)}, "
+          f"square_brackets_present={'[' in url or ']' in url}, "
+          f"contains_newline={has_newline}, "
+          f"wrapped_in_quotes={url.startswith((chr(34), chr(39)))}, "
+          f"contains_sslmode_parameter={'sslmode=' in url.lower()}",
+          file=sys.stderr)
     sys.exit(2)
 print("PASS: Airlinerra source identity validated; TLS forced for every remote connection.")
 PY
