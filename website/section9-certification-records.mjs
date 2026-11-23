@@ -21,8 +21,9 @@ export function summarizeRecordedCertifications(reply){
    c.scheduleVersion===reply.scheduleVersion);
   const row=matching.length===1?matching[0]:null;
   const valid=!!gameDate&&row?.status==='certified'&&
+   /^\d{4}-\d{2}-\d{2}$/.test(row.validFromGameDate||'')&&
    /^\d{4}-\d{2}-\d{2}$/.test(row.validToGameDate||'')&&
-   row.validToGameDate>=gameDate;
+   row.validFromGameDate<=gameDate&&row.validToGameDate>=gameDate;
   return Object.freeze({type,label,page,
    state:valid?'recorded':row?.status==='revoked'?'blocked':'unverified',
    explanation:valid?
