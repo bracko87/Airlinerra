@@ -246,6 +246,19 @@ SELECT (
 )::int;")"
 [[ "$source_ok" == 1 ]] || { echo "BLOCKED: unexpected database schema identity." >&2; exit 2; }
 
+source_roles_ok="$(psql "$source_url" -X -v ON_ERROR_STOP=1 -Atqc "
+SELECT (
+  NOT has_function_privilege('anon','airlinerra_game.section9_auto_dispatch_due_flight_events_v1(integer)','EXECUTE')
+  AND NOT has_function_privilege('authenticated','airlinerra_game.section9_auto_dispatch_due_flight_events_v1(integer)','EXECUTE')
+  AND NOT has_function_privilege('service_role','airlinerra_game.section9_auto_dispatch_due_flight_events_v1(integer)','EXECUTE')
+  AND NOT has_function_privilege('anon','airlinerra_game.section9_record_signed_operated_flight_movement_v1(uuid,uuid,integer,date,integer,text,timestamptz,text,text)','EXECUTE')
+  AND NOT has_function_privilege('authenticated','airlinerra_game.section9_record_signed_operated_flight_movement_v1(uuid,uuid,integer,date,integer,text,timestamptz,text,text)','EXECUTE')
+)::int;")"
+[[ "$source_roles_ok" == 1 ]] || {
+  echo "BLOCKED: live trusted flight writer/dispatcher grant safety does not pass." >&2; exit 2;
+}
+echo "PASS: live trusted-flight core function grants independently restricted."
+
 echo "Hashing remote structural definitions without returning SQL bodies..."
 psql "$source_url" -X -v ON_ERROR_STOP=1 -At \
   -f tests/sql/airlinerra_private_schema_fingerprint.sql \
@@ -256,9 +269,9 @@ psql "$source_url" -X -v ON_ERROR_STOP=1 -At \
   echo "BLOCKED: source structural signature has missing categories." >&2; exit 2;
 }
 
-echo "Read-only pg_dump to private ephemeral CI directory..."
+echo "Read-only pg_dump of private game/research structures (privileges audited separately)..."
 pg_dump --schema-only --no-owner --no-tablespaces \
-  --schema=airlinerra --schema=airlinerra_game --schema=public \
+  --schema=airlinerra --schema=airlinerra_game --no-privileges \
   --file="$tmp/schema-only.sql" "$source_url" \
   2>"$tmp/dump.stderr" || {
     echo "BLOCKED: source schema dump failed; private database details withheld." >&2
