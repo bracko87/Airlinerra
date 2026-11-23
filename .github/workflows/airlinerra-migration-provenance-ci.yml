@@ -1,0 +1,27 @@
+name: Airlinerra migration provenance and duplicate version gate
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
+      - 'scripts/verify_airlinerra_migration_history.py'
+      - '.github/workflows/airlinerra-migration-provenance-ci.yml'
+  pull_request:
+    paths:
+      - 'supabase/migrations/**'
+      - 'scripts/verify_airlinerra_migration_history.py'
+      - '.github/workflows/airlinerra-migration-provenance-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  migration-provenance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate unique versions, immutable 14 restored SQL bodies and no stale runtime file paths
+        run: python3 scripts/verify_airlinerra_migration_history.py
+      - name: Verify no live database connections used
+        run: |
+          echo 'Static source-only migration provenance: no Supabase credentials, no database or deployment actions.' >> "$GITHUB_STEP_SUMMARY"
