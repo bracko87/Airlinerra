@@ -51,6 +51,7 @@ INSERT INTO airlinerra_game.section6_weekly_airport_slot_reservations_v1
 -- All preceding are controlled synthetic fixtures. The booking procedure
 -- installed by CI is extracted unchanged from the actual game migration.
 
+\i /tmp/section9-direct-booking-actual.sql
 DO $test$
 DECLARE x jsonb;v_count int;v_booked int;v_held int;
  occ uuid:='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
