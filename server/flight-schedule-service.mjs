@@ -210,7 +210,7 @@ export function validateFlightSchedulePayload(body){
     Number.isInteger(body.loadPercent)&&body.loadPercent>=0&&body.loadPercent<=100&&
     Number.isInteger(body.parkingMinutes)&&body.parkingMinutes>=0&&
     body.parkingMinutes<=10080;
- if(body.action==='certification-status'||body.action==='delete'||body.action==='activation-check'||
+ if(body.action==='operational-evidence'||body.action==='certification-status'||body.action==='delete'||body.action==='activation-check'||
     body.action==='booking-window-preview')
   return withinFields(body,CHECK_FIELDS)&&uuid(body.scheduleId);
  if(body.action==='rotation-preview'||body.action==='operations-preview'){
@@ -1435,6 +1435,59 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
     if(evidence.canActivateNormalFlight!==false||evidence.readOnly!==true)
      return respond(503,{error:'Operational activation not verified'});
     return respond(200,evidence);
+   }
+   if(body.action==='operational-evidence'){
+    // All evidence comes from existing owner-scoped, STABLE/read-only engine
+    // functions. It cannot issue clearances, reserve slots or dispatch flights.
+    const owned=await client.query(`SELECT s.aircraft_inventory_id::text AS "aircraftId",
+      s.version AS "scheduleVersion"
+      FROM airlinerra_game.airline_flight_schedule_drafts_v1 s
+      JOIN airlinerra_game.airlines a ON a.id=s.airline_id
+       AND a.owner_player_id=$1::uuid AND a.world_id=1
+      WHERE s.id=$3::uuid AND s.airline_id=$2::uuid AND s.world_id=1`,
+      [userId,body.airlineId,body.scheduleId]);
+    if(owned.rowCount!==1)return respond(404,{error:'Owned flight schedule not found'});
+    const gameDateResult=await client.query(
+      'SELECT airlinerra_game.section9_verified_permission_game_day_v1()::text AS game_day');
+    const gameDate=gameDateResult.rows?.[0]?.game_day;
+    if(typeof gameDate!=='string'||!/^(20|21)\\d{2}-\\d{2}-\\d{2}$/.test(gameDate))
+      return respond(200,{status:'operational_evidence_unavailable',readOnly:true,
+       canActivateNormalFlight:false,scheduleId:body.scheduleId,
+       reason:'Authoritative game date is unavailable'});
+    const [preflight,crew,maintenance]=await Promise.all([
+     client.query(SCHEDULE_SQL.operationsPreview,
+      [userId,body.airlineId,body.scheduleId,gameDate,28]),
+     client.query(`SELECT airlinerra_game.section9_owned_crew_licence_preflight_v1(
+      $1::uuid,$2::uuid,$3::uuid,$4::date,28) AS result`,
+      [userId,body.airlineId,body.scheduleId,gameDate]),
+     client.query(SCHEDULE_SQL.maintenanceReadiness,
+      [userId,body.airlineId,owned.rows[0].aircraftId,gameDate])
+    ]);
+    const op=preflight.rows?.[0]?.result;
+    const cr=crew.rows?.[0]?.result;
+    const mt=maintenance.rows?.[0]?.result;
+    if(!op||!cr||!mt||[op,cr,mt].some(x=>x.readOnly!==true)||
+       op.canActivateNormalFlight!==false||
+       cr.canActivateNormalFlight!==false||
+       mt.flightActivated!==false)
+      return respond(503,{error:'Operational evidence contract not verified'});
+    return respond(200,{
+     status:'read_only_operational_diagnostics',readOnly:true,
+     canActivateNormalFlight:false,flightActivated:false,
+     scheduleId:body.scheduleId,scheduleVersion:owned.rows[0].scheduleVersion,
+     verifiedGameDate:gameDate,
+     activationChecklist:op.activationChecklist??null,
+     activationBlockers:Array.isArray(op.activationBlockers)?
+      op.activationBlockers.slice(0,40):[],
+     crew:cr.crew??null,permissions:cr.permissions??null,
+     maintenance:{
+      status:mt.status,maintenanceReady:mt.maintenanceReady===true,
+      blockers:Array.isArray(mt.blockers)?mt.blockers.slice(0,30):[],
+      conditionEvidenceVerified:mt.conditionEvidenceVerified===true,
+      usageTrackingVerified:mt.usageTrackingVerified===true,
+      groundingEvaluationConnected:mt.groundingEvaluationConnected===true
+     }
+    });
    }
    if(body.action==='certification-status'){
     // Owner-scoped, read-only evidence. A certificate row is not a fresh
