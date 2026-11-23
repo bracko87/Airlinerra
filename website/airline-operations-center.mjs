@@ -461,8 +461,43 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
    if(!route||!confirmation)return;
    if(route.serverScheduleId){
     confirmation.hidden=true;
-    message('operations-route-detail-save-status',
-     'This route has reserved airport slots. Cancellation remains unavailable until passenger and slot release checks are connected. Nothing changed.');
+    const id=route.serverScheduleId,airlineId=server.airline?.id;
+    const scheduler=server.scheduler;
+    if(!server.connected||!airlineId||typeof scheduler?.scheduleChangeAssessment!=='function'){
+     message('operations-route-detail-save-status',
+      'Cancellation and rescheduling are not enabled. Schedule protection information is unavailable; no flights or bookings were changed.');
+     return;
+    }
+    target.disabled=true;
+    message('operations-route-detail-save-status','Checking protected flight reservations and airport slots...');
+    try{
+     const report=await scheduler.scheduleChangeAssessment({airlineId,scheduleId:id});
+     if(report?.status!=='schedule_change_assessment_read_only'||
+        report.readOnly!==true||report.scheduleId!==id||
+        report.canCancelOperationalFlight!==false||
+        report.canRescheduleOperationalFlight!==false||
+        report.bookingMutation!==false||report.slotMutation!==false||
+        report.ledgerPosted!==false||
+        !Array.isArray(report.blockers)||!report.evidence||
+        ['reservedSlotCount','flightOccurrenceCount','reservedBookingBatches',
+         'reservedPassengerSeats','certificateRecords'].some(k=>
+          !Number.isSafeInteger(report.evidence[k])||report.evidence[k]<0))
+      throw Error('Unverified schedule change assessment');
+     // An asynchronous response for an old selection must not overwrite another route.
+     if(allRoutes()[details.index()]?.serverScheduleId!==id||
+        server.airline?.id!==airlineId)return;
+     const e=report.evidence;
+     message('operations-route-detail-save-status',
+      'Operational changes remain locked. '+e.reservedSlotCount+' airport slot records, '+
+      e.flightOccurrenceCount+' flight occurrences, '+e.reservedBookingBatches+
+      ' reserved booking batches ('+e.reservedPassengerSeats+' seats), and '+
+      e.certificateRecords+' certification records require protected reconciliation. '+
+      'No flights, tickets, airport slots or money were changed.');
+    }catch{
+     if(allRoutes()[details.index()]?.serverScheduleId===id)
+      message('operations-route-detail-save-status',
+       'Protected schedule change assessment unavailable. Cancellation and rescheduling remain disabled; nothing changed.');
+    }finally{target.disabled=false;}
     return;
    }
    if(route.serverPlanningId&&
