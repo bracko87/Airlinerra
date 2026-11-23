@@ -11,7 +11,9 @@ const request=(bearer=true)=>new Request(endpoint,{method:'POST',headers:{
 },body:JSON.stringify({action:'schedule-change-assessment',airlineId,scheduleId})});
 const defaultEvidence=()=>({scheduleId,scheduleVersion:2,scheduleStatus:'active',operationallyVerified:true,
  reservedSlotCount:6,flightOccurrenceCount:4,currentVersionOccurrenceCount:4,
- reservedBookingBatches:2,reservedPassengerSeats:7,certificateRecords:5});
+ reservedBookingBatches:2,reservedPassengerSeats:7,certificateRecords:5,
+ operatedMovementCount:1,recognizedFlightRevenueUsd:450,
+ recognizedReservationRevenueUsd:450});
 function fixture({found=true,row=defaultEvidence()}={}){
  const queries=[],holder={released:false};
  const handler=createFlightScheduleHandler({
@@ -61,13 +63,31 @@ test('reserved passengers trigger explicit protection blocker',async()=>{
  assert.equal(r.status,200);const v=await r.json();
  assert.equal(v.evidence.reservedPassengerSeats,7);
  assert.ok(v.blockers.includes('PASSENGER_RESERVATIONS_REQUIRE_PROTECTION'));
+ assert.ok(v.blockers.includes('OPERATED_MOVEMENTS_MUST_BE_PRESERVED'));
+ assert.ok(v.blockers.includes('RECOGNIZED_REVENUE_REQUIRES_ACCOUNTING_RECONCILIATION'));
+ assert.equal(v.evidence.operatedMovementCount,1);
+ assert.equal(v.evidence.recognizedFlightRevenueUsd,450);
 });
 test('invalid evidence never becomes a valid cancellation receipt',async()=>{
  for(const row of [{...defaultEvidence(),reservedSlotCount:-1},
   {...defaultEvidence(),reservedPassengerSeats:'7'},
   {...defaultEvidence(),scheduleId:'44444444-4444-4444-8444-444444444444'},
-  {...defaultEvidence(),scheduleVersion:null}]){
+  {...defaultEvidence(),scheduleVersion:null},
+  {...defaultEvidence(),operatedMovementCount:-1},
+  {...defaultEvidence(),recognizedFlightRevenueUsd:'450'},
+  {...defaultEvidence(),recognizedReservationRevenueUsd:Infinity}]){
   const f=fixture({row}),r=await f.handler(request());
   assert.equal(r.status,503);
  }
+});
+
+test('a schedule with a past movement remains non-cancellable even without future bookings',async()=>{
+ const row={...defaultEvidence(),reservedSlotCount:0,flightOccurrenceCount:0,
+  currentVersionOccurrenceCount:0,reservedBookingBatches:0,reservedPassengerSeats:0,
+  certificateRecords:0,recognizedFlightRevenueUsd:0,
+  recognizedReservationRevenueUsd:0};
+ const f=fixture({row}),r=await f.handler(request());assert.equal(r.status,200);
+ const result=await r.json();
+ assert.equal(result.canCancelOperationalFlight,false);
+ assert.ok(result.blockers.includes('OPERATED_MOVEMENTS_MUST_BE_PRESERVED'));
 });
