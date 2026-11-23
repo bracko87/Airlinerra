@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 
 const migration=()=>readFile(new URL(
- '../supabase/migrations/20261113095000_section9_jetstream32_easa_usable_tank_capacity_v1.sql',
+ '../supabase/migrations/20261113083722_section9_jetstream32_easa_usable_tank_capacity_v1.sql',
  import.meta.url),'utf8');
 
 test('Jetstream 32 gets EASA certified TYPE-level usable fuel capacity, not total or a guess',async()=>{

@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 const read=path=>readFile(new URL('../'+path,import.meta.url),'utf8');
 
-const main='supabase/migrations/20261113103000_section9_owned_aircraft_maintenance_readiness_v1.sql';
-const guard='supabase/migrations/20261113105500_section9_missing_maintenance_state_fails_closed.sql';
+const main='supabase/migrations/20261113084622_section9_owned_aircraft_maintenance_readiness_v1.sql';
+const guard='supabase/migrations/20261113084839_section9_missing_maintenance_state_fails_closed.sql';
 
 test('condition/age require a trusted reviewed inspection, never starter allocation alone',async()=>{
  const sql=await read(main);

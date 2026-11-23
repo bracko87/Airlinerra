@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 const src=()=>readFile(new URL(
- '../supabase/migrations/20261112164500_section9_phase1_no_crew_still_signed_five_certificates.sql',
+ '../supabase/migrations/20261112163436_section9_phase1_no_crew_still_signed_five_certificates.sql',
  import.meta.url),'utf8');
 test('Phase 1 crew defer is explicit, reversible and never disables commercial release',async()=>{
  const sql=await src();
@@ -62,7 +62,7 @@ test('crew is skipped only in deferred mode; all other checks remain mandatory',
 
 test('legacy schedule readiness reports missing operations without naming crew as a blocker',async()=>{
  const source=await readFile(new URL(
-  '../supabase/migrations/20261112171500_section5_activation_readiness_excludes_crew_phase1.sql',
+  '../supabase/migrations/20261112164502_section5_activation_readiness_excludes_crew_phase1.sql',
   import.meta.url),'utf8');
  assert.doesNotMatch(source,/CREW_ASSIGNMENT_NOT_CONNECTED/);
  assert.match(source,/AIRPORT_SLOTS_AND_TRAFFIC_RIGHTS_NOT_CONNECTED/);

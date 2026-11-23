@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 
 const read=path=>readFile(new URL('../'+path,import.meta.url),'utf8');
-const sqlPath='supabase/migrations/20261113111500_section9_starter_commissioning_request_workflow_v1.sql';
+const sqlPath='supabase/migrations/20261113085618_section9_starter_commissioning_request_workflow_v1.sql';
 
 test('starter commissioning requests are private, owner-bound and repeat safe',async()=>{
  const sql=await read(sqlPath);

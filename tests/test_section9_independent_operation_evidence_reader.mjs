@@ -30,7 +30,7 @@ test('only owner-and-occurrence scoped SELECT, never source of flight evidence',
  assert.match(sql,/aircraft_inventory_id=\$2::uuid/);
  assert.match(sql,/event_id=\$3::text and flight_occurrence_id=\$4::text/);
  assert.doesNotMatch(sql,/\bINSERT\b|\bUPDATE\b|\bDELETE\b|\bTRUNCATE\b/i);
- const migration=await read('supabase/migrations/20261110235955_section9_independent_operated_flight_evidence_v1.sql');
+ const migration=await read('supabase/migrations/20261110175011_section9_independent_operated_flight_evidence_v1.sql');
  assert.match(migration,/row level security/);
  assert.match(migration,/unique\(airline_id,flight_occurrence_id,phase\)/);
  assert.match(migration,/primary key/);

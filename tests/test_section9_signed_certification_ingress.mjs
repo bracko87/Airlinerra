@@ -170,10 +170,10 @@ test('DB errors release connections; never invent a successful certification',as
 });
 test('private SQL proof requires append-only signed events and does not activate schedules',async()=>{
  const sql=await readFile(new URL(
-  '../supabase/migrations/20261109190500_section9_signed_certification_events.sql',
+  '../supabase/migrations/20261109125816_section9_signed_certification_events.sql',
   import.meta.url),'utf8');
  const gate=await readFile(new URL(
-  '../supabase/migrations/20261109191000_section9_activation_requires_signed_proof.sql',
+  '../supabase/migrations/20261109125837_section9_activation_requires_signed_proof.sql',
   import.meta.url),'utf8');
  const ingress=await readFile(new URL(
   '../server/section9-signed-certification-ingress.mjs',

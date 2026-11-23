@@ -208,7 +208,7 @@ test('route financial UI mounted beside commercial plan and refreshed on fare sa
  const files=await Promise.all([
   readFile(new URL('../website/section9-route-details.mjs',import.meta.url),'utf8'),
   readFile(new URL('../website/section9-commercial-plan-editor.mjs',import.meta.url),'utf8'),
-  readFile(new URL('../supabase/migrations/20261109224500_section9_owned_route_financial_dashboard.sql',import.meta.url),'utf8')
+  readFile(new URL('../supabase/migrations/20261109164732_section9_owned_route_financial_dashboard.sql',import.meta.url),'utf8')
  ]);
  assert.match(files[0],/createSection9RouteFinancePanel/);
  assert.match(files[0],/financePanel\.open/);

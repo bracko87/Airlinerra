@@ -4,7 +4,7 @@ import {readFile} from 'node:fs/promises';
 const read=path=>readFile(new URL('../'+path,import.meta.url),'utf8');
 
 test('starter initial allocation is a valid origin ONLY before any verified movement',async()=>{
- const sql=await read('supabase/migrations/20261112182500_section9_aircraft_position_resolver_record_alias_repair.sql');
+ const sql=await read('supabase/migrations/20261112165529_section9_aircraft_position_resolver_record_alias_repair.sql');
  assert.match(sql,/section9_starter_origin_evidence_v1/);
  assert.match(sql,/starter->>'sourceKind'='original_airline_starter_allocation'/);
  assert.match(sql,/starter->>'airportKey'=aircraft_row.home_airport_key/);
@@ -25,7 +25,7 @@ test('starter initial allocation is a valid origin ONLY before any verified move
  assert.match(sql,/REVOKE ALL ON FUNCTION/);
 });
 test('preflight uses initial or last signed position, not a browser hub assumption',async()=>{
- const sql=await read('supabase/migrations/20261112184000_section9_noncrew_preflight_verified_game_position.sql');
+ const sql=await read('supabase/migrations/20261112170128_section9_noncrew_preflight_verified_game_position.sql');
  assert.match(sql,/section9_owned_aircraft_operational_position_v1\(/);
  assert.match(sql,/verified_position->>'verified' IS DISTINCT FROM 'true'/);
  assert.match(sql,/verified_position->>'atGroundAirport'='true'/);
