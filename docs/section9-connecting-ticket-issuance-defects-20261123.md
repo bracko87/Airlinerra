@@ -53,3 +53,17 @@ No production SQL was changed in this investigation.
 - Verified GitHub Actions run: https://github.com/bracko87/Airlinerra/actions/runs/45182867604 (both jobs successful).
 
 Before release: confirm production function has not drifted, review with database owner, generate the actual migration using the Supabase CLI, evaluate automatic-demand workers and concurrent connecting-journey issuance, and schedule rollout monitoring. Do **not** use the candidate alone as approval for active-flight cancellation.
+
+## Additional direct-issuer concurrency verification (2026-11-23)
+
+The review-only candidate also passed a two-session test of the **actual corrected private ticket-issuer SQL** without using the automatic-demand worker mutex:
+
+- First session locked the first physical-flight capacity row and issued the two-leg itinerary in one transaction.
+- Second session concurrently attempted to issue the **same allocation key** and waited for the inventory lock.
+- After the first committed, the second returned `demand_tickets_already_issued` (idempotent replay), not a second issue.
+- Exactly two reserved ticket batches remained, one per leg, with two booked seats each, matching the two seats already held in each capacity inventory.
+- Both batches still had `paid_upfront=false` and `recognized_revenue_usd=0`.
+- Existing activation, direct-booking, cancellation safety, connecting-hold and automatic-demand worker tests remained green.
+- Verified in disposable PostgreSQL 17: https://github.com/bracko87/Airlinerra/actions/runs/45185102613
+
+This confirms **same-allocation concurrent replay** in the isolated fixture; it does not cover concurrent different allocation keys on overlapping two-leg itineraries, financial settlement/refunds, complete real-world release/certification state, or a production rollout. The candidate remains outside production migrations.
