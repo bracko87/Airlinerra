@@ -75,3 +75,42 @@ the unverified real movement-to-settlement production lifecycle.
 
 No reliable total-project completion percentage can be inferred without
 a feature-by-feature production UI and gameplay acceptance audit.
+
+## Newly identified signed-movement versus cancellation hazard
+
+On 2026-11-23 the actual deployed source of
+`section9_record_signed_operated_flight_movement_v1` was inspected.
+It checks dated-flight cancellation through a plain `SELECT` of
+`booking_status` and later inserts an immutable operated-movement
+event. The original `section9_cancel_unflown_occurrence_v1`
+locks capacity and occurrence `FOR UPDATE`, but has no common
+aircraft lock with movement publication. The deployed movement table's
+only user trigger protects UPDATE/DELETE, not INSERT based on the
+current dated-occurrence status.
+
+The disposable test
+`tests/sql/section9_disposable_movement_vs_cancellation_gap.sh`
+reproduced the unsafe **protocol** interleaving: a read of `open`
+without a row lock, then a successful original cancellation, followed
+by insertion of a synthetic departure record, leaving a cancelled
+occurrence with a departure event. It then tested a proposed
+`FOR SHARE OF o` occurrence read lock in both operation orders and
+showed they serialize safely with the original cancellation
+`FOR UPDATE` lock. The signed movement writer itself was not
+invoked end-to-end in this reproduction.
+
+All readiness tests passed including the expected unsafe-protocol
+reproduction: https://github.com/bracko87/Airlinerra/actions/runs/45211678543
+
+An **undeployed review-only** patch was created at
+`supabase/migration_candidates/20261123_section9_signed_movement_cancellation_row_lock_review.sql`.
+It changes the source read to take `FOR SHARE OF o`, verifies an
+exact old-source segment before replacement, and revokes browser-role
+execute privileges. It is not merged into the migration directory.
+The candidate still requires full signed-event, aircraft lock-order,
+capacity, event replay and cancellation/recovery transaction audit
+before it can be approved for production.
+
+**Release consequence:** signed movement/cancellation consistency is a
+known blocker. Do not enable player active-flight cancellation or
+claim complete live flight publication safety until this is resolved.
