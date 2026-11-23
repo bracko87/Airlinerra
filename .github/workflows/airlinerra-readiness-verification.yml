@@ -150,6 +150,22 @@ jobs:
           test "$PGHOST" = '127.0.0.1'
           test "$PGDATABASE" = 'airlinerra_disposable'
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_connecting_hold_guard.sql
+      - name: Test unchanged connecting-ticket issuance and atomic second-leg rollback
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('supabase/migrations/20261113224000_section9_trusted_demand_hold_to_ticket_bridge_v1.sql').read_text()
+          start=s.index('CREATE OR REPLACE FUNCTION airlinerra_game.section9_issue_verified_demand_hold_tickets_v1(')
+          end=s.index('REVOKE ALL ON FUNCTION airlinerra_game.section9_issue_verified_demand_hold_tickets_v1(',start)
+          source=s[start:end]
+          assert len(source)>10000
+          assert source.index('FOR UPDATE')<source.index('SECTION9_PARTIALLY_ISSUED_CONNECTING_JOURNEY')
+          assert "MESSAGE='SECTION9_ATOMIC_DEMAND_TICKET_ISSUANCE_INCOMPLETE'" in source
+          Path('/tmp/section9-connecting-tickets-actual.sql').write_text(source)
+          print('Original two-leg ticket issuance function extracted unchanged')
+          PY
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_real_connecting_ticket_acceptance.sql
       - name: Verify isolated acceptance remained on disposable Postgres
         run: |
           set -euo pipefail
