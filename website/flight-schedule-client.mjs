@@ -122,6 +122,7 @@ export function createFlightScheduleClient({auth,origin,fetchImpl=(...args)=>fet
   routeForecast:({airlineId,aircraftInventoryId,originAirportKey,destinationAirportKey,departureStand,arrivalStand,parkingMinutes,loadPercent=50,economyFareUsd=null})=>
    post({action:'route-forecast',airlineId,aircraftInventoryId,originAirportKey,destinationAirportKey,departureStand,arrivalStand,parkingMinutes,loadPercent,economyFareUsd}),
   operationalBookings:({airlineId,scheduleId})=>post({action:'operational-bookings',airlineId,scheduleId}),
+  scheduleChangeAssessment:({airlineId,scheduleId})=>post({action:'schedule-change-assessment',airlineId,scheduleId}),
   operationalSingleCreate:({airlineId,aircraftInventoryId,flightNumber,originAirportKey,
    destinationAirportKey,weeklySchedule,departureStand=null,arrivalStand='terminal',
    turnaroundMinutes,fares,service,launchDelayDays=0})=>
