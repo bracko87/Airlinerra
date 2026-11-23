@@ -1,8 +1,20 @@
 {
   "source": "Airlinerra database migration-history statement[1] SHA1 Git blob equivalence, read-only audited 2026-11-23",
   "boundary": "Proves exact content equality for these files only. No SQL from production is embedded. 17 same-name content differences and 142 unmatched names remain excluded.",
-  "count": 201,
+  "count": 203,
   "entries": [
+    {
+      "historical": "20261023130625_airlinerra_private_research_and_public_site_check.sql",
+      "verified": "20261023130625_airlinerra_private_research_and_public_site_check.sql",
+      "blob": "632afe6099a3984a66330abc1be4e6ddce1b725d",
+      "recorded_version": "20261023130625"
+    },
+    {
+      "historical": "20261027072557_airlinerra_prelaunch_private_account_foundation_20261027.sql",
+      "verified": "20261027072557_airlinerra_prelaunch_private_account_foundation_20261027.sql",
+      "blob": "6d1259765b8ce14b0fc32fdac0dc411aa915f35e",
+      "recorded_version": "20261027072557"
+    },
     {
       "historical": "20261107234000_section6_stand_based_airport_capacity.sql",
       "verified": "20261107204530_section6_stand_based_airport_capacity.sql",
