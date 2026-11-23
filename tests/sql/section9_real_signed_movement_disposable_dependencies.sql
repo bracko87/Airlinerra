@@ -80,11 +80,11 @@ CREATE OR REPLACE FUNCTION airlinerra_game.section9_aircraft_movement_decision_v
  '{"allowed":true,"newState":"airborne","newAirport":"TEST-AAA"}'::jsonb
  ELSE '{"allowed":false,"reason":"TEST_STATE_NOT_ELIGIBLE"}'::jsonb END $$;
 -- REAL cryptographic signature produced by pgcrypto with synthetic, nonproduction key.
-CREATE FUNCTION airlinerra_game.test_sign_event(p_event text,p_time timestamptz)
+CREATE FUNCTION airlinerra_game.test_sign_event(p_event text,p_time timestamptz,p_entry integer)
 RETURNS text LANGUAGE sql STABLE AS $$
  SELECT encode(extensions.hmac(
  convert_to(concat_ws(E'\n','airlinerra-operated-game-event-v1','1',
  '22222222-2222-4222-8222-222222222222',
- '11111111-1111-4111-8111-111111111111','1','2026-11-23','1','departed',
+ '11111111-1111-4111-8111-111111111111','1','2026-11-23',p_entry::text,'departed',
  to_char(p_time AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS"Z"'),p_event),'UTF8'),
  convert_to(repeat('a',80),'UTF8'),'sha256'),'hex')$$;
