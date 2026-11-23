@@ -17,15 +17,22 @@ normalized_source_url="$(python3 - <<'PY'
 from urllib.parse import urlsplit, parse_qs
 import os, re, sys
 raw = os.environ["AIRLINERRA_SCHEMA_READONLY_URL"]
+# Supabase Connect can copy a shell command like:
+#   psql 'postgresql://...'
+# Or a DATABASE_URL=postgresql://... assignment.
+# Accept these wrappers only if they contain an explicit PostgreSQL URI;
+# never try to reconstruct a URL from unknown shell commands or credentials.
+match = re.search(r"postgres(?:ql)?://[^\\s'\\\"<>]+", raw, re.I)
+uri = match.group(0) if match else raw.strip()
 try:
-    if raw != raw.strip():
+    if not match and raw != raw.strip():
         raise ValueError("whitespace")
-    if re.search(r'\\[[^\\]]*(?:YOUR|PASSWORD|PASSWD|SECRET|REPLACE)[^\\]]*\\]', raw, re.I):
+    if re.search(r"\\[[^\\]]*(?:YOUR|PASSWORD|PASSWD|SECRET|REPLACE)[^\\]]*\\]", uri, re.I):
         print("BLOCKED: connection URL still contains a bracketed password placeholder.",file=sys.stderr)
         sys.exit(2)
     # Translate valid literal password brackets to their required URI encoding.
     # The target is a DNS hostname, never an IPv6 address.
-    url = raw.replace("[", "%5B").replace("]", "%5D")
+    url = uri.replace("[", "%5B").replace("]", "%5D")
     parts = urlsplit(url)
     q = parse_qs(parts.query)
     assert parts.scheme in ("postgresql", "postgres")
@@ -61,6 +68,11 @@ except (AssertionError, ValueError, AttributeError):
                             else "omitted" if requested_ssl is None else "unsupported")
     except (ValueError, AttributeError):
         safe = {"uri_parseable": False}
+    safe["embedded_uri_present"] = bool(match)
+    safe["looks_like_psql_command"] = bool(re.search(r"\\bpsql\\b", raw, re.I))
+    safe["looks_like_key_value_connection"] = bool(
+        re.search(r"\\b(host|dbname|user|password)\\s*=", raw, re.I))
+    safe["looks_like_http_url"] = raw.lstrip().lower().startswith(("http://", "https://"))
     print("BLOCKED: Airlinerra connection URI validation failed: " +
           ", ".join(f"{k}={v}" for k,v in safe.items()),file=sys.stderr)
     sys.exit(2)
