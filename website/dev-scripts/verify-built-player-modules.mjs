@@ -53,6 +53,7 @@ export async function verifyBuiltPlayerModules({distDir}={}){
   'game-permission-applications-client.mjs',
   'game-permission-applications-view.mjs',
   'section9-route-details.mjs',
+  'section9-owned-schedule-routes.mjs',
   'section9-certification-records.mjs',
   'section9-operational-evidence.mjs'
  ]){
