@@ -649,9 +649,13 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
  // not to an unactivated live-flight simulator.
  doc.addEventListener('airlinerra:schedule-open-flight',event=>{
   const flightNumber=event.detail?.flightNumber;
+  const scheduleId=event.detail?.scheduleId;
   if(!/^[A-Z0-9]{2}[0-9]{1,4}$/.test(flightNumber||''))return;
+  if(scheduleId!==undefined&&
+   (typeof scheduleId!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(scheduleId)))return;
   const routes=allRoutes();
-  const index=routes.findIndex(x=>x.flightNumber===flightNumber);
+  const index=routes.findIndex(x=>x.flightNumber===flightNumber&&
+   (!scheduleId||x.serverScheduleId===scheduleId));
   if(index<0){
    goTo?.('route-list');
    message('operations-routes-feedback',
