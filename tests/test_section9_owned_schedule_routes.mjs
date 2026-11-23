@@ -85,6 +85,6 @@ test('My Routes exposes a manual owner-scoped refresh and never reports failed s
  assert.match(ops,/target\.id==='operations-routes-refresh'/);
  assert.match(ops,/const verified=await loadRemotePlans\(\)/);
  assert.match(ops,/if\(verified\)message\('operations-routes-feedback'/);
- assert.match(ops,/renderRoutes\(\);return true;/);
+ assert.match(ops,/renderRoutes\(\);[\s\S]{0,250}void details\.refresh\(\);[\s\S]{0,80}return true;/);
  assert.match(ops,/Server planning routes could not be loaded/);
 });
