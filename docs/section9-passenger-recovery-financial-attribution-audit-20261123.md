@@ -221,3 +221,44 @@ separate per-flight advisory lock and is not exercised in this test.
 Full real settlement-versus-cancellation and signed movement
 publication races remain open review gates. Production schema, player
 money, bookings and settings were not changed.
+
+## Actual final financial posting writer: isolated release and mutex tests (2026-11-23)
+
+Retrieved the unchanged deployed
+`section9_post_completed_flight_finance_once_v1(text)` definition
+read-only and stored a database-guarded snapshot at
+`tests/sql/section9_disposable_original_final_finance_writer.sql`.
+The snapshot is solely a test asset, not a deployment migration.
+
+The original writer was installed in disposable PostgreSQL 17 and
+tested using
+`tests/sql/section9_disposable_original_final_finance_guards.sql`.
+It rejected execution when the approved release evidence was absent,
+preserved private `postgres` execution privileges, and returned
+`blocked_missing_completed_ticket_preparation` when given a
+synthetic correctly gated flight without a finance preparation. All
+testing was confined to the disposable environment; approval policy
+changes were rolled back inside the fixture.
+
+A second two-session test,
+`tests/sql/section9_disposable_original_final_finance_mutex.sh`,
+held the real flight-specific posting mutex
+`(583730,hashtext(physical_flight_id))` in one session while the
+other attempted the **unchanged posting function** with the same
+physical flight identifier. The competing invocation returned
+`game_flight_finance_posting_busy`. After the lock was released,
+it retried, reached the missing-preparation refusal, and performed
+no posting or preparation. This verifies one specific exactly-once
+entry gate for the finance writer, not the actual money-posting path.
+
+Both CI jobs passed:
+https://github.com/bracko87/Airlinerra/actions/runs/45206485210
+
+**Remaining release boundaries:** full final-settlement success and
+atomic airline-cash/ledger writes (including rollback injected after
+ledger insertion), final finance approval/replay protection with
+nonzero signed-arrival fixtures, signed movement publication racing
+cancellation, and real posting-vs-cancellation interleavings. These
+are not certified by a missing-preparation test or by an advisory
+mutex test. Player-initiated active-flight cancellation remains
+disabled; the reviewed ticket correction remains undeployed.
