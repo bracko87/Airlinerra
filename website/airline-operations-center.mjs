@@ -482,7 +482,8 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
         !Array.isArray(report.blockers)||!report.evidence||
         (['reservedSlotCount','flightOccurrenceCount','reservedBookingBatches',
          'reservedPassengerSeats','certificateRecords','operatedMovementCount',
-          'actualFinancePreparationCount','preparedSettlementCount'].some(k=>
+          'actualFinancePreparationCount','preparedSettlementCount',
+          'pendingConnectingJourneyLegCount','connectingHoldPlanItemCount'].some(k=>
           !Number.isSafeInteger(report.evidence[k])||report.evidence[k]<0)||
          ['recognizedFlightRevenueUsd','recognizedReservationRevenueUsd'].some(k=>
           typeof report.evidence[k]!=='number'||!Number.isFinite(report.evidence[k])||
@@ -498,7 +499,9 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
       ' reserved booking batches ('+e.reservedPassengerSeats+' seats), and '+
       e.certificateRecords+' certification records, '+e.operatedMovementCount+
       ' operated movements, '+e.actualFinancePreparationCount+' actual finance preparations, '+
-      e.preparedSettlementCount+' prepared settlements, and '+
+      e.preparedSettlementCount+' prepared settlements, '+
+      e.pendingConnectingJourneyLegCount+' pending two-leg itinerary records, '+
+      e.connectingHoldPlanItemCount+' two-leg allocation items, and '+
       (e.recognizedFlightRevenueUsd+
        e.recognizedReservationRevenueUsd).toLocaleString('en-US',{maximumFractionDigits:2})+
        ' USD in recorded revenue fields (which may overlap) require protected reconciliation. '+
