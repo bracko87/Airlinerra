@@ -1,0 +1,106 @@
+name: Fuel custody and cancellation lock-order regression (disposable)
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tests/sql/section9_fuel_cancellation_lock_order_fixture.sql'
+      - 'tests/test_section9_game_fuel_custody_dispatch_v1.mjs'
+      - 'server/sql/section9_disruption_decision_and_cancellation.sql'
+      - 'supabase/migrations/20261117110000_section9_game_fuel_custody_supply_dispatch_v1.sql'
+      - '.github/workflows/section9-fuel-cancellation-lock-ci.yml'
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  fuel-cancellation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable-ci-only
+          POSTGRES_DB: airlinerra_disposable
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d airlinerra_disposable"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: disposable-ci-only
+      PGDATABASE: airlinerra_disposable
+      PGOPTIONS: -c statement_timeout=20000 -c lock_timeout=10000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify current production SQL locking contract
+        run: node --test tests/test_section9_game_fuel_custody_dispatch_v1.mjs
+      - name: Install PostgreSQL client
+        run: |
+          if ! command -v psql >/dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y postgresql-client
+          fi
+      - name: Check disposable database and install isolated fixture
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = 127.0.0.1
+          test "$PGDATABASE" = airlinerra_disposable
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/disposable_database_preflight.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_fuel_cancellation_lock_order_fixture.sql
+      - name: Fuel custody held; departure wins; cancellation must not succeed
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql -XqAt -v ON_ERROR_STOP=1 -c "BEGIN; SELECT 1 FROM release_test.fuel WHERE aircraft_id=1 FOR UPDATE; SELECT pg_sleep(3); COMMIT;" > "$RUNNER_TEMP/fuel-holder.txt" 2>&1 &
+          holder=$!
+          sleep 0.25
+          psql -XqAt -v ON_ERROR_STOP=1 -c "SELECT release_test.dispatch(1)" > "$RUNNER_TEMP/dispatch-first.txt" 2>&1 &
+          dispatcher=$!
+          seen=0
+          for n in $(seq 1 20); do
+            blocked=$(psql -XAt -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM pg_stat_activity WHERE wait_event_type='Lock' AND query LIKE 'SELECT release_test.dispatch(1)%';")
+            if [ "$blocked" -ge 1 ]; then seen=1; break; fi
+            sleep 0.1
+          done
+          test "$seen" -eq 1
+          psql -XqAt -v ON_ERROR_STOP=1 -c "SELECT release_test.cancel(1)" > "$RUNNER_TEMP/cancel-second.txt" 2>&1 &
+          canceller=$!
+          wait "$holder"
+          wait "$dispatcher"
+          wait "$canceller"
+          grep -qx departed "$RUNNER_TEMP/dispatch-first.txt"
+          grep -qx not_cancellable "$RUNNER_TEMP/cancel-second.txt"
+          psql -XAt -v ON_ERROR_STOP=1 -c "SELECT booking_status||':'||(SELECT count(*) FROM release_test.movement WHERE occurrence_id=1) FROM release_test.occurrence WHERE id=1" | grep -qx 'closed:1'
+      - name: Cancellation wins; no subsequent signed movement survives
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql -XqAt -v ON_ERROR_STOP=1 -c "BEGIN; SELECT pg_advisory_xact_lock(583729,10041); SELECT pg_sleep(2); SELECT release_test.cancel(2); COMMIT;" > "$RUNNER_TEMP/cancel-first.txt" 2>&1 &
+          canceller=$!
+          sleep 0.25
+          psql -XqAt -v ON_ERROR_STOP=1 -c "SELECT release_test.dispatch(2)" > "$RUNNER_TEMP/dispatch-busy.txt" 2>&1
+          grep -qx dispatch_busy "$RUNNER_TEMP/dispatch-busy.txt"
+          wait "$canceller"
+          grep -qx cancelled "$RUNNER_TEMP/cancel-first.txt"
+          if psql -XqAt -v ON_ERROR_STOP=1 -c "SELECT release_test.dispatch(2)" > "$RUNNER_TEMP/dispatch-after.txt" 2>&1; then
+            echo 'ERROR: dispatch of cancelled occurrence succeeded'
+            exit 1
+          fi
+          grep -q SECTION9_DEPARTURE_BOOKING_CLOSE_UNCONFIRMED_ROLLBACK "$RUNNER_TEMP/dispatch-after.txt"
+          psql -XAt -v ON_ERROR_STOP=1 -c "SELECT booking_status||':'||(SELECT count(*) FROM release_test.movement WHERE occurrence_id=2) FROM release_test.occurrence WHERE id=2" | grep -qx 'cancelled:0'
+      - name: State precise acceptance scope
+        if: always()
+        run: |
+          echo '### Fuel cancellation lock race — disposable fixture' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Production SQL lock contracts checked using Node source assertions; both lock orders exercised in an isolated PostgreSQL 17 model.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'This is not an invocation of the real signed-movement writer, and is not a fuel-quantity/receipt audit. Production remains unchanged.' >> "$GITHUB_STEP_SUMMARY"
