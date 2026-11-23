@@ -1,6 +1,7 @@
 /**
- * Authenticated server-owned flight schedule drafts for operational inventory.
- * This is not a live flight activation API. Catalog previews remain local only.
+ * Authenticated owner-scoped route planning, flight schedule reads and gated
+ * operational creation. Only a separately verified server response can prove
+ * a route is active; saving a draft never activates a flight.
  */
 export const FLIGHT_SCHEDULE_API_ROUTE='/api/v1/player/flight-schedule-drafts';
 export function createFlightScheduleClient({auth,origin,fetchImpl=(...args)=>fetch(...args)}={}){
