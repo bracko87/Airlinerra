@@ -11,6 +11,7 @@ import {buildAircraftWeeklyTimeline,renderAircraftWeeklyTimeline} from './aircra
 import {assessAircraftRouteRunways} from './route-aircraft-runway-screen.mjs';
 import {createBasicCabinPackage} from './cabin-services-manager.mjs';
 import {planningClockEstimate} from './route-planning-times.mjs';
+import {summarizeProtectedRouteReadiness} from './section9-route-readiness.mjs';
 const section=(eyebrow,title,body)=>
  '<article class="panel route-planner-panel"><span class="panel-kicker">'+eyebrow+'</span><h2>'+title+'</h2>'+body+'</article>';
 const field=(id,label,el)=>'<label class="workspace-label" for="'+id+'">'+label+'</label>'+el;
@@ -1694,10 +1695,11 @@ export function createRoutePlanner({doc,getData,loadDraft,draftWrite,getCabinSta
    message('route-server-draft-status','Checking restrictions and operational readiness...');
    try{
     const result=await scheduler.activationCheck({airlineId,scheduleId:id});
-    const missing=Array.isArray(result.reasons)?result.reasons.slice(0,6)
-      .map(x=>String(x).replace(/_/g,' ').toLowerCase()).join('; '):'';
-    message('route-server-draft-status',String(result.status||'Activation unavailable').replace(/_/g,' ')+
-     (missing?' · '+missing:'')+'. No flight activated.');
+    const report=summarizeProtectedRouteReadiness(result);
+    const blocked=report.checks.filter(check=>check.state==='blocked')
+      .map(check=>check.explanation).join(' ');
+    message('route-server-draft-status',report.summary+
+     (blocked?' '+blocked:'')+' This check does not activate a flight.');
    }catch{
     message('route-server-draft-status','Activation readiness check failed. No flight activated.');
    }
