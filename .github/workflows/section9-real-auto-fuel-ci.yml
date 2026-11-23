@@ -96,14 +96,14 @@ jobs:
           cat "$RUNNER_TEMP/auto-fuel-departure.txt"
           grep -q '"departuresRecorded": 1' "$RUNNER_TEMP/auto-fuel-departure.txt"
           psql -XAt -v ON_ERROR_STOP=1 -c "SELECT (SELECT count(*) FROM airlinerra_game.section9_operated_flight_movements_v1 WHERE flight_occurrence_id='$FID' AND phase='departed')||':'||(SELECT count(*) FROM airlinerra_game.section9_game_flight_fuel_departure_receipts_v1 WHERE physical_flight_id='$FID')||':'||(SELECT count(*) FROM airlinerra_game.section9_game_approved_fuel_load_receipts_v1 WHERE source_event_id='game-auto-fuel-v1-'||md5('$FID'))||':'||(SELECT (onboard_kg=180)::int||':'||revision::text FROM airlinerra_game.section9_aircraft_game_fuel_custody_v1)||':'||(SELECT booking_status FROM airlinerra_game.section9_dated_flight_occurrences_v1 WHERE weekly_entry=4)" | grep -qx '1:1:1:1:2:closed'
-          psql -XAt -v ON_ERROR_STOP=1 -c "SELECT load_added_kg::text||':'||fuel_after_load_kg::text||':'||source_status FROM airlinerra_game.section9_game_approved_fuel_load_receipts_v1 WHERE source_event_id='game-auto-fuel-v1-'||md5('$FID')" | grep -Eq '^80(\\.0+)?:180(\\.0+)?:game_authority_approved$'
+          psql -XAt -v ON_ERROR_STOP=1 -c "SELECT (load_added_kg=80 AND fuel_after_load_kg=180 AND source_status='game_authority_approved')::int FROM airlinerra_game.section9_game_approved_fuel_load_receipts_v1 WHERE source_event_id='game-auto-fuel-v1-'||md5('$FID')" | grep -qx 1
       - name: Repeated production auto fuel and dispatcher cannot supply or depart twice
         run: |
           set -euo pipefail
           FID='11111111-1111-4111-8111-111111111111:2026-11-23:4'
           psql -XAt -v ON_ERROR_STOP=1 -c "SELECT airlinerra_game.section9_auto_dispatch_due_flight_events_v1(10)->>'departuresRecorded'" | grep -qx 0
           psql -XAt -v ON_ERROR_STOP=1 -c "SELECT airlinerra_game.section9_auto_supply_game_only_fuel_v1('$FID')->>'status'" | grep -qx blocked_nonoperating_or_out_of_window_flight
-          psql -XAt -v ON_ERROR_STOP=1 -c "SELECT (SELECT count(*) FROM airlinerra_game.section9_game_approved_fuel_load_receipts_v1 WHERE source_event_id='game-auto-fuel-v1-'||md5('$FID'))||':'||(SELECT count(*) FROM airlinerra_game.section9_operated_flight_movements_v1 WHERE flight_occurrence_id='$FID' AND phase='departed')||':'||(SELECT onboard_kg::text||':'||revision::text FROM airlinerra_game.section9_aircraft_game_fuel_custody_v1)" | grep -Eq '^1:1:180(\\.0+)?:2$'
+          psql -XAt -v ON_ERROR_STOP=1 -c "SELECT ( (SELECT count(*) FROM airlinerra_game.section9_game_approved_fuel_load_receipts_v1 WHERE source_event_id='game-auto-fuel-v1-'||md5('$FID'))=1 AND (SELECT count(*) FROM airlinerra_game.section9_operated_flight_movements_v1 WHERE flight_occurrence_id='$FID' AND phase='departed')=1 AND (SELECT onboard_kg=180 AND revision=2 FROM airlinerra_game.section9_aircraft_game_fuel_custody_v1))::int" | grep -qx 1
       - name: Declare limits
         if: always()
         run: |
