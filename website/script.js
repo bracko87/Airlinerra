@@ -107,3 +107,24 @@ renderTab('routes');
 
 const yearEl = document.querySelector('#copyright-year');
 if (yearEl) yearEl.textContent = String(new Date().getFullYear());
+
+
+// Cinematic airport hero stays entirely client-side: no player data or backend.
+// Pause/resume respects keyboard and assistive technology via aria-pressed.
+const airportHero = document.querySelector('.hero-cinematic');
+const airportMotionToggle = document.getElementById('hero-motion-toggle');
+if (airportHero && airportMotionToggle) {
+  const motionLabel = airportMotionToggle.querySelector('span');
+  const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+  function setAirportMotionPaused(paused) {
+    airportHero.classList.toggle('hero-motion-paused', paused);
+    airportMotionToggle.setAttribute('aria-pressed', String(paused));
+    airportMotionToggle.setAttribute('aria-label', paused ? 'Resume airport animation' : 'Pause airport animation');
+    if (motionLabel) motionLabel.textContent = paused ? 'Play motion' : 'Pause motion';
+  }
+  setAirportMotionPaused(reducedMotion?.matches === true);
+  airportMotionToggle.addEventListener('click', () => {
+    setAirportMotionPaused(!airportHero.classList.contains('hero-motion-paused'));
+  });
+  reducedMotion?.addEventListener?.('change', e => setAirportMotionPaused(e.matches));
+}
