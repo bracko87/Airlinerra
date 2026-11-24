@@ -1,0 +1,89 @@
+name: Airport game curfew and noise catalog alignment (disposable)
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/20261124123000_section9_conservative_game_airport_restriction_alignment.sql'
+      - 'tests/sql/section9_disposable_airport_game_restriction_alignment_bootstrap.sql'
+      - 'tests/sql/section9_disposable_airport_game_restriction_alignment_acceptance.sql'
+      - '.github/workflows/section9-airport-restriction-alignment-disposable-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/20261124123000_section9_conservative_game_airport_restriction_alignment.sql'
+      - 'tests/sql/section9_disposable_airport_game_restriction_alignment_bootstrap.sql'
+      - 'tests/sql/section9_disposable_airport_game_restriction_alignment_acceptance.sql'
+      - '.github/workflows/section9-airport-restriction-alignment-disposable-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  airport-restriction-alignment:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable-ci-only
+          POSTGRES_DB: airlinerra_disposable
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d airlinerra_disposable"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 8
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: disposable-ci-only
+      PGDATABASE: airlinerra_disposable
+      PGOPTIONS: -c statement_timeout=30000 -c lock_timeout=10000
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify isolated database with no user accounts
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = '127.0.0.1'
+          test "$PGDATABASE" = 'airlinerra_disposable'
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/disposable_database_preflight.sql
+      - name: Seed realistic but SYNTHETIC conflicting airport sources
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_airport_game_restriction_alignment_bootstrap.sql
+      - name: Run proposed forward-only conservative catalog alignment twice
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261124123000_section9_conservative_game_airport_restriction_alignment.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261124123000_section9_conservative_game_airport_restriction_alignment.sql
+      - name: Load UNCHANGED current Section5 simplified curfew-noise function
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          src=Path('supabase/migrations/20261108110500_section5_simplified_night_noise_live_preflight.sql').read_text()
+          name='section5_simplified_airport_leg_screen_v1'
+          a=src.index('CREATE OR REPLACE FUNCTION airlinerra_game.'+name+'(')
+          b=src.index('REVOKE ALL ON FUNCTION airlinerra_game.'+name+'(',a)
+          body=src[a:b]
+          assert 'END;\n$body$;' in body
+          assert 'section5_icao_aircraft_certification_v2' in body
+          assert 'blockedBySimplifiedNighttimeBan' in body
+          Path('/tmp/real-section5-game-curfew-noise.sql').write_text(body)
+          print('Unchanged production Section5 hard curfew/noise and certificate review function')
+          PY
+          psql -X -v ON_ERROR_STOP=1 -f /tmp/real-section5-game-curfew-noise.sql
+      - name: Assert no erased bans no changed sources no unverified certificate unlock
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_airport_game_restriction_alignment_acceptance.sql
+      - name: Publish clear scope and remaining conflicts
+        if: always()
+        run: |
+          echo '### Airport game restrictions — conservative catalog consistency only' >> "$GITHUB_STEP_SUMMARY"
+          echo 'No catalog source rows or research evidence overwritten. Published GAME flags OR both inputs, with read-only per-airport source conflict audit.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Real Section5 function independently asserts MUC curfew, unknown Chapter review, disallowed Chapter block and synthetic Chapter4 daytime gate.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Does NOT resolve 1077 catalog-only nighttime records, supply real aircraft certificates, change player authorization, book any flight, or modify Supabase production.' >> "$GITHUB_STEP_SUMMARY"
