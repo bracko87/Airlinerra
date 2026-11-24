@@ -269,21 +269,23 @@ psql "$source_url" -X -v ON_ERROR_STOP=1 -At \
   echo "BLOCKED: source structural signature has missing categories." >&2; exit 2;
 }
 
-echo "Read-only pg_dump of private game/research structures (privileges audited separately)..."
-pg_dump --schema-only --no-owner --no-tablespaces \
-  --schema=airlinerra --schema=airlinerra_game --no-privileges \
-  --file="$tmp/schema-only.sql" "$source_url" \
-  2>"$tmp/dump.stderr" || {
-    echo "BLOCKED: source schema dump failed; private database details withheld." >&2
-    exit 2
-  }
-[[ -s "$tmp/schema-only.sql" ]] || { echo "BLOCKED: empty schema dump." >&2; exit 2; }
-# Three public application tables are referenced by private-game FK
-# constraints. Their POST-DATA includes a trigger that calls
-# airlinerra_game.touch_profile_updated_at, so restore public pre-data
-# first, private schemas/functions/constraints second, public post-data
-# (triggers, RLS policies, grants) last.
+echo "Read-only pg_dump by dependency-safe sections (no table data or ACL restore)..."
+# Four sections are required, rather than appending a whole private dump
+# between two whole public dumps:
+# 1. public app pre-data tables
+# 2. private schemas, tables and trigger FUNCTIONS
+# 3. public app post-data PRIMARY KEYS and TRIGGERS
+# 4. private post-data foreign keys (including world1 FK references)
+# This avoids both missing private trigger functions and missing public PKs.
 for dump_section in pre-data post-data; do
+  pg_dump --no-owner --no-tablespaces --no-privileges \
+    --section="$dump_section" \
+    --schema=airlinerra --schema=airlinerra_game \
+    --file="$tmp/private-$dump_section.sql" "$source_url" \
+    2>"$tmp/private-$dump_section.stderr" || {
+      echo "BLOCKED: source private $dump_section dump failed (details suppressed)." >&2
+      exit 2
+    }
   pg_dump --no-owner --no-tablespaces --no-privileges \
     --section="$dump_section" \
     --table=public.airlinerra_game_worlds \
@@ -291,18 +293,17 @@ for dump_section in pre-data post-data; do
     --table=public.airlinerra_site_status \
     --file="$tmp/public-$dump_section.sql" "$source_url" \
     2>"$tmp/public-$dump_section.stderr" || {
-      echo "BLOCKED: source public-app $dump_section schema dump failed." >&2
+      echo "BLOCKED: source public-app $dump_section dump failed (details suppressed)." >&2
       exit 2
     }
-  [[ -s "$tmp/public-$dump_section.sql" ]] || {
-    echo "BLOCKED: public-app $dump_section snapshot was empty." >&2; exit 2;
+  [[ -s "$tmp/private-$dump_section.sql" && -s "$tmp/public-$dump_section.sql" ]] || {
+    echo "BLOCKED: schema section unexpectedly empty." >&2; exit 2;
   }
 done
-# The isolated Supabase public schema already exists; only application
-# table definitions are imported. No table rows or owner credentials.
-cat "$tmp/public-pre-data.sql" "$tmp/schema-only.sql" \
-  "$tmp/public-post-data.sql" > "$tmp/ordered-schema.sql"
-mv "$tmp/ordered-schema.sql" "$tmp/schema-only.sql"
+cat "$tmp/public-pre-data.sql" "$tmp/private-pre-data.sql" \
+  "$tmp/public-post-data.sql" "$tmp/private-post-data.sql" \
+  >"$tmp/schema-only.sql"
+[[ -s "$tmp/schema-only.sql" ]] || { echo "BLOCKED: empty ordered schema." >&2; exit 2; }
 echo "Private schema captured (bytes only): $(wc -c < "$tmp/schema-only.sql")"
 echo "Schema SHA-256: $(sha256sum "$tmp/schema-only.sql" | cut -d' ' -f1)"
 
