@@ -14,6 +14,7 @@ on:
       - 'tests/sql/section9_three_real_source_signed_certifier_bootstrap.sql'
       - 'tests/sql/section9_three_real_source_signed_certifier_acceptance.sql'
       - 'tests/sql/section9_three_real_source_signed_certifier_race_postconditions.sql'
+      - 'supabase/migrations/20261124135500_section9_game_clearance_issuer_prelock_schedule.sql'
       - 'tests/section9_concurrent_signed_certification_disposable.py'
       - 'server/sql/section9_game_route_restrictions.sql'
       - '.github/workflows/section9-current-aoc-rights-disposable-ci.yml'
@@ -31,6 +32,7 @@ on:
       - 'tests/sql/section9_three_real_source_signed_certifier_bootstrap.sql'
       - 'tests/sql/section9_three_real_source_signed_certifier_acceptance.sql'
       - 'tests/sql/section9_three_real_source_signed_certifier_race_postconditions.sql'
+      - 'supabase/migrations/20261124135500_section9_game_clearance_issuer_prelock_schedule.sql'
       - 'tests/section9_concurrent_signed_certification_disposable.py'
       - 'server/sql/section9_game_route_restrictions.sql'
       - '.github/workflows/section9-current-aoc-rights-disposable-ci.yml'
@@ -138,6 +140,11 @@ jobs:
             uuid,uuid,integer,text,text,text,text,text,date,date,text)
           FROM PUBLIC,anon,authenticated,service_role;
           SQL
+      - name: Apply candidate issuer schedule PRE-LOCK fix twice inside disposable PG17 only
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261124135500_section9_game_clearance_issuer_prelock_schedule.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261124135500_section9_game_clearance_issuer_prelock_schedule.sql
       - name: Issue and independently verify 3 genuine HMAC game certificates with atomic sink + negative cases
         run: |
           set -euo pipefail
@@ -155,4 +162,5 @@ jobs:
           echo 'AOC 365-day provenance, 70-point safety rule, Licence1 BEG-ZAG and strict Licence2 FRA-MUC cross-border policy verified without old disabled business-permission tables.' >> "$GITHUB_STEP_SUMMARY"
           echo 'CURRENT deployed game slot authority independently verifies live BEG-ZAG game-restriction receipts and synthetic current stand reservations. It rejects MUC unverified A319 Chapter, missing/overbooked slots, too-short runway, hard curfew, stale tick and version mismatch.' >> "$GITHUB_STEP_SUMMARY"
           echo 'Source-backed 3-type game certification: exact deployed private issuer + schedule-locked sink, ephemeral test-only Vault keys, real pgcrypto HMACs, 3 signed audit rows and current-version source fingerprints, immutable/replay-safe. Safety/slot drift and unreleased finance fail closed.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Concurrency lock-order repair tested only on disposable PG17: issue schedule FOR UPDATE first, before source reader FOR SHARE, then atomic sink; race must yield one signature and five replay results.' >> "$GITHUB_STEP_SUMMARY"
           echo 'This does NOT access live Vault secrets, reserve LIVE airport slots, book live aircraft maintenance, create routes or change player money. Slot proposer/clock/crew adapter remain synthetic; no production writes or paid staging.' >> "$GITHUB_STEP_SUMMARY"
