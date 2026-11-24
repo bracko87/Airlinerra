@@ -58,11 +58,20 @@
   </header>
 
   <main>
-    <section class="hero hero-modern section-anchor" id="home">
-      <div class="hero-backdrop" aria-hidden="true"><img src="assets/airlinerra-aircraft.webp" alt="" width="1551" height="474" fetchpriority="high" /></div>
+    <section class="hero hero-modern hero-cinematic section-anchor" id="home" aria-label="Airlinerra airline management">
+      <div class="hero-motion-scene" aria-hidden="true">
+        <div class="hero-scene-shot hero-scene-shot-airport"><img src="assets/airlinerra-airport.webp" width="1320" height="408" alt="" fetchpriority="high" /></div>
+        <div class="hero-scene-shot hero-scene-shot-aircraft"><img src="assets/airlinerra-aircraft.webp" width="1551" height="474" alt="" fetchpriority="high" /></div>
+        <span class="hero-runway-lights hero-runway-lights-one"></span>
+        <span class="hero-runway-lights hero-runway-lights-two"></span>
+        <svg class="hero-motion-aircraft hero-motion-aircraft-taxi" viewBox="0 0 24 24"><use href="#i-plane"/></svg>
+        <svg class="hero-motion-aircraft hero-motion-aircraft-depart" viewBox="0 0 24 24"><use href="#i-plane"/></svg>
+        <svg class="hero-motion-aircraft hero-motion-aircraft-arrive" viewBox="0 0 24 24"><use href="#i-plane"/></svg>
+      </div>
+      <div class="hero-cinematic-shade" aria-hidden="true"></div>
       <div class="container hero-topline">
-        <span class="hero-topline-label"><span class="hero-topline-dot" aria-hidden="true"></span> REAL-TIME AIRLINE MANAGEMENT</span>
-        <span class="hero-topline-status">WORLD 01 <span aria-hidden="true">/</span> DEVELOPMENT PREVIEW</span>
+        <span class="hero-topline-label"><span class="hero-topline-dot" aria-hidden="true"></span> THE AIRLINE MANAGEMENT EXPERIENCE</span>
+        <span class="hero-topline-status">AIRLINERRA <span aria-hidden="true">/</span> WORLD 01</span>
       </div>
       <div class="container hero-notice-wrap">
         <aside class="development-notice" role="note" aria-label="Important development notice">
@@ -72,44 +81,27 @@
           </div>
         </aside>
       </div>
-      <div class="container hero-modern-grid">
-        <div class="hero-modern-copy">
-          <div class="eyebrow"><span class="eyebrow-line"></span> YOUR AIRLINE. YOUR DECISIONS.</div>
-          <h1>Build your airline.<br><span>Connect the world.</span></h1>
-          <p class="hero-lead">From your first aircraft to an international network, every route, schedule and investment shapes the airline you build. Plan your next move in a shared, persistent aviation world.</p>
+      <div class="container hero-cinematic-content">
+        <div class="hero-cinematic-copy">
+          <div class="eyebrow"><span class="eyebrow-line"></span> BUILD. OPERATE. EXPAND.</div>
+          <h1>Your airline.<br><span>Your world to connect.</span></h1>
+          <p class="hero-lead">Take control of your own airline. Build a fleet, connect destinations and turn ambitious decisions into a global network in a persistent multiplayer aviation world.</p>
           <div class="hero-buttons">
-            <span class="button button-large registration-closed-button" aria-label="Registration is currently closed">Registration closed <svg class="icon"><use href="#i-lock"/></svg></span>
-            <a class="button button-large hero-discover" href="#how-it-works">Explore the game <svg class="icon"><use href="#i-arrow"/></svg></a>
+            <a class="button button-large hero-discover" href="#how-it-works">Explore Airlinerra <svg class="icon"><use href="#i-arrow"/></svg></a>
+            <a class="button button-large hero-secondary-link" href="#features">Discover the features <svg class="icon"><use href="#i-arrow"/></svg></a>
           </div>
-          <a class="hero-tester-link" href="/account.html?screen=sign-in">Already an approved tester? Sign in <svg class="icon"><use href="#i-arrow"/></svg></a>
-          <div class="hero-modern-meta" aria-label="How Airlinerra works">
-            <div><svg class="icon"><use href="#i-clock"/></svg><span><strong>Real-time progress</strong><small>1 real day = 1 game day</small></span></div>
-            <div><svg class="icon"><use href="#i-globe"/></svg><span><strong>One shared world</strong><small>Independent airline strategies</small></span></div>
+          <div class="hero-registration-row"><span class="hero-registration-pill"><svg class="icon"><use href="#i-lock"/></svg> Registration closed</span><a class="hero-tester-link" href="/account.html?screen=sign-in">Approved tester? Sign in <svg class="icon"><use href="#i-arrow"/></svg></a></div>
+          <div class="hero-modern-meta" aria-label="Airlinerra game facts">
+            <div><svg class="icon"><use href="#i-clock"/></svg><span><strong>Time moves with you</strong><small>1 real day = 1 in-game day</small></span></div>
+            <div><svg class="icon"><use href="#i-globe"/></svg><span><strong>A shared airline world</strong><small>Build your own route strategy</small></span></div>
           </div>
         </div>
-        <aside class="hero-flightdeck" aria-label="Illustrative airline route-management concept">
-          <div class="flightdeck-head">
-            <span class="flightdeck-brand"><span class="flightdeck-symbol"><svg class="icon"><use href="#i-compass"/></svg></span><span>NETWORK OPERATIONS <small>AIRLINERRA / WORLD 01</small></span></span>
-            <span class="flightdeck-concept"><span aria-hidden="true"></span> CONCEPT PREVIEW</span>
-          </div>
-          <div class="flightdeck-body">
-            <div class="flightdeck-section-label"><span>ROUTE DESIGN</span><span>ILLUSTRATIVE</span></div>
-            <div class="flightdeck-route">
-              <div class="flightdeck-airport"><strong>FRA</strong><span>Sample hub</span></div>
-              <div class="flightdeck-route-line" aria-hidden="true"><i></i><svg class="icon"><use href="#i-plane"/></svg><i></i></div>
-              <div class="flightdeck-airport"><strong>MUC</strong><span>Sample destination</span></div>
-            </div>
-            <div class="flightdeck-map"><img src="assets/route-map.svg" alt="Illustrated network map showing how airline destinations connect" width="1024" height="495" /><span class="flightdeck-map-caption"><span class="map-caption-dot"></span> Plan a connected network</span></div>
-            <div class="flightdeck-pills" aria-label="Management areas">
-              <span><svg class="icon"><use href="#i-plane"/></svg> Fleet</span>
-              <span><svg class="icon"><use href="#i-calendar"/></svg> Schedules</span>
-              <span><svg class="icon"><use href="#i-chart"/></svg> Finance</span>
-            </div>
-          </div>
-          <div class="flightdeck-bottom"><svg class="icon"><use href="#i-info"/></svg> Illustrative interface only — not live flight or booking data.</div>
-        </aside>
+        <div class="hero-airport-space" aria-hidden="true"></div>
       </div>
-      <div class="container hero-bottomline"><span>PLAN <i aria-hidden="true"></i> OPERATE <i aria-hidden="true"></i> GROW</span><a href="#features">DISCOVER WHAT YOU CAN MANAGE <svg class="icon"><use href="#i-arrow"/></svg></a></div>
+      <div class="container hero-cinematic-footer">
+        <div class="hero-cinematic-motto">YOUR AIRLINE <i aria-hidden="true"></i> YOUR STRATEGY <i aria-hidden="true"></i> YOUR SKY</div>
+        <div class="hero-scene-controls"><span>ANIMATED AIRPORT CONCEPT · 20-SECOND LOOP</span><button type="button" id="hero-motion-toggle" class="hero-motion-toggle" aria-pressed="false" aria-label="Pause airport animation"><svg class="icon"><use href="#i-clock"/></svg><span>Pause motion</span></button></div>
+      </div>
     </section>
 
     <div class="value-strip" aria-label="Core game pillars"><div class="container value-strip-inner">
