@@ -10,6 +10,10 @@ on:
       - 'tests/sql/section9_single_flight_real_sql_disposable_acceptance.sql'
       - 'tests/sql/section9_single_flight_paid_maintenance_bootstrap.sql'
       - 'tests/sql/section9_single_flight_paid_maintenance_acceptance.sql'
+      - 'tests/sql/section9_beg_zag_live_game_evidence_20261124.sql'
+      - 'tests/sql/section9_beg_zag_source_profile_first_departure_bootstrap.sql'
+      - 'tests/sql/section9_beg_zag_source_profile_first_departure_acceptance.sql'
+      - 'server/sql/section9_game_route_restrictions.sql'
       - 'tests/sql/section9_single_flight_passenger_booking_bootstrap.sql'
       - 'supabase/migrations/20261113224000_section9_trusted_demand_hold_to_ticket_bridge_v1.sql'
       - 'supabase/migrations/20261113104046_section9_maintenance_ledger_generated_identity_fix.sql'
@@ -27,6 +31,10 @@ on:
       - 'tests/sql/section9_single_flight_real_sql_disposable_acceptance.sql'
       - 'tests/sql/section9_single_flight_paid_maintenance_bootstrap.sql'
       - 'tests/sql/section9_single_flight_paid_maintenance_acceptance.sql'
+      - 'tests/sql/section9_beg_zag_live_game_evidence_20261124.sql'
+      - 'tests/sql/section9_beg_zag_source_profile_first_departure_bootstrap.sql'
+      - 'tests/sql/section9_beg_zag_source_profile_first_departure_acceptance.sql'
+      - 'server/sql/section9_game_route_restrictions.sql'
       - 'tests/sql/section9_single_flight_passenger_booking_bootstrap.sql'
       - 'supabase/migrations/20261113224000_section9_trusted_demand_hold_to_ticket_bridge_v1.sql'
       - 'supabase/migrations/20261113104046_section9_maintenance_ledger_generated_identity_fix.sql'
@@ -180,6 +188,40 @@ jobs:
         run: |
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_single_flight_paid_maintenance_acceptance.sql
+      - name: Seed READ-ONLY captured BEG-ZAG/MUC airport GAME evidence and actual A319 aircraft properties
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_beg_zag_live_game_evidence_20261124.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_beg_zag_source_profile_first_departure_bootstrap.sql
+      - name: Install unchanged production GAME phase profile and enforceable source-grounded restriction guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          sources=[
+           ('server/sql/section9_atomic_single_route_creation.sql','section9_route_timing_pick_v1'),
+           ('server/sql/section9_atomic_single_route_creation.sql','section9_game_route_phase_profile_v1'),
+           ('server/sql/section9_game_route_restrictions.sql','section9_game_route_restrictions_valid_v1')
+          ]
+          body=[]
+          for source,name in sources:
+           text=Path(source).read_text()
+           start=text.index('CREATE OR REPLACE FUNCTION airlinerra_game.'+name+'(')
+           end=text.index('REVOKE ALL ON FUNCTION airlinerra_game.'+name+'(',start)
+           piece=text[start:end]
+           assert 'SECURITY INVOKER' in piece and 'CREATE OR REPLACE FUNCTION' in piece
+           body.append(piece)
+          Path('/tmp/source-backed-beograd-zagreb-game.sql').write_text('\n'.join(body))
+          print('Three UNMODIFIED real PostgreSQL GAME timing/restriction functions installed')
+          PY
+          psql -X -v ON_ERROR_STOP=1 -f /tmp/source-backed-beograd-zagreb-game.sql
+      - name: Prove actual BEG-ZAG daytime first departure after real paid GAME maintenance and reject MUC missing certificate
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_beg_zag_source_profile_first_departure_acceptance.sql
       - name: Describe the unproven boundaries
         if: always()
         shell: bash
@@ -187,4 +229,5 @@ jobs:
           echo '### Current single-flight route creation — disposable PostgreSQL 17' >> "$GITHUB_STEP_SUMMARY"
           echo 'Exact server SQL: owner/cabin wrapper, weekly route, first departure and atomic single-flight creation.' >> "$GITHUB_STEP_SUMMARY"
           echo 'Maintenance booking, paid worker, due engine, flight window and dispatch preflight are current unmodified SQL. Slot authority, clock, position, certification signers and ticket gateway remain isolated fixtures.' >> "$GITHUB_STEP_SUMMARY"
-          echo 'Genuine passenger reservation writer proves seat counting, replay and oversell guards with NO upfront recognition. Signed ticket demand hold, actual departure/arrival, fuel, postflight settlement and refunds are NOT proven. Production untouched.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'NEW BEG-ZAG source-grounded GAME profile: real 347km/54min A319 model, actual 4-week Section5 airport game evidence, real Section9 GAME guard, real paid daily/weekly game-maintenance clearance, one 125-seat first departure. MUC unknown noise, wrong first airport, duplicate route fail closed.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'External slot authority, operator certificate/signatures, aircraft identity and position remain synthetic. This is NOT a live flight approval or real-revenue certification. Production untouched.' >> "$GITHUB_STEP_SUMMARY"
