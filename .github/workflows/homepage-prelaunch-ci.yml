@@ -40,26 +40,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Inspect Pexels 3716220 video delivery (read-only diagnostic)
-        shell: bash
-        run: |
-          node --input-type=module <<'JS'
-          const url='https://www.pexels.com/download/video/3716220/';
-          let next=url;
-          for(let i=0;i<5;i++){
-            try {
-              const response=await fetch(next,{redirect:'manual',signal:AbortSignal.timeout(12000),headers:{Range:'bytes=0-1023','User-Agent':'Mozilla/5.0'}});
-              const location=response.headers.get('location');
-              const parsed=new URL(next);
-              console.log(JSON.stringify({step:i,status:response.status,domain:parsed.hostname,path:parsed.pathname,
-                type:response.headers.get('content-type'),length:response.headers.get('content-length'),
-                next:location?new URL(location,next).hostname:null}));
-              await response.body?.cancel();
-              if(!location||![301,302,303,307,308].includes(response.status))break;
-              next=new URL(location,next).toString();
-            }catch(e){console.log('Pexels check:',e.message);break;}
-          }
-          JS
       - name: Verify marketing scene JavaScript syntax
         run: node --check website/script.js
       - name: Verify public registration stays closed and existing sign-in remains linked
