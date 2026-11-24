@@ -94,3 +94,22 @@ RETURNS text LANGUAGE sql STABLE AS $$
  '11111111-1111-4111-8111-111111111111','1','2026-11-23',p_entry::text,'departed',
  to_char(p_time AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS"Z"'),p_event),'UTF8'),
  convert_to(repeat('a',80),'UTF8'),'sha256'),'hex')$$;
+
+-- Test-only stubs for NEWER deployed delayed-aware signed movement function.
+-- No synthetic delay authorisation: normal unchanged 18:00 UTC schedule.
+CREATE OR REPLACE FUNCTION airlinerra_game.section9_effective_dispatch_window_v1(p_occurrence uuid)
+RETURNS TABLE(is_delayed boolean,dispatch_allowed boolean,
+ effective_departure_utc timestamptz,effective_arrival_utc timestamptz)
+LANGUAGE sql STABLE AS $fn$
+ SELECT false,true,
+  '2026-11-23 18:00:00+00'::timestamptz,
+  '2026-11-23 19:00:00+00'::timestamptz
+ WHERE EXISTS(SELECT 1 FROM airlinerra_game.section9_dated_flight_occurrences_v1
+ WHERE id=p_occurrence)
+$fn$;
+CREATE OR REPLACE FUNCTION airlinerra_game.section9_delayed_turnaround_clear_v1(
+ p_aircraft uuid,p_occurrence uuid,p_when timestamptz)
+RETURNS boolean LANGUAGE sql STABLE AS $fn$
+ SELECT EXISTS(SELECT 1 FROM airlinerra_game.section9_dated_flight_occurrences_v1
+ WHERE id=p_occurrence AND aircraft_inventory_id=p_aircraft)
+$fn$;
