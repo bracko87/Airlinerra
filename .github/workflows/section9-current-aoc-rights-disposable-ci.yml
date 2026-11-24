@@ -14,6 +14,7 @@ on:
       - 'tests/sql/section9_three_real_source_signed_certifier_bootstrap.sql'
       - 'tests/sql/section9_three_real_source_signed_certifier_acceptance.sql'
       - 'tests/sql/section9_three_real_source_signed_certifier_race_postconditions.sql'
+      - 'tests/section9_concurrent_signed_certification_disposable.py'
       - 'server/sql/section9_game_route_restrictions.sql'
       - '.github/workflows/section9-current-aoc-rights-disposable-ci.yml'
   push:
@@ -30,6 +31,7 @@ on:
       - 'tests/sql/section9_three_real_source_signed_certifier_bootstrap.sql'
       - 'tests/sql/section9_three_real_source_signed_certifier_acceptance.sql'
       - 'tests/sql/section9_three_real_source_signed_certifier_race_postconditions.sql'
+      - 'tests/section9_concurrent_signed_certification_disposable.py'
       - 'server/sql/section9_game_route_restrictions.sql'
       - '.github/workflows/section9-current-aoc-rights-disposable-ci.yml'
   workflow_dispatch:
@@ -140,32 +142,10 @@ jobs:
         run: |
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_three_real_source_signed_certifier_acceptance.sql
-      - name: Race six independent local PostgreSQL certification issuers
+      - name: Race six local PostgreSQL issuers and verify one signed event
         run: |
           set -euo pipefail
-          for n in 1 2 3 4 5 6; do
-            psql -X -qAt -v ON_ERROR_STOP=1 -c "SELECT airlinerra_game.section9_issue_queued_game_clearance_v1('11111111-1111-4111-8111-111111111111','44444444-4444-4444-8444-444444444444',1,'2026-11-24'::date,'operator_licence')->>'status';" > "$RUNNER_TEMP/cert_race_$n.txt" 2>&1 &
-          done
-          wait
-          cat "$RUNNER_TEMP"/cert_race_*.txt
-          test "$(grep -hxc '^certification_event_recorded        if: always()
-        run: |
-          echo '### Source-backed AOC and L1/L2 acceptance' >> "$GITHUB_STEP_SUMMARY"
-          echo 'Unmodified read-only snapshots of seven deployed database functions; synthetic current original-company AOC/tick/safety/country/rights source fixtures, all inside local ephemeral PostgreSQL 17.' >> "$GITHUB_STEP_SUMMARY"
-          echo 'AOC 365-day provenance, 70-point safety rule, Licence1 BEG-ZAG and strict Licence2 FRA-MUC cross-border policy verified without old disabled business-permission tables.' >> "$GITHUB_STEP_SUMMARY"
-          echo 'CURRENT deployed game slot authority independently verifies live BEG-ZAG game-restriction receipts and synthetic current stand reservations. It rejects MUC unverified A319 Chapter, missing/overbooked slots, too-short runway, hard curfew, stale tick and version mismatch.' >> "$GITHUB_STEP_SUMMARY"
-          echo 'Source-backed 3-type game certification: exact deployed private issuer + schedule-locked sink, ephemeral test-only Vault keys, real pgcrypto HMACs, 3 signed audit rows and current-version source fingerprints, immutable/replay-safe. Safety/slot drift and unreleased finance fail closed.' >> "$GITHUB_STEP_SUMMARY"
-          echo 'This does NOT access live Vault secrets, reserve LIVE airport slots, book live aircraft maintenance, create routes or change player money. Slot proposer/clock/crew adapter remain synthetic; no production writes or paid staging.' >> "$GITHUB_STEP_SUMMARY"
- "$RUNNER_TEMP"/cert_race_*.txt | awk '{s+=$1}END{print s+0}')" -eq 1
-          test "$(grep -hxc '^certification_event_replayed        if: always()
-        run: |
-          echo '### Source-backed AOC and L1/L2 acceptance' >> "$GITHUB_STEP_SUMMARY"
-          echo 'Unmodified read-only snapshots of seven deployed database functions; synthetic current original-company AOC/tick/safety/country/rights source fixtures, all inside local ephemeral PostgreSQL 17.' >> "$GITHUB_STEP_SUMMARY"
-          echo 'AOC 365-day provenance, 70-point safety rule, Licence1 BEG-ZAG and strict Licence2 FRA-MUC cross-border policy verified without old disabled business-permission tables.' >> "$GITHUB_STEP_SUMMARY"
-          echo 'CURRENT deployed game slot authority independently verifies live BEG-ZAG game-restriction receipts and synthetic current stand reservations. It rejects MUC unverified A319 Chapter, missing/overbooked slots, too-short runway, hard curfew, stale tick and version mismatch.' >> "$GITHUB_STEP_SUMMARY"
-          echo 'Source-backed 3-type game certification: exact deployed private issuer + schedule-locked sink, ephemeral test-only Vault keys, real pgcrypto HMACs, 3 signed audit rows and current-version source fingerprints, immutable/replay-safe. Safety/slot drift and unreleased finance fail closed.' >> "$GITHUB_STEP_SUMMARY"
-          echo 'This does NOT access live Vault secrets, reserve LIVE airport slots, book live aircraft maintenance, create routes or change player money. Slot proposer/clock/crew adapter remain synthetic; no production writes or paid staging.' >> "$GITHUB_STEP_SUMMARY"
- "$RUNNER_TEMP"/cert_race_*.txt | awk '{s+=$1}END{print s+0}')" -eq 5
+          python3 tests/section9_concurrent_signed_certification_disposable.py
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_three_real_source_signed_certifier_race_postconditions.sql
       - name: Describe certification boundary
         if: always()
