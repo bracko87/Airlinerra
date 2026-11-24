@@ -473,5 +473,4 @@ BEGIN
   'verifiedServiceTypes',jsonb_array_length(rights_details),
   'flightActivated',false,'movementRecorded',false,
   'bookingsCreated',false,'ledgerPosted',false);
-END $function$
-
+END $function$;
