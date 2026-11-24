@@ -6,6 +6,9 @@ on:
       - 'tests/sql/section9_real_cancellation_disposable_bootstrap.sql'
       - 'tests/sql/section9_real_signed_movement_disposable_dependencies.sql'
       - 'supabase/migrations/20261123200000_section9_signed_movement_cancellation_guard.sql'
+      - 'supabase/migrations/20261123210000_section9_dispatch_traffic_permission_binding_fix.sql'
+      - 'tests/sql/section9_current_live_signed_movement_source_20261124.sql'
+      - 'tests/sql/section9_current_live_dispatch_source_20261124.sql'
       - 'server/sql/section9_disruption_decision_and_cancellation.sql'
       - '.github/workflows/section9-real-signed-cancel-race-ci.yml'
   pull_request:
@@ -13,6 +16,9 @@ on:
       - 'tests/sql/section9_real_cancellation_disposable_bootstrap.sql'
       - 'tests/sql/section9_real_signed_movement_disposable_dependencies.sql'
       - 'supabase/migrations/20261123200000_section9_signed_movement_cancellation_guard.sql'
+      - 'supabase/migrations/20261123210000_section9_dispatch_traffic_permission_binding_fix.sql'
+      - 'tests/sql/section9_current_live_signed_movement_source_20261124.sql'
+      - 'tests/sql/section9_current_live_dispatch_source_20261124.sql'
       - '.github/workflows/section9-real-signed-cancel-race-ci.yml'
   workflow_dispatch:
 permissions:
@@ -66,12 +72,21 @@ jobs:
           end=source.index('REVOKE ALL ON FUNCTION airlinerra_game.'+name+'(',start)
           Path('/tmp/airlinerra-real-cancellation.sql').write_text(source[start:end])
           guarded=Path('supabase/migrations/20261123200000_section9_signed_movement_cancellation_guard.sql').read_text()
-          assert 'SECTION9_SIGNED_DEPARTURE_OCCURRENCE_NOT_OPEN' in guarded
+          assert 'SECTION9_SIGNED_DEPARTURE_OCCURRENCE_NOT_ELIGIBLE' in guarded
           assert 'pg_advisory_xact_lock(583729,10041)' in guarded
-          print('Unmodified real cancellation function and guarded real signed movement writer ready')
+          assert 'section9_effective_dispatch_window_v1' in guarded
+          print('Unmodified cancellation and current delayed-aware signed writer ready')
           PY
           psql -X -v ON_ERROR_STOP=1 -f /tmp/airlinerra-real-cancellation.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_current_live_signed_movement_source_20261124.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261123200000_section9_signed_movement_cancellation_guard.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261123200000_section9_signed_movement_cancellation_guard.sql
+      - name: Refuse obsolete dispatcher downgrade and preserve newer canonical AOC / delayed crew source
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_current_live_dispatch_source_20261124.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261123210000_section9_dispatch_traffic_permission_binding_fix.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261123210000_section9_dispatch_traffic_permission_binding_fix.sql
       - name: Cancellation first rejects real correctly HMAC-signed departure
         run: |
           set -euo pipefail
@@ -79,7 +94,7 @@ jobs:
           if psql -XAt -v ON_ERROR_STOP=1 -c "SELECT airlinerra_game.section9_record_signed_operated_flight_movement_v1('22222222-2222-4222-8222-222222222222','11111111-1111-4111-8111-111111111111',1,'2026-11-23',1,'departed','2026-11-23 18:00+00','TEST-SIGNED-EVENT-01',airlinerra_game.test_sign_event('TEST-SIGNED-EVENT-01','2026-11-23 18:00+00',1))" > /tmp/invalid-real-signed.txt 2>&1; then
             echo 'CRITICAL: cancelled flight accepted a genuine HMAC movement'; exit 1
           fi
-          grep -q SECTION9_SIGNED_DEPARTURE_OCCURRENCE_NOT_OPEN /tmp/invalid-real-signed.txt
+          grep -q SECTION9_SIGNED_DEPARTURE_OCCURRENCE_NOT_ELIGIBLE /tmp/invalid-real-signed.txt
           psql -XAt -v ON_ERROR_STOP=1 -c "SELECT booking_status||':'||(SELECT count(*) FROM airlinerra_game.section9_operated_flight_movements_v1 WHERE flight_occurrence_id='11111111-1111-4111-8111-111111111111:2026-11-23:1') FROM airlinerra_game.section9_dated_flight_occurrences_v1 WHERE weekly_entry=1" | grep -qx 'cancelled:0'
       - name: Genuine HMAC departure first prevents real cancellation
         run: |
@@ -116,5 +131,5 @@ jobs:
         if: always()
         run: |
           echo '### Real HMAC movement writer + real cancellation, disposable PostgreSQL' >> "$GITHUB_STEP_SUMMARY"
-          echo 'Both production SQL functions run; the signed writer has a forward-only corrective SQL guard. Genuine pgcrypto HMAC, synthetic secret and clock/aircraft/booking dependencies.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Exact delayed-aware current deployed signed writer plus current cancellation; safe migration installs advisory lock and saleable open/closed occurrence guard without replacing delayed/crew features. Stale dispatcher migration now fails closed rather than downgrade canonical AOC/crew code. Genuine synthetic-key HMAC; no live production release.' >> "$GITHUB_STEP_SUMMARY"
           echo 'The full production fuel preflight and receipt functions are NOT run; custody lock is directly acquired in the orchestration fixture. No production release or deployment.' >> "$GITHUB_STEP_SUMMARY"
