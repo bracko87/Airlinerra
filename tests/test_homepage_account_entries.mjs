@@ -159,8 +159,8 @@ test('cinematic hero replaces the FRA-MUC card with a looping airport scene and 
  assert.match(style,/@keyframes airportTaxi20/);
  assert.match(style,/@keyframes airportDeparture20/);
  assert.match(style,/@keyframes airportArrival20/);
- assert.match(style,/\.hero-cinematic\.hero-scene-shot-airport\s*\{[^}]*20s linear infinite/);
- assert.match(style,/\.hero-cinematic\.hero-scene-shot-aircraft\s*\{[^}]*20s linear infinite/);
+ assert.match(style,/\.hero-cinematic \.hero-scene-shot-airport\s*\{[^}]*20s linear infinite/);
+ assert.match(style,/\.hero-cinematic \.hero-scene-shot-aircraft\s*\{[^}]*20s linear infinite/);
  assert.match(style,/\.hero-cinematic\.hero-motion-aircraft-depart|\.hero-motion-aircraft-depart/);
  assert.match(style,/\.hero-cinematic\.hero-motion-paused/);
  assert.match(style,/@media \(prefers-reduced-motion:reduce\)/);
