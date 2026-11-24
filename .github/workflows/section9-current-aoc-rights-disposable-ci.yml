@@ -6,6 +6,11 @@ on:
       - 'tests/sql/section9_current_live_canonical_aoc_rights_sources_20261124.sql'
       - 'tests/sql/section9_current_aoc_rights_disposable_bootstrap.sql'
       - 'tests/sql/section9_current_aoc_rights_disposable_acceptance.sql'
+      - 'tests/sql/section9_beg_zag_live_game_evidence_20261124.sql'
+      - 'tests/sql/section9_live_verified_slot_authority_source_20261124.sql'
+      - 'tests/sql/section9_real_slot_authority_beg_zag_disposable_bootstrap.sql'
+      - 'tests/sql/section9_real_slot_authority_beg_zag_disposable_acceptance.sql'
+      - 'server/sql/section9_game_route_restrictions.sql'
       - '.github/workflows/section9-current-aoc-rights-disposable-ci.yml'
   push:
     branches: [main]
@@ -13,6 +18,11 @@ on:
       - 'tests/sql/section9_current_live_canonical_aoc_rights_sources_20261124.sql'
       - 'tests/sql/section9_current_aoc_rights_disposable_bootstrap.sql'
       - 'tests/sql/section9_current_aoc_rights_disposable_acceptance.sql'
+      - 'tests/sql/section9_beg_zag_live_game_evidence_20261124.sql'
+      - 'tests/sql/section9_live_verified_slot_authority_source_20261124.sql'
+      - 'tests/sql/section9_real_slot_authority_beg_zag_disposable_bootstrap.sql'
+      - 'tests/sql/section9_real_slot_authority_beg_zag_disposable_acceptance.sql'
+      - 'server/sql/section9_game_route_restrictions.sql'
       - '.github/workflows/section9-current-aoc-rights-disposable-ci.yml'
   workflow_dispatch:
 permissions:
@@ -71,10 +81,41 @@ jobs:
         run: |
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_current_aoc_rights_disposable_acceptance.sql
+      - name: Seed actual read-only BEG-ZAG/MUC A319 weekly restriction evidence and synthetic reservable slot rows
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_beg_zag_live_game_evidence_20261124.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_real_slot_authority_beg_zag_disposable_bootstrap.sql
+      - name: Install unchanged real game restriction guard and exact deployed slot source-verification function
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          src=Path('server/sql/section9_game_route_restrictions.sql').read_text()
+          name='section9_game_route_restrictions_valid_v1'
+          start=src.index('CREATE OR REPLACE FUNCTION airlinerra_game.'+name+'(')
+          end=src.index('REVOKE ALL ON FUNCTION airlinerra_game.'+name+'(',start)
+          body=src[start:end]
+          assert 'SECURITY INVOKER' in body and 'simpleNightNoise' in body
+          Path('/tmp/actual-game-route-restriction.sql').write_text(body)
+          print('Loaded exact current Section9 enforceable game airport restriction guard')
+          PY
+          psql -X -v ON_ERROR_STOP=1 -f /tmp/actual-game-route-restriction.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_live_verified_slot_authority_source_20261124.sql
+          psql -X -v ON_ERROR_STOP=1 <<'SQL'
+          REVOKE ALL ON FUNCTION
+          airlinerra_game.section9_verify_slot_clearance_source_v1(uuid,uuid,integer,date)
+          FROM PUBLIC,anon,authenticated,service_role;
+          SQL
+      - name: Verify actual independent slot source BEG-ZAG and every capacity / noise / reservation denial guard
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_real_slot_authority_beg_zag_disposable_acceptance.sql
       - name: Describe certification boundary
         if: always()
         run: |
           echo '### Source-backed AOC and L1/L2 acceptance' >> "$GITHUB_STEP_SUMMARY"
           echo 'Unmodified read-only snapshots of seven deployed database functions; synthetic current original-company AOC/tick/safety/country/rights source fixtures, all inside local ephemeral PostgreSQL 17.' >> "$GITHUB_STEP_SUMMARY"
           echo 'AOC 365-day provenance, 70-point safety rule, Licence1 BEG-ZAG and strict Licence2 FRA-MUC cross-border policy verified without old disabled business-permission tables.' >> "$GITHUB_STEP_SUMMARY"
-          echo 'This does NOT issue Vault HMAC certification events, reserve real airport slots, book live aircraft maintenance, create routes or change player money. No production data writes or paid staging.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'CURRENT deployed game slot authority independently verifies live BEG-ZAG game-restriction receipts and synthetic current stand reservations. It rejects MUC unverified A319 Chapter, missing/overbooked slots, too-short runway, hard curfew, stale tick and version mismatch.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'This does NOT issue Vault HMAC certification events, reserve LIVE airport slots, book live aircraft maintenance, create routes or change player money. No production data writes or paid staging.' >> "$GITHUB_STEP_SUMMARY"
