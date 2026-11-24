@@ -6,6 +6,10 @@ on:
       - 'supabase/migrations/20261124123000_section9_conservative_game_airport_restriction_alignment.sql'
       - 'tests/sql/section9_disposable_airport_game_restriction_alignment_bootstrap.sql'
       - 'tests/sql/section9_disposable_airport_game_restriction_alignment_acceptance.sql'
+      - 'supabase/migrations/20261124134500_section9_candidate_game_gate_vs_research_review.sql'
+      - 'tests/sql/section9_current_live_candidate_preflight_snapshot_20261124.sql'
+      - 'tests/sql/section9_candidate_game_gate_vs_research_acceptance.sql'
+      - 'server/sql/section9_game_route_restrictions.sql'
       - '.github/workflows/section9-airport-restriction-alignment-disposable-ci.yml'
   push:
     branches: [main]
@@ -13,6 +17,10 @@ on:
       - 'supabase/migrations/20261124123000_section9_conservative_game_airport_restriction_alignment.sql'
       - 'tests/sql/section9_disposable_airport_game_restriction_alignment_bootstrap.sql'
       - 'tests/sql/section9_disposable_airport_game_restriction_alignment_acceptance.sql'
+      - 'supabase/migrations/20261124134500_section9_candidate_game_gate_vs_research_review.sql'
+      - 'tests/sql/section9_current_live_candidate_preflight_snapshot_20261124.sql'
+      - 'tests/sql/section9_candidate_game_gate_vs_research_acceptance.sql'
+      - 'server/sql/section9_game_route_restrictions.sql'
       - '.github/workflows/section9-airport-restriction-alignment-disposable-ci.yml'
   workflow_dispatch:
 permissions:
@@ -80,10 +88,41 @@ jobs:
         run: |
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_airport_game_restriction_alignment_acceptance.sql
+      - name: Load real enforceable game restriction guard and deployed candidate source snapshot
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          sql=Path('server/sql/section9_game_route_restrictions.sql').read_text()
+          name='section9_game_route_restrictions_valid_v1'
+          a=sql.index('CREATE OR REPLACE FUNCTION airlinerra_game.'+name+'(')
+          b=sql.index('REVOKE ALL ON FUNCTION airlinerra_game.'+name+'(',a)
+          body=sql[a:b]
+          assert 'SECURITY INVOKER' in body and 'gameHardBlocked' in body
+          Path('/tmp/airlinerra-real-game-restrictions-valid.sql').write_text(body)
+          PY
+          psql -X -v ON_ERROR_STOP=1 -f /tmp/airlinerra-real-game-restrictions-valid.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_current_live_candidate_preflight_snapshot_20261124.sql
+          psql -X -v ON_ERROR_STOP=1 <<'SQL'
+          REVOKE ALL ON FUNCTION
+          airlinerra_game.section9_owned_candidate_slot_rights_preflight_v1(
+            uuid,uuid,uuid,text,text,timestamptz,timestamptz,jsonb,text,text)
+          FROM PUBLIC,anon,authenticated,service_role;
+          SQL
+      - name: Patch ONLY candidate game blocker logic while preserving real L1-L2 licence scope
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261124134500_section9_candidate_game_gate_vs_research_review.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261124134500_section9_candidate_game_gate_vs_research_review.sql
+      - name: Verify research-only review is advisory but actual game curfews noise and slots still fail closed
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_candidate_game_gate_vs_research_acceptance.sql
       - name: Publish clear scope and remaining conflicts
         if: always()
         run: |
           echo '### Airport game restrictions — conservative catalog consistency only' >> "$GITHUB_STEP_SUMMARY"
           echo 'No catalog source rows or research evidence overwritten. Published GAME flags OR both inputs, with read-only per-airport source conflict audit.' >> "$GITHUB_STEP_SUMMARY"
           echo 'Real Section5 function independently asserts MUC curfew, unknown Chapter review, disallowed Chapter block and synthetic Chapter4 daytime gate.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Also compiles and twice replays safe source-preserving candidate owner preflight patch using exact LIVE L1/L2 source snapshot: real game restriction guard passes research-only, rejects MUC unverified noise, curfew, bad runway and prohibited Group2.' >> "$GITHUB_STEP_SUMMARY"
           echo 'Does NOT resolve 1077 catalog-only nighttime records, supply real aircraft certificates, change player authorization, book any flight, or modify Supabase production.' >> "$GITHUB_STEP_SUMMARY"
