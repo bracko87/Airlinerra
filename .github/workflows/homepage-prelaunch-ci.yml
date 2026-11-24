@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'website/index.html'
+      - 'website/script.js'
       - 'website/studio-footer.js'
       - 'website/studio-footer.css'
       - 'tests/test_financial_charts_and_studio_footer.mjs'
@@ -18,6 +19,7 @@ on:
     branches: [main]
     paths:
       - 'website/index.html'
+      - 'website/script.js'
       - 'website/studio-footer.js'
       - 'website/studio-footer.css'
       - 'tests/test_financial_charts_and_studio_footer.mjs'
@@ -38,6 +40,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Verify marketing scene JavaScript syntax
+        run: node --check website/script.js
       - name: Verify public registration stays closed and existing sign-in remains linked
         run: node --test tests/test_homepage_account_entries.mjs tests/test_registration_access.mjs
       - name: Verify shared footer excludes duplicate current-time line
