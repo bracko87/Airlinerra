@@ -13,6 +13,7 @@ on:
       - 'tests/sql/section9_actual_deployed_certificate_issuer_sink_20261124.sql'
       - 'tests/sql/section9_three_real_source_signed_certifier_bootstrap.sql'
       - 'tests/sql/section9_three_real_source_signed_certifier_acceptance.sql'
+      - 'tests/sql/section9_three_real_source_signed_certifier_race_postconditions.sql'
       - 'server/sql/section9_game_route_restrictions.sql'
       - '.github/workflows/section9-current-aoc-rights-disposable-ci.yml'
   push:
@@ -28,6 +29,7 @@ on:
       - 'tests/sql/section9_actual_deployed_certificate_issuer_sink_20261124.sql'
       - 'tests/sql/section9_three_real_source_signed_certifier_bootstrap.sql'
       - 'tests/sql/section9_three_real_source_signed_certifier_acceptance.sql'
+      - 'tests/sql/section9_three_real_source_signed_certifier_race_postconditions.sql'
       - 'server/sql/section9_game_route_restrictions.sql'
       - '.github/workflows/section9-current-aoc-rights-disposable-ci.yml'
   workflow_dispatch:
