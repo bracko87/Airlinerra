@@ -199,7 +199,9 @@ BEGIN
  -- Controlled test movement row only, NOT a signed engine event:
  -- the real writer must refuse further reservations after any movement.
  INSERT INTO airlinerra_game.section9_operated_flight_movements_v1
- VALUES ('synthetic-booking-closed-marker',active_schedule,DATE '2026-11-21',5);
+ (event_id,schedule_id,flight_local_date,weekly_entry)
+ SELECT 'synthetic-booking-closed-marker',o.schedule_id,o.flight_local_date,o.weekly_entry
+ FROM airlinerra_game.section9_dated_flight_occurrences_v1 o WHERE o.id=booking_occurrence;
  booking:=airlinerra_game.section9_reserve_verified_game_passenger_seats_v1(
   booking_occurrence,'trusted.test.booking.after-movement','economy',1);
  IF booking->>'status'<>'blocked_slots_or_flight_already_operated'
