@@ -305,3 +305,33 @@ test('localhost proxy forwards deployed prepared-airport read only with verified
  assert.equal(bad.status,401);
  assert.equal(calls.length,1);
 });
+
+
+test('localhost forwards authenticated aircraft calendar reads only to the schedule Edge service',async()=>{
+ const calls=[];
+ const path='/api/v1/player/flight-schedule-drafts';
+ const calendar={status:'verified_aircraft_calendar',readOnly:true,
+  fleet:[{id,registration:'TEST-001'}],events:[{id:'test-flight',aircraftInventoryId:id,kind:'flight',label:'TE101'}]};
+ const handler=await makeRealLocalPlayerHandler({env:{},
+  loadPg:async()=>{throw Error('Calendar read must not require private local database credentials')},
+  fetchImpl:async(url,options)=>{
+   calls.push(JSON.parse(options.body));
+   assert.equal(url,'https://'+REF+'.supabase.co/functions/v1/airlinerra-flight-schedule-drafts');
+   assert.equal(options.headers['x-airlinerra-route'],path);
+   assert.equal(options.headers.authorization,'Bearer '+token);
+   assert.equal(options.headers.origin,'https://airlinerra.com');
+   return new Response(JSON.stringify(calendar),{status:200,headers:{'content-type':'application/json'}});
+  }});
+ const payload={action:'aircraft-calendar',airlineId:id};
+ const response=await handler(request(payload,path));
+ assert.equal(response.status,200);
+ assert.deepEqual(await response.json(),calendar);
+ assert.deepEqual(calls,[payload]);
+ assert.equal((await handler(request({...payload,extra:true},path))).status,403);
+ assert.equal((await handler(request({...payload,airlineId:'invalid'},path))).status,403);
+ assert.equal((await handler(request(payload,path,'bad'))).status,401);
+ assert.equal((await handler(request(payload,path,token,'https://evil.example'))).status,403);
+ assert.equal((await handler(request(payload,'/api/v1/player/fleet-acquisition'))).status,403);
+ assert.equal((await handler(request({action:'cancel',airlineId:id},path))).status,403);
+ assert.deepEqual(calls,[payload],'Rejected requests must not reach the Edge service');
+});

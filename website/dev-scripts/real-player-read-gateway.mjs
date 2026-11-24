@@ -36,7 +36,7 @@ export function allowedLocalOwnerRead(pathname,payload){
  if(pathname!==FLEET_READ_PATH&&pathname!==SCHEDULE_READ_PATH)return false;
  if(!payload||typeof payload!=='object'||Array.isArray(payload)||
     typeof payload.action!=='string'||!AIRLINE_ID.test(payload.airlineId||''))return false;
- if(payload.action==='list')
+ if(payload.action==='list'||(pathname===SCHEDULE_READ_PATH&&payload.action==='aircraft-calendar'))
   return Object.keys(payload).length===2 &&
    Object.keys(payload).every(x=>x==='action'||x==='airlineId');
  // New and used marketplace discovery and individual aircraft details are read-only.
