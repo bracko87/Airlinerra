@@ -259,6 +259,25 @@ SELECT (
 }
 echo "PASS: live trusted-flight core function grants independently restricted."
 
+# Source permission expectations are verified before the ACL-free dump.
+# Never infer live ACLs from a schema-only restore.
+release_source_acl="$(psql "$source_url" -X -v ON_ERROR_STOP=1 -Atqc "
+SELECT (NOT EXISTS (
+ SELECT 1 FROM unnest(ARRAY['anon','authenticated','service_role']) AS r(role_name)
+ CROSS JOIN (VALUES
+ ('airlinerra_game.section9_auto_dispatch_due_flight_events_v1(integer)'),
+ ('airlinerra_game.section9_record_signed_operated_flight_movement_v1(uuid,uuid,integer,date,integer,text,timestamptz,text,text)'),
+ ('airlinerra_game.section9_issue_queued_game_clearance_v1(uuid,uuid,integer,date,text)'),
+ ('airlinerra_game.section9_owned_candidate_slot_rights_preflight_v1(uuid,uuid,uuid,text,text,timestamptz,timestamptz,jsonb,text,text)'),
+ ('airlinerra_game.section9_game_route_restrictions_valid_v1(text,text,jsonb)')
+ ) AS f(sig) WHERE has_function_privilege(r.role_name,f.sig,'EXECUTE')
+) AND NOT EXISTS (
+ SELECT 1 FROM unnest(ARRAY['anon','authenticated','service_role']) AS r(role_name)
+ WHERE has_table_privilege(r.role_name,'airlinerra_game.airport_unified_operations_v1','SELECT')
+))::int;")"
+[[ "$release_source_acl" == 1 ]] || { echo "BLOCKED: live release-target ACL differs." >&2; exit 2; }
+echo "PASS: five live target function permissions and private unified airport view verified."
+
 echo "Hashing remote structural definitions without returning SQL bodies..."
 psql "$source_url" -X -v ON_ERROR_STOP=1 -At \
   -f tests/sql/airlinerra_private_schema_fingerprint.sql \
@@ -365,6 +384,19 @@ if ! cmp -s "$tmp/source-structure.hashes" "$tmp/clone-structure.hashes"; then
 fi
 echo "PASS: seven structural categories match between remote and isolated local database."
 
+# The source ACL check above established that these three roles cannot execute
+# these functions or select the existing private view. The dump drops ACLs,
+# so reproduce this specific verified denial locally BEFORE applying migrations.
+# This is not an assertion of full source role or grant parity.
+local_psql -q >/dev/null <<'SQL'
+REVOKE EXECUTE ON FUNCTION airlinerra_game.section9_auto_dispatch_due_flight_events_v1(integer) FROM PUBLIC,anon,authenticated,service_role;
+REVOKE EXECUTE ON FUNCTION airlinerra_game.section9_record_signed_operated_flight_movement_v1(uuid,uuid,integer,date,integer,text,timestamptz,text,text) FROM PUBLIC,anon,authenticated,service_role;
+REVOKE EXECUTE ON FUNCTION airlinerra_game.section9_issue_queued_game_clearance_v1(uuid,uuid,integer,date,text) FROM PUBLIC,anon,authenticated,service_role;
+REVOKE EXECUTE ON FUNCTION airlinerra_game.section9_owned_candidate_slot_rights_preflight_v1(uuid,uuid,uuid,text,text,timestamptz,timestamptz,jsonb,text,text) FROM PUBLIC,anon,authenticated,service_role;
+REVOKE EXECUTE ON FUNCTION airlinerra_game.section9_game_route_restrictions_valid_v1(text,text,jsonb) FROM PUBLIC,anon,authenticated,service_role;
+REVOKE SELECT ON airlinerra_game.airport_unified_operations_v1 FROM PUBLIC,anon,authenticated,service_role;
+SQL
+
 # Preserve existing column order/types and the modern dispatcher definition.
 # The dump intentionally excludes ACLs. Check live access separately and
 # compare restored-clone behavior before and after; do not claim ACL parity.
@@ -441,6 +473,7 @@ SELECT (
  AND NOT EXISTS (
  SELECT 1 FROM unnest(ARRAY['anon','authenticated','service_role']) AS r(role_name)
  WHERE has_table_privilege(r.role_name,'airlinerra_game.section9_airport_game_restriction_alignment_v1','SELECT')
+ OR has_table_privilege(r.role_name,'airlinerra_game.airport_unified_operations_v1','SELECT')
  )
 )::int FROM checks;")"
 [[ "$guards" == 1 ]] || { echo "BLOCKED: cloned forward corrections or grants fail." >&2; exit 2; }
