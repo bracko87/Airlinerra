@@ -1,0 +1,80 @@
+name: Canonical AOC and L1/L2 independent source-verifier acceptance (disposable)
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tests/sql/section9_current_live_canonical_aoc_rights_sources_20261124.sql'
+      - 'tests/sql/section9_current_aoc_rights_disposable_bootstrap.sql'
+      - 'tests/sql/section9_current_aoc_rights_disposable_acceptance.sql'
+      - '.github/workflows/section9-current-aoc-rights-disposable-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tests/sql/section9_current_live_canonical_aoc_rights_sources_20261124.sql'
+      - 'tests/sql/section9_current_aoc_rights_disposable_bootstrap.sql'
+      - 'tests/sql/section9_current_aoc_rights_disposable_acceptance.sql'
+      - '.github/workflows/section9-current-aoc-rights-disposable-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  canonical-aoc-l1l2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable-ci-only
+          POSTGRES_DB: airlinerra_disposable
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d airlinerra_disposable"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 8
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: disposable-ci-only
+      PGDATABASE: airlinerra_disposable
+      PGOPTIONS: -c statement_timeout=30000 -c lock_timeout=10000
+    steps:
+      - uses: actions/checkout@v4
+      - name: Guarantee disposable database isolation
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = "127.0.0.1"
+          test "$PGDATABASE" = "airlinerra_disposable"
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/disposable_database_preflight.sql
+      - name: Seed synthetic carrier, two draft routes and current World1 canonical AOC licence policy
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_positive_fra_muc_pair_bootstrap.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_current_aoc_rights_disposable_bootstrap.sql
+      - name: Install SEVEN actual CURRENT deployed canonical AOC, L1/L2 classification and rights-source SQL functions
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_current_live_canonical_aoc_rights_sources_20261124.sql
+          psql -X -v ON_ERROR_STOP=1 <<'SQL'
+          REVOKE ALL ON FUNCTION
+          airlinerra_game.section9_verify_game_operator_licence_v1(uuid,uuid,integer,date)
+          FROM PUBLIC,anon,authenticated,service_role;
+          REVOKE ALL ON FUNCTION
+          airlinerra_game.section9_verify_game_route_traffic_rights_v1(uuid,uuid,integer,date)
+          FROM PUBLIC,anon,authenticated,service_role;
+          SQL
+      - name: Verify real BEG-ZAG L1 sources, AOC validity, safety below 70, forged provenance and L2 blocked cabotage
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_current_aoc_rights_disposable_acceptance.sql
+      - name: Describe certification boundary
+        if: always()
+        run: |
+          echo '### Source-backed AOC and L1/L2 acceptance' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Unmodified read-only snapshots of seven deployed database functions; synthetic current original-company AOC/tick/safety/country/rights source fixtures, all inside local ephemeral PostgreSQL 17.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'AOC 365-day provenance, 70-point safety rule, Licence1 BEG-ZAG and strict Licence2 FRA-MUC cross-border policy verified without old disabled business-permission tables.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'This does NOT issue Vault HMAC certification events, reserve real airport slots, book live aircraft maintenance, create routes or change player money. No production data writes or paid staging.' >> "$GITHUB_STEP_SUMMARY"
