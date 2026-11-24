@@ -24,12 +24,12 @@ BEGIN
  THEN RAISE EXCEPTION 'Initial overdue daily+weekly count wrong: %',due;END IF;
  win:=airlinerra_game.section9_owned_game_maintenance_flight_window_v1(
   player,airline,aircraft,depart,arrive);
- IF win->>'flightWindowClear'<>'false' OR win->'blockers' NOT @> '["GAME_MAINTENANCE_CHECK_DUE"]'::jsonb
+ IF win->>'flightWindowClear'<>'false' OR NOT (win->'blockers' @> '["GAME_MAINTENANCE_CHECK_DUE"]'::jsonb)
  THEN RAISE EXCEPTION 'Overdue window not blocked: %',win;END IF;
  dispatch:=airlinerra_game.section9_verified_game_maintenance_dispatch_window_v1(
   player,airline,aircraft,depart,arrive);
  IF dispatch->>'gameMaintenanceClear'<>'false' OR
-    dispatch->'blockers' NOT @> '["MAINTENANCE_CHECK_DUE_DAILY","MAINTENANCE_CHECK_DUE_WEEKLY"]'::jsonb
+    NOT (dispatch->'blockers' @> '["MAINTENANCE_CHECK_DUE_DAILY","MAINTENANCE_CHECK_DUE_WEEKLY"]'::jsonb)
  THEN RAISE EXCEPTION 'Signed-dispatch-side maintenance preflight not blocked: %',dispatch;END IF;
  result:=airlinerra_game.section9_create_active_route_with_cabin_v1(
   player,airline,aircraft,'AL104',origin,dest,weekly,'terminal','terminal',60,90,'basic');
