@@ -109,22 +109,64 @@ const yearEl = document.querySelector('#copyright-year');
 if (yearEl) yearEl.textContent = String(new Date().getFullYear());
 
 
-// Cinematic airport hero stays entirely client-side: no player data or backend.
-// Pause/resume respects keyboard and assistive technology via aria-pressed.
+// Pexels airport sunset video (clip 3716220). The player never loads with
+// reduced-motion enabled until the user explicitly chooses to play it.
+// Remote media failures keep the high-resolution still image visible.
 const airportHero = document.querySelector('.hero-cinematic');
 const airportMotionToggle = document.getElementById('hero-motion-toggle');
-if (airportHero && airportMotionToggle) {
+const airportVideo = document.getElementById('hero-airport-video');
+if (airportHero && airportMotionToggle && airportVideo) {
   const motionLabel = airportMotionToggle.querySelector('span');
   const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)');
-  function setAirportMotionPaused(paused) {
-    airportHero.classList.toggle('hero-motion-paused', paused);
+  let userOverride = null; // null follows the device motion preference
+  let mediaUnavailable = false;
+  const showButton = paused => {
     airportMotionToggle.setAttribute('aria-pressed', String(paused));
-    airportMotionToggle.setAttribute('aria-label', paused ? 'Resume airport animation' : 'Pause airport animation');
-    if (motionLabel) motionLabel.textContent = paused ? 'Play motion' : 'Pause motion';
-  }
-  setAirportMotionPaused(reducedMotion?.matches === true);
-  airportMotionToggle.addEventListener('click', () => {
-    setAirportMotionPaused(!airportHero.classList.contains('hero-motion-paused'));
+    airportMotionToggle.setAttribute('aria-label', paused ? 'Play airport video' : 'Pause airport video');
+    if (motionLabel) motionLabel.textContent = paused ? 'Play video' : 'Pause video';
+  };
+  const stopVideo = () => {
+    airportVideo.pause();
+    airportHero.classList.add('hero-motion-paused');
+    showButton(true);
+  };
+  const startVideo = () => {
+    if (mediaUnavailable) return;
+    airportHero.classList.remove('hero-motion-paused');
+    if (!airportVideo.src) {
+      airportVideo.src = airportVideo.dataset.source;
+      airportVideo.load();
+    }
+    const attempt = airportVideo.play();
+    attempt?.catch?.(() => {
+      // Browser blocked autoplay or media is unavailable: poster stays visible.
+      airportHero.classList.remove('hero-video-playing');
+      showButton(true);
+    });
+  };
+  const applyMotionPreference = () => {
+    const paused = userOverride === null ? reducedMotion?.matches === true : userOverride === 'paused';
+    if (paused) stopVideo();
+    else startVideo();
+  };
+  airportVideo.addEventListener('playing', () => {
+    airportHero.classList.add('hero-video-playing');
+    showButton(false);
   });
-  reducedMotion?.addEventListener?.('change', e => setAirportMotionPaused(e.matches));
+  airportVideo.addEventListener('error', () => {
+    mediaUnavailable = true;
+    airportHero.classList.remove('hero-video-playing');
+    airportMotionToggle.disabled = true;
+    airportMotionToggle.setAttribute('aria-label', 'Airport video unavailable');
+    if (motionLabel) motionLabel.textContent = 'Still image';
+  });
+  airportMotionToggle.addEventListener('click', () => {
+    userOverride = airportVideo.paused ? 'playing' : 'paused';
+    applyMotionPreference();
+  });
+  reducedMotion?.addEventListener?.('change', () => {
+    userOverride = null;
+    applyMotionPreference();
+  });
+  applyMotionPreference();
 }
