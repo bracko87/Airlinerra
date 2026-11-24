@@ -1,4 +1,4 @@
-name: Actual auto fuel top-up plus real signed automatic departure (disposable)
+name: Auto fuel top-up with legacy dispatcher and live signed writer (disposable)
 on:
   push:
     branches: [main]
@@ -8,7 +8,17 @@ on:
       - 'tests/sql/section9_real_fuel_departure_disposable_dependencies.sql'
       - 'supabase/migrations/20261117110000_section9_game_fuel_custody_supply_dispatch_v1.sql'
       - 'supabase/migrations/20261123200000_section9_signed_movement_cancellation_guard.sql'
+      - 'tests/sql/section9_current_live_signed_movement_source_20261124.sql'
       - 'supabase/migrations/20261123210000_section9_dispatch_traffic_permission_binding_fix.sql'
+      - '.github/workflows/section9-real-auto-fuel-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tests/sql/section9_real_signed_movement_disposable_dependencies.sql'
+      - 'tests/sql/section9_current_live_signed_movement_source_20261124.sql'
+      - 'tests/sql/section9_real_fuel_departure_disposable_dependencies.sql'
+      - 'tests/sql/section9_real_auto_fuel_disposable_dependencies.sql'
+      - 'supabase/migrations/20261123200000_section9_signed_movement_cancellation_guard.sql'
       - '.github/workflows/section9-real-auto-fuel-ci.yml'
   workflow_dispatch:
 permissions:
@@ -69,14 +79,30 @@ jobs:
             a=src.index('CREATE OR REPLACE FUNCTION airlinerra_game.'+name+'(')
             b=src.index('REVOKE ALL ON FUNCTION airlinerra_game.'+name+'(',a)
             body=src[a:b]
+            if name=='section9_auto_dispatch_due_flight_events_v1':
+              # Repair ONLY this OLD Nov17 disposable dispatcher fixture.
+              # The live dispatcher has newer AOC/crew/disruption logic.
+              for old,new in (
+                (' permission_code text;',' required_permission_code text;'),
+                ('permission_code:=airlinerra_game.section9_required_game_traffic_permission_v1',
+                 'required_permission_code:=airlinerra_game.section9_required_game_traffic_permission_v1'),
+                ('IF permission_code IS NULL','IF required_permission_code IS NULL'),
+                ('a.permission_code=permission_code','a.permission_code=required_permission_code'),
+              ):
+                assert old in body, old
+                body=body.replace(old,new)
             assert 'END $function$' in body
             bodies.append(body)
           Path('/tmp/actual-auto-fuel-dispatch-functions.sql').write_text('\n'.join(bodies))
           print('Exact production fuel supplier, preflight, departure receipt and dispatcher extracted')
           PY
           psql -X -v ON_ERROR_STOP=1 -f /tmp/actual-auto-fuel-dispatch-functions.sql
+          # Current delayed-aware signed writer; safely patch only its lock
+          # and source-eligible occurrence check. Historical Nov17 dispatcher
+          # is a LEGACY BASELINE, not a replica of today's live dispatcher.
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_current_live_signed_movement_source_20261124.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261123200000_section9_signed_movement_cancellation_guard.sql
-          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261123210000_section9_dispatch_traffic_permission_binding_fix.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261123200000_section9_signed_movement_cancellation_guard.sql
       - name: Unavailable airport fuel service blocks real automatic supply
         run: |
           set -euo pipefail
@@ -108,5 +134,5 @@ jobs:
         if: always()
         run: |
           echo '### Real automatic game-only fuel top-up and actual dispatcher' >> "$GITHUB_STEP_SUMMARY"
-          echo 'Unchanged production auto supplier, preflight, departure receipt and dispatcher executed against synthetic certified inputs. Tests no service, approved exact top-up, once-only operation.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Real fuel supplier, preflight, departure receipt and LEGACY Nov17 dispatcher executed against synthetic certified inputs. Tests no service, approved exact top-up, once-only operation.' >> "$GITHUB_STEP_SUMMARY"
           echo 'Quote, permissions, airline, clock and airport service input states synthetic. No production, money ledger or actual fuel-grade certification.' >> "$GITHUB_STEP_SUMMARY"
