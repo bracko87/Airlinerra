@@ -1,4 +1,4 @@
-name: First fuel custody and concurrent auto supply (disposable)
+name: Auto fuel starter concurrency with legacy dispatcher (disposable)
 on:
   push:
     branches: [main]
@@ -8,6 +8,7 @@ on:
       - 'tests/sql/section9_real_fuel_departure_disposable_dependencies.sql'
       - 'supabase/migrations/20261117110000_section9_game_fuel_custody_supply_dispatch_v1.sql'
       - 'supabase/migrations/20261123200000_section9_signed_movement_cancellation_guard.sql'
+      - 'tests/sql/section9_current_live_signed_movement_source_20261124.sql'
       - 'supabase/migrations/20261123210000_section9_dispatch_traffic_permission_binding_fix.sql'
       - '.github/workflows/section9-auto-fuel-starter-concurrency-ci.yml'
   workflow_dispatch:
@@ -69,14 +70,30 @@ jobs:
             a=src.index('CREATE OR REPLACE FUNCTION airlinerra_game.'+name+'(')
             b=src.index('REVOKE ALL ON FUNCTION airlinerra_game.'+name+'(',a)
             body=src[a:b]
+            if name=='section9_auto_dispatch_due_flight_events_v1':
+              # Repair ONLY this OLD Nov17 disposable dispatcher fixture.
+              # The live dispatcher has newer AOC/crew/disruption logic.
+              for old,new in (
+                (' permission_code text;',' required_permission_code text;'),
+                ('permission_code:=airlinerra_game.section9_required_game_traffic_permission_v1',
+                 'required_permission_code:=airlinerra_game.section9_required_game_traffic_permission_v1'),
+                ('IF permission_code IS NULL','IF required_permission_code IS NULL'),
+                ('a.permission_code=permission_code','a.permission_code=required_permission_code'),
+              ):
+                assert old in body, old
+                body=body.replace(old,new)
             assert 'END $function$' in body
             bodies.append(body)
           Path('/tmp/actual-auto-fuel-dispatch-functions.sql').write_text('\n'.join(bodies))
           print('Exact production fuel supplier, preflight, departure receipt and dispatcher extracted')
           PY
           psql -X -v ON_ERROR_STOP=1 -f /tmp/actual-auto-fuel-dispatch-functions.sql
+          # Current delayed-aware signed writer; safely patch only its lock
+          # and source-eligible occurrence check. Historical Nov17 dispatcher
+          # is a LEGACY BASELINE, not a replica of today's live dispatcher.
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_current_live_signed_movement_source_20261124.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261123200000_section9_signed_movement_cancellation_guard.sql
-          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261123210000_section9_dispatch_traffic_permission_binding_fix.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261123200000_section9_signed_movement_cancellation_guard.sql
       - name: Reject unverified starter location without creating custody
         run: |
           set -euo pipefail
