@@ -107,7 +107,25 @@ jobs:
             first=src.index('CREATE OR REPLACE FUNCTION airlinerra_game.'+name+'(')
             end=src.index('REVOKE ALL ON FUNCTION airlinerra_game.'+name+'(',first)
             body=src[first:end]
-            assert 'END $function        run: |
+            assert 'END $function$' in body and 'CREATE OR REPLACE FUNCTION' in body
+            parts.append(body)
+          Path('/tmp/real-same-flight-booking.sql').write_text('\n'.join(parts))
+          print('Unmodified real 7-day saleable window and private game booking SQL extracted')
+          PY
+          psql -X -v ON_ERROR_STOP=1 -f /tmp/real-same-flight-booking.sql
+      - name: Reserve real passenger seats BEFORE actual signed departure on same physical flight
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_bookings_before_signed_departure_acceptance.sql
+          psql -X -v ON_ERROR_STOP=1 <<'SQL'
+          CREATE OR REPLACE FUNCTION airlinerra_game.section9_verified_berlin_game_hour_v1()
+          RETURNS jsonb LANGUAGE sql STABLE AS $fn$
+           SELECT jsonb_build_object('authoritativeGameHourAvailable',true,
+             'gameHourUtc','2026-11-23 18:00:00+00')
+          $fn$;
+          SQL
+      - name: Actual dispatcher signs and records genuine departure and fuel proof
+        run: |
           set -euo pipefail
           psql -XAt -v ON_ERROR_STOP=1 -c "SELECT airlinerra_game.section9_auto_dispatch_due_flight_events_v1(10)->>'departuresRecorded'" | grep -qx 1
           psql -XAt -v ON_ERROR_STOP=1 -c "SELECT (SELECT count(*) FROM airlinerra_game.section9_game_flight_fuel_departure_receipts_v1)::text||':'||(SELECT booking_status FROM airlinerra_game.section9_dated_flight_occurrences_v1 WHERE weekly_entry=4)" | grep -qx '1:closed'
@@ -158,68 +176,5 @@ jobs:
         run: |
           echo '### Real automatic signed departure and arrival with unchanged airframe and fuel-burn SQL' >> "$GITHUB_STEP_SUMMARY"
           echo 'Verifies 500 to 380 kg, custody revision 1 to 2, 1 hour and 1 cycle, two once-only receipt kinds, and stable replay.' >> "$GITHUB_STEP_SUMMARY"
-          echo 'Unmodified genuine game passenger writer (plus genuine 7-day time-window), signed automatic departure and arrival, fuel custody and aircraft usage now operate on ONE synthetic physical flight.' >> "$GITHUB_STEP_SUMMARY"
-          echo 'Release, permission, clock, aircraft position, synthetic prebooked 2 seats and fuel quote remain fixtures. No production/finance release. Actual postflight revenue settlement, real signed demand issuer and cancellations/refunds still not certified.' >> "$GITHUB_STEP_SUMMARY"
- in body and 'CREATE OR REPLACE FUNCTION' in body
-            parts.append(body)
-          Path('/tmp/real-same-flight-booking.sql').write_text('\n'.join(parts))
-          print('Unmodified real 7-day saleable window and private game booking SQL extracted')
-          PY
-          psql -X -v ON_ERROR_STOP=1 -f /tmp/real-same-flight-booking.sql
-      - name: Reserve real passenger seats BEFORE actual signed departure on same physical flight
-        run: |
-          set -euo pipefail
-          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_bookings_before_signed_departure_acceptance.sql
-          # Restore initial synthetic authoritative 18:00 UTC game clock for real dispatch.
-          psql -X -v ON_ERROR_STOP=1 <<'SQL'
-          CREATE OR REPLACE FUNCTION airlinerra_game.section9_verified_berlin_game_hour_v1()
-          RETURNS jsonb LANGUAGE sql STABLE AS $fn$
-           SELECT jsonb_build_object('authoritativeGameHourAvailable',true,
-             'gameHourUtc','2026-11-23 18:00:00+00')
-          $fn$;
-          SQL
-      - name: Actual dispatcher signs and records genuine departure and fuel proof
-        run: |
-          set -euo pipefail
-          psql -XAt -v ON_ERROR_STOP=1 -c "SELECT airlinerra_game.section9_auto_dispatch_due_flight_events_v1(10)->>'departuresRecorded'" | grep -qx 1
-          psql -XAt -v ON_ERROR_STOP=1 -c "SELECT (SELECT count(*) FROM airlinerra_game.section9_game_flight_fuel_departure_receipts_v1)::text||':'||(SELECT booking_status FROM airlinerra_game.section9_dated_flight_occurrences_v1 WHERE weekly_entry=4)" | grep -qx '1:closed'
-      - name: Advance synthetic authoritative clock to signed arrival
-        run: |
-          set -euo pipefail
-          psql -X -v ON_ERROR_STOP=1 -c "CREATE OR REPLACE FUNCTION airlinerra_game.section9_verified_berlin_game_hour_v1() RETURNS jsonb LANGUAGE sql STABLE AS \$\$ SELECT jsonb_build_object('authoritativeGameHourAvailable',true,'gameHourUtc','2026-11-23 19:00:00+00') \$\$"
-      - name: Actual dispatcher applies signed arrival fuel burn and airframe hours once
-        run: |
-          set -euo pipefail
-          FID='11111111-1111-4111-8111-111111111111:2026-11-23:4'
-          psql -XAt -v ON_ERROR_STOP=1 -c "SELECT airlinerra_game.section9_auto_dispatch_due_flight_events_v1(10)" > "$RUNNER_TEMP/arrival-first.txt"
-          cat "$RUNNER_TEMP/arrival-first.txt"
-          grep -q '"arrivalsRecorded": 1' "$RUNNER_TEMP/arrival-first.txt"
-          psql -XAt -v ON_ERROR_STOP=1 -c "SELECT (SELECT count(*) FROM airlinerra_game.section9_operated_flight_movements_v1 WHERE flight_occurrence_id='$FID' AND phase='arrived')||':'||(SELECT count(*) FROM airlinerra_game.section9_game_flight_fuel_arrival_receipts_v1 WHERE physical_flight_id='$FID')||':'||(SELECT count(*) FROM airlinerra_game.section9_arrived_aircraft_usage_receipts_v1 WHERE physical_flight_id='$FID')||':'||(SELECT (onboard_kg=380)::int||':'||revision::text||':'||at_airport_key FROM airlinerra_game.section9_aircraft_game_fuel_custody_v1)||':'||(SELECT (tracked_flight_hours=1)::int||':'||tracked_flight_cycles::text FROM airlinerra_game.aircraft_maintenance_state_v1)" | grep -qx '1:1:1:1:2:TEST-BBB:1:1'
-      - name: Replay of actual arrival dispatcher does not repeat fuel burn or cycles
-        run: |
-          set -euo pipefail
-          psql -XAt -v ON_ERROR_STOP=1 -c "SELECT airlinerra_game.section9_auto_dispatch_due_flight_events_v1(10)->>'arrivalsRecorded'" | grep -qx 0
-          psql -XAt -v ON_ERROR_STOP=1 -c "SELECT (SELECT count(*) FROM airlinerra_game.section9_game_flight_fuel_arrival_receipts_v1)||':'||(SELECT count(*) FROM airlinerra_game.section9_arrived_aircraft_usage_receipts_v1)||':'||(SELECT (onboard_kg=380)::int||':'||revision::text FROM airlinerra_game.section9_aircraft_game_fuel_custody_v1)||':'||(SELECT tracked_flight_cycles FROM airlinerra_game.aircraft_maintenance_state_v1)" | grep -qx '1:1:1:2:1'
-          psql -XAt -v ON_ERROR_STOP=1 -c "SELECT airlinerra_game.section9_apply_verified_arrival_fuel_burn_once_v1('11111111-1111-4111-8111-111111111111:2026-11-23:4','TEST-AUTO-DISPATCH-ARRIVED-4')->>'status'" | grep -qx signed_game_fuel_burn_already_applied
-          psql -XAt -v ON_ERROR_STOP=1 -c "SELECT airlinerra_game.section9_apply_arrival_airframe_usage_once_v1('11111111-1111-4111-8111-111111111111:2026-11-23:4')->>'status'" | grep -qx airframe_usage_already_applied
-      - name: Changed fuel custody in transit atomically rolls back signed arrival
-        run: |
-          set -euo pipefail
-          FID='11111111-1111-4111-8111-111111111111:2026-11-23:5'
-          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_arrival_custody_conflict_disposable_setup.sql
-          psql -XAt -v ON_ERROR_STOP=1 -c "SELECT airlinerra_game.section9_auto_dispatch_due_flight_events_v1(10)->>'departuresRecorded'" | grep -qx 1
-          psql -XAt -v ON_ERROR_STOP=1 -c "SELECT (SELECT count(*) FROM airlinerra_game.section9_operated_flight_movements_v1 WHERE flight_occurrence_id='$FID' AND phase='departed')||':'||(SELECT count(*) FROM airlinerra_game.section9_game_flight_fuel_departure_receipts_v1 WHERE physical_flight_id='$FID')||':'||(SELECT booking_status FROM airlinerra_game.section9_dated_flight_occurrences_v1 WHERE weekly_entry=5)" | grep -qx '1:1:closed'
-          # This fixture-only tamper changes the custody revision after departure.
-          psql -X -v ON_ERROR_STOP=1 -c "UPDATE airlinerra_game.section9_aircraft_game_fuel_custody_v1 SET revision=revision+1"
-          psql -X -v ON_ERROR_STOP=1 -c "CREATE OR REPLACE FUNCTION airlinerra_game.section9_verified_berlin_game_hour_v1() RETURNS jsonb LANGUAGE sql STABLE AS \$\$ SELECT jsonb_build_object('authoritativeGameHourAvailable',true,'gameHourUtc','2026-11-23 19:00:00+00') \$\$"
-          if psql -XAt -v ON_ERROR_STOP=1 -c "SELECT airlinerra_game.section9_auto_dispatch_due_flight_events_v1(10)" > "$RUNNER_TEMP/rejected-arrival.txt" 2>&1; then
-             echo 'CRITICAL: in-transit custody revision mismatch was accepted'; exit 1
-          fi
-          grep -q SECTION9_FLIGHT_FUEL_CUSTODY_CHANGED_IN_TRANSIT_ROLLBACK "$RUNNER_TEMP/rejected-arrival.txt"
-          psql -XAt -v ON_ERROR_STOP=1 -c "SELECT (SELECT count(*) FROM airlinerra_game.section9_operated_flight_movements_v1 WHERE flight_occurrence_id='$FID' AND phase='arrived')||':'||(SELECT count(*) FROM airlinerra_game.section9_game_flight_fuel_arrival_receipts_v1 WHERE physical_flight_id='$FID')||':'||(SELECT count(*) FROM airlinerra_game.section9_arrived_aircraft_usage_receipts_v1 WHERE physical_flight_id='$FID')||':'||(SELECT tracked_flight_cycles FROM airlinerra_game.aircraft_maintenance_state_v1)||':'||(SELECT booking_status FROM airlinerra_game.section9_dated_flight_occurrences_v1 WHERE weekly_entry=5)" | grep -qx '0:0:0:1:closed'
-      - name: Report boundaries
-        if: always()
-        run: |
-          echo '### Real automatic signed departure and arrival with unchanged airframe and fuel-burn SQL' >> "$GITHUB_STEP_SUMMARY"
-          echo 'Verifies 500 to 380 kg, custody revision 1 to 2, 1 hour and 1 cycle, two once-only receipt kinds, and stable replay.' >> "$GITHUB_STEP_SUMMARY"
-          echo 'All release, permission, clock, maintenance, reference airports and fuel quote evidence synthetic. No production or finance deployment.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Unmodified production booking plus real 7-day time-window, signed departure/arrival and fuel burn now run on one synthetic flight.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Release, permission, clock, aircraft position, seeded 2-seat reservation and fuel quote remain synthetic. Final real flight finance, demand issuer and refunds unverified. Production untouched.' >> "$GITHUB_STEP_SUMMARY"
