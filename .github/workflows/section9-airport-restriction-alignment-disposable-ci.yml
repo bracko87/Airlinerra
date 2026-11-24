@@ -69,7 +69,7 @@ jobs:
           a=src.index('CREATE OR REPLACE FUNCTION airlinerra_game.'+name+'(')
           b=src.index('REVOKE ALL ON FUNCTION airlinerra_game.'+name+'(',a)
           body=src[a:b]
-          assert 'END $body$' in body
+          assert 'END;\n$body$;' in body
           assert 'section5_icao_aircraft_certification_v2' in body
           assert 'blockedBySimplifiedNighttimeBan' in body
           Path('/tmp/real-section5-game-curfew-noise.sql').write_text(body)
