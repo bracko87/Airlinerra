@@ -190,8 +190,8 @@ BEGIN
      WHERE id=occurrence_id)<>110
  OR (SELECT passengers_held FROM airlinerra_game.section9_occurrence_capacity_inventory_v1
      WHERE schedule_id=active_schedule)<>110
- OR (SELECT count(*) FROM airlinerra_game.section9_passenger_reservation_batches_v1
-     WHERE occurrence_id=occurrence_id)<>2
+ OR (SELECT count(*) FROM airlinerra_game.section9_passenger_reservation_batches_v1 b
+     WHERE b.occurrence_id=occurrence_id)<>2
  OR (SELECT count(*) FROM airlinerra_game.airline_ledger WHERE entry_kind='EXPENSE')<>2
  OR (SELECT coalesce(sum(amount_usd),0) FROM airlinerra_game.airline_ledger
      WHERE airline_id=airline)<>4999425
