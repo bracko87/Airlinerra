@@ -136,36 +136,35 @@ test('signup has repeat-password match, strength indicator, aligned consent and 
 });
 
 
-test('cinematic hero replaces the FRA-MUC card with a looping airport scene and safe navigation',async()=>{
+test('homepage plays the approved airport-sunset timelapse with an accessible high-resolution fallback',async()=>{
  const [home,style,script]=await Promise.all([
   read('../website/index.html'),read('../website/styles.css'),read('../website/script.js')
  ]);
  assert.match(home,/<section class="hero hero-modern hero-cinematic section-anchor" id="home"/);
- assert.match(home,/class="hero-motion-scene" aria-hidden="true"/);
- assert.match(home,/src="assets\/airlinerra-airport\.webp"/);
- assert.match(home,/src="assets\/airlinerra-aircraft\.webp"/);
- assert.equal((home.match(/class="hero-motion-aircraft hero-motion-aircraft-/g)||[]).length,3);
- assert.doesNotMatch(home,/hero-flightdeck|flightdeck-route|Sample hub|Sample destination|FRA\s*<|MUC\s*</);
- assert.match(home,/ANIMATED AIRPORT CONCEPT · 20-SECOND LOOP/);
+ assert.match(home,/class="hero-video-scene" aria-hidden="true"/);
+ assert.match(home,/id="hero-airport-video"[^>]*autoplay muted loop playsinline preload="none"/);
+ assert.match(home,/data-source="https:\/\/videos\.pexels\.com\/video-files\/3716220\/3716220-hd_1920_1080_25fps\.mp4"/);
+ assert.match(home,/class="hero-video-poster" src="https:\/\/images\.pexels\.com\/videos\/3716220\//);
+ assert.match(home,/width="2520" height="1500" fetchpriority="high"/);
+ assert.match(home,/REAL AIRPORT TIMELAPSE · ILLUSTRATIVE FOOTAGE/);
+ assert.match(home,/Video: S\. R\. \/ Pexels/);
+ assert.doesNotMatch(home,/hero-motion-aircraft|hero-scene-shot|hero-flightdeck|flightdeck-route|Sample hub|Sample destination/);
  assert.match(home,/href="#how-it-works">Explore Airlinerra/);
  assert.match(home,/href="#features">Discover the features/);
  assert.match(home,/href="\/account\.html\?screen=sign-in">Approved tester\? Sign in/);
  assert.match(home,/role="note" aria-label="Important development notice"/);
  assert.match(home,/Airlinerra is still in development/);
  assert.match(home,/public registration is currently closed/);
- assert.doesNotMatch(home,/<a[^>]+href="\/register\.html"[^>]*>\s*Explore Airlinerra/);
  assert.match(home,/id="hero-motion-toggle"[^>]*aria-pressed="false"/);
- assert.match(style,/@keyframes airportSceneDrift/);
- assert.match(style,/@keyframes airportTaxi20/);
- assert.match(style,/@keyframes airportDeparture20/);
- assert.match(style,/@keyframes airportArrival20/);
- assert.match(style,/\.hero-cinematic \.hero-scene-shot-airport\s*\{[^}]*20s linear infinite/);
- assert.match(style,/\.hero-cinematic \.hero-scene-shot-aircraft\s*\{[^}]*20s linear infinite/);
- assert.match(style,/\.hero-cinematic\.hero-motion-aircraft-depart|\.hero-motion-aircraft-depart/);
- assert.match(style,/\.hero-cinematic\.hero-motion-paused/);
+ assert.match(style,/\.hero-cinematic \.hero-video-poster,/);
+ assert.match(style,/\.hero-cinematic\.hero-video-playing \.hero-airport-video/);
  assert.match(style,/@media \(prefers-reduced-motion:reduce\)/);
+ assert.doesNotMatch(style,/@keyframes airportTaxi20|@keyframes airportDeparture20|@keyframes airportArrival20/);
+ assert.match(script,/airportVideo\.dataset\.source/);
+ assert.match(script,/airportVideo\.addEventListener\('playing'/);
+ assert.match(script,/airportVideo\.addEventListener\('error'/);
  assert.match(script,/airportMotionToggle\.addEventListener\('click'/);
- assert.match(script,/setAirportMotionPaused\(!airportHero\.classList\.contains\('hero-motion-paused'\)\)/);
  assert.match(script,/setAttribute\('aria-pressed', String\(paused\)\)/);
  assert.match(script,/reducedMotion\?\.addEventListener\?\.\('change'/);
+ assert.match(script,/if \(paused\) stopVideo\(\)/);
 });
