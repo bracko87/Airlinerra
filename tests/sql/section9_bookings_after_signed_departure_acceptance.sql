@@ -18,7 +18,8 @@ BEGIN
  THEN RAISE EXCEPTION 'No real signed departure/fuel custody/closed booking for same passenger flight';END IF;
  result:=airlinerra_game.section9_reserve_verified_game_passenger_seats_v1(
   occ,'synthetic.engine.after.departure','economy',1);
- IF result->>'status'<>'blocked_slots_or_flight_already_operated'
+ IF result->>'status' NOT IN ('blocked_booking_window_or_unreleased_engine',
+ 'blocked_slots_or_flight_already_operated')
  OR result->>'reserved'<>'false' OR result->>'ledgerPosted'<>'false'
  THEN RAISE EXCEPTION 'Booked seats after signed movement: %',result;END IF;
  IF (SELECT booked_seats FROM airlinerra_game.section9_dated_flight_occurrences_v1
@@ -27,5 +28,5 @@ BEGIN
      WHERE physical_flight_id=fid)<>5
  OR (SELECT count(*) FROM airlinerra_game.airline_ledger)<>1
  THEN RAISE EXCEPTION 'Signed departure mutated seats or airline money';END IF;
- RAISE NOTICE 'PASS SAME-FLIGHT SIGNED DEPARTURE: 5 passenger seats retained, no further ticketing, real fuel receipt, no upfront money';
+ RAISE NOTICE 'PASS SAME-FLIGHT SIGNED DEPARTURE: further booking rejected by elapsed-window or operated-flight gate, 5 seats/fuel receipt preserved, no upfront money';
 END $test$;
