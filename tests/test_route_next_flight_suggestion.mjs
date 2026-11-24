@@ -64,7 +64,10 @@ test('the UI offers Next flight and Blank new flight, no automatic return save',
  assert.match(src,/const suggestReturnFromSavedFlight=async/);
  assert.match(src,/await resetRouteForm\(\{blank:true\}\)/);
  assert.match(src,/target\.id==='route-plan-blank'/);
- assert.match(src,/await suggestReturnFromSavedFlight\(flightNumber\)/);
+ assert.match(src,/if\(target.id==='route-plan-next'\)/);
+ assert.match(src,/await suggestReturnFromSavedFlight\(\)/);
+ assert.equal((src.match(/await suggestReturnFromSavedFlight\(/g)||[]).length,1,
+   'return suggestion is an explicit click action, never an automatic second save');
  assert.match(src,/Return flight suggested, NOT CREATED/);
 });
 test('server returns time zones from the unified airport read model',async()=>{

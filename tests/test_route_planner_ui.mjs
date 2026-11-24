@@ -343,7 +343,8 @@ test('Step 2 inherits departure stand and keeps arrival stand selector, includin
  assert.ok(markup.includes('id="route-aircraft-position-status"'));
  assert.ok(markup.includes('id="route-aircraft-timeline-content"'));
  assert.match(source,/const timeline=selectedAircraftTimeline\(\)/);
- assert.match(source,/if\(timeline\.errors\.length\)/);
+ assert.match(source,/const blockingTimelineErrors=timeline\.errors\.filter\(issue=>issue\.code!=='AIRCRAFT_WRONG_AIRPORT'\)/);
+ assert.match(source,/if\(blockingTimelineErrors\.length\)/);
  assert.match(source,/Aircraft schedule conflict:/);
  assert.match(source,/departureStand:departureStandFromTimeline\(selectedAircraftTimeline\(\)\)/);
  assert.match(source,/arrivalStand:\$\('route-arrival-stand'\)\?\.value/);

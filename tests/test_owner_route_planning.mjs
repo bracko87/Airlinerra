@@ -153,7 +153,10 @@ test('route detail uses geographic map and organised operational and finance sec
  assert.match(operations,/async function loadRemotePlans\(/);
  assert.match(operations,/serverPlanningId/);
  assert.match(operations,/operations-route-publish-plan/);
- assert.match(planner,/scheduler\.operationalCreate\(/);
+ assert.match(planner,/scheduler\.operationalSingleCreate\(/);
+  assert.match(planner,/result\?\.routeCreated!==true/);
+  assert.match(planner,/result\.activated!==true/);
+  assert.match(planner,/result\.bookingEnabled!==true/);
  assert.doesNotMatch(planner,/scheduler\.planSave\(/);
  assert.match(css,/\.route-details-top/);
  assert.match(sql,/operationally_verified boolean NOT NULL DEFAULT false CHECK \(operationally_verified=false\)/);

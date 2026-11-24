@@ -194,16 +194,18 @@ test('the first outbound plan does not show missing return warning; second route
 });
 test('route creation UI no longer invokes planning-only save or claims unapproved routes exist',async()=>{
  const ui=await readFile(new URL('../website/route-planner.mjs',import.meta.url),'utf8');
- assert.match(ui,/scheduler\.operationalRoundtripStage\(/);
+ assert.match(ui,/scheduler\.operationalSingleCreate\(/);
  assert.doesNotMatch(ui,/scheduler\.planSave\(/);
- assert.match(ui,/result\?\.status==='paired_drafts_saved_for_independent_certification'/);
- assert.match(ui,/const active=replay&&result\.certificationStatus==='activated'/);
- assert.match(ui,/Ticket sales open only when both flights are approved/);
- assert.match(ui,/NOT CREATED — automatic flight activation/);
- assert.match(ui,/AIRCRAFT_STARTING_LOCATION_NOT_VERIFIED/);
+ assert.match(ui,/if\(result\?\.routeCreated!==true/);
+ assert.match(ui,/result\.activated!==true/);
+ assert.match(ui,/result\.bookingEnabled!==true/);
+ assert.match(ui,/result\.ledgerPosted!==false/);
+ assert.match(ui,/OPERATIONAL_ROUTE_NOT_CONFIRMED/);
+ assert.match(ui,/The aircraft cannot reach this flight/);
  assert.doesNotMatch(ui,/CREW_ASSIGNMENTS_INCOMPLETE/);
- assert.match(ui,/No flight was created/);
- assert.match(ui,/Both flights saved together — awaiting automatic approval/);
+ assert.match(ui,/No route or flight was saved/);
+ assert.match(ui,/Active and open for bookings/);
+ assert.doesNotMatch(ui,/scheduler\.operationalRoundtripCreate\(/);
 });
 
 test('a verified starter aircraft at the correct origin is not misdiagnosed as lacking delivery or location',async()=>{

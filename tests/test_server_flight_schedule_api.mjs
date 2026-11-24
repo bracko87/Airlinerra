@@ -242,12 +242,15 @@ test('browser schedule API never sends a player ID or database credentials',asyn
  assert.equal(JSON.parse(seen[0].options.body).playerId,undefined);
  assert.equal(seen[0].url,'https://airlinerra.com'+FLIGHT_SCHEDULE_API_ROUTE);
 });
-test('route planner exposes owned fleet schedule drafts, not live activation',async()=>{
+test('route planner exposes drafts and acknowledges active routes only on verified server receipt',async()=>{
  const source=await read('../website/route-planner.mjs');
  const markup=routePlannerMarkup();
  assert.match(markup,/route-server-draft-list/);
  assert.match(source,/loadOwnedScheduleData/);
- assert.match(source,/scheduler\.operationalCreate/);
+ assert.match(source,/scheduler\.operationalSingleCreate/);
+ assert.match(source,/result\?\.routeCreated!==true/);
+ assert.match(source,/result\.activated!==true/);
+ assert.match(source,/result\.bookingEnabled!==true/);
  assert.match(source,/scheduler\.activationCheck/);
  assert.match(source,/serverScheduleId/);
  assert.doesNotMatch(source,/status:'active'/);
