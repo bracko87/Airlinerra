@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - main
+      - airlinerra-current-main-ci-20261124
     paths:
       - '.github/workflows/airlinerra-account-node-ci.yml'
       - 'server/**'
