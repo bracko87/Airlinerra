@@ -41,7 +41,11 @@ test('player UI includes the selected main runway in safety feedback without imp
  const planner=await read('website/route-planner.mjs');
  assert.match(client,/runway:typeof side\.runway==='string'/);
  assert.match(client,/runwayOperationalStatusVerified:side\.runwayOperationalStatusVerified===true/);
- assert.match(planner,/side\.airportCode\+\(side\.runway\?/);
+ assert.match(planner,/if\(leg\.runwayBlocked\)/);
+ assert.match(planner,/leg\.availableRunwayM/);
+ assert.match(planner,/leg\.requiredRunwayM/);
+ assert.match(planner,/confirmed aircraft noise restriction/);
+ assert.match(planner,/Other flight permissions still apply/);
  assert.match(planner,/NOT CREATED/);
- assert.match(planner,/runway status/);
+ assert.match(planner,/runway not suitable/);
 });

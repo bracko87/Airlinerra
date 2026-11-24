@@ -44,7 +44,9 @@ test('client and UI show missing return or overlapping flights, never activate o
  assert.match(service,/wrongAirportDepartures/);
  assert.match(client,/conflict\.aircraftRotationWarning=/);
  assert.match(client,/Number\.isInteger\(a\.wrongAirportDepartures\)/);
- assert.match(planner,/The aircraft will still be at the previous destination/);
- assert.match(planner,/Add a return or repositioning flight/);
+ assert.match(planner,/AIRCRAFT_CANNOT_REACH_FIRST_DEPARTURE/);
+ assert.match(planner,/Schedule a valid positioning flight first/);
+ assert.match(planner,/const blockingTimelineErrors=timeline\.errors\.filter/);
+ assert.match(planner,/if\(blockingTimelineErrors\.length\)/);
  assert.match(planner,/NOT CREATED/);
 });

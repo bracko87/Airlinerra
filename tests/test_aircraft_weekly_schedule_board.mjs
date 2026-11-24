@@ -179,31 +179,24 @@ test('plannedRotationTiming keeps correct arrival and available-from maths',()=>
   arrivalDayOffset:0,availableDayOffset:0
  });
 });
-test('schedule page reads only server drafts and omits all planning legends',async()=>{
+test('current daily schedule renders confirmed server events without inventing provisional routes',async()=>{
  const root=new URL('../website/',import.meta.url);
- const [view,css,bundle,boardSource]=await Promise.all([
+ const [view,calendar,bundle]=await Promise.all([
   readFile(new URL('airline-workspace.mjs',root),'utf8'),
-  readFile(new URL('player-app.css',root),'utf8'),
-  readFile(new URL('dev-scripts/invited-overlay.mjs',root),'utf8'),
-  readFile(new URL('aircraft-weekly-schedule-board.mjs',root),'utf8')
+  readFile(new URL('aircraft-dated-calendar.mjs',root),'utf8'),
+  readFile(new URL('dev-scripts/invited-overlay.mjs',root),'utf8')
  ]);
  assert.match(view,/id="schedule-aircraft-board"/);
  assert.match(view,/id="schedule-day-prev"/);
  assert.match(view,/id="schedule-day-next"/);
- assert.match(view,/Booked flights only/);
- assert.match(view,/drafts:scheduleSnapshot\?\.drafts/);
- assert.match(view,/plans:\[\],localRoutes:\[\]/);
- assert.doesNotMatch(view,/schedule-board-legend|Departure only:|planning, not reserved|verified airport-slot flight windows/i);
- assert.doesNotMatch(view,/refreshScheduleEstimates/);
- assert.match(boardSource,/slotsReserved!==true/);
- assert.doesNotMatch(boardSource,/Planning only; time not reserved/);
- assert.match(boardSource,/kind:'planned-rotation'/);
- assert.match(css,/\.schedule-board-rotation-band\.is-slot-held/);
- assert.match(css,/\.schedule-board-rotation-band\.is-planning/);
- assert.match(bundle,/'aircraft-weekly-schedule-board\.mjs'/);
- assert.match(SCHEDULE_SQL.drafts,/count\(\*\) = 2\*jsonb_array_length\(s.weekly_schedule\)/);
+ assert.match(view,/Unconfirmed route plans are excluded/);
+ assert.match(view,/result\?\.status!=='verified_aircraft_calendar'/);
+ assert.match(view,/buildDatedCalendar\(enriched,scheduleSnapshot\?\.events,selectedDate\.iso\)/);
+ assert.match(calendar,/if\(!Array\.isArray\(fleet\)\|\|!Array\.isArray\(events\)/);
+ assert.match(calendar,/\['flight','maintenance','relocation'\]/);
+ assert.match(calendar,/No confirmed flights or maintenance on this date/);
+ assert.match(bundle,/'aircraft-dated-calendar\.mjs'/);
 });
-
 test('schedule does not claim no booked flights when the schedule API is unavailable',()=>{
  const host=render(buildAirlineWeeklyBoard({fleet}),0,'Monday, 9 Nov 2026',false);
  const rows=getAll(host,x=>x.className==='schedule-board-aircraft-identity');
@@ -211,15 +204,16 @@ test('schedule does not claim no booked flights when the schedule API is unavail
  assert.equal(getAll(host,x=>x.textContent==='Booking records unavailable').length,2);
  assert.equal(getAll(host,x=>x.className==='schedule-board-rotation-band is-slot-held').length,0);
 });
-test('schedule workspace differentiates verified fleet, booked routes and local drafts',async()=>{
+test('schedule fails closed on unavailable authoritative calendar or invalid airline access',async()=>{
  const source=await readFile(new URL('../website/airline-workspace.mjs',import.meta.url),'utf8');
- assert.match(source,/bookingsAvailable:bookingDataAvailable/);
- assert.match(source,/Booking data unavailable: check the schedule API connection/);
- assert.doesNotMatch(source,/plannedCount\+' planned departures/);
- assert.match(source,/Booked flights only/);
- assert.match(source,/plans:\[\],localRoutes:\[\]/);
+ assert.match(source,/typeof scheduler\?\.aircraftCalendar!=='function'/);
+ assert.match(source,/scheduleReadError=true;renderSchedule\(\);return/);
+ assert.match(source,/scheduleReadError\?null:buildDatedCalendar/);
+ assert.match(source,/Verified calendar data unavailable\. Refresh to retry/);
+ assert.match(source,/result\?\.status!=='verified_aircraft_calendar'/);
+ assert.match(source,/Array\.isArray\(result\.fleet\)/);
+ assert.match(source,/Array\.isArray\(result\.events\)/);
 });
-
 test('local planning route uses flight time plus turnaround, unlike booked-flight bars',()=>{
  const board=buildAirlineWeeklyBoard({fleet,localRoutes:[local({
   flightNumber:'PA450',

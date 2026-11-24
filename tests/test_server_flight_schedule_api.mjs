@@ -247,8 +247,12 @@ test('route planner exposes owned fleet schedule drafts, not live activation',as
  const markup=routePlannerMarkup();
  assert.match(markup,/route-server-draft-list/);
  assert.match(source,/loadOwnedScheduleData/);
- assert.match(source,/scheduler\.operationalCreate/);
+ assert.match(source,/scheduler\.operationalSingleCreate/);
+ assert.match(source,/result\?\.routeCreated!==true/);
+ assert.match(source,/result\.activated!==true/);
+ assert.match(source,/result\.bookingEnabled!==true/);
  assert.match(source,/scheduler\.activationCheck/);
  assert.match(source,/serverScheduleId/);
- assert.doesNotMatch(source,/status:'active'/);
+ assert.match(source,/draft\.status='active'/);
+ assert.match(source,/OPERATIONAL_ROUTE_NOT_CONFIRMED/);
 });

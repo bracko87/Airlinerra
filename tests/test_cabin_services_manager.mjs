@@ -23,7 +23,9 @@ test('each airline automatically has a protected Basic package and all four clas
  const estimate=cabinPackageEstimate(basic);
  assert.equal(estimate.attractiveness,25);
  assert.equal(estimate.relativeToBasic,0);
- assert.equal(estimate.includedCents,65);
+ assert.equal(estimate.includedCents,Math.round(65*.7));
+ assert.equal(cabinPackageUnitEconomics(basic).includedPerPassengerCents,65,
+  'nominal one-serving allowance is separate from expected consumption');
  assert.equal(estimate.indicativeMarginCents,0);
 });
 test('complimentary and paid product levels affect preview rating and cost differently',()=>{
@@ -63,7 +65,9 @@ test('unit economics show free one-serving airline allowance without assuming a 
  assert.equal(noFlight.includedPerPassengerCents,65);
  assert.equal(noFlight.includedItems,1);
  assert.equal(noFlight.flightTotalsCalculated,false);
- assert.equal(noFlight.excludesWastageAndUnsoldStock,true);
+ assert.equal(noFlight.oneServingEach,true);
+ assert.equal(noFlight.consumptionOnly,true);
+ assert.equal(noFlight.flightTotalsCalculated,false);
  const custom=structuredClone(basic);
  custom.items.coffee.mode='included';
  custom.items.hotmeal.mode='included';
