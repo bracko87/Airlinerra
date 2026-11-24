@@ -59,14 +59,10 @@
 
   <main>
     <section class="hero hero-modern hero-cinematic section-anchor" id="home" aria-label="Airlinerra airline management">
-      <div class="hero-motion-scene" aria-hidden="true">
-        <div class="hero-scene-shot hero-scene-shot-airport"><img src="assets/airlinerra-airport.webp" width="1320" height="408" alt="" fetchpriority="high" /></div>
-        <div class="hero-scene-shot hero-scene-shot-aircraft"><img src="assets/airlinerra-aircraft.webp" width="1551" height="474" alt="" fetchpriority="high" /></div>
-        <span class="hero-runway-lights hero-runway-lights-one"></span>
-        <span class="hero-runway-lights hero-runway-lights-two"></span>
-        <svg class="hero-motion-aircraft hero-motion-aircraft-taxi" viewBox="0 0 24 24"><use href="#i-plane"/></svg>
-        <svg class="hero-motion-aircraft hero-motion-aircraft-depart" viewBox="0 0 24 24"><use href="#i-plane"/></svg>
-        <svg class="hero-motion-aircraft hero-motion-aircraft-arrive" viewBox="0 0 24 24"><use href="#i-plane"/></svg>
+      <div class="hero-video-scene" aria-hidden="true">
+        <img class="hero-video-poster" src="https://images.pexels.com/videos/3716220/airplane-airport-frankfurt-sunrise-3716220.jpeg?auto=compress&amp;w=1260&amp;h=750&amp;dpr=2" alt="" width="2520" height="1500" fetchpriority="high" />
+        <video id="hero-airport-video" class="hero-airport-video" autoplay muted loop playsinline preload="none" poster="https://images.pexels.com/videos/3716220/airplane-airport-frankfurt-sunrise-3716220.jpeg?auto=compress&amp;w=1260&amp;h=750&amp;dpr=2"
+          data-source="https://videos.pexels.com/video-files/3716220/3716220-hd_1920_1080_25fps.mp4"></video>
       </div>
       <div class="hero-cinematic-shade" aria-hidden="true"></div>
       <div class="container hero-topline">
@@ -100,7 +96,7 @@
       </div>
       <div class="container hero-cinematic-footer">
         <div class="hero-cinematic-motto">YOUR AIRLINE <i aria-hidden="true"></i> YOUR STRATEGY <i aria-hidden="true"></i> YOUR SKY</div>
-        <div class="hero-scene-controls"><span>ANIMATED AIRPORT CONCEPT · 20-SECOND LOOP</span><button type="button" id="hero-motion-toggle" class="hero-motion-toggle" aria-pressed="false" aria-label="Pause airport animation"><svg class="icon"><use href="#i-clock"/></svg><span>Pause motion</span></button></div>
+        <div class="hero-scene-controls"><span>REAL AIRPORT TIMELAPSE · ILLUSTRATIVE FOOTAGE</span><a class="hero-video-credit" href="https://www.pexels.com/video/footage-of-airport-and-sunset-in-time-lapse-3716220/" target="_blank" rel="noopener noreferrer">Video: S. R. / Pexels</a><button type="button" id="hero-motion-toggle" class="hero-motion-toggle" aria-pressed="false" aria-label="Pause airport video"><svg class="icon"><use href="#i-clock"/></svg><span>Pause video</span></button></div>
       </div>
     </section>
 
