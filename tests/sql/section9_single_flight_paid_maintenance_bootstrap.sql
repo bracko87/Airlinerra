@@ -93,6 +93,11 @@ CREATE TABLE airlinerra_game.approved_game_airports(world_id smallint,airport_ke
  PRIMARY KEY(world_id,airport_key));
 INSERT INTO airlinerra_game.approved_game_airports VALUES
  (1,'OURAIRPORTS:2212'),(1,'OURAIRPORTS:2218');
+-- The real booking function references the heavy-check capability catalogue
+-- even when the selected Daily/Weekly policy does not require an MRO.
+CREATE TABLE airlinerra_game.maintenance_airport_capabilities_v1(
+ world_id smallint,airport_key text,configuration_id bigint,
+ check_code text,approval_status text);
 -- Synthetic maintenance price quotes; do not imply these are live tariffs.
 CREATE TABLE airlinerra_game.aircraft_maintenance_check_overview_v1(
  aircraft_inventory_id uuid,airline_id uuid,check_code text,base_estimate_usd numeric,
