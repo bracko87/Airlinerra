@@ -4,6 +4,12 @@ on:
     branches: [main]
     paths:
       - 'tests/sql/section9_real_arrival_disposable_dependencies.sql'
+      - 'tests/sql/section9_bookings_into_real_arrival_dependencies.sql'
+      - 'tests/sql/section9_bookings_before_signed_departure_acceptance.sql'
+      - 'tests/sql/section9_bookings_after_signed_departure_acceptance.sql'
+      - 'tests/sql/section9_bookings_after_signed_arrival_acceptance.sql'
+      - 'supabase/migrations/20261113224000_section9_trusted_demand_hold_to_ticket_bridge_v1.sql'
+      - 'supabase/migrations/20261113223000_section9_hour_accurate_tickets_and_movement_enforcement_v1.sql'
       - 'tests/sql/section9_arrival_custody_conflict_disposable_setup.sql'
       - 'tests/sql/section9_real_dispatcher_disposable_dependencies.sql'
       - 'tests/sql/section9_real_fuel_departure_disposable_dependencies.sql'
@@ -11,6 +17,17 @@ on:
       - 'supabase/migrations/20261123210000_section9_dispatch_traffic_permission_binding_fix.sql'
       - 'supabase/migrations/20261113233000_section9_once_only_arrival_airframe_hours_cycles_v1.sql'
       - 'supabase/migrations/20261117110000_section9_game_fuel_custody_supply_dispatch_v1.sql'
+      - '.github/workflows/section9-real-arrival-fuel-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tests/sql/section9_bookings_into_real_arrival_dependencies.sql'
+      - 'tests/sql/section9_bookings_before_signed_departure_acceptance.sql'
+      - 'tests/sql/section9_bookings_after_signed_departure_acceptance.sql'
+      - 'tests/sql/section9_bookings_after_signed_arrival_acceptance.sql'
+      - 'tests/sql/section9_real_arrival_disposable_dependencies.sql'
+      - 'supabase/migrations/20261113224000_section9_trusted_demand_hold_to_ticket_bridge_v1.sql'
+      - 'supabase/migrations/20261113223000_section9_hour_accurate_tickets_and_movement_enforcement_v1.sql'
       - '.github/workflows/section9-real-arrival-fuel-ci.yml'
   workflow_dispatch:
 permissions:
@@ -83,11 +100,50 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f /tmp/actual-arrival-functions.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261123200000_section9_signed_movement_cancellation_guard.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261123210000_section9_dispatch_traffic_permission_binding_fix.sql
+      - name: Install unchanged genuine saleable-window and private game passenger booking SQL
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_bookings_into_real_arrival_dependencies.sql
+          python3 - <<'PY'
+          from pathlib import Path
+          sources=[
+            ('supabase/migrations/20261113223000_section9_hour_accurate_tickets_and_movement_enforcement_v1.sql',
+             'section9_verified_saleable_departure_window_v1'),
+            ('supabase/migrations/20261113224000_section9_trusted_demand_hold_to_ticket_bridge_v1.sql',
+             'section9_reserve_verified_game_passenger_seats_v1')
+          ]
+          parts=[]
+          for path,name in sources:
+            src=Path(path).read_text()
+            first=src.index('CREATE OR REPLACE FUNCTION airlinerra_game.'+name+'(')
+            end=src.index('REVOKE ALL ON FUNCTION airlinerra_game.'+name+'(',first)
+            body=src[first:end]
+            assert 'END $function$' in body and 'CREATE OR REPLACE FUNCTION' in body
+            parts.append(body)
+          Path('/tmp/real-same-flight-booking.sql').write_text('\n'.join(parts))
+          print('Unmodified real 7-day saleable window and private game booking SQL extracted')
+          PY
+          psql -X -v ON_ERROR_STOP=1 -f /tmp/real-same-flight-booking.sql
+      - name: Reserve real passenger seats BEFORE actual signed departure on same physical flight
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_bookings_before_signed_departure_acceptance.sql
+          psql -X -v ON_ERROR_STOP=1 <<'SQL'
+          CREATE OR REPLACE FUNCTION airlinerra_game.section9_verified_berlin_game_hour_v1()
+          RETURNS jsonb LANGUAGE sql STABLE AS $fn$
+           SELECT jsonb_build_object('authoritativeGameHourAvailable',true,
+             'gameHourUtc','2026-11-23 18:00:00+00')
+          $fn$;
+          SQL
       - name: Actual dispatcher signs and records genuine departure and fuel proof
         run: |
           set -euo pipefail
           psql -XAt -v ON_ERROR_STOP=1 -c "SELECT airlinerra_game.section9_auto_dispatch_due_flight_events_v1(10)->>'departuresRecorded'" | grep -qx 1
           psql -XAt -v ON_ERROR_STOP=1 -c "SELECT (SELECT count(*) FROM airlinerra_game.section9_game_flight_fuel_departure_receipts_v1)::text||':'||(SELECT booking_status FROM airlinerra_game.section9_dated_flight_occurrences_v1 WHERE weekly_entry=4)" | grep -qx '1:closed'
+      - name: Confirm bookings closed by REAL signed departure and fuel custody receipt
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_bookings_after_signed_departure_acceptance.sql
       - name: Advance synthetic authoritative clock to signed arrival
         run: |
           set -euo pipefail
@@ -100,6 +156,10 @@ jobs:
           cat "$RUNNER_TEMP/arrival-first.txt"
           grep -q '"arrivalsRecorded": 1' "$RUNNER_TEMP/arrival-first.txt"
           psql -XAt -v ON_ERROR_STOP=1 -c "SELECT (SELECT count(*) FROM airlinerra_game.section9_operated_flight_movements_v1 WHERE flight_occurrence_id='$FID' AND phase='arrived')||':'||(SELECT count(*) FROM airlinerra_game.section9_game_flight_fuel_arrival_receipts_v1 WHERE physical_flight_id='$FID')||':'||(SELECT count(*) FROM airlinerra_game.section9_arrived_aircraft_usage_receipts_v1 WHERE physical_flight_id='$FID')||':'||(SELECT (onboard_kg=380)::int||':'||revision::text||':'||at_airport_key FROM airlinerra_game.section9_aircraft_game_fuel_custody_v1)||':'||(SELECT (tracked_flight_hours=1)::int||':'||tracked_flight_cycles::text FROM airlinerra_game.aircraft_maintenance_state_v1)" | grep -qx '1:1:1:1:2:TEST-BBB:1:1'
+      - name: Confirm SAME booked flight completed signed arrival and actual fuel burn with no upfront revenue
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_bookings_after_signed_arrival_acceptance.sql
       - name: Replay of actual arrival dispatcher does not repeat fuel burn or cycles
         run: |
           set -euo pipefail
@@ -127,4 +187,5 @@ jobs:
         run: |
           echo '### Real automatic signed departure and arrival with unchanged airframe and fuel-burn SQL' >> "$GITHUB_STEP_SUMMARY"
           echo 'Verifies 500 to 380 kg, custody revision 1 to 2, 1 hour and 1 cycle, two once-only receipt kinds, and stable replay.' >> "$GITHUB_STEP_SUMMARY"
-          echo 'All release, permission, clock, maintenance, reference airports and fuel quote evidence synthetic. No production or finance deployment.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Unmodified production booking plus real 7-day time-window, signed departure/arrival and fuel burn now run on one synthetic flight.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Release, permission, clock, aircraft position, seeded 2-seat reservation and fuel quote remain synthetic. Final real flight finance, demand issuer and refunds unverified. Production untouched.' >> "$GITHUB_STEP_SUMMARY"
