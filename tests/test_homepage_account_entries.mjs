@@ -136,25 +136,36 @@ test('signup has repeat-password match, strength indicator, aligned consent and 
 });
 
 
-test('cinematic homepage uses existing aviation branding with accessible concept previews and no signup bypass',async()=>{
- const [home,style]=await Promise.all([read('../website/index.html'),read('../website/styles.css')]);
- assert.match(home,/<section class="hero hero-modern section-anchor" id="home">/);
- assert.match(home,/class="hero-backdrop" aria-hidden="true"/);
- assert.match(home,/src="assets\/airlinerra-aircraft\.webp" alt=""[^>]*fetchpriority="high"/);
- assert.match(home,/class="hero-flightdeck" aria-label="Illustrative airline route-management concept"/);
- assert.match(home,/CONCEPT PREVIEW/);
- assert.match(home,/Illustrative interface only — not live flight or booking data/);
- assert.match(home,/class="hero-discover" href="#how-it-works"|class="button button-large hero-discover" href="#how-it-works"/);
- assert.match(home,/class="hero-tester-link" href="\/account\.html\?screen=sign-in"/);
- assert.match(home,/<section class="flightpath-section" id="journey" aria-labelledby="journey-title">/);
- assert.equal((home.match(/class="flightpath-step"/g)||[]).length,4);
- assert.match(home,/id="preview-tab-content"/);
+test('cinematic hero replaces the FRA-MUC card with a looping airport scene and safe navigation',async()=>{
+ const [home,style,script]=await Promise.all([
+  read('../website/index.html'),read('../website/styles.css'),read('../website/script.js')
+ ]);
+ assert.match(home,/<section class="hero hero-modern hero-cinematic section-anchor" id="home"/);
+ assert.match(home,/class="hero-motion-scene" aria-hidden="true"/);
+ assert.match(home,/src="assets\/airlinerra-airport\.webp"/);
+ assert.match(home,/src="assets\/airlinerra-aircraft\.webp"/);
+ assert.equal((home.match(/class="hero-motion-aircraft hero-motion-aircraft-/g)||[]).length,3);
+ assert.doesNotMatch(home,/hero-flightdeck|flightdeck-route|Sample hub|Sample destination|FRA\s*<|MUC\s*</);
+ assert.match(home,/ANIMATED AIRPORT CONCEPT · 20-SECOND LOOP/);
+ assert.match(home,/href="#how-it-works">Explore Airlinerra/);
+ assert.match(home,/href="#features">Discover the features/);
+ assert.match(home,/href="\/account\.html\?screen=sign-in">Approved tester\? Sign in/);
  assert.match(home,/role="note" aria-label="Important development notice"/);
+ assert.match(home,/Airlinerra is still in development/);
  assert.match(home,/public registration is currently closed/);
- assert.doesNotMatch(home,/class="hero-discover"[^>]*href="\/register/);
- assert.match(style,/\.hero\.hero-modern\s*\{/);
- assert.match(style,/\.hero-flightdeck\s*\{/);
- assert.match(style,/\.flightpath-steps\s*\{/);
- assert.match(style,/@media \(max-width:640px\)/);
+ assert.doesNotMatch(home,/<a[^>]+href="\/register\.html"[^>]*>\s*Explore Airlinerra/);
+ assert.match(home,/id="hero-motion-toggle"[^>]*aria-pressed="false"/);
+ assert.match(style,/@keyframes airportSceneDrift/);
+ assert.match(style,/@keyframes airportTaxi20/);
+ assert.match(style,/@keyframes airportDeparture20/);
+ assert.match(style,/@keyframes airportArrival20/);
+ assert.match(style,/\.hero-cinematic\.hero-scene-shot-airport\s*\{[^}]*20s linear infinite/);
+ assert.match(style,/\.hero-cinematic\.hero-scene-shot-aircraft\s*\{[^}]*20s linear infinite/);
+ assert.match(style,/\.hero-cinematic\.hero-motion-aircraft-depart|\.hero-motion-aircraft-depart/);
+ assert.match(style,/\.hero-cinematic\.hero-motion-paused/);
  assert.match(style,/@media \(prefers-reduced-motion:reduce\)/);
+ assert.match(script,/airportMotionToggle\.addEventListener\('click'/);
+ assert.match(script,/setAirportMotionPaused\(!airportHero\.classList\.contains\('hero-motion-paused'\)\)/);
+ assert.match(script,/setAttribute\('aria-pressed', String\(paused\)\)/);
+ assert.match(script,/reducedMotion\?\.addEventListener\?\.\('change'/);
 });
