@@ -92,6 +92,23 @@ INSERT INTO airlinerra_game.airport_reference_profiles
  FROM airlinerra_game.airport_sections1_8_combined_catalog_v1 WHERE source_group='GROUP_1';
 INSERT INTO airlinerra_game.airport_group2_game_profiles_v1
  VALUES('GROUP2_READY','Test Group2'),('GROUP2_PROHIBITED','Test Forbidden Group2');
+-- The real Section 5 simplified GAME leg screen is installed separately,
+-- unchanged from migration. Its airport-policy and certification sources are
+-- explicitly synthetic and NEVER imply an official aircraft certificate.
+CREATE TABLE airlinerra_game.section5_airport_operating_policy_v1(
+ world_id smallint,airport_key text,timezone_iana text,
+ PRIMARY KEY(world_id,airport_key));
+INSERT INTO airlinerra_game.section5_airport_operating_policy_v1
+ SELECT world_id,airport_key,
+ CASE WHEN airport_key='MUC' THEN 'Europe/Berlin'
+      WHEN airport_key='BEG' THEN 'Europe/Belgrade'
+      ELSE 'UTC' END
+ FROM airlinerra_game.airport_sections1_8_combined_catalog_v1;
+CREATE TABLE airlinerra_game.section5_icao_aircraft_certification_v2(
+ configuration_id bigint PRIMARY KEY, official_icao_chapter smallint,
+ noise_certificate_status text);
+INSERT INTO airlinerra_game.section5_icao_aircraft_certification_v2 VALUES
+ (16,NULL,'CERTIFICATE_NOT_VERIFIED');
 -- Before/after immutable source-value fingerprint.
 CREATE TABLE airlinerra_game.fixture_airport_source_hashes AS
  SELECT 'catalog'::text AS source,md5(string_agg(to_jsonb(t)::text,'|' ORDER BY airport_key)) AS digest
