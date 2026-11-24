@@ -259,6 +259,25 @@ SELECT (
 }
 echo "PASS: live trusted-flight core function grants independently restricted."
 
+# Source permission expectations are verified before the ACL-free dump.
+# Never infer live ACLs from a schema-only restore.
+release_source_acl="$(psql "$source_url" -X -v ON_ERROR_STOP=1 -Atqc "
+SELECT (NOT EXISTS (
+ SELECT 1 FROM unnest(ARRAY['anon','authenticated','service_role']) AS r(role_name)
+ CROSS JOIN (VALUES
+ ('airlinerra_game.section9_auto_dispatch_due_flight_events_v1(integer)'),
+ ('airlinerra_game.section9_record_signed_operated_flight_movement_v1(uuid,uuid,integer,date,integer,text,timestamptz,text,text)'),
+ ('airlinerra_game.section9_issue_queued_game_clearance_v1(uuid,uuid,integer,date,text)'),
+ ('airlinerra_game.section9_owned_candidate_slot_rights_preflight_v1(uuid,uuid,uuid,text,text,timestamptz,timestamptz,jsonb,text,text)'),
+ ('airlinerra_game.section9_game_route_restrictions_valid_v1(text,text,jsonb)')
+ ) AS f(sig) WHERE has_function_privilege(r.role_name,f.sig,'EXECUTE')
+) AND NOT EXISTS (
+ SELECT 1 FROM unnest(ARRAY['anon','authenticated','service_role']) AS r(role_name)
+ WHERE has_table_privilege(r.role_name,'airlinerra_game.airport_unified_operations_v1','SELECT')
+))::int;")"
+[[ "$release_source_acl" == 1 ]] || { echo "BLOCKED: live release-target ACL differs." >&2; exit 2; }
+echo "PASS: five live target function permissions and private unified airport view verified."
+
 echo "Hashing remote structural definitions without returning SQL bodies..."
 psql "$source_url" -X -v ON_ERROR_STOP=1 -At \
   -f tests/sql/airlinerra_private_schema_fingerprint.sql \
@@ -365,28 +384,99 @@ if ! cmp -s "$tmp/source-structure.hashes" "$tmp/clone-structure.hashes"; then
 fi
 echo "PASS: seven structural categories match between remote and isolated local database."
 
-echo "Applying repository forward-only corrections to local clone ONLY..."
-local_psql -q -f "$tmp/original-repository-migrations/20261123200000_section9_signed_movement_cancellation_guard.sql" \
-  >"$tmp/patch.log" 2>&1 || {
-    echo "BLOCKED: signed-movement correction failed against cloned schema." >&2
-    exit 2
-  }
-local_psql -q -f "$tmp/original-repository-migrations/20261123210000_section9_dispatch_traffic_permission_binding_fix.sql" \
-  >>"$tmp/patch.log" 2>&1 || {
-    echo "BLOCKED: dispatcher correction failed against cloned schema." >&2
-    exit 2
-  }
+# The source ACL check above established that these three roles cannot execute
+# these functions or select the existing private view. The dump drops ACLs,
+# so reproduce this specific verified denial locally BEFORE applying migrations.
+# This is not an assertion of full source role or grant parity.
+local_psql -q >/dev/null <<'SQL'
+REVOKE EXECUTE ON FUNCTION airlinerra_game.section9_auto_dispatch_due_flight_events_v1(integer) FROM PUBLIC,anon,authenticated,service_role;
+REVOKE EXECUTE ON FUNCTION airlinerra_game.section9_record_signed_operated_flight_movement_v1(uuid,uuid,integer,date,integer,text,timestamptz,text,text) FROM PUBLIC,anon,authenticated,service_role;
+REVOKE EXECUTE ON FUNCTION airlinerra_game.section9_issue_queued_game_clearance_v1(uuid,uuid,integer,date,text) FROM PUBLIC,anon,authenticated,service_role;
+REVOKE EXECUTE ON FUNCTION airlinerra_game.section9_owned_candidate_slot_rights_preflight_v1(uuid,uuid,uuid,text,text,timestamptz,timestamptz,jsonb,text,text) FROM PUBLIC,anon,authenticated,service_role;
+REVOKE EXECUTE ON FUNCTION airlinerra_game.section9_game_route_restrictions_valid_v1(text,text,jsonb) FROM PUBLIC,anon,authenticated,service_role;
+REVOKE SELECT ON airlinerra_game.airport_unified_operations_v1 FROM PUBLIC,anon,authenticated,service_role;
+SQL
+
+# Preserve existing column order/types and the modern dispatcher definition.
+# The dump intentionally excludes ACLs. Check live access separately and
+# compare restored-clone behavior before and after; do not claim ACL parity.
+local_psql -Atqc "
+ SELECT md5(pg_get_functiondef('airlinerra_game.section9_auto_dispatch_due_flight_events_v1(integer)'::regprocedure));
+" >"$tmp/dispatcher-before"
+local_psql -Atqc "
+ SELECT attnum,attname,format_type(atttypid,atttypmod)
+ FROM pg_attribute
+ WHERE attrelid='airlinerra_game.airport_unified_operations_v1'::regclass
+ AND attnum>0 AND NOT attisdropped ORDER BY attnum;
+" >"$tmp/airport-columns-before"
+
+echo "Applying exactly five forward-only release migrations to local clone ONLY..."
+release_migrations=(
+  20261123200000_section9_signed_movement_cancellation_guard.sql
+  20261123210000_section9_dispatch_traffic_permission_binding_fix.sql
+  20261124123000_section9_conservative_game_airport_restriction_alignment.sql
+  20261124134500_section9_candidate_game_gate_vs_research_review.sql
+  20261124135500_section9_game_clearance_issuer_prelock_schedule.sql
+)
+for pass in 1 2; do
+  for migration in "${release_migrations[@]}"; do
+    local_psql -q -f "$tmp/original-repository-migrations/$migration" >"$tmp/patch.log" 2>&1 || {
+      echo "BLOCKED: local migration $migration failed on pass $pass (details suppressed)." >&2
+      exit 2
+    }
+    echo "PASS: local migration $migration, pass $pass."
+  done
+  local_psql -At -f tests/sql/airlinerra_private_schema_fingerprint.sql >"$tmp/release-pass-$pass.hashes" 2>"$tmp/release-fingerprint.stderr"
+done
+cmp -s "$tmp/release-pass-1.hashes" "$tmp/release-pass-2.hashes" || { echo "BLOCKED: second pass changed structure." >&2; exit 2; }
+
+local_psql -Atqc "
+ SELECT md5(pg_get_functiondef('airlinerra_game.section9_auto_dispatch_due_flight_events_v1(integer)'::regprocedure));
+" >"$tmp/dispatcher-after"
+cmp -s "$tmp/dispatcher-before" "$tmp/dispatcher-after" || { echo "BLOCKED: dispatcher changed despite no-op migration." >&2; exit 2; }
+local_psql -Atqc "
+ SELECT attnum,attname,format_type(atttypid,atttypmod)
+ FROM pg_attribute
+ WHERE attrelid='airlinerra_game.airport_unified_operations_v1'::regclass
+ AND attnum>0 AND NOT attisdropped ORDER BY attnum;
+" >"$tmp/airport-columns-after"
+cmp -s "$tmp/airport-columns-before" "$tmp/airport-columns-after" || { echo "BLOCKED: airport view column signature changed." >&2; exit 2; }
 
 guards="$(local_psql -Atqc "
+WITH checks AS (
+ SELECT
+ pg_get_functiondef('airlinerra_game.section9_record_signed_operated_flight_movement_v1(uuid,uuid,integer,date,integer,text,timestamptz,text,text)'::regprocedure) AS movement,
+ pg_get_functiondef('airlinerra_game.section9_owned_candidate_slot_rights_preflight_v1(uuid,uuid,uuid,text,text,timestamptz,timestamptz,jsonb,text,text)'::regprocedure) AS candidate,
+ pg_get_functiondef('airlinerra_game.section9_issue_queued_game_clearance_v1(uuid,uuid,integer,date,text)'::regprocedure) AS issuer
+)
 SELECT (
-  position('SECTION9_SIGNED_DEPARTURE_OCCURRENCE_NOT_OPEN' in
-    pg_get_functiondef('airlinerra_game.section9_record_signed_operated_flight_movement_v1(uuid,uuid,integer,date,integer,text,timestamptz,text,text)'::regprocedure)) > 0
-  AND position('required_permission_code' in
-    pg_get_functiondef('airlinerra_game.section9_auto_dispatch_due_flight_events_v1(integer)'::regprocedure)) > 0
-  AND NOT has_function_privilege('anon','airlinerra_game.section9_auto_dispatch_due_flight_events_v1(integer)','EXECUTE')
-  AND NOT has_function_privilege('authenticated','airlinerra_game.section9_auto_dispatch_due_flight_events_v1(integer)','EXECUTE')
-  AND NOT has_function_privilege('service_role','airlinerra_game.section9_auto_dispatch_due_flight_events_v1(integer)','EXECUTE')
-)::int;")"
+ position('SECTION9_SIGNED_DEPARTURE_OCCURRENCE_NOT_ELIGIBLE' in movement)>0
+ AND position('section9_effective_dispatch_window_v1' in movement)>0
+ AND position('gameRestrictionGuardPassed' in candidate)>0
+ AND position('researchDocumentationReviewPending' in candidate)>0
+ AND position('section9_game_route_restrictions_valid_v1' in candidate)>0
+ AND position('Serialize competing issuer requests' in issuer)>0
+ AND position('FOR UPDATE OF sch' in issuer)>0
+ AND position('extensions.hmac' in issuer)>0
+ AND (SELECT reloptions @> ARRAY['security_invoker=true'] FROM pg_class WHERE oid='airlinerra_game.airport_unified_operations_v1'::regclass)
+ AND (SELECT reloptions @> ARRAY['security_invoker=true'] FROM pg_class WHERE oid='airlinerra_game.section9_airport_game_restriction_alignment_v1'::regclass)
+ AND NOT EXISTS (
+ SELECT 1 FROM unnest(ARRAY['anon','authenticated','service_role']) AS r(role_name)
+ CROSS JOIN (VALUES
+ ('airlinerra_game.section9_auto_dispatch_due_flight_events_v1(integer)'),
+ ('airlinerra_game.section9_record_signed_operated_flight_movement_v1(uuid,uuid,integer,date,integer,text,timestamptz,text,text)'),
+ ('airlinerra_game.section9_issue_queued_game_clearance_v1(uuid,uuid,integer,date,text)'),
+ ('airlinerra_game.section9_owned_candidate_slot_rights_preflight_v1(uuid,uuid,uuid,text,text,timestamptz,timestamptz,jsonb,text,text)')
+ ) AS fn(sig)
+ WHERE has_function_privilege(r.role_name,fn.sig,'EXECUTE')
+ )
+ AND NOT EXISTS (
+ SELECT 1 FROM unnest(ARRAY['anon','authenticated','service_role']) AS r(role_name)
+ WHERE has_table_privilege(r.role_name,'airlinerra_game.section9_airport_game_restriction_alignment_v1','SELECT')
+ OR has_table_privilege(r.role_name,'airlinerra_game.airport_unified_operations_v1','SELECT')
+ )
+)::int FROM checks;")"
 [[ "$guards" == 1 ]] || { echo "BLOCKED: cloned forward corrections or grants fail." >&2; exit 2; }
-echo "PASS: real schema-only baseline restored locally; two corrected functions verified."
+echo "PASS: all five migrations applied twice on isolated schema; structural idempotence, unchanged modern dispatcher, stable airport columns and private grants verified."
+echo "Schema-only rehearsal is not data restore, full ACL parity, or commercial flight acceptance."
 echo "The dump is never uploaded, committed, archived or displayed."
