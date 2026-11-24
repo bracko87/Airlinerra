@@ -90,7 +90,8 @@ jobs:
               ):
                 assert old in fragment, old
                 fragment=fragment.replace(old,new)
-            assert 'END $function            out.append(fragment)
+            assert 'END $function$' in fragment, name
+            out.append(fragment)
           Path('/tmp/real-dispatcher-functions.sql').write_text('\n'.join(out))
           print('Unmodified real fuel functions and explicitly repaired LEGACY dispatcher fixture extracted')
           PY
