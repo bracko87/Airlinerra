@@ -8,6 +8,12 @@ on:
       - 'tests/sql/section9_disposable_positive_fra_muc_pair_bootstrap.sql'
       - 'tests/sql/section9_single_flight_real_sql_disposable_bootstrap.sql'
       - 'tests/sql/section9_single_flight_real_sql_disposable_acceptance.sql'
+      - 'tests/sql/section9_single_flight_paid_maintenance_bootstrap.sql'
+      - 'tests/sql/section9_single_flight_paid_maintenance_acceptance.sql'
+      - 'supabase/migrations/20261113104046_section9_maintenance_ledger_generated_identity_fix.sql'
+      - 'supabase/migrations/20261113104858_section9_unpaid_maintenance_indefinite_grounding.sql'
+      - 'supabase/migrations/20261113231000_section9_hourly_game_maintenance_dispatch_clearance_v1.sql'
+      - 'supabase/migrations/20261117090000_section9_hourly_maintenance_slot_and_booking_v1.sql'
       - '.github/workflows/section9-single-flight-acceptance-ci.yml'
   push:
     branches: [main]
@@ -17,6 +23,12 @@ on:
       - 'tests/sql/section9_disposable_positive_fra_muc_pair_bootstrap.sql'
       - 'tests/sql/section9_single_flight_real_sql_disposable_bootstrap.sql'
       - 'tests/sql/section9_single_flight_real_sql_disposable_acceptance.sql'
+      - 'tests/sql/section9_single_flight_paid_maintenance_bootstrap.sql'
+      - 'tests/sql/section9_single_flight_paid_maintenance_acceptance.sql'
+      - 'supabase/migrations/20261113104046_section9_maintenance_ledger_generated_identity_fix.sql'
+      - 'supabase/migrations/20261113104858_section9_unpaid_maintenance_indefinite_grounding.sql'
+      - 'supabase/migrations/20261113231000_section9_hourly_game_maintenance_dispatch_clearance_v1.sql'
+      - 'supabase/migrations/20261117090000_section9_hourly_maintenance_slot_and_booking_v1.sql'
       - '.github/workflows/section9-single-flight-acceptance-ci.yml'
   workflow_dispatch:
 permissions:
@@ -24,7 +36,7 @@ permissions:
 jobs:
   single-flight-acceptance:
     runs-on: ubuntu-latest
-    timeout-minutes: 14
+    timeout-minutes: 18
     services:
       postgres:
         image: postgres:17
@@ -100,11 +112,52 @@ jobs:
         run: |
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_single_flight_real_sql_disposable_acceptance.sql
+      - name: Seed controlled overdue aircraft, maintenance tariff and ledger
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_single_flight_paid_maintenance_bootstrap.sql
+      - name: Install unchanged production game maintenance booking, paid worker and two independent flight preflights
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          sources={
+            'booking': Path('supabase/migrations/20261117090000_section9_hourly_maintenance_slot_and_booking_v1.sql').read_text(),
+            'worker': Path('supabase/migrations/20261113104046_section9_maintenance_ledger_generated_identity_fix.sql').read_text(),
+            'current': Path('supabase/migrations/20261113104858_section9_unpaid_maintenance_indefinite_grounding.sql').read_text(),
+            'dispatch': Path('supabase/migrations/20261113231000_section9_hourly_game_maintenance_dispatch_clearance_v1.sql').read_text()
+          }
+          def unchanged(source,name):
+              offset=source.index('CREATE OR REPLACE FUNCTION airlinerra_game.'+name+'(')
+              match=re.search(r'END \$(?:fn|function)\$\s*;',source[offset:],re.DOTALL)
+              if match is None: raise ValueError('Missing complete function: '+name)
+              body=source[offset:offset+match.end()]
+              if not body.strip().endswith(';'): raise ValueError('Truncated SQL function: '+name)
+              return body
+          exact=[
+            unchanged(sources['booking'],'section9_owned_game_maintenance_job_v1'),
+            unchanged(sources['worker'],'section9_advance_game_maintenance_jobs_v1'),
+            unchanged(sources['current'],'section9_owned_game_maintenance_due_v1'),
+            unchanged(sources['current'],'section9_owned_game_maintenance_flight_window_v1'),
+            unchanged(sources['dispatch'],'section9_verified_game_maintenance_dispatch_window_v1')
+          ]
+          Path('/tmp/airlinerra-current-game-maintenance.sql').write_text('\n'.join(exact)+'\n')
+          print('Installing five unchanged real maintenance functions (booking, money worker, due, date window, hour-accurate dispatch preflight).')
+          PY
+          psql -X -v ON_ERROR_STOP=1 -f /tmp/airlinerra-current-game-maintenance.sql
+      - name: Verify overdue, cancelled, unpaid, settled and exactly-once maintenance leads to the same aircraft route
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_single_flight_paid_maintenance_acceptance.sql
       - name: Describe the unproven boundaries
         if: always()
         shell: bash
         run: |
           echo '### Current single-flight route creation — disposable PostgreSQL 17' >> "$GITHUB_STEP_SUMMARY"
           echo 'Exact server SQL: owner/cabin wrapper, weekly route, first departure and atomic single-flight creation.' >> "$GITHUB_STEP_SUMMARY"
-          echo 'Synthetic test doubles: aircraft position, slots, maintenance, five certification authorities, saleable-window/ticket gateway, game clock and phase profile.' >> "$GITHUB_STEP_SUMMARY"
-          echo 'No real player authentication, signed flight departure/arrival, fuel custody, finance settlement or refund proof. No production DB/source credentials accessed or data copied.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Maintenance booking, paid worker, due engine, flight window and dispatch preflight are current unmodified SQL. Slot authority, clock, position, certification signers and ticket gateway remain isolated fixtures.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Game maintenance fee posting and replay are tested; passenger sale, actual departure/arrival, fuel consumption, final flight finance and refunds are NOT proven. No production credentials, data or paid staging used.' >> "$GITHUB_STEP_SUMMARY"
