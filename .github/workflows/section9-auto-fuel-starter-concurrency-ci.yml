@@ -11,6 +11,15 @@ on:
       - 'tests/sql/section9_current_live_signed_movement_source_20261124.sql'
       - 'supabase/migrations/20261123210000_section9_dispatch_traffic_permission_binding_fix.sql'
       - '.github/workflows/section9-auto-fuel-starter-concurrency-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tests/sql/section9_real_signed_movement_disposable_dependencies.sql'
+      - 'tests/sql/section9_current_live_signed_movement_source_20261124.sql'
+      - 'tests/sql/section9_real_fuel_departure_disposable_dependencies.sql'
+      - 'tests/sql/section9_real_auto_fuel_disposable_dependencies.sql'
+      - 'supabase/migrations/20261123200000_section9_signed_movement_cancellation_guard.sql'
+      - '.github/workflows/section9-auto-fuel-starter-concurrency-ci.yml'
   workflow_dispatch:
 permissions:
   contents: read
