@@ -2,7 +2,7 @@
 -- preflight and departure receipt functions. The quote provider and clock
 -- are explicitly synthetic dependencies; the tested functions are unchanged.
 ALTER TABLE airlinerra_game.section9_dated_flight_occurrences_v1
- ADD COLUMN world_id smallint NOT NULL DEFAULT 1,
+ ADD COLUMN IF NOT EXISTS world_id smallint NOT NULL DEFAULT 1,
  ADD COLUMN departure_utc timestamptz NOT NULL DEFAULT '2026-11-23 18:00+00',
  ADD COLUMN arrival_utc timestamptz NOT NULL DEFAULT '2026-11-23 19:00+00',
  ADD COLUMN verified_passenger_seats integer NOT NULL DEFAULT 10;
