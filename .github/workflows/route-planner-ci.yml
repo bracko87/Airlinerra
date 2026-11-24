@@ -3,7 +3,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [main, airlinerra-current-main-ci-20261124]
+    branches: [main]
     paths:
       - 'website/airport-country-picker.mjs'
       - 'website/airport-restriction-display.mjs'
