@@ -1,4 +1,4 @@
-name: Actual signed arrival airframe and fuel burn (disposable)
+name: Signed arrival, fuel and finance with legacy dispatcher baseline (disposable)
 on:
   push:
     branches: [main]
@@ -19,6 +19,7 @@ on:
       - 'tests/sql/section9_real_dispatcher_disposable_dependencies.sql'
       - 'tests/sql/section9_real_fuel_departure_disposable_dependencies.sql'
       - 'supabase/migrations/20261123200000_section9_signed_movement_cancellation_guard.sql'
+      - 'tests/sql/section9_current_live_signed_movement_source_20261124.sql'
       - 'supabase/migrations/20261123210000_section9_dispatch_traffic_permission_binding_fix.sql'
       - 'supabase/migrations/20261113233000_section9_once_only_arrival_airframe_hours_cycles_v1.sql'
       - 'supabase/migrations/20261117110000_section9_game_fuel_custody_supply_dispatch_v1.sql'
@@ -92,7 +93,8 @@ jobs:
             ('supabase/migrations/20261117110000_section9_game_fuel_custody_supply_dispatch_v1.sql',[
               'section9_verify_game_fuel_before_departure_v1',
               'section9_capture_verified_departure_fuel_v1',
-              'section9_apply_verified_arrival_fuel_burn_once_v1']),
+              'section9_apply_verified_arrival_fuel_burn_once_v1',
+              'section9_auto_dispatch_due_flight_events_v1']),
             ('supabase/migrations/20261113233000_section9_once_only_arrival_airframe_hours_cycles_v1.sql',[
               'section9_apply_arrival_airframe_usage_once_v1'])]
           fragments=[]
@@ -102,14 +104,27 @@ jobs:
               a=source.index('CREATE OR REPLACE FUNCTION airlinerra_game.'+name+'(')
               b=source.index('REVOKE ALL ON FUNCTION airlinerra_game.'+name+'(',a)
               fragment=source[a:b]
+              if name=='section9_auto_dispatch_due_flight_events_v1':
+                # Baseline Nov17 dispatcher; repair permission-variable
+                # ambiguity inside THIS CI fixture only, never production.
+                for old,new in (
+                  (' permission_code text;',' required_permission_code text;'),
+                  ('permission_code:=airlinerra_game.section9_required_game_traffic_permission_v1',
+                   'required_permission_code:=airlinerra_game.section9_required_game_traffic_permission_v1'),
+                  ('IF permission_code IS NULL','IF required_permission_code IS NULL'),
+                  ('a.permission_code=permission_code','a.permission_code=required_permission_code'),
+                ):
+                  assert old in fragment, old
+                  fragment=fragment.replace(old,new)
               assert 'END $function$' in fragment
               fragments.append(fragment)
           Path('/tmp/actual-arrival-functions.sql').write_text('\n'.join(fragments))
-          print('Original production arrival burn, airframe usage, fuel departure functions extracted unchanged')
+          print('Unchanged real arrival/fuel functions plus clearly LEGACY dispatcher baseline installed')
           PY
           psql -X -v ON_ERROR_STOP=1 -f /tmp/actual-arrival-functions.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_current_live_signed_movement_source_20261124.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261123200000_section9_signed_movement_cancellation_guard.sql
-          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261123210000_section9_dispatch_traffic_permission_binding_fix.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261123200000_section9_signed_movement_cancellation_guard.sql
       - name: Install unchanged genuine saleable-window and private game passenger booking SQL
         run: |
           set -euo pipefail
