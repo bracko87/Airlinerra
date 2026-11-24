@@ -18,6 +18,7 @@ on:
       - 'supabase/migrations/20261113224000_section9_trusted_demand_hold_to_ticket_bridge_v1.sql'
       - 'supabase/migrations/20261113104046_section9_maintenance_ledger_generated_identity_fix.sql'
       - 'supabase/migrations/20261113104858_section9_unpaid_maintenance_indefinite_grounding.sql'
+      - 'supabase/migrations/20261124193500_section9_exact_maintenance_flight_window.sql'
       - 'supabase/migrations/20261113231000_section9_hourly_game_maintenance_dispatch_clearance_v1.sql'
       - 'supabase/migrations/20261117090000_section9_hourly_maintenance_slot_and_booking_v1.sql'
       - '.github/workflows/section9-single-flight-acceptance-ci.yml'
@@ -39,6 +40,7 @@ on:
       - 'supabase/migrations/20261113224000_section9_trusted_demand_hold_to_ticket_bridge_v1.sql'
       - 'supabase/migrations/20261113104046_section9_maintenance_ledger_generated_identity_fix.sql'
       - 'supabase/migrations/20261113104858_section9_unpaid_maintenance_indefinite_grounding.sql'
+      - 'supabase/migrations/20261124193500_section9_exact_maintenance_flight_window.sql'
       - 'supabase/migrations/20261113231000_section9_hourly_game_maintenance_dispatch_clearance_v1.sql'
       - 'supabase/migrations/20261117090000_section9_hourly_maintenance_slot_and_booking_v1.sql'
       - '.github/workflows/section9-single-flight-acceptance-ci.yml'
@@ -160,6 +162,8 @@ jobs:
           print('Installing five unchanged real maintenance functions (booking, money worker, due, date window, hour-accurate dispatch preflight).')
           PY
           psql -X -v ON_ERROR_STOP=1 -f /tmp/airlinerra-current-game-maintenance.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261124193500_section9_exact_maintenance_flight_window.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261124193500_section9_exact_maintenance_flight_window.sql
       - name: Add disposable physical occurrence capacity and booking inventories
         shell: bash
         run: |
@@ -228,6 +232,6 @@ jobs:
         run: |
           echo '### Current single-flight route creation — disposable PostgreSQL 17' >> "$GITHUB_STEP_SUMMARY"
           echo 'Exact server SQL: owner/cabin wrapper, weekly route, first departure and atomic single-flight creation.' >> "$GITHUB_STEP_SUMMARY"
-          echo 'Maintenance booking, paid worker, due engine, flight window and dispatch preflight are current unmodified SQL. Slot authority, clock, position, certification signers and ticket gateway remain isolated fixtures.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Maintenance booking, paid worker, due engine, flight window includes exact paid deadline correction, and dispatch preflight remains unchanged. Slot authority, clock, position, certification signers and ticket gateway remain isolated fixtures.' >> "$GITHUB_STEP_SUMMARY"
           echo 'NEW BEG-ZAG source-grounded GAME profile: real 347km/54min A319 model, actual 4-week Section5 airport game evidence, real Section9 GAME guard, real paid daily/weekly game-maintenance clearance, one 125-seat first departure. MUC unknown noise, wrong first airport, duplicate route fail closed.' >> "$GITHUB_STEP_SUMMARY"
           echo 'External slot authority, operator certificate/signatures, aircraft identity and position remain synthetic. This is NOT a live flight approval or real-revenue certification. Production untouched.' >> "$GITHUB_STEP_SUMMARY"
