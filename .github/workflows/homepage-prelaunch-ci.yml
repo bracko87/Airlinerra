@@ -14,6 +14,20 @@ on:
       - 'tests/test_homepage_account_entries.mjs'
       - 'tests/test_registration_access.mjs'
       - '.github/workflows/homepage-prelaunch-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'website/index.html'
+      - 'website/studio-footer.js'
+      - 'website/studio-footer.css'
+      - 'tests/test_financial_charts_and_studio_footer.mjs'
+      - 'website/styles.css'
+      - 'website/register.html'
+      - 'website/real-registration.mjs'
+      - 'website/registration-access.mjs'
+      - 'tests/test_homepage_account_entries.mjs'
+      - 'tests/test_registration_access.mjs'
+      - '.github/workflows/homepage-prelaunch-ci.yml'
   workflow_dispatch:
 jobs:
   homepage-preview:
