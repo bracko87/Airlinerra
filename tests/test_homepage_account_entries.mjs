@@ -134,3 +134,27 @@ test('signup has repeat-password match, strength indicator, aligned consent and 
  assert.match(account,/New password \(8 to 128 characters\)/);
  assert.match(page,/password.length<8/);
 });
+
+
+test('cinematic homepage uses existing aviation branding with accessible concept previews and no signup bypass',async()=>{
+ const [home,style]=await Promise.all([read('../website/index.html'),read('../website/styles.css')]);
+ assert.match(home,/<section class="hero hero-modern section-anchor" id="home">/);
+ assert.match(home,/class="hero-backdrop" aria-hidden="true"/);
+ assert.match(home,/src="assets\/airlinerra-aircraft\.webp" alt=""[^>]*fetchpriority="high"/);
+ assert.match(home,/class="hero-flightdeck" aria-label="Illustrative airline route-management concept"/);
+ assert.match(home,/CONCEPT PREVIEW/);
+ assert.match(home,/Illustrative interface only — not live flight or booking data/);
+ assert.match(home,/class="hero-discover" href="#how-it-works"|class="button button-large hero-discover" href="#how-it-works"/);
+ assert.match(home,/class="hero-tester-link" href="\/account\.html\?screen=sign-in"/);
+ assert.match(home,/<section class="flightpath-section" id="journey" aria-labelledby="journey-title">/);
+ assert.equal((home.match(/class="flightpath-step"/g)||[]).length,4);
+ assert.match(home,/id="preview-tab-content"/);
+ assert.match(home,/role="note" aria-label="Important development notice"/);
+ assert.match(home,/public registration is currently closed/);
+ assert.doesNotMatch(home,/class="hero-discover"[^>]*href="\/register/);
+ assert.match(style,/\.hero\.hero-modern\s*\{/);
+ assert.match(style,/\.hero-flightdeck\s*\{/);
+ assert.match(style,/\.flightpath-steps\s*\{/);
+ assert.match(style,/@media \(max-width:640px\)/);
+ assert.match(style,/@media \(prefers-reduced-motion:reduce\)/);
+});
