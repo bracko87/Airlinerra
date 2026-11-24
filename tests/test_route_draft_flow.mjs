@@ -17,7 +17,9 @@ test('Create new route saves, while Blank new flight clears only the editor',asy
  assert.match(source,/if\(target.id==='route-plan-new'\|\|target.id==='route-plan-blank'\)/);
  assert.match(source,/await resetRouteForm\(\{blank:true\}\)/);
  assert.match(source,/if\(target.id!=='route-plan-save'\)return;/);
- assert.match(source,/await draftWrite\('routes',\[\.\.\.mirror,outbound,inbound\]\)/);
+ assert.match(source,/await draftWrite\('routes',\[\.\.\.filtered,draft\]\)/);
+ assert.match(source,/if\(result\?\.routeCreated!==true/);
+ assert.match(source,/result\.bookingEnabled!==true/);
  assert.match(source,/doc\.dispatchEvent\(new CustomEvent\('airlinerra:route-draft-saved'/);
  assert.match(source,/Blank new flight\. The suggestion was cleared/);
  assert.match(css,/#workspace-routes \.route-step1-actions \.primary/);

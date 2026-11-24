@@ -71,16 +71,19 @@ test('API preview uses new launch gate while retaining old response safety contr
  assert.match(server,/result\.ledgerPosted!==false/);
 });
 
-test('UI distinguishes valid timing from missing licences, fuel and booking bridge',async()=>{
+test('UI fails closed for missing licence, fuel or booking clearance on active single flight',async()=>{
  const client=await read('website/flight-schedule-client.mjs');
  const ui=await read('website/route-planner.mjs');
  assert.match(client,/conflict\.launchBlockers=/);
  assert.match(client,/reason\.roundtripPreview\.launchBlockers/);
- assert.match(ui,/error\.roundtripModelPassed===true/);
- assert.match(ui,/GAME_OPERATOR_LICENCE_NOT_ISSUED/);
- assert.match(ui,/ATOMIC_BOOKING_AND_FLIGHT_BRIDGE_NOT_COMPLETED/);
- assert.match(ui,/The flight engine is not released\./);
- assert.match(ui,/NOT CREATED — neither flight was changed or booked\./);
+ assert.match(ui,/blocked_commercial_engine_not_released/);
+ assert.match(ui,/blocked_operational_requirement/);
+ assert.match(ui,/blocked_activation/);
+ assert.match(ui,/blocked_ticket_inventory/);
+ assert.match(ui,/if\(result\?\.routeCreated!==true/);
+ assert.match(ui,/result\.bookingEnabled!==true/);
+ assert.match(ui,/OPERATIONAL_ROUTE_NOT_CONFIRMED/);
+ assert.match(ui,/The protected flight service did not confirm the route/);
 });
 
 
