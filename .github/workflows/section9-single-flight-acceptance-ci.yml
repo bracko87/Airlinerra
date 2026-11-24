@@ -1,0 +1,110 @@
+name: Airlinerra current single-flight creation acceptance (disposable PostgreSQL)
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'server/sql/section9_atomic_single_route_creation.sql'
+      - 'server/sql/section9_gated_operational_route_cabin_packages.sql'
+      - 'tests/sql/section9_disposable_positive_fra_muc_pair_bootstrap.sql'
+      - 'tests/sql/section9_single_flight_real_sql_disposable_bootstrap.sql'
+      - 'tests/sql/section9_single_flight_real_sql_disposable_acceptance.sql'
+      - '.github/workflows/section9-single-flight-acceptance-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'server/sql/section9_atomic_single_route_creation.sql'
+      - 'server/sql/section9_gated_operational_route_cabin_packages.sql'
+      - 'tests/sql/section9_disposable_positive_fra_muc_pair_bootstrap.sql'
+      - 'tests/sql/section9_single_flight_real_sql_disposable_bootstrap.sql'
+      - 'tests/sql/section9_single_flight_real_sql_disposable_acceptance.sql'
+      - '.github/workflows/section9-single-flight-acceptance-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  single-flight-acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable-ci-only
+          POSTGRES_DB: airlinerra_disposable
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d airlinerra_disposable"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 8
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: disposable-ci-only
+      PGDATABASE: airlinerra_disposable
+      PGOPTIONS: -c statement_timeout=30000 -c lock_timeout=10000
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client if needed
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v psql >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y postgresql-client
+          fi
+      - name: Confirm disposable PostgreSQL only
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = '127.0.0.1'
+          test "$PGDATABASE" = 'airlinerra_disposable'
+          test "$PGUSER" = 'postgres'
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/disposable_database_preflight.sql
+      - name: Seed controlled synthetic airline aircraft fuel and clock
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_disposable_positive_fra_muc_pair_bootstrap.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_single_flight_real_sql_disposable_bootstrap.sql
+      - name: Extract unchanged current route and cabin PostgreSQL functions
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          route=Path('server/sql/section9_atomic_single_route_creation.sql').read_text()
+          cabin=Path('server/sql/section9_gated_operational_route_cabin_packages.sql').read_text()
+          def source(src,name):
+              start=src.index('CREATE OR REPLACE FUNCTION airlinerra_game.'+name+'(')
+              end=src.index('REVOKE ALL ON FUNCTION airlinerra_game.'+name+'(',start)
+              body=src[start:end]
+              assert 'SECURITY INVOKER' in body and 'CREATE OR REPLACE FUNCTION' in body
+              return body
+          functions=[
+              source(route,'section9_single_route_first_departure_v1'),
+              source(route,'section9_create_active_single_route_v1'),
+              source(route,'section9_create_active_route_from_weekly_v1'),
+              source(cabin,'section9_resolve_route_onboard_package_v1'),
+              source(cabin,'section9_create_active_route_with_cabin_v1'),
+          ]
+          Path('/tmp/airlinerra-exact-current-single-flight.sql').write_text('\n'.join(functions))
+          print('Extracted FIVE unchanged current production route/cabin functions; other authorities remain explicit synthetic fixtures.')
+          PY
+          psql -X -v ON_ERROR_STOP=1 -f /tmp/airlinerra-exact-current-single-flight.sql
+      - name: Test single-flight creation, hard failures and full transaction rollback
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_single_flight_real_sql_disposable_acceptance.sql
+      - name: Describe the unproven boundaries
+        if: always()
+        shell: bash
+        run: |
+          echo '### Current single-flight route creation — disposable PostgreSQL 17' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Exact server SQL: owner/cabin wrapper, weekly route, first departure and atomic single-flight creation.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Synthetic test doubles: aircraft position, slots, maintenance, five certification authorities, saleable-window/ticket gateway, game clock and phase profile.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'No real player authentication, signed flight departure/arrival, fuel custody, finance settlement or refund proof. No production DB/source credentials accessed or data copied.' >> "$GITHUB_STEP_SUMMARY"
