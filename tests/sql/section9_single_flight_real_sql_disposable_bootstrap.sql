@@ -78,7 +78,7 @@ RETURNS jsonb LANGUAGE sql STABLE AS $fn$
  FROM airlinerra_game.fixture_single_route_control
 $fn$;
 CREATE OR REPLACE FUNCTION airlinerra_game.section9_game_route_phase_profile_v1(
- p_configuration bigint,p_origin text,p_destination text,p_minutes integer DEFAULT NULL)
+ p_configuration bigint,p_origin text,p_destination text,p_scheduled_minutes integer DEFAULT NULL)
 RETURNS jsonb LANGUAGE sql STABLE AS $fn$
  SELECT jsonb_build_object('totalMinutes',60)
  WHERE p_configuration=100 AND p_origin<>p_destination
