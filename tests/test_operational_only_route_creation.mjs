@@ -192,21 +192,22 @@ test('the first outbound plan does not show missing return warning; second route
  assert.ok(second.errors.some(e=>e.code==='AIRCRAFT_WRONG_AIRPORT'));
  assert.match(second.warnings.join(' '),/return or repositioning flight/i);
 });
-test('route creation UI saves unresolved rotation plans without claiming unapproved routes are active',async()=>{
+test('route creation requires one fully signed active route receipt; no planning fallback',async()=>{
  const ui=await readFile(new URL('../website/route-planner.mjs',import.meta.url),'utf8');
- assert.match(ui,/scheduler\.operationalCreate\(/);
- assert.match(ui,/scheduler\.planSave\(/);
- assert.match(ui,/if\(locationWarnings.length\)\{/);
- assert.match(ui,/result\.passengerBookingsCreated!==false/);
- assert.match(ui,/draft\.status='planning'/);
- assert.match(ui,/result\?\.routeCreated!==true/);
+ assert.match(ui,/scheduler\.operationalSingleCreate\(/);
+ assert.doesNotMatch(ui,/scheduler\.planSave\(/);
+ assert.match(ui,/if\(result\?\.routeCreated!==true/);
  assert.match(ui,/result\.activated!==true/);
  assert.match(ui,/result\.bookingEnabled!==true/);
- assert.match(ui,/NOT CREATED — automatic flight activation/);
- assert.match(ui,/AIRCRAFT_STARTING_LOCATION_NOT_VERIFIED/);
+ assert.match(ui,/result\.slotsReserved!==true/);
+ assert.match(ui,/result\.ledgerPosted!==false/);
+ assert.match(ui,/OPERATIONAL_ROUTE_NOT_CONFIRMED/);
+ assert.match(ui,/blocked_commercial_engine_not_released/);
+ assert.match(ui,/blocked_ticket_inventory/);
+ assert.match(ui,/AIRCRAFT_CANNOT_REACH_FIRST_DEPARTURE/);
  assert.doesNotMatch(ui,/CREW_ASSIGNMENTS_INCOMPLETE/);
- assert.match(ui,/No flight was created/);
- assert.match(ui,/const text='Route '\+flightNumber\+' created\.'/);
+ assert.match(ui,/not created\./);
+ assert.match(ui,/Active and open for bookings\./);
 });
 
 test('a verified starter aircraft at the correct origin is not misdiagnosed as lacking delivery or location',async()=>{

@@ -66,16 +66,18 @@ test('client exposes paired action and preserves release blockers',async()=>{
  assert.match(client,/reason\.blockers\.filter/);
  assert.match(client,/conflict\.isAtomicRoundtrip=true/);
 });
-test('route planner sends both flights when return suggestion still matches aircraft and airports',async()=>{
+test('Create route never silently creates the suggested return as a second flight',async()=>{
  const src=await read('website/route-planner.mjs');
- assert.match(src,/const matchingReturn=Boolean\(source&&source\.aircraftId===flightAircraft/);
- assert.match(src,/source\.from\?\.key===to\.key&&source\.to\?\.key===from\.key/);
- assert.match(src,/await scheduler\.operationalRoundtripCreate/);
- assert.match(src,/outboundFlightNumber:source\.flightNumber,returnFlightNumber:flightNumber/);
- assert.match(src,/No airport slots were reserved and no charge was made/);
- assert.match(src,/suggestedSourceFlight=null/);
+ assert.match(src,/const suggestReturnFromSavedFlight=async/);
+ assert.match(src,/if\(target.id==='route-plan-next'\)/);
+ assert.match(src,/await suggestReturnFromSavedFlight\(\)/);
+ assert.match(src,/const result=await scheduler\.operationalSingleCreate\(/);
+ assert.match(src,/result\?\.routeCreated!==true/);
+ assert.match(src,/result\.activated!==true/);
+ assert.match(src,/result\.bookingEnabled!==true/);
+ assert.doesNotMatch(src,/scheduler\.operationalRoundtripCreate\(/);
+ assert.doesNotMatch(src,/scheduler\.planSave\(/);
 });
-
 
 test('phase-1 crew exemption is represented as a PAUSED, never-open release policy',async()=>{
  const sql=await read('supabase/migrations/20261113216000_section9_world1_paused_crew_deferred_phase1.sql');
