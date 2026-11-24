@@ -7,6 +7,7 @@ DO $guard$ BEGIN
     OR to_regclass('airlinerra_game.fixture_single_route_control') IS NULL
  THEN RAISE EXCEPTION 'MAINTENANCE_FLIGHT_DISPOSABLE_ONLY'; END IF;
 END $guard$;
+ALTER TABLE airlinerra_game.airline_aircraft_inventory ADD COLUMN registration text DEFAULT 'TEST-001';
 CREATE TABLE airlinerra_game.fixture_game_now (
  singleton boolean PRIMARY KEY DEFAULT true CHECK(singleton),
  simulated_now timestamptz NOT NULL
