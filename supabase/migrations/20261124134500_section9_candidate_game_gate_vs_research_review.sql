@@ -17,13 +17,11 @@ DO $candidate_game_guard_patch$
 DECLARE
  fn_oid oid;
  ddl text;
- old_block text:=$old_block$
-IF restrict_preview->>'weeklyTimetableChecked' IS DISTINCT FROM 'true'
+ old_block text:=$old_block$IF restrict_preview->>'weeklyTimetableChecked' IS DISTINCT FROM 'true'
     OR restrict_preview->>'gameHardBlocked' IS DISTINCT FROM 'false'
     OR restrict_preview->>'needsReview' IS DISTINCT FROM 'false'
   THEN blockers:=array_append(blockers,'AIRPORT_GAME_RESTRICTIONS_NOT_CLEARED');END IF;$old_block$;
- new_block text:=$new_block$
-game_restriction_clear:=coalesce(
+ new_block text:=$new_block$game_restriction_clear:=coalesce(
     airlinerra_game.section9_game_route_restrictions_valid_v1(
        p_origin,p_destination,restrict_preview),false);
   IF NOT game_restriction_clear
