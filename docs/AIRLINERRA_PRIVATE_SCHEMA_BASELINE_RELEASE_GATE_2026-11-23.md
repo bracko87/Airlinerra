@@ -85,3 +85,19 @@ The GitHub secret now passes basic URI formatting validation; local safety scrip
 **Latest workflow run:** https://github.com/bracko87/Airlinerra/actions/runs/45275280824
 
 This is a connection/authentication prerequisite only, not a schema migration failure. Stop trying blind pooler variants until the authoritative project Session pooler URI is provided.
+
+## 24 November 2026 — isolated restoration gate PASSED
+
+**Outcome: PASS** — [GitHub Actions run 45355469102](https://github.com/bracko87/Airlinerra/actions/runs/45355469102), using commit `1ed3cb0e8b339d9ea6dfff8c28a7bf79adf01a44`.
+
+The complete real-production **schema-only** snapshot was exported via independently verified Airlinerra IPv4 session pooler without table data. The private runner then successfully restored the application schema into disposable local Supabase and proved all seven `airlinerra`/`airlinerra_game` structural fingerprints match the source. The two pending trusted-flight forward-only SQL corrections applied successfully **on the disposable clone** and the expected function-body and execute-grant guards passed. The live trusted-flight function grants passed separate read-only checks before export.
+
+The final correction is deterministic four-stage restore ordering:
+1. Public application tables — `pre-data`, to establish `public.airlinerra_game_worlds` and the profile table
+2. Private `airlinerra` and `airlinerra_game` — `pre-data`, including the profile-update trigger function
+3. Public application tables — `post-data`, providing primary keys and the profile trigger
+4. Private schemas — `post-data`, including foreign keys to `public.airlinerra_game_worlds`
+
+Earlier fails were due to local Supabase-owned public objects, privileges and creation order. This corrects the isolated test setup without changing source SQL definitions or production.
+
+**Important boundaries:** This passes the structural schema clone and two corrective functions, **not** the full authenticated player commercial lifecycle, complete source data/configuration seeding or 17 SQL-body drift reconciliations. This is not approval to `db push`, merge draft PR #62, or enable new production release controls. No paid Supabase branch is open.
