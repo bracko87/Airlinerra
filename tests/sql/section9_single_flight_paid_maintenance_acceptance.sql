@@ -15,7 +15,7 @@ DECLARE
  weekly jsonb:='[{"day":5,"time":"15:00"}]'::jsonb;
  due jsonb;win jsonb;dispatch jsonb;job jsonb;result jsonb;advance jsonb;
  dail_id uuid;week_id uuid;
- occurrence_id uuid; booking jsonb; booking_replay jsonb; reservation_id uuid; active_schedule uuid;
+ booking_occurrence uuid; booking jsonb; booking_replay jsonb; reservation_id uuid; active_schedule uuid;
 BEGIN
  IF current_database()<>'airlinerra_disposable' OR current_user<>'postgres'
  THEN RAISE EXCEPTION 'MAINTENANCE_ACCEPTANCE_WRONG_TARGET';END IF;
@@ -145,16 +145,16 @@ BEGIN
  JOIN airlinerra_game.airline_flight_schedule_drafts_v1 s ON s.id=f.schedule_id
  JOIN airlinerra_game.section9_route_commercial_plans_v1 p ON p.schedule_id=s.id
  WHERE s.id=active_schedule
- RETURNING id INTO occurrence_id;
+ RETURNING id INTO booking_occurrence;
  INSERT INTO airlinerra_game.section9_occurrence_capacity_inventory_v1
   (physical_flight_id,schedule_id,airline_id,passenger_capacity,
    schedule_version,commercial_version,passengers_held,status)
  SELECT o.schedule_id::text||':'||o.flight_local_date||':'||o.weekly_entry,
     o.schedule_id,o.airline_id,o.verified_passenger_seats,
     o.schedule_version,o.commercial_version,0,'preflight_only'
- FROM airlinerra_game.section9_dated_flight_occurrences_v1 o WHERE o.id=occurrence_id;
+ FROM airlinerra_game.section9_dated_flight_occurrences_v1 o WHERE o.id=booking_occurrence;
  booking:=airlinerra_game.section9_reserve_verified_game_passenger_seats_v1(
-   occurrence_id,'trusted.test.booking.00001','economy',20);
+   booking_occurrence,'trusted.test.booking.00001','economy',20);
  IF booking->>'status'<>'game_passenger_seats_reserved' OR
     booking->>'seatsReservedNow'<>'20' OR booking->>'totalSeatsBooked'<>'20'
  OR booking->>'remainingSeats'<>'90' OR booking->>'chargedNow'<>'false'
@@ -162,36 +162,36 @@ BEGIN
  THEN RAISE EXCEPTION 'Real passenger booking failed: %',booking;END IF;
  reservation_id:=(booking->>'reservationId')::uuid;
  booking_replay:=airlinerra_game.section9_reserve_verified_game_passenger_seats_v1(
-   occurrence_id,'trusted.test.booking.00001','economy',20);
+   booking_occurrence,'trusted.test.booking.00001','economy',20);
  IF booking_replay->>'status'<>'game_passenger_reservation_replayed'
  OR booking_replay->>'replayed'<>'true' OR booking_replay->>'reservedNow'<>'false'
  OR (booking_replay->>'reservationId')::uuid<>reservation_id
  THEN RAISE EXCEPTION 'Same reservation key duplicated passengers: %',booking_replay;END IF;
  BEGIN
   PERFORM airlinerra_game.section9_reserve_verified_game_passenger_seats_v1(
-   occurrence_id,'trusted.test.booking.00001','economy',19);
+   booking_occurrence,'trusted.test.booking.00001','economy',19);
   RAISE EXCEPTION 'Mismatched replay was accepted without a hard error';
  EXCEPTION WHEN unique_violation THEN
   IF SQLERRM NOT LIKE '%SECTION9_PASSENGER_RESERVATION_REPLAY_MISMATCH%'
   THEN RAISE;END IF;
  END;
  booking:=airlinerra_game.section9_reserve_verified_game_passenger_seats_v1(
-  occurrence_id,'trusted.test.booking.too-many','economy',95);
+  booking_occurrence,'trusted.test.booking.too-many','economy',95);
  IF booking->>'status'<>'blocked_insufficient_available_seats'
  OR booking->>'availableSeats'<>'90' OR booking->>'chargedNow'<>'false'
  THEN RAISE EXCEPTION 'Oversell was not denied: %',booking;END IF;
  booking:=airlinerra_game.section9_reserve_verified_game_passenger_seats_v1(
-  occurrence_id,'trusted.test.booking.00002','economy',90);
+  booking_occurrence,'trusted.test.booking.00002','economy',90);
  IF booking->>'status'<>'game_passenger_seats_reserved'
  OR booking->>'totalSeatsBooked'<>'110' OR booking->>'remainingSeats'<>'0'
  OR booking->>'ledgerPosted'<>'false'
  THEN RAISE EXCEPTION 'Remaining seat booking incorrect: %',booking;END IF;
  IF (SELECT booked_seats FROM airlinerra_game.section9_dated_flight_occurrences_v1
-     WHERE id=occurrence_id)<>110
+     WHERE id=booking_occurrence)<>110
  OR (SELECT passengers_held FROM airlinerra_game.section9_occurrence_capacity_inventory_v1
      WHERE schedule_id=active_schedule)<>110
  OR (SELECT count(*) FROM airlinerra_game.section9_passenger_reservation_batches_v1 b
-     WHERE b.occurrence_id=occurrence_id)<>2
+     WHERE b.occurrence_id=booking_occurrence)<>2
  OR (SELECT count(*) FROM airlinerra_game.airline_ledger WHERE entry_kind='EXPENSE')<>2
  OR (SELECT coalesce(sum(amount_usd),0) FROM airlinerra_game.airline_ledger
      WHERE airline_id=airline)<>4999425
@@ -201,7 +201,7 @@ BEGIN
  INSERT INTO airlinerra_game.section9_operated_flight_movements_v1
  VALUES ('synthetic-booking-closed-marker',active_schedule,DATE '2026-11-21',5);
  booking:=airlinerra_game.section9_reserve_verified_game_passenger_seats_v1(
-  occurrence_id,'trusted.test.booking.after-movement','economy',1);
+  booking_occurrence,'trusted.test.booking.after-movement','economy',1);
  IF booking->>'status'<>'blocked_slots_or_flight_already_operated'
  OR booking->>'ledgerPosted'<>'false'
  THEN RAISE EXCEPTION 'Post-movement booking did not fail closed: %',booking;END IF;
