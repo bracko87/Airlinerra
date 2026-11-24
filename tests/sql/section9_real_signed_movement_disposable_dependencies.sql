@@ -95,6 +95,11 @@ RETURNS text LANGUAGE sql STABLE AS $$
  to_char(p_time AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS"Z"'),p_event),'UTF8'),
  convert_to(repeat('a',80),'UTF8'),'sha256'),'hex')$$;
 
+-- Current live movement checks world_id on the dated occurrence. Historical
+-- small synthetic fixture omitted it; add only after old positional INSERTs.
+ALTER TABLE airlinerra_game.section9_dated_flight_occurrences_v1
+ ADD COLUMN world_id smallint NOT NULL DEFAULT 1;
+
 -- Test-only stubs for NEWER deployed delayed-aware signed movement function.
 -- No synthetic delay authorisation: normal unchanged 18:00 UTC schedule.
 CREATE OR REPLACE FUNCTION airlinerra_game.section9_effective_dispatch_window_v1(p_occurrence uuid)
