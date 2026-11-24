@@ -110,6 +110,32 @@ BEGIN
  IF win->>'flightWindowClear'<>'true' OR dispatch->>'gameMaintenanceClear'<>'true'
  OR dispatch->>'dispatchApproved'<>'false'
  THEN RAISE EXCEPTION 'Post-service flight preflight not clear: % :: %',win,dispatch;END IF;
+ -- Regression: calendar-day gate must not reject a future morning flight
+ -- before its verified paid Daily deadline, nor permit arrival at/after it.
+ -- Historical fixture has separate paid Daily and Weekly receipts.
+ DECLARE deadline timestamptz; original_now timestamptz;
+ BEGIN
+  SELECT game_completed_at_utc+interval '24 hours' INTO STRICT deadline
+   FROM airlinerra_game.section9_game_maintenance_service_receipts_v1 WHERE job_id=dail_id;
+  win:=airlinerra_game.section9_owned_game_maintenance_flight_window_v1(player,airline,aircraft,deadline-interval '2 hours',deadline-interval '1 minute');
+  IF win->>'flightWindowClear' IS DISTINCT FROM 'true'
+   THEN RAISE EXCEPTION 'Future due-date morning flight wrongly blocked: %',win; END IF;
+  win:=airlinerra_game.section9_owned_game_maintenance_flight_window_v1(player,airline,aircraft,deadline-interval '1 hour',deadline);
+  IF win->>'flightWindowClear' IS DISTINCT FROM 'false' OR NOT (win->'blockers' @> '["GAME_MAINTENANCE_CHECK_DUE"]'::jsonb)
+   THEN RAISE EXCEPTION 'Exact maintenance expiry must block: %',win; END IF;
+  win:=airlinerra_game.section9_owned_game_maintenance_flight_window_v1(player,airline,aircraft,deadline+interval '1 minute',deadline+interval '1 hour');
+  IF win->>'flightWindowClear' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'Overdue future departure passed: %',win; END IF;
+  win:=airlinerra_game.section9_owned_game_maintenance_flight_window_v1(player,airline,aircraft,deadline-interval '12 hours',deadline-interval '1 minute');
+  IF win->>'flightWindowClear' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'Cross-midnight before expiry blocked: %',win; END IF;
+  SELECT simulated_now INTO STRICT original_now FROM airlinerra_game.fixture_game_now;
+  UPDATE airlinerra_game.fixture_game_now SET simulated_now=deadline-interval '2 hours';
+  UPDATE airlinerra_game.holding_world_clock_v1 SET confirmed_game_date=(deadline AT TIME ZONE 'Europe/Berlin')::date;
+  win:=airlinerra_game.section9_owned_game_maintenance_flight_window_v1(player,airline,aircraft,deadline-interval '1 hour',deadline+interval '1 minute');
+  IF win->>'flightWindowClear' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'Current-day crossing deadline passed: %',win; END IF;
+  UPDATE airlinerra_game.fixture_game_now SET simulated_now=original_now;
+  UPDATE airlinerra_game.holding_world_clock_v1 SET confirmed_game_date=(original_now AT TIME ZONE 'Europe/Berlin')::date;
+  RAISE NOTICE 'PASS: paid maintenance exact deadline, before/equal/after and cross-midnight.';
+ END;
  -- The SAME synthetic aircraft can now use exact genuine main single-route code.
  result:=airlinerra_game.section9_create_active_route_with_cabin_v1(
   player,airline,aircraft,'AL104',origin,dest,weekly,'terminal','terminal',60,90,'basic');
