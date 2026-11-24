@@ -1,11 +1,7 @@
 name: Airlinerra private schema-only baseline and restore gate
+# Manual invocation only: production database connection credentials are
+# intentionally unavailable to routine pushes on this public repository.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'scripts/ci/airlinerra_private_schema_baseline.sh'
-      - 'tests/sql/airlinerra_private_schema_fingerprint.sql'
-      - '.github/workflows/airlinerra-private-schema-baseline-ci.yml'
   workflow_dispatch:
 permissions:
   contents: read
