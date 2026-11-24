@@ -172,5 +172,5 @@ test('route list and details surface the saved provisional flight arrival withou
  assert.match(list,/savedArrivalUtc\?'~'/);
  assert.match(details,/Estimated arrival \(provisional\)/);
  assert.match(details,/not an approved flight time or reserved airport slot/);
- assert.match(details,/slots','Not reserved for planning routes/);
+ assert.match(details,/fact\(doc,schedInfo,'Airport slots',route\.slotsReserved===true\?'Reserved'/);
 });

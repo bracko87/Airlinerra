@@ -144,7 +144,7 @@ export function createSection9RouteDetails({doc,host,getRoutes,getServer}={}){
   bookingRows.className='route-booking-preview-rows';
   bookingPanel.append(bookingRows);
   host.append(bookingPanel);
-  if(route.operationallyVerified&&route.serverScheduleId&&typeof server.scheduler?.operationalBookings==='function'){
+  if(route.operationallyVerified&&route.serverScheduleId&&server.connected&&server.airline?.id&&typeof server.scheduler?.operationalBookings==='function'){
    bookingStatus.textContent='Loading upcoming flights and reservations...';
    void (async()=>{try{
     const reply=await server.scheduler.operationalBookings({airlineId:server.airline.id,scheduleId:route.serverScheduleId});
@@ -155,7 +155,14 @@ export function createSection9RouteDetails({doc,host,getRoutes,getServer}={}){
     for(const item of reply.occurrences){
      const row=doc.createElement('div');row.className='route-booking-preview-row';
      const dep=new Date(item.departureUtc),arr=new Date(item.arrivalUtc);
-     row.append(text(doc,'strong',String(item.flightDate).slice(0,10)+' - '+dep.toISOString().slice(11,16)+' UTC'),text(doc,'span','Arrival '+arr.toISOString().slice(11,16)+' UTC'),text(doc,'span',item.bookedSeats+' / '+item.capacity+' passengers'),text(doc,'span',String(item.bookingStatus)+' - 'Awaiting approval - ticket sales have not started. You can continue editing your weekly schedule.';
+     row.append(text(doc,'strong',String(item.flightDate).slice(0,10)+' - '+dep.toISOString().slice(11,16)+' UTC'),text(doc,'span','Arrival '+arr.toISOString().slice(11,16)+' UTC'),text(doc,'span',item.bookedSeats+' / '+item.capacity+' passengers'),text(doc,'span',String(item.bookingStatus)+' - $'+Number(item.reservedTicketRevenueUsd).toLocaleString('en-US')+' reserved fares'));
+     bookingRows.append(row);
+    }
+   }catch{if(mySerial===serial)bookingStatus.textContent='Live booking information unavailable.';}})();
+  }else if(route.operationallyVerified){
+   bookingStatus.textContent='Live booking information unavailable.';
+  }else if(!route.serverScheduleId){
+   bookingStatus.textContent='Awaiting approval - ticket sales have not started. You can continue editing your weekly schedule.';
   }else if(!server.connected||!server.airline?.id||
     typeof server.scheduler?.bookingWindowPreview!=='function'){
    bookingStatus.textContent='Seven-day departure preview unavailable. Ticket sales remain closed.';
