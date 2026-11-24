@@ -1,7 +1,9 @@
 name: Unified airport planning and admission boundary
 on:
   push:
+    branches: [main, commercial-flight-lifecycle]
     paths:
+      - 'tests/test_owner_route_planning.mjs'
       - 'server/flight-schedule-service.mjs'
       - 'supabase/migrations/*unified*airport*.sql'
       - 'tests/test_unified_airport_route_planning.mjs'
