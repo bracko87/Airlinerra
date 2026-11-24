@@ -8,6 +8,11 @@ on:
       - 'tests/sql/section9_bookings_before_signed_departure_acceptance.sql'
       - 'tests/sql/section9_bookings_after_signed_departure_acceptance.sql'
       - 'tests/sql/section9_bookings_after_signed_arrival_acceptance.sql'
+      - 'tests/sql/section9_same_signed_flight_finance_dependencies.sql'
+      - 'tests/sql/section9_same_signed_flight_finance_preflight.sql'
+      - 'tests/sql/section9_same_signed_flight_finance_postconditions.sql'
+      - 'supabase/migrations/20261117095000_section9_once_only_final_flight_finance_guarded_v1.sql'
+      - 'supabase/migrations/20261113225000_section9_postarrival_ticket_revenue_reconciliation_v1.sql'
       - 'supabase/migrations/20261113224000_section9_trusted_demand_hold_to_ticket_bridge_v1.sql'
       - 'supabase/migrations/20261113223000_section9_hour_accurate_tickets_and_movement_enforcement_v1.sql'
       - 'tests/sql/section9_arrival_custody_conflict_disposable_setup.sql'
@@ -25,6 +30,11 @@ on:
       - 'tests/sql/section9_bookings_before_signed_departure_acceptance.sql'
       - 'tests/sql/section9_bookings_after_signed_departure_acceptance.sql'
       - 'tests/sql/section9_bookings_after_signed_arrival_acceptance.sql'
+      - 'tests/sql/section9_same_signed_flight_finance_dependencies.sql'
+      - 'tests/sql/section9_same_signed_flight_finance_preflight.sql'
+      - 'tests/sql/section9_same_signed_flight_finance_postconditions.sql'
+      - 'supabase/migrations/20261117095000_section9_once_only_final_flight_finance_guarded_v1.sql'
+      - 'supabase/migrations/20261113225000_section9_postarrival_ticket_revenue_reconciliation_v1.sql'
       - 'tests/sql/section9_real_arrival_disposable_dependencies.sql'
       - 'supabase/migrations/20261113224000_section9_trusted_demand_hold_to_ticket_bridge_v1.sql'
       - 'supabase/migrations/20261113223000_section9_hour_accurate_tickets_and_movement_enforcement_v1.sql'
@@ -167,6 +177,60 @@ jobs:
           psql -XAt -v ON_ERROR_STOP=1 -c "SELECT (SELECT count(*) FROM airlinerra_game.section9_game_flight_fuel_arrival_receipts_v1)||':'||(SELECT count(*) FROM airlinerra_game.section9_arrived_aircraft_usage_receipts_v1)||':'||(SELECT (onboard_kg=380)::int||':'||revision::text FROM airlinerra_game.section9_aircraft_game_fuel_custody_v1)||':'||(SELECT tracked_flight_cycles FROM airlinerra_game.aircraft_maintenance_state_v1)" | grep -qx '1:1:1:2:1'
           psql -XAt -v ON_ERROR_STOP=1 -c "SELECT airlinerra_game.section9_apply_verified_arrival_fuel_burn_once_v1('11111111-1111-4111-8111-111111111111:2026-11-23:4','TEST-AUTO-DISPATCH-ARRIVED-4')->>'status'" | grep -qx signed_game_fuel_burn_already_applied
           psql -XAt -v ON_ERROR_STOP=1 -c "SELECT airlinerra_game.section9_apply_arrival_airframe_usage_once_v1('11111111-1111-4111-8111-111111111111:2026-11-23:4')->>'status'" | grep -qx airframe_usage_already_applied
+      - name: Install same-flight SYNTHETIC finance approval and genuine production final finance SQL
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_same_signed_flight_finance_dependencies.sql
+          python3 - <<'PY'
+          from pathlib import Path
+          targets=[
+            ('supabase/migrations/20261117095000_section9_once_only_final_flight_finance_guarded_v1.sql',
+             'section9_verify_operated_flight_hmac_pair_v1'),
+            ('supabase/migrations/20261113225000_section9_postarrival_ticket_revenue_reconciliation_v1.sql',
+             'section9_postarrival_ticket_reconciliation_v1'),
+            ('supabase/migrations/20261117095000_section9_once_only_final_flight_finance_guarded_v1.sql',
+             'section9_post_completed_flight_finance_once_v1')
+          ]
+          parts=[]
+          for path,name in targets:
+            src=Path(path).read_text()
+            first=src.index('CREATE OR REPLACE FUNCTION airlinerra_game.'+name+'(')
+            end=src.index('REVOKE ALL ON FUNCTION airlinerra_game.'+name+'(',first)
+            body=src[first:end]
+            assert 'END $function$' in body, name
+            parts.append(body)
+          Path('/tmp/same-real-signed-flight-finance.sql').write_text('\n'.join(parts))
+          print('Three UNMODIFIED production finance/cryptographic/ticket SQL functions installed in disposable PG17')
+          PY
+          psql -X -v ON_ERROR_STOP=1 -f /tmp/same-real-signed-flight-finance.sql
+      - name: Verify actual signed booked arrival rejects unapproved missing or tampered financial evidence
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_same_signed_flight_finance_preflight.sql
+      - name: Race SIX separate connections for one real-signed flight's genuine final finance posting
+        run: |
+          set -euo pipefail
+          FID='11111111-1111-4111-8111-111111111111:2026-11-23:4'
+          pids=()
+          for n in $(seq 1 6); do
+            psql -X -qAt -v ON_ERROR_STOP=1 -c "SELECT (airlinerra_game.section9_post_completed_flight_finance_once_v1('$FID')->>'status');" > "$RUNNER_TEMP/same_flight_finance_$n.txt" 2>&1 &
+            pids+=("$!")
+          done
+          exit_status=0
+          for pid in "${pids[@]}"; do
+            wait "$pid" || exit_status=1
+          done
+          cat "$RUNNER_TEMP"/same_flight_finance_*.txt
+          test "$exit_status" -eq 0
+          posted=$(grep -hxc 'verified_complete_flight_finance_posted_once' "$RUNNER_TEMP"/same_flight_finance_*.txt | awk '{s+=$1}END{print s+0}')
+          test "$posted" -eq 1
+          for path in "$RUNNER_TEMP"/same_flight_finance_*.txt; do
+            grep -Eq '^(verified_complete_flight_finance_posted_once|game_flight_finance_posting_busy|complete_game_flight_finance_already_posted)$' "$path"
+          done
+      - name: Verify SAME real booked signed arrived fuel-burned flight posts exactly one income and expense
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_same_signed_flight_finance_postconditions.sql
       - name: Changed fuel custody in transit atomically rolls back signed arrival
         run: |
           set -euo pipefail
@@ -188,4 +252,5 @@ jobs:
           echo '### Real automatic signed departure and arrival with unchanged airframe and fuel-burn SQL' >> "$GITHUB_STEP_SUMMARY"
           echo 'Verifies 500 to 380 kg, custody revision 1 to 2, 1 hour and 1 cycle, two once-only receipt kinds, and stable replay.' >> "$GITHUB_STEP_SUMMARY"
           echo 'Unmodified production booking plus real 7-day time-window, signed departure/arrival and fuel burn now run on one synthetic flight.' >> "$GITHUB_STEP_SUMMARY"
-          echo 'Release, permission, clock, aircraft position, seeded 2-seat reservation and fuel quote remain synthetic. Final real flight finance, demand issuer and refunds unverified. Production untouched.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Real HMAC pair verification, real ticket reconciliation and real final finance-posting SQL also run against the SAME signed flight; six concurrent workers post revenue and expense once.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Cost approval, airport/fuel tariffs, first 2 prebooked seats, release states, operations rights and clock remain SYNTHETIC. Real source cost approval, real demand issuance, cancellation/refunds and production release NOT certified. Production untouched.' >> "$GITHUB_STEP_SUMMARY"
