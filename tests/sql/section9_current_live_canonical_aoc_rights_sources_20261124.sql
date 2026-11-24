@@ -71,7 +71,7 @@ begin
   'authorized',cardinality(issues)=0,'issues',to_jsonb(issues),
   'airlineId',p_airline,'gameDay',p_game_day,
   'flightActivated',false,'ledgerPosted',false);
-end $function$
+end $function$;
 
 
 -- SOURCE: section9_canonical_aoc_covers_v1
@@ -85,7 +85,7 @@ AS $function$
  AND EXISTS(SELECT 1 FROM airlinerra_game.section9_aoc_certificates_v1 c
  WHERE c.airline_id=p_airline AND c.world_id=1 AND c.status='active'
  AND c.issued_game_day<=p_day AND c.expires_game_day>p_day+p_days)
-$function$
+$function$;
 
 
 -- SOURCE: licence2_country_market_v1
@@ -104,7 +104,7 @@ AS $function$
  when upper(coalesce(p_iso,''))='GB' then 'L2-UK'
  when upper(coalesce(p_iso,''))='JP' then 'L2-JP'
  else null end
-$function$
+$function$;
 
 
 -- SOURCE: licence2_foreign_route_preview_v1
@@ -218,7 +218,7 @@ begin
   'requiresLicence2',true,'canActivateFlights',false,
   'hubVerified',v_base_active,
   'quotaNote','Route-count ledger and atomic quota allocation required before activation');
-end $function$
+end $function$;
 
 
 -- SOURCE: section9_game_route_licence_scope_v1
@@ -242,7 +242,7 @@ BEGIN
  SELECT 1 FROM airlinerra_game.licence2_directed_route_allocations_v1 x WHERE x.world_id=1 AND x.airline_id=p_airline AND x.origin_airport_key=p_origin AND x.destination_airport_key=p_destination AND x.market_code=market AND x.allocation_state IN ('reserved','active'))
  THEN RETURN jsonb_build_object('allowed',true,'decision','L2_APPROVED_MARKET_ROUTE','licence',2,'market',market,'applicationRequired',false);END IF;
  RETURN jsonb_build_object('allowed',false,'decision',coalesce(scope->>'decision','L2_REQUIRED'),'licence',2,'market',market);
-END $function$
+END $function$;
 
 
 -- SOURCE: section9_verify_game_operator_licence_v1
@@ -344,7 +344,7 @@ BEGIN
   'verified',true,'readOnly',true,'gameLicenceOnly',true,
   'flightActivated',false,'movementRecorded',false,
   'bookingsCreated',false,'ledgerPosted',false);
-END $function$
+END $function$;
 
 
 -- SOURCE: section9_verify_game_route_traffic_rights_v1
