@@ -71,7 +71,7 @@ RETURNS jsonb LANGUAGE sql STABLE AS $fn$
  'airportKey',position_airport) FROM airlinerra_game.fixture_single_route_control
 $fn$;
 CREATE OR REPLACE FUNCTION airlinerra_game.section9_owned_game_maintenance_flight_window_v1(
- p_player uuid,p_airline uuid,p_aircraft uuid,p_dep timestamptz,p_arr timestamptz)
+ p_player uuid,p_airline uuid,p_aircraft uuid,p_departure_utc timestamptz,p_arrival_utc timestamptz)
 RETURNS jsonb LANGUAGE sql STABLE AS $fn$
  SELECT jsonb_build_object('flightWindowClear',fail_at<>'maintenance',
  'blockers',CASE WHEN fail_at='maintenance' THEN '["MAINTENANCE_BOOKED"]'::jsonb ELSE '[]'::jsonb END)
