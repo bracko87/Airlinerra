@@ -18,6 +18,17 @@ on:
       - 'supabase/migrations/20261113233000_section9_once_only_arrival_airframe_hours_cycles_v1.sql'
       - 'supabase/migrations/20261117110000_section9_game_fuel_custody_supply_dispatch_v1.sql'
       - '.github/workflows/section9-real-arrival-fuel-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tests/sql/section9_bookings_into_real_arrival_dependencies.sql'
+      - 'tests/sql/section9_bookings_before_signed_departure_acceptance.sql'
+      - 'tests/sql/section9_bookings_after_signed_departure_acceptance.sql'
+      - 'tests/sql/section9_bookings_after_signed_arrival_acceptance.sql'
+      - 'tests/sql/section9_real_arrival_disposable_dependencies.sql'
+      - 'supabase/migrations/20261113224000_section9_trusted_demand_hold_to_ticket_bridge_v1.sql'
+      - 'supabase/migrations/20261113223000_section9_hour_accurate_tickets_and_movement_enforcement_v1.sql'
+      - '.github/workflows/section9-real-arrival-fuel-ci.yml'
   workflow_dispatch:
 permissions:
   contents: read
