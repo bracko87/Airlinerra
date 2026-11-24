@@ -115,9 +115,10 @@ test('blocked route response carries read-only airport evidence through client i
  assert.match(server,/candidate\.airportRestrictionFindings\?\.operationApproved===false/);
  assert.match(client,/conflict\.operationalAirportFindings=/);
  assert.match(client,/reason\.gameAirportRestrictionFindings\?\.readOnly===true/);
- assert.match(planner,/unresolvedAirports/);
- assert.match(planner,/runway status/);
- assert.match(planner,/aircraft noise certificate/);
+ assert.match(planner,/if\(leg\.runwayBlocked\)/);
+ assert.match(planner,/runway not suitable/);
+ assert.match(planner,/confirmed aircraft noise restriction/);
+ assert.match(planner,/if\(preflight\?\.gameHardBlocked===true\)/);
  assert.match(planner,/NOT CREATED/);
 });
 
@@ -154,7 +155,9 @@ test('UI carries model estimate but keeps operational route creation blocked',as
  assert.match(server,/gameModelEvidenceType:'GAME_ESTIMATE_NOT_OFFICIAL_CLEARANCE'/);
  assert.match(server,/routeCreated:false/);
  assert.match(client,/conflict\.gameModelPreliminarySuitable=reason\.gameModelPreliminarySuitable/);
- assert.match(planner,/error\?\.gameModelPreliminarySuitable===true/);
- assert.match(planner,/game estimate, not an operating clearance/);
+ assert.match(planner,/if\(result\?\.routeCreated!==true/);
+ assert.match(planner,/result\.activated!==true/);
+ assert.match(planner,/result\.bookingEnabled!==true/);
+ assert.doesNotMatch(planner,/scheduler\.planSave\(/);
  assert.match(planner,/NOT CREATED/);
 });
