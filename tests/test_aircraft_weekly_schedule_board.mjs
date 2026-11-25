@@ -187,8 +187,8 @@ test('current daily schedule renders confirmed server events without inventing p
   readFile(new URL('dev-scripts/invited-overlay.mjs',root),'utf8')
  ]);
  assert.match(view,/id="schedule-aircraft-board"/);
- assert.match(view,/id="schedule-day-prev"/);
- assert.match(view,/id="schedule-day-next"/);
+ assert.doesNotMatch(view,/id="schedule-day-prev"|id="schedule-day-next"|id="schedule-selected-day"/);
+ assert.doesNotMatch(view,/AIRCRAFT × NEXT 12 HOURS/);
  assert.match(view,/Unconfirmed route plans are excluded/);
  assert.match(view,/result\?\.status!=='verified_aircraft_calendar'/);
  assert.match(view,/buildDatedCalendar\(enriched,scheduleSnapshot\?\.events,selectedDate\)/);
@@ -346,4 +346,21 @@ test('compact aircraft family beside registration; nickname stays; utilization n
  assert.deepEqual(identity.children.map(x=>x.textContent),['YU-PAN01','A320']);
  assert.equal(getAll(host,x=>x.className==='schedule-board-nickname')[0].textContent,'Aleksandrovo');
  assert.equal(getAll(host,x=>x.textContent.includes('scheduled utilization')).length,0);
+});
+
+test('rolling calendar hides duplicate date range but retains time ticks and genuine empty state',async()=>{
+ const {buildDatedCalendar,renderDatedCalendar}=await import('../website/aircraft-dated-calendar.mjs');
+ const {rollingTwelveHourWindows}=await import('../website/rolling-flight-calendar.mjs');
+ const window=rollingTwelveHourWindows(Date.parse('2026-11-25T14:30:00Z'))[0];
+ const make=tag=>({...element(tag),dataset:{},addEventListener(){}});
+ const host=make('main');
+ const events=[{aircraftInventoryId:A,kind:'flight',label:'PA102',fromCode:'ZAG',toCode:'BEG',startUtc:'2026-11-25T12:00Z',arrivalUtc:'2026-11-25T13:04Z',endUtc:'2026-11-25T13:49Z',turnaroundMinutes:45,status:'closed'}];
+ renderDatedCalendar({createElement:make},host,buildDatedCalendar([fleet[0]],events,window),window);
+ assert.deepEqual(getAll(host,x=>x.className==='schedule-board-hour-labels')[0].children.map(x=>x.textContent),['14:30','16:30','18:30','20:30','22:30','00:30','02:30']);
+ assert.equal(getAll(host,x=>x.textContent.includes('2026-11-25 14:30')).length,0);
+ assert.equal(getAll(host,x=>x.textContent==='No confirmed flights or maintenance in this 12-hour period.').length,1);
+ assert.equal(getAll(host,x=>x.className==='schedule-board-dated-event').length,0);
+ renderDatedCalendar({createElement:make},host,null,window);
+ assert.equal(getAll(host,x=>x.textContent==='No confirmed flights or maintenance in this 12-hour period.').length,0);
+ assert.ok(getAll(host,x=>x.textContent.includes('Verified aircraft calendar unavailable')).length);
 });
