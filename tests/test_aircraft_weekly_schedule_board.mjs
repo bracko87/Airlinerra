@@ -335,3 +335,15 @@ test('rolling 12-hour aircraft calendar clips past flights and spans midnight on
  assert.equal(dst.end-dst.start,43200000);
  assert.match(SCHEDULE_SQL.aircraftCalendar,/>t\.start_utc-interval '1 day'/);
 });
+
+test('compact aircraft family beside registration; nickname stays; utilization not rendered',async()=>{
+ const {buildDatedCalendar,renderDatedCalendar,compactAircraftFamily}=await import('../website/aircraft-dated-calendar.mjs');
+ assert.equal(compactAircraftFamily({family:'Airbus A320 family',model:'A319-100'}),'A320');
+ assert.equal(compactAircraftFamily({family:'Boeing 737 NG'}),'737');
+ const make=tag=>({...element(tag),dataset:{},addEventListener(){}});
+ const host=make('main');renderDatedCalendar({createElement:make},host,buildDatedCalendar([{...fleet[0],family:'Airbus A320 family'}],[],'2026-11-25'),'2026-11-25');
+ const identity=getAll(host,x=>x.className==='schedule-board-aircraft-identity')[0];
+ assert.deepEqual(identity.children.map(x=>x.textContent),['YU-PAN01','A320']);
+ assert.equal(getAll(host,x=>x.className==='schedule-board-nickname')[0].textContent,'Aleksandrovo');
+ assert.equal(getAll(host,x=>x.textContent.includes('scheduled utilization')).length,0);
+});

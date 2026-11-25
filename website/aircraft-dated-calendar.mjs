@@ -33,6 +33,12 @@ export function buildDatedCalendar(fleet,events,date){
  });
 }
 const add=(doc,parent,tag,label,cls)=>{const x=doc.createElement(tag);if(cls)x.className=cls;if(label!=null)x.textContent=label;parent.append(x);return x;};
+export function compactAircraftFamily(row){
+ const source=String(row?.family||'').trim();
+ const match=source.match(/\b(A\d{3}|B?7\d{2}|CRJ|ERJ|E-?Jets?|ATR\s*\d{2}|Dash\s*8|MD-?\d+|DC-?\d+)\b/i);
+ if(match)return match[1].toUpperCase().replace(/\s+/g,'');
+ return source.replace(/^(Airbus|Boeing|Embraer|Bombardier|De Havilland)\s+/i,'').replace(/\s+family$/i,'').slice(0,14);
+}
 const dt=x=>{const n=time(x);return Number.isFinite(n)?new Date(n).toISOString().slice(0,16).replace('T',' ')+' UTC':'Unavailable';};
 export function renderDatedCalendar(doc,host,rows,date){
  host.replaceChildren();
@@ -52,10 +58,12 @@ export function renderDatedCalendar(doc,host,rows,date){
  }
  const body=add(doc,table,'tbody');
  for(const row of rows){
-  const tr=add(doc,body,'tr'),id=add(doc,tr,'th',row.registration,'schedule-board-aircraft-col');
+  const tr=add(doc,body,'tr'),id=add(doc,tr,'th',null,'schedule-board-aircraft-col');
+  const identity=add(doc,id,'div',null,'schedule-board-aircraft-identity');
+  add(doc,identity,'strong',row.registration);
+  const family=compactAircraftFamily(row);
+  if(family)add(doc,identity,'span',family,'schedule-board-family-code');
   if(row.nickname)add(doc,id,'div',row.nickname,'schedule-board-nickname');
-  if(row.model)add(doc,id,'div',[row.manufacturer,row.model].filter(Boolean).join(' '),'schedule-board-name');
-  add(doc,id,'div',row.usage.percent+'% scheduled utilization'+(row.usage.highUtilization?' - high utilization':''),'hint');
   const track=add(doc,add(doc,tr,'td'),'div',null,'schedule-board-day-track');
   // Reuse the same 24-hour lane for every non-overlapping reservation.
   // Extra lanes are only needed to expose an actual overlap, not a new flight.
@@ -79,5 +87,5 @@ export function renderDatedCalendar(doc,host,rows,date){
   }
   if(row.overlap)add(doc,track,'p','Schedule conflict: overlapping confirmed reservations.','hint');
  }
- add(doc,host,'p','Blue: commercial flight. Teal: empty relocation. Purple: maintenance. Darker flight portion: turnaround. Utilization includes flight time and scheduled turnaround as a share of the displayed '+(rolling?'12':'24')+' hours. Maintenance is excluded. High utilization is advisory, not a hard limit.','hint');
+ add(doc,host,'p','Blue: commercial flight. Teal: empty relocation. Purple: maintenance. Darker flight portion: turnaround.','hint');
 }
