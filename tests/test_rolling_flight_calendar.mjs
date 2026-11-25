@@ -27,7 +27,7 @@ test('Berlin dates always use actual local day, including DST midnight',()=>{
  assert.equal(after[0].iso,'2026-10-26');
  assert.deepEqual(berlinSevenDayWindow(NaN),[]);
 });
-test('schedule uses server Berlin date, bounds navigation and links to route details',async()=>{
+test('schedule uses verified server time, only the current rolling window, and links to route details',async()=>{
  const [workspace,board,operations,overlay]=await Promise.all([
   read('website/airline-workspace.mjs'),
   read('website/aircraft-weekly-schedule-board.mjs'),
@@ -36,9 +36,9 @@ test('schedule uses server Berlin date, bounds navigation and links to route det
  ]);
  assert.match(workspace,/verifyWorldTimeResponse\(await response\.json\(\)\)/);
  assert.match(workspace,/rollingTwelveHourWindows\(epoch\)/);
- assert.match(workspace,/scheduleSelectedOffset=Math\.max\(0,Math\.min\(Math\.max\(0,scheduleCalendar\.length-1\)/);
- assert.match(workspace,/scheduleSelectedOffset=0/);
- assert.match(workspace,/selectedDate\.label/);
+ assert.match(workspace,/const selectedDate=scheduleCalendar\[0\]/);
+ assert.doesNotMatch(workspace,/schedule-day-prev|schedule-day-next|schedule-selected-day|AIRCRAFT × NEXT 12 HOURS/);
+ assert.match(workspace,/status\.hidden=rows!==null/);
  assert.match(board,/data-schedule-flight/);
  assert.match(board,/schedule-board-rotation-band/);
  assert.match(board,/plannedRotationTiming/);

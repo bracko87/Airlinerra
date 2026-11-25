@@ -49,8 +49,8 @@ export function renderDatedCalendar(doc,host,rows,date){
  const header=add(doc,add(doc,table,'thead'),'tr');
  add(doc,header,'th','Aircraft','schedule-board-aircraft-col');
  const rolling=range.minutes===720;
- const heading=rolling?dt(new Date(range.start).toISOString()).replace(' UTC','')+' → '+dt(new Date(range.end).toISOString()):date+' - UTC';
- const h=add(doc,header,'th',heading);
+ const h=add(doc,header,'th',rolling?null:date+' - UTC');
+ if(rolling)h.setAttribute('aria-label','Next 12 hours, UTC');
  const ticks=add(doc,h,'div',null,'schedule-board-hour-labels');
  for(let n=0;n<=range.minutes;n+=rolling?120:180){
   const tick=rolling?new Date(range.start+n*MINUTE).toISOString().slice(11,16):String(n/60).padStart(2,'0')+':00';

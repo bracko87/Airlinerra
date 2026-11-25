@@ -3153,3 +3153,7 @@ section[data-player-view="aircraft-market"]:has(#workspace-aircraft-market.is-sh
 #workspace-schedule .schedule-board-rolling-12h .schedule-board-aircraft-identity{flex-wrap:nowrap;gap:6px;align-items:center}
 #workspace-schedule .schedule-board-rolling-12h .schedule-board-aircraft-identity .schedule-board-family-code{display:inline;margin:0;font-size:10px;white-space:nowrap;font-weight:500;color:inherit}
 #workspace-schedule .schedule-board-rolling-12h tbody td{min-height:0;padding-top:10px;padding-bottom:10px}
+
+/* Rolling schedule: keep only actions above the timeline; show status on loading or error. */
+#workspace-schedule .schedule-board-toolbar{justify-content:flex-end}
+#workspace-schedule #schedule-status[hidden]{display:none!important}
