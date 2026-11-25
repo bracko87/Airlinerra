@@ -20,6 +20,7 @@ on:
       - 'supabase/migrations/20261113104858_section9_unpaid_maintenance_indefinite_grounding.sql'
       - 'supabase/migrations/20261124193500_section9_exact_maintenance_flight_window.sql'
       - 'supabase/migrations/20261125133100_section9_maintenance_cash_ledger_atomic.sql'
+      - 'tests/sql/section9_live_maintenance_worker_source_20261125.sql'
       - 'supabase/migrations/20261113231000_section9_hourly_game_maintenance_dispatch_clearance_v1.sql'
       - 'supabase/migrations/20261117090000_section9_hourly_maintenance_slot_and_booking_v1.sql'
       - '.github/workflows/section9-single-flight-acceptance-ci.yml'
@@ -43,6 +44,7 @@ on:
       - 'supabase/migrations/20261113104858_section9_unpaid_maintenance_indefinite_grounding.sql'
       - 'supabase/migrations/20261124193500_section9_exact_maintenance_flight_window.sql'
       - 'supabase/migrations/20261125133100_section9_maintenance_cash_ledger_atomic.sql'
+      - 'tests/sql/section9_live_maintenance_worker_source_20261125.sql'
       - 'supabase/migrations/20261113231000_section9_hourly_game_maintenance_dispatch_clearance_v1.sql'
       - 'supabase/migrations/20261117090000_section9_hourly_maintenance_slot_and_booking_v1.sql'
       - '.github/workflows/section9-single-flight-acceptance-ci.yml'
@@ -168,6 +170,14 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261124193500_section9_exact_maintenance_flight_window.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261125133100_section9_maintenance_cash_ledger_atomic.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261125133100_section9_maintenance_cash_ledger_atomic.sql
+      - name: Verify captured live maintenance worker declaration and preserve live start protections
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_live_maintenance_worker_source_20261125.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261125133100_section9_maintenance_cash_ledger_atomic.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261125133100_section9_maintenance_cash_ledger_atomic.sql
+          psql -X -v ON_ERROR_STOP=1 -c "SELECT 1 WHERE strpos(pg_get_functiondef('airlinerra_game.section9_advance_game_maintenance_jobs_v1()'::regprocedure),'pos jsonb; actual_hours numeric;')>0;"
       - name: Add disposable physical occurrence capacity and booking inventories
         shell: bash
         run: |
