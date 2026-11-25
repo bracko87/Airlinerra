@@ -39,6 +39,8 @@ export function allowedLocalOwnerRead(pathname,payload){
  if(payload.action==='list'||(pathname===SCHEDULE_READ_PATH&&payload.action==='aircraft-calendar'))
   return Object.keys(payload).length===2 &&
    Object.keys(payload).every(x=>x==='action'||x==='airlineId');
+ if(pathname===SCHEDULE_READ_PATH&&['aircraft-reliability','aircraft-history'].includes(payload.action))
+  return validateFlightSchedulePayload(payload);
  // New and used marketplace discovery and individual aircraft details are read-only.
  // The deployed Edge service independently validates airline ownership and the
  // selected listing ID; localhost never forwards bids or purchases.

@@ -987,6 +987,7 @@ const pages=Object.freeze({
  </div>
  <p id="fleet-reliability-notice" class="hint" role="status" aria-live="polite"></p>
 </section>
+<section id="fleet-flight-history" class="fleet-maintenance-preview" aria-label="Last 10 flights"><h3>Last 10 flights</h3><div id="fleet-flight-history-content" aria-live="polite">Loading verified flight history…</div></section>
 <section id="fleet-maintenance-preview" class="fleet-maintenance-preview" aria-label="Aircraft maintenance cycle" aria-live="polite">Maintenance information loads when you open this aircraft.</section>
 <section id="fleet-starter-commissioning" class="fleet-maintenance-preview" aria-label="Starter aircraft commissioning" hidden>
  <h3>Aircraft commissioning</h3>
@@ -1685,6 +1686,60 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   notice.textContent='A–D checks require an eligible maintenance facility. Local maintenance reservations are available below. Relocation reservations remain subject to the release status.';
   host.append(notice);
  }
+ let historyFetchVersion=0;
+ async function loadAircraftHistory(aircraftId){
+  const ticket=++historyFetchVersion,airlineId=data.airline?.id,scheduler=data.scheduler,host=$('fleet-flight-history-content'),cost=$('fleet-detail-operating-cost');
+  if(!host||!cost)return;
+  host.textContent='Loading verified flight history…';cost.textContent='Loading verified operating costs…';
+  const current=()=>ticket===historyFetchVersion&&selectedFleetAircraftId===aircraftId&&data.airline?.id===airlineId;
+  const unavailable=()=>{host.textContent='Verified flight history unavailable. Reopen this aircraft to retry.';cost.textContent='Verified operating costs unavailable';};
+  if(!data.connected||!airlineId||!aircraftId||typeof scheduler?.aircraftHistory!=='function'){unavailable();return;}
+  try{
+   const r=await scheduler.aircraftHistory({airlineId,aircraftInventoryId:aircraftId});
+   if(!current())return;
+   if(r?.status!=='verified_aircraft_history'||r.readOnly!==true||r.aircraftInventoryId!==aircraftId||!Array.isArray(r.flights)||r.flights.length>10||!Number.isInteger(r.completedCount)||!Number.isInteger(r.settledCount)||r.completedCount<r.flights.length||r.settledCount<0||r.settledCount>r.completedCount)throw Error('Invalid history');
+   const money=n=>n===null||n===undefined?'Not settled':usd(n);
+   cost.textContent=r.settledCount>0&&r.averageCostUsd!=null?usd(r.averageCostUsd)+' · '+r.settledCount+' settled flight'+(r.settledCount===1?'':'s'):r.completedCount===0?'Not calculated — no operated flights':'Awaiting flight settlement';
+   const starter=r.starterAllocation;
+   const aircraft=marketSnapshot?.fleet?.find(x=>x.id===aircraftId);
+   if(starter?.kind==='original_airline_starter_allocation'&&Number.isFinite(Date.parse(starter.assignedAt))&&!aircraft?.acquisitionType){
+    $('fleet-detail-acquisition-type').textContent='Starter aircraft allocation';
+    $('fleet-detail-acquisition-date').textContent=fmtAircraftDate(starter.assignedAt);
+    $('fleet-detail-upfront').textContent='$0.00 (no purchase charge)';
+    $('fleet-detail-monthly-lease').textContent='Not applicable';
+    $('fleet-detail-contract-months').textContent='Not applicable';
+   }
+   host.replaceChildren();
+   const el=(parent,tag,label,cls)=>{const n=doc.createElement(tag);if(label!=null)n.textContent=String(label);if(cls)n.className=cls;parent.append(n);return n;};
+   if(r.flights.length===0){el(host,'p','No completed flights recorded for this aircraft.','hint');return;}
+   const stamp=v=>Number.isFinite(Date.parse(v))?new Date(v).toISOString().slice(0,16).replace('T',' '):'Not recorded';
+   const duration=n=>Number.isInteger(n)&&n>0?Math.floor(n/60)+'h '+String(n%60).padStart(2,'0')+'m':'Not recorded';
+   const scroll=el(host,'div',null,'fleet-maintenance-scroll');
+   const table=el(scroll,'table',null,'fleet-maintenance-table fleet-history-table');
+   const header=el(el(table,'thead'),'tr');
+   for(const label of ['Flight','From','To','Departure (UTC)','Arrival (UTC)','Airborne time','Passengers','Operating cost','Details'])el(header,'th',label);
+   const body=el(table,'tbody');
+   for(const flight of r.flights){
+    if(typeof flight?.occurrenceId!=='string'||!Number.isInteger(flight.airborneMinutes)||flight.airborneMinutes<=0||!Number.isFinite(Date.parse(flight.departureUtc))||!Number.isFinite(Date.parse(flight.arrivalUtc)))throw Error('Unverified flight row');
+    const row=el(body,'tr');
+    const flightLabel=flight.flightNumber||'Relocation';
+    for(const value of [flightLabel,flight.fromCode,flight.toCode,stamp(flight.departureUtc),stamp(flight.arrivalUtc),duration(flight.airborneMinutes),flight.passengers??'—',money(flight.costUsd)])el(row,'td',value);
+    const cell=el(row,'td');const more=el(cell,'button','View','fleet-history-open');
+    more.type='button';more.setAttribute('aria-expanded','false');
+    const detailRow=el(body,'tr',null,'fleet-history-detail');detailRow.hidden=true;
+    const details=el(detailRow,'td');details.colSpan=9;
+    el(details,'strong',flightLabel+' · '+flight.fromCode+' → '+flight.toCode+' · '+stamp(flight.departureUtc)+' UTC');
+    el(details,'p','Actual flying time: '+duration(flight.airborneMinutes)+' · Passengers: '+(flight.passengers??'Not recorded')+' · Cargo: '+(flight.cargoTonnes??'Not recorded')+' t');
+    el(details,'p','Posted revenue: '+money(flight.incomeUsd)+' · Fuel: '+money(flight.fuelCostUsd)+' · Airport/navigation: '+money(flight.airportCostUsd)+' · Other: '+money(flight.otherCostUsd)+' · Total operating cost: '+money(flight.costUsd));
+    if(/^[A-Z0-9]{2}[0-9]{1,4}$/.test(flight.flightNumber||'')){
+     const link=el(details,'button','Open route details','fleet-history-open');link.type='button';
+     link.dataset.scheduleFlight=flight.flightNumber;
+    }
+    more.addEventListener('click',()=>{detailRow.hidden=!detailRow.hidden;more.setAttribute('aria-expanded',String(!detailRow.hidden));more.textContent=detailRow.hidden?'View':'Close';});
+   }
+   el(host,'p','Newest completed flights first. Operating costs reflect posted settlements; separate company expenses are excluded unless included in the flight settlement.','hint');
+  }catch{if(current())unavailable();}
+ }
  let reliabilityFetchVersion=0;
  async function loadAircraftReliability(aircraftId){
   const ticket=++reliabilityFetchVersion,airlineId=data.airline?.id,scheduler=data.scheduler;
@@ -1706,6 +1761,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
  }
  async function loadMaintenancePreview(aircraftId){
   void loadAircraftReliability(aircraftId);
+  void loadAircraftHistory(aircraftId);
   const ticket=++maintenanceFetchVersion;
   const airlineId=data.airline?.id,client=data.fleetClient;
   maintenanceLast=null;renderMaintenancePreview();
@@ -2060,7 +2116,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    'fleet-detail-monthly-lease':aircraft?.recurringMonthlyUsd===null||aircraft?.recurringMonthlyUsd===undefined?'Not recorded':usd(aircraft.recurringMonthlyUsd),
    'fleet-detail-contract-months':fmtAircraftNumber(aircraft?.contractMonths,' months'),
    'fleet-detail-market-value':'Not available — no verified tail valuation',
-   'fleet-detail-operating-cost':'Not calculated — no operated flights'
+   'fleet-detail-operating-cost':'Loading verified operating costs…'
   };
   for(const [id,value] of Object.entries(ids))if($(id))$(id).textContent=value;
   const input=$('fleet-detail-nickname'),save=$('fleet-detail-save');
@@ -2715,6 +2771,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   }
   const openAircraft=event.target.closest('[data-fleet-aircraft-open]');
   if(openAircraft){
+   event.preventDefault();
    const aircraftId=openAircraft.dataset.fleetAircraftOpen;
    if(!marketSnapshot?.fleet?.some(a=>a.id===aircraftId))return;
    aircraftConfigurationDialog?.close();

@@ -312,3 +312,21 @@ test('localhost browser scheduler reaches protected calendar gateway and builds 
  assert.equal(rows[0].overlap,false);
  assert.equal(rows[0].usage.occupiedMinutes,208);
 });
+
+test('aircraft profile history and reliability use the authenticated local read gateway',async()=>{
+ const actions=['aircraft-history','aircraft-reliability'];
+ const calls=[];
+ const handler=createLiveReadOnlyPreviewHandler({fetchImpl:async(url,opts)=>{calls.push(JSON.parse(opts.body));return Response.json({readOnly:true});}});
+ for(const action of actions){
+  const payload={action,airlineId:AIRLINE,aircraftInventoryId:AIRCRAFT};
+  assert.equal(allowedLocalOwnerRead(pathSchedule,payload),true);
+  assert.equal(allowedLocalOwnerRead(pathSchedule,{...payload,playerId:AIRCRAFT}),false);
+  assert.equal(allowedLocalOwnerRead(pathSchedule,{...payload,aircraftInventoryId:'invalid'}),false);
+  assert.equal((await handler(request(pathSchedule,payload))).status,200);
+ }
+ assert.deepEqual(calls.map(x=>x.action),actions);
+ const local=createLocalOwnerFleetReaders({auth:{getAccessToken:async()=>TOKEN},origin:LOCAL,fetchImpl:async(url,opts)=>{calls.push(JSON.parse(opts.body));return Response.json({readOnly:true});}});
+ await local.scheduler.aircraftHistory({airlineId:AIRLINE,aircraftInventoryId:AIRCRAFT});
+ await local.scheduler.aircraftReliability({airlineId:AIRLINE,aircraftInventoryId:AIRCRAFT});
+ assert.deepEqual(calls.slice(2).map(x=>x.action),actions);
+});
