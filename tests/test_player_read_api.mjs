@@ -346,3 +346,13 @@ test('Group 2 airport selection displays sourced aviation codes, never G2 intern
  assert.match(PLAYER_READ_SQL.preparedAirports,/l\.airport_code as airport_code/);
  assert.doesNotMatch(PLAYER_READ_SQL.preparedAirports,/c\.game_lookup_code as airport_code/);
 });
+
+test('owner ledger summary is full-history while the transaction list is bounded',async()=>{
+ const rows={...baseRows,ledger:[{entry_kind:'REVENUE',amount_usd:'2923.00',recorded_at:'2026-11-25T13:38:00Z',total_count:6,ledger_balance:'4992927.81',posted_income:'6083.00',posted_expenses:'13155.19'}]};
+ const result=await make({rows}).handler(request('/api/v1/player/overview'));
+ assert.equal(result.status,200);
+ const data=await result.json();
+ assert.deepEqual(data.financialSummary,{airlineId:data.airlines[0].id,transactionCount:6,ledgerBalanceUsd:'4992927.81',postedIncomeUsd:'6083.00',postedExpensesUsd:'13155.19'});
+ assert.equal(data.ledgerEntries.length,1);
+ assert.match(PLAYER_READ_SQL.ledger,/where airline_id=\$1::uuid/);
+});
