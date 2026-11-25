@@ -344,6 +344,9 @@ test('compact aircraft family beside registration; nickname stays; utilization n
  const host=make('main');renderDatedCalendar({createElement:make},host,buildDatedCalendar([{...fleet[0],family:'Airbus A320 family'}],[],'2026-11-25'),'2026-11-25');
  const identity=getAll(host,x=>x.className==='schedule-board-aircraft-identity')[0];
  assert.deepEqual(identity.children.map(x=>x.textContent),['YU-PAN01','A320']);
+ assert.equal(identity.children[0].tagName,'A');
+ assert.equal(identity.children[0].href,'#fleet-aircraft/'+fleet[0].id);
+ assert.equal(identity.children[0].dataset.fleetAircraftOpen,fleet[0].id);
  assert.equal(getAll(host,x=>x.className==='schedule-board-nickname')[0].textContent,'Aleksandrovo');
  assert.equal(getAll(host,x=>x.textContent.includes('scheduled utilization')).length,0);
 });

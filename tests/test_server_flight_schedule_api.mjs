@@ -256,3 +256,24 @@ test('route planner exposes owned fleet schedule drafts, not live activation',as
  assert.match(source,/draft\.status='active'/);
  assert.match(source,/OPERATIONAL_ROUTE_NOT_CONFIRMED/);
 });
+
+test('aircraft history is scoped to verified owner and exact aircraft; no fake empty history for foreign tails',async()=>{
+ const payload={action:'aircraft-history',airlineId:AIRLINE,aircraftInventoryId:PLANE};
+ assert.equal(validateFlightSchedulePayload(payload),true);
+ assert.equal(validateFlightSchedulePayload({...payload,playerId:USER}),false);
+ const row={aircraftInventoryId:PLANE,completedCount:2,settledCount:2,averageCostUsd:'6127.60',flights:[{occurrenceId:'signed-flight'}],starterAllocation:null};
+ const {handler,statements}=create((sql,args)=>{
+  assert.equal(sql,SCHEDULE_SQL.aircraftHistory);
+  assert.deepEqual(args,[USER,AIRLINE,PLANE]);
+  return {rowCount:1,rows:[row]};
+ });
+ const result=await handler(req(payload));assert.equal(result.status,200);
+ assert.deepEqual(await result.json(),{status:'verified_aircraft_history',readOnly:true,...row});
+ assert.equal(statements.length,1);
+ const blocked=create(()=>({rowCount:0,rows:[]}));
+ assert.equal((await blocked.handler(req(payload))).status,403);
+ assert.match(SCHEDULE_SQL.aircraftHistory,/LIMIT 10/);
+ assert.match(SCHEDULE_SQL.aircraftHistory,/record_status='posted_complete'/);
+ assert.match(SCHEDULE_SQL.aircraftHistory,/owner_player_id=\$1::uuid/);
+ assert.match(SCHEDULE_SQL.aircraftHistory,/arrived_engine_event_id/);
+});

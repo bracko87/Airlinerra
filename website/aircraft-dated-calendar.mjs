@@ -60,7 +60,9 @@ export function renderDatedCalendar(doc,host,rows,date){
  for(const row of rows){
   const tr=add(doc,body,'tr'),id=add(doc,tr,'th',null,'schedule-board-aircraft-col');
   const identity=add(doc,id,'div',null,'schedule-board-aircraft-identity');
-  add(doc,identity,'strong',row.registration);
+  const registration=add(doc,identity,'a',row.registration,'schedule-aircraft-profile-link');
+  registration.href='#fleet-aircraft/'+row.id;
+  registration.dataset.fleetAircraftOpen=row.id;
   const family=compactAircraftFamily(row);
   if(family)add(doc,identity,'span',family,'schedule-board-family-code');
   if(row.nickname)add(doc,id,'div',row.nickname,'schedule-board-nickname');
