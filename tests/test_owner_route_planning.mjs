@@ -169,7 +169,7 @@ test('route list and details surface the saved provisional flight arrival withou
  const list=await readFile(new URL('../website/airline-operations-center.mjs',import.meta.url),'utf8');
  const details=await readFile(new URL('../website/section9-route-details.mjs',import.meta.url),'utf8');
  assert.match(list,/Date\.parse\(route\.referenceArrivalUtc\|\|''\)/);
- assert.match(list,/savedArrivalUtc\?'~'/);
+ assert.match(list,/savedArrivalLocal\?\(route\.operationallyVerified\?'':'~'\)/);
  assert.match(details,/Estimated arrival \(provisional\)/);
  assert.match(details,/not an approved flight time or reserved airport slot/);
  assert.match(details,/fact\(doc,schedInfo,'Airport slots',route\.slotsReserved===true\?'Reserved'/);

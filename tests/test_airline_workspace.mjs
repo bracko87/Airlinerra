@@ -277,3 +277,13 @@ test('management-page state messages have no decorative orange vertical bars',as
  assert.doesNotMatch(notice,/border-left/);
  assert.match(css,/#workspace-aircraft-market>.workspace-panel>h2\{display:none\}/);
 });
+
+test('Finance view uses posted ledger totals and labels bounded history accurately',async()=>{
+ const {verifiedFinanceView}=await import('../website/airline-workspace.mjs');
+ const entries=[{kind:'REVENUE',amountUsd:'6083',recordedAt:'2026-11-25T13:38:00Z'},{kind:'EXPENSE',amountUsd:'-13155.19',recordedAt:'2026-11-25T13:38:00Z'}];
+ const recent=verifiedFinanceView('4992927.81',entries,null);
+ assert.equal(recent.full,false);assert.equal(recent.net,-7072.19);
+ const full=verifiedFinanceView('4992927.81',entries,{transactionCount:6,ledgerBalanceUsd:'4992927.81',postedIncomeUsd:'6083.00',postedExpensesUsd:'13155.19'});
+ assert.equal(full.full,true);assert.equal(full.reconciled,true);assert.equal(full.count,6);
+ assert.equal(verifiedFinanceView(null,null,null).available,false);
+});

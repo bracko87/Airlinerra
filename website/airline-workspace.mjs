@@ -58,6 +58,16 @@ export function validateRouteIdea(idea){
   typeof destination.key==='string'&&source.key!==destination.key&&
   Number.isInteger(Number(idea.flights))&&Number(idea.flights)>=1&&Number(idea.flights)<=28);
 }
+export function verifiedFinanceView(cash,entries,summary){
+ const decimal=value=>value!==null&&value!==undefined&&/^-?\d+(\.\d+)?$/.test(String(value))&&Number.isFinite(Number(value))?Number(value):null;
+ const cashValue=decimal(cash);
+ const list=Array.isArray(entries)?entries.filter(e=>typeof e?.kind==='string'&&/^[A-Z][A-Z0-9_]{0,40}$/.test(e.kind)&&decimal(e.amountUsd)!==null&&Number.isFinite(Date.parse(e.recordedAt))):[];
+ const available=Array.isArray(entries)&&list.length===entries.length;
+ const full=available&&summary!=null&&Number.isSafeInteger(summary.transactionCount)&&summary.transactionCount>=list.length&&[summary.ledgerBalanceUsd,summary.postedIncomeUsd,summary.postedExpensesUsd].every(v=>decimal(v)!==null);
+ const income=full?decimal(summary.postedIncomeUsd):available?list.filter(e=>e.kind==='REVENUE').reduce((n,e)=>n+Number(e.amountUsd),0):null;
+ const expenses=full?decimal(summary.postedExpensesUsd):available?list.filter(e=>e.kind==='EXPENSE').reduce((n,e)=>n-Number(e.amountUsd),0):null;
+ return {cash:cashValue,entries:list,available,full,count:full?summary.transactionCount:available?list.length:null,income,expenses,net:income===null||expenses===null?null:Math.round((income-expenses)*100)/100,reconciled:full&&decimal(summary.ledgerBalanceUsd)===cashValue};
+}
 const currency=value=>Number.isFinite(Number(value))
  ?new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0,minimumFractionDigits:0}).format(Number(value)):'-';
 const small=(text)=>'<p class="hint">'+text+'</p>';
@@ -1028,9 +1038,12 @@ const pages=Object.freeze({
    'AIRCRAFT × NEXT 12 HOURS'),
  'finances':()=>card('Financial position',
    '<div class="workspace-kpis"><div><span>Available cash</span><strong id="finance-live-cash">-</strong></div>'+
-   '<div><span>Transactions</span><strong>Not connected</strong></div>'+
-   '<div><span>Operating profit</span><strong>Not connected</strong></div></div>'+
-   '<p>The cash value comes from the verified airline record. Revenue, debts, loans, salaries and bank transactions require a secured financial ledger endpoint.</p>',
+   '<div><span>Transactions</span><strong id="finance-live-count">—</strong></div>'+
+   '<div><span>Posted income less expenses</span><strong id="finance-live-net">—</strong></div></div>'+
+   '<div class="workspace-kpis"><div><span>Posted income</span><strong id="finance-live-income">—</strong></div><div><span>Posted expenses</span><strong id="finance-live-expenses">—</strong></div></div>'+
+   '<p id="finance-live-status" role="status" class="hint">Loading verified ledger…</p>'+
+   '<div class="workspace-actions"><button type="button" class="secondary" id="finance-refresh">Refresh finances</button></div>'+
+   '<h3>Recent transactions</h3><div id="finance-live-ledger"></div>',
    'SERVER FINANCES')+
   card('Monthly budget scenario',
    '<p>Enter your own assumptions to estimate operating cash needs. All numbers here are hypothetical and do not change game finances.</p>'+
@@ -2532,10 +2545,45 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    renderCrewSettings(null);if($('crew-recruit-status'))$('crew-recruit-status').textContent='Could not load recruitment settings.';
   }
  }
+ function renderFinance(){
+  const root=$('finance-live-ledger');if(!root)return;
+  const connected=data.connected===true&&Boolean(data.airline?.id);
+  const list=connected&&Array.isArray(data.ledgerEntries)?data.ledgerEntries:null;
+  const summary=connected&&data.financialSummary?.airlineId===data.airline.id?data.financialSummary:null;
+  const values=verifiedFinanceView(connected?data.airline.cashUsd:null,list,summary);
+  const money=value=>value===null?'—':new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',minimumFractionDigits:2,maximumFractionDigits:2}).format(value);
+  for(const [id,value] of Object.entries({'finance-live-cash':money(values.cash),'finance-live-count':values.count===null?'—':String(values.count)+(values.full?'':' recent'),'finance-live-income':money(values.income),'finance-live-expenses':money(values.expenses),'finance-live-net':money(values.net)}))if($(id))$(id).textContent=value;
+  if($('finance-live-status'))$('finance-live-status').textContent=!values.available?'Verified ledger unavailable. Refresh to retry.':values.full?(values.reconciled?'Cash and ledger reconcile. Totals include all posted REVENUE and EXPENSE entries; starting capital is excluded.':'Cash and ledger differ; settlement may be blocked.'):'Totals reflect the latest five verified entries only, not lifetime operating profit.';
+  root.replaceChildren();
+  for(const entry of values.entries){
+   const row=doc.createElement('div');row.className='detail-row';
+   const label=doc.createElement('span');label.textContent=entry.kind.replaceAll('_',' ')+' · '+new Date(entry.recordedAt).toISOString().slice(0,16).replace('T',' ')+' UTC';
+   const amount=doc.createElement('strong');amount.textContent=money(Number(entry.amountUsd));
+   row.append(label,amount);root.append(row);
+  }
+ }
+ let financeRefreshVersion=0;
+ async function refreshFinance(){
+  const ticket=++financeRefreshVersion,airlineId=data.airline?.id,reader=data.reader;
+  if(!data.connected||!airlineId||typeof reader?.overview!=='function')return;
+  try{
+   const reply=await reader.overview();
+   if(ticket!==financeRefreshVersion||data.airline?.id!==airlineId)return;
+   const airline=reply.airlines?.[0];
+   if(airline?.id!==airlineId||!Array.isArray(reply.ledgerEntries))throw Error('Finance owner data unavailable');
+   data={...data,airline:{...data.airline,cashUsd:airline.cashUsd},ledgerEntries:reply.ledgerEntries,financialSummary:reply.financialSummary};
+   renderFinance();
+  }catch{
+   if(ticket!==financeRefreshVersion||data.airline?.id!==airlineId)return;
+   if($('finance-live-status'))$('finance-live-status').textContent='Refresh failed. Previously displayed verified figures may be out of date.';
+  }
+ }
+ $('finance-refresh')?.addEventListener('click',()=>{void refreshFinance();});
  function updateData(next={}){
   const oldAirlineId=data.airline?.id||null;
   data={...data,...next};
   const airline=data.airline;
+  if((airline?.id||null)!==oldAirlineId){financeRefreshVersion++;if(!Object.hasOwn(next,'ledgerEntries'))data.ledgerEntries=null;if(!Object.hasOwn(next,'financialSummary'))data.financialSummary=null;}
   if(data.playerDraftStore?.ready('preferences')){
    preferences=cleanUiPreferences(data.playerDraftStore.snapshot('preferences'));
    applyPreferences();
@@ -2584,6 +2632,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    'finance-live-cash':connected&&airline?.cashUsd!==undefined?currency(airline.cashUsd):'-'
   };
   for(const [id,value] of Object.entries(values)){if($(id))$(id).textContent=value;}
+  renderFinance();
   routePlannerController.updateData(data);
   void syncScheduleCalendar();
   void loadRealFleetMarket();
@@ -3152,7 +3201,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   renderSchedule();
  });
  applyPreferences();loadDraftForms();
- return Object.freeze({updateData,
+ return Object.freeze({updateData,refreshFinance,
   openUsedAircraft:hash=>{
    const id=/^#aircraft-market\/([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/iu.exec(String(hash||''))?.[1]?.toLowerCase()||null;
    selectedUsedProfileId=id;usedProfileFetchVersion++;

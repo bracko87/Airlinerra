@@ -310,7 +310,7 @@ test('My Routes is a plain one-line table with weekday indicators and a text edi
   read('../website/player-app.css')
  ]);
  assert.match(operations,/operations-route-directory-row/);
- assert.match(operations,/const headings=\['Flight','City to city','Departure','Arrival','Aircraft','Weekly days','Status','More'\]/);
+ assert.match(operations,/const headings=\['Flight','City to city','Departure \(local\)','Arrival \(local\)','Aircraft','Weekly days','Status','More'\]/);
  assert.match(operations,/className='operations-route-open-text'/);
  assert.match(operations,/data[s]et\.opsRouteEdit/);
  assert.match(operations,/goTo\?\.\('routes'\)/);

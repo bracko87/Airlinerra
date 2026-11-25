@@ -205,7 +205,7 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
    root.append(p);return;
   }
   const grid=doc.createElement('div');grid.className='operations-route-directory';
-  const headings=['Flight','City to city','Departure','Arrival','Aircraft','Weekly days','Status','More'];
+  const headings=['Flight','City to city','Departure (local)','Arrival (local)','Aircraft','Weekly days','Status','More'];
   const head=doc.createElement('div');head.className='operations-route-directory-row is-heading';
   for(const label of headings){
    const col=doc.createElement('span');col.textContent=label;head.append(col);
@@ -230,10 +230,12 @@ export function createOperationsCenter({doc,identity,session,goTo,getAirlineLogo
     route.estimatedDurationMinutes,route.operation?.turnaroundMinutes);
    const timed=estimate?.sameDepartureTime?estimate.rows[0]:null;
    const savedArrival=Date.parse(route.referenceArrivalUtc||'');
-   const savedArrivalUtc=Number.isFinite(savedArrival)?
-    new Date(savedArrival).toISOString().slice(11,16):null;
-   add(savedArrivalUtc?'~'+savedArrivalUtc+' UTC':
-    timed?'~'+timed.arrivalClock+' UTC':'—');
+   let savedArrivalLocal=null;
+   if(Number.isFinite(savedArrival)&&typeof route.to.timezoneIana==='string'){
+    try{savedArrivalLocal=new Intl.DateTimeFormat('en-GB',{timeZone:route.to.timezoneIana,hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(savedArrival));}catch{}
+   }
+   add(savedArrivalLocal?(route.operationallyVerified?'':'~')+savedArrivalLocal:
+    timed&&route.from.timezoneIana&&route.from.timezoneIana===route.to.timezoneIana?'~'+timed.arrivalClock:'—');
    add(route.aircraftLabel||'Not assigned');
    const weekdays=doc.createElement('span');weekdays.className='operations-route-weekdays';
    weekdays.setAttribute('aria-label','Days: '+(schedule.length?schedule.map(x=>days[x.day]).join(', '):'None selected'));

@@ -85,3 +85,7 @@ test('pricing and FAQ have truthful trial conditions and no fictional monthly fe
  assert.match(faq,/Horizon/);
  assert.doesNotMatch(pricing,/€[0-9]|\$[0-9]+\/month/);
 });
+
+test('actual generic revenue and expense postings appear in charts',()=>{
+ assert.deepEqual(operatingMonthlyPoints([{kind:'REVENUE',amountUsd:'6083',recordedAt:'2026-11-25T13:38:00Z'},{kind:'EXPENSE',amountUsd:'-13155.19',recordedAt:'2026-11-25T13:38:00Z'},{kind:'STARTING_CAPITAL',amountUsd:'5000000',recordedAt:'2026-11-10T00:00:00Z'}]),[{period:'2026-11',income:6083,expense:13155.19}]);
+});
