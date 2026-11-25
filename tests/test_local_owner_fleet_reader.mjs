@@ -284,3 +284,31 @@ test('local profile disconnection message distinguishes missing reader from expi
  assert.match(gateway,/\['list-used','used-detail'\]/);
  assert.doesNotMatch(gateway,/\['list-used','used-detail','bid-used'\]/);
 });
+
+
+test('localhost browser scheduler reaches protected calendar gateway and builds the actual dated timeline',async()=>{
+ const {buildDatedCalendar}=await import('../website/aircraft-dated-calendar.mjs');
+ const seen=[];
+ const fleet=[{id:AIRCRAFT,registration:'TEST-001',ownershipType:'owned',fleetStatus:'in_service'}];
+ const events=[
+  {id:'outbound',aircraftInventoryId:AIRCRAFT,kind:'flight',label:'TE101',fromCode:'BEG',toCode:'ZAG',startUtc:'2026-11-25T10:00:00Z',arrivalUtc:'2026-11-25T10:54:00Z',endUtc:'2026-11-25T11:39:00Z',turnaroundMinutes:45,status:'closed'},
+  {id:'return',aircraftInventoryId:AIRCRAFT,kind:'flight',label:'TE102',fromCode:'ZAG',toCode:'BEG',startUtc:'2026-11-25T12:00:00Z',arrivalUtc:'2026-11-25T13:04:00Z',endUtc:'2026-11-25T13:49:00Z',turnaroundMinutes:45,status:'closed'}
+ ];
+ const gateway=createLiveReadOnlyPreviewHandler({fetchImpl:async(url,options)=>{
+  assert.equal(url,'https://hwllkabgzaynalahvkpz.supabase.co/functions/v1/airlinerra-flight-schedule-drafts');
+  assert.equal(options.headers.authorization,'Bearer '+TOKEN);
+  seen.push(JSON.parse(options.body));
+  return Response.json({status:'verified_aircraft_calendar',readOnly:true,fleet,events});
+ }});
+ const {scheduler}=createLocalOwnerFleetReaders({auth:{getAccessToken:async()=>TOKEN},origin:LOCAL,
+  fetchImpl:async(url,options)=>gateway(new Request(url,{...options,headers:{...options.headers,origin:LOCAL}}))});
+ const snapshot=await scheduler.aircraftCalendar(AIRLINE);
+ assert.equal(snapshot.status,'verified_aircraft_calendar');
+ assert.equal(snapshot.readOnly,true);
+ assert.deepEqual(seen,[{action:'aircraft-calendar',airlineId:AIRLINE}]);
+ const rows=buildDatedCalendar(snapshot.fleet,snapshot.events,'2026-11-25');
+ assert.equal(rows.length,1);
+ assert.deepEqual(rows[0].blocks.map(b=>b.label),['TE101','TE102']);
+ assert.equal(rows[0].overlap,false);
+ assert.equal(rows[0].usage.occupiedMinutes,208);
+});
