@@ -90,6 +90,7 @@ function navigateTo(view){
     void loadGamePermissionApplications();
   }
   if(name==='holding')void loadHoldingStatus();
+  if(name==='finances'&&playerData&&currentAirline?.id)void workspaceController?.refreshFinance?.();
   if(name==='airports'&&!preparedAirportPageLoaded)void searchPreparedAirports();
 }
 // The holding page is read-only. The game clock and first settled flight must
@@ -675,7 +676,7 @@ async function loadPlayerReadData({local=false}={}){
   try{
     workspaceController?.updateData({connected:true,airline:first||null,worlds:data.worlds,
      countries:data.countries,reader:playerData,scheduler,fleetClient,cabinServiceClient,aircraftMedia:auth,
-     playerDraftStore:draftStore});
+     playerDraftStore:draftStore,ledgerEntries:data.ledgerEntries,financialSummary:data.financialSummary});
     operationsController?.updateData({connected:true,airline:first||null,worlds:data.worlds,countries:data.countries,reader:playerData,scheduler,fleetClient,playerDraftStore:draftStore});
   }
   catch{console.warn('Airlinerra secondary workspace failed to display');}
