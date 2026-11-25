@@ -60,6 +60,15 @@ BEGIN
  -- Advance the synthetic world hour past one-hour Daily end with ZERO funds.
  -- The actual settlement worker must retain an unpaid grounded job.
  UPDATE airlinerra_game.fixture_game_now SET simulated_now='2026-11-21 08:05+00';
+ -- A discrepant cash/ledger pair must fail closed without a new expense.
+ UPDATE airlinerra_game.airlines SET cash_usd=5000900 WHERE id=airline;
+ advance:=airlinerra_game.section9_advance_game_maintenance_jobs_v1();
+ IF advance->>'financialPostings'<>'0'
+ OR (SELECT count(*) FROM airlinerra_game.airline_ledger WHERE entry_kind='EXPENSE')<>0
+ OR (SELECT cash_usd FROM airlinerra_game.airlines WHERE id=airline)<>5000900
+ OR (SELECT status FROM airlinerra_game.section9_game_maintenance_jobs_v1 WHERE job_id=dail_id)<>'payment_required'
+ THEN RAISE EXCEPTION 'Cash discrepancy did not fail closed: %',advance;END IF;
+ UPDATE airlinerra_game.airlines SET cash_usd=0 WHERE id=airline;
  UPDATE airlinerra_game.airline_ledger SET amount_usd=0 WHERE entry_kind='CAPITAL';
  advance:=airlinerra_game.section9_advance_game_maintenance_jobs_v1();
  IF (SELECT status FROM airlinerra_game.section9_game_maintenance_jobs_v1 WHERE job_id=dail_id)<>'payment_required'
@@ -71,6 +80,7 @@ BEGIN
  IF due->>'dueCheckCount'<>'2' OR due->>'gameJobBlocksDate'<>'true'
  THEN RAISE EXCEPTION 'Unpaid maintenance incorrectly released Daily: %',due;END IF;
  -- Funding allows exactly one completion charge and one source receipt.
+ UPDATE airlinerra_game.airlines SET cash_usd=5000000 WHERE id=airline;
  UPDATE airlinerra_game.airline_ledger SET amount_usd=5000000 WHERE entry_kind='CAPITAL';
  advance:=airlinerra_game.section9_advance_game_maintenance_jobs_v1();
  IF advance->>'financialPostings'<>'1' OR advance->>'gameMaintenanceExpenseUsd'<>'125'
@@ -95,6 +105,7 @@ BEGIN
  advance:=airlinerra_game.section9_advance_game_maintenance_jobs_v1();
  IF advance->>'financialPostings'<>'0'
  OR (SELECT count(*) FROM airlinerra_game.airline_ledger WHERE entry_kind='EXPENSE')<>2
+ OR (SELECT cash_usd FROM airlinerra_game.airlines WHERE id=airline)<>4999425
  OR (SELECT coalesce(sum(amount_usd),0) FROM airlinerra_game.airline_ledger WHERE entry_kind='EXPENSE')<>-575
  OR (SELECT coalesce(sum(amount_usd),0) FROM airlinerra_game.airline_ledger WHERE airline_id=airline)<>4999425
  OR (SELECT count(*) FROM airlinerra_game.section9_game_maintenance_service_receipts_v1 r

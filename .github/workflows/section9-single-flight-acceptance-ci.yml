@@ -19,6 +19,7 @@ on:
       - 'supabase/migrations/20261113104046_section9_maintenance_ledger_generated_identity_fix.sql'
       - 'supabase/migrations/20261113104858_section9_unpaid_maintenance_indefinite_grounding.sql'
       - 'supabase/migrations/20261124193500_section9_exact_maintenance_flight_window.sql'
+      - 'supabase/migrations/20261125133100_section9_maintenance_cash_ledger_atomic.sql'
       - 'supabase/migrations/20261113231000_section9_hourly_game_maintenance_dispatch_clearance_v1.sql'
       - 'supabase/migrations/20261117090000_section9_hourly_maintenance_slot_and_booking_v1.sql'
       - '.github/workflows/section9-single-flight-acceptance-ci.yml'
@@ -41,6 +42,7 @@ on:
       - 'supabase/migrations/20261113104046_section9_maintenance_ledger_generated_identity_fix.sql'
       - 'supabase/migrations/20261113104858_section9_unpaid_maintenance_indefinite_grounding.sql'
       - 'supabase/migrations/20261124193500_section9_exact_maintenance_flight_window.sql'
+      - 'supabase/migrations/20261125133100_section9_maintenance_cash_ledger_atomic.sql'
       - 'supabase/migrations/20261113231000_section9_hourly_game_maintenance_dispatch_clearance_v1.sql'
       - 'supabase/migrations/20261117090000_section9_hourly_maintenance_slot_and_booking_v1.sql'
       - '.github/workflows/section9-single-flight-acceptance-ci.yml'
@@ -164,6 +166,8 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f /tmp/airlinerra-current-game-maintenance.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261124193500_section9_exact_maintenance_flight_window.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261124193500_section9_exact_maintenance_flight_window.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261125133100_section9_maintenance_cash_ledger_atomic.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261125133100_section9_maintenance_cash_ledger_atomic.sql
       - name: Add disposable physical occurrence capacity and booking inventories
         shell: bash
         run: |

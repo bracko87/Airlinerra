@@ -88,6 +88,7 @@ BEGIN
  IF advance->>'financialPostings'<>'0'
  OR (SELECT count(*) FROM airlinerra_game.section9_game_maintenance_service_receipts_v1)<>2
  OR (SELECT count(*) FROM airlinerra_game.airline_ledger WHERE entry_kind='EXPENSE')<>2
+ OR (SELECT cash_usd FROM airlinerra_game.airlines WHERE id=airline)<>4998860
  OR (SELECT coalesce(sum(amount_usd),0) FROM airlinerra_game.airline_ledger WHERE airline_id=airline)<>4998860
  THEN RAISE EXCEPTION 'Game maintenance expense replay/sums incorrect';END IF;
  due:=airlinerra_game.section9_owned_game_maintenance_due_v1(player,airline,aircraft,DATE '2026-11-28');
@@ -152,6 +153,7 @@ BEGIN
      WHERE schedule_id=sid AND flight_local_date=DATE '2026-11-28' AND passenger_seats=125)<>1
  OR (SELECT count(*) FROM airlinerra_game.airline_route_planning_drafts_v1
      WHERE airline_id=airline AND flight_number='AL105')<>1
+ OR (SELECT cash_usd FROM airlinerra_game.airlines WHERE id=airline)<>4998860
  OR (SELECT coalesce(sum(amount_usd),0) FROM airlinerra_game.airline_ledger WHERE airline_id=airline)<>4998860
  THEN RAISE EXCEPTION 'Positive source-grounded single flight had wrong seat/timing/fee records';END IF;
  result:=airlinerra_game.section9_create_active_route_with_cabin_v1(
@@ -159,6 +161,7 @@ BEGIN
   'terminal','terminal',60,90,'basic');
  IF result->>'status'<>'blocked_flight_number_exists' OR result->>'routeCreated'<>'false'
  OR (SELECT count(*) FROM airlinerra_game.fixture_ticket_occurrences WHERE schedule_id=sid)<>1
+ OR (SELECT cash_usd FROM airlinerra_game.airlines WHERE id=airline)<>4998860
  OR (SELECT coalesce(sum(amount_usd),0) FROM airlinerra_game.airline_ledger WHERE airline_id=airline)<>4998860
  THEN RAISE EXCEPTION 'Duplicate positive flight caused extra charges or inventory: %',result;END IF;
 
