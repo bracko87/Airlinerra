@@ -151,7 +151,7 @@ export function validateFlightSchedulePayload(body){
   return withinFields(body,COMMISSIONING_FIELDS)&&uuid(body.aircraftInventoryId);
  if(body.action==='maintenance-policy-list')return withinFields(body,COMMISSIONING_FIELDS)&&uuid(body.aircraftInventoryId);
  if(body.action==='maintenance-policy-save')return withinFields(body,MAINTENANCE_POLICY_FIELDS)&&uuid(body.aircraftInventoryId)&&['daily','weekly','a','b','c','d'].includes(body.checkCode)&&typeof body.enabled==='boolean'&&(!body.enabled||(typeof body.airportKey==='string'&&AIRPORT.test(body.airportKey)&&['economy','standard','express'].some(t=>body.providerKey===body.airportKey+':'+t)&&typeof body.maxCostUsd==='number'&&Number.isFinite(body.maxCostUsd)&&body.maxCostUsd>0&&body.maxCostUsd<=10000000&&(body.allowRelocation===undefined||typeof body.allowRelocation==='boolean')&&(!body.allowRelocation||(typeof body.maxTripCostUsd==='number'&&Number.isFinite(body.maxTripCostUsd)&&body.maxTripCostUsd>=body.maxCostUsd&&body.maxTripCostUsd<=10000000))));
- if(body.action==='aircraft-reliability')return withinFields(body,COMMISSIONING_FIELDS)&&uuid(body.aircraftInventoryId);
+ if(['aircraft-reliability','aircraft-history'].includes(body.action))return withinFields(body,COMMISSIONING_FIELDS)&&uuid(body.aircraftInventoryId);
  if(body.action==='maintenance-relocation-status')return withinFields(body,COMMISSIONING_FIELDS)&&uuid(body.aircraftInventoryId);
  if(body.action==='maintenance-relocation-recover')return withinFields(body,RELOCATION_RECOVERY_FIELDS)&&uuid(body.aircraftInventoryId)&&uuid(body.tripId)&&utc(body.startUtc);
  if(body.action==='maintenance-relocation-cancel')return withinFields(body,RELOCATION_CANCEL_FIELDS)&&uuid(body.aircraftInventoryId)&&uuid(body.tripId);
@@ -260,6 +260,39 @@ export function nextWeeklyDepartureGameDate(gameDate,weeklySchedule,launchDelayD
 }
 export const SCHEDULE_SQL=Object.freeze({
  maintenancePolicy:`SELECT airlinerra_game.section9_owned_auto_maintenance_policy_v2($1::uuid,$2::uuid,$3::uuid,$4::text,$5::text,$6::text,$7::text,$8::boolean,$9::numeric,$10::boolean,$11::numeric) AS result`,
+ aircraftHistory:`WITH owned AS (
+ SELECT i.id,i.airline_id,a.world_id FROM airlinerra_game.airline_aircraft_inventory i
+ JOIN airlinerra_game.airlines a ON a.id=i.airline_id
+ JOIN airlinerra_game.world_memberships w ON w.world_id=a.world_id AND w.player_id=a.owner_player_id AND w.state='active'
+ WHERE a.world_id=1 AND a.owner_player_id=$1::uuid AND a.id=$2::uuid AND i.id=$3::uuid
+), completed AS (
+ SELECT u.physical_flight_id AS "occurrenceId",s.flight_number AS "flightNumber",m.schedule_id::text AS "scheduleId",
+ coalesce(o.game_lookup_code,m.origin_airport_key) AS "fromCode",coalesce(d.game_lookup_code,m.destination_airport_key) AS "toCode",
+ p.actual_event_utc AS "departureUtc",m.actual_event_utc AS "arrivalUtc",
+ round(extract(epoch FROM m.actual_event_utc-p.actual_event_utc)/60)::int AS "airborneMinutes",
+ f.passenger_count AS passengers,f.cargo_tonnes::text AS "cargoTonnes",
+ (f.ticket_income_usd+f.cargo_income_usd+f.other_income_usd)::text AS "incomeUsd",
+ (f.airport_navigation_cost_usd+f.fuel_cost_usd+f.crew_cost_usd+f.maintenance_cost_usd+f.ownership_cost_usd+f.other_cost_usd)::text AS "costUsd",
+ f.fuel_cost_usd::text AS "fuelCostUsd",f.airport_navigation_cost_usd::text AS "airportCostUsd",
+ f.other_cost_usd::text AS "otherCostUsd"
+ FROM owned i JOIN airlinerra_game.section9_arrived_aircraft_usage_receipts_v1 u ON u.aircraft_inventory_id=i.id AND u.airline_id=i.airline_id
+ JOIN airlinerra_game.section9_operated_flight_movements_v1 m ON m.engine_event_id=u.arrived_engine_event_id AND m.aircraft_inventory_id=i.id AND m.airline_id=i.airline_id AND m.world_id=i.world_id AND m.phase='arrived' AND m.flight_occurrence_id=u.physical_flight_id
+ JOIN airlinerra_game.section9_operated_flight_movements_v1 p ON p.engine_event_id=u.departed_engine_event_id AND p.aircraft_inventory_id=i.id AND p.airline_id=i.airline_id AND p.world_id=i.world_id AND p.phase='departed' AND p.flight_occurrence_id=m.flight_occurrence_id AND p.schedule_id IS NOT DISTINCT FROM m.schedule_id
+ LEFT JOIN airlinerra_game.airline_flight_schedule_drafts_v1 s ON s.id=m.schedule_id AND s.airline_id=i.airline_id
+ LEFT JOIN airlinerra_game.airport_unified_operations_v1 o ON o.world_id=i.world_id AND o.airport_key=m.origin_airport_key
+ LEFT JOIN airlinerra_game.airport_unified_operations_v1 d ON d.world_id=i.world_id AND d.airport_key=m.destination_airport_key
+ LEFT JOIN airlinerra_game.section9_route_posted_flight_financials_v1 f ON f.physical_flight_id=u.physical_flight_id AND f.airline_id=i.airline_id AND f.arrived_event_id=m.engine_event_id AND f.schedule_id=m.schedule_id AND f.record_status='posted_complete'
+ WHERE p.actual_event_utc<m.actual_event_utc
+), recent AS (
+ SELECT * FROM completed ORDER BY "arrivalUtc" DESC,"occurrenceId" DESC LIMIT 10
+)
+SELECT i.id::text AS "aircraftInventoryId",
+ (SELECT count(*)::int FROM completed) AS "completedCount",
+ (SELECT count("costUsd")::int FROM completed) AS "settledCount",
+ (SELECT round(avg("costUsd"::numeric),2)::text FROM completed) AS "averageCostUsd",
+ coalesce((SELECT jsonb_agg(to_jsonb(recent) ORDER BY "arrivalUtc" DESC,"occurrenceId" DESC) FROM recent),'[]'::jsonb) AS flights,
+ (SELECT jsonb_build_object('assignedAt',x.assigned_at,'kind',x.source_kind) FROM airlinerra_game.initial_aircraft_allocations_v1 x WHERE x.aircraft_inventory_id=i.id AND x.airline_id=i.airline_id AND x.source_kind='original_airline_starter_allocation') AS "starterAllocation"
+FROM owned i`,
  aircraftReliability:`SELECT airlinerra_game.section9_owned_aircraft_reliability_v1($1::uuid,$2::uuid,$3::uuid) AS result`,
  relocationStatus:`SELECT airlinerra_game.section9_owned_relocation_status_v1($1::uuid,$2::uuid,$3::uuid) AS result`,
  relocationReserve:`SELECT airlinerra_game.section9_reserve_maintenance_relocation_v1($1::uuid,$2::uuid,$3::uuid,$4::text,$5::text,$6::text,$7::timestamptz,$8::numeric,$9::uuid) AS result`,
@@ -633,6 +666,15 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
     if(r.saved===false&&['invalid_maintenance_policy_quote','invalid_relocation_budget'].includes(r.status))return respond(200,r);
     if(r.status!=='aircraft_auto_maintenance_policies'||r.aircraftInventoryId!==body.aircraftInventoryId||r.ledgerPosted!==false||!Array.isArray(r.policies))return respond(503,{error:'MAINTENANCE_POLICY_UNVERIFIED'});
     return respond(200,r);
+   }
+   if(body.action==='aircraft-history'){
+    const q=await client.query(SCHEDULE_SQL.aircraftHistory,[userId,body.airlineId,body.aircraftInventoryId]);
+    if(q.rowCount!==1)return respond(403,{error:'Aircraft not owned by this account'});
+    const r=q.rows?.[0];
+    if(r?.aircraftInventoryId!==body.aircraftInventoryId||!Array.isArray(r.flights)||r.flights.length>10||
+       !Number.isInteger(r.completedCount)||!Number.isInteger(r.settledCount)||r.completedCount<r.flights.length||r.settledCount<0||r.settledCount>r.completedCount||
+       (r.averageCostUsd!==null&&!/^\d+(\.\d+)?$/.test(String(r.averageCostUsd))))return respond(503,{error:'AIRCRAFT_HISTORY_UNVERIFIED'});
+    return respond(200,{status:'verified_aircraft_history',readOnly:true,...r});
    }
    if(body.action==='aircraft-reliability'){
     const q=await client.query(SCHEDULE_SQL.aircraftReliability,[userId,body.airlineId,body.aircraftInventoryId]);const r=q.rows?.[0]?.result;
