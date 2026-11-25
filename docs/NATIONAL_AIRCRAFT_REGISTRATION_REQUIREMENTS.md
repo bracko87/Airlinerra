@@ -1,0 +1,17 @@
+# National aircraft registrations — release requirement (2026-11-25)
+
+Player-visible identity has exactly two identification fields: official aircraft registration and optional player-selected nickname. Do not introduce a separate airline fleet code. Aircraft model/type and immutable database IDs remain independent.
+
+## Scope and evidence
+Use ICAO nationality marks as the country/territory baseline: https://www.icao.int/nationality-marks . ICAO prefixes alone do not establish national suffix rules, forbidden combinations, category or weight restrictions. Research the national regulator/AIP for each playable registry before enabling the final policy. This change is an initial four-country format validator, not global completion or proof of real-world allocation availability. Examples are synthetic format examples only. Germany requires weight-category rules (LuftVZO Anlage 1: https://www.gesetze-im-internet.de/luftvzo/anlage_1.html); do not collapse it into a generic four-letter rule. Other registries must be researched before accepting them.
+
+## Acquisition and persistence requirements
+- Use an authoritative country-of-registration field; for the current domestic game model, derive initial registry from the verified airline home country. Keep an explicit registry country on the airframe if foreign leasing/re-registration is introduced. Do not use a departure airport or player nationality to choose the mark.
+- Enforce national syntax, category-specific rules, exclusions and game-wide uniqueness in the database before any purchase/bid/reservation charges. Preserve idempotency, concurrent reservation locking and pending auctions. Validate again at delivery; no generic invented fallback.
+- Validate the public-facing input using the same policy and show a country-specific format hint. Allow a free valid mark or allocate one from the allowed game pool. No claim of real-world availability. Optional nickname already exists independently and is unchanged.
+- Audit all playable registry countries including territories, all aircraft classes and outstanding bids/orders; complete the country-rule catalog before activating enforcement globally.
+- Existing World 1 inventory: the only aircraft on 2026-11-25 was Panonian's YU-PAN01, nickname Aleksandrovo. Serbian ordinary aircraft need three letters following YU-, with PAN among excluded emergency combinations. Proposed game replacement YU-ALX (format example, not actual-world availability assertion). Preserve its UUID, nickname, configuration, maintenance, route and movement history, flight financial postings, and any acquisition/allocation references. Audit registration-keyed historical records before changing the live registration. No live rename in this PR.
+- Acceptance: reject malformed, wrong-country, duplicate and reserved registrations across new factory orders, used auctions, leasing and direct acquisition; prove cash and history unchanged on failures and replays. Do not deploy an incomplete global policy or silently accept unknown rules.
+
+## Source-backed first batch
+RS — Serbian CAD regulation Official Gazette 6/19, arts. 3 and 5 (ordinary civil aircraft); GB — CAA CAP 523 and registration mark allocation policy; US — FAA Forming an N-Number; CA — Transport Canada reservation guidance (ordinary aircraft). Detailed source references are in the validator. More local allocation restrictions can exist; the validator is not a legal allocation service.
