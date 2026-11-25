@@ -3,7 +3,7 @@ import {crewHiringMarkup,createCrewHiringPanel} from './crew-hiring-panel.mjs';
 import {routePlannerMarkup,createRoutePlanner} from './route-planner.mjs';
 import {aircraftDisplayName} from './aircraft-library.mjs';
 import {buildDatedCalendar,renderDatedCalendar} from './aircraft-dated-calendar.mjs';
-import {berlinSevenDayWindow} from './rolling-flight-calendar.mjs';
+import {rollingTwelveHourWindows} from './rolling-flight-calendar.mjs';
 import {WORLD_TIME_URL,verifyWorldTimeResponse} from './world-time-client.mjs';
 import {createCabinServiceManager} from './cabin-services-manager.mjs';
 import {createCabinConfigurationManager} from './cabin-configuration-manager.mjs';
@@ -57,6 +57,16 @@ export function validateRouteIdea(idea){
  return !!(source&&destination&&typeof source.key==='string'&&
   typeof destination.key==='string'&&source.key!==destination.key&&
   Number.isInteger(Number(idea.flights))&&Number(idea.flights)>=1&&Number(idea.flights)<=28);
+}
+export function verifiedFinanceView(cash,entries,summary){
+ const decimal=value=>value!==null&&value!==undefined&&/^-?\d+(\.\d+)?$/.test(String(value))&&Number.isFinite(Number(value))?Number(value):null;
+ const cashValue=decimal(cash);
+ const list=Array.isArray(entries)?entries.filter(e=>typeof e?.kind==='string'&&/^[A-Z][A-Z0-9_]{0,40}$/.test(e.kind)&&decimal(e.amountUsd)!==null&&Number.isFinite(Date.parse(e.recordedAt))):[];
+ const available=Array.isArray(entries)&&list.length===entries.length;
+ const full=available&&summary!=null&&Number.isSafeInteger(summary.transactionCount)&&summary.transactionCount>=list.length&&[summary.ledgerBalanceUsd,summary.postedIncomeUsd,summary.postedExpensesUsd].every(v=>decimal(v)!==null);
+ const income=full?decimal(summary.postedIncomeUsd):available?list.filter(e=>e.kind==='REVENUE').reduce((n,e)=>n+Number(e.amountUsd),0):null;
+ const expenses=full?decimal(summary.postedExpensesUsd):available?list.filter(e=>e.kind==='EXPENSE').reduce((n,e)=>n-Number(e.amountUsd),0):null;
+ return {cash:cashValue,entries:list,available,full,count:full?summary.transactionCount:available?list.length:null,income,expenses,net:income===null||expenses===null?null:Math.round((income-expenses)*100)/100,reconciled:full&&decimal(summary.ledgerBalanceUsd)===cashValue};
 }
 const currency=value=>Number.isFinite(Number(value))
  ?new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0,minimumFractionDigits:0}).format(Number(value)):'-';
@@ -1011,26 +1021,29 @@ const pages=Object.freeze({
    '<p class="hint">Provider-supported does not mean every aircraft/check can be booked. Research-pending sites remain unavailable for bookings. No payment or flight is changed by browsing.</p>'+
    button('fleet','Return to my fleet'),'MAINTENANCE NETWORK'),
  'routes':()=>routePlannerMarkup(),
- 'schedule':()=>card('Aircraft daily flight schedule',
-   '<p class="hint">Confirmed flights and maintenance · Today and the next six game dates. Times shown in UTC. Unconfirmed route plans are excluded.</p>'+ 
+ 'schedule':()=>card('Aircraft flight schedule',
+   '<p class="hint">Confirmed flights and maintenance · Rolling 12-hour view from the current game time. Times shown in UTC. Unconfirmed route plans are excluded.</p>'+ 
    '<div class="schedule-board-toolbar">'+
-    '<div class="schedule-day-switch" role="group" aria-label="Choose a date in the next seven days">'+
-     '<button type="button" class="secondary" id="schedule-day-prev" aria-label="Previous day">◀</button>'+
-     '<strong id="schedule-selected-day" aria-live="polite">Loading Berlin date…</strong>'+ 
-     '<button type="button" class="secondary" id="schedule-day-next" aria-label="Next day">▶</button>'+
+    '<div class="schedule-day-switch" role="group" aria-label="Choose a 12-hour period">'+
+     '<button type="button" class="secondary" id="schedule-day-prev" aria-label="Previous 12 hours">◀</button>'+
+     '<strong id="schedule-selected-day" aria-live="polite">Loading verified game time…</strong>'+ 
+     '<button type="button" class="secondary" id="schedule-day-next" aria-label="Next 12 hours">▶</button>'+
     '</div>'+
     '<div class="workspace-actions schedule-board-actions">'+
      '<button type="button" class="secondary" id="schedule-refresh">Refresh timetable</button>'+
      button('routes','Create a route')+'</div>'+
    '</div>'+
    '<p id="schedule-status" role="status" class="hint">Loading confirmed flights and maintenance…</p>'+
-   '<div id="schedule-aircraft-board" class="schedule-aircraft-board" aria-label="Airline aircraft 24-hour daily flight timetable"></div>'+
-   'AIRCRAFT × ONE DAY × 24 HOURS'),
+   '<div id="schedule-aircraft-board" class="schedule-aircraft-board" aria-label="Airline aircraft rolling 12-hour flight timetable"></div>'+
+   'AIRCRAFT × NEXT 12 HOURS'),
  'finances':()=>card('Financial position',
    '<div class="workspace-kpis"><div><span>Available cash</span><strong id="finance-live-cash">-</strong></div>'+
-   '<div><span>Transactions</span><strong>Not connected</strong></div>'+
-   '<div><span>Operating profit</span><strong>Not connected</strong></div></div>'+
-   '<p>The cash value comes from the verified airline record. Revenue, debts, loans, salaries and bank transactions require a secured financial ledger endpoint.</p>',
+   '<div><span>Transactions</span><strong id="finance-live-count">—</strong></div>'+
+   '<div><span>Posted income less expenses</span><strong id="finance-live-net">—</strong></div></div>'+
+   '<div class="workspace-kpis"><div><span>Posted income</span><strong id="finance-live-income">—</strong></div><div><span>Posted expenses</span><strong id="finance-live-expenses">—</strong></div></div>'+
+   '<p id="finance-live-status" role="status" class="hint">Loading verified ledger…</p>'+
+   '<div class="workspace-actions"><button type="button" class="secondary" id="finance-refresh">Refresh finances</button></div>'+
+   '<h3>Recent transactions</h3><div id="finance-live-ledger"></div>',
    'SERVER FINANCES')+
   card('Monthly budget scenario',
    '<p>Enter your own assumptions to estimate operating cash needs. All numbers here are hypothetical and do not change game finances.</p>'+
@@ -1180,13 +1193,15 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
     method:'GET',headers:{Accept:'application/json'},cache:'no-store',
     credentials:'omit',redirect:'error',referrerPolicy:'no-referrer'
    });
-   if(!response?.ok)throw Error('Berlin game date unavailable');
+   if(!response?.ok)throw Error('Verified game time unavailable');
    const epoch=verifyWorldTimeResponse(await response.json());
    if(epoch===null)throw Error('Invalid game date response');
-   const days=berlinSevenDayWindow(epoch);
-   if(days.length!==7)throw Error('Invalid calendar');
-   if(days[0].iso!==scheduleCalendar[0]?.iso)scheduleSelectedOffset=0;
-   scheduleCalendar=days;
+   const windows=rollingTwelveHourWindows(epoch);
+   if(!windows.length)throw Error('Invalid calendar');
+   const changedDate=scheduleCalendar.length>0&&windows[0].coverageStart!==scheduleCalendar[0].coverageStart;
+   scheduleCalendar=windows;
+   scheduleSelectedOffset=Math.min(scheduleSelectedOffset,windows.length-1);
+   if(changedDate&&data.connected&&data.airline?.id)void loadAirlineSchedule();
   }catch{
    scheduleCalendar=[];scheduleSelectedOffset=0;
   }finally{scheduleDateLoading=false;renderSchedule();}
@@ -1350,23 +1365,24 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   const selectedDate=scheduleCalendar[scheduleSelectedOffset];
   const caption=$('schedule-selected-day');
   if(caption)caption.textContent=selectedDate?
-   (selectedDate.isToday?'Today · ':'')+selectedDate.label:
+   (selectedDate.isNow?'Now · ':'')+selectedDate.label:
    'Berlin game date unavailable';
   const back=$('schedule-day-prev'),forward=$('schedule-day-next');
   if(back)back.disabled=!selectedDate||scheduleSelectedOffset===0;
-  if(forward)forward.disabled=!selectedDate||scheduleSelectedOffset===6;
+  if(forward)forward.disabled=!selectedDate||scheduleSelectedOffset===scheduleCalendar.length-1;
   if(!selectedDate){
-   host.textContent='Verifying today’s Berlin date. Refresh the timetable to retry.';
+   host.textContent='Verifying the current game time. Refresh the timetable to retry.';
    const status=$('schedule-status');
-   if(status)status.textContent='The server date is not verified.';
+   if(status)status.textContent='The server game time is not verified.';
    return;
   }
   const enriched=Array.isArray(scheduleSnapshot?.fleet)?scheduleSnapshot.fleet.map(a=>({...marketSnapshot?.fleet?.find(f=>f.id===a.id),...a})):null;
-  const rows=scheduleReadError?null:buildDatedCalendar(enriched,scheduleSnapshot?.events,selectedDate.iso);
-  renderDatedCalendar(doc,host,rows,selectedDate.iso);
+  const coverageGap=selectedDate.start<selectedDate.coverageStart&&scheduleSnapshot?.calendarCoverage!=='includes_previous_utc_day';
+  const rows=scheduleReadError||coverageGap?null:buildDatedCalendar(enriched,scheduleSnapshot?.events,selectedDate);
+  renderDatedCalendar(doc,host,rows,selectedDate);
   const status=$('schedule-status');
-  if(status)status.textContent=rows===null?'Verified calendar data unavailable. Refresh to retry.':
-   rows.length+' registered aircraft - confirmed flights and maintenance on '+selectedDate.label+'.';
+  if(status)status.textContent=coverageGap?'Calendar service does not yet cover the first UTC hour(s) of the Berlin day. Refresh after updating the service.':rows===null?'Verified calendar data unavailable. Refresh to retry.':
+   rows.length+' registered aircraft - confirmed flights and maintenance from '+selectedDate.label+'.';
  }
  async function loadAirlineSchedule(){
   const ticket=++scheduleFetchVersion;
@@ -2529,10 +2545,45 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    renderCrewSettings(null);if($('crew-recruit-status'))$('crew-recruit-status').textContent='Could not load recruitment settings.';
   }
  }
+ function renderFinance(){
+  const root=$('finance-live-ledger');if(!root)return;
+  const connected=data.connected===true&&Boolean(data.airline?.id);
+  const list=connected&&Array.isArray(data.ledgerEntries)?data.ledgerEntries:null;
+  const summary=connected&&data.financialSummary?.airlineId===data.airline.id?data.financialSummary:null;
+  const values=verifiedFinanceView(connected?data.airline.cashUsd:null,list,summary);
+  const money=value=>value===null?'—':new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',minimumFractionDigits:2,maximumFractionDigits:2}).format(value);
+  for(const [id,value] of Object.entries({'finance-live-cash':money(values.cash),'finance-live-count':values.count===null?'—':String(values.count)+(values.full?'':' recent'),'finance-live-income':money(values.income),'finance-live-expenses':money(values.expenses),'finance-live-net':money(values.net)}))if($(id))$(id).textContent=value;
+  if($('finance-live-status'))$('finance-live-status').textContent=!values.available?'Verified ledger unavailable. Refresh to retry.':values.full?(values.reconciled?'Cash and ledger reconcile. Totals include all posted REVENUE and EXPENSE entries; starting capital is excluded.':'Cash and ledger differ; settlement may be blocked.'):'Totals reflect the latest five verified entries only, not lifetime operating profit.';
+  root.replaceChildren();
+  for(const entry of values.entries){
+   const row=doc.createElement('div');row.className='detail-row';
+   const label=doc.createElement('span');label.textContent=entry.kind.replaceAll('_',' ')+' · '+new Date(entry.recordedAt).toISOString().slice(0,16).replace('T',' ')+' UTC';
+   const amount=doc.createElement('strong');amount.textContent=money(Number(entry.amountUsd));
+   row.append(label,amount);root.append(row);
+  }
+ }
+ let financeRefreshVersion=0;
+ async function refreshFinance(){
+  const ticket=++financeRefreshVersion,airlineId=data.airline?.id,reader=data.reader;
+  if(!data.connected||!airlineId||typeof reader?.overview!=='function')return;
+  try{
+   const reply=await reader.overview();
+   if(ticket!==financeRefreshVersion||data.airline?.id!==airlineId)return;
+   const airline=reply.airlines?.[0];
+   if(airline?.id!==airlineId||!Array.isArray(reply.ledgerEntries))throw Error('Finance owner data unavailable');
+   data={...data,airline:{...data.airline,cashUsd:airline.cashUsd},ledgerEntries:reply.ledgerEntries,financialSummary:reply.financialSummary};
+   renderFinance();
+  }catch{
+   if(ticket!==financeRefreshVersion||data.airline?.id!==airlineId)return;
+   if($('finance-live-status'))$('finance-live-status').textContent='Refresh failed. Previously displayed verified figures may be out of date.';
+  }
+ }
+ $('finance-refresh')?.addEventListener('click',()=>{void refreshFinance();});
  function updateData(next={}){
   const oldAirlineId=data.airline?.id||null;
   data={...data,...next};
   const airline=data.airline;
+  if((airline?.id||null)!==oldAirlineId){financeRefreshVersion++;if(!Object.hasOwn(next,'ledgerEntries'))data.ledgerEntries=null;if(!Object.hasOwn(next,'financialSummary'))data.financialSummary=null;}
   if(data.playerDraftStore?.ready('preferences')){
    preferences=cleanUiPreferences(data.playerDraftStore.snapshot('preferences'));
    applyPreferences();
@@ -2581,6 +2632,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    'finance-live-cash':connected&&airline?.cashUsd!==undefined?currency(airline.cashUsd):'-'
   };
   for(const [id,value] of Object.entries(values)){if($(id))$(id).textContent=value;}
+  renderFinance();
   routePlannerController.updateData(data);
   void syncScheduleCalendar();
   void loadRealFleetMarket();
@@ -3119,7 +3171,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
     ' | Estimated cash runway: '+months+'. Saved as a planning scenario in Supabase; no ledger changes.';
   }
   if(id==='schedule-day-prev'||id==='schedule-day-next'){
-   scheduleSelectedOffset=Math.max(0,Math.min(6,scheduleSelectedOffset+
+   scheduleSelectedOffset=Math.max(0,Math.min(Math.max(0,scheduleCalendar.length-1),scheduleSelectedOffset+
     (id==='schedule-day-next'?1:-1)));
    renderSchedule();return;
   }
@@ -3149,7 +3201,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   renderSchedule();
  });
  applyPreferences();loadDraftForms();
- return Object.freeze({updateData,
+ return Object.freeze({updateData,refreshFinance,
   openUsedAircraft:hash=>{
    const id=/^#aircraft-market\/([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/iu.exec(String(hash||''))?.[1]?.toLowerCase()||null;
    selectedUsedProfileId=id;usedProfileFetchVersion++;

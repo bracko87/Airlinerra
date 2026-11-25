@@ -136,8 +136,8 @@ test('settings and local hypothetical briefs remain separate from owner-scoped p
  assert.match(workspace,/id=\\?"market-acquire\\?"/);
  assert.match(workspace,/role="status"/);
  assert.match(workspace,/id="schedule-aircraft-board"/);
- assert.match(workspace,/buildDatedCalendar\(enriched,scheduleSnapshot\?\.events,selectedDate\.iso\)/);
- assert.match(workspace,/renderDatedCalendar\(doc,host,rows,selectedDate\.iso\)/);
+ assert.match(workspace,/buildDatedCalendar\(enriched,scheduleSnapshot\?\.events,selectedDate\)/);
+ assert.match(workspace,/renderDatedCalendar\(doc,host,rows,selectedDate\)/);
  assert.doesNotMatch(workspace,/plans:scheduleSnapshot\?\.plans/);
  assert.match(workspace,/scheduler\.aircraftCalendar\(airlineId\)/);
  assert.match(workspace,/scheduleSnapshot\?\.events/);
@@ -276,4 +276,14 @@ test('management-page state messages have no decorative orange vertical bars',as
  const notice=css.match(/\.notice\{[^}]*\}/)?.[0]||'';
  assert.doesNotMatch(notice,/border-left/);
  assert.match(css,/#workspace-aircraft-market>.workspace-panel>h2\{display:none\}/);
+});
+
+test('Finance view uses posted ledger totals and labels bounded history accurately',async()=>{
+ const {verifiedFinanceView}=await import('../website/airline-workspace.mjs');
+ const entries=[{kind:'REVENUE',amountUsd:'6083',recordedAt:'2026-11-25T13:38:00Z'},{kind:'EXPENSE',amountUsd:'-13155.19',recordedAt:'2026-11-25T13:38:00Z'}];
+ const recent=verifiedFinanceView('4992927.81',entries,null);
+ assert.equal(recent.full,false);assert.equal(recent.net,-7072.19);
+ const full=verifiedFinanceView('4992927.81',entries,{transactionCount:6,ledgerBalanceUsd:'4992927.81',postedIncomeUsd:'6083.00',postedExpensesUsd:'13155.19'});
+ assert.equal(full.full,true);assert.equal(full.reconciled,true);assert.equal(full.count,6);
+ assert.equal(verifiedFinanceView(null,null,null).available,false);
 });

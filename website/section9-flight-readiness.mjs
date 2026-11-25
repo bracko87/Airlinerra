@@ -43,5 +43,5 @@ export function summarizeSection9FlightReadiness(result) {
  }
  return Object.freeze({verified:true,stage,
   fleet,planned,registered:registered.length,slotDrafts,active,
-  text:prefix+next+' Ticket sales remain disabled.'});
+  text:prefix+next+(active>0?' See each active route for verified booking and execution information.':' Inactive plans do not accept passenger bookings.')});
 }

@@ -27,3 +27,22 @@ export function berlinSevenDayWindow(epochMillis){
  }
  return Object.freeze(days);
 }
+
+/** Full twelve-hour periods, starting at the verified current game minute.
+ * Keep the existing server upper bound (Berlin date + seven UTC dates).
+ * UTC elapsed time makes a period exactly 12 hours even over DST.
+ */
+export function rollingTwelveHourWindows(epoch){
+ const dates=berlinSevenDayWindow(epoch);if(!dates.length)return [];
+ const start=Math.floor(epoch/60000)*60000;
+ const coverageStart=Date.parse(dates[0].iso+'T00:00:00Z');
+ const coverageEnd=coverageStart+7*86400000;
+ const span=12*3600000;
+ const label=instant=>new Date(instant).toISOString().slice(0,16).replace('T',' ');
+ const windows=[];
+ for(let offset=0;start+(offset+1)*span<=coverageEnd;offset++){
+  const from=start+offset*span,end=from+span;
+  windows.push(Object.freeze({start:from,end,minutes:720,offset,isNow:offset===0,coverageStart,coverageEnd,label:label(from)+' → '+label(end)+' UTC'}));
+ }
+ return Object.freeze(windows);
+}
