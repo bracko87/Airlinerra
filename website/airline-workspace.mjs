@@ -3,7 +3,7 @@ import {crewHiringMarkup,createCrewHiringPanel} from './crew-hiring-panel.mjs';
 import {routePlannerMarkup,createRoutePlanner} from './route-planner.mjs';
 import {aircraftDisplayName} from './aircraft-library.mjs';
 import {buildDatedCalendar,renderDatedCalendar} from './aircraft-dated-calendar.mjs';
-import {berlinSevenDayWindow} from './rolling-flight-calendar.mjs';
+import {rollingTwelveHourWindows} from './rolling-flight-calendar.mjs';
 import {WORLD_TIME_URL,verifyWorldTimeResponse} from './world-time-client.mjs';
 import {createCabinServiceManager} from './cabin-services-manager.mjs';
 import {createCabinConfigurationManager} from './cabin-configuration-manager.mjs';
@@ -1011,21 +1011,21 @@ const pages=Object.freeze({
    '<p class="hint">Provider-supported does not mean every aircraft/check can be booked. Research-pending sites remain unavailable for bookings. No payment or flight is changed by browsing.</p>'+
    button('fleet','Return to my fleet'),'MAINTENANCE NETWORK'),
  'routes':()=>routePlannerMarkup(),
- 'schedule':()=>card('Aircraft daily flight schedule',
-   '<p class="hint">Confirmed flights and maintenance · Today and the next six game dates. Times shown in UTC. Unconfirmed route plans are excluded.</p>'+ 
+ 'schedule':()=>card('Aircraft flight schedule',
+   '<p class="hint">Confirmed flights and maintenance · Rolling 12-hour view from the current game time. Times shown in UTC. Unconfirmed route plans are excluded.</p>'+ 
    '<div class="schedule-board-toolbar">'+
-    '<div class="schedule-day-switch" role="group" aria-label="Choose a date in the next seven days">'+
-     '<button type="button" class="secondary" id="schedule-day-prev" aria-label="Previous day">◀</button>'+
-     '<strong id="schedule-selected-day" aria-live="polite">Loading Berlin date…</strong>'+ 
-     '<button type="button" class="secondary" id="schedule-day-next" aria-label="Next day">▶</button>'+
+    '<div class="schedule-day-switch" role="group" aria-label="Choose a 12-hour period">'+
+     '<button type="button" class="secondary" id="schedule-day-prev" aria-label="Previous 12 hours">◀</button>'+
+     '<strong id="schedule-selected-day" aria-live="polite">Loading verified game time…</strong>'+ 
+     '<button type="button" class="secondary" id="schedule-day-next" aria-label="Next 12 hours">▶</button>'+
     '</div>'+
     '<div class="workspace-actions schedule-board-actions">'+
      '<button type="button" class="secondary" id="schedule-refresh">Refresh timetable</button>'+
      button('routes','Create a route')+'</div>'+
    '</div>'+
    '<p id="schedule-status" role="status" class="hint">Loading confirmed flights and maintenance…</p>'+
-   '<div id="schedule-aircraft-board" class="schedule-aircraft-board" aria-label="Airline aircraft 24-hour daily flight timetable"></div>'+
-   'AIRCRAFT × ONE DAY × 24 HOURS'),
+   '<div id="schedule-aircraft-board" class="schedule-aircraft-board" aria-label="Airline aircraft rolling 12-hour flight timetable"></div>'+
+   'AIRCRAFT × NEXT 12 HOURS'),
  'finances':()=>card('Financial position',
    '<div class="workspace-kpis"><div><span>Available cash</span><strong id="finance-live-cash">-</strong></div>'+
    '<div><span>Transactions</span><strong>Not connected</strong></div>'+
@@ -1180,13 +1180,15 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
     method:'GET',headers:{Accept:'application/json'},cache:'no-store',
     credentials:'omit',redirect:'error',referrerPolicy:'no-referrer'
    });
-   if(!response?.ok)throw Error('Berlin game date unavailable');
+   if(!response?.ok)throw Error('Verified game time unavailable');
    const epoch=verifyWorldTimeResponse(await response.json());
    if(epoch===null)throw Error('Invalid game date response');
-   const days=berlinSevenDayWindow(epoch);
-   if(days.length!==7)throw Error('Invalid calendar');
-   if(days[0].iso!==scheduleCalendar[0]?.iso)scheduleSelectedOffset=0;
-   scheduleCalendar=days;
+   const windows=rollingTwelveHourWindows(epoch);
+   if(!windows.length)throw Error('Invalid calendar');
+   const changedDate=scheduleCalendar.length>0&&windows[0].coverageStart!==scheduleCalendar[0].coverageStart;
+   scheduleCalendar=windows;
+   scheduleSelectedOffset=Math.min(scheduleSelectedOffset,windows.length-1);
+   if(changedDate&&data.connected&&data.airline?.id)void loadAirlineSchedule();
   }catch{
    scheduleCalendar=[];scheduleSelectedOffset=0;
   }finally{scheduleDateLoading=false;renderSchedule();}
@@ -1350,23 +1352,24 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   const selectedDate=scheduleCalendar[scheduleSelectedOffset];
   const caption=$('schedule-selected-day');
   if(caption)caption.textContent=selectedDate?
-   (selectedDate.isToday?'Today · ':'')+selectedDate.label:
+   (selectedDate.isNow?'Now · ':'')+selectedDate.label:
    'Berlin game date unavailable';
   const back=$('schedule-day-prev'),forward=$('schedule-day-next');
   if(back)back.disabled=!selectedDate||scheduleSelectedOffset===0;
-  if(forward)forward.disabled=!selectedDate||scheduleSelectedOffset===6;
+  if(forward)forward.disabled=!selectedDate||scheduleSelectedOffset===scheduleCalendar.length-1;
   if(!selectedDate){
-   host.textContent='Verifying today’s Berlin date. Refresh the timetable to retry.';
+   host.textContent='Verifying the current game time. Refresh the timetable to retry.';
    const status=$('schedule-status');
-   if(status)status.textContent='The server date is not verified.';
+   if(status)status.textContent='The server game time is not verified.';
    return;
   }
   const enriched=Array.isArray(scheduleSnapshot?.fleet)?scheduleSnapshot.fleet.map(a=>({...marketSnapshot?.fleet?.find(f=>f.id===a.id),...a})):null;
-  const rows=scheduleReadError?null:buildDatedCalendar(enriched,scheduleSnapshot?.events,selectedDate.iso);
-  renderDatedCalendar(doc,host,rows,selectedDate.iso);
+  const coverageGap=selectedDate.start<selectedDate.coverageStart&&scheduleSnapshot?.calendarCoverage!=='includes_previous_utc_day';
+  const rows=scheduleReadError||coverageGap?null:buildDatedCalendar(enriched,scheduleSnapshot?.events,selectedDate);
+  renderDatedCalendar(doc,host,rows,selectedDate);
   const status=$('schedule-status');
-  if(status)status.textContent=rows===null?'Verified calendar data unavailable. Refresh to retry.':
-   rows.length+' registered aircraft - confirmed flights and maintenance on '+selectedDate.label+'.';
+  if(status)status.textContent=coverageGap?'Calendar service does not yet cover the first UTC hour(s) of the Berlin day. Refresh after updating the service.':rows===null?'Verified calendar data unavailable. Refresh to retry.':
+   rows.length+' registered aircraft - confirmed flights and maintenance from '+selectedDate.label+'.';
  }
  async function loadAirlineSchedule(){
   const ticket=++scheduleFetchVersion;
@@ -3119,7 +3122,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
     ' | Estimated cash runway: '+months+'. Saved as a planning scenario in Supabase; no ledger changes.';
   }
   if(id==='schedule-day-prev'||id==='schedule-day-next'){
-   scheduleSelectedOffset=Math.max(0,Math.min(6,scheduleSelectedOffset+
+   scheduleSelectedOffset=Math.max(0,Math.min(Math.max(0,scheduleCalendar.length-1),scheduleSelectedOffset+
     (id==='schedule-day-next'?1:-1)));
    renderSchedule();return;
   }

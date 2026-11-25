@@ -35,10 +35,10 @@ test('schedule uses server Berlin date, bounds navigation and links to route det
   read('website/dev-scripts/invited-overlay.mjs')
  ]);
  assert.match(workspace,/verifyWorldTimeResponse\(await response\.json\(\)\)/);
- assert.match(workspace,/berlinSevenDayWindow\(epoch\)/);
- assert.match(workspace,/scheduleSelectedOffset=Math\.max\(0,Math\.min\(6/);
+ assert.match(workspace,/rollingTwelveHourWindows\(epoch\)/);
+ assert.match(workspace,/scheduleSelectedOffset=Math\.max\(0,Math\.min\(Math\.max\(0,scheduleCalendar\.length-1\)/);
  assert.match(workspace,/scheduleSelectedOffset=0/);
- assert.match(workspace,/dateLabel:selectedDate\.label/);
+ assert.match(workspace,/selectedDate\.label/);
  assert.match(board,/data-schedule-flight/);
  assert.match(board,/schedule-board-rotation-band/);
  assert.match(board,/plannedRotationTiming/);

@@ -3141,3 +3141,11 @@ section[data-player-view="aircraft-market"]:has(#workspace-aircraft-market.is-sh
 #workspace-schedule button.schedule-board-dated-event:focus-visible{
  outline:2px solid #f46c19;outline-offset:2px;z-index:4
 }
+
+/* A rolling twelve-hour period has six equal two-hour grid segments. */
+#workspace-schedule .schedule-board-rolling-12h .schedule-board-dated-lane{
+ background:repeating-linear-gradient(90deg,transparent 0,transparent calc(16.666667% - 1px),#cddbeb calc(16.666667% - 1px),#cddbeb 16.666667%),#f4f7fb
+}
+:root[data-ui-theme="dark"] #workspace-schedule .schedule-board-rolling-12h .schedule-board-dated-lane{
+ background:repeating-linear-gradient(90deg,transparent 0,transparent calc(16.666667% - 1px),#54718c calc(16.666667% - 1px),#54718c 16.666667%),#2b4762
+}

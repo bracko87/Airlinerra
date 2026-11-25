@@ -191,7 +191,7 @@ test('current daily schedule renders confirmed server events without inventing p
  assert.match(view,/id="schedule-day-next"/);
  assert.match(view,/Unconfirmed route plans are excluded/);
  assert.match(view,/result\?\.status!=='verified_aircraft_calendar'/);
- assert.match(view,/buildDatedCalendar\(enriched,scheduleSnapshot\?\.events,selectedDate\.iso\)/);
+ assert.match(view,/buildDatedCalendar\(enriched,scheduleSnapshot\?\.events,selectedDate\)/);
  assert.match(calendar,/if\(!Array\.isArray\(fleet\)\|\|!Array\.isArray\(events\)/);
  assert.match(calendar,/\['flight','maintenance','relocation'\]/);
  assert.match(calendar,/No confirmed flights or maintenance on this date/);
@@ -208,7 +208,7 @@ test('schedule fails closed on unavailable authoritative calendar or invalid air
  const source=await readFile(new URL('../website/airline-workspace.mjs',import.meta.url),'utf8');
  assert.match(source,/typeof scheduler\?\.aircraftCalendar!=='function'/);
  assert.match(source,/scheduleReadError=true;renderSchedule\(\);return/);
- assert.match(source,/scheduleReadError\?null:buildDatedCalendar/);
+ assert.match(source,/scheduleReadError\|\|coverageGap\?null:buildDatedCalendar/);
  assert.match(source,/Verified calendar data unavailable\. Refresh to retry/);
  assert.match(source,/result\?\.status!=='verified_aircraft_calendar'/);
  assert.match(source,/Array\.isArray\(result\.fleet\)/);
@@ -296,8 +296,8 @@ test('dated calendar shares one lane for sequential flights, with one labeled cl
  assert.deepEqual(bars.map(x=>x.textContent),['PA101 BEG - ZAG','PA102 ZAG - BEG']);
  assert.deepEqual(bars.map(x=>x.dataset.scheduleFlight),['PA101','PA102']);
  assert.equal(bars[0].tagName,'BUTTON');assert.match(bars[0].title,/Turnaround 50 min/);
- assert.equal(parseFloat(bars[0].style.left),600/14.4);
- assert.equal(parseFloat(bars[1].style.left),720/14.4);
+ assert.ok(Math.abs(parseFloat(bars[0].style.left)-600/14.4)<1e-9);
+ assert.ok(Math.abs(parseFloat(bars[1].style.left)-720/14.4)<1e-9);
  assert.match(bars[0].style.background,/linear-gradient/);
  assert.equal(getAll(host,x=>x.className.includes('schedule-board-inline-flight')).length,0);
  const conflicting={...events[1],startUtc:'2026-11-25T11:30:00Z'};
@@ -306,4 +306,32 @@ test('dated calendar shares one lane for sequential flights, with one labeled cl
  const empty=draw([]);assert.equal(getAll(empty,isLane).length,1);assert.equal(getAll(empty,isEvent).length,0);
  const css=await readFile(new URL('../website/player-app.css',import.meta.url),'utf8');
  assert.match(css,/button\.schedule-board-dated-event\{[\s\S]*?color:#fff/);
+});
+
+test('rolling 12-hour aircraft calendar clips past flights and spans midnight on exact elapsed time',async()=>{
+ const {buildDatedCalendar,renderDatedCalendar}=await import('../website/aircraft-dated-calendar.mjs');
+ const {rollingTwelveHourWindows}=await import('../website/rolling-flight-calendar.mjs');
+ const windows=rollingTwelveHourWindows(Date.parse('2026-11-25T13:55:47Z'));
+ const window=windows[0];
+ assert.equal(new Date(window.start).toISOString(),'2026-11-25T13:55:00.000Z');
+ assert.equal(new Date(window.end).toISOString(),'2026-11-26T01:55:00.000Z');
+ assert.equal(windows[1].start,window.end);
+ assert.ok(windows.every(w=>w.end<=w.coverageEnd&&w.minutes===720));
+ const event=(label,startUtc,arrivalUtc,endUtc)=>({aircraftInventoryId:A,kind:'flight',label,fromCode:'BEG',toCode:'ZAG',startUtc,arrivalUtc,endUtc,turnaroundMinutes:30,status:'active'});
+ const entries=[event('PA101','2026-11-25T10:00Z','2026-11-25T10:54Z','2026-11-25T11:44Z'),event('PA102','2026-11-25T12:00Z','2026-11-25T13:04Z','2026-11-25T14:04Z'),event('PA103','2026-11-26T00:55Z','2026-11-26T01:25Z','2026-11-26T02:00Z')];
+ const rows=buildDatedCalendar([fleet[0]],entries,window);
+ assert.deepEqual(rows[0].blocks.map(x=>[x.label,x.begin,x.finish]),[['PA102',0,9],['PA103',660,720]]);
+ assert.equal(rows[0].usage.occupiedMinutes,69);
+ assert.equal(rows[0].usage.percent,10);
+ const make=tag=>({...element(tag),dataset:{},addEventListener(){}});
+ const host=make('main');renderDatedCalendar({createElement:make},host,rows,window);
+ const ticks=getAll(host,x=>x.className==='schedule-board-hour-labels')[0];
+ assert.deepEqual(ticks.children.map(x=>x.textContent),['13:55','15:55','17:55','19:55','21:55','23:55','01:55']);
+ const bars=getAll(host,x=>x.className==='schedule-board-dated-event');
+ assert.equal(bars.length,2);assert.equal(bars[0].style.width,'1.25%');
+ assert.equal(getAll(host,x=>x.className.includes('schedule-board-dated-lane')).length,1);
+ const dst=rollingTwelveHourWindows(Date.parse('2026-03-28T23:30Z'))[0];
+ assert.ok(dst.start<dst.coverageStart);
+ assert.equal(dst.end-dst.start,43200000);
+ assert.match(SCHEDULE_SQL.aircraftCalendar,/>t\.start_utc-interval '1 day'/);
 });
