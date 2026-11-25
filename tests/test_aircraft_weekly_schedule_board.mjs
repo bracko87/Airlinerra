@@ -280,3 +280,30 @@ test('missing flight duration is explained without nonsensical unknown UTC times
  assert.match(value,/Available from not yet calculated/);
  assert.doesNotMatch(value,/unknown UTC|not verified UTC/);
 });
+
+test('dated calendar shares one lane for sequential flights, with one labeled clickable bar each',async()=>{
+ const {buildDatedCalendar,renderDatedCalendar}=await import('../website/aircraft-dated-calendar.mjs');
+ const events=[
+  {aircraftInventoryId:A,kind:'flight',label:'PA101',fromCode:'BEG',toCode:'ZAG',startUtc:'2026-11-25T10:00:00Z',arrivalUtc:'2026-11-25T10:54:00Z',endUtc:'2026-11-25T11:44:00Z',turnaroundMinutes:50,status:'completed'},
+  {aircraftInventoryId:A,kind:'flight',label:'PA102',fromCode:'ZAG',toCode:'BEG',startUtc:'2026-11-25T12:00:00Z',arrivalUtc:'2026-11-25T13:04:00Z',endUtc:'2026-11-25T13:54:00Z',turnaroundMinutes:50,status:'completed'}];
+ const make=tag=>({...element(tag),dataset:{},addEventListener(){}});
+ const draw=entries=>{const host=make('main');renderDatedCalendar({createElement:make},host,buildDatedCalendar([fleet[0]],entries,'2026-11-25'),'2026-11-25');return host;};
+ const isLane=x=>x.className.includes('schedule-board-dated-lane');
+ const isEvent=x=>x.className==='schedule-board-dated-event';
+ const host=draw(events);
+ const lanes=getAll(host,isLane);assert.equal(lanes.length,1);
+ const bars=getAll(lanes[0],isEvent);assert.equal(bars.length,2);
+ assert.deepEqual(bars.map(x=>x.textContent),['PA101 BEG - ZAG','PA102 ZAG - BEG']);
+ assert.deepEqual(bars.map(x=>x.dataset.scheduleFlight),['PA101','PA102']);
+ assert.equal(bars[0].tagName,'BUTTON');assert.match(bars[0].title,/Turnaround 50 min/);
+ assert.equal(parseFloat(bars[0].style.left),600/14.4);
+ assert.equal(parseFloat(bars[1].style.left),720/14.4);
+ assert.match(bars[0].style.background,/linear-gradient/);
+ assert.equal(getAll(host,x=>x.className.includes('schedule-board-inline-flight')).length,0);
+ const conflicting={...events[1],startUtc:'2026-11-25T11:30:00Z'};
+ const overlap=draw([events[0],conflicting]);assert.equal(getAll(overlap,isLane).length,2);
+ assert.ok(getAll(overlap,x=>x.textContent.includes('Schedule conflict:')).length);
+ const empty=draw([]);assert.equal(getAll(empty,isLane).length,1);assert.equal(getAll(empty,isEvent).length,0);
+ const css=await readFile(new URL('../website/player-app.css',import.meta.url),'utf8');
+ assert.match(css,/button\.schedule-board-dated-event\{[\s\S]*?color:#fff/);
+});

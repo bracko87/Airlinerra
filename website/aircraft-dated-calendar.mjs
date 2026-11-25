@@ -46,20 +46,25 @@ export function renderDatedCalendar(doc,host,rows,date){
   if(row.model)add(doc,id,'div',[row.manufacturer,row.model].filter(Boolean).join(' '),'schedule-board-name');
   add(doc,id,'div',row.usage.percent+'% scheduled utilization'+(row.usage.highUtilization?' - high utilization':''),'hint');
   const track=add(doc,add(doc,tr,'td'),'div',null,'schedule-board-day-track');
-  if(!row.blocks.length)add(doc,track,'p','No confirmed flights or maintenance on this date.','hint');
+  // Reuse the same 24-hour lane for every non-overlapping reservation.
+  // Extra lanes are only needed to expose an actual overlap, not a new flight.
+  const lanes=[{element:add(doc,track,'div',null,'schedule-board-track-lane schedule-board-dated-lane'),until:0}];
+  if(!row.blocks.length)add(doc,lanes[0].element,'p','No confirmed flights or maintenance on this date.','hint');
   for(const b of row.blocks){
-   const lane=add(doc,track,'div',null,'schedule-board-track-lane');
+   let slot=lanes.find(l=>l.until<=b.begin);
+   if(!slot){slot={element:add(doc,track,'div',null,'schedule-board-track-lane schedule-board-dated-lane'),until:0};lanes.push(slot);}
+   slot.until=b.finish;
+   const lane=slot.element;
    const title=b.kind!=='maintenance'?b.label+' '+b.fromCode+' - '+b.toCode:b.label+' - '+b.fromCode;
    const details=b.kind!=='maintenance'?title+' | Departure '+dt(b.startUtc)+' | Arrival '+dt(b.arrivalUtc)+' | Turnaround '+b.turnaroundMinutes+' min | Available '+dt(b.endUtc)+' | Status '+b.status+(b.kind==='relocation'&&b.costUsd!=null?' | USD '+Number(b.costUsd).toLocaleString('en-US'):''):title+' | Start '+dt(b.startUtc)+' | End/block until '+dt(b.endUtc)+' | '+b.status+(b.costUsd!=null?' | $'+Number(b.costUsd).toLocaleString('en-US'):'');
-   const band=add(doc,lane,'div',null,'schedule-board-rotation-band is-slot-held');
+   const band=add(doc,lane,'button',title,'schedule-board-dated-event');
+   band.type='button';
    band.style.left=b.begin/14.4+'%';band.style.width=(b.finish-b.begin)/14.4+'%';
    band.style.background=b.kind==='maintenance'?'#8756b8':b.kind==='relocation'?'#298c84':'#2878c7';
    if(b.kind!=='maintenance'&&b.finish>b.flightEnd){const p=Math.max(0,Math.min(100,100*(b.flightEnd-b.begin)/(b.finish-b.begin)));band.style.background='linear-gradient(to right,'+(b.kind==='relocation'?'#298c84':'#2878c7')+' '+p+'%,'+(b.kind==='relocation'?'#1d605a':'#205993')+' '+p+'%)';}
-   band.title=details;
-   const label=add(doc,lane,'button',title,'schedule-board-inline-flight is-slot-held');
-   label.type='button';label.style.left=Math.min(b.begin/14.4,75)+'%';label.title=details;label.setAttribute('aria-label',details);
-   if(b.kind==='flight')label.dataset.scheduleFlight=b.label;
-   else label.addEventListener('click',()=>{const info=lane.querySelector('.schedule-maintenance-detail');if(info)info.remove();else add(doc,lane,'p',details,'schedule-maintenance-detail');});
+   band.title=details;band.setAttribute('aria-label',details);
+   if(b.kind==='flight')band.dataset.scheduleFlight=b.label;
+   else band.addEventListener('click',()=>{const info=track.querySelector('.schedule-maintenance-detail');if(info)info.remove();else add(doc,track,'p',details,'schedule-maintenance-detail');});
   }
   if(row.overlap)add(doc,track,'p','Schedule conflict: overlapping confirmed reservations.','hint');
  }

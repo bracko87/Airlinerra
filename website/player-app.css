@@ -3126,3 +3126,18 @@ section[data-player-view="aircraft-market"]:has(#workspace-aircraft-market.is-sh
 .staff-eligibility-table td{text-align:center!important;min-width:36px}
 .staff-eligibility-table th[scope="rowgroup"]{background:var(--line);color:inherit;text-align:left}
 .staff-position-group[hidden],[data-staff-position][hidden],[data-staff-section-panel][hidden]{display:none!important}
+
+/* Dated aircraft timeline: one track, label inside the actual reservation bar. */
+#workspace-schedule .schedule-board-dated-lane{height:44px;display:block}
+#workspace-schedule button.schedule-board-dated-event{
+ position:absolute;top:7px;bottom:7px;box-sizing:border-box;
+ display:block;min-width:0;max-width:none;min-height:0;margin:0!important;
+ padding:0 3px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
+ border:1px solid rgba(0,0,0,.16);border-radius:4px;
+ color:#fff;font-size:10px;font-weight:700;line-height:28px;
+ text-align:center;text-decoration:none;cursor:pointer;z-index:2;
+}
+#workspace-schedule button.schedule-board-dated-event:hover{filter:brightness(1.1)}
+#workspace-schedule button.schedule-board-dated-event:focus-visible{
+ outline:2px solid #f46c19;outline-offset:2px;z-index:4
+}
