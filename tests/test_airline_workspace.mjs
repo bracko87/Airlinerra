@@ -136,8 +136,8 @@ test('settings and local hypothetical briefs remain separate from owner-scoped p
  assert.match(workspace,/id=\\?"market-acquire\\?"/);
  assert.match(workspace,/role="status"/);
  assert.match(workspace,/id="schedule-aircraft-board"/);
- assert.match(workspace,/buildDatedCalendar\(enriched,scheduleSnapshot\?\.events,selectedDate\.iso\)/);
- assert.match(workspace,/renderDatedCalendar\(doc,host,rows,selectedDate\.iso\)/);
+ assert.match(workspace,/buildDatedCalendar\(enriched,scheduleSnapshot\?\.events,selectedDate\)/);
+ assert.match(workspace,/renderDatedCalendar\(doc,host,rows,selectedDate\)/);
  assert.doesNotMatch(workspace,/plans:scheduleSnapshot\?\.plans/);
  assert.match(workspace,/scheduler\.aircraftCalendar\(airlineId\)/);
  assert.match(workspace,/scheduleSnapshot\?\.events/);

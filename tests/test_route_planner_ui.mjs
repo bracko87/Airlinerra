@@ -352,7 +352,7 @@ test('Step 2 inherits departure stand and keeps arrival stand selector, includin
  const office=await read('../website/airline-workspace.mjs');
  assert.match(office,/fleet-detail-name/);
  assert.match(office,/fleet-detail-location/);
- assert.match(office,/buildDatedCalendar\(enriched,scheduleSnapshot\?\.events,selectedDate\.iso\)/);
+ assert.match(office,/buildDatedCalendar\(enriched,scheduleSnapshot\?\.events,selectedDate\)/);
 });
 
 

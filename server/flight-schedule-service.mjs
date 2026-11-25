@@ -284,7 +284,7 @@ export const SCHEDULE_SQL=Object.freeze({
  LEFT JOIN airlinerra_game.airport_unified_operations_v1 a ON a.world_id=1 AND a.airport_key=o.origin_airport_key
  LEFT JOIN airlinerra_game.airport_unified_operations_v1 b ON b.world_id=1 AND b.airport_key=o.destination_airport_key
  CROSS JOIN bounds t
- WHERE o.world_id=1 AND o.source_kind='game_verified_saleable_schedule_v1' AND o.departure_utc<t.start_utc+interval '7 days' AND o.arrival_utc+make_interval(mins=>o.turnaround_minutes)>t.start_utc
+ WHERE o.world_id=1 AND o.source_kind='game_verified_saleable_schedule_v1' AND o.departure_utc<t.start_utc+interval '7 days' AND o.arrival_utc+make_interval(mins=>o.turnaround_minutes)>t.start_utc-interval '1 day'
  UNION ALL
  SELECT j.job_id::text,j.aircraft_inventory_id::text,'maintenance',upper(j.check_code)||' check'||CASE WHEN j.provider_name IS NOT NULL THEN ' - '||j.provider_name ELSE '' END,
  j.game_start_utc,NULL::timestamptz,CASE WHEN j.status='payment_required' THEN greatest(j.game_end_utc,t.start_utc+interval '7 days') ELSE j.game_end_utc END,
@@ -293,7 +293,7 @@ export const SCHEDULE_SQL=Object.freeze({
  LEFT JOIN airlinerra_game.airport_unified_operations_v1 a ON a.world_id=1 AND a.airport_key=j.airport_key
  CROSS JOIN bounds t
  WHERE j.world_id=1 AND j.status IN ('scheduled','in_progress','payment_required','completed') AND j.game_start_utc<t.start_utc+interval '7 days'
- AND (j.game_end_utc>t.start_utc OR j.status='payment_required')
+ AND (j.game_end_utc>t.start_utc-interval '1 day' OR j.status='payment_required')
  UNION ALL
  SELECT r.id::text||':'||l.leg,r.aircraft_inventory_id::text,'relocation','Maintenance relocation ('||l.leg||')',
  (r.quote->l.leg->>'departureUtc')::timestamptz,(r.quote->l.leg->>'arrivalUtc')::timestamptz,(r.quote->l.leg->>'availableUtc')::timestamptz,
@@ -307,7 +307,7 @@ export const SCHEDULE_SQL=Object.freeze({
  JOIN airlinerra_game.airport_unified_operations_v1 a ON a.world_id=1 AND a.airport_key=CASE WHEN l.n=1 THEN r.origin_airport_key ELSE r.provider_airport_key END
  JOIN airlinerra_game.airport_unified_operations_v1 b ON b.world_id=1 AND b.airport_key=CASE WHEN l.n=1 THEN r.provider_airport_key ELSE r.origin_airport_key END
  CROSS JOIN bounds t
- WHERE r.world_id=1 AND r.status IN ('reserved','completed') AND (r.quote->l.leg->>'departureUtc')::timestamptz<t.start_utc+interval '7 days' AND (r.quote->l.leg->>'availableUtc')::timestamptz>t.start_utc
+ WHERE r.world_id=1 AND r.status IN ('reserved','completed') AND (r.quote->l.leg->>'departureUtc')::timestamptz<t.start_utc+interval '7 days' AND (r.quote->l.leg->>'availableUtc')::timestamptz>t.start_utc-interval '1 day'
  UNION ALL
  SELECT r.id::text||':maintenance',r.aircraft_inventory_id::text,'maintenance',upper(r.check_code)||' check - '||(r.quote#>>'{provider,providerName}'),
  (r.quote#>>'{maintenance,startUtc}')::timestamptz,NULL::timestamptz,(r.quote#>>'{maintenance,endUtc}')::timestamptz,0,'reserved',
@@ -316,7 +316,7 @@ export const SCHEDULE_SQL=Object.freeze({
  LEFT JOIN airlinerra_game.airport_unified_operations_v1 a ON a.world_id=1 AND a.airport_key=r.provider_airport_key
  CROSS JOIN bounds t
  WHERE r.world_id=1 AND r.status='reserved' AND r.maintenance_job_id IS NULL
- AND (r.quote#>>'{maintenance,startUtc}')::timestamptz<t.start_utc+interval '7 days' AND (r.quote#>>'{maintenance,endUtc}')::timestamptz>t.start_utc
+ AND (r.quote#>>'{maintenance,startUtc}')::timestamptz<t.start_utc+interval '7 days' AND (r.quote#>>'{maintenance,endUtc}')::timestamptz>t.start_utc-interval '1 day'
 )
 SELECT * FROM events ORDER BY "startUtc",id`,
  routeForecast:`SELECT airlinerra_game.section9_owned_route_commercial_forecast_v1($1::uuid,$2::uuid,$3::uuid,$4::text,$5::text,$6::text,$7::text,$8::int,$9::int,$10::numeric) AS result`,
@@ -688,7 +688,7 @@ export function createFlightScheduleHandler({verifyUserToken,database}={}){
     const owner=await client.query(SCHEDULE_SQL.owner,[body.airlineId,userId]);
     if(owner.rowCount!==1)return respond(403,{error:'Airline not owned by this account'});
     const [fleet,events]=await Promise.all([client.query(SCHEDULE_SQL.fleet,[body.airlineId]),client.query(SCHEDULE_SQL.aircraftCalendar,[body.airlineId,userId])]);
-    return respond(200,{status:'verified_aircraft_calendar',readOnly:true,fleet:fleet.rows,events:events.rows});
+    return respond(200,{status:'verified_aircraft_calendar',readOnly:true,calendarCoverage:'includes_previous_utc_day',fleet:fleet.rows,events:events.rows});
    }
    if(body.action==='list'){
     const owner=await client.query(SCHEDULE_SQL.owner,[body.airlineId,userId]);
