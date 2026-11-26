@@ -27,7 +27,7 @@ BEGIN
  j:=airlinerra_game.complete_aircraft_storage_arrival_v1(r.id);
  IF j->>'replayed' IS DISTINCT FROM 'true' OR j->>'ledgerPosted' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'completion replay: %',j;END IF;
  SELECT sum(amount_usd) INTO after_total FROM airlinerra_game.airline_ledger WHERE airline_id=r.airline_id;
- IF after_total IS DISTINCT FROM before_total-r.quoted_cost_usd THEN RAISE EXCEPTION 'expense duplicated or missing';END IF;
+ IF after_total IS DISTINCT FROM before_total OR (SELECT cash_usd FROM airlinerra_game.airlines WHERE id=r.airline_id) IS DISTINCT FROM after_total OR NOT EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_funds_v1 WHERE request_id=r.id AND status='settled') OR (SELECT count(*) FROM airlinerra_game.airline_ledger WHERE airline_id=r.airline_id AND entry_kind='EXPENSE' AND amount_usd=-r.quoted_cost_usd)<>1 THEN RAISE EXCEPTION 'expense duplicated or missing';END IF;
  RAISE NOTICE 'Storage arrival and exactly-once expense acceptance passed';
 END $test$;
 ROLLBACK;
