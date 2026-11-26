@@ -532,3 +532,33 @@ test('single used-airframe profile is a fresh protected, read-only DB lookup by 
  });
  assert.equal((await missing.handler(request(detail))).status,404);
 });
+
+test('storage overview verifies session owner and tail; rejects writes and spoofed player identity',async()=>{
+ const body={action:'storage-overview',airlineId:airline,aircraftInventoryId:aircraft};
+ const value={status:'storage_overview_verified',airlineId:airline,aircraftId:aircraft,ownershipType:'owned',fleetStatus:'stored',readOnly:true,actionsReleased:false,history:[],session:null,pendingRequest:null};
+ assert.equal(validateFleetAcquisitionRequest(body),true);
+ for(const extra of [{playerId:user},{actionsReleased:true},{aircraftInventoryId:'invalid'},{action:'storage-book'},{action:'storage-reactivate'}])
+  assert.equal(validateFleetAcquisitionRequest({...body,...extra}),false);
+ const ok=setup((sql,args)=>{
+  if(sql===FLEET_SQL.owner){assert.deepEqual(args,[airline,user]);return {rowCount:1,rows:[{id:airline}]};}
+  assert.equal(sql,FLEET_SQL.storageOverview);assert.deepEqual(args,[user,airline,aircraft]);
+  return {rowCount:1,rows:[{result:value}]};
+ });
+ const response=await ok.handler(request(body));assert.equal(response.status,200);assert.deepEqual(await response.json(),value);
+ assert.equal(ok.statements.length,2);assert.equal(ok.releases(),1);
+ const denied=setup(sql=>{assert.equal(sql,FLEET_SQL.owner);return {rowCount:0,rows:[]};});
+ assert.equal((await denied.handler(request(body))).status,403);assert.equal(denied.statements.length,1);
+ const foreignTail=setup(sql=>{if(sql===FLEET_SQL.owner)return {rowCount:1,rows:[{id:airline}]};throw Object.assign(Error('not owned'),{code:'42501'});});
+ assert.equal((await foreignTail.handler(request(body))).status,403);
+ for(const invalid of [{...value,aircraftId:offer},{...value,actionsReleased:true},{...value,readOnly:false}]){
+  const bad=setup(sql=>sql===FLEET_SQL.owner?{rowCount:1,rows:[{id:airline}]}:{rowCount:1,rows:[{result:invalid}]});
+  assert.equal((await bad.handler(request(body))).status,503);
+ }
+ const client=createFleetAcquisitionClient({auth:{getAccessToken:async()=>TOKEN},origin:'https://airlinerra.com',fetchImpl:async(url,options)=>{
+  assert.equal(url,'https://airlinerra.com'+FLEET_ACQUISITION_API_ROUTE);
+  assert.equal(options.headers.authorization,'Bearer '+TOKEN);
+  assert.deepEqual(JSON.parse(options.body),body);
+  return Response.json(value);
+ }});
+ assert.deepEqual(await client.storageOverview(airline,aircraft),value);
+});
