@@ -38,3 +38,8 @@ CREATE OR REPLACE FUNCTION airlinerra_game.section9_verified_world_instant_v1() 
 CREATE FUNCTION airlinerra_game.section9_verified_berlin_game_hour_v1() RETURNS jsonb LANGUAGE sql STABLE AS
  'SELECT jsonb_build_object(''authoritativeGameHourAvailable'',true,''gameHourUtc'',airlinerra_game.section9_verified_world_instant_v1())';
 DELETE FROM airlinerra_game.section6_weekly_airport_slot_reservations_v1;
+
+ALTER TABLE airlinerra_game.airline_ledger ADD COLUMN id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY, ADD COLUMN entry_kind text, ADD COLUMN recorded_at timestamptz;
+ALTER TABLE airlinerra_game.airline_aircraft_inventory ADD COLUMN updated_at timestamptz;
+CREATE TABLE airlinerra_game.section9_game_flight_fuel_arrival_receipts_v1(physical_flight_id text PRIMARY KEY,airline_id uuid,aircraft_inventory_id uuid,arrival_engine_event_id text,trip_burn_kg numeric,location_airport_key text);
+CREATE TABLE airlinerra_game.section9_arrived_aircraft_usage_receipts_v1(physical_flight_id text PRIMARY KEY,airline_id uuid,aircraft_inventory_id uuid,arrived_engine_event_id text,departed_engine_event_id text,elapsed_flight_hours numeric,flight_cycles integer);
