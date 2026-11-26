@@ -1,37 +1,8 @@
 -- ROLLBACK-ONLY REVIEW. Requires inbound movement, billing and reactivation reservation schemas.
 -- Maintain legacy FK guarantees, introduce a purpose-specific outbound origin.
 BEGIN;
-ALTER TABLE airlinerra_game.section9_operated_flight_movements_v1
- ADD COLUMN storage_reactivation boolean NOT NULL DEFAULT false,
- ADD CONSTRAINT storage_reactivation_parent_required CHECK(NOT storage_reactivation OR storage_request_id IS NOT NULL),
- DROP CONSTRAINT section9_operated_flight_movements_unified_origin_fk,
- DROP CONSTRAINT section9_movement_legacy_destination_fk,
- DROP CONSTRAINT section9_movement_storage_destination_fk,
- DROP COLUMN legacy_destination_airport_key,
- DROP COLUMN storage_destination_airport_key;
-ALTER TABLE airlinerra_game.section9_operated_flight_movements_v1
- ADD COLUMN legacy_origin_airport_key text GENERATED ALWAYS AS (CASE WHEN NOT storage_reactivation THEN origin_airport_key END) STORED,
- ADD COLUMN storage_origin_airport_key text GENERATED ALWAYS AS (CASE WHEN storage_reactivation THEN origin_airport_key END) STORED,
- ADD COLUMN legacy_destination_airport_key text GENERATED ALWAYS AS (CASE WHEN storage_request_id IS NULL OR storage_reactivation THEN destination_airport_key END) STORED,
- ADD COLUMN storage_destination_airport_key text GENERATED ALWAYS AS (CASE WHEN storage_request_id IS NOT NULL AND NOT storage_reactivation THEN destination_airport_key END) STORED;
-ALTER TABLE airlinerra_game.section9_operated_flight_movements_v1
- ADD CONSTRAINT section9_movement_legacy_origin_fk FOREIGN KEY(world_id,legacy_origin_airport_key) REFERENCES airlinerra_game.airport_sections1_8_combined_members_v1(world_id,airport_key),
- ADD CONSTRAINT section9_movement_storage_origin_fk FOREIGN KEY(world_id,storage_origin_airport_key) REFERENCES airlinerra_game.aircraft_storage_facilities_v1(world_id,airport_key),
- ADD CONSTRAINT section9_movement_legacy_destination_fk FOREIGN KEY(world_id,legacy_destination_airport_key) REFERENCES airlinerra_game.airport_sections1_8_combined_members_v1(world_id,airport_key),
- ADD CONSTRAINT section9_movement_storage_destination_fk FOREIGN KEY(world_id,storage_destination_airport_key) REFERENCES airlinerra_game.aircraft_storage_facilities_v1(world_id,airport_key);
-ALTER TABLE airlinerra_game.section9_aircraft_current_position_v1
- ADD COLUMN storage_reactivation boolean NOT NULL DEFAULT false,
- ADD CONSTRAINT storage_position_reactivation_parent_required CHECK(NOT storage_reactivation OR storage_request_id IS NOT NULL),
- DROP CONSTRAINT section9_position_legacy_airport_fk,
- DROP CONSTRAINT section9_position_storage_airport_fk,
- DROP COLUMN legacy_airport_key,
- DROP COLUMN storage_airport_key;
-ALTER TABLE airlinerra_game.section9_aircraft_current_position_v1
- ADD COLUMN legacy_airport_key text GENERATED ALWAYS AS (CASE WHEN storage_request_id IS NULL OR storage_reactivation THEN airport_key END) STORED,
- ADD COLUMN storage_airport_key text GENERATED ALWAYS AS (CASE WHEN storage_request_id IS NOT NULL AND NOT storage_reactivation THEN airport_key END) STORED;
-ALTER TABLE airlinerra_game.section9_aircraft_current_position_v1
- ADD CONSTRAINT section9_position_legacy_airport_fk FOREIGN KEY(world_id,legacy_airport_key) REFERENCES airlinerra_game.approved_game_airports(world_id,airport_key),
- ADD CONSTRAINT section9_position_storage_airport_fk FOREIGN KEY(world_id,storage_airport_key) REFERENCES airlinerra_game.aircraft_storage_facilities_v1(world_id,airport_key);
+-- Direction-aware keys are installed by the base movement review, avoiding
+-- dropped composite attributes and stale cached plans in the combined transaction.
 CREATE TABLE airlinerra_game.aircraft_storage_reactivation_release_v1(world_id smallint PRIMARY KEY CHECK(world_id=1),enabled boolean NOT NULL DEFAULT false);
 INSERT INTO airlinerra_game.aircraft_storage_reactivation_release_v1(world_id) VALUES(1);
 ALTER TABLE airlinerra_game.aircraft_storage_reactivation_release_v1 ENABLE ROW LEVEL SECURITY;
