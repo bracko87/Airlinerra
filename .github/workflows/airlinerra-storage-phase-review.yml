@@ -1,5 +1,6 @@
 name: Aircraft storage phase review
 on:
+  pull_request:
   push:
     branches: [feature/aircraft-leasing-billing-review]
     paths:
@@ -39,8 +40,13 @@ jobs:
           INSERT INTO airlinerra_game.section9_game_fuel_model_snapshot_v1 VALUES(1,800,true);
           INSERT INTO airlinerra.aircraft_catalog_configuration_inventory VALUES(1,70000);
           CREATE FUNCTION airlinerra_game.section9_route_timing_pick_v1(text,int,int) RETURNS int LANGUAGE sql IMMUTABLE AS 'SELECT ($2+$3)/2';
+          CREATE TABLE airlinerra_game.section8_airport_operating_tariffs_v1(world_id smallint,airport_key text,landing_base_for_reference_aircraft_usd numeric,departure_movement_fraction numeric,ground_handling_fraction numeric,remote_stand_multiplier numeric,remote_parking_reference_per_day_usd numeric,terminal_navigation_unit_usd numeric,price_model_version text,evidence_class text);
+          INSERT INTO airlinerra_game.section8_airport_operating_tariffs_v1 VALUES(1,'OURAIRPORTS:999',1000,0.16,0.2,1,100,50,'fixture','GAME_ESTIMATE_NOT_REAL_AERONAUTICAL_TARIFF');
+          CREATE TABLE airlinerra.aircraft_expansion_group3_economics_v1(fuel_price_assumption_usd_per_kg numeric);
+          INSERT INTO airlinerra.aircraft_expansion_group3_economics_v1 VALUES(1.2);
+          CREATE FUNCTION airlinerra_game.section9_game_reserve_aware_fuel_quote_v1(bigint,numeric,integer,integer,integer,integer,integer) RETURNS jsonb LANGUAGE sql AS 'SELECT jsonb_build_object(''status'',''game_reserve_aware_fuel_estimate_only'',''tripBurnKg'',1000,''withinGameTankIncludingReserve'',true)';
           SQL
-          for file in aircraft_storage_facilities_review aircraft_storage_airport_admission_review aircraft_storage_route_phase_review; do
+          for file in aircraft_storage_facilities_review aircraft_storage_airport_admission_review aircraft_storage_route_phase_review aircraft_storage_relocation_cost_review; do
             psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1 -f "server/sql/$file.sql"
           done
           psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1 <<'SQL'
@@ -58,6 +64,14 @@ jobs:
            IF EXISTS(SELECT 1 FROM airlinerra_game.airport_unified_operations_v1 WHERE airport_key='OURAIRPORTS:316427') THEN RAISE EXCEPTION 'commercial catalogue changed';END IF;
            a:=airlinerra_game.aircraft_storage_airport_admission_v1('OURAIRPORTS:316427','storage_inbound');
            IF a->>'dispatchAuthorized' IS DISTINCT FROM 'false' OR a->>'storageCapacityUnlimited' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'incorrect release flags';END IF;
+           j:=airlinerra_game.aircraft_storage_relocation_cost_v1(1,'OURAIRPORTS:999','OURAIRPORTS:316427','storage_inbound');
+           IF j->>'status' IS DISTINCT FROM 'storage_tariff_unavailable' THEN RAISE EXCEPTION 'missing tariff not rejected';END IF;
+           INSERT INTO airlinerra_game.aircraft_storage_relocation_tariffs_v1 VALUES(1,'OURAIRPORTS:316427',100,200,50,'fixture');
+           j:=airlinerra_game.aircraft_storage_relocation_cost_v1(1,'OURAIRPORTS:999','OURAIRPORTS:316427','storage_inbound');
+           IF j->>'status' IS DISTINCT FROM 'storage_relocation_cost_estimate' OR (j->>'fuelCostUsd')::numeric IS DISTINCT FROM 1200::numeric OR (j->>'airportFeesUsd')::numeric IS DISTINCT FROM 1498.13::numeric OR (j->>'directOperatingCostUsd')::numeric IS DISTINCT FROM 2698.13::numeric THEN RAISE EXCEPTION 'inbound cost mismatch: %',j;END IF;
+           IF j->>'passengers' IS DISTINCT FROM '0' OR j->>'cargoTonnes' IS DISTINCT FROM '0' OR j->>'dispatchAuthorized' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'unsafe release flags';END IF;
+           j:=airlinerra_game.aircraft_storage_relocation_cost_v1(1,'OURAIRPORTS:316427','OURAIRPORTS:999','storage_reactivation');
+           IF j->>'status' IS DISTINCT FROM 'storage_relocation_cost_estimate' OR (j->>'airportFeesUsd')::numeric IS DISTINCT FROM 1488.13::numeric THEN RAISE EXCEPTION 'return cost mismatch: %',j;END IF;
            UPDATE airlinerra_game.aircraft_storage_facilities_v1 SET review_state='suspended' WHERE airport_key='OURAIRPORTS:316427';
            IF airlinerra_game.aircraft_storage_route_phase_profile_v1(1,'OURAIRPORTS:999','OURAIRPORTS:316427','storage_inbound') IS NOT NULL THEN RAISE EXCEPTION 'suspended facility accepted';END IF;
            RAISE NOTICE 'Storage phase acceptance passed';
