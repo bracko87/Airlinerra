@@ -115,4 +115,83 @@ BEGIN
  IF EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_booking_approvals_v1) THEN RAISE EXCEPTION 'licence/duty preflight generated booking clearance';END IF;
  RAISE NOTICE 'Storage ferry permission and actual rotation duty-window acceptance passed';
 END $ferry$;
+CREATE FUNCTION airlinerra_game.section9_crew_duty_fit_v2(p_rotation jsonb,p_existing jsonb,p_home_timezone text,p_initial_airport text)
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path TO pg_catalog,airlinerra_game AS $$
+DECLARE pol record; s timestamptz;e timestamptz; d record; prev_end timestamptz; prev_dest text;
+ report_date date;work_dates date[]:='{}'; day_start date; working_count integer; peak int:=0;
+BEGIN
+ SELECT * INTO STRICT pol FROM airlinerra_game.section9_crew_scheduler_policy_v2 WHERE world_id=1;
+ IF p_rotation->>'status' IS DISTINCT FROM 'rotation_preview' THEN RETURN jsonb_build_object('status','invalid_rotation','eligible',false);END IF;
+ IF p_existing IS NULL OR jsonb_typeof(p_existing)<>'array' OR p_initial_airport IS NULL OR btrim(p_initial_airport)='' OR NOT EXISTS(SELECT 1 FROM pg_timezone_names WHERE name=p_home_timezone) THEN RETURN jsonb_build_object('status','invalid_duty_history','eligible',false);END IF;
+ IF jsonb_array_length(p_existing)>366 THEN RETURN jsonb_build_object('status','history_requires_sharding','eligible',false);END IF;
+ s:=(p_rotation->>'dutyStartUtc')::timestamptz;e:=(p_rotation->>'dutyEndUtc')::timestamptz;
+ IF s IS NULL OR e IS NULL OR NOT isfinite(s) OR NOT isfinite(e) OR e<=s OR e-s>make_interval(mins=>pol.maximum_duty_minutes) THEN RETURN jsonb_build_object('status','invalid_rotation','eligible',false);END IF;
+ report_date:=(s AT TIME ZONE p_home_timezone)::date;
+ prev_dest:=p_initial_airport;
+ FOR d IN SELECT (v->>'dutyStartUtc')::timestamptz ds,(v->>'dutyEndUtc')::timestamptz de,
+ v->>'startingAirport' AS origin,v->>'endingAirport' AS destination
+ FROM jsonb_array_elements(p_existing||jsonb_build_array(p_rotation)) x(v)
+ ORDER BY ds,de LOOP
+  IF d.ds IS NULL OR d.de IS NULL OR NOT isfinite(d.ds) OR NOT isfinite(d.de) OR d.de<=d.ds OR d.de-d.ds>make_interval(mins=>pol.maximum_duty_minutes) OR nullif(btrim(d.origin),'') IS NULL OR nullif(btrim(d.destination),'') IS NULL THEN RETURN jsonb_build_object('status','invalid_duty_history','eligible',false);END IF;
+  IF prev_end IS NOT NULL AND d.ds<prev_end THEN RETURN jsonb_build_object('status','duty_overlap','eligible',false);END IF;
+  IF prev_end IS NOT NULL AND d.ds<prev_end+make_interval(mins=>pol.minimum_rest_minutes) THEN RETURN jsonb_build_object('status','insufficient_rest','eligible',false);END IF;
+  IF prev_dest IS DISTINCT FROM d.origin THEN RETURN jsonb_build_object('status','crew_wrong_airport','eligible',false);END IF;
+  work_dates:=array_append(work_dates,(d.ds AT TIME ZONE p_home_timezone)::date);
+  prev_end:=d.de;prev_dest:=d.destination;
+ END LOOP;
+ FOR day_start IN SELECT report_date-i FROM generate_series(0,pol.working_day_window-1) i LOOP
+  SELECT count(DISTINCT dt) INTO working_count FROM unnest(work_dates) dt WHERE dt BETWEEN day_start AND day_start+pol.working_day_window-1;
+  peak:=greatest(peak,working_count);
+ END LOOP;
+ RETURN jsonb_build_object('status',CASE WHEN peak>pol.maximum_working_days THEN 'working_days_exceeded' ELSE 'duty_fit_preview' END,
+ 'eligible',peak<=pol.maximum_working_days,'maxWorkingDaysInWindow',peak,'workingDayBasis','home_base_reporting_date','reportDate',report_date,'dispatchEnforced',false);
+EXCEPTION WHEN invalid_datetime_format OR datetime_field_overflow OR invalid_text_representation THEN RETURN jsonb_build_object('status','invalid_duty_history','eligible',false);
+END $$;
+
+-- Synthetic member inputs; actual duty-fit function is used.
+CREATE TABLE airlinerra_game.section9_crew_plan_batches_v1(plan_id uuid PRIMARY KEY,airline_id uuid,status text);
+CREATE TABLE airlinerra_game.section9_planned_crew_duties_v1(plan_id uuid,airline_id uuid,employee_id uuid,duty_end_utc timestamptz);
+CREATE FUNCTION airlinerra_game.section9_owned_rolling_crew_input_v1(uuid,uuid,timestamptz)
+RETURNS jsonb LANGUAGE sql STABLE AS $$SELECT current_setting('test.storage_crew_input')::jsonb$$;
+DO $candidates$
+DECLARE s record;owner_id uuid;dep timestamptz;rot jsonb;pilot jsonb;member jsonb;inp jsonb;outcome jsonb;hist jsonb;ds timestamptz;plan uuid:=gen_random_uuid();
+ cap uuid:='11111111-1111-4111-8111-111111111111';fo uuid:='22222222-2222-4222-8222-222222222222';c1 uuid:='33333333-3333-4333-8333-333333333333';c2 uuid:='44444444-4444-4444-8444-444444444444';
+BEGIN
+ SELECT * INTO STRICT s FROM airlinerra_game.aircraft_storage_sessions_v1 WHERE storage_ended_utc IS NULL;
+ SELECT owner_player_id INTO STRICT owner_id FROM airlinerra_game.aircraft_storage_relocation_requests_v1 WHERE id=s.request_id;
+ PERFORM set_config('test.storage_hour',s.storage_started_utc::text,true);
+ dep:=date_trunc('second',s.storage_started_utc+interval '3 hours');
+ outcome:=airlinerra_game.owned_aircraft_storage_cost_preview_v1(owner_id,s.airline_id,s.aircraft_inventory_id,'storage_reactivation','OURAIRPORTS:999',dep);
+ rot:=airlinerra_game.aircraft_storage_crew_requirements_v1(1,s.airport_key,'OURAIRPORTS:999',dep,(outcome->>'arrivalUtc')::timestamptz)->'rotation';
+ ds:=(rot->>'dutyStartUtc')::timestamptz;
+ pilot:=jsonb_build_object('id',cap,'initialAirport',s.airport_key,'baseTimezone','Europe/Berlin','locationEffectiveUtc',ds-interval '30 days','employmentFrom',(ds-interval '30 days')::date,'history','[]'::jsonb,'absences','[]'::jsonb,
+ 'permissions',jsonb_build_array(jsonb_build_object('group','family:1','issued',(ds-interval '30 days')::date,'expires',(ds+interval '30 days')::date,'active',true,'captain',true,'firstOfficer',true)));
+ IF NOT airlinerra_game.aircraft_storage_crew_candidate_fit_v1(pilot,rot,'family:1','captain') THEN RAISE EXCEPTION 'qualified captain rejected';END IF;
+ IF airlinerra_game.aircraft_storage_crew_candidate_fit_v1(pilot||jsonb_build_object('initialAirport','OTHER'),rot,'family:1','captain') THEN RAISE EXCEPTION 'wrong airport accepted';END IF;
+ IF airlinerra_game.aircraft_storage_crew_candidate_fit_v1(pilot,rot,'family:2','captain') THEN RAISE EXCEPTION 'wrong family accepted';END IF;
+ IF airlinerra_game.aircraft_storage_crew_candidate_fit_v1(pilot||jsonb_build_object('absences',jsonb_build_array(jsonb_build_object('startUtc',ds,'endUtc',ds+interval '1 hour'))),rot,'family:1','captain') THEN RAISE EXCEPTION 'absent employee accepted';END IF;
+ hist:=jsonb_build_array(jsonb_build_object('startUtc',ds-interval '10 hours','endUtc',ds-interval '5 hours','origin',s.airport_key,'destination',s.airport_key));
+ IF airlinerra_game.aircraft_storage_crew_candidate_fit_v1(pilot||jsonb_build_object('history',hist),rot,'family:1','captain') THEN RAISE EXCEPTION 'insufficient rest accepted';END IF;
+ -- Isolate the weekly hours gate from the five-working-day gate.
+ UPDATE airlinerra_game.section9_crew_scheduler_policy_v2 SET maximum_working_days=7;
+ SELECT jsonb_agg(jsonb_build_object('startUtc',ds-i*interval '24 hours','endUtc',ds-i*interval '24 hours'+interval '12 hours','origin',s.airport_key,'destination',s.airport_key) ORDER BY i DESC) INTO hist FROM generate_series(1,5) i;
+ IF airlinerra_game.aircraft_storage_crew_candidate_fit_v1(pilot||jsonb_build_object('history',hist),rot,'family:1','captain') THEN RAISE EXCEPTION 'weekly duty cap bypassed';END IF;
+ UPDATE airlinerra_game.section9_crew_scheduler_policy_v2 SET maximum_working_days=5;
+ member:=(pilot-'permissions')||jsonb_build_object('role','flight_attendant');
+ inp:=jsonb_build_object('status','rolling_crew_input_preview','unboundDeparturesLast7Days',0,'unresolvedCaptureIssues',0,'invalidOccurrenceCount',0,'alreadyReportedFutureFlights',0,
+ 'pilots',jsonb_build_array(pilot,jsonb_set(jsonb_set(pilot,'{id}',to_jsonb(fo)),'{permissions,0,captain}','false'::jsonb)),
+ 'cabinMembers',jsonb_build_array(member||jsonb_build_object('id',c1),member||jsonb_build_object('id',c2)));
+ PERFORM set_config('test.storage_crew_input',inp::text,true);
+ outcome:=airlinerra_game.owned_aircraft_storage_crew_candidates_v1(owner_id,s.airline_id,s.aircraft_inventory_id,'storage_reactivation','OURAIRPORTS:999',dep);
+ IF outcome->>'status' IS DISTINCT FROM 'storage_crew_candidates_found' OR outcome#>>'{candidateCaptains,0}' IS DISTINCT FROM cap::text OR outcome#>>'{candidateFirstOfficers,0}' IS DISTINCT FROM fo::text OR outcome->>'crewReserved' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'crew selection incorrect: %',outcome;END IF;
+ INSERT INTO airlinerra_game.section9_crew_plan_batches_v1 VALUES(plan,s.airline_id,'validated_preview');
+ INSERT INTO airlinerra_game.section9_planned_crew_duties_v1 VALUES(plan,s.airline_id,cap,ds+interval '1 day');
+ outcome:=airlinerra_game.owned_aircraft_storage_crew_candidates_v1(owner_id,s.airline_id,s.aircraft_inventory_id,'storage_reactivation','OURAIRPORTS:999',dep);
+ IF outcome->>'status' IS DISTINCT FROM 'storage_crew_candidates_insufficient' THEN RAISE EXCEPTION 'commercial duty conflict not rejected: %',outcome;END IF;
+ PERFORM set_config('test.storage_crew_input',(inp||jsonb_build_object('unboundDeparturesLast7Days',1))::text,true);
+ outcome:=airlinerra_game.owned_aircraft_storage_crew_candidates_v1(owner_id,s.airline_id,s.aircraft_inventory_id,'storage_reactivation','OURAIRPORTS:999',dep);
+ IF outcome->>'status' IS DISTINCT FROM 'storage_crew_history_unverified' THEN RAISE EXCEPTION 'incomplete history accepted: %',outcome;END IF;
+ RAISE NOTICE 'Storage crew candidate selection acceptance passed (synthetic rolling input, actual duty fit)';
+END $candidates$;
+
 ROLLBACK TO SAVEPOINT storage_operational_screen;
