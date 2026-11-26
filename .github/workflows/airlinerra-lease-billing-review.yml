@@ -1,0 +1,51 @@
+name: Aircraft lease monthly billing (disposable)
+on:
+  pull_request:
+    paths:
+      - 'server/sql/aircraft_lease_monthly_billing_review.sql'
+      - 'tests/sql/aircraft_lease_monthly_billing_*'
+      - '.github/workflows/airlinerra-lease-billing-review.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  lease-billing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable-ci-only
+          POSTGRES_DB: airlinerra_disposable
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d airlinerra_disposable"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: disposable-ci-only
+      PGDATABASE: airlinerra_disposable
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install client if needed
+        run: |
+          if ! command -v psql >/dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y postgresql-client
+          fi
+      - name: Test actual proposed billing SQL in disposable fixture
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = 127.0.0.1
+          test "$PGDATABASE" = airlinerra_disposable
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/disposable_database_preflight.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/aircraft_lease_monthly_billing_fixture.sql
+          psql -X -v ON_ERROR_STOP=1 -f server/sql/aircraft_lease_monthly_billing_review.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/aircraft_lease_monthly_billing_acceptance.sql
