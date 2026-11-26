@@ -2,7 +2,7 @@
 DO $test$
 DECLARE r record; m record; d record; j jsonb; before_total numeric; after_total numeric;
 BEGIN
- SELECT q.* INTO r FROM airlinerra_game.aircraft_storage_relocation_requests_v1 q JOIN airlinerra_game.section9_operated_flight_movements_v1 m ON m.storage_request_id=q.id AND m.phase='arrived';
+ SELECT q.* INTO r FROM airlinerra_game.aircraft_storage_relocation_requests_v1 q JOIN airlinerra_game.section9_operated_flight_movements_v1 mv ON mv.storage_request_id=q.id AND mv.phase='arrived';
  IF NOT FOUND THEN RAISE EXCEPTION 'arrival fixture missing';END IF;
  SELECT * INTO m FROM airlinerra_game.section9_operated_flight_movements_v1 WHERE storage_request_id=r.id AND phase='arrived';
  SELECT * INTO d FROM airlinerra_game.section9_operated_flight_movements_v1 WHERE storage_request_id=r.id AND phase='departed';
