@@ -142,3 +142,22 @@ jobs:
           psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1 -f tests/sql/aircraft_storage_signed_movement_fixture.sql
           # Run acceptance inside the review transaction, then roll back.
           { sed '/^ROLLBACK;$/d' server/sql/aircraft_storage_signed_movement_schema_review.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_funds_review.sql; sed '/^ROLLBACK;$/d' tests/sql/aircraft_storage_signed_movement_acceptance.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_arrival_completion_review.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_monthly_billing_review.sql; echo "INSERT INTO airlinerra_game.aircraft_storage_billing_classes_v1 VALUES(1,'narrowbody','fixture');"; sed '/^ROLLBACK;$/d' tests/sql/aircraft_storage_arrival_completion_acceptance.sql; cat tests/sql/aircraft_storage_monthly_billing_acceptance.sql; } | psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1
+          # Compile worker with the same storage schemas and a disabled synthetic fuel release.
+          { sed '/^ROLLBACK;$/d' server/sql/aircraft_storage_signed_movement_schema_review.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_funds_review.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_arrival_completion_review.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_monthly_billing_review.sql; cat <<'SQL'
+          CREATE TABLE airlinerra_game.aircraft_storage_execution_release_v1(world_id smallint PRIMARY KEY,fuel_adapter_enabled boolean NOT NULL DEFAULT false,execution_enabled boolean NOT NULL DEFAULT false);
+          INSERT INTO airlinerra_game.aircraft_storage_execution_release_v1(world_id) VALUES(1);
+          SQL
+          sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_execution_worker_review.sql; cat <<'SQL'
+          DO $worker$
+          DECLARE j jsonb;
+          BEGIN
+           j:=airlinerra_game.advance_aircraft_storage_relocations_v1(10);
+           IF j->>'status' IS DISTINCT FROM 'storage_execution_not_released' OR j->'results' IS DISTINCT FROM '[]'::jsonb THEN RAISE EXCEPTION 'worker release bypass: %',j;END IF;
+           j:=airlinerra_game.execute_aircraft_storage_leg_v1(gen_random_uuid(),'departed');
+           IF j->>'status' IS DISTINCT FROM 'storage_execution_not_released' OR j->>'movementRecorded' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'direct execution release bypass: %',j;END IF;
+           IF EXISTS(SELECT 1 FROM airlinerra_game.section9_operated_flight_movements_v1) THEN RAISE EXCEPTION 'disabled worker wrote movements';END IF;
+           RAISE NOTICE 'Storage worker disabled release acceptance passed';
+          END $worker$;
+          ROLLBACK;
+          SQL
+          } | psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1
