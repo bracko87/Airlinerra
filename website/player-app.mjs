@@ -61,7 +61,7 @@ function visible(view){
 function navigateTo(view){
   const returningFromAircraftProfile=doc.querySelector('[data-player-view="aircraft-profile"]')?.hidden===false;
   const selected=safePlayerView('#'+view);
-  const name=selected==='onboarding'&&hasRealAirline?'overview':selected;
+  const name=selected==='onboarding'?managerLandingView({requestedView:selected,hasAirline:hasRealAirline}):selected;
   if(name==='fleet-aircraft')workspaceController?.openFleetAircraft?.(window.location.hash);
   if(name==='aircraft-market')workspaceController?.openUsedAircraft?.(window.location.hash);
   if(name!==selected)window.history.replaceState({},'',playerViewUrl(name));
@@ -300,7 +300,8 @@ function setManager(user){
 }
 function renderOverviewState(hasAirline){
  doc.getElementById('player-airline-note').textContent=hasAirline?'':'Awaiting onboarding';
- doc.querySelectorAll('[data-setup-only]').forEach(element=>{element.hidden=hasAirline;});
+ app.dataset.airlineOwnership=hasAirline===true?'owned':hasAirline===false?'none':'unknown';
+ doc.querySelectorAll('[data-setup-only]').forEach(element=>{element.hidden=hasAirline!==false;});
  doc.getElementById('overview-subtitle').textContent=hasAirline
   ?'Your airline and business activity at a glance.'
   :'Create your first airline to begin managing routes and aircraft.';
@@ -311,7 +312,7 @@ let playerData=null;
 aircraftLibraryController=createAircraftLibrary({doc,getReader:()=>playerData});
 let onboarding=null;
 let onboardingContext=null;
-let hasRealAirline=false;
+let hasRealAirline=null; // Unknown until a verified owner read succeeds.
 let workspaceController=null;
 let operationsController=null;
 let currentAirline=null,manageLogoBlob=null,manageLogoPreviewUrl=null,manageLogoRequest=0;
@@ -645,6 +646,7 @@ async function loadPlayerReadData({local=false}={}){
   if(!Array.isArray(data.worlds)||!Array.isArray(data.countries)||!Array.isArray(data.airlines))
    throw Error('Invalid game directory');
   const first=data.airlines[0];
+  if(first&&(!first.id||!first.name))throw Error('Invalid airline identity');
   // All signed-in game workplans and preferences use the owner database.
   // Old browser session data is READ ONCE for safe migration, never newly saved.
   let draftStore=null;
@@ -668,6 +670,7 @@ async function loadPlayerReadData({local=false}={}){
   if(safePlayerView(window.location.hash)==='licenses')
     void loadGamePermissionApplications();
   renderOverviewState(hasRealAirline);
+  if(hasRealAirline&&safePlayerView(window.location.hash)==='onboarding')navigateTo('onboarding');
   // Airline identity and cash must not disappear if an unrelated airport
   // directory widget or planning panel fails to render.
   renderAirlineDashboard(doc,{airline:first||null,worlds:data.worlds,ledgerEntries:data.ledgerEntries});
@@ -715,7 +718,11 @@ async function loadPlayerReadData({local=false}={}){
    (readStage==='api'?'Request failed':'Display failed');
   console.warn('Airlinerra player overview',readStage,code);
   playerData=null;
-  hasRealAirline=false; // Unknown because the protected read failed - NOT proof no airline exists.
+  hasRealAirline=null; // Failed read is not proof that an airline is missing.
+  onboardingContext=null;
+  app.dataset.airlineOwnership='unknown';
+  doc.querySelectorAll('[data-setup-only]').forEach(element=>{element.hidden=true;});
+  if(safePlayerView(window.location.hash)==='onboarding')navigateTo('overview');
   workspaceController?.updateData({connected:false,airline:null,reader:null,scheduler:null,fleetClient:null,cabinServiceClient:null,aircraftMedia:null});
   operationsController?.updateData({connected:false,airline:null,reader:null,fleetClient:null});
   currentAirline=null;
@@ -745,7 +752,8 @@ async function loadPlayerReadData({local=false}={}){
  doc.getElementById('setup-retry-loading').hidden=!needsRetry;
  if(readSucceeded&&initialManagerLanding){
   const destination=managerLandingView({requestedView:'onboarding',hasAirline:hasRealAirline});
-  const landing=hasRealAirline?(workspaceController?.getLandingView()||destination):destination;
+  const preference=workspaceController?.getLandingView();
+  const landing=hasRealAirline&&preference&&preference!=='onboarding'?preference:destination;
   window.history.replaceState({},'',playerViewUrl(landing));
   navigateTo(landing);
   initialManagerLanding=false;
@@ -794,6 +802,7 @@ async function restoreSetupDraft(){
 async function loadRealOnboarding(){
  if(!auth)return;
  const status=doc.getElementById('setup-draft-feedback');
+ if(hasRealAirline===null)return;
  if(hasRealAirline){
    onboardingContext=null;
    doc.getElementById('setup-create-airline').disabled=true;
@@ -1179,13 +1188,13 @@ async function initialize(){
       enablePublicAircraftImageCache();
       if(['overview','onboarding'].includes(selected)){
         initialManagerLanding=true;
-        window.history.replaceState({},'',playerViewUrl('onboarding'));
-        navigateTo('onboarding');
+        window.history.replaceState({},'',playerViewUrl('overview'));
+        navigateTo('overview');
       }
       doc.getElementById('local-preview-note').hidden=true;
-      visible('app');
       showRealBerlinGameTime();
       await loadPlayerReadData({local:true});
+      visible('app');
     }catch(error){
       // Do not send a signed-in manager back to the account page on every
       // startup failure: account.html immediately redirects verified users here.
@@ -1209,12 +1218,12 @@ async function initialize(){
     enablePublicAircraftImageCache();
     if(['overview','onboarding'].includes(selected)){
       initialManagerLanding=true;
-      window.history.replaceState({},'',playerViewUrl('onboarding'));
-      navigateTo('onboarding');
+      window.history.replaceState({},'',playerViewUrl('overview'));
+      navigateTo('overview');
     }
-    visible('app');
     showRealBerlinGameTime();
     await loadPlayerReadData();
+    visible('app');
   }catch(err){
     if(err instanceof PrivateTesterAccessDenied){
       window.location.replace(PLAYER_LOGIN_PATH);return;

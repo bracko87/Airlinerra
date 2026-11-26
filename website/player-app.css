@@ -3183,3 +3183,7 @@ section[data-player-view="aircraft-market"]:has(#workspace-aircraft-market.is-sh
 #workspace-fleet-aircraft .fleet-aircraft-picture-disclosure[open] .fleet-aircraft-picture-chevron::before{transform:translateY(3px) rotate(225deg)}
 #workspace-fleet-aircraft .fleet-aircraft-picture-disclosure:not([open])>.fleet-aircraft-picture-content{display:none}
 #workspace-fleet-aircraft .fleet-aircraft-picture-content{padding-top:12px}
+
+/* Never flash the creation wizard or setup links while ownership is unknown or owned. */
+#player-app:not([data-airline-ownership="none"]) [data-player-view="onboarding"],
+#player-app:not([data-airline-ownership="none"]) [data-setup-only]{display:none!important}

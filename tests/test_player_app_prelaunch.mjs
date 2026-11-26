@@ -136,7 +136,7 @@ test('real account onboarding does not re-open creation for an existing airline'
 test('verified first-time account routes to real setup while a returning airline retains its dashboard',async()=>{
  const js=await readFile(new URL('../website/player-app.mjs',import.meta.url),'utf8');
  assert.match(js,/managerLandingView\(\{requestedView:'onboarding',hasAirline:hasRealAirline\}\)/);
- assert.match(js,/navigateTo\('onboarding'\)/);
+ assert.match(js,/const name=selected==='onboarding'\?managerLandingView/);
  assert.match(js,/if\(hasRealAirline\)\{/);
  assert.match(js,/Your real airline already exists/);
  assert.doesNotMatch(js,/if\(!local&&\(!auth\|\|!PLAYER_READ_API_ENABLED\)\)return/);
@@ -211,4 +211,27 @@ test('Group 2 locations support real HQ registration and owner-only hub/station 
  assert.match(html,/Flights and reservations remain restricted/);
  assert.doesNotMatch(app.slice(app.indexOf('async function loadGroup2Plans'),app.indexOf('async function airportSearch')),
   /activateFlight\(|reserveSlots\(|dispatchFlight\(/);
+});
+
+test('onboarding landing is fail-closed until an authenticated empty airline list is verified',async()=>{
+ for(const requestedView of ['overview','onboarding']){
+  assert.equal(managerLandingView({requestedView,hasAirline:null}),'overview');
+  assert.equal(managerLandingView({requestedView,hasAirline:true}),'overview');
+  assert.equal(managerLandingView({requestedView,hasAirline:false}),'onboarding');
+ }
+ assert.equal(managerLandingView({requestedView:'fleet',hasAirline:null}),'fleet');
+ const [js,css,html]=await Promise.all([
+  readFile(new URL('../website/player-app.mjs',import.meta.url),'utf8'),
+  readFile(new URL('../website/player-app.css',import.meta.url),'utf8'),
+  readFile(new URL('../website/private-player-app.html',import.meta.url),'utf8')
+ ]);
+ const startup=js.slice(js.indexOf('async function initialize(){'),js.indexOf('// Align Settings'));
+ assert.doesNotMatch(startup,/navigateTo\('onboarding'\)|playerViewUrl\('onboarding'\)/);
+ assert.match(startup,/await loadPlayerReadData\(\{local:true\}\);\s*visible\('app'\)/);
+ assert.match(startup,/await loadPlayerReadData\(\);\s*visible\('app'\)/);
+ assert.match(js,/let hasRealAirline=null;/);
+ assert.match(js,/element\.hidden=hasAirline!==false/);
+ assert.match(js,/app\.dataset\.airlineOwnership='unknown'/);
+ assert.match(css,/#player-app:not\(\[data-airline-ownership="none"\]\) \[data-player-view="onboarding"\]/);
+ assert.match(html,/<section data-player-view="onboarding" hidden>/);
 });
