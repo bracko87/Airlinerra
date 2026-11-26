@@ -73,18 +73,8 @@ BEGIN
  cfg:=(ctx->>'configurationId')::bigint;origin:=q->>'originAirportKey';arrival:=(q->>'arrivalUtc')::timestamptz;outbound:=p_purpose='storage_reactivation';
  o:=airlinerra_game.aircraft_storage_leg_airport_screen_v1(origin,cfg,'departure',p_departure,outbound);
  d:=airlinerra_game.aircraft_storage_leg_airport_screen_v1(p_destination,cfg,'arrival',arrival,NOT outbound);
- game_day:=(p_departure AT TIME ZONE 'Europe/Berlin')::date;
- coverage_days:=(arrival AT TIME ZONE 'Europe/Berlin')::date-game_day+1;
- IF NOT airlinerra_game.section9_canonical_aoc_covers_v1(p_airline,game_day,coverage_days) THEN
- licence:=jsonb_build_object('allowed',false,'decision','VALID_LICENCE_1_REQUIRED');
- ELSIF EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_facilities_v1 WHERE world_id=1 AND airport_key=CASE WHEN outbound THEN origin ELSE p_destination END AND admission_scope='relocation_only') THEN
- -- A commercial route licence cannot grant a dedicated storage-only airport commercial rights.
- -- Explicit ferry-specific permission and crew reservation remain required.
- licence:=jsonb_build_object('allowed',false,'decision','STORAGE_FERRY_LICENCE_REVIEW_REQUIRED');
- ELSE
- licence:=airlinerra_game.section9_game_route_licence_scope_v1(p_airline,origin,p_destination,game_day,coverage_days);
- END IF;
- RETURN q||jsonb_build_object('airportScreenPassed',o->>'passed'='true' AND d->>'passed'='true','departureScreen',o,'arrivalScreen',d,'licenceScreen',licence,'crewScreen',jsonb_build_object('allowed',false,'decision','STORAGE_FERRY_CREW_RESERVATION_REQUIRED'),'clearanceGenerated',false,'bookingEligible',false,'dispatchAuthorized',false);
+ licence:=airlinerra_game.aircraft_storage_ferry_licence_screen_v1(p_airline,p_purpose,origin,p_destination,p_departure,arrival);
+ RETURN q||jsonb_build_object('airportScreenPassed',o->>'passed'='true' AND d->>'passed'='true','departureScreen',o,'arrivalScreen',d,'licenceScreen',licence,'crewScreen',airlinerra_game.aircraft_storage_crew_requirements_v1(cfg,origin,p_destination,p_departure,arrival),'clearanceGenerated',false,'bookingEligible',false,'dispatchAuthorized',false);
 END $fn$;
 REVOKE ALL ON FUNCTION airlinerra_game.owned_aircraft_storage_operational_screen_v1(uuid,uuid,uuid,text,text,timestamptz) FROM PUBLIC,anon,authenticated,service_role;
 ROLLBACK;
