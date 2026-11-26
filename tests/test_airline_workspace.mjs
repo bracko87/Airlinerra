@@ -299,5 +299,12 @@ test('aircraft profile stacks full-width identity above aircraft image and liver
  const image=workspace.indexOf('<section class="fleet-aircraft-image-panel"',identity);
  const airframe=workspace.indexOf('Airframe condition and usage',image);
  assert.ok(top>=0&&top<identity&&identity<image&&image<airframe);
- assert.match(css,/\.fleet-aircraft-image-frame img\{display:block;width:100%;height:auto;max-width:100%;max-height:none;object-fit:contain;border-radius:10px\}/);
+ assert.match(css,/\.fleet-aircraft-image-frame img\{display:block;width:auto;height:auto;max-width:min\(100%,640px\);max-height:340px;object-fit:contain;border-radius:10px\}/);
+});
+
+test('aircraft image remains centered without stretching the full-width upload section',async()=>{
+ const css=await read('../website/player-app.css');
+ assert.match(css,/\.fleet-aircraft-image-frame\{\s*display:flex;align-items:center;justify-content:center;/);
+ assert.match(css,/#workspace-fleet-aircraft \.fleet-aircraft-image-frame\{height:auto;min-height:0;padding:0;border:0;border-radius:10px;background:transparent;overflow:hidden\}/);
+ assert.match(css,/#workspace-fleet-aircraft #fleet-aircraft-image-file\{\s*width:100%;max-width:none;/);
 });
