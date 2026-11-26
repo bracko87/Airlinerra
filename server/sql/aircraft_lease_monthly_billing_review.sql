@@ -107,4 +107,77 @@ BEGIN
  RETURN jsonb_build_object('status','paid','month',p_month,'dueGameDate',due,'coverageEndGameDate',ends,'amountUsd',terms.recurring_monthly_usd,'ledgerId',lid,'ledgerPosted',true);
 END $$;
 REVOKE ALL ON FUNCTION airlinerra_game.post_aircraft_lease_month_v1(uuid,uuid,integer) FROM PUBLIC,anon,authenticated,service_role;
+
+-- Private bounded worker entry point, not scheduled or released. Every
+-- attempted installment uses the same serialized exact-once writer.
+CREATE FUNCTION airlinerra_game.run_aircraft_lease_billing_v1(p_limit integer)
+RETURNS jsonb LANGUAGE plpgsql SET search_path=pg_catalog AS $$
+DECLARE game_day date; candidate record; result jsonb; results jsonb:='[]'::jsonb;
+BEGIN
+ IF current_user<>'postgres' THEN RAISE EXCEPTION USING ERRCODE='42501';END IF;
+ IF p_limit IS NULL OR p_limit NOT BETWEEN 1 AND 100 THEN RAISE EXCEPTION USING ERRCODE='22023',MESSAGE='INVALID_LEASE_BATCH_LIMIT';END IF;
+ game_day:=(airlinerra_game.section9_verified_world_instant_v1() AT TIME ZONE 'Europe/Berlin')::date;
+ FOR candidate IN
+  SELECT o.airline_id,o.order_id,paid.n+1 AS next_month,
+   airlinerra_game.aircraft_lease_anniversary_v1(d.anchored_game_date,paid.n) AS due
+  FROM airlinerra_game.aircraft_acquisition_orders_v1 o
+  JOIN airlinerra_game.airline_aircraft_inventory i ON i.id=o.aircraft_inventory_id AND i.airline_id=o.airline_id
+  JOIN airlinerra_game.section9_aircraft_delivery_position_v1 d ON d.acquisition_order_id=o.order_id AND d.aircraft_inventory_id=i.id AND d.airline_id=o.airline_id AND d.world_id=o.world_id
+  CROSS JOIN LATERAL (SELECT count(*)::integer AS n FROM airlinerra_game.aircraft_lease_monthly_receipts_v1 x WHERE x.order_id=o.order_id) paid
+  WHERE o.world_id=1 AND o.transaction_type='lease' AND o.order_status='delivered_pending_inspection'
+  AND i.ownership_type='leased' AND i.fleet_status IN('in_service','maintenance')
+  AND o.contract_months BETWEEN 1 AND 240 AND paid.n<o.contract_months
+  AND airlinerra_game.aircraft_lease_anniversary_v1(d.anchored_game_date,paid.n)<=game_day
+  ORDER BY due,o.order_id LIMIT p_limit
+ LOOP
+  result:=airlinerra_game.post_aircraft_lease_month_v1(candidate.airline_id,candidate.order_id,candidate.next_month);
+  results:=results||jsonb_build_array(result||jsonb_build_object('orderId',candidate.order_id));
+ END LOOP;
+ RETURN jsonb_build_object('status','lease_batch_checked','gameDate',game_day,'results',results);
+END $$;
+REVOKE ALL ON FUNCTION airlinerra_game.run_aircraft_lease_billing_v1(integer) FROM PUBLIC,anon,authenticated,service_role;
+
+-- Read-only contract coverage verdict for a trusted proposed departure.
+-- It is intentionally not wired into the dispatcher in this review.
+-- Never use it to block arrival or safety recovery of an airborne aircraft.
+CREATE FUNCTION airlinerra_game.aircraft_lease_departure_coverage_v1(p_airline uuid,p_aircraft uuid,p_departure timestamptz,p_arrival timestamptz)
+RETURNS jsonb LANGUAGE plpgsql SET search_path=pg_catalog AS $$
+DECLARE game_now timestamptz; start_day date; end_day date; plane record; terms record;
+ first_day date; expiry date; n integer; max_month integer; paid_until date;
+BEGIN
+ IF current_user<>'postgres' THEN RAISE EXCEPTION USING ERRCODE='42501';END IF;
+ IF p_airline IS NULL OR p_aircraft IS NULL OR p_departure IS NULL OR p_arrival IS NULL OR p_arrival<=p_departure THEN RAISE EXCEPTION USING ERRCODE='22023',MESSAGE='INVALID_LEASE_COVERAGE_SCOPE';END IF;
+ game_now:=airlinerra_game.section9_verified_world_instant_v1();
+ IF p_arrival<=game_now THEN RETURN jsonb_build_object('eligible',false,'status','flight_window_elapsed');END IF;
+ start_day:=(greatest(p_departure,game_now) AT TIME ZONE 'Europe/Berlin')::date;
+ end_day:=(p_arrival AT TIME ZONE 'Europe/Berlin')::date;
+ SELECT * INTO plane FROM airlinerra_game.airline_aircraft_inventory WHERE id=p_aircraft AND airline_id=p_airline;
+ IF NOT FOUND THEN RAISE EXCEPTION USING ERRCODE='42501',MESSAGE='LEASE_AIRCRAFT_NOT_OWNED';END IF;
+ IF plane.ownership_type='owned' THEN RETURN jsonb_build_object('eligible',true,'status','not_leased');END IF;
+ IF plane.ownership_type<>'leased' OR plane.fleet_status<>'in_service' THEN RETURN jsonb_build_object('eligible',false,'status','aircraft_unavailable');END IF;
+ SELECT o.*,d.anchored_game_date,d.recorded_at AS anchor_recorded_at,d.inspection_reviewed_at INTO terms
+ FROM airlinerra_game.aircraft_acquisition_orders_v1 o
+ JOIN airlinerra_game.section9_aircraft_delivery_position_v1 d ON d.acquisition_order_id=o.order_id AND d.aircraft_inventory_id=p_aircraft AND d.airline_id=p_airline AND d.world_id=1
+ WHERE o.aircraft_inventory_id=p_aircraft AND o.airline_id=p_airline AND o.world_id=1 AND o.transaction_type='lease'
+ AND o.order_status='delivered_pending_inspection';
+ IF NOT FOUND OR terms.contract_months IS NULL OR terms.contract_months NOT BETWEEN 1 AND 240 OR terms.recurring_monthly_usd IS NULL OR terms.recurring_monthly_usd<=0
+ OR terms.registration IS DISTINCT FROM plane.registration OR terms.configuration_id IS DISTINCT FROM plane.configuration_id
+ OR terms.anchor_recorded_at IS NULL OR terms.anchor_recorded_at>game_now OR terms.inspection_reviewed_at IS NULL OR terms.inspection_reviewed_at>game_now OR terms.delivery_due_at>game_now
+ THEN RETURN jsonb_build_object('eligible',false,'status','lease_terms_unverified');END IF;
+ first_day:=terms.anchored_game_date;
+ expiry:=airlinerra_game.aircraft_lease_anniversary_v1(first_day,terms.contract_months);
+ IF first_day IS NULL OR start_day<first_day THEN RETURN jsonb_build_object('eligible',false,'status','lease_not_started');END IF;
+ IF end_day>=expiry THEN RETURN jsonb_build_object('eligible',false,'status','lease_term_expired','expiryGameDate',expiry);END IF;
+ SELECT count(*)::integer,coalesce(max(month_number),0) INTO n,max_month FROM airlinerra_game.aircraft_lease_monthly_receipts_v1 WHERE order_id=terms.order_id;
+ IF n<>max_month OR n>terms.contract_months OR EXISTS(
+ SELECT 1 FROM airlinerra_game.aircraft_lease_monthly_receipts_v1 x WHERE x.order_id=terms.order_id AND
+ (x.airline_id<>p_airline OR x.aircraft_inventory_id<>p_aircraft OR x.amount_usd<>terms.recurring_monthly_usd
+ OR x.due_game_date<>airlinerra_game.aircraft_lease_anniversary_v1(first_day,x.month_number-1)
+ OR x.coverage_end_game_date<>airlinerra_game.aircraft_lease_anniversary_v1(first_day,x.month_number)
+ OR NOT EXISTS(SELECT 1 FROM airlinerra_game.airline_ledger l WHERE l.id=x.ledger_id AND l.airline_id=p_airline AND l.entry_kind='AIRCRAFT_LEASE' AND l.amount_usd=-x.amount_usd)))
+ THEN RETURN jsonb_build_object('eligible',false,'status','lease_receipts_unreconciled');END IF;
+ paid_until:=airlinerra_game.aircraft_lease_anniversary_v1(first_day,n);
+ RETURN jsonb_build_object('eligible',end_day<paid_until,'status',CASE WHEN end_day<paid_until THEN 'lease_paid_coverage' ELSE 'lease_payment_due' END,'paidThroughExclusive',paid_until,'expiryGameDate',expiry);
+END $$;
+REVOKE ALL ON FUNCTION airlinerra_game.aircraft_lease_departure_coverage_v1(uuid,uuid,timestamptz,timestamptz) FROM PUBLIC,anon,authenticated,service_role;
 COMMIT;
