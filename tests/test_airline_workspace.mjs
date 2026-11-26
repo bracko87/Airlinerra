@@ -299,7 +299,7 @@ test('aircraft profile stacks full-width identity above aircraft image and liver
  const image=workspace.indexOf('<section class="fleet-aircraft-image-panel"',identity);
  const airframe=workspace.indexOf('Airframe condition and usage',image);
  assert.ok(top>=0&&top<identity&&identity<image&&image<airframe);
- assert.match(css,/\.fleet-aircraft-image-frame img\{display:block;width:auto;height:auto;max-width:min\(100%,640px\);max-height:340px;object-fit:contain;border-radius:10px\}/);
+ assert.match(css,/\.fleet-aircraft-image-frame img\{display:block;width:auto;height:auto;max-width:min\(100%,800px\);max-height:420px;object-fit:contain;border-radius:10px\}/);
 });
 
 test('aircraft image remains centered without stretching the full-width upload section',async()=>{
@@ -307,4 +307,23 @@ test('aircraft image remains centered without stretching the full-width upload s
  assert.match(css,/\.fleet-aircraft-image-frame\{\s*display:flex;align-items:center;justify-content:center;/);
  assert.match(css,/#workspace-fleet-aircraft \.fleet-aircraft-image-frame\{height:auto;min-height:0;padding:0;border:0;border-radius:10px;background:transparent;overflow:hidden\}/);
  assert.match(css,/#workspace-fleet-aircraft #fleet-aircraft-image-file\{\s*width:100%;max-width:none;/);
+});
+
+test('aircraft picture disclosure starts collapsed and resets only on profile selection or company change',async()=>{
+ const [css,workspace]=await Promise.all([read('../website/player-app.css'),read('../website/airline-workspace.mjs')]);
+ const opening=workspace.match(/<details id="fleet-aircraft-picture-disclosure"[^>]*>/)?.[0];
+ assert.ok(opening);
+ assert.doesNotMatch(opening,/\sopen(?:\s|=|>)/);
+ const body=workspace.slice(workspace.indexOf(opening),workspace.indexOf('</details>',workspace.indexOf(opening)));
+ assert.match(body,/<summary class="fleet-aircraft-picture-summary">/);
+ assert.match(body,/fleet-aircraft-picture-chevron/);
+ assert.match(body,/id="fleet-aircraft-image"/);
+ assert.match(body,/id="fleet-aircraft-image-file"/);
+ assert.match(body,/id="fleet-aircraft-image-save"/);
+ assert.match(body,/id="fleet-aircraft-image-reset"/);
+ assert.match(workspace,/function collapseAircraftPicture\(\)\{\s*const disclosure=\$\('fleet-aircraft-picture-disclosure'\);\s*if\(disclosure\)disclosure.open=false;/);
+ assert.match(workspace,/selectedFleetAircraftId=id;collapseAircraftPicture\(\);renderAircraftDetail\(\);/);
+ assert.match(workspace,/selectedFleetAircraftId=aircraftId;collapseAircraftPicture\(\);/);
+ assert.match(css,/\.fleet-aircraft-picture-disclosure:not\(\[open\]\)>\.fleet-aircraft-picture-content\{display:none\}/);
+ assert.match(css,/\.fleet-aircraft-picture-disclosure\[open\] \.fleet-aircraft-picture-chevron::before/);
 });
