@@ -39,4 +39,8 @@ BEGIN
 END $review$;
 -- No offer publication, lease enablement, inspection approval or data changes.
 -- Roll back by design until actual current schema and negative tests pass.
+-- Isolated fixture hook: test the transformed functions before rollback.
+\if :{?factory_delivery_fixture}
+\i tests/sql/aircraft_factory_delivery_compatibility_acceptance.sql
+\endif
 ROLLBACK;
