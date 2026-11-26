@@ -36,14 +36,14 @@ export function playerViewUrl(view){
   return PLAYER_APP_PATH+'#'+safePlayerView('#'+candidate);
 }
 /**
- * A newly authenticated manager lands on the airline creation wizard while
- * backend airline ownership is checked. A confirmed existing airline goes to
- * Overview. Non-landing routes (profile, airports, etc.) remain unchanged.
+ * Only a verified empty airline list permits the creation wizard.
+ * Unknown ownership and existing airlines land on Overview.
+ * Non-landing routes (profile, airports, etc.) remain unchanged.
  */
 export function managerLandingView({requestedView='overview',hasAirline=null}={}){
   const view=safePlayerView('#'+requestedView);
   if(view!=='overview'&&view!=='onboarding')return view;
-  return hasAirline===true?'overview':'onboarding';
+  return hasAirline===false?'onboarding':'overview';
 }
 export function verifiedManagerIdentity(user){
   if(!user||typeof user.id!=='string'||typeof user.email!=='string'||
