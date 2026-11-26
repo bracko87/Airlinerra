@@ -39,6 +39,26 @@ export function cleanUiPreferences(value){
   key,choices.includes(v[key])?v[key]:AIRLINE_UI_DEFAULTS[key]
  ])));
 }
+/** Read-only factory quote: use server amounts, integer cents, never reserve stock. */
+export function factoryLeaseBudget(offer,cashUsd,quantity=1){
+ const cents=value=>{
+  if(typeof value!=='string'&&typeof value!=='number')return null;
+  const s=String(value);
+  if(!/^\d{1,12}(?:\.\d{1,2})?$/.test(s))return null;
+  const [whole,fraction='']=s.split('.');
+  const n=Number(whole)*100+Number(fraction.padEnd(2,'0'));
+  return Number.isSafeInteger(n)?n:null;
+ };
+ if(offer?.transactionType!=='lease'||!Number.isInteger(quantity)||quantity<1||quantity>10)return null;
+ const upfront=cents(offer.upfrontPriceUsd),monthly=cents(offer.recurringMonthlyUsd),cash=cents(cashUsd),months=offer.contractMonths;
+ if(upfront===null||monthly===null||cash===null||monthly<=0||upfront<=0||!Number.isInteger(months)||months<1||months>240)return null;
+ const upfrontTotal=upfront*quantity,monthlyTotal=monthly*quantity,firstMonthTotal=upfrontTotal+monthlyTotal,totalRent=monthlyTotal*months;
+ if(![upfrontTotal,monthlyTotal,firstMonthTotal,totalRent,totalRent+upfrontTotal].every(Number.isSafeInteger))return null;
+ return Object.freeze({quantity,months,upfrontUsd:upfrontTotal/100,monthlyUsd:monthlyTotal/100,
+ firstMonthUsd:firstMonthTotal/100,cashAfterOrderUsd:(cash-upfrontTotal)/100,
+ cashAfterFirstRentUsd:(cash-firstMonthTotal)/100,totalRentUsd:totalRent/100,
+ affordableUpfront:cash>=upfrontTotal,affordableFirstMonth:cash>=firstMonthTotal});
+}
 export function financialScenario(data){
  const num=key=>{
   const value=Number(data?.[key]);
@@ -1019,7 +1039,7 @@ const pages=Object.freeze({
  <p class="hint">Compare AI providers and reserve a service at the aircraft's present airport. Future starts require a confirmed ground window. For another airport, estimate a round-trip relocation before booking becomes available.</p>
  <div id="fleet-maintenance-providers" aria-live="polite"></div>
 </section>`,'AIRCRAFT PROFILE'),
- 'aircraft-new-orders':()=>card('New factory aircraft orders',"<p class=\"hint\">Select a current-production aircraft and its cabin or cargo configuration. Delivery depends on available factory stock and manufacturer orders.</p>\n<p id=\"market-state\" class=\"workspace-state\" role=\"status\">Loading factory catalog…</p>\n<div class=\"aircraft-market-filter-grid\" aria-label=\"Choose new aircraft\">\n<label>Manufacturer<select id=\"new-maker\"><option value=\"\">Choose manufacturer</option></select></label>\n<label>Family<select id=\"new-family\" disabled><option value=\"\">Choose family</option></select></label>\n<label>Model<select id=\"new-model\" disabled><option value=\"\">Choose model</option></select></label>\n<label>Configuration<select id=\"new-configuration\" disabled><option value=\"\">Choose configuration</option></select></label>\n</div>\n<div class=\"aircraft-market-finance-row\">\n<label>Payment<select id=\"new-payment\"><option value=\"cash\">Pay cash</option><option value=\"credit\">Buy on credit (not yet active)</option><option value=\"lease\">Lease (not yet active)</option></select></label>\n<label>Aircraft registration<input id=\"market-aircraft-registration\" maxlength=\"20\" autocomplete=\"off\" placeholder=\"e.g. D-ABCD\" aria-describedby=\"market-feedback\"></label>\n</div>\n<div id=\"new-aircraft-quote\" class=\"aircraft-market-quote\" role=\"status\" aria-live=\"polite\">Choose manufacturer, family, model and configuration to see prices and delivery.</div>\n<div id=\"new-aircraft-crew-preview\" class=\"aircraft-market-quote\" role=\"status\" aria-live=\"polite\">Select an aircraft to see crew requirements.</div>\n<div id=\"factory-cabin-customizer\" class=\"factory-cabin-customizer\" aria-label=\"Factory cabin preview\"></div>\n<div class=\"workspace-actions aircraft-market-actionbar\"><button type=\"button\" id=\"new-aircraft-view-cabin\" class=\"route-text-action\" disabled>View default cabin layout</button></div>\n<div class=\"workspace-actions aircraft-market-actionbar\">\n<button type=\"button\" class=\"primary aircraft-market-compact-button\" id=\"market-acquire\" disabled>Confirm cash order</button>\n<button type=\"button\" class=\"secondary aircraft-market-compact-button\" data-workspace-go=\"fleet\">My fleet</button>\n<button type=\"button\" class=\"secondary aircraft-market-compact-button\" data-workspace-go=\"aircraft-market\">Used aircraft market</button>\n</div>\n<p id=\"market-feedback\" class=\"hint\" role=\"status\" aria-live=\"polite\"></p>\n<p class=\"hint\">Aircraft prices are game estimates, not manufacturer offers. Credit and lease payment engines are not yet active. No payment or aircraft delivery happens before World 1 opens.</p>\n<div id=\"market-offers\" hidden></div><select id=\"market-offer-select\" hidden aria-label=\"Selected server offer\"><option value=\"\"></option></select>",'NEW AIRCRAFT'),
+ 'aircraft-new-orders':()=>card('New factory aircraft orders',"<p class=\"hint\">Select a current-production aircraft and its cabin or cargo configuration. Delivery depends on available factory stock and manufacturer orders.</p>\n<p id=\"market-state\" class=\"workspace-state\" role=\"status\">Loading factory catalog…</p>\n<div class=\"aircraft-market-filter-grid\" aria-label=\"Choose new aircraft\">\n<label>Manufacturer<select id=\"new-maker\"><option value=\"\">Choose manufacturer</option></select></label>\n<label>Family<select id=\"new-family\" disabled><option value=\"\">Choose family</option></select></label>\n<label>Model<select id=\"new-model\" disabled><option value=\"\">Choose model</option></select></label>\n<label>Configuration<select id=\"new-configuration\" disabled><option value=\"\">Choose configuration</option></select></label>\n</div>\n<div class=\"aircraft-market-finance-row\">\n<label>Payment<select id=\"new-payment\"><option value=\"cash\">Pay cash</option><option value=\"credit\">Buy on credit (not yet active)</option><option value=\"lease\">Lease (not yet active)</option></select></label>\n<label>Aircraft registration<input id=\"market-aircraft-registration\" maxlength=\"20\" autocomplete=\"off\" placeholder=\"e.g. D-ABCD\" aria-describedby=\"market-feedback\"></label>\n</div>\n<div id=\"new-aircraft-quote\" class=\"aircraft-market-quote\" role=\"status\" aria-live=\"polite\">Choose manufacturer, family, model and configuration to see prices and delivery.</div>\n<section id=\"factory-lease-budget\" class=\"aircraft-market-quote factory-lease-budget\" aria-label=\"Lease budget preview\" hidden>\n<h3>Lease budget preview</h3><p class=\"hint\">Planning only. No reservation, order or payment is created.</p>\n<label>Aircraft quantity <input id=\"factory-lease-quantity\" type=\"number\" min=\"1\" max=\"10\" step=\"1\" value=\"1\"></label>\n<div id=\"factory-lease-budget-details\" aria-live=\"polite\"></div>\n</section>\n<div id=\"new-aircraft-crew-preview\" class=\"aircraft-market-quote\" role=\"status\" aria-live=\"polite\">Select an aircraft to see crew requirements.</div>\n<div id=\"factory-cabin-customizer\" class=\"factory-cabin-customizer\" aria-label=\"Factory cabin preview\"></div>\n<div class=\"workspace-actions aircraft-market-actionbar\"><button type=\"button\" id=\"new-aircraft-view-cabin\" class=\"route-text-action\" disabled>View default cabin layout</button></div>\n<div class=\"workspace-actions aircraft-market-actionbar\">\n<button type=\"button\" class=\"primary aircraft-market-compact-button\" id=\"market-acquire\" disabled>Confirm cash order</button>\n<button type=\"button\" class=\"secondary aircraft-market-compact-button\" data-workspace-go=\"fleet\">My fleet</button>\n<button type=\"button\" class=\"secondary aircraft-market-compact-button\" data-workspace-go=\"aircraft-market\">Used aircraft market</button>\n</div>\n<p id=\"market-feedback\" class=\"hint\" role=\"status\" aria-live=\"polite\"></p>\n<p class=\"hint\">Aircraft prices are game estimates, not manufacturer offers. Credit and lease payment engines are not yet active. No payment or aircraft delivery happens before World 1 opens.</p>\n<div id=\"market-offers\" hidden></div><select id=\"market-offer-select\" hidden aria-label=\"Selected server offer\"><option value=\"\"></option></select>",'NEW AIRCRAFT'),
  'aircraft-market':()=>card('Used aircraft auctions',"<section id=\"used-aircraft-profile\" class=\"used-aircraft-profile\" role=\"region\" aria-label=\"Selected used aircraft details\" hidden></section>\n<p class=\"hint\">Every offer represents one fictional game aircraft. You can filter by manufacturer, family, model and configuration. Sellers are fictional market companies until player-to-player trading is enabled.</p>\n<p id=\"used-market-state\" class=\"workspace-state\" role=\"status\" aria-live=\"polite\">Loading used-aircraft listings…</p>\n<div class=\"aircraft-market-filter-grid\" aria-label=\"Filter used aircraft\">\n<label>Manufacturer<select id=\"used-maker\"><option value=\"\">All manufacturers</option></select></label>\n<label>Family<select id=\"used-family\"><option value=\"\">All families</option></select></label>\n<label>Model<select id=\"used-model\"><option value=\"\">All models</option></select></label>\n<label>Configuration<select id=\"used-configuration\"><option value=\"\">All configurations</option></select></label>\n</div>\n<div class=\"aircraft-market-search-row\">\n<label>Search<input id=\"used-market-search\" type=\"search\" maxlength=\"60\" autocomplete=\"off\" placeholder=\"Aircraft or seller\"></label>\n<label>Offer type<select id=\"used-market-mode\"><option value=\"all\">All listings</option><option value=\"purchase\">Purchase</option><option value=\"lease\">Leasing</option></select></label>\n<label>Payment method<select id=\"used-market-payment\"><option value=\"cash\">Cash (purchase auction)</option><option value=\"credit\">Credit (not yet active)</option><option value=\"lease\">Leasing (not yet active)</option></select></label>\n<div class=\"aircraft-market-search-actions\">\n<button id=\"used-market-find\" type=\"button\" class=\"secondary aircraft-market-compact-button\">Search</button>\n<button id=\"used-market-refresh\" type=\"button\" class=\"secondary aircraft-market-compact-button\">Refresh</button>\n</div></div>\n<div id=\"used-market-lots\" class=\"used-market-list\" role=\"list\" aria-live=\"polite\"></div>\n<div class=\"used-market-pagination\">\n<button id=\"used-market-prev\" type=\"button\" class=\"secondary aircraft-market-compact-button\" disabled>Previous</button>\n<span id=\"used-market-page\">Page 1</span>\n<button id=\"used-market-next\" type=\"button\" class=\"secondary aircraft-market-compact-button\" disabled>Next</button></div>\n<section id=\"used-market-bid-panel\" class=\"used-market-bid-panel\" hidden>\n<h3 id=\"used-market-bid-title\">Bid on aircraft</h3><p id=\"used-market-bid-info\" class=\"hint\"></p>\n<div class=\"aircraft-market-finance-row\">\n<label>Your bid (USD)<input id=\"used-market-bid-amount\" type=\"number\" min=\"100\" step=\"0.01\" autocomplete=\"off\" inputmode=\"decimal\"></label>\n<label>Aircraft registration<input id=\"used-market-bid-registration\" type=\"text\" maxlength=\"20\" autocomplete=\"off\" placeholder=\"e.g. D-ABCD\"></label>\n</div><div class=\"workspace-actions aircraft-market-actionbar\">\n<button id=\"used-market-bid-confirm\" type=\"button\" class=\"primary aircraft-market-compact-button\" disabled>Confirm cash bid</button>\n<button id=\"used-market-bid-cancel\" type=\"button\" class=\"secondary aircraft-market-compact-button\">Cancel</button></div>\n<p id=\"used-market-bid-feedback\" class=\"hint\" role=\"status\" aria-live=\"polite\"></p></section>\n<p class=\"hint\">Unsold listings have no expiry. The first accepted bid starts 15 minutes; each higher bid restarts the countdown. A cash bid holds your funds and refunds the previous highest bidder. Real-money transactions do not occur.</p>\n<div class=\"workspace-actions aircraft-market-actionbar\">\n<button type=\"button\" class=\"secondary aircraft-market-compact-button\" data-workspace-go=\"aircraft-new-orders\">New aircraft orders</button>\n<button type=\"button\" class=\"secondary aircraft-market-compact-button\" data-workspace-go=\"fleet\">My fleet</button></div>",'SECOND-HAND AVIATION MARKET'),
  'maintenance':()=>card('Aircraft maintenance locations',
    '<p class="hint">Explore real maintenance providers across six continents. Daily and Weekly checks are available at every approved game airport. Heavy checks and cabin refits require a provider matched to your exact aircraft type.</p>'+
@@ -2240,6 +2260,35 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   const payment=$('new-payment');
   if(payment)payment.value=newAircraftChoice.payment;
  }
+ function renderFactoryLeaseBudget(offer){
+  const section=$('factory-lease-budget'),details=$('factory-lease-budget-details');
+  if(!section||!details)return;
+  section.hidden=newAircraftChoice.payment!=='lease';
+  details.replaceChildren();
+  if(section.hidden)return;
+  const quantity=Number($('factory-lease-quantity')?.value);
+  const budget=factoryLeaseBudget(offer,marketSnapshot?.cashUsd,quantity);
+  if(!budget){details.textContent='Select a lease offer and enter a whole quantity from 1 to 10. Verified cash and lease terms are required.';return;}
+  const money=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',minimumFractionDigits:2,maximumFractionDigits:2}).format(n);
+  const rows=[
+   ['Contract term',budget.months+' months per aircraft'],
+   ['Upfront amount (all aircraft)',money(budget.upfrontUsd)],
+   ['Monthly rent (all aircraft)',money(budget.monthlyUsd)],
+   ['Upfront + first monthly rent',money(budget.firstMonthUsd)],
+   ['Cash remaining after upfront',money(budget.cashAfterOrderUsd)],
+   ['Cash remaining after first rent',money(budget.cashAfterFirstRentUsd)],
+   ['Rent over full term',money(budget.totalRentUsd)]
+  ];
+  for(const [label,value] of rows){
+   const row=doc.createElement('div');row.className='detail-row';
+   const name=doc.createElement('span');name.textContent=label;
+   const amount=doc.createElement('strong');amount.textContent=value;row.append(name,amount);details.append(row);
+  }
+  const note=doc.createElement('p');note.className='hint';
+  note.textContent=(budget.affordableFirstMonth?'Current cash covers the shown upfront amount and first rent.':'Current cash does not cover the shown upfront amount plus first rent.')+
+   ' Rent at verified delivery is the proposed rule, not an active contract. Upfront refund terms, future costs, availability and delivery are not guaranteed.';
+  details.append(note);
+ }
  function updateNewOrderAvailability(){
   const offers=Array.isArray(marketSnapshot?.offers)?marketSnapshot.offers:[];
   const approved=offers.filter(isReleasedFactoryOffer);
@@ -2251,7 +2300,8 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    (!factoryPlan||factoryPlan.standard===true)&&typeof data.fleetClient?.acquire==='function';
   const select=$('market-offer-select'),buy=$('market-acquire'),quote=$('new-aircraft-quote');
   if(select)select.value=offer?.offerId||'';
-  if(buy)buy.disabled=!enabled;
+  if(buy){buy.disabled=!enabled;buy.textContent=payment==='lease'?'Lease order not available':payment==='credit'?'Credit order not available':'Confirm cash order';}
+  renderFactoryLeaseBudget(offer);
   const viewCabin=$('new-aircraft-view-cabin');
   if(viewCabin){viewCabin.disabled=!offer||offer.useType==='cargo'||!data.fleetClient?.cabinOverview;
    viewCabin.hidden=!!offer&&offer.useType==='cargo';}
@@ -2266,7 +2316,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
     const dateLabel=date&&!Number.isNaN(date.getTime())?
      date.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'Not available';
     const price=payment==='lease'?
-     usd(offer.recurringMonthlyUsd)+'/month, deposit '+usd(offer.upfrontPriceUsd):
+     usd(offer.recurringMonthlyUsd)+'/month, upfront '+usd(offer.upfrontPriceUsd):
      usd(offer.upfrontPriceUsd)+' cash game price';
     const readiness=payment==='credit'?
      'Credit financing is not available until loan repayments and ownership accounting are implemented.':
@@ -2287,7 +2337,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    else info.textContent=String(new Set(offers.map(o=>o.configurationId)).size)+
     ' configurations · '+approved.length+' approved cash offers · '+
     (marketIsOpen()?'Market open for approved cash orders.':
-     'World 1 market not yet open; all selections are preview only.');
+     'Aircraft marketplace closed; all selections are preview only.');
   }
  }
  function renderUsedMarketSelectors(){
@@ -2745,6 +2795,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    if(status)status.textContent=String(error?.message||'Unable to process the image.');
   }
  });
+ $('factory-lease-quantity')?.addEventListener('input',()=>renderFactoryLeaseBudget(currentFactoryOffer()));
  for(const id of ['maker','family','model','configuration','payment']){
   $('new-'+id)?.addEventListener('change',()=>{
    if(id==='payment')newAircraftChoice.payment=$('new-payment').value;
