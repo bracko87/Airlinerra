@@ -3160,7 +3160,7 @@ section[data-player-view="aircraft-market"]:has(#workspace-aircraft-market.is-sh
 
 /* Aircraft profile: centered, size-limited art in a full-width rounded frame; no colored backdrop. */
 #workspace-fleet-aircraft .fleet-aircraft-image-frame{height:auto;min-height:0;padding:0;border:0;border-radius:10px;background:transparent;overflow:hidden}
-#workspace-fleet-aircraft .fleet-aircraft-image-frame img{display:block;width:auto;height:auto;max-width:min(100%,640px);max-height:340px;object-fit:contain;border-radius:10px}
+#workspace-fleet-aircraft .fleet-aircraft-image-frame img{display:block;width:auto;height:auto;max-width:min(100%,800px);max-height:420px;object-fit:contain;border-radius:10px}
 #workspace-schedule .schedule-aircraft-profile-link{font-size:11px;font-weight:700;white-space:nowrap;color:inherit;text-decoration:underline;text-underline-offset:2px}
 #workspace-schedule .schedule-aircraft-profile-link:hover{color:#2878c7}
 .fleet-history-table th,.fleet-history-table td{white-space:nowrap;text-align:left}
@@ -3172,3 +3172,14 @@ section[data-player-view="aircraft-market"]:has(#workspace-aircraft-market.is-sh
 #workspace-fleet-aircraft .fleet-aircraft-profile-top>.fleet-aircraft-identity-panel,
 #workspace-fleet-aircraft .fleet-aircraft-profile-top>.fleet-aircraft-image-panel{width:100%;min-width:0}
 #workspace-fleet-aircraft .fleet-aircraft-image-panel{border-top:1px solid var(--line);padding-top:20px}
+
+/* Native disclosure: accessible keyboard controls, collapsed until requested. */
+#workspace-fleet-aircraft .fleet-aircraft-picture-summary{display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;list-style:none;color:var(--navy);font-size:15px;font-weight:700;min-height:38px}
+#workspace-fleet-aircraft .fleet-aircraft-picture-summary::-webkit-details-marker{display:none}
+#workspace-fleet-aircraft .fleet-aircraft-picture-summary::marker{content:''}
+#workspace-fleet-aircraft .fleet-aircraft-picture-summary:focus-visible{outline:2px solid #ff671f;outline-offset:4px;border-radius:6px}
+#workspace-fleet-aircraft .fleet-aircraft-picture-chevron{display:grid;place-items:center;flex:none;width:44px;height:34px;border:1px solid #ff671f;border-radius:7px;color:#ff671f}
+#workspace-fleet-aircraft .fleet-aircraft-picture-chevron::before{content:'';width:10px;height:10px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:translateY(-3px) rotate(45deg)}
+#workspace-fleet-aircraft .fleet-aircraft-picture-disclosure[open] .fleet-aircraft-picture-chevron::before{transform:translateY(3px) rotate(225deg)}
+#workspace-fleet-aircraft .fleet-aircraft-picture-disclosure:not([open])>.fleet-aircraft-picture-content{display:none}
+#workspace-fleet-aircraft .fleet-aircraft-picture-content{padding-top:12px}

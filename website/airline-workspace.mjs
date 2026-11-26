@@ -903,6 +903,9 @@ const pages=Object.freeze({
     </div>
   </div>
   <section class="fleet-aircraft-image-panel" aria-label="Aircraft photo or livery">
+    <details id="fleet-aircraft-picture-disclosure" class="fleet-aircraft-picture-disclosure">
+      <summary class="fleet-aircraft-picture-summary"><span>Aircraft picture and livery</span><span class="fleet-aircraft-picture-chevron" aria-hidden="true"></span></summary>
+      <div class="fleet-aircraft-picture-content">
     <div class="fleet-aircraft-image-frame">
       <img id="fleet-aircraft-image" alt="Current aircraft photo or custom livery" hidden>
       <p id="fleet-aircraft-image-empty" class="hint">Aircraft image unavailable</p>
@@ -917,6 +920,8 @@ const pages=Object.freeze({
       <p id="fleet-aircraft-image-help" class="hint">PNG, JPG or WebP up to 6 MB. Your uploaded image is private and applies only to this registered aircraft.</p>
       <p id="fleet-aircraft-image-status" class="hint" role="status" aria-live="polite"></p>
     </div>
+      </div>
+    </details>
   </section>
 </div>
 <dialog id="fleet-configuration-dialog" class="fleet-configuration-dialog" aria-labelledby="fleet-configuration-dialog-heading">
@@ -2058,6 +2063,10 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    panel.hidden=true;button.hidden=true;
   }
  }
+ function collapseAircraftPicture(){
+  const disclosure=$('fleet-aircraft-picture-disclosure');
+  if(disclosure)disclosure.open=false;
+ }
  function renderAircraftDetail(){
   const aircraft=marketSnapshot?.fleet?.find(x=>x.id===selectedFleetAircraftId);
   const detail=$('fleet-detail-name');
@@ -2658,7 +2667,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    commissioningFetchVersion++;gameServiceFetchVersion++;gameServiceQuotes={};gameServiceHasActive=false;
    if($('fleet-starter-commissioning'))$('fleet-starter-commissioning').hidden=true;
    if($('fleet-game-maintenance-jobs'))$('fleet-game-maintenance-jobs').hidden=true;
-   aircraftPhotoId=null;aircraftPhotoToken++;resetPhotoDraft();
+   aircraftPhotoId=null;aircraftPhotoToken++;resetPhotoDraft();collapseAircraftPicture();
    selectedFleetAircraftId=/^#fleet-aircraft\/([0-9a-f-]{36})$/iu.exec(doc.defaultView?.location?.hash||'')?.[1]||null;
   }
   const connected=data.connected===true;
@@ -2775,7 +2784,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
    const aircraftId=openAircraft.dataset.fleetAircraftOpen;
    if(!marketSnapshot?.fleet?.some(a=>a.id===aircraftId))return;
    aircraftConfigurationDialog?.close();
-   selectedFleetAircraftId=aircraftId;
+   selectedFleetAircraftId=aircraftId;collapseAircraftPicture();
    cabinConfigurationManager?.selectAircraft(aircraftId);
    renderAircraftDetail();
    void loadMaintenancePreview(aircraftId);
@@ -3254,7 +3263,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   },
   openFleetAircraft:hash=>{
    const id=/^#fleet-aircraft\/([0-9a-f-]{36})$/iu.exec(String(hash||''))?.[1]||null;
-   selectedFleetAircraftId=id;renderAircraftDetail();
+   selectedFleetAircraftId=id;collapseAircraftPicture();renderAircraftDetail();
    if(id){
     void loadCommissioningStatus(id);
     void loadGameMaintenanceJobs(id);
