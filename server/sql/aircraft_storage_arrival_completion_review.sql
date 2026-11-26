@@ -74,12 +74,7 @@ BEGIN
  fuel_cost:=(r.quote->>'fuelCostUsd')::numeric;fee:=(r.quote->>'airportFeesUsd')::numeric;total:=fuel_cost+fee;
  IF burn IS NULL OR burn<=0 OR b.trip_burn_kg IS DISTINCT FROM burn OR fuel_cost IS NULL OR fuel_cost<=0 OR fee IS NULL OR fee<0 OR total IS DISTINCT FROM r.quoted_cost_usd OR (r.quote->>'configurationId')::bigint IS DISTINCT FROM i.configuration_id
  THEN RAISE EXCEPTION 'STORAGE_SETTLEMENT_QUOTE_MISMATCH';END IF;
- -- Review-only: a protected predeparture funds commitment is required before
- -- automatic execution release. Never diverge cash from the ledger.
- SELECT coalesce(sum(amount_usd),0) INTO ledger_total FROM airlinerra_game.airline_ledger WHERE airline_id=r.airline_id;
- IF a.cash_usd IS DISTINCT FROM ledger_total OR a.cash_usd<total THEN RAISE EXCEPTION 'STORAGE_EXPENSE_FUNDS_NOT_PROTECTED';END IF;
- UPDATE airlinerra_game.airlines SET cash_usd=cash_usd-total WHERE id=r.airline_id;
- INSERT INTO airlinerra_game.airline_ledger(airline_id,entry_kind,amount_usd,recorded_at) VALUES(r.airline_id,'EXPENSE',-total,m.actual_event_utc) RETURNING id INTO ledger_id;
+ ledger_id:=airlinerra_game.settle_held_storage_funds_v1(r.id,r.airline_id,total,m.actual_event_utc);
  INSERT INTO airlinerra_game.aircraft_storage_sessions_v1(request_id,world_id,airline_id,aircraft_inventory_id,airport_key,physical_flight_id,arrival_engine_event_id,storage_started_utc,relocation_expense_usd,expense_ledger_id)
  VALUES(r.id,1,r.airline_id,r.aircraft_inventory_id,r.destination_airport_key,physical,m.engine_event_id,m.actual_event_utc,total,ledger_id);
  UPDATE airlinerra_game.airline_aircraft_inventory SET fleet_status='stored',updated_at=clock_timestamp() WHERE id=i.id AND airline_id=r.airline_id AND fleet_status='in_service';
