@@ -42,6 +42,8 @@ export function createFleetAcquisitionClient({auth,origin,fetchImpl=(...a)=>fetc
   usedDetail:({airlineId,listingId})=>post({action:'used-detail',airlineId,listingId}),
   bidUsed:({airlineId,listingId,bidUsd,registration,requestId})=>
    post({action:'bid-used',airlineId,listingId,bidUsd,registration,requestId}),
+  confirmStorageBooking:({airlineId,aircraftInventoryId,purpose,destinationAirportKey,departureUtc,expectedCostUsd,requestId})=>post({action:'storage-book-confirm',airlineId,aircraftInventoryId,purpose,destinationAirportKey,departureUtc,expectedCostUsd,requestId}),
+  cancelStorageBooking:({airlineId,aircraftInventoryId,requestId})=>post({action:'storage-book-cancel',airlineId,aircraftInventoryId,requestId}),
   storageDestinations:({airlineId,aircraftInventoryId,purpose,search=''})=>post({action:'storage-destinations',airlineId,aircraftInventoryId,purpose,search}),
   storageCostPreview:({airlineId,aircraftInventoryId,purpose,destinationAirportKey,departureUtc})=>post({action:'storage-cost-preview',airlineId,aircraftInventoryId,purpose,destinationAirportKey,departureUtc}),
   storageOverview:(airlineId,aircraftInventoryId)=>post({action:'storage-overview',airlineId,aircraftInventoryId}),
