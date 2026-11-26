@@ -15,3 +15,14 @@ export async function preparePersistentCrewPlan({client,playerId,airlineId,planI
  if(typeof output.rows?.[0]?.result?.status!=='string')throw Error('CREW_PLAN_SAVE_NOT_VERIFIED');
  return {status:output.rows[0].result.status,plan,receipt:output.rows[0].result,saved:output.rows[0].result.saved===true||output.rows[0].result.status==='validated_preview'&&output.rows[0].result.replayed===true};
 }
+
+// Review-only path: deliberately no save option and no call to the old
+// plan writer, which cannot yet independently validate merged history.
+export async function previewStorageAwareCrewPlan({client,playerId,airlineId,windowStartUtc,save=false}){
+ if(typeof client?.query!=='function'||save!==false)throw Error('STORAGE_AWARE_CREW_PREVIEW_ONLY');
+ const response=await client.query('SELECT airlinerra_game.owned_storage_aware_crew_input_preview_v1($1::uuid,$2::uuid,$3::timestamptz) AS result',[playerId,airlineId,windowStartUtc]);
+ const snapshot=response.rows?.[0]?.result;
+ if(snapshot?.status!=='storage_aware_crew_input_preview'||snapshot.airlineId!==airlineId||snapshot.storageHistoryIncluded!==true||snapshot.enforceRollingWeeklyDutyHours!==true||snapshot.saveAllowed!==false||snapshot.crewReleased!==false||snapshot.dispatchEnforced!==false||Date.parse(snapshot.windowStartUtc)!==Date.parse(windowStartUtc))throw Error('STORAGE_AWARE_CREW_INPUT_NOT_VERIFIED');
+ const plan=planWeeklyCrew(snapshot);
+ return {status:'storage_aware_crew_plan_preview',plan,excludedEmployees:snapshot.excludedEmployees,saved:false,crewReleased:false,dispatchEnforced:false};
+}
