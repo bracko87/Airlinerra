@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - 'server/sql/aircraft_lease_monthly_billing_review.sql'
+      - 'server/sql/aircraft_factory_delivery_compatibility_review.sql'
+      - 'tests/sql/aircraft_factory_delivery_compatibility_*'
       - 'tests/sql/aircraft_lease_monthly_billing_*'
       - '.github/workflows/airlinerra-lease-billing-review.yml'
   workflow_dispatch:
@@ -49,3 +51,6 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/aircraft_lease_monthly_billing_fixture.sql
           psql -X -v ON_ERROR_STOP=1 -f server/sql/aircraft_lease_monthly_billing_review.sql
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/aircraft_lease_monthly_billing_acceptance.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/aircraft_factory_delivery_compatibility_fixture.sql
+          psql -X -v ON_ERROR_STOP=1 -v factory_delivery_fixture=1 -f server/sql/aircraft_factory_delivery_compatibility_review.sql
+          psql -X -v ON_ERROR_STOP=1 -c "DO \$\$ BEGIN IF airlinerra_game.section9_sync_approved_delivery_positions_v1(10) IS DISTINCT FROM ARRAY[1] THEN RAISE EXCEPTION 'Rollback failed'; END IF; END \$\$;"
