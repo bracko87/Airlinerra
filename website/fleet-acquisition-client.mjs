@@ -42,6 +42,7 @@ export function createFleetAcquisitionClient({auth,origin,fetchImpl=(...a)=>fetc
   usedDetail:({airlineId,listingId})=>post({action:'used-detail',airlineId,listingId}),
   bidUsed:({airlineId,listingId,bidUsd,registration,requestId})=>
    post({action:'bid-used',airlineId,listingId,bidUsd,registration,requestId}),
+  storageOverview:(airlineId,aircraftInventoryId)=>post({action:'storage-overview',airlineId,aircraftInventoryId}),
   cabinOverview:airlineId=>post({action:'cabin-overview',airlineId}),
   saveCabinDraft:layout=>post({action:'cabin-save-draft',...layout}),
   saveCabinModelDesign:design=>post({action:'cabin-save-model-design',...design}),
