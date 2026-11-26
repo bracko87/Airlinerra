@@ -16,6 +16,37 @@ import {estimateFivePhaseFuel} from './flight-fuel-phase-engine.mjs';
  * structure in this module is constant markup authored by the application.
  * Never interpolate untrusted names into innerHTML.
  */
+/** Storage display never grants mutation authority. The private storage
+ * read model is optional until the authenticated gateway is released. */
+export function aircraftStoragePanelState(aircraft,airlineId,overview){
+ const owned=aircraft?.ownershipType==='owned';
+ const verified=!!(owned&&airlineId&&overview?.status==='storage_overview_verified'&&
+  overview.airlineId===airlineId&&overview.aircraftId===aircraft.id&&
+  overview.ownershipType==='owned'&&overview.readOnly===true&&
+  overview.fleetStatus===aircraft.fleetStatus);
+ const session=verified?overview.session:null;
+ const pending=verified?overview.pendingRequest:null;
+ const money=value=>value!==null&&value!==undefined&&Number.isFinite(Number(value))&&Number(value)>=0?
+  new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:2}).format(Number(value)):'Not available';
+ const date=value=>typeof value==='string'&&Number.isFinite(Date.parse(value))?
+  new Intl.DateTimeFormat('en-GB',{dateStyle:'medium',timeStyle:'short',timeZone:'UTC'}).format(new Date(value))+' UTC':'Not available';
+ return Object.freeze({
+  visible:!!owned,verified,storeDisabled:true,reactivateDisabled:true,
+  status:!owned?'Storage is available only for owned aircraft.':
+   pending?.departed===true?'Relocation flight in progress':
+   pending?.purpose==='storage_reactivation'?'Reactivation requested':
+   pending?.purpose==='storage_inbound'?'Storage relocation requested':
+   aircraft?.fleetStatus==='stored'?'Stored':
+   aircraft?.fleetStatus==='in_service'?'In service':'Aircraft unavailable',
+  airport:session?.airportKey||'Not available',
+  started:date(session?.startedUtc),
+  monthly:money(session?.monthlyUsd),
+  arrears:money(session?.billing?.arrearsUsd),
+  nextDue:typeof session?.billing?.nextDueGameDate==='string'?session.billing.nextDueGameDate:'Not available',
+  flight:pending?String(pending.originAirportKey||'—')+' → '+String(pending.destinationAirportKey||'—')+' · '+date(pending.departureUtc):'Not available',
+  history:verified&&Array.isArray(overview.history)?overview.history.slice(0,10).map(h=>String(h.airportKey||'—')+' · '+date(h.startedUtc)+' – '+date(h.endedUtc)):[]
+ });
+}
 export const AIRLINE_UI_DEFAULTS=Object.freeze({
  units:'km',time:'24',date:'dmy',timezone:'local',language:'en',
  density:'comfortable',motion:'normal',theme:'light',landing:'overview',
@@ -947,6 +978,22 @@ const pages=Object.freeze({
     <p class="hint">Saving a proposal does not replace installed seats, ground the aircraft, reserve a maintenance slot, or charge the airline. Final refit cost and installation date need a verified booking.</p>
   </div>
 </dialog>
+<section id="fleet-storage-panel" class="fleet-detail-section" hidden>
+ <h4>Long-term aircraft storage</h4>
+ <p id="fleet-storage-release-note" class="hint" role="status">Storage actions are not released yet.</p>
+ <div class="fleet-detail-grid">
+ <div class="fleet-detail-row"><span>Storage status</span><strong id="fleet-storage-state">—</strong></div>
+ <div class="fleet-detail-row"><span>Storage airport</span><strong id="fleet-storage-airport">—</strong></div>
+ <div class="fleet-detail-row"><span>Stored since</span><strong id="fleet-storage-started">—</strong></div>
+ <div class="fleet-detail-row"><span>Monthly storage fee</span><strong id="fleet-storage-monthly">—</strong></div>
+ <div class="fleet-detail-row"><span>Outstanding storage fees</span><strong id="fleet-storage-arrears">—</strong></div>
+ <div class="fleet-detail-row"><span>Next payment date (game)</span><strong id="fleet-storage-due">—</strong></div>
+ <div class="fleet-detail-row"><span>Pending relocation</span><strong id="fleet-storage-flight">—</strong></div>
+ </div>
+ <div class="workspace-actions"><button type="button" class="secondary" id="fleet-store-aircraft" disabled>Store aircraft</button><button type="button" class="secondary" id="fleet-reactivate-aircraft" disabled>Reactivate aircraft</button></div>
+ <p class="hint">Unlimited storage duration. A physical relocation flight is required; creating a request alone does not change aircraft location or status.</p>
+ <details><summary>Storage history</summary><div id="fleet-storage-history" class="hint">Storage history unavailable.</div></details>
+</section>
 <section class="fleet-detail-section"><h4>Airframe condition and usage</h4><div class="fleet-detail-grid"><div class="fleet-detail-row"><span>Individual aircraft manufacture year</span><strong id="fleet-detail-manufacture-year">—</strong></div>
 <div class="fleet-detail-row"><span>Individual aircraft age</span><strong id="fleet-detail-aircraft-age">—</strong></div>
 <div class="fleet-detail-row"><span>Verified condition</span><strong id="fleet-detail-condition">—</strong></div>
@@ -2067,6 +2114,33 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   const disclosure=$('fleet-aircraft-picture-disclosure');
   if(disclosure)disclosure.open=false;
  }
+ let storageReadVersion=0;
+ function renderAircraftStorage(aircraft){
+  const version=++storageReadVersion;
+  const host=$('fleet-storage-panel');
+  if(!host)return;
+  const airlineId=data.airline?.id;
+  const client=data.fleetClient;
+  const paint=overview=>{
+   const p=aircraftStoragePanelState(aircraft,airlineId,overview);
+   host.hidden=!p.visible;
+   for(const [id,value] of Object.entries({
+    'fleet-storage-state':p.status,'fleet-storage-airport':p.airport,
+    'fleet-storage-started':p.started,'fleet-storage-monthly':p.monthly,
+    'fleet-storage-arrears':p.arrears,'fleet-storage-due':p.nextDue,
+    'fleet-storage-flight':p.flight,
+    'fleet-storage-release-note':p.verified?'Verified storage information. Storage actions are not released yet.':'Storage details are not connected. Storage actions are not released yet.',
+    'fleet-storage-history':p.history.length?p.history.join(' | '):p.verified?'No completed storage sessions recorded.':'Storage history unavailable.'
+   }))if($(id))$(id).textContent=value;
+   if($('fleet-store-aircraft'))$('fleet-store-aircraft').disabled=p.storeDisabled;
+   if($('fleet-reactivate-aircraft'))$('fleet-reactivate-aircraft').disabled=p.reactivateDisabled;
+  };
+  paint(null);
+  if(!data.connected||!airlineId||aircraft?.ownershipType!=='owned'||typeof client?.storageOverview!=='function')return;
+  void Promise.resolve().then(()=>client.storageOverview(airlineId,aircraft.id)).then(result=>{
+   if(version===storageReadVersion&&selectedFleetAircraftId===aircraft.id&&data.airline?.id===airlineId&&data.fleetClient===client&&data.connected)paint(result);
+  }).catch(()=>{/* Leave explicit unavailable state; do not erase the fleet. */});
+ }
  function renderAircraftDetail(){
   const aircraft=marketSnapshot?.fleet?.find(x=>x.id===selectedFleetAircraftId);
   const detail=$('fleet-detail-name');
@@ -2138,6 +2212,7 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   const currentMaintenance=maintenanceLast?.aircraftInventoryId===aircraft?.id?
    maintenanceLast?.checks?.[0]:null;
   updateAirframeDetails(currentMaintenance);
+  renderAircraftStorage(aircraft);
   if(aircraftPhotoId!==aircraft?.id)void refreshAircraftPhoto(aircraft);
  }
  /** Owner-verified cabin references are read fresh when a profile opens.
