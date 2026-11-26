@@ -102,6 +102,13 @@ export function validateFleetAcquisitionRequest(body){
   uuid(body.aircraftInventoryId)&&uuid(body.requestId)&&
   typeof body.airportKey==='string'&&/^[A-Za-z0-9:_-]{2,100}$/u.test(body.airportKey)&&
   typeof body.providerKey==='string'&&/^[a-z0-9-]{2,100}$/u.test(body.providerKey);
+ if(['storage-destinations','storage-cost-preview'].includes(body.action)){
+  const quote=body.action==='storage-cost-preview';
+  return Object.keys(body).length===(quote?6:5)&&Object.keys(body).every(k=>['action','airlineId','aircraftInventoryId','purpose',...(quote?['destinationAirportKey','departureUtc']:['search'])].includes(k))&&
+   uuid(body.aircraftInventoryId)&&['storage_inbound','storage_reactivation'].includes(body.purpose)&&
+   (quote?typeof body.destinationAirportKey==='string'&&/^[A-Za-z0-9:_-]{1,100}$/u.test(body.destinationAirportKey)&&typeof body.departureUtc==='string'&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/u.test(body.departureUtc)&&Number.isFinite(Date.parse(body.departureUtc))&&new Date(body.departureUtc).toISOString()===body.departureUtc.replace('Z','.000Z'):
+    typeof body.search==='string'&&body.search.length<=80&&!/[\u0000-\u001f\u007f]/u.test(body.search));
+ }
  if(body.action==='storage-overview')return Object.keys(body).length===3 &&
   Object.keys(body).every(k=>['action','airlineId','aircraftInventoryId'].includes(k)) && uuid(body.aircraftInventoryId);
  if(body.action==='maintenance-preview')return Object.keys(body).length===3 &&
@@ -120,6 +127,8 @@ export function validateFleetAcquisitionRequest(body){
  return false;
 }
 export const FLEET_SQL=Object.freeze({
+ storageDestinations:"SELECT airlinerra_game.owned_aircraft_storage_destinations_v1($1::uuid,$2::uuid,$3::uuid,$4::text,$5::text) AS result",
+ storageCostPreview:"SELECT airlinerra_game.owned_aircraft_storage_cost_preview_v1($1::uuid,$2::uuid,$3::uuid,$4::text,$5::text,$6::timestamptz) AS result",
  storageOverview:"SELECT airlinerra_game.owned_aircraft_storage_overview_v1($1::uuid,$2::uuid,$3::uuid) AS result",
  owner:"SELECT a.id,a.cash_usd::text AS \"cashUsd\" FROM airlinerra_game.airlines a "+
   "JOIN airlinerra_game.world_memberships w ON w.world_id=a.world_id AND w.player_id=a.owner_player_id "+
@@ -692,6 +701,19 @@ export function createFleetAcquisitionHandler({verifyUserToken,database}={}){
     if(result.rowCount!==1||!result.rows?.[0]?.result)
      return respond(503,{error:'Auction bid could not be confirmed'});
     return respond(200,result.rows[0].result);
+   }
+   if(['storage-destinations','storage-cost-preview'].includes(body.action)){
+    const owner=await client.query(FLEET_SQL.owner,[body.airlineId,playerId]);
+    if(owner.rowCount!==1)return respond(403,{error:'Airline not owned by this account'});
+    const quote=body.action==='storage-cost-preview';
+    const args=[playerId,body.airlineId,body.aircraftInventoryId,body.purpose,...(quote?[body.destinationAirportKey,body.departureUtc]:[body.search])];
+    const result=await client.query(quote?FLEET_SQL.storageCostPreview:FLEET_SQL.storageDestinations,args);
+    const value=result.rows?.[0]?.result;
+    if(result.rowCount!==1||typeof value?.status!=='string'||value.airlineId!==body.airlineId||
+       value.aircraftId!==body.aircraftInventoryId||value.purpose!==body.purpose||value.readOnly!==true||value.actionsReleased!==false||
+       (quote?(value.bookable!==false||value.destinationAirportKey!==body.destinationAirportKey||Date.parse(value.departureUtc)!==Date.parse(body.departureUtc)):!Array.isArray(value.airports)||value.airports.length>50))
+      return respond(503,{error:'Verified storage planning unavailable'});
+    return respond(200,value);
    }
    if(body.action==='storage-overview'){
     const owner=await client.query(FLEET_SQL.owner,[body.airlineId,playerId]);
