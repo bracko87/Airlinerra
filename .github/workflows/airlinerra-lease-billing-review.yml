@@ -4,6 +4,7 @@ on:
     paths:
       - 'server/sql/aircraft_lease_monthly_billing_review.sql'
       - 'server/sql/aircraft_factory_delivery_compatibility_review.sql'
+      - 'server/sql/aircraft_lease_dispatch_coverage_review.sql'
       - 'tests/sql/aircraft_factory_delivery_compatibility_*'
       - 'tests/sql/aircraft_lease_monthly_billing_*'
       - '.github/workflows/airlinerra-lease-billing-review.yml'
@@ -54,3 +55,8 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/aircraft_factory_delivery_compatibility_fixture.sql
           psql -X -v ON_ERROR_STOP=1 -v factory_delivery_fixture=1 -f server/sql/aircraft_factory_delivery_compatibility_review.sql
           psql -X -v ON_ERROR_STOP=1 -c "DO \$\$ BEGIN IF airlinerra_game.section9_sync_approved_delivery_positions_v1(10) IS DISTINCT FROM ARRAY[1] THEN RAISE EXCEPTION 'Rollback failed'; END IF; END \$\$;"
+          # Compile the real captured bodies without executing their external dependencies.
+          PGOPTIONS='-c check_function_bodies=off' psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_current_live_dispatch_source_20261124.sql
+          PGOPTIONS='-c check_function_bodies=off' psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_current_live_signed_movement_source_20261124.sql
+          psql -X -v ON_ERROR_STOP=1 -f server/sql/aircraft_lease_dispatch_coverage_review.sql
+          psql -XAt -v ON_ERROR_STOP=1 -c "SELECT position('AIRCRAFT_LEASE_PAYMENT_COVERAGE_REQUIRED' in pg_get_functiondef('airlinerra_game.section9_auto_dispatch_due_flight_events_v1(integer)'::regprocedure))=0" | grep -qx t
