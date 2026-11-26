@@ -66,7 +66,7 @@ jobs:
           INSERT INTO airlinerra_game.section6_airport_slot_capacity_v1 VALUES(1,'OURAIRPORTS:999',1,1);
           INSERT INTO airlinerra_game.section5_airport_operating_policy_v1 VALUES(1,'OURAIRPORTS:999','Europe/Paris');
           SQL
-          for file in aircraft_storage_facilities_review aircraft_storage_airport_admission_review aircraft_storage_route_phase_review aircraft_storage_relocation_cost_review aircraft_storage_relocation_request_review aircraft_storage_flight_slots_review; do
+          for file in aircraft_storage_facilities_review aircraft_storage_airport_admission_review aircraft_storage_route_phase_review aircraft_storage_relocation_cost_review aircraft_storage_relocation_request_review aircraft_storage_flight_slots_review aircraft_storage_leg_evidence_review; do
             psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1 -f "server/sql/$file.sql"
           done
           psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1 <<'SQL'
@@ -97,13 +97,15 @@ jobs:
            RAISE NOTICE 'Storage phase acceptance passed';
           END $test$;
           DO $slots$
-          DECLARE a uuid:='00000000-0000-0000-0000-000000000001';p uuid:='00000000-0000-0000-0000-000000000002';f uuid:='00000000-0000-0000-0000-000000000003';k uuid:='00000000-0000-0000-0000-000000000004';r uuid;j jsonb;
+          DECLARE physical text; payload text; a uuid:='00000000-0000-0000-0000-000000000001';p uuid:='00000000-0000-0000-0000-000000000002';f uuid:='00000000-0000-0000-0000-000000000003';k uuid:='00000000-0000-0000-0000-000000000004';r uuid;j jsonb;
           BEGIN
            UPDATE airlinerra_game.aircraft_storage_facilities_v1 SET review_state='approved' WHERE airport_key='OURAIRPORTS:316427';
            INSERT INTO airlinerra_game.aircraft_storage_only_movement_limits_v1 VALUES(1,'OURAIRPORTS:316427',1,1,'fixture');
            j:=airlinerra_game.request_aircraft_storage_relocation_v1(p,a,f,'OURAIRPORTS:316427','2026-11-26 12:00+00',2698.13,k);
            IF j->>'created' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'request creation: %',j;END IF;
            r:=(j->>'requestId')::uuid;
+           physical:=r::text||':2026-11-26:1';
+           IF EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_leg_evidence_v1(physical)) THEN RAISE EXCEPTION 'unreserved evidence accepted';END IF;
            j:=airlinerra_game.request_aircraft_storage_relocation_v1(p,a,f,'OURAIRPORTS:316427','2026-11-26 12:00+00',2698.13,k);
            IF j->>'replayed' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'request replay: %',j;END IF;
            INSERT INTO airlinerra_game.section6_weekly_airport_slot_reservations_v1 VALUES(1,'OURAIRPORTS:999','remote','departure',3,780);
@@ -122,7 +124,15 @@ jobs:
            INSERT INTO airlinerra_game.section9_dated_replacement_slots_v1 VALUES(1,'OURAIRPORTS:999','remote','departure','2026-11-26',3,780);
            RAISE EXCEPTION 'unexpected replacement slot';
            EXCEPTION WHEN raise_exception THEN IF SQLERRM<>'STORAGE_FLIGHT_SLOT_UNAVAILABLE' THEN RAISE;END IF;END;
+           IF NOT EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_leg_evidence_v1(physical)) THEN RAISE EXCEPTION 'reserved evidence missing';END IF;
+           payload:=airlinerra_game.aircraft_storage_event_signing_payload_v1(physical,'departed');
+           IF payload IS NULL OR split_part(payload,E'\n',1)<>'airlinerra-storage-event-v1' OR split_part(payload,E'\n',5)<>'departed' OR airlinerra_game.aircraft_storage_event_signing_payload_v1(physical,'arrived') IS NOT DISTINCT FROM payload THEN RAISE EXCEPTION 'signing payload mismatch';END IF;
+           IF airlinerra_game.aircraft_storage_event_signing_payload_v1(physical,'invalid') IS NOT NULL THEN RAISE EXCEPTION 'invalid phase accepted';END IF;
+           UPDATE airlinerra_game.airline_aircraft_inventory SET configuration_id=2 WHERE id=f;
+           IF EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_leg_evidence_v1(physical)) THEN RAISE EXCEPTION 'changed configuration accepted';END IF;
+           UPDATE airlinerra_game.airline_aircraft_inventory SET configuration_id=1 WHERE id=f;
            j:=airlinerra_game.cancel_aircraft_storage_relocation_request_v1(p,a,r);
+           IF EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_leg_evidence_v1(physical)) THEN RAISE EXCEPTION 'cancelled evidence accepted';END IF;
            IF j->>'status' IS DISTINCT FROM 'cancelled' OR EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_flight_slots_v1 WHERE request_id=r) THEN RAISE EXCEPTION 'slot release failed';END IF;
            INSERT INTO airlinerra_game.section6_weekly_airport_slot_reservations_v1 VALUES(1,'OURAIRPORTS:999','remote','departure',3,780);
            IF (SELECT cash_usd FROM airlinerra_game.airlines WHERE id=a)<>5000000 OR (SELECT fleet_status FROM airlinerra_game.airline_aircraft_inventory WHERE id=f)<>'in_service' THEN RAISE EXCEPTION 'unexpected financial or fleet mutation';END IF;
