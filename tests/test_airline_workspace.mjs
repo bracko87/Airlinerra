@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {AIRLINE_UI_DEFAULTS,AIRLINE_UI_VIEWS,cleanUiPreferences,financialScenario,validateRouteIdea} from '../website/airline-workspace.mjs';
+import {AIRLINE_UI_DEFAULTS,AIRLINE_UI_VIEWS,cleanUiPreferences,financialScenario,validateRouteIdea,aircraftStoragePanelState} from '../website/airline-workspace.mjs';
 import {PLAYER_VIEWS} from '../website/player-app-model.mjs';
 const read=path=>readFile(new URL(path,import.meta.url),'utf8');
 
@@ -326,4 +326,21 @@ test('aircraft picture disclosure starts collapsed and resets only on profile se
  assert.match(workspace,/selectedFleetAircraftId=aircraftId;collapseAircraftPicture\(\);/);
  assert.match(css,/\.fleet-aircraft-picture-disclosure:not\(\[open\]\)>\.fleet-aircraft-picture-content\{display:none\}/);
  assert.match(css,/\.fleet-aircraft-picture-disclosure\[open\] \.fleet-aircraft-picture-chevron::before/);
+});
+
+test('storage panel shows verified owner-scoped details and never releases actions',async()=>{
+ const aircraft={id:'tail-a',ownershipType:'owned',fleetStatus:'stored'};
+ const overview={status:'storage_overview_verified',readOnly:true,airlineId:'airline-a',aircraftId:'tail-a',ownershipType:'owned',fleetStatus:'stored',session:{airportKey:'OURAIRPORTS:316427',startedUtc:'2026-11-26T10:00:00Z',monthlyUsd:5000,billing:{arrearsUsd:0,nextDueGameDate:'2026-12-26'}},pendingRequest:{purpose:'storage_reactivation',departed:false,originAirportKey:'OURAIRPORTS:316427',destinationAirportKey:'OURAIRPORTS:999',departureUtc:'2026-11-27T10:00:00Z'},history:[]};
+ const p=aircraftStoragePanelState(aircraft,'airline-a',overview);
+ assert.equal(p.verified,true);assert.equal(p.status,'Reactivation requested');
+ assert.equal(p.monthly,'$5,000.00');assert.equal(p.arrears,'$0.00');assert.equal(p.storeDisabled,true);assert.equal(p.reactivateDisabled,true);
+ for(const invalid of [null,{...overview,airlineId:'other'},{...overview,aircraftId:'other'},{...overview,fleetStatus:'in_service'}]){
+  const q=aircraftStoragePanelState(aircraft,'airline-a',invalid);
+  assert.equal(q.verified,false);assert.equal(q.monthly,'Not available');assert.equal(q.airport,'Not available');assert.equal(q.status,'Stored');
+ }
+ assert.equal(aircraftStoragePanelState({...aircraft,ownershipType:'leased'},'airline-a',overview).visible,false);
+ const workspace=await read('../website/airline-workspace.mjs');
+ assert.match(workspace,/id="fleet-store-aircraft" disabled/);
+ assert.match(workspace,/id="fleet-reactivate-aircraft" disabled/);
+ assert.match(workspace,/version===storageReadVersion&&selectedFleetAircraftId===aircraft.id/);
 });
