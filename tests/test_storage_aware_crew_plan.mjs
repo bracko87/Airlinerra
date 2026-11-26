@@ -21,21 +21,13 @@ test('storage-aware crew planning rejects unverified server response',async()=>{
  }
 });
 test('storage-aware crew planning enforces 60 hours including extended duty',async()=>{
- const a=snapshot();
- // Four 12h historical duties and one 9h historical duty on five days.
- // New report shares the last historical report date in UTC? Use a 7-day
- // window with earlier report dates outside the five-day check by choosing
- // six-hour duty extension on the fifth report date instead.
- // Directly exercise five reports spread over seven days: the fifth falls
- // exactly seven calendar days after the first, but within 168 elapsed hours
- // of the first duty END. A long duty crosses the 60h limit only when
- // proposed duties extend; existing 5-day policy is independently retained.
  const {planWeeklyCrew}=await import('../server/weekly-crew-allocation-engine.mjs');
  const base=snapshot();base.windowStartUtc='2026-11-27T00:00:00Z';base.planNotBeforeUtc=base.windowStartUtc;
- const histories=[19,21,22,23,25].map(day=>({startUtc:'2026-11-'+day+'T12:00:00Z',endUtc:'2026-11-'+(day+1)+'T00:00:00Z',origin:'BASE',destination:'BASE'}));
- // A 60-hour cap can be redundant with 5 x 12-hour reports in many cases.
- // Assert valid history remains usable and multiple legs share one duty.
+ // 54 hours of completed duty. The first reporting date is outside the
+ // five-day-in-seven calendar check but its duty falls in a 168-hour window.
+ const histories=[20,21,22,23,24].map(day=>({startUtc:'2026-11-'+day+'T12:00:00Z',endUtc:day===20?'2026-11-20T18:00:00Z':'2026-11-'+(day+1)+'T00:00:00Z',origin:'BASE',destination:'BASE'}));
  for(const p of base.pilots){p.initialAirport='BASE';p.history=histories;}
- base.flights=[{id:'one',aircraftId:'tail',group:'family',origin:'BASE',destination:'NEXT',departureUtc:'2026-11-27T14:00:00Z',arrivalUtc:'2026-11-27T16:00:00Z',cabinRequired:0},{id:'two',aircraftId:'tail',group:'family',origin:'NEXT',destination:'BASE',departureUtc:'2026-11-27T17:00:00Z',arrivalUtc:'2026-11-27T19:00:00Z',cabinRequired:0}];
- const result=planWeeklyCrew(base);assert.equal(result.assignedFlightCount,2);assert.equal(result.assignments[1].duties[0].continuedDuty,true);
+ base.flights=[{id:'one',aircraftId:'tail',group:'family',origin:'BASE',destination:'NEXT',departureUtc:'2026-11-27T02:00:00Z',arrivalUtc:'2026-11-27T04:00:00Z',cabinRequired:0},{id:'two',aircraftId:'tail',group:'family',origin:'NEXT',destination:'BASE',departureUtc:'2026-11-27T05:00:00Z',arrivalUtc:'2026-11-27T07:00:00Z',cabinRequired:0}];
+ const limited=planWeeklyCrew(base);assert.equal(limited.assignedFlightCount,1);assert.equal(limited.shortages[0].flightId,'two');
+ const legacy=planWeeklyCrew({...base,enforceRollingWeeklyDutyHours:false});assert.equal(legacy.assignedFlightCount,2);assert.equal(legacy.assignments[1].duties[0].continuedDuty,true);
 });
