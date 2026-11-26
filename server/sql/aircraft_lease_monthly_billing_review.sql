@@ -184,7 +184,7 @@ REVOKE ALL ON FUNCTION airlinerra_game.aircraft_lease_departure_coverage_v1(uuid
 -- has committed, so the payment writer acquires cash before order/inventory locks.
 -- A failed first payment leaves the delivery evidence intact, not dispatch-ready.
 CREATE FUNCTION airlinerra_game.start_delivered_aircraft_lease_v1(p_airline uuid,p_aircraft uuid)
-RETURNS jsonb LANGUAGE plpgsql SET search_path=pg_catalog AS $
+RETURNS jsonb LANGUAGE plpgsql SET search_path=pg_catalog AS $lease_start$
 DECLARE oid uuid; result jsonb;
 BEGIN
  IF current_user<>'postgres' THEN RAISE EXCEPTION USING ERRCODE='42501'; END IF;
@@ -199,6 +199,6 @@ BEGIN
  'flightActivationReleased',false);
 EXCEPTION WHEN NO_DATA_FOUND THEN
  RAISE EXCEPTION USING ERRCODE='42501',MESSAGE='LEASE_DELIVERY_ORDER_NOT_OWNED';
-END $;
+END $lease_start$;
 REVOKE ALL ON FUNCTION airlinerra_game.start_delivered_aircraft_lease_v1(uuid,uuid) FROM PUBLIC,anon,authenticated,service_role;
 COMMIT;
