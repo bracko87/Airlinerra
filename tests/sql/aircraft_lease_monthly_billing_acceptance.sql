@@ -6,8 +6,8 @@ BEGIN
  INSERT INTO airlinerra_game.airline_ledger(airline_id,entry_kind,amount_usd) VALUES(a,'STARTING_CAPITAL',500000),(b,'STARTING_CAPITAL',500000);
  INSERT INTO airlinerra_game.airline_aircraft_inventory VALUES(i,a,'stored','leased','YU-ALB',106);
  INSERT INTO airlinerra_game.aircraft_acquisition_orders_v1 VALUES(o,1,a,i,'lease','YU-ALB',106,'awaiting_delivery','2027-01-31 08:00+00',2,133000);
- result:=airlinerra_game.post_aircraft_lease_month_v1(a,o,1);
- IF result->>'status'<>'delivery_not_verified' THEN RAISE EXCEPTION 'Unverified delivery accepted %',result;END IF;
+ result:=airlinerra_game.start_delivered_aircraft_lease_v1(a,i);
+ IF (result->>'firstInstallmentPaid')::boolean IS DISTINCT FROM false OR result->>'status'<>'delivery_not_verified' THEN RAISE EXCEPTION 'Unverified delivery accepted %',result;END IF;
  UPDATE airlinerra_game.airline_aircraft_inventory SET fleet_status='in_service' WHERE id=i;
  UPDATE airlinerra_game.aircraft_acquisition_orders_v1 SET order_status='delivered_pending_inspection' WHERE order_id=o;
  INSERT INTO airlinerra_game.section9_aircraft_delivery_position_v1 VALUES(o,i,a,1,'2027-01-31','2027-01-31 09:00+00','2027-01-31 09:00+00');
@@ -18,8 +18,10 @@ BEGIN
  IF result->>'status'<>'requires_next_month' THEN RAISE EXCEPTION 'Skipped first month';END IF;
  result:=airlinerra_game.aircraft_lease_departure_coverage_v1(a,i,'2027-01-31 13:00+00','2027-01-31 15:00+00');
  IF result->>'status'<>'lease_payment_due' OR (result->>'eligible')::boolean THEN RAISE EXCEPTION 'Unpaid lease eligible %',result;END IF;
- result:=airlinerra_game.run_aircraft_lease_billing_v1(10);
- IF jsonb_array_length(result->'results')<>1 OR result->'results'->0->>'status'<>'paid' OR result->'results'->0->>'coverageEndGameDate'<>'2027-02-28' THEN RAISE EXCEPTION 'Wrong first batch receipt %',result;END IF;
+ result:=airlinerra_game.start_delivered_aircraft_lease_v1(a,i);
+ IF result->>'status'<>'paid' OR (result->>'firstInstallmentPaid')::boolean IS DISTINCT FROM true OR (result->>'flightActivationReleased')::boolean IS DISTINCT FROM false OR result->>'coverageEndGameDate'<>'2027-02-28' THEN RAISE EXCEPTION 'Wrong first delivery receipt %',result;END IF;
+ result:=airlinerra_game.start_delivered_aircraft_lease_v1(a,i);
+ IF result->>'status'<>'already_paid' OR (result->>'ledgerPosted')::boolean IS DISTINCT FROM false THEN RAISE EXCEPTION 'Delivery replay charged twice';END IF;
  result:=airlinerra_game.run_aircraft_lease_billing_v1(10);
  IF jsonb_array_length(result->'results')<>0 THEN RAISE EXCEPTION 'Batch charged twice %',result;END IF;
  result:=airlinerra_game.aircraft_lease_departure_coverage_v1(a,i,'2027-01-31 13:00+00','2027-01-31 15:00+00');
@@ -39,7 +41,7 @@ BEGIN
  IF result->>'status'<>'insufficient_cash' OR (SELECT count(*) FROM airlinerra_game.aircraft_lease_monthly_receipts_v1)<>1 THEN RAISE EXCEPTION 'Unfunded payment accepted';END IF;
  INSERT INTO airlinerra_game.airline_ledger(airline_id,entry_kind,amount_usd) VALUES(a,'REVENUE',200000);
  UPDATE airlinerra_game.airlines SET cash_usd=cash_usd+200000 WHERE id=a;
- result:=airlinerra_game.post_aircraft_lease_month_v1(a,o,2);
+ result:=airlinerra_game.run_aircraft_lease_billing_v1(10)->'results'->0;
  IF result->>'status'<>'paid' OR result->>'coverageEndGameDate'<>'2027-03-31' THEN RAISE EXCEPTION 'Wrong second receipt %',result;END IF;
  result:=airlinerra_game.post_aircraft_lease_month_v1(a,o,3);
  IF result->>'status'<>'contract_term_complete' THEN RAISE EXCEPTION 'Extra month charged';END IF;
