@@ -60,7 +60,7 @@ BEGIN
  OR l.departure_utc IS DISTINCT FROM NEW.scheduled_departure_utc OR l.arrival_utc IS DISTINCT FROM NEW.scheduled_arrival_utc
  OR l.flight_local_date IS DISTINCT FROM NEW.flight_local_date
  OR NEW.engine_event_id IS DISTINCT FROM 'storage-v1:'||NEW.flight_occurrence_id||':'||NEW.phase
- OR NEW.actual_event_utc IS DISTINCT FROM CASE WHEN NEW.phase='departed' THEN l.departure_utc ELSE l.arrival_utc END
+ OR NEW.actual_event_utc IS DISTINCT FROM (CASE WHEN NEW.phase='departed' THEN l.departure_utc ELSE l.arrival_utc END)
  THEN RAISE EXCEPTION 'STORAGE_MOVEMENT_EVIDENCE_MISMATCH';END IF;
  proof:=airlinerra_game.section9_verified_berlin_game_hour_v1();
  IF proof->>'authoritativeGameHourAvailable' IS DISTINCT FROM 'true'
