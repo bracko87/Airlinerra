@@ -23,7 +23,7 @@ REVOKE ALL ON airlinerra_game.aircraft_storage_only_airport_rules_v1 FROM PUBLIC
 
 CREATE FUNCTION airlinerra_game.aircraft_storage_leg_airport_screen_v1(p_airport text,p_configuration bigint,p_operation text,p_at timestamptz,p_storage_endpoint boolean)
 RETURNS jsonb LANGUAGE plpgsql STABLE SET search_path=pg_catalog AS $fn$
-DECLARE f record;p record;r record;v record;cert record;required_m numeric;local_time time;curfew_block boolean:=false;noise_block boolean:=false;simple jsonb;universal jsonb;screen record;
+DECLARE f airlinerra_game.aircraft_storage_facilities_v1%ROWTYPE;p record;r record;v record;cert record;required_m numeric;local_time time;curfew_block boolean:=false;noise_block boolean:=false;simple jsonb;universal jsonb;screen record;
 BEGIN
  IF current_user IS DISTINCT FROM 'postgres' THEN RAISE EXCEPTION USING ERRCODE='42501';END IF;
  IF p_airport IS NULL OR p_configuration IS NULL OR p_operation IS NULL OR p_operation NOT IN('departure','arrival') OR p_at IS NULL OR p_storage_endpoint IS NULL THEN RETURN jsonb_build_object('passed',false,'status','invalid_airport_screen');END IF;
@@ -43,7 +43,7 @@ BEGIN
  IF f.admission_scope IS DISTINCT FROM 'relocation_only' THEN RETURN jsonb_build_object('passed',false,'status','storage_scope_invalid');END IF;
  SELECT * INTO p FROM airlinerra_game.aircraft_storage_airport_operational_profiles_v1 WHERE world_id=1 AND airport_key=p_airport;
  SELECT * INTO r FROM airlinerra_game.aircraft_storage_only_airport_rules_v1 WHERE world_id=1 AND airport_key=p_airport;
- IF NOT FOUND OR r.reviewed_at>airlinerra_game.section9_verified_world_instant_v1() OR p.reviewed_at>airlinerra_game.section9_verified_world_instant_v1() THEN RETURN jsonb_build_object('passed',false,'status','storage_operational_rules_missing');END IF;
+ IF NOT FOUND OR airlinerra_game.section9_verified_world_instant_v1() IS NULL OR r.reviewed_at>airlinerra_game.section9_verified_world_instant_v1() OR p.reviewed_at>airlinerra_game.section9_verified_world_instant_v1() THEN RETURN jsonb_build_object('passed',false,'status','storage_operational_rules_missing');END IF;
  SELECT * INTO v FROM airlinerra_game.section5_full_weight_aircraft_reference_v2 WHERE configuration_id=p_configuration;
  IF NOT FOUND THEN RETURN jsonb_build_object('passed',false,'status','aircraft_runway_reference_missing');END IF;
  required_m:=ceil((CASE WHEN p_operation='departure' THEN v.game_full_weight_takeoff_reference_m ELSE v.game_full_weight_landing_reference_m END)*r.runway_elevation_factor);
