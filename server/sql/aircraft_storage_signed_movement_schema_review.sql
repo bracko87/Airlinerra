@@ -1,17 +1,24 @@
 -- ROLLBACK-ONLY REVIEW. One-way storage movement parent and position adapter.
 -- Does not grant commercial admission or dispatch authority.
 BEGIN;
--- Retain the old unified-origin FK and all other movement constraints.
+-- Preserve the unified-origin guarantee for ordinary flights; prepare both directions up front.
 -- The legacy destination FK remains equivalent for every non-storage row.
 ALTER TABLE airlinerra_game.section9_operated_flight_movements_v1
  ADD COLUMN storage_request_id uuid REFERENCES airlinerra_game.aircraft_storage_relocation_requests_v1(id),
+ ADD COLUMN storage_reactivation boolean NOT NULL DEFAULT false,
+ ADD CONSTRAINT storage_reactivation_parent_required CHECK(NOT storage_reactivation OR storage_request_id IS NOT NULL),
+ ADD COLUMN legacy_origin_airport_key text GENERATED ALWAYS AS (CASE WHEN NOT storage_reactivation THEN origin_airport_key END) STORED,
+ ADD COLUMN storage_origin_airport_key text GENERATED ALWAYS AS (CASE WHEN storage_reactivation THEN origin_airport_key END) STORED,
  ADD COLUMN legacy_destination_airport_key text GENERATED ALWAYS AS
- (CASE WHEN storage_request_id IS NULL THEN destination_airport_key END) STORED,
+ (CASE WHEN storage_request_id IS NULL OR storage_reactivation THEN destination_airport_key END) STORED,
  ADD COLUMN storage_destination_airport_key text GENERATED ALWAYS AS
- (CASE WHEN storage_request_id IS NOT NULL THEN destination_airport_key END) STORED;
+ (CASE WHEN storage_request_id IS NOT NULL AND NOT storage_reactivation THEN destination_airport_key END) STORED;
 ALTER TABLE airlinerra_game.section9_operated_flight_movements_v1
  DROP CONSTRAINT section9_movement_exact_parent_v2,
  DROP CONSTRAINT section9_operated_flight_movements_unified_destination_fk,
+ DROP CONSTRAINT section9_operated_flight_movements_unified_origin_fk,
+ ADD CONSTRAINT section9_movement_legacy_origin_fk FOREIGN KEY(world_id,legacy_origin_airport_key) REFERENCES airlinerra_game.airport_sections1_8_combined_members_v1(world_id,airport_key),
+ ADD CONSTRAINT section9_movement_storage_origin_fk FOREIGN KEY(world_id,storage_origin_airport_key) REFERENCES airlinerra_game.aircraft_storage_facilities_v1(world_id,airport_key),
  ADD CONSTRAINT section9_movement_exact_parent_v3 CHECK (
   num_nonnulls(schedule_id,relocation_trip_id,storage_request_id)=1
   AND (relocation_trip_id IS NULL OR (schedule_version=1 AND weekly_entry IN(1,2)))
@@ -25,10 +32,12 @@ ALTER TABLE airlinerra_game.section9_operated_flight_movements_v1
 -- Grounded legacy positions must still reference approved_game_airports.
 ALTER TABLE airlinerra_game.section9_aircraft_current_position_v1
  ADD COLUMN storage_request_id uuid REFERENCES airlinerra_game.aircraft_storage_relocation_requests_v1(id),
+ ADD COLUMN storage_reactivation boolean NOT NULL DEFAULT false,
+ ADD CONSTRAINT storage_position_reactivation_parent_required CHECK(NOT storage_reactivation OR storage_request_id IS NOT NULL),
  ADD COLUMN legacy_airport_key text GENERATED ALWAYS AS
- (CASE WHEN storage_request_id IS NULL THEN airport_key END) STORED,
+ (CASE WHEN storage_request_id IS NULL OR storage_reactivation THEN airport_key END) STORED,
  ADD COLUMN storage_airport_key text GENERATED ALWAYS AS
- (CASE WHEN storage_request_id IS NOT NULL THEN airport_key END) STORED;
+ (CASE WHEN storage_request_id IS NOT NULL AND NOT storage_reactivation THEN airport_key END) STORED;
 ALTER TABLE airlinerra_game.section9_aircraft_current_position_v1
  DROP CONSTRAINT section9_aircraft_current_position_v1_world_id_airport_key_fkey,
  ADD CONSTRAINT section9_position_legacy_airport_fk FOREIGN KEY(world_id,legacy_airport_key)
@@ -49,6 +58,7 @@ CREATE FUNCTION airlinerra_game.guard_storage_signed_movement_v1()
 RETURNS trigger LANGUAGE plpgsql SET search_path=pg_catalog AS $fn$
 DECLARE l record; payload text; signer text; expected text; proof jsonb; prior record;
 BEGIN
+ IF NEW.storage_reactivation THEN RAISE EXCEPTION 'REACTIVATION_NOT_RELEASED';END IF;
  IF NEW.storage_request_id IS NULL THEN RETURN NEW;END IF;
  IF current_user IS DISTINCT FROM 'postgres' OR NOT EXISTS(
  SELECT 1 FROM airlinerra_game.aircraft_storage_signed_movement_release_v1 WHERE world_id=1 AND enabled)
@@ -90,6 +100,7 @@ CREATE FUNCTION airlinerra_game.guard_storage_current_position_v1()
 RETURNS trigger LANGUAGE plpgsql SET search_path=pg_catalog AS $fn$
 DECLARE m record;
 BEGIN
+ IF NEW.storage_reactivation THEN RAISE EXCEPTION 'REACTIVATION_NOT_RELEASED';END IF;
  SELECT * INTO m FROM airlinerra_game.section9_operated_flight_movements_v1 WHERE engine_event_id=NEW.last_engine_event_id;
  -- Preserve legacy behavior, but a storage event always requires its exact parent.
  IF NEW.storage_request_id IS NULL AND m.storage_request_id IS NULL THEN RETURN NEW;END IF;
