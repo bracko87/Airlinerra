@@ -102,6 +102,8 @@ export function validateFleetAcquisitionRequest(body){
   uuid(body.aircraftInventoryId)&&uuid(body.requestId)&&
   typeof body.airportKey==='string'&&/^[A-Za-z0-9:_-]{2,100}$/u.test(body.airportKey)&&
   typeof body.providerKey==='string'&&/^[a-z0-9-]{2,100}$/u.test(body.providerKey);
+ if(body.action==='storage-overview')return Object.keys(body).length===3 &&
+  Object.keys(body).every(k=>['action','airlineId','aircraftInventoryId'].includes(k)) && uuid(body.aircraftInventoryId);
  if(body.action==='maintenance-preview')return Object.keys(body).length===3 &&
   Object.keys(body).every(k=>['action','airlineId','aircraftInventoryId'].includes(k)) &&
   uuid(body.aircraftInventoryId);
@@ -118,6 +120,7 @@ export function validateFleetAcquisitionRequest(body){
  return false;
 }
 export const FLEET_SQL=Object.freeze({
+ storageOverview:"SELECT airlinerra_game.owned_aircraft_storage_overview_v1($1::uuid,$2::uuid,$3::uuid) AS result",
  owner:"SELECT a.id,a.cash_usd::text AS \"cashUsd\" FROM airlinerra_game.airlines a "+
   "JOIN airlinerra_game.world_memberships w ON w.world_id=a.world_id AND w.player_id=a.owner_player_id "+
   "WHERE a.id=$1::uuid AND a.owner_player_id=$2::uuid AND a.world_id=1 AND w.state='active'",
@@ -689,6 +692,17 @@ export function createFleetAcquisitionHandler({verifyUserToken,database}={}){
     if(result.rowCount!==1||!result.rows?.[0]?.result)
      return respond(503,{error:'Auction bid could not be confirmed'});
     return respond(200,result.rows[0].result);
+   }
+   if(body.action==='storage-overview'){
+    const owner=await client.query(FLEET_SQL.owner,[body.airlineId,playerId]);
+    if(owner.rowCount!==1)return respond(403,{error:'Airline not owned by this account'});
+    const result=await client.query(FLEET_SQL.storageOverview,[playerId,body.airlineId,body.aircraftInventoryId]);
+    const value=result.rows?.[0]?.result;
+    if(result.rowCount!==1||value?.status!=='storage_overview_verified'||
+      value.airlineId!==body.airlineId||value.aircraftId!==body.aircraftInventoryId||
+      value.readOnly!==true||value.actionsReleased!==false)
+     return respond(503,{error:'Verified storage information unavailable'});
+    return respond(200,value);
    }
    if(body.action==='cabin-overview'){
     const owner=await client.query(FLEET_SQL.owner,[body.airlineId,playerId]);
