@@ -76,7 +76,7 @@ BEGIN
  OR terms.anchored_game_date>game_day OR terms.anchor_recorded_at IS NULL OR terms.anchor_recorded_at>game_now
  OR terms.inspection_reviewed_at IS NULL OR terms.inspection_reviewed_at>game_now OR terms.delivery_due_at>game_now
  OR terms.ownership_type<>'leased' OR terms.fleet_status NOT IN('in_service','maintenance')
- OR terms.registration<>terms.current_registration OR terms.configuration_id<>terms.current_configuration
+ OR terms.registration IS DISTINCT FROM terms.current_registration OR terms.configuration_id IS DISTINCT FROM terms.current_configuration
  THEN RETURN jsonb_build_object('status','delivery_not_verified','ledgerPosted',false);END IF;
  IF terms.contract_months IS NULL OR terms.contract_months NOT BETWEEN 1 AND 240
  OR terms.recurring_monthly_usd IS NULL OR terms.recurring_monthly_usd<=0
@@ -180,4 +180,25 @@ BEGIN
  RETURN jsonb_build_object('eligible',end_day<paid_until,'status',CASE WHEN end_day<paid_until THEN 'lease_paid_coverage' ELSE 'lease_payment_due' END,'paidThroughExclusive',paid_until,'expiryGameDate',expiry);
 END $$;
 REVOKE ALL ON FUNCTION airlinerra_game.aircraft_lease_departure_coverage_v1(uuid,uuid,timestamptz,timestamptz) FROM PUBLIC,anon,authenticated,service_role;
+-- Private post-delivery handoff. Call only after the inspection transaction
+-- has committed, so the payment writer acquires cash before order/inventory locks.
+-- A failed first payment leaves the delivery evidence intact, not dispatch-ready.
+CREATE FUNCTION airlinerra_game.start_delivered_aircraft_lease_v1(p_airline uuid,p_aircraft uuid)
+RETURNS jsonb LANGUAGE plpgsql SET search_path=pg_catalog AS $
+DECLARE oid uuid; result jsonb;
+BEGIN
+ IF current_user<>'postgres' THEN RAISE EXCEPTION USING ERRCODE='42501'; END IF;
+ IF p_airline IS NULL OR p_aircraft IS NULL THEN RAISE EXCEPTION USING ERRCODE='22023'; END IF;
+ SELECT o.order_id INTO STRICT oid
+ FROM airlinerra_game.aircraft_acquisition_orders_v1 o
+ JOIN airlinerra_game.airline_aircraft_inventory i ON i.id=o.aircraft_inventory_id AND i.airline_id=o.airline_id
+ WHERE o.airline_id=p_airline AND o.aircraft_inventory_id=p_aircraft AND o.world_id=1 AND o.transaction_type='lease';
+ result:=airlinerra_game.post_aircraft_lease_month_v1(p_airline,oid,1);
+ RETURN result||jsonb_build_object('orderId',oid,'aircraftInventoryId',p_aircraft,
+ 'firstInstallmentPaid',coalesce(result->>'status' IN ('paid','already_paid'),false),
+ 'flightActivationReleased',false);
+EXCEPTION WHEN NO_DATA_FOUND THEN
+ RAISE EXCEPTION USING ERRCODE='42501',MESSAGE='LEASE_DELIVERY_ORDER_NOT_OWNED';
+END $;
+REVOKE ALL ON FUNCTION airlinerra_game.start_delivered_aircraft_lease_v1(uuid,uuid) FROM PUBLIC,anon,authenticated,service_role;
 COMMIT;
