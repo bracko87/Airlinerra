@@ -1,0 +1,30 @@
+DO $billing$
+DECLARE s record; t record; j jsonb; initial_cash numeric; final_cash numeric;
+BEGIN
+ SELECT * INTO s FROM airlinerra_game.aircraft_storage_sessions_v1;
+ SELECT * INTO t FROM airlinerra_game.aircraft_storage_billing_terms_v1 WHERE request_id=s.request_id;
+ IF t.monthly_usd IS DISTINCT FROM 5000::numeric OR t.billing_class IS DISTINCT FROM 'narrowbody' THEN RAISE EXCEPTION 'billing terms incorrect';END IF;
+ SELECT cash_usd INTO initial_cash FROM airlinerra_game.airlines WHERE id=s.airline_id;
+ IF initial_cash IS DISTINCT FROM (SELECT sum(amount_usd) FROM airlinerra_game.airline_ledger WHERE airline_id=s.airline_id) THEN RAISE EXCEPTION 'arrival cash not reconciled';END IF;
+ j:=airlinerra_game.post_aircraft_storage_month_v1(s.airline_id,s.request_id,2);
+ IF j->>'status' IS DISTINCT FROM 'requires_next_month' THEN RAISE EXCEPTION 'skipped month: %',j;END IF;
+ j:=airlinerra_game.post_aircraft_storage_month_v1(s.airline_id,s.request_id,1);
+ IF j->>'status' IS DISTINCT FROM 'paid' THEN RAISE EXCEPTION 'first payment: %',j;END IF;
+ j:=airlinerra_game.post_aircraft_storage_month_v1(s.airline_id,s.request_id,1);
+ IF j->>'status' IS DISTINCT FROM 'already_paid' THEN RAISE EXCEPTION 'payment replay: %',j;END IF;
+ j:=airlinerra_game.post_aircraft_storage_month_v1(s.airline_id,s.request_id,2);
+ IF j->>'status' IS DISTINCT FROM 'not_due' THEN RAISE EXCEPTION 'early payment: %',j;END IF;
+ UPDATE airlinerra_game.aircraft_storage_facilities_v1 SET monthly_narrowbody_usd=9000 WHERE airport_key=s.airport_key;
+ PERFORM set_config('test.storage_hour',((airlinerra_game.storage_month_anniversary_v1(t.anchor_game_date,1)+time '12:00') AT TIME ZONE 'Europe/Berlin')::text,true);
+ j:=airlinerra_game.run_aircraft_storage_billing_v1(10);
+ IF j#>>'{results,0,status}' IS DISTINCT FROM 'paid' OR j#>>'{results,0,amountUsd}' IS NULL OR (j#>>'{results,0,amountUsd}')::numeric<>5000 THEN RAISE EXCEPTION 'second month or frozen rate: %',j;END IF;
+ SELECT cash_usd INTO final_cash FROM airlinerra_game.airlines WHERE id=s.airline_id;
+ IF final_cash IS DISTINCT FROM initial_cash-10000 OR final_cash IS DISTINCT FROM (SELECT sum(amount_usd) FROM airlinerra_game.airline_ledger WHERE airline_id=s.airline_id) THEN RAISE EXCEPTION 'monthly cash/ledger mismatch';END IF;
+ UPDATE airlinerra_game.aircraft_storage_sessions_v1 SET storage_ended_utc=airlinerra_game.section9_verified_world_instant_v1() WHERE request_id=s.request_id;
+ PERFORM set_config('test.storage_hour',((airlinerra_game.storage_month_anniversary_v1(t.anchor_game_date,2)+time '12:00') AT TIME ZONE 'Europe/Berlin')::text,true);
+ j:=airlinerra_game.post_aircraft_storage_month_v1(s.airline_id,s.request_id,3);
+ IF j->>'status' IS DISTINCT FROM 'storage_ended' THEN RAISE EXCEPTION 'ended storage charged: %',j;END IF;
+ IF airlinerra_game.storage_month_anniversary_v1('2027-01-31',1)<>'2027-02-28'::date OR airlinerra_game.storage_month_anniversary_v1('2027-01-31',2)<>'2027-03-31'::date THEN RAISE EXCEPTION 'anniversary drift';END IF;
+ RAISE NOTICE 'Storage monthly billing acceptance passed';
+END $billing$;
+ROLLBACK;
