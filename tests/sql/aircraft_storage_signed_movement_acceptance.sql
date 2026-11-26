@@ -11,6 +11,10 @@ BEGIN
  physical:=r::text||':'||(departure AT TIME ZONE 'UTC')::date::text||':1';
  SELECT * INTO l FROM airlinerra_game.aircraft_storage_leg_evidence_v1(physical);
  IF NOT FOUND THEN RAISE EXCEPTION 'fixture evidence missing';END IF;
+ j:=airlinerra_game.hold_aircraft_storage_funds_v1(p,a,r);
+ IF j->>'fundsHeld' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'hold failed: %',j;END IF;
+ j:=airlinerra_game.hold_aircraft_storage_funds_v1(p,a,r);
+ IF j->>'replayed' IS DISTINCT FROM 'true' OR (SELECT cash_usd FROM airlinerra_game.airlines WHERE id=a)<>4997301.87 THEN RAISE EXCEPTION 'hold replay incorrect: %',j;END IF;
  PERFORM set_config('test.storage_hour',departure::text,true);
  event_id:='storage-v1:'||physical||':departed';
  signature:=encode(extensions.hmac(convert_to(airlinerra_game.aircraft_storage_event_signing_payload_v1(physical,'departed'),'UTF8'),convert_to(repeat('a',64),'UTF8'),'sha256'),'hex');
