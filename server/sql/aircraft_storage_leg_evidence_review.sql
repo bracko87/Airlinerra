@@ -23,7 +23,8 @@ LANGUAGE sql STABLE SET search_path=pg_catalog AS $fn$
  AND r.quote->>'status'='storage_relocation_cost_estimate'
  AND r.quote->>'passengers'='0' AND r.quote->>'cargoTonnes'='0' AND r.quote->>'ticketRevenueUsd'='0'
  AND r.quote->>'fuelRangeConfirmed'='true'
- AND r.quote->>'directOperatingCostUsd'=r.quoted_cost_usd::text
+ AND (r.quote->>'directOperatingCostUsd')::numeric=r.quoted_cost_usd
+ AND (r.quote->>'configurationId')::bigint=i.configuration_id
  AND r.arrival_utc=r.departure_utc+make_interval(mins=>(r.quote#>>'{phases,totalMinutes}')::integer)
  AND airlinerra_game.aircraft_storage_airport_admission_v1(r.destination_airport_key,'storage_inbound')->>'eligible'='true'
  AND EXISTS(SELECT 1 FROM airlinerra_game.airport_unified_operations_v1 u
