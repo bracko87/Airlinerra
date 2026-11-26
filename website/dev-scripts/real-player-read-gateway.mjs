@@ -53,7 +53,7 @@ export function allowedLocalOwnerRead(pathname,payload){
   'cabin-prepare-quote','cabin-quote-status'].includes(payload.action))
   return validateFleetAcquisitionRequest(payload);
  // Maintenance preview is read-only. Never accept a client-selected cost or site.
- if(pathname===FLEET_READ_PATH&&payload.action==='maintenance-preview')
+ if(pathname===FLEET_READ_PATH&&['maintenance-preview','storage-overview'].includes(payload.action))
   return validateFleetAcquisitionRequest(payload);
  // Nickname edits are harmless owner-verified metadata updates; never allow
  // purchase, delivery, schedule activation or any other fleet write here.
