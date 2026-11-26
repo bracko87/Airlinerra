@@ -90,6 +90,9 @@ RETURNS jsonb LANGUAGE plpgsql SET search_path=pg_catalog AS $fn$
 DECLARE r record;
 BEGIN
  IF current_user IS DISTINCT FROM 'postgres' THEN RAISE EXCEPTION USING ERRCODE='42501';END IF;
+ PERFORM 1 FROM airlinerra_game.airlines a JOIN airlinerra_game.world_memberships w ON w.world_id=1 AND w.player_id=p_player AND w.state='active'
+ WHERE a.id=p_airline AND a.owner_player_id=p_player AND a.world_id=1 FOR UPDATE OF a;
+ IF NOT FOUND THEN RAISE EXCEPTION USING ERRCODE='42501';END IF;
  SELECT t.* INTO r FROM airlinerra_game.aircraft_storage_relocation_requests_v1 t
  JOIN airlinerra_game.airlines a ON a.id=t.airline_id AND a.owner_player_id=p_player AND a.world_id=1
  JOIN airlinerra_game.world_memberships w ON w.world_id=1 AND w.player_id=p_player AND w.state='active'
