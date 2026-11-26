@@ -1,0 +1,65 @@
+name: Aircraft storage phase review
+on:
+  push:
+    branches: [feature/aircraft-leasing-billing-review]
+    paths:
+      - 'server/sql/aircraft_storage*'
+      - '.github/workflows/airlinerra-storage-phase-review.yml'
+jobs:
+  storage-phase:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: review
+          POSTGRES_DB: review
+        ports: ['5432:5432']
+        options: --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGPASSWORD: review
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run isolated storage phase acceptance
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1 <<'SQL'
+          -- Disposable test DB only.
+          CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;
+          CREATE SCHEMA airlinerra; CREATE SCHEMA airlinerra_game;
+          CREATE TABLE airlinerra.airport_registry(airport_key text PRIMARY KEY);
+          INSERT INTO airlinerra.airport_registry SELECT 'OURAIRPORTS:'||n FROM unnest(ARRAY[26900,4073,3856,316427,19330,2409,2395,21315,20507,20594,999]) n;
+          CREATE TABLE airlinerra_game.airport_reference_profiles(world_id smallint,airport_key text,latitude_deg numeric,longitude_deg numeric,timezone_iana text);
+          CREATE TABLE airlinerra_game.airport_unified_operations_v1(world_id smallint,airport_key text,game_category text,operationally_authorized boolean,dispatch_eligible_by_airport_admission boolean);
+          INSERT INTO airlinerra_game.airport_reference_profiles VALUES(1,'OURAIRPORTS:999',48,2,'Europe/Paris');
+          INSERT INTO airlinerra_game.airport_unified_operations_v1 VALUES(1,'OURAIRPORTS:999','Large',true,true);
+          CREATE TABLE airlinerra_game.section9_game_fuel_model_snapshot_v1(configuration_id bigint,cruise_speed_kmh numeric,game_calculation_ready boolean);
+          CREATE TABLE airlinerra.aircraft_catalog_configuration_inventory(configuration_id bigint,mtow_kg numeric);
+          INSERT INTO airlinerra_game.section9_game_fuel_model_snapshot_v1 VALUES(1,800,true);
+          INSERT INTO airlinerra.aircraft_catalog_configuration_inventory VALUES(1,70000);
+          CREATE FUNCTION airlinerra_game.section9_route_timing_pick_v1(text,int,int) RETURNS int LANGUAGE sql IMMUTABLE AS 'SELECT ($2+$3)/2';
+          SQL
+          for file in aircraft_storage_facilities_review aircraft_storage_airport_admission_review aircraft_storage_route_phase_review; do
+            psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1 -f "server/sql/$file.sql"
+          done
+          psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1 <<'SQL'
+          DO $test$
+          DECLARE j jsonb; a jsonb;
+          BEGIN
+           IF airlinerra_game.aircraft_storage_route_phase_profile_v1(1,'OURAIRPORTS:999','OURAIRPORTS:316427','storage_inbound') IS NOT NULL THEN RAISE EXCEPTION 'unapproved candidate accepted';END IF;
+           UPDATE airlinerra_game.aircraft_storage_facilities_v1 SET review_state='approved',monthly_regional_usd=2000,monthly_narrowbody_usd=5000,monthly_widebody_usd=10000,reactivation_allowed=true,evidence_reference='synthetic',relocation_release_reference='synthetic',reviewed_at=now() WHERE airport_key='OURAIRPORTS:316427';
+           INSERT INTO airlinerra_game.aircraft_storage_airport_operational_profiles_v1 VALUES(1,'OURAIRPORTS:316427',40,-1,'Europe/Madrid',2800,45,'asphalt',1000,150,'synthetic','synthetic',now());
+           j:=airlinerra_game.aircraft_storage_route_phase_profile_v1(1,'OURAIRPORTS:999','OURAIRPORTS:316427','storage_inbound');
+           IF j IS NULL OR (j->>'distanceKm')::numeric<=0 OR (j->>'totalMinutes')::integer<=0 THEN RAISE EXCEPTION 'inbound quote missing';END IF;
+           IF (j->>'totalMinutes')::integer <> (j->>'taxiOutMinutes')::integer+(j->>'taxiInMinutes')::integer+(j->>'climbMinutes')::integer+(j->>'cruiseMinutes')::integer+(j->>'descentMinutes')::integer THEN RAISE EXCEPTION 'phase sum mismatch';END IF;
+           IF airlinerra_game.aircraft_storage_route_phase_profile_v1(1,'OURAIRPORTS:316427','OURAIRPORTS:999','storage_reactivation') IS NULL THEN RAISE EXCEPTION 'reactivation quote missing';END IF;
+           IF airlinerra_game.aircraft_storage_route_phase_profile_v1(1,'OURAIRPORTS:999','OURAIRPORTS:316427','commercial') IS NOT NULL THEN RAISE EXCEPTION 'commercial accepted';END IF;
+           IF EXISTS(SELECT 1 FROM airlinerra_game.airport_unified_operations_v1 WHERE airport_key='OURAIRPORTS:316427') THEN RAISE EXCEPTION 'commercial catalogue changed';END IF;
+           a:=airlinerra_game.aircraft_storage_airport_admission_v1('OURAIRPORTS:316427','storage_inbound');
+           IF a->>'dispatchAuthorized' IS DISTINCT FROM 'false' OR a->>'storageCapacityUnlimited' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'incorrect release flags';END IF;
+           UPDATE airlinerra_game.aircraft_storage_facilities_v1 SET review_state='suspended' WHERE airport_key='OURAIRPORTS:316427';
+           IF airlinerra_game.aircraft_storage_route_phase_profile_v1(1,'OURAIRPORTS:999','OURAIRPORTS:316427','storage_inbound') IS NOT NULL THEN RAISE EXCEPTION 'suspended facility accepted';END IF;
+           RAISE NOTICE 'Storage phase acceptance passed';
+          END $test$;
+          SQL
