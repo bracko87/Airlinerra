@@ -45,8 +45,28 @@ jobs:
           CREATE TABLE airlinerra.aircraft_expansion_group3_economics_v1(fuel_price_assumption_usd_per_kg numeric);
           INSERT INTO airlinerra.aircraft_expansion_group3_economics_v1 VALUES(1.2);
           CREATE FUNCTION airlinerra_game.section9_game_reserve_aware_fuel_quote_v1(bigint,numeric,integer,integer,integer,integer,integer) RETURNS jsonb LANGUAGE sql AS 'SELECT jsonb_build_object(''status'',''game_reserve_aware_fuel_estimate_only'',''tripBurnKg'',1000,''withinGameTankIncludingReserve'',true)';
+          CREATE TABLE airlinerra_game.airlines(id uuid PRIMARY KEY,world_id smallint,owner_player_id uuid,cash_usd numeric);
+          CREATE TABLE airlinerra_game.world_memberships(world_id smallint,player_id uuid,state text);
+          CREATE TABLE airlinerra_game.airline_aircraft_inventory(id uuid PRIMARY KEY,airline_id uuid,configuration_id bigint,ownership_type text,fleet_status text);
+          CREATE TABLE airlinerra_game.airline_flight_schedule_drafts_v1(airline_id uuid,aircraft_inventory_id uuid,status text);
+          CREATE TABLE airlinerra_game.section9_game_maintenance_jobs_v1(airline_id uuid,aircraft_inventory_id uuid,status text,quoted_cost_usd numeric);
+          CREATE TABLE airlinerra_game.section9_maintenance_relocation_trips_v1(airline_id uuid,aircraft_inventory_id uuid,status text,quoted_total_usd numeric);
+          CREATE TABLE airlinerra_game.airline_ledger(airline_id uuid,amount_usd numeric);
+          CREATE TABLE airlinerra_game.section6_airport_slot_capacity_v1(world_id smallint,airport_key text,remote_stands integer,remote_per_direction_10m integer,PRIMARY KEY(world_id,airport_key));
+          CREATE TABLE airlinerra_game.section5_airport_operating_policy_v1(world_id smallint,airport_key text,timezone_iana text);
+          CREATE TABLE airlinerra_game.section6_weekly_airport_slot_reservations_v1(world_id smallint,airport_key text,stand_type text,direction text,weekday smallint,minute_of_day smallint);
+          CREATE TABLE airlinerra_game.section6_dated_relocation_slots_v1(world_id smallint,airport_key text,stand_type text,direction text,local_date date,weekday smallint,minute_of_day smallint);
+          CREATE TABLE airlinerra_game.section9_dated_replacement_slots_v1(LIKE airlinerra_game.section6_dated_relocation_slots_v1);
+          CREATE FUNCTION airlinerra_game.section9_verified_world_instant_v1() RETURNS timestamptz LANGUAGE sql STABLE AS 'SELECT ''2026-11-26 10:00+00''::timestamptz';
+          CREATE FUNCTION airlinerra_game.section9_owned_aircraft_operational_position_v1(uuid,uuid,uuid,date) RETURNS jsonb LANGUAGE sql STABLE AS 'SELECT jsonb_build_object(''verified'',true,''atGroundAirport'',true,''airportKey'',''OURAIRPORTS:999'')';
+          INSERT INTO airlinerra_game.airlines VALUES('00000000-0000-0000-0000-000000000001',1,'00000000-0000-0000-0000-000000000002',5000000);
+          INSERT INTO airlinerra_game.world_memberships VALUES(1,'00000000-0000-0000-0000-000000000002','active');
+          INSERT INTO airlinerra_game.airline_aircraft_inventory VALUES('00000000-0000-0000-0000-000000000003','00000000-0000-0000-0000-000000000001',1,'owned','in_service');
+          INSERT INTO airlinerra_game.airline_ledger VALUES('00000000-0000-0000-0000-000000000001',5000000);
+          INSERT INTO airlinerra_game.section6_airport_slot_capacity_v1 VALUES(1,'OURAIRPORTS:999',1,1);
+          INSERT INTO airlinerra_game.section5_airport_operating_policy_v1 VALUES(1,'OURAIRPORTS:999','Europe/Paris');
           SQL
-          for file in aircraft_storage_facilities_review aircraft_storage_airport_admission_review aircraft_storage_route_phase_review aircraft_storage_relocation_cost_review; do
+          for file in aircraft_storage_facilities_review aircraft_storage_airport_admission_review aircraft_storage_route_phase_review aircraft_storage_relocation_cost_review aircraft_storage_relocation_request_review aircraft_storage_flight_slots_review; do
             psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1 -f "server/sql/$file.sql"
           done
           psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1 <<'SQL'
@@ -76,4 +96,36 @@ jobs:
            IF airlinerra_game.aircraft_storage_route_phase_profile_v1(1,'OURAIRPORTS:999','OURAIRPORTS:316427','storage_inbound') IS NOT NULL THEN RAISE EXCEPTION 'suspended facility accepted';END IF;
            RAISE NOTICE 'Storage phase acceptance passed';
           END $test$;
+          DO $slots$
+          DECLARE a uuid:='00000000-0000-0000-0000-000000000001';p uuid:='00000000-0000-0000-0000-000000000002';f uuid:='00000000-0000-0000-0000-000000000003';k uuid:='00000000-0000-0000-0000-000000000004';r uuid;j jsonb;
+          BEGIN
+           UPDATE airlinerra_game.aircraft_storage_facilities_v1 SET review_state='approved' WHERE airport_key='OURAIRPORTS:316427';
+           INSERT INTO airlinerra_game.aircraft_storage_only_movement_limits_v1 VALUES(1,'OURAIRPORTS:316427',1,1,'fixture');
+           j:=airlinerra_game.request_aircraft_storage_relocation_v1(p,a,f,'OURAIRPORTS:316427','2026-11-26 12:00+00',2698.13,k);
+           IF j->>'created' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'request creation: %',j;END IF;
+           r:=(j->>'requestId')::uuid;
+           j:=airlinerra_game.request_aircraft_storage_relocation_v1(p,a,f,'OURAIRPORTS:316427','2026-11-26 12:00+00',2698.13,k);
+           IF j->>'replayed' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'request replay: %',j;END IF;
+           INSERT INTO airlinerra_game.section6_weekly_airport_slot_reservations_v1 VALUES(1,'OURAIRPORTS:999','remote','departure',3,780);
+           j:=airlinerra_game.reserve_aircraft_storage_slots_v1(p,a,r);
+           IF j->>'status' IS DISTINCT FROM 'STORAGE_FLIGHT_SLOT_UNAVAILABLE' OR EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_flight_slots_v1 WHERE request_id=r) THEN RAISE EXCEPTION 'atomic slot failure: %',j;END IF;
+           DELETE FROM airlinerra_game.section6_weekly_airport_slot_reservations_v1;
+           j:=airlinerra_game.reserve_aircraft_storage_slots_v1(p,a,r);
+           IF j->>'slotsReserved' IS DISTINCT FROM '2' OR j->>'flightScheduled' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'slot reservation: %',j;END IF;
+           j:=airlinerra_game.reserve_aircraft_storage_slots_v1(p,a,r);
+           IF j->>'replayed' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'slot replay: %',j;END IF;
+           BEGIN
+           INSERT INTO airlinerra_game.section6_weekly_airport_slot_reservations_v1 VALUES(1,'OURAIRPORTS:999','remote','departure',3,780);
+           RAISE EXCEPTION 'unexpected commercial slot';
+           EXCEPTION WHEN raise_exception THEN IF SQLERRM<>'STORAGE_FLIGHT_SLOT_UNAVAILABLE' THEN RAISE;END IF;END;
+           BEGIN
+           INSERT INTO airlinerra_game.section9_dated_replacement_slots_v1 VALUES(1,'OURAIRPORTS:999','remote','departure','2026-11-26',3,780);
+           RAISE EXCEPTION 'unexpected replacement slot';
+           EXCEPTION WHEN raise_exception THEN IF SQLERRM<>'STORAGE_FLIGHT_SLOT_UNAVAILABLE' THEN RAISE;END IF;END;
+           j:=airlinerra_game.cancel_aircraft_storage_relocation_request_v1(p,a,r);
+           IF j->>'status' IS DISTINCT FROM 'cancelled' OR EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_flight_slots_v1 WHERE request_id=r) THEN RAISE EXCEPTION 'slot release failed';END IF;
+           INSERT INTO airlinerra_game.section6_weekly_airport_slot_reservations_v1 VALUES(1,'OURAIRPORTS:999','remote','departure',3,780);
+           IF (SELECT cash_usd FROM airlinerra_game.airlines WHERE id=a)<>5000000 OR (SELECT fleet_status FROM airlinerra_game.airline_aircraft_inventory WHERE id=f)<>'in_service' THEN RAISE EXCEPTION 'unexpected financial or fleet mutation';END IF;
+           RAISE NOTICE 'Storage request and slot acceptance passed';
+          END $slots$;
           SQL
