@@ -30,7 +30,26 @@ BEGIN
  IF p_legs IS NULL OR jsonb_typeof(p_legs)<>'array' THEN RETURN jsonb_build_object('status','invalid_legs');END IF;
  IF jsonb_array_length(p_legs) NOT BETWEEN 1 AND 32 THEN RETURN jsonb_build_object('status','invalid_legs');END IF;
  FOR leg IN SELECT value FROM jsonb_array_elements(p_legs) LOOP
-  IF NOT coalesce(leg->>'departureUtc','') ~ '(Z|[+-][0-9]{2}:[0-9]{2})
+  IF NOT coalesce(leg->>'departureUtc','') ~ '(Z|[+-][0-9]{2}:[0-9]{2})$' OR NOT coalesce(leg->>'arrivalUtc','') ~ '(Z|[+-][0-9]{2}:[0-9]{2})$' THEN
+   RETURN jsonb_build_object('status','invalid_leg_time');END IF;
+  dep:=(leg->>'departureUtc')::timestamptz;arr:=(leg->>'arrivalUtc')::timestamptz;
+  orig:=nullif(btrim(leg->>'originAirportKey'),'');dest:=nullif(btrim(leg->>'destinationAirportKey'),'');
+  IF dep IS NULL OR arr IS NULL OR NOT isfinite(dep) OR NOT isfinite(arr) OR arr<=dep OR orig IS NULL OR dest IS NULL OR orig=dest THEN RETURN jsonb_build_object('status','invalid_leg');END IF;
+  IF last_arr IS NOT NULL AND dep<last_arr THEN RETURN jsonb_build_object('status','overlapping_flights');END IF;
+  IF last_destination IS NOT NULL AND last_destination<>orig THEN RETURN jsonb_build_object('status','crew_wrong_airport');END IF;
+  IF first_dep IS NULL THEN first_dep:=dep;first_origin:=orig;END IF;
+  last_arr:=arr;last_destination:=dest;flight_minutes:=flight_minutes+extract(epoch FROM arr-dep)/60;
+ END LOOP;
+ duty_start:=first_dep-make_interval(mins=>pol.preflight_minutes);
+ duty_end:=last_arr+make_interval(mins=>pol.postflight_minutes);
+ RETURN jsonb_build_object('status',CASE WHEN duty_end-duty_start>make_interval(mins=>pol.maximum_duty_minutes) THEN 'duty_too_long' ELSE 'rotation_preview' END,
+ 'dutyStartUtc',duty_start,'dutyEndUtc',duty_end,'startingAirport',first_origin,'endingAirport',last_destination,
+ 'dutyMinutes',extract(epoch FROM duty_end-duty_start)/60,'flightMinutes',flight_minutes,
+ 'legCount',jsonb_array_length(p_legs),'nextReadyUtc',duty_end+make_interval(mins=>pol.minimum_rest_minutes),
+ 'dispatchEnforced',false);
+EXCEPTION WHEN invalid_datetime_format OR datetime_field_overflow OR invalid_text_representation THEN RETURN jsonb_build_object('status','invalid_leg_time');
+END $function$;
+DO $test$
 DECLARE s record; owner_id uuid; j jsonb; v_now timestamptz; airport text:='OURAIRPORTS:316427';
 BEGIN
  SELECT * INTO STRICT s FROM airlinerra_game.aircraft_storage_sessions_v1 WHERE storage_ended_utc IS NULL;
@@ -96,93 +115,4 @@ BEGIN
  IF EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_booking_approvals_v1) THEN RAISE EXCEPTION 'licence/duty preflight generated booking clearance';END IF;
  RAISE NOTICE 'Storage ferry permission and actual rotation duty-window acceptance passed';
 END $ferry$;
-ROLLBACK TO SAVEPOINT storage_operational_screen;
- OR NOT coalesce(leg->>'arrivalUtc','') ~ '(Z|[+-][0-9]{2}:[0-9]{2})
-DECLARE s record; owner_id uuid; j jsonb; v_now timestamptz; airport text:='OURAIRPORTS:316427';
-BEGIN
- SELECT * INTO STRICT s FROM airlinerra_game.aircraft_storage_sessions_v1 WHERE storage_ended_utc IS NULL;
- SELECT owner_player_id INTO STRICT owner_id FROM airlinerra_game.aircraft_storage_relocation_requests_v1 WHERE id=s.request_id;
- v_now:=s.storage_started_utc;
- PERFORM set_config('test.storage_hour',v_now::text,true);
- UPDATE airlinerra_game.aircraft_storage_airport_operational_profiles_v1 SET reviewed_at=v_now-interval '1 hour' WHERE airport_key=airport;
- j:=airlinerra_game.aircraft_storage_leg_airport_screen_v1(airport,1,'departure',v_now,true);
- IF j->>'status' IS DISTINCT FROM 'storage_operational_rules_missing' THEN RAISE EXCEPTION 'missing storage rules accepted: %',j;END IF;
- INSERT INTO airlinerra_game.aircraft_storage_only_airport_rules_v1 VALUES(1,airport,1.1,40,false,NULL,NULL,false,NULL,'fixture',v_now);
- j:=airlinerra_game.aircraft_storage_leg_airport_screen_v1(airport,1,'departure',v_now,true);
- IF j->>'passed' IS DISTINCT FROM 'true' OR (j->>'requiredRunwayM')::numeric IS DISTINCT FROM 2200::numeric OR j->>'dispatchAuthorized' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'storage runway screen incorrect: %',j;END IF;
- UPDATE airlinerra_game.aircraft_storage_only_airport_rules_v1 SET runway_elevation_factor=1.5 WHERE airport_key=airport;
- j:=airlinerra_game.aircraft_storage_leg_airport_screen_v1(airport,1,'departure',v_now,true);
- IF j->>'status' IS DISTINCT FROM 'storage_runway_screen_blocked' THEN RAISE EXCEPTION 'short runway accepted: %',j;END IF;
- UPDATE airlinerra_game.aircraft_storage_only_airport_rules_v1 SET runway_elevation_factor=1.1,nighttime_ban=true,curfew_start_local='23:00',curfew_end_local='06:00' WHERE airport_key=airport;
- j:=airlinerra_game.aircraft_storage_leg_airport_screen_v1(airport,1,'departure',timestamp '2026-11-27 01:00' AT TIME ZONE 'Europe/Madrid',true);
- IF j->>'status' IS DISTINCT FROM 'storage_curfew_blocked' THEN RAISE EXCEPTION 'overnight curfew bypass: %',j;END IF;
- UPDATE airlinerra_game.aircraft_storage_only_airport_rules_v1 SET nighttime_ban=false,curfew_start_local=NULL,curfew_end_local=NULL,noise_restrictions=true,permitted_noise_chapters=ARRAY[4]::smallint[] WHERE airport_key=airport;
- j:=airlinerra_game.aircraft_storage_leg_airport_screen_v1(airport,1,'departure',v_now,true);
- IF j->>'passed' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'chapter 14 rejected by chapter 4 rule: %',j;END IF;
- UPDATE airlinerra_game.section5_icao_aircraft_certification_v2 SET official_icao_chapter=3 WHERE configuration_id=1;
- j:=airlinerra_game.aircraft_storage_leg_airport_screen_v1(airport,1,'departure',v_now,true);
- IF j->>'status' IS DISTINCT FROM 'storage_noise_chapter_blocked' THEN RAISE EXCEPTION 'noise restriction bypass: %',j;END IF;
- UPDATE airlinerra_game.section5_icao_aircraft_certification_v2 SET noise_certificate_status='UNKNOWN' WHERE configuration_id=1;
- j:=airlinerra_game.aircraft_storage_leg_airport_screen_v1(airport,1,'departure',v_now,true);
- IF j->>'status' IS DISTINCT FROM 'storage_noise_certificate_unverified' THEN RAISE EXCEPTION 'unverified certificate accepted: %',j;END IF;
- UPDATE airlinerra_game.section5_icao_aircraft_certification_v2 SET noise_certificate_status='CERTIFICATE_CONFIGURATION_MATCHED',official_icao_chapter=14 WHERE configuration_id=1;
- j:=airlinerra_game.owned_aircraft_storage_operational_screen_v1(owner_id,s.airline_id,s.aircraft_inventory_id,'storage_reactivation','OURAIRPORTS:999',date_trunc('second',v_now+interval '1 hour'));
- IF j->>'airportScreenPassed' IS DISTINCT FROM 'true' OR j#>>'{licenceScreen,decision}' IS DISTINCT FROM 'STORAGE_FERRY_LICENCE_REVIEW_REQUIRED' OR j->>'clearanceGenerated' IS DISTINCT FROM 'false' OR j->>'bookingEligible' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'incomplete clearance incorrectly released: %',j;END IF;
- IF EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_booking_approvals_v1) THEN RAISE EXCEPTION 'read-only preflight generated approval';END IF;
- RAISE NOTICE 'Storage operational screen acceptance passed (synthetic commercial-screen inputs)';
-END $test$;
-ROLLBACK TO SAVEPOINT storage_operational_screen;
- THEN
-   RETURN jsonb_build_object('status','invalid_leg_time');END IF;
-  dep:=(leg->>'departureUtc')::timestamptz;arr:=(leg->>'arrivalUtc')::timestamptz;
-  orig:=nullif(btrim(leg->>'originAirportKey'),'');dest:=nullif(btrim(leg->>'destinationAirportKey'),'');
-  IF dep IS NULL OR arr IS NULL OR NOT isfinite(dep) OR NOT isfinite(arr) OR arr<=dep OR orig IS NULL OR dest IS NULL OR orig=dest THEN RETURN jsonb_build_object('status','invalid_leg');END IF;
-  IF last_arr IS NOT NULL AND dep<last_arr THEN RETURN jsonb_build_object('status','overlapping_flights');END IF;
-  IF last_destination IS NOT NULL AND last_destination<>orig THEN RETURN jsonb_build_object('status','crew_wrong_airport');END IF;
-  IF first_dep IS NULL THEN first_dep:=dep;first_origin:=orig;END IF;
-  last_arr:=arr;last_destination:=dest;flight_minutes:=flight_minutes+extract(epoch FROM arr-dep)/60;
- END LOOP;
- duty_start:=first_dep-make_interval(mins=>pol.preflight_minutes);
- duty_end:=last_arr+make_interval(mins=>pol.postflight_minutes);
- RETURN jsonb_build_object('status',CASE WHEN duty_end-duty_start>make_interval(mins=>pol.maximum_duty_minutes) THEN 'duty_too_long' ELSE 'rotation_preview' END,
- 'dutyStartUtc',duty_start,'dutyEndUtc',duty_end,'startingAirport',first_origin,'endingAirport',last_destination,
- 'dutyMinutes',extract(epoch FROM duty_end-duty_start)/60,'flightMinutes',flight_minutes,
- 'legCount',jsonb_array_length(p_legs),'nextReadyUtc',duty_end+make_interval(mins=>pol.minimum_rest_minutes),
- 'dispatchEnforced',false);
-EXCEPTION WHEN invalid_datetime_format OR datetime_field_overflow OR invalid_text_representation THEN RETURN jsonb_build_object('status','invalid_leg_time');
-END $function$;
-DO $test$
-DECLARE s record; owner_id uuid; j jsonb; v_now timestamptz; airport text:='OURAIRPORTS:316427';
-BEGIN
- SELECT * INTO STRICT s FROM airlinerra_game.aircraft_storage_sessions_v1 WHERE storage_ended_utc IS NULL;
- SELECT owner_player_id INTO STRICT owner_id FROM airlinerra_game.aircraft_storage_relocation_requests_v1 WHERE id=s.request_id;
- v_now:=s.storage_started_utc;
- PERFORM set_config('test.storage_hour',v_now::text,true);
- UPDATE airlinerra_game.aircraft_storage_airport_operational_profiles_v1 SET reviewed_at=v_now-interval '1 hour' WHERE airport_key=airport;
- j:=airlinerra_game.aircraft_storage_leg_airport_screen_v1(airport,1,'departure',v_now,true);
- IF j->>'status' IS DISTINCT FROM 'storage_operational_rules_missing' THEN RAISE EXCEPTION 'missing storage rules accepted: %',j;END IF;
- INSERT INTO airlinerra_game.aircraft_storage_only_airport_rules_v1 VALUES(1,airport,1.1,40,false,NULL,NULL,false,NULL,'fixture',v_now);
- j:=airlinerra_game.aircraft_storage_leg_airport_screen_v1(airport,1,'departure',v_now,true);
- IF j->>'passed' IS DISTINCT FROM 'true' OR (j->>'requiredRunwayM')::numeric IS DISTINCT FROM 2200::numeric OR j->>'dispatchAuthorized' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'storage runway screen incorrect: %',j;END IF;
- UPDATE airlinerra_game.aircraft_storage_only_airport_rules_v1 SET runway_elevation_factor=1.5 WHERE airport_key=airport;
- j:=airlinerra_game.aircraft_storage_leg_airport_screen_v1(airport,1,'departure',v_now,true);
- IF j->>'status' IS DISTINCT FROM 'storage_runway_screen_blocked' THEN RAISE EXCEPTION 'short runway accepted: %',j;END IF;
- UPDATE airlinerra_game.aircraft_storage_only_airport_rules_v1 SET runway_elevation_factor=1.1,nighttime_ban=true,curfew_start_local='23:00',curfew_end_local='06:00' WHERE airport_key=airport;
- j:=airlinerra_game.aircraft_storage_leg_airport_screen_v1(airport,1,'departure',timestamp '2026-11-27 01:00' AT TIME ZONE 'Europe/Madrid',true);
- IF j->>'status' IS DISTINCT FROM 'storage_curfew_blocked' THEN RAISE EXCEPTION 'overnight curfew bypass: %',j;END IF;
- UPDATE airlinerra_game.aircraft_storage_only_airport_rules_v1 SET nighttime_ban=false,curfew_start_local=NULL,curfew_end_local=NULL,noise_restrictions=true,permitted_noise_chapters=ARRAY[4]::smallint[] WHERE airport_key=airport;
- j:=airlinerra_game.aircraft_storage_leg_airport_screen_v1(airport,1,'departure',v_now,true);
- IF j->>'passed' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'chapter 14 rejected by chapter 4 rule: %',j;END IF;
- UPDATE airlinerra_game.section5_icao_aircraft_certification_v2 SET official_icao_chapter=3 WHERE configuration_id=1;
- j:=airlinerra_game.aircraft_storage_leg_airport_screen_v1(airport,1,'departure',v_now,true);
- IF j->>'status' IS DISTINCT FROM 'storage_noise_chapter_blocked' THEN RAISE EXCEPTION 'noise restriction bypass: %',j;END IF;
- UPDATE airlinerra_game.section5_icao_aircraft_certification_v2 SET noise_certificate_status='UNKNOWN' WHERE configuration_id=1;
- j:=airlinerra_game.aircraft_storage_leg_airport_screen_v1(airport,1,'departure',v_now,true);
- IF j->>'status' IS DISTINCT FROM 'storage_noise_certificate_unverified' THEN RAISE EXCEPTION 'unverified certificate accepted: %',j;END IF;
- UPDATE airlinerra_game.section5_icao_aircraft_certification_v2 SET noise_certificate_status='CERTIFICATE_CONFIGURATION_MATCHED',official_icao_chapter=14 WHERE configuration_id=1;
- j:=airlinerra_game.owned_aircraft_storage_operational_screen_v1(owner_id,s.airline_id,s.aircraft_inventory_id,'storage_reactivation','OURAIRPORTS:999',date_trunc('second',v_now+interval '1 hour'));
- IF j->>'airportScreenPassed' IS DISTINCT FROM 'true' OR j#>>'{licenceScreen,decision}' IS DISTINCT FROM 'STORAGE_FERRY_LICENCE_REVIEW_REQUIRED' OR j->>'clearanceGenerated' IS DISTINCT FROM 'false' OR j->>'bookingEligible' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'incomplete clearance incorrectly released: %',j;END IF;
- IF EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_booking_approvals_v1) THEN RAISE EXCEPTION 'read-only preflight generated approval';END IF;
- RAISE NOTICE 'Storage operational screen acceptance passed (synthetic commercial-screen inputs)';
-END $test$;
 ROLLBACK TO SAVEPOINT storage_operational_screen;
