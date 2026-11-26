@@ -139,3 +139,6 @@ jobs:
            RAISE NOTICE 'Storage request and slot acceptance passed';
           END $slots$;
           SQL
+          psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1 -f tests/sql/aircraft_storage_signed_movement_fixture.sql
+          # Run acceptance inside the review transaction, then roll back.
+          { sed '/^ROLLBACK;$/d' server/sql/aircraft_storage_signed_movement_schema_review.sql; cat tests/sql/aircraft_storage_signed_movement_acceptance.sql; } | psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1
