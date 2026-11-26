@@ -5,6 +5,14 @@ on:
     branches: [feature/aircraft-leasing-billing-review]
     paths:
       - 'server/sql/aircraft_storage*'
+      - 'server/fleet-acquisition-service.mjs'
+      - 'website/airline-workspace.mjs'
+      - 'website/fleet-acquisition-client.mjs'
+      - 'website/local-owner-fleet-reader.mjs'
+      - 'website/dev-scripts/real-player-read-gateway.mjs'
+      - 'tests/test_fleet_acquisition_api.mjs'
+      - 'tests/test_airline_workspace.mjs'
+      - 'tests/sql/aircraft_storage*'
       - '.github/workflows/airlinerra-storage-phase-review.yml'
 jobs:
   storage-phase:
@@ -161,3 +169,9 @@ jobs:
           ROLLBACK;
           SQL
           } | psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Storage interface and authenticated API acceptance
+        run: node --test --test-name-pattern='storage panel|storage overview' tests/test_airline_workspace.mjs tests/test_fleet_acquisition_api.mjs
