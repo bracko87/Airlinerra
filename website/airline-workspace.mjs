@@ -991,6 +991,23 @@ const pages=Object.freeze({
  <div class="fleet-detail-row"><span>Pending relocation</span><strong id="fleet-storage-flight">—</strong></div>
  </div>
  <div class="workspace-actions"><button type="button" class="secondary" id="fleet-store-aircraft" disabled>Store aircraft</button><button type="button" class="secondary" id="fleet-reactivate-aircraft" disabled>Reactivate aircraft</button></div>
+ <div class="workspace-actions"><button type="button" class="secondary" id="fleet-storage-plan" disabled>Preview relocation</button></div>
+ <dialog id="fleet-storage-dialog" class="fleet-configuration-dialog" aria-labelledby="fleet-storage-dialog-title">
+ <div class="fleet-configuration-dialog-inner">
+ <div class="fleet-configuration-dialog-title"><h3 id="fleet-storage-dialog-title">Storage relocation preview</h3><button type="button" class="secondary" id="fleet-storage-close">Close</button></div>
+ <p id="fleet-storage-planning-origin" class="hint"></p>
+ <label class="workspace-label" for="fleet-storage-search">Search destination airport</label>
+ <div class="workspace-actions"><input id="fleet-storage-search" type="search" maxlength="80" placeholder="Airport name or code"><button type="button" class="secondary" id="fleet-storage-search-button">Search</button></div>
+ <label class="workspace-label" for="fleet-storage-destination">Destination airport</label>
+ <select id="fleet-storage-destination" disabled><option value="">Select an airport</option></select>
+ <label class="workspace-label" for="fleet-storage-departure">Departure (UTC, game time)</label>
+ <input id="fleet-storage-departure" type="datetime-local" step="60">
+ <div class="workspace-actions"><button type="button" class="secondary" id="fleet-storage-quote" disabled>Calculate relocation cost</button></div>
+ <p id="fleet-storage-planning-feedback" class="hint" role="status" aria-live="polite"></p>
+ <div id="fleet-storage-quote-result" class="fleet-detail-grid" aria-live="polite"></div>
+ <button type="button" class="primary" disabled id="fleet-storage-book">Confirm relocation booking</button>
+ <p class="hint">Preview only. No aircraft movement, slot reservation, or payment. Final booking is not released.</p>
+ </div></dialog>
  <p class="hint">Unlimited storage duration. A physical relocation flight is required; creating a request alone does not change aircraft location or status.</p>
  <details><summary>Storage history</summary><div id="fleet-storage-history" class="hint">Storage history unavailable.</div></details>
 </section>
@@ -2114,9 +2131,93 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   const disclosure=$('fleet-aircraft-picture-disclosure');
   if(disclosure)disclosure.open=false;
  }
- let storageReadVersion=0;
+ let storageReadVersion=0,storagePlanVersion=0,storagePlanContext=null,storagePreviewAvailable=false;
+ function closeStoragePlanning(){
+  ++storagePlanVersion;storagePlanContext=null;
+  const dialog=$('fleet-storage-dialog');if(dialog?.open)dialog.close();
+ }
+ function storagePlanIsCurrent(ctx,version){
+  return storagePlanContext===ctx&&storagePlanVersion===version&&data.connected&&data.airline?.id===ctx.airlineId&&selectedFleetAircraftId===ctx.aircraftInventoryId&&data.fleetClient===ctx.client&&$('fleet-storage-dialog')?.open;
+ }
+ function resetStorageQuote(){
+  $('fleet-storage-quote-result')?.replaceChildren();
+  const button=$('fleet-storage-quote'),destination=$('fleet-storage-destination'),departure=$('fleet-storage-departure');
+  if(button)button.disabled=!(storagePlanContext&&destination?.value&&departure?.value);
+ }
+ async function searchStorageDestinations(){
+  const ctx=storagePlanContext;if(!ctx)return;
+  const version=++storagePlanVersion;
+  const select=$('fleet-storage-destination'),feedback=$('fleet-storage-planning-feedback');
+  select.replaceChildren(new Option('Select an airport',''));select.disabled=true;resetStorageQuote();
+  feedback.textContent='Searching approved airports…';
+  try{
+   const result=await ctx.client.storageDestinations({airlineId:ctx.airlineId,aircraftInventoryId:ctx.aircraftInventoryId,purpose:ctx.purpose,search:$('fleet-storage-search').value.trim()});
+   if(!storagePlanIsCurrent(ctx,version))return;
+   if(result?.airlineId!==ctx.airlineId||result.aircraftId!==ctx.aircraftInventoryId||result.purpose!==ctx.purpose||result.readOnly!==true||result.actionsReleased!==false||result.status!=='storage_destinations_verified'||!Array.isArray(result.airports)){
+    feedback.textContent='Airport search unavailable or aircraft not ready: '+String(result?.status||'Unverified').replaceAll('_',' ');return;
+   }
+   $('fleet-storage-planning-origin').textContent='Origin: '+String(result.originAirportKey||'Not verified');
+   ctx.airports=new Set();
+   for(const a of result.airports.slice(0,50)){
+    if(typeof a.airportKey!=='string'||ctx.airports.has(a.airportKey))continue;
+    ctx.airports.add(a.airportKey);
+    select.append(new Option([a.airportCode,a.airportName,a.countryIso,a.scope==='relocation_only'?'Storage only':''].filter(Boolean).join(' · '),a.airportKey));
+   }
+   select.disabled=ctx.airports.size===0;
+   const now=Date.parse(result.serverNowUtc);
+   if(Number.isFinite(now)){
+    const input=$('fleet-storage-departure');
+    input.min=new Date(Math.ceil((now+60000)/60000)*60000).toISOString().slice(0,16);
+    input.max=new Date(Math.floor((now+7*86400000)/60000)*60000).toISOString().slice(0,16);
+    if(!input.value||input.value<input.min||input.value>input.max)input.value=input.min;
+   }
+   feedback.textContent=result.searchRequired?'Enter at least two characters to find a return airport.':ctx.airports.size?'Select an airport and departure time.':'No approved matching airports are available.';
+   resetStorageQuote();
+  }catch{if(storagePlanIsCurrent(ctx,version))feedback.textContent='Storage airport information is temporarily unavailable.';}
+ }
+ async function quoteStorageRelocation(){
+  const ctx=storagePlanContext;if(!ctx)return;
+  const destinationAirportKey=$('fleet-storage-destination').value;
+  const field=$('fleet-storage-departure'),value=field.value;
+  if(!ctx.airports?.has(destinationAirportKey)||!value||!field.checkValidity())return;
+  const date=new Date(value+':00Z');if(!Number.isFinite(date.getTime()))return;
+  const departureUtc=date.toISOString().replace('.000Z','Z');
+  const version=++storagePlanVersion;
+  const feedback=$('fleet-storage-planning-feedback'),button=$('fleet-storage-quote');
+  $('fleet-storage-quote-result').replaceChildren();button.disabled=true;feedback.textContent='Calculating server estimate…';
+  try{
+   const q=await ctx.client.storageCostPreview({airlineId:ctx.airlineId,aircraftInventoryId:ctx.aircraftInventoryId,purpose:ctx.purpose,destinationAirportKey,departureUtc});
+   if(!storagePlanIsCurrent(ctx,version))return;
+   if(q?.status!=='storage_cost_preview_verified'||q.airlineId!==ctx.airlineId||q.aircraftId!==ctx.aircraftInventoryId||q.purpose!==ctx.purpose||q.destinationAirportKey!==destinationAirportKey||Date.parse(q.departureUtc)!==Date.parse(departureUtc)||q.readOnly!==true||q.actionsReleased!==false||q.bookable!==false){
+    feedback.textContent='Relocation estimate unavailable: '+String(q?.status||'Unverified').replaceAll('_',' ');return;
+   }
+   const entries=[['Distance',fmtAircraftNumber(q.distanceKm,' km')],['Duration',fmtAircraftNumber(q.durationMinutes,' min')],['Estimated arrival (UTC)',q.arrivalUtc],['Fuel cost',usd(q.fuelUsd)],['Airport fees',usd(q.airportFeesUsd)],['Relocation estimate',usd(q.relocationUsd)]];
+   if(ctx.purpose==='storage_inbound')entries.push(['Monthly storage fee',usd(q.monthlyStorageUsd)]);
+   else entries.push(['Storage payments due by departure',usd(q.billingAtDeparture?.arrearsUsd)]);
+   for(const [label,value] of entries){
+    const row=doc.createElement('div');row.className='fleet-detail-row';
+    const name=doc.createElement('span'),dataValue=doc.createElement('strong');name.textContent=label;dataValue.textContent=String(value??'Not available');row.append(name,dataValue);$('fleet-storage-quote-result').append(row);
+   }
+   feedback.textContent='Estimated relocation cost excludes crew and monthly storage. Booking remains unavailable.';
+  }catch{if(storagePlanIsCurrent(ctx,version))feedback.textContent='Storage cost information is temporarily unavailable.';}
+  finally{if(storagePlanIsCurrent(ctx,version))button.disabled=false;}
+ }
+ function openStoragePlanning(){
+  const aircraft=marketSnapshot?.fleet?.find(x=>x.id===selectedFleetAircraftId),client=data.fleetClient;
+  if(!storagePreviewAvailable||!data.connected||!data.airline?.id||aircraft?.ownershipType!=='owned'||!['in_service','stored'].includes(aircraft.fleetStatus)||typeof client?.storageDestinations!=='function'||typeof client?.storageCostPreview!=='function')return;
+  const dialog=$('fleet-storage-dialog');if(!dialog||dialog.open)return;
+  const purpose=aircraft.fleetStatus==='stored'?'storage_reactivation':'storage_inbound';
+  storagePlanContext={airlineId:data.airline.id,aircraftInventoryId:aircraft.id,purpose,client,airports:new Set()};
+  $('fleet-storage-dialog-title').textContent=purpose==='storage_inbound'?'Preview storage relocation':'Preview reactivation flight';
+  $('fleet-storage-search').value='';$('fleet-storage-departure').value='';$('fleet-storage-planning-origin').textContent='';
+  dialog.showModal();void searchStorageDestinations();
+ }
+
  function renderAircraftStorage(aircraft){
   const version=++storageReadVersion;
+  storagePreviewAvailable=false;
+  if(storagePlanContext&&(storagePlanContext.aircraftInventoryId!==aircraft?.id||storagePlanContext.airlineId!==data.airline?.id||storagePlanContext.client!==data.fleetClient||!data.connected))closeStoragePlanning();
+
   const host=$('fleet-storage-panel');
   if(!host)return;
   const airlineId=data.airline?.id;
@@ -2124,6 +2225,17 @@ export function createAirlineWorkspace({doc,identity,storage,session,goTo}={}){
   const paint=overview=>{
    const p=aircraftStoragePanelState(aircraft,airlineId,overview);
    host.hidden=!p.visible;
+   storagePreviewAvailable=!!(p.verified&&!overview?.pendingRequest&&(aircraft?.fleetStatus==='in_service'||aircraft?.fleetStatus==='stored'&&overview?.session)&&typeof client?.storageDestinations==='function'&&typeof client?.storageCostPreview==='function');
+   const plan=$('fleet-storage-plan');
+   if(plan){plan.disabled=!storagePreviewAvailable;plan.onclick=openStoragePlanning;}
+   const close=$('fleet-storage-close');if(close)close.onclick=closeStoragePlanning;
+   const dialog=$('fleet-storage-dialog');if(dialog)dialog.onclose=()=>{++storagePlanVersion;storagePlanContext=null;};
+   const search=$('fleet-storage-search-button');if(search)search.onclick=()=>void searchStorageDestinations();
+   const quote=$('fleet-storage-quote');if(quote)quote.onclick=()=>void quoteStorageRelocation();
+   for(const id of ['fleet-storage-destination','fleet-storage-departure']){
+    const input=$(id);if(input)input.onchange=()=>{++storagePlanVersion;resetStorageQuote();};
+   }
+
    for(const [id,value] of Object.entries({
     'fleet-storage-state':p.status,'fleet-storage-airport':p.airport,
     'fleet-storage-started':p.started,'fleet-storage-monthly':p.monthly,
