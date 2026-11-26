@@ -287,3 +287,17 @@ test('Finance view uses posted ledger totals and labels bounded history accurate
  assert.equal(full.full,true);assert.equal(full.reconciled,true);assert.equal(full.count,6);
  assert.equal(verifiedFinanceView(null,null,null).available,false);
 });
+
+test('aircraft profile stacks full-width identity above aircraft image and livery on desktop and mobile',async()=>{
+ const [css,workspace]=await Promise.all([read('../website/player-app.css'),read('../website/airline-workspace.mjs')]);
+ const rules=[...css.matchAll(/\.fleet-aircraft-profile-top\{([^}]+)\}/g)];
+ assert.ok(rules.length>=1);
+ for(const rule of rules)assert.match(rule[1],/grid-template-columns:(?:minmax\(0,1fr\)|1fr)\s*;?\s*(?:gap:|$)/);
+ assert.match(css,/\.fleet-aircraft-profile-top>\.fleet-aircraft-image-panel\{width:100%;min-width:0\}/);
+ const top=workspace.indexOf('<div class="fleet-aircraft-profile-top">');
+ const identity=workspace.indexOf('<div class="fleet-aircraft-identity-panel">',top);
+ const image=workspace.indexOf('<section class="fleet-aircraft-image-panel"',identity);
+ const airframe=workspace.indexOf('Airframe condition and usage',image);
+ assert.ok(top>=0&&top<identity&&identity<image&&image<airframe);
+ assert.match(css,/\.fleet-aircraft-image-frame img\{display:block;width:100%;height:auto;max-width:100%;max-height:none;object-fit:contain;border-radius:10px\}/);
+});
