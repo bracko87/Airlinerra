@@ -102,6 +102,11 @@ export function validateFleetAcquisitionRequest(body){
   uuid(body.aircraftInventoryId)&&uuid(body.requestId)&&
   typeof body.airportKey==='string'&&/^[A-Za-z0-9:_-]{2,100}$/u.test(body.airportKey)&&
   typeof body.providerKey==='string'&&/^[a-z0-9-]{2,100}$/u.test(body.providerKey);
+ if(body.action==='storage-book-confirm'){
+  const {requestId,expectedCostUsd,...preview}=body;
+  return uuid(requestId)&&typeof expectedCostUsd==='string'&&/^(?:0|[1-9][0-9]{0,11})\.[0-9]{2}$/u.test(expectedCostUsd)&&Number(expectedCostUsd)>0&&validateFleetAcquisitionRequest({...preview,action:'storage-cost-preview'});
+ }
+ if(body.action==='storage-book-cancel')return Object.keys(body).length===4&&Object.keys(body).every(k=>['action','airlineId','aircraftInventoryId','requestId'].includes(k))&&uuid(body.aircraftInventoryId)&&uuid(body.requestId);
  if(['storage-destinations','storage-cost-preview'].includes(body.action)){
   const quote=body.action==='storage-cost-preview';
   return Object.keys(body).length===(quote?6:5)&&Object.keys(body).every(k=>['action','airlineId','aircraftInventoryId','purpose',...(quote?['destinationAirportKey','departureUtc']:['search'])].includes(k))&&
@@ -127,9 +132,11 @@ export function validateFleetAcquisitionRequest(body){
  return false;
 }
 export const FLEET_SQL=Object.freeze({
+ storageBookConfirm:"SELECT airlinerra_game.confirm_owned_aircraft_storage_booking_v1($1::uuid,$2::uuid,$3::uuid,$4::text,$5::text,$6::timestamptz,$7::numeric,$8::uuid) AS result",
+ storageBookCancel:"SELECT airlinerra_game.cancel_owned_aircraft_storage_booking_v1($1::uuid,$2::uuid,$3::uuid,$4::uuid) AS result",
  storageDestinations:"SELECT airlinerra_game.owned_aircraft_storage_destinations_v1($1::uuid,$2::uuid,$3::uuid,$4::text,$5::text) AS result",
- storageCostPreview:"SELECT airlinerra_game.owned_aircraft_storage_cost_preview_v1($1::uuid,$2::uuid,$3::uuid,$4::text,$5::text,$6::timestamptz) AS result",
- storageOverview:"SELECT airlinerra_game.owned_aircraft_storage_overview_v1($1::uuid,$2::uuid,$3::uuid) AS result",
+ storageCostPreview:"SELECT airlinerra_game.owned_aircraft_storage_booking_preview_v1($1::uuid,$2::uuid,$3::uuid,$4::text,$5::text,$6::timestamptz) AS result",
+ storageOverview:"SELECT airlinerra_game.owned_aircraft_storage_player_overview_v1($1::uuid,$2::uuid,$3::uuid) AS result",
  owner:"SELECT a.id,a.cash_usd::text AS \"cashUsd\" FROM airlinerra_game.airlines a "+
   "JOIN airlinerra_game.world_memberships w ON w.world_id=a.world_id AND w.player_id=a.owner_player_id "+
   "WHERE a.id=$1::uuid AND a.owner_player_id=$2::uuid AND a.world_id=1 AND w.state='active'",
@@ -701,6 +708,19 @@ export function createFleetAcquisitionHandler({verifyUserToken,database}={}){
     if(result.rowCount!==1||!result.rows?.[0]?.result)
      return respond(503,{error:'Auction bid could not be confirmed'});
     return respond(200,result.rows[0].result);
+   }
+   if(['storage-book-confirm','storage-book-cancel'].includes(body.action)){
+    const owner=await client.query(FLEET_SQL.owner,[body.airlineId,playerId]);
+    if(owner.rowCount!==1)return respond(403,{error:'Airline not owned by this account'});
+    const confirm=body.action==='storage-book-confirm';
+    const args=[playerId,body.airlineId,body.aircraftInventoryId,...(confirm?[body.purpose,body.destinationAirportKey,body.departureUtc,body.expectedCostUsd,body.requestId]:[body.requestId])];
+    const result=await client.query(confirm?FLEET_SQL.storageBookConfirm:FLEET_SQL.storageBookCancel,args);
+    const value=result.rows?.[0]?.result;
+    if(result.rowCount!==1||typeof value?.status!=='string'||typeof value[confirm?'booked':'cancelled']!=='boolean'||
+       ((value.booked===true||value.cancelled===true)&&!uuid(value.requestId))||
+       (!confirm&&value.requestId!==body.requestId))
+      return respond(503,{error:'Storage booking status unavailable'});
+    return respond(200,{...value,airlineId:body.airlineId,aircraftId:body.aircraftInventoryId});
    }
    if(['storage-destinations','storage-cost-preview'].includes(body.action)){
     const owner=await client.query(FLEET_SQL.owner,[body.airlineId,playerId]);
