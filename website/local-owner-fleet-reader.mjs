@@ -42,6 +42,8 @@ export function createLocalOwnerFleetReaders({auth,origin,fetchImpl=globalThis.f
   // Same owner-verified individual-airframe detail as the production client.
   // Never allow localhost to place bids, purchase or modify the used aircraft.
   usedDetail:({airlineId,listingId})=>read(FLEET_PATH,{action:'used-detail',airlineId,listingId}),
+  storageDestinations:({airlineId,aircraftInventoryId,purpose,search=''})=>read(FLEET_PATH,{action:'storage-destinations',airlineId,aircraftInventoryId,purpose,search}),
+  storageCostPreview:({airlineId,aircraftInventoryId,purpose,destinationAirportKey,departureUtc})=>read(FLEET_PATH,{action:'storage-cost-preview',airlineId,aircraftInventoryId,purpose,destinationAirportKey,departureUtc}),
   storageOverview:(airlineId,aircraftInventoryId)=>read(FLEET_PATH,{action:'storage-overview',airlineId,aircraftInventoryId}),
   cabinOverview:airlineId=>read(FLEET_PATH,{action:'cabin-overview',airlineId}),
   saveCabinDraft:layout=>read(FLEET_PATH,{action:'cabin-save-draft',...layout}),
