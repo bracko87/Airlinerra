@@ -65,7 +65,7 @@ BEGIN
  'departureTerminalAirTrafficControlUsd',round(o.navigation+d.navigation,2),
  'enrouteAirTrafficControlUsd',round((o.navigation+d.navigation)*0.35,2));
  SELECT sum(value::numeric) INTO fees FROM jsonb_each_text(lines);
- RETURN jsonb_build_object('status','storage_relocation_cost_estimate','bookable',false,'phases',phases,'fuel',fuel,
+ RETURN jsonb_build_object('status','storage_relocation_cost_estimate','bookable',false,'configurationId',p_configuration,'phases',phases,'fuel',fuel,
  'fuelRangeConfirmed',coalesce(fuel->>'withinGameTankIncludingReserve'='true',false),'fuelCostUsd',fuel_cost,
  'airportFeesUsd',fees,'feeLinesUsd',lines,'directOperatingCostUsd',fees+fuel_cost,
  'originTariffReference',o.tariff_reference,'destinationTariffReference',d.tariff_reference,
