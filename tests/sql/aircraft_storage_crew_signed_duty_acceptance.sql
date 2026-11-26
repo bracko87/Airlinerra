@@ -38,6 +38,10 @@ CREATE FUNCTION airlinerra_game.section9_crew_actual_history_v1(p_airline uuid,p
 RETURNS jsonb LANGUAGE sql STABLE AS $$
  SELECT coalesce(nullif(current_setting('test.storage_commercial_history',true),'')::jsonb,jsonb_build_object('availableForNewDuty',true,'history','[]'::jsonb))
 $$;
+CREATE FUNCTION airlinerra_game.section9_owned_weekly_crew_input_v1(p_player uuid,p_airline uuid,p_start timestamptz)
+RETURNS jsonb LANGUAGE sql STABLE AS $$
+ SELECT current_setting('test.storage_weekly_input')::jsonb||jsonb_build_object('windowStartUtc',p_start)
+$$;
 DO $test$
 DECLARE s record; r record; owner_id uuid; rid uuid; dep timestamptz; j jsonb; cash_held numeric; cap uuid:=gen_random_uuid();fo uuid:=gen_random_uuid();h jsonb;
 BEGIN
@@ -108,6 +112,17 @@ BEGIN
  PERFORM set_config('test.storage_commercial_history','',true);
  IF (SELECT count(*) FROM airlinerra_game.aircraft_storage_crew_reservations_v1 WHERE request_id=rid AND status='awaiting_history_handoff')<>2 THEN RAISE EXCEPTION 'history preview released custody';END IF;
  RAISE NOTICE 'Combined commercial and signed storage crew history acceptance passed (synthetic commercial history)';
+ PERFORM set_config('test.storage_weekly_input',jsonb_build_object('status','weekly_crew_bootstrap_input_preview','invalidOccurrenceCount',0,'cabinHeadcountReconciled',true,'flights','[]'::jsonb,'cabinMembers','[]'::jsonb,'pilots',jsonb_build_array(jsonb_build_object('id',cap,'initialAirport',r.origin_airport_key,'locationEffectiveUtc',dep-interval '10 days','permissions','[]'::jsonb)))::text,true);
+ PERFORM set_config('test.storage_hour',(r.arrival_utc+interval '12 hours 29 minutes')::text,true);
+ h:=airlinerra_game.owned_storage_aware_crew_input_preview_v1(owner_id,s.airline_id,r.arrival_utc+interval '13 hours');
+ IF h->>'status' IS DISTINCT FROM 'storage_aware_crew_input_preview' OR jsonb_array_length(h->'pilots')<>0 OR jsonb_array_length(h->'excludedEmployees')<>1 THEN RAISE EXCEPTION 'preview included unrested pilot: %',h;END IF;
+ PERFORM set_config('test.storage_hour',(r.arrival_utc+interval '12 hours 30 minutes')::text,true);
+ h:=airlinerra_game.owned_storage_aware_crew_input_preview_v1(owner_id,s.airline_id,r.arrival_utc+interval '13 hours');
+ IF h->>'status' IS DISTINCT FROM 'storage_aware_crew_input_preview' OR jsonb_array_length(h->'pilots')<>1 OR h#>>'{pilots,0,initialAirport}' IS DISTINCT FROM r.origin_airport_key OR h#>>'{pilots,0,history,0,destination}' IS DISTINCT FROM r.destination_airport_key OR h->>'saveAllowed' IS DISTINCT FROM 'false' OR h->>'crewReleased' IS DISTINCT FROM 'false' OR h->>'enforceRollingWeeklyDutyHours' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'storage-aware planning snapshot invalid: %',h;END IF;
+ IF (SELECT count(*) FROM airlinerra_game.aircraft_storage_crew_reservations_v1 WHERE request_id=rid AND status='awaiting_history_handoff')<>2 THEN RAISE EXCEPTION 'planning snapshot released custody';END IF;
+ PERFORM set_config('test.storage_hour',r.arrival_utc::text,true);
+ RAISE NOTICE 'Storage-aware crew planning snapshot acceptance passed (synthetic weekly roster)';
+
 
  j:=airlinerra_game.execute_aircraft_storage_leg_v1(rid,'arrived');
  IF j->>'replayed' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'worker replay: %',j;END IF;
