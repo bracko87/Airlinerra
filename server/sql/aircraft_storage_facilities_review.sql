@@ -5,7 +5,7 @@ CREATE TABLE airlinerra_game.aircraft_storage_facilities_v1 (
  airport_key text NOT NULL REFERENCES airlinerra.airport_registry(airport_key),
  admission_scope text NOT NULL CHECK(admission_scope IN ('existing_commercial','relocation_only')),
  review_state text NOT NULL DEFAULT 'candidate' CHECK(review_state IN ('candidate','approved','suspended')),
- storage_capacity integer CHECK(storage_capacity>0),
+ -- Unlimited storage: no capacity quota or occupancy admission gate.
  monthly_regional_usd numeric(14,2) CHECK(monthly_regional_usd>0),
  monthly_narrowbody_usd numeric(14,2) CHECK(monthly_narrowbody_usd>0),
  monthly_widebody_usd numeric(14,2) CHECK(monthly_widebody_usd>0),
@@ -16,7 +16,7 @@ CREATE TABLE airlinerra_game.aircraft_storage_facilities_v1 (
  reviewed_at timestamptz,
  PRIMARY KEY(world_id,airport_key),
  CHECK(review_state<>'approved' OR (
- storage_capacity IS NOT NULL AND monthly_regional_usd IS NOT NULL
+ monthly_regional_usd IS NOT NULL
  AND monthly_narrowbody_usd IS NOT NULL AND monthly_widebody_usd IS NOT NULL
  AND nullif(btrim(evidence_reference),'') IS NOT NULL
  AND nullif(btrim(relocation_release_reference),'') IS NOT NULL AND reviewed_at IS NOT NULL)),
