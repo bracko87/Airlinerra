@@ -29,17 +29,17 @@ export function planWeeklyCrew(input,{externalCrewPreview=false}={}) {
  const makeMember=(m,kind)=>{
   if(!m||typeof m.id!=='string'||!m.id||ids.has(m.id)||!validAirport(m.initialAirport)||!Number.isFinite(time(m.locationEffectiveUtc))||!validDay(m.employmentFrom)||!Array.isArray(m.history))throw Error('INVALID_OR_DUPLICATE_CREW_MEMBER');
   ids.add(m.id);localDate(start,m.baseTimezone);
-  const dates=new Set();let lastEnd=null,airport=m.initialAirport,lastArrival=null;
+  const dates=new Set(),completedDuties=[];let lastEnd=null,airport=m.initialAirport,lastArrival=null;
   // History contains completed duties ending before the preview starts, sorted.
   // Initial location is the checkpoint BEFORE history.
   for(const duty of m.history){
    const s=time(duty.startUtc),e=time(duty.endUtc);
    if(!Number.isFinite(s)||!Number.isFinite(e)||e<=s||e-s>720*MIN||s<time(m.locationEffectiveUtc)||e>start||!validAirport(duty.destination)||duty.origin!==airport||(lastEnd!==null&&s-lastEnd<720*MIN))throw Error('INVALID_CREW_HISTORY');
-   dates.add(localDate(s,m.baseTimezone));lastEnd=e;airport=duty.destination;
+   dates.add(localDate(s,m.baseTimezone));completedDuties.push({start:s,end:e});lastEnd=e;airport=duty.destination;
   }
   if(kind==='pilot'&&(!Array.isArray(m.permissions)||m.permissions.some(q=>!q||typeof q.group!=='string'||!validDay(q.issued)||!validDay(q.expires)||q.issued>=q.expires)))throw Error('INVALID_PILOT_PERMISSIONS');
   if(m.absences!==undefined&&(!Array.isArray(m.absences)||m.absences.some(a=>!Number.isFinite(time(a.startUtc))||!Number.isFinite(time(a.endUtc))||time(a.endUtc)<=time(a.startUtc))))throw Error('INVALID_CREW_ABSENCE');
-  return {m,kind,airport,lastEnd,lastArrival,duty:null,dates,assignedMinutes:0};
+  return {m,kind,airport,lastEnd,lastArrival,duty:null,dates,completedDuties,assignedMinutes:0};
  };
  const pilots=input.pilots.map(m=>makeMember(m,'pilot')), cabin=input.cabinMembers.map(m=>makeMember(m,'cabin'));
  const flights=input.flights.map(f=>{
@@ -60,6 +60,20 @@ export function planWeeklyCrew(input,{externalCrewPreview=false}={}) {
   if(s.kind==='cabin')return ['flight_attendant','cabin_supervisor','purser'].includes(s.m.role);
   return s.m.permissions.some(q=>q.group===f.group&&q.active===true&&dayNum(q.issued)<=first&&dayNum(q.expires)>last&&q[role]===true);
  };
+ const withinWeeklyDutyLimit=(s,ds,e,extend)=>{
+  if(input.enforceRollingWeeklyDutyHours!==true)return true;
+  const week=7*DAY;
+  const duties=[...s.completedDuties,...(!extend&&s.duty?[s.duty]:[]),{start:ds,end:e}].filter(d=>d.end>ds-week&&d.start<e+week);
+  const boundaries=new Set([ds-week,e]);
+  for(const d of duties){boundaries.add(d.start);boundaries.add(d.end-week);}
+  for(const w of boundaries){
+   if(w>e||w+week<ds)continue;
+   let total=0;
+   for(const d of duties)total+=Math.max(0,Math.min(d.end,w+week)-Math.max(d.start,w));
+   if(total>60*60*MIN)return false;
+  }
+  return true;
+ };
  const proposed=(s,f,role)=>{
   if(!permitted(s,f,role)||s.airport!==f.origin)return null;
   const e=f.arr+30*MIN;
@@ -78,12 +92,14 @@ export function planWeeklyCrew(input,{externalCrewPreview=false}={}) {
     if(n>5)return null;
    }
   }
+  if(!withinWeeklyDutyLimit(s,ds,e,extend))return null;
   return {s,ds,e,extend:!!extend,role,report,preferred:preferred.get(f.id)?.[role]?.has(s.m.id)===true};
  };
  const ordered=(a,b)=>Number(b.preferred)-Number(a.preferred)||Number(b.extend)-Number(a.extend)||a.s.assignedMinutes-b.s.assignedMinutes||a.s.m.id.localeCompare(b.s.m.id);
  const apply=(p,f)=>{
   const s=p.s;
   s.dates.add(p.report);
+  if(s.duty&&!p.extend)s.completedDuties.push(s.duty);
   s.duty={start:p.ds,end:p.e};
   s.lastEnd=p.e;s.lastArrival=f.arr;s.airport=f.destination;s.assignedMinutes+=(f.arr-f.dep)/MIN;
  };
