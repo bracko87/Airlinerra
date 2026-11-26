@@ -8,6 +8,19 @@ BEGIN
  r:=(j->>'requestId')::uuid;
  j:=airlinerra_game.reserve_aircraft_storage_slots_v1(p,a,r);
  IF j->>'slotsReserved' IS DISTINCT FROM '2' THEN RAISE EXCEPTION 'slot fixture failed: %',j;END IF;
+ -- First reserve and cancel, verifying the hold is fully returned.
+ j:=airlinerra_game.hold_aircraft_storage_funds_v1(p,a,r);
+ IF j->>'fundsHeld' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'cancellation hold failed: %',j;END IF;
+ j:=airlinerra_game.cancel_aircraft_storage_relocation_request_v1(p,a,r);
+ IF j->>'status' IS DISTINCT FROM 'cancelled' OR (SELECT cash_usd FROM airlinerra_game.airlines WHERE id=a)<>5000000 OR NOT EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_funds_v1 WHERE request_id=r AND status='refunded') THEN RAISE EXCEPTION 'hold refund failed: %',j;END IF;
+ j:=airlinerra_game.cancel_aircraft_storage_relocation_request_v1(p,a,r);
+ IF j->>'replayed' IS DISTINCT FROM 'true' OR (SELECT cash_usd FROM airlinerra_game.airlines WHERE id=a)<>5000000 THEN RAISE EXCEPTION 'refund replay failed: %',j;END IF;
+ k:=gen_random_uuid();
+ j:=airlinerra_game.request_aircraft_storage_relocation_v1(p,a,f,'OURAIRPORTS:316427',departure,2698.13,k);
+ IF j->>'created' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'second request failed: %',j;END IF;
+ r:=(j->>'requestId')::uuid;
+ j:=airlinerra_game.reserve_aircraft_storage_slots_v1(p,a,r);
+ IF j->>'slotsReserved' IS DISTINCT FROM '2' THEN RAISE EXCEPTION 'second reservation failed: %',j;END IF;
  physical:=r::text||':'||(departure AT TIME ZONE 'UTC')::date::text||':1';
  SELECT * INTO l FROM airlinerra_game.aircraft_storage_leg_evidence_v1(physical);
  IF NOT FOUND THEN RAISE EXCEPTION 'fixture evidence missing';END IF;
