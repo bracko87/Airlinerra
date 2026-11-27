@@ -8,10 +8,12 @@ assert.equal(manifest.productionAuthorized,false);
 assert.equal(manifest.executionMode,'inventory_only');
 const inputs=manifest.groups.flatMap(g=>g.components);
 const deferred=[];
-const includeCandidateData=process.argv[3]==='--include-candidate-data';
-assert.ok(process.argv.length===3 || (process.argv.length===4 && includeCandidateData),'Expected output or --validate-only, optional --include-candidate-data');
+const existingRegistry=process.argv[3]==='--existing-registry-data';
+const includeCandidateData=existingRegistry||process.argv[3]==='--include-candidate-data';
+assert.ok(process.argv.length===3 || (process.argv.length===4 && includeCandidateData),'Expected output or --validate-only, optional --include-candidate-data or --existing-registry-data');
 const chunks=['BEGIN;','SET LOCAL lock_timeout = \'5s\';','SET LOCAL statement_timeout = \'60s\';'];
-if(includeCandidateData) chunks.push('\\echo STORAGE_SCHEMA_REHEARSAL candidate_registry_fixture.sql',readFileSync('tests/sql/storage_candidate_registry_fixture.sql','utf8'));
+if(existingRegistry) chunks.push('\\echo STORAGE_SCHEMA_REHEARSAL storage_candidate_existing_registry_preflight.sql',readFileSync('tests/sql/storage_candidate_existing_registry_preflight.sql','utf8'));
+else if(includeCandidateData) chunks.push('\\echo STORAGE_SCHEMA_REHEARSAL candidate_registry_fixture.sql',readFileSync('tests/sql/storage_candidate_registry_fixture.sql','utf8'));
 for(const c of inputs){
  const bytes=readFileSync(c.path);
  assert.equal(createHash('sha1').update('blob '+bytes.length+'\0').update(bytes).digest('hex'),c.gitBlobSha,c.path);
@@ -79,4 +81,5 @@ if(process.argv[2]!=='--validate-only'){
  writeFileSync(process.argv[2],output,{mode:0o600,flag:'wx'});
 }
 console.log('PASS assembled '+(inputs.length-(includeCandidateData?0:1))+' SQL components in one rollback-only transaction; '+(includeCandidateData?'all four candidate data blocks included':'four airport data blocks deferred'));
+if(existingRegistry) console.log('REVIEW ONLY: existing registry identity preflight; no synthetic registry inserts; rollback mandatory.');
 console.log('Rehearsal does not validate production operational data, dispatcher runtime behavior or cron installation.');
