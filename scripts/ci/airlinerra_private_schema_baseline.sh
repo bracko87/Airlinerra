@@ -399,6 +399,13 @@ SQL
 
 # Explicit manual storage schema rehearsal, never executed against the source.
 if [[ "${AIRLINERRA_STORAGE_SCHEMA_REHEARSAL:-0}" == 1 ]]; then
+  # Validate the exact reviewed live-source signatures on the verified clone.
+  local_psql -At -f tests/sql/storage_release_source_compatibility_readonly.sql >"$tmp/storage-source-check.log" 2>&1
+  if ! grep -q 'SOURCE_MATCHED' "$tmp/storage-source-check.log" || grep -q 'BLOCKED_SOURCE_DRIFT' "$tmp/storage-source-check.log" || [[ "$(grep -c 'SOURCE_MATCHED' "$tmp/storage-source-check.log")" != 4 ]]; then
+    echo "BLOCKED: storage fuel, maintenance or ledger source compatibility differs." >&2
+    exit 2
+  fi
+  echo "PASS: four storage source fingerprints matched on the private clone."
   node scripts/ci/assemble_storage_schema_rehearsal.mjs "$tmp/storage-schema-rehearsal.sql"
   if ! local_psql -q -v VERBOSITY=verbose -f "$tmp/storage-schema-rehearsal.sql" >"$tmp/storage-rehearsal.log" 2>&1; then
     # Only public repository file markers and SQLSTATE are emitted.
