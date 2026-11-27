@@ -53,7 +53,7 @@ BEGIN
  OR NEW.actual_event_utc IS DISTINCT FROM (CASE WHEN NEW.phase='departed' THEN l.departure_utc ELSE l.arrival_utc END)
  THEN RAISE EXCEPTION 'STORAGE_MOVEMENT_EVIDENCE_MISMATCH';END IF;
  IF NEW.storage_reactivation THEN
-  IF NOT EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_reactivation_release_v1 WHERE world_id=1 AND enabled) THEN RAISE EXCEPTION 'REACTIVATION_NOT_RELEASED';END IF;
+  IF NEW.phase='departed' AND NOT EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_reactivation_release_v1 WHERE world_id=1 AND enabled) THEN RAISE EXCEPTION 'REACTIVATION_NOT_RELEASED';END IF;
   IF NEW.phase='departed' AND (NOT airlinerra_game.reactivation_reservation_evidence_v1(l.request_id)
    OR airlinerra_game.aircraft_storage_reactivation_billing_check_v1((SELECT storage_session_id FROM airlinerra_game.aircraft_storage_relocation_requests_v1 WHERE id=l.request_id),l.departure_utc)->>'cleared' IS DISTINCT FROM 'true')
   THEN RAISE EXCEPTION 'REACTIVATION_DEPARTURE_BLOCKED';END IF;
