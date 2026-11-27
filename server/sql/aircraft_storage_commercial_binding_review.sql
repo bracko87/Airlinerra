@@ -21,12 +21,16 @@ REVOKE ALL ON airlinerra_game.storage_commercial_binding_release_v1,airlinerra_g
 CREATE TRIGGER storage_commercial_departure_evidence_immutable BEFORE UPDATE OR DELETE ON airlinerra_game.storage_commercial_departure_crew_evidence_v1 FOR EACH ROW EXECUTE FUNCTION airlinerra_game.reject_storage_billing_receipt_mutation_v1();
 
 CREATE FUNCTION airlinerra_game.storage_commercial_normalized_duties_v1(p_airline uuid,p_plan uuid,p_occurrence uuid)
-RETURNS jsonb LANGUAGE sql STABLE SET search_path=pg_catalog AS $fn$
- SELECT coalesce(jsonb_agg(jsonb_build_object('seat',to_jsonb(s),'duty',to_jsonb(d)) ORDER BY s.employee_id),'[]'::jsonb)
+RETURNS jsonb LANGUAGE plpgsql STABLE SET search_path=pg_catalog AS $fn$
+DECLARE result jsonb;
+BEGIN
+ IF current_user IS DISTINCT FROM 'postgres' THEN RAISE EXCEPTION USING ERRCODE='42501';END IF;
+ SELECT coalesce(jsonb_agg(jsonb_build_object('seat',to_jsonb(s),'duty',to_jsonb(d)) ORDER BY s.employee_id),'[]'::jsonb) INTO result
  FROM airlinerra_game.section9_planned_crew_seats_v1 s
  JOIN airlinerra_game.section9_planned_crew_duties_v1 d ON d.duty_id=s.duty_id AND d.plan_id=s.plan_id AND d.airline_id=s.airline_id AND d.employee_id=s.employee_id
- WHERE current_user='postgres' AND s.airline_id=p_airline AND s.plan_id=p_plan AND s.occurrence_id=p_occurrence
-$fn$;
+ WHERE s.airline_id=p_airline AND s.plan_id=p_plan AND s.occurrence_id=p_occurrence;
+ RETURN result;
+END $fn$;
 REVOKE ALL ON FUNCTION airlinerra_game.storage_commercial_normalized_duties_v1(uuid,uuid,uuid) FROM PUBLIC,anon,authenticated,service_role;
 
 -- Replace the conservative guard only for an exactly matched handoff when
