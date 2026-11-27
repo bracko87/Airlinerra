@@ -3,6 +3,11 @@ name: Airlinerra private schema-only baseline and restore gate
 # intentionally unavailable to routine pushes on this public repository.
 on:
   workflow_dispatch:
+    inputs:
+      storage_schema_rehearsal:
+        description: 'Run rollback-only integrated storage schema review instead of existing release checks'
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -40,6 +45,7 @@ jobs:
     timeout-minutes: 35
     env:
       AIRLINERRA_SCHEMA_READONLY_URL: ${{ secrets.AIRLINERRA_SCHEMA_READONLY_URL }}
+      AIRLINERRA_STORAGE_SCHEMA_REHEARSAL: ${{ inputs.storage_schema_rehearsal && '1' || '0' }}
     steps:
       - uses: actions/checkout@v4
       - name: Check private source availability without printing connection details
