@@ -145,6 +145,7 @@ CREATE FUNCTION airlinerra_game.section9_owned_rolling_crew_input_v1(p_player uu
 RETURNS jsonb LANGUAGE sql STABLE AS $$SELECT current_setting('test.storage_departure_roster')::jsonb$$;
 CREATE OR REPLACE FUNCTION airlinerra_game.aircraft_storage_leg_airport_screen_v1(p_airport text,p_configuration bigint,p_operation text,p_at timestamptz,p_storage_endpoint boolean) RETURNS jsonb LANGUAGE sql STABLE AS $$SELECT jsonb_build_object('passed',current_setting('test.final_airport',true)='clear')$$;
 CREATE OR REPLACE FUNCTION airlinerra_game.aircraft_storage_ferry_licence_screen_v1(p_airline uuid,p_purpose text,p_origin text,p_destination text,p_dep timestamptz,p_arr timestamptz) RETURNS jsonb LANGUAGE sql STABLE AS $$SELECT jsonb_build_object('allowed',current_setting('test.final_licence',true)='clear')$$;
+\i server/sql/aircraft_storage_commercial_history_guards_review.sql
 DO $test$
 DECLARE s record; r record; owner_id uuid; rid uuid; dep timestamptz; j jsonb; cash_held numeric; cap uuid:=gen_random_uuid();fo uuid:=gen_random_uuid();h jsonb; review_snapshot jsonb; departure_roster jsonb; assignments jsonb; pilot jsonb; new_dep timestamptz; new_arr timestamptz; plan_key uuid:=gen_random_uuid(); flight_key uuid:=gen_random_uuid();
 BEGIN
@@ -456,6 +457,51 @@ BEGIN
   h:=airlinerra_game.bind_storage_aware_commercial_departure_v1(s.airline_id,second_physical,'atomic-commercial-dep');
   IF h->>'replayed' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'binding replay failed: %',h;END IF;
   RAISE NOTICE 'Atomic commercial handoff binding and deferred commit backstop acceptance passed (synthetic pilot manifest writer and commercial movements)';
+  BEGIN
+   UPDATE airlinerra_game.section9_planned_crew_duties_v1 SET duty_end_utc=duty_end_utc+interval '1 minute' WHERE plan_id=plan_key;
+   RAISE EXCEPTION 'operated duty mutation accepted';
+  EXCEPTION WHEN check_violation THEN IF SQLERRM<>'STORAGE_OPERATED_COMMERCIAL_HISTORY_IMMUTABLE' THEN RAISE;END IF;END;
+  BEGIN
+   DELETE FROM airlinerra_game.section9_planned_crew_seats_v1 WHERE plan_id=plan_key AND occurrence_id=second_id;
+   RAISE EXCEPTION 'operated seat deletion accepted';
+  EXCEPTION WHEN check_violation THEN IF SQLERRM<>'STORAGE_OPERATED_COMMERCIAL_HISTORY_IMMUTABLE' THEN RAISE;END IF;END;
+  BEGIN
+   UPDATE airlinerra_game.section9_operated_crew_bindings_v1 SET occurrence_id=flight_key WHERE physical_flight_id=second_physical;
+   RAISE EXCEPTION 'operated binding mutation accepted';
+  EXCEPTION WHEN check_violation THEN IF SQLERRM<>'STORAGE_OPERATED_COMMERCIAL_HISTORY_IMMUTABLE' THEN RAISE;END IF;END;
+  BEGIN
+   UPDATE airlinerra_game.section9_pilot_departure_manifests_v1 SET captain_ids=ARRAY[fo] WHERE physical_flight_id=second_physical;
+   RAISE EXCEPTION 'operated pilot manifest mutation accepted';
+  EXCEPTION WHEN check_violation THEN IF SQLERRM<>'STORAGE_OPERATED_COMMERCIAL_HISTORY_IMMUTABLE' THEN RAISE;END IF;END;
+  h:=airlinerra_game.retire_completed_storage_commercial_plan_v1(owner_id,s.airline_id,plan_key);
+  IF h->>'status' IS DISTINCT FROM 'storage_retirement_not_released' THEN RAISE EXCEPTION 'retirement release bypass: %',h;END IF;
+  UPDATE airlinerra_game.storage_commercial_plan_retirement_release_v1 SET enabled=true;
+  h:=airlinerra_game.retire_completed_storage_commercial_plan_v1(owner_id,s.airline_id,plan_key);
+  IF h->>'status' IS DISTINCT FROM 'storage_retirement_duty_not_rested' THEN RAISE EXCEPTION 'ongoing duty retired: %',h;END IF;
+  PERFORM set_config('test.storage_hour',(second_arr+interval '12 hours 30 minutes')::text,true);
+  h:=airlinerra_game.retire_completed_storage_commercial_plan_v1(owner_id,s.airline_id,plan_key);
+  IF h->>'status' IS DISTINCT FROM 'storage_retirement_binding_missing' THEN RAISE EXCEPTION 'incomplete prior leg retired: %',h;END IF;
+  -- Complete the synthetic first-leg evidence for this retirement-only test.
+  INSERT INTO airlinerra_game.section9_game_flight_fuel_departure_receipts_v1(physical_flight_id,airline_id,aircraft_inventory_id,departure_engine_event_id,planned_trip_burn_kg,configuration_id)
+  VALUES(first_physical,s.airline_id,r.aircraft_inventory_id,'synthetic-prefix-dep',1000,1);
+  PERFORM airlinerra_game.section9_record_pilot_departure_manifest_v1(s.airline_id,first_physical,ARRAY[cap],ARRAY[fo]);
+  INSERT INTO airlinerra_game.storage_commercial_departure_crew_evidence_v1 VALUES('synthetic-prefix-dep',first_physical,s.airline_id,plan_key,flight_key,r.aircraft_inventory_id,1,'fixture',ARRAY[cap],ARRAY[fo],'{}'::uuid[],airlinerra_game.storage_commercial_normalized_duties_v1(s.airline_id,plan_key,flight_key));
+  h:=airlinerra_game.retire_completed_storage_commercial_plan_v1(owner_id,s.airline_id,plan_key);
+  IF h->>'status' IS DISTINCT FROM 'storage_retirement_arrival_or_rest_unverified' THEN RAISE EXCEPTION 'missing arrival receipts accepted: %',h;END IF;
+  INSERT INTO airlinerra_game.section9_operated_flight_movements_v1(world_id,engine_event_id,event_hmac_sha256,airline_id,aircraft_inventory_id,schedule_id,schedule_version,weekly_entry,flight_local_date,flight_occurrence_id,phase,origin_airport_key,destination_airport_key,scheduled_departure_utc,scheduled_arrival_utc,actual_event_utc)
+  VALUES(1,'atomic-commercial-arr',repeat('d',64),s.airline_id,r.aircraft_inventory_id,flight_key,1,2,(second_dep AT TIME ZONE 'UTC')::date,second_physical,'arrived',commercial_stop,r.destination_airport_key,second_dep,second_arr,second_arr);
+  INSERT INTO airlinerra_game.section9_game_flight_fuel_arrival_receipts_v1 VALUES(first_physical,s.airline_id,r.aircraft_inventory_id,'synthetic-prefix-arr',1000,commercial_stop),(second_physical,s.airline_id,r.aircraft_inventory_id,'atomic-commercial-arr',1000,r.destination_airport_key);
+  INSERT INTO airlinerra_game.section9_arrived_aircraft_usage_receipts_v1 VALUES(first_physical,s.airline_id,r.aircraft_inventory_id,'synthetic-prefix-arr','synthetic-prefix-dep',2,1),(second_physical,s.airline_id,r.aircraft_inventory_id,'atomic-commercial-arr','atomic-commercial-dep',2,1);
+  h:=airlinerra_game.retire_completed_storage_commercial_plan_v1(owner_id,s.airline_id,plan_key);
+  IF h->>'retired' IS DISTINCT FROM 'true' OR h->>'flightCount' IS DISTINCT FROM '2' OR h->>'crewCustodyReleased' IS DISTINCT FROM 'false' OR NOT EXISTS(SELECT 1 FROM airlinerra_game.section9_crew_plan_batches_v1 WHERE plan_id=plan_key AND status='superseded') OR NOT EXISTS(SELECT 1 FROM airlinerra_game.storage_commercial_plan_retirements_v1 WHERE plan_id=plan_key AND flight_count=2) THEN RAISE EXCEPTION 'completed plan retirement failed: %',h;END IF;
+  h:=airlinerra_game.retire_completed_storage_commercial_plan_v1(owner_id,s.airline_id,plan_key);
+  IF h->>'replayed' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'retirement replay failed: %',h;END IF;
+  BEGIN
+   UPDATE airlinerra_game.section9_crew_plan_batches_v1 SET status='validated_preview' WHERE plan_id=plan_key;
+   RAISE EXCEPTION 'retired plan reactivated';
+  EXCEPTION WHEN check_violation THEN IF SQLERRM NOT IN('STORAGE_RETIRED_PLAN_CANNOT_REACTIVATE','STORAGE_OPERATED_COMMERCIAL_HISTORY_IMMUTABLE') THEN RAISE;END IF;END;
+  RAISE NOTICE 'Completed storage-aware commercial plan retirement and immutable history acceptance passed (synthetic commercial arrival and pilot evidence)';
+
 
   RAISE EXCEPTION USING ERRCODE='PZ009',MESSAGE='rollback synthetic multi-leg review';
  EXCEPTION WHEN SQLSTATE 'PZ009' THEN NULL;END;
