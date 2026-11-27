@@ -362,19 +362,24 @@ BEGIN
  DECLARE second_id uuid:=gen_random_uuid();second_dep timestamptz:=new_arr+interval '1 hour';second_arr timestamptz:=new_arr+interval '3 hours';
  first_physical text:=flight_key::text||':'||(new_dep AT TIME ZONE 'UTC')::date::text||':1';
  second_physical text:=flight_key::text||':'||((new_arr+interval '1 hour') AT TIME ZONE 'UTC')::date::text||':2';
- new_duties jsonb;second_assignment jsonb;seat_row record;
+ new_duties jsonb;second_assignment jsonb;seat_row record;commercial_stop text:='OURAIRPORTS:998';
  BEGIN
   EXECUTE $mock$CREATE OR REPLACE FUNCTION airlinerra_game.storage_rolling_crew_coverage_v1(p_airline uuid,p_at timestamptz)
   RETURNS jsonb LANGUAGE sql STABLE AS $body$ SELECT jsonb_build_object('coverageVerified',true) $body$ $mock$;
   PERFORM set_config('test.storage_hour',new_dep::text,true);
   SELECT jsonb_agg(v||jsonb_build_object('dutyEndUtc',second_arr+interval '30 minutes','endingAirport',r.destination_airport_key)) INTO new_duties
   FROM airlinerra_game.storage_aware_crew_plan_reviews_v1 pr CROSS JOIN LATERAL jsonb_array_elements(pr.verified_duties) a(v) WHERE pr.plan_id=plan_key;
+  -- Use a separate synthetic commercial airport, never admit Teruel.
+  INSERT INTO airlinerra_game.airport_sections1_8_combined_members_v1 VALUES(1,commercial_stop);
+  INSERT INTO airlinerra_game.approved_game_airports VALUES(1,commercial_stop);
+  UPDATE airlinerra_game.section9_dated_flight_occurrences_v1 SET destination_airport_key=commercial_stop WHERE id=flight_key;
+  UPDATE airlinerra_game.section9_planned_flight_crews_v1 SET destination_airport_key=commercial_stop WHERE plan_id=plan_key AND occurrence_id=flight_key;
   second_assignment:=(assignments->0)||jsonb_build_object('flightId',second_id,'departureUtc',second_dep,'arrivalUtc',second_arr);
   UPDATE airlinerra_game.storage_aware_crew_plan_reviews_v1 SET assignments=storage_aware_crew_plan_reviews_v1.assignments||jsonb_build_array(second_assignment),verified_duties=new_duties WHERE plan_id=plan_key;
   UPDATE airlinerra_game.section9_planned_crew_duties_v1 SET duty_end_utc=second_arr+interval '30 minutes',ending_airport=r.destination_airport_key WHERE plan_id=plan_key;
-  INSERT INTO airlinerra_game.section9_dated_flight_occurrences_v1 VALUES(second_id,s.airline_id,1,flight_key,1,r.aircraft_inventory_id,'open',second_dep,second_arr,r.origin_airport_key,r.destination_airport_key,(second_dep AT TIME ZONE 'UTC')::date,2,0);
+  INSERT INTO airlinerra_game.section9_dated_flight_occurrences_v1 VALUES(second_id,s.airline_id,1,flight_key,1,r.aircraft_inventory_id,'open',second_dep,second_arr,commercial_stop,r.destination_airport_key,(second_dep AT TIME ZONE 'UTC')::date,2,0);
   INSERT INTO airlinerra_game.section9_planned_flight_crews_v1(plan_id,airline_id,occurrence_id,schedule_version,aircraft_inventory_id,physical_flight_id,qualification_group,departure_utc,arrival_utc,origin_airport_key,destination_airport_key,captain_count,first_officer_count,cabin_count)
-  VALUES(plan_key,s.airline_id,second_id,1,r.aircraft_inventory_id,second_physical,'fixture',second_dep,second_arr,r.origin_airport_key,r.destination_airport_key,1,1,0);
+  VALUES(plan_key,s.airline_id,second_id,1,r.aircraft_inventory_id,second_physical,'fixture',second_dep,second_arr,commercial_stop,r.destination_airport_key,1,1,0);
   INSERT INTO airlinerra_game.section9_planned_crew_seats_v1(plan_id,airline_id,occurrence_id,duty_id,employee_id,seat_role)
   SELECT plan_id,airline_id,second_id,duty_id,employee_id,seat_role FROM airlinerra_game.section9_planned_crew_seats_v1 WHERE plan_id=plan_key AND occurrence_id=flight_key;
   h:=airlinerra_game.storage_commercial_crew_departure_readiness_v1(s.airline_id,first_physical);
@@ -385,8 +390,8 @@ BEGIN
   -- Synthetic signed commercial rows only. Do not change the production guard.
   ALTER TABLE airlinerra_game.section9_operated_flight_movements_v1 DISABLE TRIGGER guard_commercial_departure_storage_handoff_v1;
   INSERT INTO airlinerra_game.section9_operated_flight_movements_v1(world_id,engine_event_id,event_hmac_sha256,airline_id,aircraft_inventory_id,schedule_id,schedule_version,weekly_entry,flight_local_date,flight_occurrence_id,phase,origin_airport_key,destination_airport_key,scheduled_departure_utc,scheduled_arrival_utc,actual_event_utc)
-  VALUES(1,'synthetic-prefix-dep',repeat('a',64),s.airline_id,r.aircraft_inventory_id,flight_key,1,1,(new_dep AT TIME ZONE 'UTC')::date,first_physical,'departed',r.destination_airport_key,r.origin_airport_key,new_dep,new_arr,new_dep),
-        (1,'synthetic-prefix-arr',repeat('b',64),s.airline_id,r.aircraft_inventory_id,flight_key,1,1,(new_dep AT TIME ZONE 'UTC')::date,first_physical,'arrived',r.destination_airport_key,r.origin_airport_key,new_dep,new_arr,new_arr);
+  VALUES(1,'synthetic-prefix-dep',repeat('a',64),s.airline_id,r.aircraft_inventory_id,flight_key,1,1,(new_dep AT TIME ZONE 'UTC')::date,first_physical,'departed',r.destination_airport_key,commercial_stop,new_dep,new_arr,new_dep),
+        (1,'synthetic-prefix-arr',repeat('b',64),s.airline_id,r.aircraft_inventory_id,flight_key,1,1,(new_dep AT TIME ZONE 'UTC')::date,first_physical,'arrived',r.destination_airport_key,commercial_stop,new_dep,new_arr,new_arr);
   ALTER TABLE airlinerra_game.section9_operated_flight_movements_v1 ENABLE TRIGGER guard_commercial_departure_storage_handoff_v1;
   INSERT INTO airlinerra_game.section9_operated_crew_bindings_v1(physical_flight_id,airline_id,departure_event_id,plan_id,occurrence_id) VALUES(first_physical,s.airline_id,'synthetic-prefix-dep',plan_key,second_id);
   h:=airlinerra_game.storage_commercial_crew_departure_readiness_v1(s.airline_id,second_physical);
