@@ -10,6 +10,7 @@ CREATE TABLE airlinerra_game.aircraft_storage_fuel_services_v1(
 ALTER TABLE airlinerra_game.aircraft_storage_fuel_services_v1 ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON airlinerra_game.aircraft_storage_fuel_services_v1 FROM PUBLIC,anon,authenticated,service_role;
 
+SAVEPOINT original_facility_review;
 DO $test$
 DECLARE j jsonb;k text:='OURAIRPORTS:316427';commercial text:='OURAIRPORTS:26900';at_time timestamptz;
 BEGIN
@@ -80,3 +81,47 @@ BEGIN
  RAISE NOTICE 'Current storage admission and revocation acceptance passed; historical facility and commercial data preserved';
 
 END $test$;
+
+ROLLBACK TO SAVEPOINT original_facility_review;
+-- Phase 1: each dual-use facility must obtain its own exact review before
+-- admission. These are disposable audited-game-row fixtures, not live approvals.
+DO $phase1$
+DECLARE k text; j jsonb; a jsonb; snapshot jsonb; source_before jsonb; source_after jsonb;
+ n integer:=0; t timestamptz; ref text;
+BEGIN
+ t:=airlinerra_game.section9_verified_world_instant_v1();
+ SELECT jsonb_build_array(
+  (SELECT jsonb_agg(to_jsonb(u) ORDER BY airport_key) FROM airlinerra_game.airport_unified_operations_v1 u),
+  (SELECT jsonb_agg(to_jsonb(u) ORDER BY airport_key) FROM airlinerra_game.section8_airport_operating_tariffs_v1 u),
+  (SELECT jsonb_agg(to_jsonb(u) ORDER BY airport_key) FROM airlinerra_game.section6_airport_slot_capacity_v1 u),
+  (SELECT jsonb_agg(to_jsonb(u) ORDER BY airport_key) FROM airlinerra_game.airport_facilities u)
+ ) INTO source_before;
+ UPDATE airlinerra_game.storage_facility_admission_release_v1 SET enabled=true;
+ FOREACH k IN ARRAY ARRAY['OURAIRPORTS:26900','OURAIRPORTS:4073','OURAIRPORTS:3856'] LOOP
+  j:=airlinerra_game.approve_storage_facility_review_v1(k);
+  IF j->>'status' IS DISTINCT FROM 'storage_facility_final_review_missing' THEN RAISE EXCEPTION 'phase1 missing review bypass %: %',k,j;END IF;
+  snapshot:=airlinerra_game.storage_facility_readiness_snapshot_v1(k);
+  IF snapshot->>'ready' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'phase1 not ready %: %',k,snapshot;END IF;
+  ref:='isolated phase1 fixture '||k;
+  INSERT INTO airlinerra_game.storage_facility_final_reviews_v1 VALUES(1,k,snapshot,ref,'reuse existing game fuel',t,NULL);
+  j:=airlinerra_game.approve_storage_facility_review_v1(k);
+  IF j->>'approved' IS DISTINCT FROM 'true' OR j->>'dispatchAuthorized' IS DISTINCT FROM 'false' OR j->>'commercialAuthorityGranted' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'phase1 approval %: %',k,j;END IF;
+  FOREACH a IN ARRAY ARRAY[airlinerra_game.aircraft_storage_airport_admission_v1(k,'storage_inbound'),airlinerra_game.aircraft_storage_airport_admission_v1(k,'storage_reactivation')] LOOP
+   IF a->>'eligible' IS DISTINCT FROM 'true' OR a->>'storageCapacityUnlimited' IS DISTINCT FROM 'true' OR a->>'scope' IS DISTINCT FROM 'existing_commercial' THEN RAISE EXCEPTION 'phase1 admission %: %',k,a;END IF;
+  END LOOP;
+  n:=n+1;
+  IF (SELECT count(*) FROM airlinerra_game.aircraft_storage_facilities_v1 WHERE review_state='approved')<>n THEN RAISE EXCEPTION 'phase1 unintended approval %',k;END IF;
+  RAISE NOTICE 'Phase 1 individual storage admission passed: %',k;
+ END LOOP;
+ IF EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_fuel_services_v1) THEN RAISE EXCEPTION 'phase1 duplicated commercial fuel';END IF;
+ IF EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_facilities_v1 f WHERE f.airport_key NOT IN('OURAIRPORTS:26900','OURAIRPORTS:4073','OURAIRPORTS:3856') AND (f.review_state='approved' OR airlinerra_game.aircraft_storage_airport_admission_v1(f.airport_key,'storage_inbound')->>'eligible' IS DISTINCT FROM 'false')) THEN RAISE EXCEPTION 'phase1 other airport admitted';END IF;
+ SELECT jsonb_build_array(
+  (SELECT jsonb_agg(to_jsonb(u) ORDER BY airport_key) FROM airlinerra_game.airport_unified_operations_v1 u),
+  (SELECT jsonb_agg(to_jsonb(u) ORDER BY airport_key) FROM airlinerra_game.section8_airport_operating_tariffs_v1 u),
+  (SELECT jsonb_agg(to_jsonb(u) ORDER BY airport_key) FROM airlinerra_game.section6_airport_slot_capacity_v1 u),
+  (SELECT jsonb_agg(to_jsonb(u) ORDER BY airport_key) FROM airlinerra_game.airport_facilities u)
+ ) INTO source_after;
+ IF source_before IS DISTINCT FROM source_after THEN RAISE EXCEPTION 'phase1 commercial source mutated';END IF;
+ RAISE NOTICE 'Phase 1 all three individual approvals, unlimited storage, unchanged commercial data and isolated scope passed';
+END $phase1$;
+ROLLBACK TO SAVEPOINT original_facility_review;
