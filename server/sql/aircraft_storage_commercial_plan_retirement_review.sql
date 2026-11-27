@@ -31,7 +31,7 @@ BEGIN
   IF TG_TABLE_NAME IN('storage_aware_crew_plan_reviews_v1','storage_crew_plan_handoffs_v1','section9_crew_plan_batches_v1') THEN
    IF EXISTS(SELECT 1 FROM airlinerra_game.storage_commercial_departure_crew_evidence_v1 e WHERE e.plan_id=pid) THEN
     IF TG_TABLE_NAME='section9_crew_plan_batches_v1' AND TG_OP='UPDATE' AND (to_jsonb(NEW)-'status')=(to_jsonb(OLD)-'status')
-    AND OLD.status='validated_preview' AND NEW.status='superseded' AND EXISTS(SELECT 1 FROM airlinerra_game.storage_commercial_plan_retirements_v1 t WHERE t.plan_id=pid AND t.airline_id=OLD.airline_id) THEN CONTINUE;END IF;
+    AND to_jsonb(OLD)->>'status'='validated_preview' AND to_jsonb(NEW)->>'status'='superseded' AND EXISTS(SELECT 1 FROM airlinerra_game.storage_commercial_plan_retirements_v1 t WHERE t.plan_id=pid AND t.airline_id=(to_jsonb(OLD)->>'airline_id')::uuid) THEN CONTINUE;END IF;
     RAISE EXCEPTION USING ERRCODE='23514',MESSAGE='STORAGE_OPERATED_COMMERCIAL_HISTORY_IMMUTABLE';
    END IF;
   ELSIF TG_TABLE_NAME IN('section9_operated_crew_bindings_v1','section9_pilot_departure_manifests_v1') THEN
@@ -46,12 +46,6 @@ BEGIN
  RETURN NEW;
 END $fn$;
 REVOKE ALL ON FUNCTION airlinerra_game.guard_operated_storage_commercial_history_v1() FROM PUBLIC,anon,authenticated,service_role;
-CREATE TRIGGER guard_operated_storage_commercial_review_v1 BEFORE UPDATE OR DELETE ON airlinerra_game.storage_aware_crew_plan_reviews_v1 FOR EACH ROW EXECUTE FUNCTION airlinerra_game.guard_operated_storage_commercial_history_v1();
-CREATE TRIGGER guard_operated_storage_commercial_handoff_v1 BEFORE UPDATE OR DELETE ON airlinerra_game.storage_crew_plan_handoffs_v1 FOR EACH ROW EXECUTE FUNCTION airlinerra_game.guard_operated_storage_commercial_history_v1();
-CREATE TRIGGER guard_operated_storage_commercial_batch_v1 BEFORE UPDATE OR DELETE ON airlinerra_game.section9_crew_plan_batches_v1 FOR EACH ROW EXECUTE FUNCTION airlinerra_game.guard_operated_storage_commercial_history_v1();
-CREATE TRIGGER guard_operated_storage_commercial_flight_v1 BEFORE INSERT OR UPDATE OR DELETE ON airlinerra_game.section9_planned_flight_crews_v1 FOR EACH ROW EXECUTE FUNCTION airlinerra_game.guard_operated_storage_commercial_history_v1();
-CREATE TRIGGER guard_operated_storage_commercial_duty_v1 BEFORE INSERT OR UPDATE OR DELETE ON airlinerra_game.section9_planned_crew_duties_v1 FOR EACH ROW EXECUTE FUNCTION airlinerra_game.guard_operated_storage_commercial_history_v1();
-CREATE TRIGGER guard_operated_storage_commercial_seat_v1 BEFORE INSERT OR UPDATE OR DELETE ON airlinerra_game.section9_planned_crew_seats_v1 FOR EACH ROW EXECUTE FUNCTION airlinerra_game.guard_operated_storage_commercial_history_v1();
 
 CREATE OR REPLACE FUNCTION airlinerra_game.guard_storage_handoff_plan_replacement_v1()
 RETURNS trigger LANGUAGE plpgsql SET search_path=pg_catalog AS $fn$
