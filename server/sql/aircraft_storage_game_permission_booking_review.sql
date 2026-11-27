@@ -93,6 +93,8 @@ RETURNS jsonb LANGUAGE plpgsql SET search_path=pg_catalog AS $fn$
 DECLARE r record;v_now timestamptz;
 BEGIN
  IF current_user IS DISTINCT FROM 'postgres' THEN RAISE EXCEPTION USING ERRCODE='42501';END IF;
+ -- Match the worker's airline-first lock order, serializing revocation with departure.
+ PERFORM 1 FROM airlinerra_game.airlines a JOIN airlinerra_game.aircraft_storage_relocation_requests_v1 q ON q.airline_id=a.id WHERE q.id=p_request FOR UPDATE OF a;
  SELECT * INTO r FROM airlinerra_game.storage_game_permission_receipts_v1 WHERE request_id=p_request FOR UPDATE;
  IF NOT FOUND THEN RETURN jsonb_build_object('revoked',false,'status','storage_game_permission_missing');END IF;
  IF r.revoked_at IS NOT NULL THEN RETURN jsonb_build_object('revoked',true,'replayed',true);END IF;
