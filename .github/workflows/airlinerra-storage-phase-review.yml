@@ -274,6 +274,12 @@ jobs:
             for file in aircraft_storage_inbound_arrival_continuity_review aircraft_storage_reactivation_reservation_review aircraft_storage_reactivation_movement_review aircraft_storage_reactivation_lifecycle_review aircraft_storage_execution_worker_review aircraft_storage_booking_confirmation_review aircraft_storage_crew_reservation_guard_review aircraft_storage_crew_bound_booking_review aircraft_storage_automatic_booking_review aircraft_storage_background_tick_review; do
               sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' "server/sql/$file.sql"
             done
+            # Install the actual service-calendar definitions; the browser fixture
+            # supplies the unrelated operational screen and admission inputs.
+            sed '/^-- Keep existing screens intact/,$d' server/sql/aircraft_storage_service_availability_review.sql | sed '/^BEGIN;$/d'
+            for file in aircraft_storage_game_permission_policy_review aircraft_storage_game_permission_booking_review; do
+              sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' "server/sql/$file.sql"
+            done
             echo "COMMIT;"
           } | psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1
       - name: Run Chromium storage database acceptance
