@@ -94,6 +94,7 @@ jobs:
           sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_only_service_profiles_review.sql
           cat tests/sql/aircraft_storage_only_service_profiles_acceptance.sql
           sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_facility_final_approval_review.sql
+          sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_facility_current_admission_review.sql
           cat tests/sql/aircraft_storage_facility_final_approval_acceptance.sql
           echo "ROLLBACK;"
           } | psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1
