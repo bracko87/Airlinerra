@@ -152,8 +152,10 @@ BEGIN
  SELECT * INTO s FROM airlinerra_game.aircraft_storage_sessions_v1 WHERE storage_ended_utc IS NULL;
  SELECT owner_player_id INTO owner_id FROM airlinerra_game.aircraft_storage_relocation_requests_v1 WHERE id=s.request_id;
  PERFORM set_config('test.storage_hour',s.storage_started_utc::text,true);
- j:=airlinerra_game.post_aircraft_storage_month_v1(s.airline_id,s.request_id,1);
- IF j->>'status' IS DISTINCT FROM 'paid' THEN RAISE EXCEPTION 'fixture billing: %',j;END IF;
+ UPDATE airlinerra_game.storage_background_worker_release_v1 SET billing_enabled=true WHERE world_id=1;
+ j:=airlinerra_game.run_storage_background_tick_v1(25);
+ IF j#>>'{results,0,status}' IS DISTINCT FROM 'paid' OR j#>>'{results,0,requestId}' IS DISTINCT FROM s.request_id::text OR j#>>'{results,0,phase}' IS DISTINCT FROM 'billing' THEN RAISE EXCEPTION 'lifecycle automatic billing: %',j;END IF;
+ UPDATE airlinerra_game.storage_background_worker_release_v1 SET billing_enabled=false WHERE world_id=1;
  dep:=date_trunc('second',s.storage_started_utc+interval '2 minutes');
  j:=airlinerra_game.request_aircraft_storage_reactivation_v1(owner_id,s.airline_id,s.aircraft_inventory_id,'OURAIRPORTS:999',dep,2688.13,gen_random_uuid());
  IF j->>'created' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'fixture request: %',j;END IF;
@@ -255,8 +257,11 @@ BEGIN
  IF h->>'passed' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'valid operational recheck failed: %',h;END IF;
  RAISE NOTICE 'Final storage departure operational revalidation acceptance passed (synthetic airport and licence screens)';
 
- j:=airlinerra_game.advance_aircraft_storage_relocations_v1(10);
- IF j#>>'{results,0,movementRecorded}' IS DISTINCT FROM 'true' OR j#>>'{results,0,settlement,billingStopped}' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'automatic outbound departure: %',j;END IF;
+ UPDATE airlinerra_game.storage_background_worker_release_v1 SET movement_enabled=true WHERE world_id=1;
+ j:=airlinerra_game.run_storage_background_tick_v1(25);
+ IF j#>>'{results,0,movementRecorded}' IS DISTINCT FROM 'true' OR j#>>'{results,0,settlement,billingStopped}' IS DISTINCT FROM 'true' OR j#>>'{results,0,phase}' IS DISTINCT FROM 'departed' OR j#>>'{results,0,requestId}' IS DISTINCT FROM rid::text THEN RAISE EXCEPTION 'automatic outbound departure: %',j;END IF;
+ j:=airlinerra_game.run_storage_background_tick_v1(25);
+ IF j->'results' IS DISTINCT FROM '[]'::jsonb THEN RAISE EXCEPTION 'duplicate lifecycle departure: %',j;END IF;
  IF (SELECT count(*) FROM airlinerra_game.aircraft_storage_crew_duty_receipts_v1 WHERE request_id=rid AND arrival_engine_event_id IS NULL)<>2 THEN RAISE EXCEPTION 'signed crew departure receipts missing';END IF;
  h:=airlinerra_game.storage_crew_history_for_booking_review_v1(s.airline_id,cap,dep,r.origin_airport_key,dep-interval '10 days',rid);
  IF h->>'status' IS DISTINCT FROM 'storage_history_request_exemption_invalid' THEN RAISE EXCEPTION 'signed departure exemption accepted: %',h;END IF;
@@ -275,8 +280,22 @@ BEGIN
  IF j#>>'{results,0,status}' IS DISTINCT FROM 'storage_leg_rolled_back' OR EXISTS(SELECT 1 FROM airlinerra_game.section9_operated_flight_movements_v1 WHERE storage_request_id=rid AND phase='arrived') OR NOT EXISTS(SELECT 1 FROM airlinerra_game.section9_aircraft_current_position_v1 WHERE aircraft_inventory_id=r.aircraft_inventory_id AND location_status='in_flight') THEN RAISE EXCEPTION 'arrival rollback failed: %',j;END IF;
  IF EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_crew_duty_receipts_v1 WHERE request_id=rid AND arrival_engine_event_id IS NOT NULL) THEN RAISE EXCEPTION 'failed arrival completed crew duty';END IF;
  PERFORM set_config('test.storage_fail_burn','no',true);
- j:=airlinerra_game.advance_aircraft_storage_relocations_v1(10);
- IF j#>>'{results,0,settlement,status}' IS DISTINCT FROM 'aircraft_reactivated' OR NOT EXISTS(SELECT 1 FROM airlinerra_game.airline_aircraft_inventory WHERE id=r.aircraft_inventory_id AND fleet_status='in_service') OR (SELECT cash_usd FROM airlinerra_game.airlines WHERE id=r.airline_id) IS DISTINCT FROM cash_held THEN RAISE EXCEPTION 'automatic outbound arrival: %',j;END IF;
+ j:=airlinerra_game.run_storage_background_tick_v1(25);
+ IF j#>>'{results,0,phase}' IS DISTINCT FROM 'arrived' OR j#>>'{results,0,requestId}' IS DISTINCT FROM rid::text OR j#>>'{results,0,settlement,status}' IS DISTINCT FROM 'aircraft_reactivated' OR NOT EXISTS(SELECT 1 FROM airlinerra_game.airline_aircraft_inventory WHERE id=r.aircraft_inventory_id AND fleet_status='in_service') OR (SELECT cash_usd FROM airlinerra_game.airlines WHERE id=r.airline_id) IS DISTINCT FROM cash_held THEN RAISE EXCEPTION 'automatic outbound arrival: %',j;END IF;
+ j:=airlinerra_game.run_storage_background_tick_v1(25);
+ IF j->'results' IS DISTINCT FROM '[]'::jsonb THEN RAISE EXCEPTION 'duplicate lifecycle arrival: %',j;END IF;
+ IF NOT EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_sessions_v1 WHERE request_id=s.request_id AND storage_ended_utc=dep)
+ OR NOT EXISTS(SELECT 1 FROM airlinerra_game.section9_aircraft_current_position_v1 WHERE aircraft_inventory_id=r.aircraft_inventory_id AND location_status='grounded' AND airport_key=r.destination_airport_key)
+ OR (SELECT count(*) FROM airlinerra_game.aircraft_storage_monthly_receipts_v1 WHERE request_id=s.request_id)<>1
+ OR (SELECT count(*) FROM airlinerra_game.section9_operated_flight_movements_v1 WHERE storage_request_id=rid)<>2 THEN RAISE EXCEPTION 'lifecycle settlement not reconciled';END IF;
+ BEGIN
+  PERFORM set_config('test.storage_hour',(r.arrival_utc+interval '2 months')::text,true);
+  UPDATE airlinerra_game.storage_background_worker_release_v1 SET billing_enabled=true WHERE world_id=1;
+  j:=airlinerra_game.run_storage_background_tick_v1(25);
+  IF EXISTS(SELECT 1 FROM jsonb_array_elements(j->'results') e WHERE e->>'requestId'=s.request_id::text AND e->>'phase'='billing') OR (SELECT count(*) FROM airlinerra_game.aircraft_storage_monthly_receipts_v1 WHERE request_id=s.request_id)<>1 OR (SELECT cash_usd FROM airlinerra_game.airlines WHERE id=r.airline_id) IS DISTINCT FROM cash_held THEN RAISE EXCEPTION 'ended session billed again: %',j;END IF;
+  RAISE NOTICE 'Integrated background billing, reactivation departure/arrival, replay and ended-session billing acceptance passed';
+  RAISE EXCEPTION USING ERRCODE='PZ009',MESSAGE='rollback future lifecycle clock';
+ EXCEPTION WHEN SQLSTATE 'PZ009' THEN NULL;END;
  IF (SELECT count(*) FROM airlinerra_game.aircraft_storage_crew_duty_receipts_v1 WHERE request_id=rid AND actual_arrival_utc=r.arrival_utc AND completed_duty_end_utc=r.arrival_utc+interval '30 minutes' AND rest_complete_utc=r.arrival_utc+interval '12 hours 30 minutes')<>2 THEN RAISE EXCEPTION 'completed crew duties missing';END IF;
  IF (SELECT count(*) FROM airlinerra_game.aircraft_storage_crew_reservations_v1 WHERE request_id=rid AND status='awaiting_history_handoff')<>2 THEN RAISE EXCEPTION 'crew custody released prematurely';END IF;
  h:=airlinerra_game.storage_crew_completed_duty_history_v1(s.airline_id,cap,r.arrival_utc);
