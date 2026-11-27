@@ -125,3 +125,44 @@ BEGIN
  RAISE NOTICE 'Phase 1 all three individual approvals, unlimited storage, unchanged commercial data and isolated scope passed';
 END $phase1$;
 ROLLBACK TO SAVEPOINT original_facility_review;
+
+-- Phase 2: exercise both dedicated storage airports without treating synthetic
+-- operational inputs as verified real-world restrictions or granting live rights.
+SAVEPOINT phase2_facility_review;
+DO $phase2$
+DECLARE k text; j jsonb; a jsonb; t timestamptz; n integer:=0; ref text;
+BEGIN
+ t:=airlinerra_game.section9_verified_world_instant_v1();
+ k:='OURAIRPORTS:21315';
+ j:=airlinerra_game.stage_storage_only_operational_profile_v1(k);
+ IF j->>'status' IS DISTINCT FROM 'storage_profile_review_required' THEN RAISE EXCEPTION 'Victorville unreviewed staging: %',j;END IF;
+ INSERT INTO airlinerra_game.aircraft_storage_only_profile_reviews_v1 VALUES(1,k,3979,45.72,'CON',1.2,30,false,NULL,NULL,false,NULL,true,'synthetic runway','synthetic restrictions','synthetic access',t);
+ j:=airlinerra_game.stage_storage_only_operational_profile_v1(k);
+ IF j->>'status' IS DISTINCT FROM 'storage_profile_review_mismatch' THEN RAISE EXCEPTION 'Victorville overstated runway accepted: %',j;END IF;
+ UPDATE airlinerra_game.aircraft_storage_only_profile_reviews_v1 SET reviewed_runway_length_m=3978 WHERE airport_key=k;
+ j:=airlinerra_game.stage_storage_only_operational_profile_v1(k);
+ IF j->>'staged' IS DISTINCT FROM 'true' OR j->>'storageCapacityUnlimited' IS DISTINCT FROM 'true' OR j->>'storageAdmissionChanged' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'Victorville staging: %',j;END IF;
+ UPDATE airlinerra_game.storage_facility_admission_release_v1 SET enabled=true;
+ FOREACH k IN ARRAY ARRAY['OURAIRPORTS:316427','OURAIRPORTS:21315'] LOOP
+  j:=airlinerra_game.approve_storage_facility_review_v1(k);
+  IF j->>'status' IS DISTINCT FROM 'storage_facility_final_review_missing' THEN RAISE EXCEPTION 'phase2 missing review bypass %: %',k,j;END IF;
+  j:=airlinerra_game.storage_facility_readiness_snapshot_v1(k);
+  IF j->>'ready' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'phase2 readiness %: %',k,j;END IF;
+  ref:='synthetic phase2 '||k;
+  INSERT INTO airlinerra_game.storage_facility_final_reviews_v1 VALUES(1,k,j,ref,ref||' fuel',t,NULL);
+  j:=airlinerra_game.approve_storage_facility_review_v1(k);
+  IF j->>'approved' IS DISTINCT FROM 'true' OR j->>'commercialAuthorityGranted' IS DISTINCT FROM 'false' OR j->>'dispatchAuthorized' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'phase2 approval %: %',k,j;END IF;
+  FOREACH a IN ARRAY ARRAY[airlinerra_game.aircraft_storage_airport_admission_v1(k,'storage_inbound'),airlinerra_game.aircraft_storage_airport_admission_v1(k,'storage_reactivation')] LOOP
+   IF a->>'eligible' IS DISTINCT FROM 'true' OR a->>'scope' IS DISTINCT FROM 'relocation_only' OR a->>'storageCapacityUnlimited' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'phase2 admission %: %',k,a;END IF;
+  END LOOP;
+  IF airlinerra_game.aircraft_storage_airport_admission_v1(k,'commercial')->>'eligible' IS DISTINCT FROM 'false'
+  OR EXISTS(SELECT 1 FROM airlinerra_game.airport_unified_operations_v1 WHERE airport_key=k AND operationally_authorized)
+  OR NOT EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_fuel_services_v1 WHERE airport_key=k AND fuel_game_family='TURBINE_KEROSENE_ASSUMED' AND approval_reference=ref||' fuel') THEN RAISE EXCEPTION 'phase2 scope/fuel %',k;END IF;
+  n:=n+1;
+  IF (SELECT count(*) FROM airlinerra_game.aircraft_storage_facilities_v1 WHERE review_state='approved')<>n THEN RAISE EXCEPTION 'phase2 unrelated facility approved';END IF;
+  RAISE NOTICE 'Phase 2 individual storage-only admission passed: % (synthetic operational review)',k;
+ END LOOP;
+ IF (SELECT count(*) FROM airlinerra_game.aircraft_storage_fuel_services_v1)<>2 THEN RAISE EXCEPTION 'phase2 unexpected fuel scope';END IF;
+ RAISE NOTICE 'Phase 2 both dedicated storage airports passed; no commercial rights or capacity quotas';
+END $phase2$;
+ROLLBACK TO SAVEPOINT phase2_facility_review;
