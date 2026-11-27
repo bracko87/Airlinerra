@@ -181,7 +181,7 @@ BEGIN
  IF j->'results' IS DISTINCT FROM '[]'::jsonb THEN RAISE EXCEPTION 'expiry replay produced work: %',j;END IF;
  SELECT count(*) INTO paid_before FROM airlinerra_game.aircraft_storage_monthly_receipts_v1 WHERE request_id=s.request_id;
  SELECT monthly_usd,anchor_game_date INTO rate,anchor FROM airlinerra_game.aircraft_storage_billing_terms_v1 WHERE request_id=s.request_id;
- PERFORM set_config('test.storage_hour',((airlinerra_game.storage_month_anniversary_v1(anchor,paid_before)+time '12:00') AT TIME ZONE 'Europe/Berlin')::text,true);
+ PERFORM set_config('test.storage_hour',greatest(s.storage_started_utc,dep+interval '10 minutes',((airlinerra_game.storage_month_anniversary_v1(anchor,paid_before)+time '12:00') AT TIME ZONE 'Europe/Berlin'))::text,true);
  UPDATE airlinerra_game.storage_background_worker_release_v1 SET billing_enabled=true;
  j:=airlinerra_game.run_storage_background_tick_v1(10);
  IF j#>>'{results,0,status}' IS DISTINCT FROM 'paid' OR (j#>>'{results,0,amountUsd}')::numeric IS DISTINCT FROM rate
