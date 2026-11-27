@@ -259,6 +259,18 @@ jobs:
             echo "CREATE TABLE airlinerra_game.aircraft_storage_automatic_booking_release_v1(world_id smallint PRIMARY KEY,enabled boolean NOT NULL DEFAULT false); INSERT INTO airlinerra_game.aircraft_storage_automatic_booking_release_v1(world_id) VALUES(1); CREATE TABLE airlinerra_game.storage_operational_departure_release_v1(world_id smallint PRIMARY KEY,enabled boolean NOT NULL DEFAULT false); INSERT INTO airlinerra_game.storage_operational_departure_release_v1(world_id) VALUES(1); CREATE TABLE airlinerra_game.storage_crew_departure_validation_release_v1(world_id smallint PRIMARY KEY,enabled boolean NOT NULL DEFAULT false); INSERT INTO airlinerra_game.storage_crew_departure_validation_release_v1(world_id) VALUES(1); CREATE TABLE airlinerra_game.aircraft_storage_crew_booking_release_v1(world_id smallint PRIMARY KEY,enabled boolean NOT NULL DEFAULT false); INSERT INTO airlinerra_game.aircraft_storage_crew_booking_release_v1(world_id) VALUES(1); CREATE TABLE airlinerra_game.aircraft_storage_booking_release_v1(world_id smallint PRIMARY KEY,enabled boolean NOT NULL DEFAULT false); INSERT INTO airlinerra_game.aircraft_storage_booking_release_v1(world_id) VALUES(1); CREATE TABLE airlinerra_game.aircraft_storage_execution_release_v1(world_id smallint PRIMARY KEY,execution_enabled boolean NOT NULL DEFAULT false,fuel_adapter_enabled boolean NOT NULL DEFAULT false); INSERT INTO airlinerra_game.aircraft_storage_execution_release_v1(world_id) VALUES(1); CREATE TABLE airlinerra_game.aircraft_storage_reactivation_release_v1(world_id smallint PRIMARY KEY,enabled boolean NOT NULL DEFAULT false); INSERT INTO airlinerra_game.aircraft_storage_reactivation_release_v1(world_id) VALUES(1);"
             echo "UPDATE airlinerra_game.aircraft_storage_signed_movement_release_v1 SET enabled=false; COMMIT;"
           } | psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1
+      - name: Prepare real booking transaction functions for browser acceptance
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1 -f tests/sql/aircraft_storage_browser_booking_fixture.sql
+          {
+            echo "BEGIN; DROP TABLE airlinerra_game.aircraft_storage_booking_release_v1,airlinerra_game.aircraft_storage_crew_booking_release_v1,airlinerra_game.aircraft_storage_automatic_booking_release_v1;"
+            for file in aircraft_storage_reactivation_reservation_review aircraft_storage_execution_worker_review aircraft_storage_booking_confirmation_review aircraft_storage_crew_reservation_guard_review aircraft_storage_crew_bound_booking_review aircraft_storage_automatic_booking_review; do
+              sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' "server/sql/$file.sql"
+            done
+            echo "COMMIT;"
+          } | psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1
       - name: Run Chromium storage database acceptance
         shell: bash
         env:
