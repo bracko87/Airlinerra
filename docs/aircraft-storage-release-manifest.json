@@ -76,7 +76,7 @@
         },
         {
           "path": "server/sql/aircraft_storage_billing_class_staging_review.sql",
-          "gitBlobSha": "c703ca04ce5262ad7611fe650d611eb1c074a841"
+          "gitBlobSha": "8cf8de6fca37f5fe8266608be3edd4e3ab82d993"
         },
         {
           "path": "server/sql/aircraft_storage_reactivation_request_review.sql",
