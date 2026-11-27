@@ -37,7 +37,8 @@ LANGUAGE sql STABLE SET search_path=pg_catalog AS $fn$
  FROM airlinerra_game.aircraft_storage_any_leg_evidence_v1(p_physical) l
  WHERE EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_execution_release_v1
  WHERE world_id=1 AND fuel_adapter_enabled AND execution_enabled)
- AND (l.purpose='storage_inbound' OR (l.purpose='storage_reactivation' AND EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_reactivation_release_v1 WHERE world_id=1 AND enabled)))
+ AND (l.purpose='storage_inbound' OR (l.purpose='storage_reactivation' AND (EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_reactivation_release_v1 WHERE world_id=1 AND enabled)
+ OR EXISTS(SELECT 1 FROM airlinerra_game.section9_operated_flight_movements_v1 d WHERE d.storage_request_id=l.request_id AND d.phase='departed' AND d.storage_reactivation AND d.flight_occurrence_id=p_physical AND d.airline_id=l.airline_id AND d.aircraft_inventory_id=l.aircraft_inventory_id AND d.actual_event_utc=l.departure_utc))))
  AND NOT EXISTS(SELECT 1 FROM airlinerra_game.section9_relocation_leg_evidence_v1(p_physical));
 $fn$;
 REVOKE ALL ON FUNCTION airlinerra_game.aircraft_storage_fuel_leg_lookup_v1(text) FROM PUBLIC,anon,authenticated,service_role;
