@@ -1,0 +1,1904 @@
+{
+  "status": "proposed_game_balance_review_not_approved",
+  "catalogueDate": "2026-11-27",
+  "familyMappingBlob": "f8a5e44348396b481df2097ec98bc3a5b7bcb6eb",
+  "configurations": [
+    {
+      "configuration_id": 1,
+      "family_id": 6,
+      "variant_id": 1,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 2,
+      "family_id": 6,
+      "variant_id": 2,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 3,
+      "family_id": 12,
+      "variant_id": 3,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 4,
+      "family_id": 15,
+      "variant_id": 4,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 5,
+      "family_id": 2,
+      "variant_id": 5,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 6,
+      "family_id": 45,
+      "variant_id": 6,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 7,
+      "family_id": 47,
+      "variant_id": 7,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 8,
+      "family_id": 21,
+      "variant_id": 8,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 9,
+      "family_id": 22,
+      "variant_id": 9,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 10,
+      "family_id": 23,
+      "variant_id": 10,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 11,
+      "family_id": 17,
+      "variant_id": 11,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 12,
+      "family_id": 37,
+      "variant_id": 12,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 13,
+      "family_id": 14,
+      "variant_id": 53,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 14,
+      "family_id": 14,
+      "variant_id": 52,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 15,
+      "family_id": 13,
+      "variant_id": 51,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 16,
+      "family_id": 12,
+      "variant_id": 50,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 17,
+      "family_id": 12,
+      "variant_id": 48,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 18,
+      "family_id": 12,
+      "variant_id": 47,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 19,
+      "family_id": 12,
+      "variant_id": 46,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 20,
+      "family_id": 11,
+      "variant_id": 45,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 21,
+      "family_id": 11,
+      "variant_id": 44,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 22,
+      "family_id": 11,
+      "variant_id": 43,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 23,
+      "family_id": 10,
+      "variant_id": 42,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 24,
+      "family_id": 9,
+      "variant_id": 41,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 25,
+      "family_id": 9,
+      "variant_id": 40,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 26,
+      "family_id": 8,
+      "variant_id": 39,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 27,
+      "family_id": 16,
+      "variant_id": 55,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 28,
+      "family_id": 15,
+      "variant_id": 54,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 29,
+      "family_id": 7,
+      "variant_id": 38,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 30,
+      "family_id": 6,
+      "variant_id": 37,
+      "configuration_code": "COMBI-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 31,
+      "family_id": 6,
+      "variant_id": 36,
+      "configuration_code": "COMBI-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 32,
+      "family_id": 6,
+      "variant_id": 35,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 33,
+      "family_id": 6,
+      "variant_id": 34,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 34,
+      "family_id": 6,
+      "variant_id": 33,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 35,
+      "family_id": 6,
+      "variant_id": 32,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 36,
+      "family_id": 6,
+      "variant_id": 31,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 37,
+      "family_id": 5,
+      "variant_id": 30,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 38,
+      "family_id": 5,
+      "variant_id": 29,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 39,
+      "family_id": 5,
+      "variant_id": 28,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 40,
+      "family_id": 5,
+      "variant_id": 27,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 41,
+      "family_id": 5,
+      "variant_id": 26,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 42,
+      "family_id": 4,
+      "variant_id": 25,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 43,
+      "family_id": 4,
+      "variant_id": 24,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 44,
+      "family_id": 4,
+      "variant_id": 23,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 45,
+      "family_id": 3,
+      "variant_id": 22,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 46,
+      "family_id": 3,
+      "variant_id": 21,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 47,
+      "family_id": 3,
+      "variant_id": 20,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 48,
+      "family_id": 3,
+      "variant_id": 19,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 49,
+      "family_id": 3,
+      "variant_id": 18,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 50,
+      "family_id": 2,
+      "variant_id": 17,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 51,
+      "family_id": 2,
+      "variant_id": 16,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 52,
+      "family_id": 2,
+      "variant_id": 15,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 53,
+      "family_id": 1,
+      "variant_id": 14,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 54,
+      "family_id": 1,
+      "variant_id": 13,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 55,
+      "family_id": 38,
+      "variant_id": 68,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 56,
+      "family_id": 38,
+      "variant_id": 67,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 57,
+      "family_id": 38,
+      "variant_id": 66,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 58,
+      "family_id": 37,
+      "variant_id": 65,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 59,
+      "family_id": 36,
+      "variant_id": 64,
+      "configuration_code": "COMBI-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 60,
+      "family_id": 36,
+      "variant_id": 63,
+      "configuration_code": "COMBI-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 61,
+      "family_id": 36,
+      "variant_id": 62,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 62,
+      "family_id": 50,
+      "variant_id": 72,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 63,
+      "family_id": 18,
+      "variant_id": 58,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 64,
+      "family_id": 18,
+      "variant_id": 57,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 65,
+      "family_id": 18,
+      "variant_id": 56,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 66,
+      "family_id": 41,
+      "variant_id": 70,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 67,
+      "family_id": 42,
+      "variant_id": 71,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 68,
+      "family_id": 40,
+      "variant_id": 69,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 69,
+      "family_id": 31,
+      "variant_id": 61,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 70,
+      "family_id": 30,
+      "variant_id": 60,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 71,
+      "family_id": 30,
+      "variant_id": 59,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 72,
+      "family_id": 12,
+      "variant_id": 76,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 73,
+      "family_id": 12,
+      "variant_id": 75,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 74,
+      "family_id": 11,
+      "variant_id": 74,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 75,
+      "family_id": 53,
+      "variant_id": 84,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 76,
+      "family_id": 19,
+      "variant_id": 81,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 77,
+      "family_id": 19,
+      "variant_id": 80,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 78,
+      "family_id": 19,
+      "variant_id": 79,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 79,
+      "family_id": 18,
+      "variant_id": 78,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 80,
+      "family_id": 15,
+      "variant_id": 77,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 81,
+      "family_id": 32,
+      "variant_id": 82,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 82,
+      "family_id": 39,
+      "variant_id": 83,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 83,
+      "family_id": 58,
+      "variant_id": 85,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 84,
+      "family_id": 1,
+      "variant_id": 73,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 85,
+      "family_id": 6,
+      "variant_id": 1,
+      "configuration_code": "AIR-INUIT-CARGO",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 86,
+      "family_id": 6,
+      "variant_id": 1,
+      "configuration_code": "AIR-INUIT-COMBI",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 87,
+      "family_id": 11,
+      "variant_id": 45,
+      "configuration_code": "QANTAS-FREIGHT-CARGO-CONVERSION",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 88,
+      "family_id": 12,
+      "variant_id": 48,
+      "configuration_code": "QANTAS-FREIGHT-CARGO-CONVERSION",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 89,
+      "family_id": 36,
+      "variant_id": 63,
+      "configuration_code": "AIR-INUIT-PASSENGER",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 90,
+      "family_id": 36,
+      "variant_id": 63,
+      "configuration_code": "AIR-INUIT-CARGO",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 91,
+      "family_id": 36,
+      "variant_id": 64,
+      "configuration_code": "AIR-INUIT-PASSENGER",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 92,
+      "family_id": 35,
+      "variant_id": 90,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 93,
+      "family_id": 48,
+      "variant_id": 96,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 94,
+      "family_id": 59,
+      "variant_id": 104,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 95,
+      "family_id": 20,
+      "variant_id": 88,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 96,
+      "family_id": 57,
+      "variant_id": 103,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 97,
+      "family_id": 51,
+      "variant_id": 99,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 98,
+      "family_id": 52,
+      "variant_id": 100,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 99,
+      "family_id": 38,
+      "variant_id": 93,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 100,
+      "family_id": 38,
+      "variant_id": 92,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 101,
+      "family_id": 49,
+      "variant_id": 98,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 102,
+      "family_id": 49,
+      "variant_id": 97,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 103,
+      "family_id": 43,
+      "variant_id": 94,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 104,
+      "family_id": 60,
+      "variant_id": 105,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 105,
+      "family_id": 36,
+      "variant_id": 91,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 106,
+      "family_id": 62,
+      "variant_id": 108,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 107,
+      "family_id": 62,
+      "variant_id": 107,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 108,
+      "family_id": 61,
+      "variant_id": 106,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 109,
+      "family_id": 46,
+      "variant_id": 95,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 110,
+      "family_id": 29,
+      "variant_id": 89,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 111,
+      "family_id": 16,
+      "variant_id": 87,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 112,
+      "family_id": 54,
+      "variant_id": 102,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 113,
+      "family_id": 54,
+      "variant_id": 101,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 114,
+      "family_id": 6,
+      "variant_id": 86,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 115,
+      "family_id": 11,
+      "variant_id": 114,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 116,
+      "family_id": 10,
+      "variant_id": 112,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 117,
+      "family_id": 12,
+      "variant_id": 116,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 118,
+      "family_id": 12,
+      "variant_id": 115,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 119,
+      "family_id": 6,
+      "variant_id": 111,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 120,
+      "family_id": 6,
+      "variant_id": 110,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 121,
+      "family_id": 6,
+      "variant_id": 109,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 122,
+      "family_id": 11,
+      "variant_id": 113,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 123,
+      "family_id": 48,
+      "variant_id": 125,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 124,
+      "family_id": 27,
+      "variant_id": 120,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 125,
+      "family_id": 26,
+      "variant_id": 119,
+      "configuration_code": "COMBI-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 126,
+      "family_id": 25,
+      "variant_id": 118,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 127,
+      "family_id": 44,
+      "variant_id": 123,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 128,
+      "family_id": 44,
+      "variant_id": 122,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 129,
+      "family_id": 17,
+      "variant_id": 117,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 130,
+      "family_id": 38,
+      "variant_id": 121,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 131,
+      "family_id": 63,
+      "variant_id": 126,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 132,
+      "family_id": 46,
+      "variant_id": 124,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 133,
+      "family_id": 47,
+      "variant_id": 7,
+      "configuration_code": "FACTORY-19-SEAT-PASSENGER",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 134,
+      "family_id": 40,
+      "variant_id": 69,
+      "configuration_code": "AMERIFLIGHT-CARGO",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 137,
+      "family_id": 65,
+      "variant_id": 137,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 138,
+      "family_id": 6,
+      "variant_id": 129,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 139,
+      "family_id": 66,
+      "variant_id": 138,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 140,
+      "family_id": 37,
+      "variant_id": 134,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 141,
+      "family_id": 37,
+      "variant_id": 133,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 142,
+      "family_id": 16,
+      "variant_id": 130,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 143,
+      "family_id": 6,
+      "variant_id": 128,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 144,
+      "family_id": 6,
+      "variant_id": 127,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 145,
+      "family_id": 18,
+      "variant_id": 132,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 146,
+      "family_id": 40,
+      "variant_id": 135,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 147,
+      "family_id": 67,
+      "variant_id": 139,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 148,
+      "family_id": 36,
+      "variant_id": 63,
+      "configuration_code": "AIR-INUIT-LARGE-DOOR-CARGO",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 149,
+      "family_id": 36,
+      "variant_id": 64,
+      "configuration_code": "PNG-AIR-FREIGHTER",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 150,
+      "family_id": 37,
+      "variant_id": 65,
+      "configuration_code": "AIR-KIRIBATI-300HG",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 151,
+      "family_id": 40,
+      "variant_id": 69,
+      "configuration_code": "RYAN-AIR-CARGO",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 152,
+      "family_id": 62,
+      "variant_id": 108,
+      "configuration_code": "RYAN-AIR-CARGO",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 153,
+      "family_id": 6,
+      "variant_id": 128,
+      "configuration_code": "AEROSUCRE-CARGO-UNSPECIFIED",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 154,
+      "family_id": 16,
+      "variant_id": 130,
+      "configuration_code": "AIR-NORTH-CARGO",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 155,
+      "family_id": 6,
+      "variant_id": 141,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 156,
+      "family_id": 16,
+      "variant_id": 142,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 157,
+      "family_id": 69,
+      "variant_id": 143,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 158,
+      "family_id": 70,
+      "variant_id": 145,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 159,
+      "family_id": 70,
+      "variant_id": 144,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 160,
+      "family_id": 6,
+      "variant_id": 128,
+      "configuration_code": "MYINDO-737-400F",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 161,
+      "family_id": 6,
+      "variant_id": 1,
+      "configuration_code": "MYINDO-737-800F",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 162,
+      "family_id": 13,
+      "variant_id": 148,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 163,
+      "family_id": 71,
+      "variant_id": 150,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 164,
+      "family_id": 11,
+      "variant_id": 147,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 165,
+      "family_id": 28,
+      "variant_id": 149,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 166,
+      "family_id": 5,
+      "variant_id": 146,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 167,
+      "family_id": 71,
+      "variant_id": 150,
+      "configuration_code": "ULS-A310-300F",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 168,
+      "family_id": 5,
+      "variant_id": 151,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 169,
+      "family_id": 10,
+      "variant_id": 152,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 170,
+      "family_id": 24,
+      "variant_id": 153,
+      "configuration_code": "COMBI-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 171,
+      "family_id": 35,
+      "variant_id": 154,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 172,
+      "family_id": 40,
+      "variant_id": 155,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 173,
+      "family_id": 44,
+      "variant_id": 156,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 174,
+      "family_id": 44,
+      "variant_id": 157,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 175,
+      "family_id": 44,
+      "variant_id": 158,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 176,
+      "family_id": 53,
+      "variant_id": 159,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 177,
+      "family_id": 15,
+      "variant_id": 77,
+      "configuration_code": "ASL-FREIGHTER-CONVERSION",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 178,
+      "family_id": 24,
+      "variant_id": 153,
+      "configuration_code": "CONSTANTA-PASSENGER",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 179,
+      "family_id": 24,
+      "variant_id": 153,
+      "configuration_code": "CONSTANTA-CARGO",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 180,
+      "family_id": 40,
+      "variant_id": 155,
+      "configuration_code": "AIR-CHATHAMS-QUICK-CHANGE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 181,
+      "family_id": 40,
+      "variant_id": 155,
+      "configuration_code": "AIR-CHATHAMS-FREIGHT",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 182,
+      "family_id": 15,
+      "variant_id": 160,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 183,
+      "family_id": 53,
+      "variant_id": 162,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 184,
+      "family_id": 72,
+      "variant_id": 163,
+      "configuration_code": "PASSENGER-BASE",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 185,
+      "family_id": 73,
+      "variant_id": 164,
+      "configuration_code": "CARGO-BASE",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 186,
+      "family_id": 53,
+      "variant_id": 162,
+      "configuration_code": "DAP-ANTARCTIC-70",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 187,
+      "family_id": 6,
+      "variant_id": 141,
+      "configuration_code": "ASL-737-300QC-PASSENGER",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 188,
+      "family_id": 6,
+      "variant_id": 128,
+      "configuration_code": "ASL-737-400-COMBI",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 189,
+      "family_id": 12,
+      "variant_id": 165,
+      "configuration_code": "GROUP2-01-PASSENGER",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 190,
+      "family_id": 12,
+      "variant_id": 166,
+      "configuration_code": "GROUP2-02-CARGO",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 191,
+      "family_id": 12,
+      "variant_id": 167,
+      "configuration_code": "GROUP2-03-PASSENGER",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 192,
+      "family_id": 9,
+      "variant_id": 168,
+      "configuration_code": "GROUP2-04-PASSENGER",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 193,
+      "family_id": 6,
+      "variant_id": 169,
+      "configuration_code": "GROUP2-05-PASSENGER",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 194,
+      "family_id": 6,
+      "variant_id": 170,
+      "configuration_code": "GROUP2-06-PASSENGER",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 195,
+      "family_id": 5,
+      "variant_id": 171,
+      "configuration_code": "GROUP2-07-CARGO",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 196,
+      "family_id": 4,
+      "variant_id": 25,
+      "configuration_code": "GROUP2-08-COMBI",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 197,
+      "family_id": 3,
+      "variant_id": 172,
+      "configuration_code": "GROUP2-09-CARGO",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 198,
+      "family_id": 2,
+      "variant_id": 173,
+      "configuration_code": "GROUP2-10-PASSENGER",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 199,
+      "family_id": 2,
+      "variant_id": 174,
+      "configuration_code": "GROUP2-11-PASSENGER",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 200,
+      "family_id": 36,
+      "variant_id": 63,
+      "configuration_code": "GROUP2-12-PASSENGER",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 201,
+      "family_id": 20,
+      "variant_id": 88,
+      "configuration_code": "GROUP2-13-PASSENGER",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 202,
+      "family_id": 15,
+      "variant_id": 160,
+      "configuration_code": "GROUP2-14-PASSENGER",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 203,
+      "family_id": 15,
+      "variant_id": 54,
+      "configuration_code": "GROUP2-15-CARGO",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 204,
+      "family_id": 48,
+      "variant_id": 125,
+      "configuration_code": "GROUP2-16-PASSENGER",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 205,
+      "family_id": 48,
+      "variant_id": 96,
+      "configuration_code": "GROUP2-17-CARGO",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 206,
+      "family_id": 52,
+      "variant_id": 175,
+      "configuration_code": "GROUP2-18-PASSENGER",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 207,
+      "family_id": 53,
+      "variant_id": 176,
+      "configuration_code": "GROUP2-19-PASSENGER",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 208,
+      "family_id": 74,
+      "variant_id": 177,
+      "configuration_code": "GROUP2-20-PASSENGER",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 209,
+      "family_id": 74,
+      "variant_id": 177,
+      "configuration_code": "GROUP2-21-CARGO",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 210,
+      "family_id": 57,
+      "variant_id": 103,
+      "configuration_code": "GROUP2-22-PASSENGER",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 211,
+      "family_id": 43,
+      "variant_id": 94,
+      "configuration_code": "GROUP2-23-CARGO",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 212,
+      "family_id": 75,
+      "variant_id": 178,
+      "configuration_code": "GROUP2-24-PASSENGER",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 213,
+      "family_id": 35,
+      "variant_id": 179,
+      "configuration_code": "GROUP2-25-CARGO",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 214,
+      "family_id": 76,
+      "variant_id": 180,
+      "configuration_code": "GROUP2-26-PASSENGER",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 215,
+      "family_id": 31,
+      "variant_id": 181,
+      "configuration_code": "GROUP2-27-PASSENGER",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 216,
+      "family_id": 30,
+      "variant_id": 182,
+      "configuration_code": "GROUP2-28-CARGO",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 217,
+      "family_id": 30,
+      "variant_id": 183,
+      "configuration_code": "GROUP2-29-PASSENGER",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 218,
+      "family_id": 77,
+      "variant_id": 184,
+      "configuration_code": "GROUP2-30-PASSENGER",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 219,
+      "family_id": 78,
+      "variant_id": 185,
+      "configuration_code": "GROUP2-31-PASSENGER",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 220,
+      "family_id": 28,
+      "variant_id": 186,
+      "configuration_code": "GROUP2-32-PASSENGER",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 221,
+      "family_id": 79,
+      "variant_id": 187,
+      "configuration_code": "GROUP2-33-PASSENGER",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 222,
+      "family_id": 22,
+      "variant_id": 188,
+      "configuration_code": "GROUP2-34-CARGO",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 223,
+      "family_id": 33,
+      "variant_id": 189,
+      "configuration_code": "GROUP2-35-PASSENGER",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 224,
+      "family_id": 33,
+      "variant_id": 190,
+      "configuration_code": "GROUP2-36-PASSENGER",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 225,
+      "family_id": 33,
+      "variant_id": 190,
+      "configuration_code": "GROUP2-37-CARGO",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 226,
+      "family_id": 32,
+      "variant_id": 191,
+      "configuration_code": "GROUP2-38-PASSENGER",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 227,
+      "family_id": 26,
+      "variant_id": 192,
+      "configuration_code": "GROUP2-39-CARGO",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 228,
+      "family_id": 24,
+      "variant_id": 193,
+      "configuration_code": "GROUP2-40-CARGO",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 229,
+      "family_id": 6,
+      "variant_id": 194,
+      "configuration_code": "GROUP2-41-PASSENGER",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 230,
+      "family_id": 6,
+      "variant_id": 195,
+      "configuration_code": "GROUP2-42-PASSENGER",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 231,
+      "family_id": 80,
+      "variant_id": 196,
+      "configuration_code": "GROUP2-43-PASSENGER",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 232,
+      "family_id": 81,
+      "variant_id": 197,
+      "configuration_code": "GROUP2-44-PASSENGER",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 233,
+      "family_id": 9,
+      "variant_id": 198,
+      "configuration_code": "GROUP2-45-CARGO",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 234,
+      "family_id": 2,
+      "variant_id": 199,
+      "configuration_code": "GROUP2-46-PASSENGER",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 235,
+      "family_id": 82,
+      "variant_id": 200,
+      "configuration_code": "GROUP2-47-PASSENGER",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 236,
+      "family_id": 115,
+      "variant_id": 258,
+      "configuration_code": "GROUP3-37-PASSENGER",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 237,
+      "family_id": 58,
+      "variant_id": 85,
+      "configuration_code": "GROUP3-38-PASSENGER",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 238,
+      "family_id": 61,
+      "variant_id": 106,
+      "configuration_code": "GROUP3-39-PASSENGER",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 239,
+      "family_id": 10,
+      "variant_id": 230,
+      "configuration_code": "GROUP3-01-PASSENGER",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 240,
+      "family_id": 9,
+      "variant_id": 231,
+      "configuration_code": "GROUP3-02-PASSENGER",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 241,
+      "family_id": 16,
+      "variant_id": 142,
+      "configuration_code": "GROUP3-03-COMBI",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 242,
+      "family_id": 16,
+      "variant_id": 130,
+      "configuration_code": "GROUP3-04-COMBI",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 243,
+      "family_id": 15,
+      "variant_id": 54,
+      "configuration_code": "GROUP3-05-COMBI",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 244,
+      "family_id": 54,
+      "variant_id": 232,
+      "configuration_code": "GROUP3-06-PASSENGER",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 245,
+      "family_id": 66,
+      "variant_id": 233,
+      "configuration_code": "GROUP3-07-PASSENGER",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 246,
+      "family_id": 6,
+      "variant_id": 169,
+      "configuration_code": "GROUP3-08-CARGO",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 247,
+      "family_id": 6,
+      "variant_id": 234,
+      "configuration_code": "GROUP3-09-COMBI",
+      "billingClass": "narrowbody"
+    },
+    {
+      "configuration_id": 248,
+      "family_id": 5,
+      "variant_id": 235,
+      "configuration_code": "GROUP3-10-PASSENGER",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 249,
+      "family_id": 5,
+      "variant_id": 236,
+      "configuration_code": "GROUP3-11-COMBI",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 250,
+      "family_id": 5,
+      "variant_id": 237,
+      "configuration_code": "GROUP3-12-PASSENGER",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 252,
+      "family_id": 5,
+      "variant_id": 239,
+      "configuration_code": "GROUP3-14-PASSENGER",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 253,
+      "family_id": 5,
+      "variant_id": 240,
+      "configuration_code": "GROUP3-15-COMBI",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 254,
+      "family_id": 3,
+      "variant_id": 241,
+      "configuration_code": "GROUP3-16-PASSENGER",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 255,
+      "family_id": 3,
+      "variant_id": 242,
+      "configuration_code": "GROUP3-17-PASSENGER",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 256,
+      "family_id": 3,
+      "variant_id": 243,
+      "configuration_code": "GROUP3-18-PASSENGER",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 257,
+      "family_id": 2,
+      "variant_id": 244,
+      "configuration_code": "GROUP3-19-CARGO",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 258,
+      "family_id": 2,
+      "variant_id": 245,
+      "configuration_code": "GROUP3-20-CARGO",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 259,
+      "family_id": 38,
+      "variant_id": 246,
+      "configuration_code": "GROUP3-21-PASSENGER",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 260,
+      "family_id": 53,
+      "variant_id": 247,
+      "configuration_code": "GROUP3-22-PASSENGER",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 261,
+      "family_id": 36,
+      "variant_id": 62,
+      "configuration_code": "GROUP3-23-CARGO",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 262,
+      "family_id": 36,
+      "variant_id": 62,
+      "configuration_code": "GROUP3-24-COMBI",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 263,
+      "family_id": 129,
+      "variant_id": 248,
+      "configuration_code": "GROUP3-25-PASSENGER",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 264,
+      "family_id": 50,
+      "variant_id": 72,
+      "configuration_code": "GROUP3-26-CARGO",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 265,
+      "family_id": 18,
+      "variant_id": 249,
+      "configuration_code": "GROUP3-27-CARGO",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 266,
+      "family_id": 75,
+      "variant_id": 178,
+      "configuration_code": "GROUP3-28-CARGO",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 267,
+      "family_id": 72,
+      "variant_id": 250,
+      "configuration_code": "GROUP3-29-PASSENGER",
+      "billingClass": "regional"
+    },
+    {
+      "configuration_id": 268,
+      "family_id": 121,
+      "variant_id": 251,
+      "configuration_code": "GROUP3-30-PASSENGER",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 269,
+      "family_id": 121,
+      "variant_id": 252,
+      "configuration_code": "GROUP3-31-PASSENGER",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 270,
+      "family_id": 110,
+      "variant_id": 253,
+      "configuration_code": "GROUP3-32-PASSENGER",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 271,
+      "family_id": 110,
+      "variant_id": 254,
+      "configuration_code": "GROUP3-33-CARGO",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 272,
+      "family_id": 45,
+      "variant_id": 255,
+      "configuration_code": "GROUP3-34-PASSENGER",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 273,
+      "family_id": 45,
+      "variant_id": 256,
+      "configuration_code": "GROUP3-35-COMBI",
+      "billingClass": "widebody"
+    },
+    {
+      "configuration_id": 274,
+      "family_id": 44,
+      "variant_id": 257,
+      "configuration_code": "GROUP3-36-PASSENGER",
+      "billingClass": "narrowbody"
+    }
+  ]
+}
