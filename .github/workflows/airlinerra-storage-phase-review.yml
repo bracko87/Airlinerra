@@ -13,6 +13,8 @@ on:
       - 'tests/test_fleet_acquisition_api.mjs'
       - 'tests/test_airline_workspace.mjs'
       - 'tests/sql/aircraft_storage*'
+      - 'tests/e2e/browser-aircraft-storage.mjs'
+      - 'tests/e2e/package.json'
       - '.github/workflows/airlinerra-storage-phase-review.yml'
 jobs:
   storage-phase:
@@ -215,3 +217,18 @@ jobs:
 
       - name: Storage-aware crew allocation preview tests
         run: node --test tests/test_storage_aware_crew_plan.mjs
+
+      - name: Install isolated browser test dependencies
+        working-directory: tests/e2e
+        run: npm install --ignore-scripts --no-audit --no-fund --no-package-lock
+      - name: Run Chromium storage workspace acceptance
+        shell: bash
+        run: |
+          set -euo pipefail
+          BROWSER="$(command -v google-chrome || command -v google-chrome-stable || true)"
+          if [ -n "$BROWSER" ]; then
+            export AIRLINERRA_CHROME_PATH="$BROWSER"
+          else
+            ./tests/e2e/node_modules/.bin/playwright install --with-deps chromium
+          fi
+          node tests/e2e/browser-aircraft-storage.mjs
