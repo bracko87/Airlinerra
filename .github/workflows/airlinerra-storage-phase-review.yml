@@ -293,3 +293,5 @@ jobs:
           BROWSER="$(command -v google-chrome || command -v google-chrome-stable || true)"
           if [ -n "$BROWSER" ]; then export AIRLINERRA_CHROME_PATH="$BROWSER"; fi
           node tests/e2e/browser-aircraft-storage-database.mjs
+      - name: Verify persisted browser game permission receipts
+        run: psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1 -f tests/sql/aircraft_storage_browser_permission_receipts_acceptance.sql
