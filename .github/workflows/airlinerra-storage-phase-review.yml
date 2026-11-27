@@ -242,7 +242,7 @@ jobs:
           test "$(psql -h localhost -U postgres -d review -Atqc 'SELECT current_database()')" = review
           {
             sed '/^ROLLBACK;$/d' server/sql/aircraft_storage_signed_movement_schema_review.sql
-            echo "UPDATE airlinerra_game.airlines SET id='00000000-0000-4000-8000-000000000001',owner_player_id='00000000-0000-4000-8000-000000000002'; UPDATE airlinerra_game.world_memberships SET player_id='00000000-0000-4000-8000-000000000002'; UPDATE airlinerra_game.airline_aircraft_inventory SET id='00000000-0000-4000-8000-000000000003',airline_id='00000000-0000-4000-8000-000000000001'; UPDATE airlinerra_game.airline_ledger SET airline_id='00000000-0000-4000-8000-000000000001';"
+            echo "INSERT INTO airlinerra_game.airlines VALUES('00000000-0000-4000-8000-000000000001',1,'00000000-0000-4000-8000-000000000002',5000000); INSERT INTO airlinerra_game.world_memberships VALUES(1,'00000000-0000-4000-8000-000000000002','active'); INSERT INTO airlinerra_game.airline_aircraft_inventory(id,airline_id,configuration_id,ownership_type,fleet_status) VALUES('00000000-0000-4000-8000-000000000003','00000000-0000-4000-8000-000000000001',1,'owned','in_service'); INSERT INTO airlinerra_game.airline_ledger(airline_id,amount_usd) VALUES('00000000-0000-4000-8000-000000000001',5000000);"
             sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_funds_review.sql
             sed -e '/^ROLLBACK;$/d' -e 's/00000000-0000-0000-0000-00000000000/00000000-0000-4000-8000-00000000000/g' tests/sql/aircraft_storage_signed_movement_acceptance.sql
             sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_arrival_completion_review.sql
