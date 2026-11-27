@@ -112,6 +112,14 @@ EXCEPTION WHEN invalid_datetime_format OR datetime_field_overflow OR invalid_tex
 END $$;
 REVOKE ALL ON FUNCTION airlinerra_game.section9_crew_duty_fit_v2(jsonb,jsonb,text,text) FROM PUBLIC,anon,authenticated,service_role;
 
+-- Synthetic commercial occurrence and normalized plan schema, matching writer columns.
+ALTER TABLE airlinerra_game.airline_flight_schedule_drafts_v1 ADD COLUMN id uuid,ADD COLUMN version int,ADD COLUMN configuration_id bigint;
+ALTER TABLE airlinerra_game.section9_flight_crew_model_policy_v1 ADD COLUMN seat_basis text DEFAULT 'cargo_zero';
+ALTER TABLE airlinerra_game.section9_crew_plan_batches_v1 ADD COLUMN window_start_utc timestamptz,ADD COLUMN window_end_utc timestamptz,ADD COLUMN source_snapshot jsonb,ADD COLUMN proposed_assignments jsonb;
+ALTER TABLE airlinerra_game.section9_planned_crew_duties_v1 ADD COLUMN duty_id uuid DEFAULT gen_random_uuid(),ADD COLUMN cabin_member_id uuid,ADD COLUMN duty_start_utc timestamptz,ADD COLUMN report_date date,ADD COLUMN starting_airport text,ADD COLUMN ending_airport text;
+CREATE TABLE airlinerra_game.section9_dated_flight_occurrences_v1(id uuid PRIMARY KEY,airline_id uuid,world_id smallint,schedule_id uuid,schedule_version int,aircraft_inventory_id uuid,booking_status text,departure_utc timestamptz,arrival_utc timestamptz,origin_airport_key text,destination_airport_key text,flight_local_date date,weekly_entry int,verified_passenger_seats int);
+CREATE TABLE airlinerra_game.section9_planned_flight_crews_v1(plan_id uuid,airline_id uuid,occurrence_id uuid,schedule_version int,aircraft_inventory_id uuid,physical_flight_id text,qualification_group text,departure_utc timestamptz,arrival_utc timestamptz,origin_airport_key text,destination_airport_key text,captain_count int,first_officer_count int,cabin_count int,PRIMARY KEY(plan_id,occurrence_id));
+CREATE TABLE airlinerra_game.section9_planned_crew_seats_v1(plan_id uuid,airline_id uuid,occurrence_id uuid,duty_id uuid,employee_id uuid,seat_role text,PRIMARY KEY(plan_id,occurrence_id,employee_id));
 DO $test$
 DECLARE s record; r record; owner_id uuid; rid uuid; dep timestamptz; j jsonb; cash_held numeric; cap uuid:=gen_random_uuid();fo uuid:=gen_random_uuid();h jsonb; review_snapshot jsonb; assignments jsonb; pilot jsonb; new_dep timestamptz; new_arr timestamptz; plan_key uuid:=gen_random_uuid(); flight_key uuid:=gen_random_uuid();
 BEGIN
@@ -210,6 +218,35 @@ BEGIN
  IF h->>'replayed' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'review replay failed: %',h;END IF;
  IF (SELECT count(*) FROM airlinerra_game.aircraft_storage_crew_reservations_v1 WHERE request_id=rid AND status='awaiting_history_handoff')<>2 THEN RAISE EXCEPTION 'review plan released crew';END IF;
  RAISE NOTICE 'Persistent storage-aware crew plan review acceptance passed (actual rotation and duty fit, synthetic roster)';
+ h:=airlinerra_game.promote_storage_aware_crew_plan_review_v1(owner_id,s.airline_id,plan_key);
+ IF h->>'status' IS DISTINCT FROM 'storage_handoff_not_released' THEN RAISE EXCEPTION 'handoff gate bypass: %',h;END IF;
+ UPDATE airlinerra_game.storage_crew_plan_handoff_release_v1 SET enabled=true;
+ INSERT INTO airlinerra_game.section9_crew_plan_batches_v1(plan_id,airline_id,status) VALUES(gen_random_uuid(),s.airline_id,'validated_preview');
+ h:=airlinerra_game.promote_storage_aware_crew_plan_review_v1(owner_id,s.airline_id,plan_key);
+ IF h->>'status' IS DISTINCT FROM 'storage_handoff_existing_plan_requires_replan' THEN RAISE EXCEPTION 'existing plan overwritten: %',h;END IF;
+ DELETE FROM airlinerra_game.section9_crew_plan_batches_v1 WHERE airline_id=s.airline_id;
+ h:=airlinerra_game.promote_storage_aware_crew_plan_review_v1(owner_id,s.airline_id,plan_key);
+ IF h->>'status' IS DISTINCT FROM 'storage_handoff_rolled_back' OR EXISTS(SELECT 1 FROM airlinerra_game.storage_crew_plan_handoffs_v1 WHERE plan_id=plan_key) OR EXISTS(SELECT 1 FROM airlinerra_game.section9_crew_plan_batches_v1 WHERE plan_id=plan_key) THEN RAISE EXCEPTION 'missing occurrence rollback failed: %',h;END IF;
+ INSERT INTO airlinerra_game.airline_flight_schedule_drafts_v1(id,airline_id,aircraft_inventory_id,status,version,configuration_id) VALUES(flight_key,s.airline_id,r.aircraft_inventory_id,'active',1,1);
+ INSERT INTO airlinerra_game.section9_dated_flight_occurrences_v1 VALUES(flight_key,s.airline_id,1,flight_key,1,r.aircraft_inventory_id,'open',new_dep,new_arr,r.destination_airport_key,r.origin_airport_key,(new_dep AT TIME ZONE 'UTC')::date,1,0);
+ h:=airlinerra_game.promote_storage_aware_crew_plan_review_v1(owner_id,s.airline_id,plan_key);
+ IF h->>'promoted' IS DISTINCT FROM 'true' OR h->>'seatCount' IS DISTINCT FROM '2' OR h->>'crewReleased' IS DISTINCT FROM 'false' OR h->>'dispatchAuthorized' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'restricted plan promotion failed: %',h;END IF;
+ IF (SELECT count(*) FROM airlinerra_game.section9_planned_crew_duties_v1 WHERE plan_id=plan_key AND starting_airport=r.destination_airport_key)<>2 OR (SELECT count(*) FROM airlinerra_game.section9_planned_crew_seats_v1 WHERE plan_id=plan_key)<>2 THEN RAISE EXCEPTION 'normalized crew plan missing';END IF;
+ BEGIN
+  UPDATE airlinerra_game.section9_crew_plan_batches_v1 SET status='superseded' WHERE plan_id=plan_key;
+  RAISE EXCEPTION 'legacy replan overwrote handoff';
+ EXCEPTION WHEN check_violation THEN IF SQLERRM<>'STORAGE_AWARE_REPLAN_REQUIRED' THEN RAISE;END IF;
+ END;
+ BEGIN
+  INSERT INTO airlinerra_game.section9_planned_crew_duties_v1(plan_id,airline_id,pilot_id,duty_start_utc,duty_end_utc,starting_airport,ending_airport) VALUES(gen_random_uuid(),s.airline_id,cap,new_dep-interval '2 hours',new_arr+interval '30 minutes',r.destination_airport_key,r.origin_airport_key);
+  RAISE EXCEPTION 'unreviewed duty accepted';
+ EXCEPTION WHEN check_violation THEN IF SQLERRM<>'CREW_RESERVED_FOR_STORAGE_OR_HISTORY_HANDOFF' THEN RAISE;END IF;
+ END;
+ h:=airlinerra_game.promote_storage_aware_crew_plan_review_v1(owner_id,s.airline_id,plan_key);
+ IF h->>'replayed' IS DISTINCT FROM 'true' OR (SELECT count(*) FROM airlinerra_game.section9_planned_crew_seats_v1 WHERE plan_id=plan_key)<>2 THEN RAISE EXCEPTION 'handoff replay failed: %',h;END IF;
+ IF (SELECT count(*) FROM airlinerra_game.aircraft_storage_crew_reservations_v1 WHERE request_id=rid AND status='awaiting_history_handoff')<>2 THEN RAISE EXCEPTION 'handoff released crew without dispatch integration';END IF;
+ RAISE NOTICE 'Restricted storage-aware commercial plan handoff acceptance passed (synthetic occurrence and commercial plan schema)';
+
  PERFORM set_config('test.storage_hour',r.arrival_utc::text,true);
  RAISE NOTICE 'Storage-aware crew planning snapshot acceptance passed (synthetic weekly roster)';
 
