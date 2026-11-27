@@ -120,6 +120,9 @@ ALTER TABLE airlinerra_game.section9_planned_crew_duties_v1 ADD COLUMN duty_id u
 CREATE TABLE airlinerra_game.section9_dated_flight_occurrences_v1(id uuid PRIMARY KEY,airline_id uuid,world_id smallint,schedule_id uuid,schedule_version int,aircraft_inventory_id uuid,booking_status text,departure_utc timestamptz,arrival_utc timestamptz,origin_airport_key text,destination_airport_key text,flight_local_date date,weekly_entry int,verified_passenger_seats int);
 CREATE TABLE airlinerra_game.section9_planned_flight_crews_v1(plan_id uuid,airline_id uuid,occurrence_id uuid,schedule_version int,aircraft_inventory_id uuid,physical_flight_id text,qualification_group text,departure_utc timestamptz,arrival_utc timestamptz,origin_airport_key text,destination_airport_key text,captain_count int,first_officer_count int,cabin_count int,PRIMARY KEY(plan_id,occurrence_id));
 CREATE TABLE airlinerra_game.section9_planned_crew_seats_v1(plan_id uuid,airline_id uuid,occurrence_id uuid,duty_id uuid,employee_id uuid,seat_role text,PRIMARY KEY(plan_id,occurrence_id,employee_id));
+-- Minimal binding/issue tables for exercising exact rolling coverage.
+CREATE TABLE airlinerra_game.section9_operated_crew_bindings_v1(physical_flight_id text PRIMARY KEY,airline_id uuid,departure_event_id text);
+CREATE TABLE airlinerra_game.section9_operated_crew_capture_issues_v1(engine_event_id text PRIMARY KEY,airline_id uuid,physical_flight_id text);
 CREATE FUNCTION airlinerra_game.section9_owned_rolling_crew_input_v1(p_player uuid,p_airline uuid,p_start timestamptz)
 RETURNS jsonb LANGUAGE sql STABLE AS $$SELECT current_setting('test.storage_departure_roster')::jsonb$$;
 CREATE OR REPLACE FUNCTION airlinerra_game.aircraft_storage_leg_airport_screen_v1(p_airport text,p_configuration bigint,p_operation text,p_at timestamptz,p_storage_endpoint boolean) RETURNS jsonb LANGUAGE sql STABLE AS $$SELECT jsonb_build_object('passed',current_setting('test.final_airport',true)='clear')$$;
@@ -202,6 +205,10 @@ BEGIN
  j:=airlinerra_game.advance_aircraft_storage_relocations_v1(10);
  IF j#>>'{results,0,movementRecorded}' IS DISTINCT FROM 'true' OR j#>>'{results,0,settlement,billingStopped}' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'automatic outbound departure: %',j;END IF;
  IF (SELECT count(*) FROM airlinerra_game.aircraft_storage_crew_duty_receipts_v1 WHERE request_id=rid AND arrival_engine_event_id IS NULL)<>2 THEN RAISE EXCEPTION 'signed crew departure receipts missing';END IF;
+ IF NOT EXISTS(SELECT 1 FROM airlinerra_game.storage_signed_crew_manifests_v1 m WHERE m.request_id=rid AND m.captain_count=1 AND m.first_officer_count=1 AND m.cabin_count=0 AND jsonb_array_length(m.seats)=2 AND airlinerra_game.storage_signed_crew_departure_covered_v1(s.airline_id,m.departure_event_id))
+ THEN RAISE EXCEPTION 'in-flight signed manifest missing or uncovered';END IF;
+ IF airlinerra_game.storage_signed_crew_departure_covered_v1(s.airline_id,'nonexistent-event') IS DISTINCT FROM false THEN RAISE EXCEPTION 'missing manifest accepted';END IF;
+
  PERFORM set_config('test.storage_hour',r.arrival_utc::text,true);
  -- Revocation after the signed departure must not prevent arrival.
  UPDATE airlinerra_game.aircraft_storage_reactivation_release_v1 SET enabled=false;
@@ -313,6 +320,21 @@ BEGIN
  EXCEPTION WHEN check_violation THEN IF SQLERRM<>'STORAGE_CREW_RECEIPT_IMMUTABLE' THEN RAISE;END IF;END;
  IF (SELECT count(*) FROM airlinerra_game.aircraft_storage_crew_duty_receipts_v1 WHERE request_id=rid AND rest_complete_utc=r.arrival_utc+interval '12 hours 30 minutes')<>2 THEN RAISE EXCEPTION 'protected receipts changed';END IF;
  RAISE NOTICE 'Commercial handoff dispatch guard and immutable storage duty receipt acceptance passed';
+ IF NOT EXISTS(SELECT 1 FROM airlinerra_game.storage_signed_crew_manifests_v1 m WHERE m.request_id=rid AND airlinerra_game.storage_signed_crew_departure_covered_v1(s.airline_id,m.departure_event_id)) THEN RAISE EXCEPTION 'completed manifest not covered';END IF;
+ BEGIN
+  UPDATE airlinerra_game.storage_signed_crew_manifests_v1 SET rest_minutes=721 WHERE request_id=rid;
+  RAISE EXCEPTION 'signed manifest mutation accepted';
+ EXCEPTION WHEN raise_exception THEN IF SQLERRM<>'STORAGE_BILLING_RECORD_IMMUTABLE' THEN RAISE;END IF;END;
+ h:=airlinerra_game.storage_rolling_crew_coverage_v1(s.airline_id,airlinerra_game.section9_verified_world_instant_v1());
+ IF h->>'coveredStorageDepartures' IS DISTINCT FROM '1' OR (h->>'unboundDeparturesLast7Days')::int<1 OR h->>'coverageVerified' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'legacy unbound movements were silently grandfathered: %',h;END IF;
+ h:=airlinerra_game.owned_storage_aware_rolling_crew_input_v1(owner_id,s.airline_id,r.arrival_utc+interval '13 hours');
+ IF h->>'status' IS DISTINCT FROM 'storage_aware_rolling_crew_history_blocked' OR h->>'crewReleased' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'unbound rolling history bypass: %',h;END IF;
+ -- Once the older unsigned-history fixtures are outside the rolling window,
+ -- the exact newly captured manifest is sufficient for departure coverage.
+ h:=airlinerra_game.storage_rolling_crew_coverage_v1(s.airline_id,dep+interval '7 days');
+ IF h->>'coveredStorageDepartures' IS DISTINCT FROM '1' OR h->>'unboundDeparturesLast7Days' IS DISTINCT FROM '0' OR h->>'coverageVerified' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'exact rolling manifest coverage failed: %',h;END IF;
+ RAISE NOTICE 'Signed storage manifest coverage acceptance passed; legacy unbound movements remain blocked';
+
 
 
  PERFORM set_config('test.storage_hour',r.arrival_utc::text,true);
