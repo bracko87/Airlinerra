@@ -233,6 +233,20 @@ jobs:
             echo "ROLLBACK;"
           } | psql -h localhost -U postgres -d storage_billing_review -v ON_ERROR_STOP=1
           dropdb -h localhost -U postgres storage_billing_review
+      - name: Verify exact dispatcher patch on isolated source snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          createdb -h localhost -U postgres airlinerra_disposable
+          {
+            echo "BEGIN; CREATE SCHEMA airlinerra; CREATE SCHEMA airlinerra_game; SET LOCAL check_function_bodies=off;"
+            cat tests/sql/section9_current_live_dispatch_source_20261124.sql
+            echo "REVOKE ALL ON FUNCTION airlinerra_game.section9_auto_dispatch_due_flight_events_v1(integer) FROM PUBLIC,anon,authenticated,service_role;"
+            sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_commercial_dispatcher_integration_review.sql
+            cat tests/sql/aircraft_storage_dispatcher_patch_acceptance.sql
+            echo "ROLLBACK;"
+          } | psql -h localhost -U postgres -d airlinerra_disposable -v ON_ERROR_STOP=1
+          dropdb -h localhost -U postgres airlinerra_disposable
       - name: Verify pinned release component and billing classification inventory
         run: |
           node tests/aircraft-storage-release-inventory.mjs
