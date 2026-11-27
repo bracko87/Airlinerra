@@ -44,6 +44,9 @@ try{
   const date='2026-11-27T10:00:00Z';
   const aircraft=()=>({id:aircraftId,ownershipType:'owned',fleetStatus,manufacturer:'Airbus',model:'A319',registration:'TEST-001',locationStatus:'grounded',locationAirportKey:fleetStatus==='stored'?storageAirport:originAirport});
   const client={
+   // Unrelated optional workspace reads are explicitly unavailable in this fixture.
+   crewCapacity:async()=>({airlineId,status:'fixture_unavailable'}),
+   managementResponsibilities:async()=>({airlineId,status:'fixture_unavailable'}),
    list:async()=>({airlineId,fleet:[aircraft()],offers:[]}),
    storageOverview:async()=>({status:'storage_overview_verified',readOnly:true,airlineId:wrongOwner?'other':airlineId,aircraftId,ownershipType:'owned',fleetStatus,session,pendingRequest:pending,history,cancellationEligible:!!pending&&!pending.departed}),
    storageDestinations:async args=>({status:'storage_destinations_verified',airlineId,aircraftId,purpose:args.purpose,readOnly:true,actionsReleased:false,originAirportKey:args.purpose==='storage_inbound'?originAirport:storageAirport,serverNowUtc:date,airports:[{airportKey:args.purpose==='storage_inbound'?storageAirport:originAirport,airportCode:args.purpose==='storage_inbound'?'TEV':'TEST',airportName:'Synthetic airport',scope:args.purpose==='storage_inbound'?'relocation_only':'existing_commercial'}]}),
