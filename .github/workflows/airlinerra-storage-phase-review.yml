@@ -87,8 +87,10 @@ jobs:
            THEN RAISE EXCEPTION 'approved storage tariff staging altered admission or scope';END IF;
            RAISE NOTICE 'Approved monthly storage prices staged for nine candidates; all admission states unchanged';
           END $prices$;
-          ROLLBACK;
           SQL
+          sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_existing_commercial_profiles_review.sql
+          cat tests/sql/aircraft_storage_existing_commercial_profiles_acceptance.sql
+          echo "ROLLBACK;"
           } | psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1
           psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1 <<'SQL'
           DO $test$
