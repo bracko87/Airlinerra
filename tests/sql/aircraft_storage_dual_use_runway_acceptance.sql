@@ -1,6 +1,12 @@
 -- Disposable audit fixture; no production runway status changes.
 SAVEPOINT dual_use_runway;
 ALTER TABLE airlinerra_game.airport_runway_inventory ADD COLUMN operational_status text DEFAULT 'unknown';
+-- Explicit synthetic Section 5 evidence producer; real storage admission
+-- and all three layers of the storage leg airport screen execute unchanged.
+CREATE TABLE airlinerra_game.section5_full_weight_airport_aircraft_screen_v2(world_id smallint,airport_key text,configuration_id bigint,high_elevation_needs_site_specific_review boolean,full_weight_takeoff_length_pass boolean,full_weight_landing_length_pass boolean,runway_reference_source_id text,formula_version text);
+INSERT INTO airlinerra_game.section5_full_weight_airport_aircraft_screen_v2 VALUES(1,'OURAIRPORTS:4073',1,false,true,true,'235930','synthetic');
+CREATE FUNCTION airlinerra_game.section5_simplified_airport_leg_screen_v1(smallint,text,bigint,text,timestamptz) RETURNS jsonb LANGUAGE sql AS $$SELECT jsonb_build_object('gameHardBlocked',false,'needsReview',false)$$;
+CREATE FUNCTION airlinerra_game.section5_universal_airport_leg_restriction_v1(smallint,text,bigint,text,timestamptz,text) RETURNS jsonb LANGUAGE sql AS $$SELECT jsonb_build_object('gameHardBlocked',false,'needsReview',false,'selectedRunwaySourceId',current_setting('test.dual_runway_id',true),'runwayLengthEvidence',current_setting('test.dual_runway_evidence',true),'requiredGameRunwayLengthM',nullif(current_setting('test.dual_runway_required',true),'' )::numeric)$$;
 DO $test$
 DECLARE k text:='OURAIRPORTS:4073'; j jsonb; t timestamptz;
 BEGIN
@@ -21,6 +27,30 @@ BEGIN
  INSERT INTO airlinerra_game.storage_facility_final_reviews_v1 VALUES(1,k,j,'synthetic dual-use final review','reuse commercial fuel',t,NULL);
  j:=airlinerra_game.approve_storage_facility_review_v1(k);
  IF j->>'approved' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'reviewed airport not approved: %',j;END IF;
+ PERFORM set_config('test.dual_runway_id','235930',true);
+ PERFORM set_config('test.dual_runway_evidence','FULL_WEIGHT_GAME_REFERENCE',true);
+ PERFORM set_config('test.dual_runway_required','2330',true);
+ j:=airlinerra_game.aircraft_storage_leg_airport_screen_v1(k,1,'arrival',t,true);
+ IF j->>'passed' IS DISTINCT FROM 'true' OR (j->>'storageRunwayLimitM')::numeric IS DISTINCT FROM 2330::numeric THEN RAISE EXCEPTION 'exact landing boundary blocked: %',j;END IF;
+ PERFORM set_config('test.dual_runway_required','2331',true);
+ IF airlinerra_game.aircraft_storage_leg_airport_screen_v1(k,1,'arrival',t,true)->>'status' IS DISTINCT FROM 'storage_dual_use_runway_limit_blocked' THEN RAISE EXCEPTION 'excess landing length accepted';END IF;
+ PERFORM set_config('test.dual_runway_required','3000',true);
+ j:=airlinerra_game.aircraft_storage_leg_airport_screen_v1(k,1,'departure',t,true);
+ IF j->>'passed' IS DISTINCT FROM 'true' OR (j->>'storageRunwayLimitM')::numeric IS DISTINCT FROM 3000::numeric THEN RAISE EXCEPTION 'exact takeoff boundary blocked: %',j;END IF;
+ PERFORM set_config('test.dual_runway_required','3001',true);
+ IF airlinerra_game.aircraft_storage_leg_airport_screen_v1(k,1,'departure',t,true)->>'status' IS DISTINCT FROM 'storage_dual_use_runway_limit_blocked' THEN RAISE EXCEPTION 'excess takeoff length accepted';END IF;
+ PERFORM set_config('test.dual_runway_required','2000',true);
+ PERFORM set_config('test.dual_runway_id','other-runway',true);
+ IF airlinerra_game.aircraft_storage_leg_airport_screen_v1(k,1,'arrival',t,true)->>'status' IS DISTINCT FROM 'storage_dual_use_runway_limit_blocked' THEN RAISE EXCEPTION 'different runway accepted';END IF;
+ PERFORM set_config('test.dual_runway_id','235930',true);
+ PERFORM set_config('test.dual_runway_evidence','CATALOG_REFERENCE_NEEDS_FULL_WEIGHT_VALIDATION',true);
+ IF airlinerra_game.aircraft_storage_leg_airport_screen_v1(k,1,'arrival',t,true)->>'status' IS DISTINCT FROM 'storage_dual_use_runway_limit_blocked' THEN RAISE EXCEPTION 'unreviewed performance accepted';END IF;
+ PERFORM set_config('test.dual_runway_evidence','FULL_WEIGHT_GAME_REFERENCE',true);
+ PERFORM set_config('test.dual_runway_required','',true);
+ IF airlinerra_game.aircraft_storage_leg_airport_screen_v1(k,1,'arrival',t,true)->>'status' IS DISTINCT FROM 'storage_dual_use_runway_limit_blocked' THEN RAISE EXCEPTION 'missing performance accepted';END IF;
+ j:=airlinerra_game.aircraft_storage_leg_airport_screen_v1(k,1,'arrival',t,false);
+ IF j->>'passed' IS DISTINCT FROM 'true' OR j ? 'storageRunwayLimitM' THEN RAISE EXCEPTION 'ordinary commercial endpoint affected by storage limit: %',j;END IF;
+ RAISE NOTICE 'Dual-use actual storage leg screen acceptance passed: takeoff and landing boundaries, runway identity, performance evidence, ordinary commercial endpoint unchanged';
  UPDATE airlinerra_game.storage_dual_use_runway_reviews_v1 SET landing_limit_m=2329 WHERE airport_key=k;
  IF airlinerra_game.aircraft_storage_airport_admission_v1(k,'storage_inbound')->>'reason' IS DISTINCT FROM 'FACILITY_FINAL_REVIEW_STALE' THEN RAISE EXCEPTION 'changed limit not invalidated';END IF;
  IF NOT EXISTS(SELECT 1 FROM airlinerra_game.airport_unified_operations_v1 WHERE airport_key=k AND operationally_authorized) THEN RAISE EXCEPTION 'commercial rights changed';END IF;
