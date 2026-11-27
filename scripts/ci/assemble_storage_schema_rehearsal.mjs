@@ -56,4 +56,4 @@ if(process.argv[2]!=='--validate-only'){
  writeFileSync(process.argv[2],output,{mode:0o600,flag:'wx'});
 }
 console.log('PASS assembled '+(inputs.length-1)+' structural SQL components in one rollback-only transaction; four airport data blocks deferred');
-console.log('Schema-only rehearsal does not validate production data, dispatcher replacement or cron installation.');
+console.log('Schema-only rehearsal does not validate production data, dispatcher runtime behavior or cron installation.');
