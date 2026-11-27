@@ -1,5 +1,9 @@
 -- Disposable audit fixture; no production runway status changes.
 SAVEPOINT dual_use_runway;
+ALTER TABLE airlinerra.aircraft_catalog_configuration_inventory ADD COLUMN wingspan_m numeric;
+UPDATE airlinerra.aircraft_catalog_configuration_inventory SET wingspan_m=36 WHERE configuration_id=1;
+CREATE TABLE airlinerra_game.section5_aircraft_engine_and_icao_game_library_v1(configuration_id bigint,representative_engine_count smallint);
+INSERT INTO airlinerra_game.section5_aircraft_engine_and_icao_game_library_v1 VALUES(1,2);
 ALTER TABLE airlinerra_game.airport_runway_inventory ADD COLUMN operational_status text DEFAULT 'unknown';
 -- Explicit synthetic Section 5 evidence producer; real storage admission
 -- and all three layers of the storage leg airport screen execute unchanged.
@@ -48,6 +52,23 @@ BEGIN
  PERFORM set_config('test.dual_runway_evidence','FULL_WEIGHT_GAME_REFERENCE',true);
  PERFORM set_config('test.dual_runway_required','',true);
  IF airlinerra_game.aircraft_storage_leg_airport_screen_v1(k,1,'arrival',t,true)->>'status' IS DISTINCT FROM 'storage_dual_use_runway_limit_blocked' THEN RAISE EXCEPTION 'missing performance accepted';END IF;
+ PERFORM set_config('test.dual_runway_required','2000',true);
+ UPDATE airlinerra.aircraft_catalog_configuration_inventory SET wingspan_m=52 WHERE configuration_id=1;
+ IF airlinerra_game.aircraft_storage_leg_airport_screen_v1(k,1,'arrival',t,true)->>'passed' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION '52m twin boundary blocked';END IF;
+ UPDATE airlinerra.aircraft_catalog_configuration_inventory SET wingspan_m=52.01 WHERE configuration_id=1;
+ IF airlinerra_game.aircraft_storage_leg_airport_screen_v1(k,1,'arrival',t,true)->>'status' IS DISTINCT FROM 'storage_tarbes_shoulder_review_required' THEN RAISE EXCEPTION 'overspan twin accepted';END IF;
+ UPDATE airlinerra_game.section5_aircraft_engine_and_icao_game_library_v1 SET representative_engine_count=4;
+ UPDATE airlinerra.aircraft_catalog_configuration_inventory SET wingspan_m=36 WHERE configuration_id=1;
+ IF airlinerra_game.aircraft_storage_leg_airport_screen_v1(k,1,'departure',t,true)->>'passed' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION '36m four engine boundary blocked';END IF;
+ UPDATE airlinerra.aircraft_catalog_configuration_inventory SET wingspan_m=36.01 WHERE configuration_id=1;
+ IF airlinerra_game.aircraft_storage_leg_airport_screen_v1(k,1,'departure',t,true)->>'status' IS DISTINCT FROM 'storage_tarbes_shoulder_review_required' THEN RAISE EXCEPTION 'overspan four engine accepted';END IF;
+ UPDATE airlinerra.aircraft_catalog_configuration_inventory SET wingspan_m=NULL WHERE configuration_id=1;
+ IF airlinerra_game.aircraft_storage_leg_airport_screen_v1(k,1,'arrival',t,true)->>'status' IS DISTINCT FROM 'storage_tarbes_aircraft_dimensions_unverified' THEN RAISE EXCEPTION 'missing span accepted';END IF;
+ UPDATE airlinerra.aircraft_catalog_configuration_inventory SET wingspan_m='NaN'::numeric WHERE configuration_id=1;
+ IF airlinerra_game.aircraft_storage_leg_airport_screen_v1(k,1,'arrival',t,true)->>'status' IS DISTINCT FROM 'storage_tarbes_aircraft_dimensions_unverified' THEN RAISE EXCEPTION 'nonfinite span accepted';END IF;
+ UPDATE airlinerra.aircraft_catalog_configuration_inventory SET wingspan_m=36 WHERE configuration_id=1;
+ DELETE FROM airlinerra_game.section5_aircraft_engine_and_icao_game_library_v1 WHERE configuration_id=1;
+ IF airlinerra_game.aircraft_storage_leg_airport_screen_v1(k,1,'arrival',t,true)->>'status' IS DISTINCT FROM 'storage_tarbes_aircraft_dimensions_unverified' THEN RAISE EXCEPTION 'missing engine data accepted';END IF;
  j:=airlinerra_game.aircraft_storage_leg_airport_screen_v1(k,1,'arrival',t,false);
  IF j->>'passed' IS DISTINCT FROM 'true' OR j ? 'storageRunwayLimitM' THEN RAISE EXCEPTION 'ordinary commercial endpoint affected by storage limit: %',j;END IF;
  RAISE NOTICE 'Dual-use actual storage leg screen acceptance passed: takeoff and landing boundaries, runway identity, performance evidence, ordinary commercial endpoint unchanged';
