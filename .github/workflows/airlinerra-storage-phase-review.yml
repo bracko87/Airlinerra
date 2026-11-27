@@ -5,6 +5,12 @@ on:
     branches: [feature/aircraft-leasing-billing-review]
     paths:
       - 'server/sql/aircraft_storage*'
+      - 'scripts/ci/assemble_storage_schema_rehearsal.mjs'
+      - 'scripts/ci/airlinerra_private_schema_baseline.sh'
+      - 'tests/sql/storage_release_source_compatibility_readonly.sql'
+      - 'docs/aircraft-storage-release-manifest.json'
+      - 'docs/aircraft-storage-billing-*-candidates.json'
+      - 'tests/aircraft-storage-release-inventory.mjs'
       - 'server/fleet-acquisition-service.mjs'
       - 'website/airline-workspace.mjs'
       - 'website/fleet-acquisition-client.mjs'
