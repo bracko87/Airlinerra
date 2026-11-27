@@ -294,6 +294,26 @@ BEGIN
  IF h->>'replayed' IS DISTINCT FROM 'true' OR (SELECT count(*) FROM airlinerra_game.section9_planned_crew_seats_v1 WHERE plan_id=plan_key)<>2 THEN RAISE EXCEPTION 'handoff replay failed: %',h;END IF;
  IF (SELECT count(*) FROM airlinerra_game.aircraft_storage_crew_reservations_v1 WHERE request_id=rid AND status='awaiting_history_handoff')<>2 THEN RAISE EXCEPTION 'handoff released crew without dispatch integration';END IF;
  RAISE NOTICE 'Restricted storage-aware commercial plan handoff acceptance passed (synthetic occurrence and commercial plan schema)';
+ h:=airlinerra_game.storage_commercial_handoff_dispatch_check_v1(s.airline_id,flight_key::text||':'||(new_dep AT TIME ZONE 'UTC')::date::text||':1');
+ IF h->>'allowed' IS DISTINCT FROM 'false' OR h->>'status' IS DISTINCT FROM 'storage_handoff_dispatch_integration_required' THEN RAISE EXCEPTION 'unintegrated promoted plan passed commercial dispatch: %',h;END IF;
+ h:=airlinerra_game.storage_commercial_handoff_dispatch_check_v1(s.airline_id,'unrelated-fixture');
+ IF h->>'allowed' IS DISTINCT FROM 'true' OR h->>'commercialDispatchAuthorized' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'unrelated commercial operation changed: %',h;END IF;
+ BEGIN
+  INSERT INTO airlinerra_game.section9_operated_flight_movements_v1(world_id,engine_event_id,event_hmac_sha256,airline_id,aircraft_inventory_id,schedule_id,schedule_version,weekly_entry,flight_local_date,flight_occurrence_id,phase,origin_airport_key,destination_airport_key,scheduled_departure_utc,scheduled_arrival_utc,actual_event_utc)
+  VALUES(1,'blocked-handoff-fixture',repeat('a',64),s.airline_id,r.aircraft_inventory_id,flight_key,1,1,(new_dep AT TIME ZONE 'UTC')::date,flight_key::text||':'||(new_dep AT TIME ZONE 'UTC')::date::text||':1','departed',r.destination_airport_key,r.origin_airport_key,new_dep,new_arr,new_dep);
+  RAISE EXCEPTION 'unintegrated commercial departure recorded';
+ EXCEPTION WHEN check_violation THEN IF SQLERRM<>'STORAGE_COMMERCIAL_HANDOFF_DISPATCH_BLOCKED' THEN RAISE;END IF;END;
+ BEGIN
+  UPDATE airlinerra_game.aircraft_storage_crew_duty_receipts_v1 SET rest_complete_utc=rest_complete_utc+interval '1 hour' WHERE request_id=rid AND employee_id=cap;
+  RAISE EXCEPTION 'completed receipt mutation accepted';
+ EXCEPTION WHEN check_violation THEN IF SQLERRM<>'STORAGE_CREW_RECEIPT_IMMUTABLE' THEN RAISE;END IF;END;
+ BEGIN
+  DELETE FROM airlinerra_game.aircraft_storage_crew_duty_receipts_v1 WHERE request_id=rid AND employee_id=cap;
+  RAISE EXCEPTION 'completed receipt deletion accepted';
+ EXCEPTION WHEN check_violation THEN IF SQLERRM<>'STORAGE_CREW_RECEIPT_IMMUTABLE' THEN RAISE;END IF;END;
+ IF (SELECT count(*) FROM airlinerra_game.aircraft_storage_crew_duty_receipts_v1 WHERE request_id=rid AND rest_complete_utc=r.arrival_utc+interval '12 hours 30 minutes')<>2 THEN RAISE EXCEPTION 'protected receipts changed';END IF;
+ RAISE NOTICE 'Commercial handoff dispatch guard and immutable storage duty receipt acceptance passed';
+
 
  PERFORM set_config('test.storage_hour',r.arrival_utc::text,true);
  RAISE NOTICE 'Storage-aware crew planning snapshot acceptance passed (synthetic weekly roster)';
