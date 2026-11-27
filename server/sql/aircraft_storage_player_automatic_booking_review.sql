@@ -6,8 +6,9 @@ INSERT INTO airlinerra_game.storage_player_automatic_booking_release_v1(world_id
 ALTER TABLE airlinerra_game.storage_player_automatic_booking_release_v1 ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON airlinerra_game.storage_player_automatic_booking_release_v1 FROM PUBLIC,anon,authenticated,service_role;
 CREATE FUNCTION airlinerra_game.storage_player_automatic_booking_enabled_v1(p_purpose text)
-RETURNS boolean LANGUAGE sql STABLE SET search_path=pg_catalog AS $fn$
- SELECT current_user='postgres' AND p_purpose IN('storage_inbound','storage_reactivation')
+RETURNS boolean LANGUAGE plpgsql STABLE SET search_path=pg_catalog AS $fn$
+BEGIN
+ RETURN current_user='postgres' AND p_purpose IN('storage_inbound','storage_reactivation')
  AND EXISTS(SELECT 1 FROM airlinerra_game.storage_player_automatic_booking_release_v1 WHERE world_id=1 AND enabled)
  AND EXISTS(SELECT 1 FROM airlinerra_game.storage_facility_admission_release_v1 WHERE world_id=1 AND enabled)
  AND EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_automatic_booking_release_v1 WHERE world_id=1 AND enabled)
@@ -18,8 +19,8 @@ RETURNS boolean LANGUAGE sql STABLE SET search_path=pg_catalog AS $fn$
  AND EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_execution_release_v1 WHERE world_id=1 AND execution_enabled AND fuel_adapter_enabled)
  AND EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_signed_movement_release_v1 WHERE world_id=1 AND enabled)
  AND (p_purpose='storage_reactivation' AND EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_reactivation_release_v1 WHERE world_id=1 AND enabled)
- OR p_purpose='storage_inbound' AND to_regclass('airlinerra_game.storage_inbound_departure_evidence_v1') IS NOT NULL)
-$fn$;
+ OR p_purpose='storage_inbound' AND to_regclass('airlinerra_game.storage_inbound_departure_evidence_v1') IS NOT NULL);
+END $fn$;
 REVOKE ALL ON FUNCTION airlinerra_game.storage_player_automatic_booking_enabled_v1(text) FROM PUBLIC,anon,authenticated,service_role;
 CREATE FUNCTION airlinerra_game.owned_aircraft_storage_automatic_booking_preview_v1(p_player uuid,p_airline uuid,p_aircraft uuid,p_purpose text,p_destination text,p_departure timestamptz)
 RETURNS jsonb LANGUAGE plpgsql STABLE SET search_path=pg_catalog AS $fn$
