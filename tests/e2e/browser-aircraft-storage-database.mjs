@@ -195,6 +195,47 @@ try{
  await tick(new Date(Date.parse(flight.arr)+60000).toISOString());
  assert.deepEqual(await snapshot(),after,'Worker replay must not change finances or requests');
  console.log('PASS connected browser reactivation: monthly billing, signed worker departure and arrival, storage closure, restored fleet status and exactly-once settlement (synthetic operational inputs)');
+ // Normal inbound round-trip acceptance: use the reactivated aircraft
+ // and the distinct synthetic inbound crew, with all existing checks intact.
+ await page.waitForFunction(()=>!document.getElementById('fleet-storage-plan').disabled);
+ await page.locator('#fleet-storage-plan').click();
+ await page.locator('#fleet-storage-destination').locator('option[value="OURAIRPORTS:316427"]').waitFor({state:'attached'});
+ await page.locator('#fleet-storage-destination').selectOption('OURAIRPORTS:316427');
+ const inboundTime=new Date(Math.ceil((Date.parse(reviewNow)+3*3600000)/60000)*60000).toISOString().slice(0,16);
+ await page.locator('#fleet-storage-departure').fill(inboundTime);
+ const inboundQuoteResponse=page.waitForResponse(r=>r.url().endsWith(FLEET_ACQUISITION_API_ROUTE)&&r.request().postDataJSON()?.action==='storage-cost-preview');
+ await page.locator('#fleet-storage-quote').click();
+ const inboundQuote=await (await inboundQuoteResponse).json();
+ assert.equal(inboundQuote.status,'storage_cost_preview_verified');
+ assert.equal(Number(inboundQuote.relocationUsd),2698.13);
+ assert.equal(Number(inboundQuote.monthlyStorageUsd),8000);
+ await page.waitForFunction(()=>!document.getElementById('fleet-storage-book').disabled);
+ const inboundResponse=page.waitForResponse(r=>r.url().endsWith(FLEET_ACQUISITION_API_ROUTE)&&r.request().postDataJSON()?.action==='storage-book-confirm');
+ await page.locator('#fleet-storage-book').click();
+ const inbound=await (await inboundResponse).json();
+ assert.equal(inbound.booked,true,JSON.stringify(inbound));
+ assert.equal(inbound.crewReserved,true);
+ assert.equal(inbound.slotsReserved,2);
+ await waitText('fleet-storage-state','Storage relocation requested');
+ const inboundFlight=(await db.query("SELECT departure_utc::text AS dep,arrival_utc::text AS arr FROM airlinerra_game.aircraft_storage_relocation_requests_v1 WHERE id=$1",[inbound.requestId])).rows[0];
+ const inboundDeparted=await tick(inboundFlight.dep);
+ assert.ok(inboundDeparted.results.some(x=>x.requestId===inbound.requestId&&x.phase==='departed'&&x.movementRecorded===true),JSON.stringify(inboundDeparted));
+ await refreshFromDatabase();
+ await waitText('fleet-storage-state','Relocation flight in progress');
+ assert.equal(await page.locator('#fleet-storage-cancel').isDisabled(),true);
+ const inboundArrived=await tick(inboundFlight.arr);
+ assert.ok(inboundArrived.results.some(x=>x.requestId===inbound.requestId&&x.phase==='arrived'&&x.settlement?.status==='aircraft_stored'),JSON.stringify(inboundArrived));
+ await refreshFromDatabase();
+ await waitText('fleet-storage-state','Stored');
+ await waitText('fleet-storage-monthly','$8,000.00');
+ await waitText('fleet-storage-airport','OURAIRPORTS:316427');
+ const saved=(await db.query("SELECT (SELECT count(*)::int FROM airlinerra_game.section9_operated_flight_movements_v1 WHERE storage_request_id=$1) AS movements,(SELECT status FROM airlinerra_game.aircraft_storage_funds_v1 WHERE request_id=$1) AS funds,(SELECT count(*)::int FROM airlinerra_game.aircraft_storage_sessions_v1 WHERE request_id=$1 AND storage_ended_utc IS NULL) AS sessions,(SELECT count(*)::int FROM airlinerra_game.aircraft_storage_crew_reservations_v1 WHERE request_id=$1 AND status='awaiting_history_handoff') AS crew,(SELECT count(*)::int FROM airlinerra_game.aircraft_storage_monthly_receipts_v1 WHERE request_id=$1) AS payments",[inbound.requestId])).rows[0];
+ assert.deepEqual(saved,{movements:2,funds:'settled',sessions:1,crew:2,payments:1});
+ const inboundBalance=await snapshot();
+ assert.equal(Math.round((Number(after.cash)-Number(inboundBalance.cash))*100),1069813);
+ await tick(new Date(Date.parse(inboundFlight.arr)+60000).toISOString());
+ assert.deepEqual(await snapshot(),inboundBalance);
+ console.log('PASS connected inbound storage: actual booking, signed worker flight, active session, crew custody and initial payment');
  assert.deepEqual(errors,[]);
  console.log('PASS Chromium -> actual fleet client -> authenticated storage handler -> PostgreSQL overview, return airport search and exact server quote; booking gate enforced, foreign owner denied, no financial mutations');
 }finally{
