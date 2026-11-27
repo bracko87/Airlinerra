@@ -122,8 +122,8 @@ CREATE TABLE airlinerra_game.section9_planned_flight_crews_v1(plan_id uuid,airli
 CREATE TABLE airlinerra_game.section9_planned_crew_seats_v1(plan_id uuid,airline_id uuid,occurrence_id uuid,duty_id uuid,employee_id uuid,seat_role text,PRIMARY KEY(plan_id,occurrence_id,employee_id));
 CREATE FUNCTION airlinerra_game.section9_owned_rolling_crew_input_v1(p_player uuid,p_airline uuid,p_start timestamptz)
 RETURNS jsonb LANGUAGE sql STABLE AS $$SELECT current_setting('test.storage_departure_roster')::jsonb$$;
-CREATE FUNCTION airlinerra_game.aircraft_storage_leg_airport_screen_v1(p_airport text,p_configuration bigint,p_operation text,p_at timestamptz,p_storage_endpoint boolean) RETURNS jsonb LANGUAGE sql STABLE AS $$SELECT jsonb_build_object('passed',current_setting('test.final_airport',true)='clear')$$;
-CREATE FUNCTION airlinerra_game.aircraft_storage_ferry_licence_screen_v1(p_airline uuid,p_purpose text,p_origin text,p_destination text,p_dep timestamptz,p_arr timestamptz) RETURNS jsonb LANGUAGE sql STABLE AS $$SELECT jsonb_build_object('allowed',current_setting('test.final_licence',true)='clear')$$;
+CREATE OR REPLACE FUNCTION airlinerra_game.aircraft_storage_leg_airport_screen_v1(p_airport text,p_configuration bigint,p_operation text,p_at timestamptz,p_storage_endpoint boolean) RETURNS jsonb LANGUAGE sql STABLE AS $$SELECT jsonb_build_object('passed',current_setting('test.final_airport',true)='clear')$$;
+CREATE OR REPLACE FUNCTION airlinerra_game.aircraft_storage_ferry_licence_screen_v1(p_airline uuid,p_purpose text,p_origin text,p_destination text,p_dep timestamptz,p_arr timestamptz) RETURNS jsonb LANGUAGE sql STABLE AS $$SELECT jsonb_build_object('allowed',current_setting('test.final_licence',true)='clear')$$;
 DO $test$
 DECLARE s record; r record; owner_id uuid; rid uuid; dep timestamptz; j jsonb; cash_held numeric; cap uuid:=gen_random_uuid();fo uuid:=gen_random_uuid();h jsonb; review_snapshot jsonb; departure_roster jsonb; assignments jsonb; pilot jsonb; new_dep timestamptz; new_arr timestamptz; plan_key uuid:=gen_random_uuid(); flight_key uuid:=gen_random_uuid();
 BEGIN
