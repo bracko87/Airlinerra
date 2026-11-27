@@ -17,7 +17,7 @@ const server=createServer(async(req,res)=>{
   const pathname=new URL(req.url,'http://localhost').pathname;
   if(pathname==='/fixture'){
    res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});
-   res.end('<!doctype html><html><body><main id="player-main"><section id="workspace-fleet-aircraft"></section></main></body></html>');return;
+   res.end('<!doctype html><html><body><main id="player-main"><section id="workspace-fleet-aircraft"></section><section id="workspace-routes" hidden></section></main></body></html>');return;
   }
   const file=resolve(root,'.'+pathname);
   if(!file.startsWith(root+sep)){res.writeHead(403).end();return;}
