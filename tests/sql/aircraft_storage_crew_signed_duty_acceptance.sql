@@ -122,6 +122,8 @@ CREATE TABLE airlinerra_game.section9_planned_flight_crews_v1(plan_id uuid,airli
 CREATE TABLE airlinerra_game.section9_planned_crew_seats_v1(plan_id uuid,airline_id uuid,occurrence_id uuid,duty_id uuid,employee_id uuid,seat_role text,PRIMARY KEY(plan_id,occurrence_id,employee_id));
 CREATE FUNCTION airlinerra_game.section9_owned_rolling_crew_input_v1(p_player uuid,p_airline uuid,p_start timestamptz)
 RETURNS jsonb LANGUAGE sql STABLE AS $$SELECT current_setting('test.storage_departure_roster')::jsonb$$;
+CREATE FUNCTION airlinerra_game.aircraft_storage_leg_airport_screen_v1(p_airport text,p_configuration bigint,p_operation text,p_at timestamptz,p_storage_endpoint boolean) RETURNS jsonb LANGUAGE sql STABLE AS $$SELECT jsonb_build_object('passed',current_setting('test.final_airport',true)='clear')$$;
+CREATE FUNCTION airlinerra_game.aircraft_storage_ferry_licence_screen_v1(p_airline uuid,p_purpose text,p_origin text,p_destination text,p_dep timestamptz,p_arr timestamptz) RETURNS jsonb LANGUAGE sql STABLE AS $$SELECT jsonb_build_object('allowed',current_setting('test.final_licence',true)='clear')$$;
 DO $test$
 DECLARE s record; r record; owner_id uuid; rid uuid; dep timestamptz; j jsonb; cash_held numeric; cap uuid:=gen_random_uuid();fo uuid:=gen_random_uuid();h jsonb; review_snapshot jsonb; departure_roster jsonb; assignments jsonb; pilot jsonb; new_dep timestamptz; new_arr timestamptz; plan_key uuid:=gen_random_uuid(); flight_key uuid:=gen_random_uuid();
 BEGIN
@@ -181,10 +183,30 @@ BEGIN
  h:=airlinerra_game.storage_crew_departure_check_v1(rid);
  IF h->>'passed' IS DISTINCT FROM 'true' OR h->>'crewCount' IS DISTINCT FROM '2' THEN RAISE EXCEPTION 'qualified reserved crew rejected: %',h;END IF;
  RAISE NOTICE 'Storage departure crew revalidation acceptance passed (synthetic current roster, actual duty fit and signed movement guard)';
+ UPDATE airlinerra_game.storage_operational_departure_release_v1 SET enabled=true;
+ PERFORM set_config('test.final_airport','blocked',true);
+ PERFORM set_config('test.final_licence','clear',true);
+ h:=airlinerra_game.storage_operational_departure_check_v1(rid);
+ IF h->>'status' IS DISTINCT FROM 'storage_operational_airport_changed' THEN RAISE EXCEPTION 'changed airport accepted: %',h;END IF;
+ j:=airlinerra_game.advance_aircraft_storage_relocations_v1(10);
+ IF j#>>'{results,0,status}' IS DISTINCT FROM 'storage_leg_rolled_back' OR EXISTS(SELECT 1 FROM airlinerra_game.section9_operated_flight_movements_v1 WHERE storage_request_id=rid AND phase='departed') THEN RAISE EXCEPTION 'airport revalidation rollback failed: %',j;END IF;
+ PERFORM set_config('test.final_airport','clear',true);
+ PERFORM set_config('test.final_licence','blocked',true);
+ h:=airlinerra_game.storage_operational_departure_check_v1(rid);
+ IF h->>'status' IS DISTINCT FROM 'storage_operational_licence_changed' THEN RAISE EXCEPTION 'changed licence accepted: %',h;END IF;
+ PERFORM set_config('test.final_licence','clear',true);
+ h:=airlinerra_game.storage_operational_departure_check_v1(rid);
+ IF h->>'passed' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'valid operational recheck failed: %',h;END IF;
+ RAISE NOTICE 'Final storage departure operational revalidation acceptance passed (synthetic airport and licence screens)';
+
  j:=airlinerra_game.advance_aircraft_storage_relocations_v1(10);
  IF j#>>'{results,0,movementRecorded}' IS DISTINCT FROM 'true' OR j#>>'{results,0,settlement,billingStopped}' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'automatic outbound departure: %',j;END IF;
  IF (SELECT count(*) FROM airlinerra_game.aircraft_storage_crew_duty_receipts_v1 WHERE request_id=rid AND arrival_engine_event_id IS NULL)<>2 THEN RAISE EXCEPTION 'signed crew departure receipts missing';END IF;
  PERFORM set_config('test.storage_hour',r.arrival_utc::text,true);
+ -- Revocation after the signed departure must not prevent arrival.
+ UPDATE airlinerra_game.aircraft_storage_reactivation_release_v1 SET enabled=false;
+ PERFORM set_config('test.final_airport','blocked',true);
+ PERFORM set_config('test.final_licence','blocked',true);
  PERFORM set_config('test.storage_fail_burn','yes',true);
  j:=airlinerra_game.advance_aircraft_storage_relocations_v1(10);
  IF j#>>'{results,0,status}' IS DISTINCT FROM 'storage_leg_rolled_back' OR EXISTS(SELECT 1 FROM airlinerra_game.section9_operated_flight_movements_v1 WHERE storage_request_id=rid AND phase='arrived') OR NOT EXISTS(SELECT 1 FROM airlinerra_game.section9_aircraft_current_position_v1 WHERE aircraft_inventory_id=r.aircraft_inventory_id AND location_status='in_flight') THEN RAISE EXCEPTION 'arrival rollback failed: %',j;END IF;
