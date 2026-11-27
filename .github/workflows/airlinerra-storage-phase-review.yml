@@ -267,7 +267,7 @@ jobs:
           {
             echo "BEGIN; DROP TABLE airlinerra_game.aircraft_storage_booking_release_v1,airlinerra_game.aircraft_storage_crew_booking_release_v1,airlinerra_game.aircraft_storage_automatic_booking_release_v1,airlinerra_game.aircraft_storage_reactivation_release_v1;"
             sed -n '/^CREATE OR REPLACE FUNCTION airlinerra_game.section9_aircraft_movement_decision_v1(/,/^END \$f\$;/p' supabase/migrations/20261109111043_section9_operated_aircraft_movement_schema.sql
-            for file in aircraft_storage_reactivation_reservation_review aircraft_storage_reactivation_movement_review aircraft_storage_reactivation_lifecycle_review aircraft_storage_execution_worker_review aircraft_storage_booking_confirmation_review aircraft_storage_crew_reservation_guard_review aircraft_storage_crew_bound_booking_review aircraft_storage_automatic_booking_review aircraft_storage_background_tick_review; do
+            for file in aircraft_storage_inbound_arrival_continuity_review aircraft_storage_reactivation_reservation_review aircraft_storage_reactivation_movement_review aircraft_storage_reactivation_lifecycle_review aircraft_storage_execution_worker_review aircraft_storage_booking_confirmation_review aircraft_storage_crew_reservation_guard_review aircraft_storage_crew_bound_booking_review aircraft_storage_automatic_booking_review aircraft_storage_background_tick_review; do
               sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' "server/sql/$file.sql"
             done
             echo "COMMIT;"
