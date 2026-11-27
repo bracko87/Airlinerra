@@ -584,6 +584,8 @@ test('storage planning preview accepts only read requests and verifies response 
 });
 
 test('storage booking actions verify owner and use exact request key and quote amount',async()=>{
+ assert.match(FLEET_SQL.storageBookConfirm,/airlinerra_game\.confirm_player_automatic_storage_booking_v1\(/u);
+ assert.match(FLEET_SQL.storageCostPreview,/airlinerra_game\.owned_aircraft_storage_automatic_booking_preview_v1\(/u);
  const booking={action:'storage-book-confirm',airlineId:airline,aircraftInventoryId:aircraft,purpose:'storage_inbound',destinationAirportKey:'OURAIRPORTS:316427',departureUtc:'2026-11-27T10:00:00Z',expectedCostUsd:'2698.13',requestId};
  const cancel={action:'storage-book-cancel',airlineId:airline,aircraftInventoryId:aircraft,requestId};
  assert.equal(validateFleetAcquisitionRequest(booking),true);
