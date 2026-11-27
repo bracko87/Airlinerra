@@ -219,6 +219,20 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Verify exact aircraft billing classification staging in separate disposable database
+        shell: bash
+        run: |
+          set -euo pipefail
+          createdb -h localhost -U postgres storage_billing_review
+          {
+            echo "BEGIN; CREATE SCHEMA airlinerra; CREATE SCHEMA airlinerra_game;"
+            echo "CREATE TABLE airlinerra.aircraft_catalog_configuration_inventory(configuration_id bigint PRIMARY KEY,family_id bigint,variant_id bigint,configuration_code text);"
+            sed -n '/^CREATE TABLE airlinerra_game.aircraft_storage_billing_classes_v1(/,/^);/p' server/sql/aircraft_storage_monthly_billing_review.sql
+            sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_billing_class_staging_review.sql
+            cat tests/sql/aircraft_storage_billing_class_staging_acceptance.sql
+            echo "ROLLBACK;"
+          } | psql -h localhost -U postgres -d storage_billing_review -v ON_ERROR_STOP=1
+          dropdb -h localhost -U postgres storage_billing_review
       - name: Verify pinned release component and billing classification inventory
         run: node tests/aircraft-storage-release-inventory.mjs
       - name: Storage interface and authenticated API acceptance
