@@ -397,6 +397,21 @@ REVOKE EXECUTE ON FUNCTION airlinerra_game.section9_game_route_restrictions_vali
 REVOKE SELECT ON airlinerra_game.airport_unified_operations_v1 FROM PUBLIC,anon,authenticated,service_role;
 SQL
 
+# Explicit manual storage schema rehearsal, never executed against the source.
+if [[ "${AIRLINERRA_STORAGE_SCHEMA_REHEARSAL:-0}" == 1 ]]; then
+  node scripts/ci/assemble_storage_schema_rehearsal.mjs "$tmp/storage-schema-rehearsal.sql"
+  if ! local_psql -q -v VERBOSITY=verbose -f "$tmp/storage-schema-rehearsal.sql" >"$tmp/storage-rehearsal.log" 2>&1; then
+    # Only public repository file markers and SQLSTATE are emitted.
+    awk '/^STORAGE_SCHEMA_REHEARSAL aircraft_storage_[a-z_]+\.sql$/ { component=$2 } END { print "Blocked component: " component }' "$tmp/storage-rehearsal.log"
+    grep -Eo 'ERROR: +[0-9A-Z]{5}:' "$tmp/storage-rehearsal.log" | sort -u || true
+    echo "BLOCKED: storage schema composition failed; private SQL diagnostics withheld." >&2
+    exit 2
+  fi
+  local_psql -Atqc "SELECT (to_regclass('airlinerra_game.aircraft_storage_facilities_v1') IS NULL)::int" | grep -qx 1
+  echo "PASS: integrated storage schema-only transaction rolled back; no storage schema persisted on clone."
+  exit 0
+fi
+
 # Preserve existing column order/types and the modern dispatcher definition.
 # The dump intentionally excludes ACLs. Check live access separately and
 # compare restored-clone behavior before and after; do not claim ACL parity.
