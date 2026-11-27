@@ -56,6 +56,10 @@ jobs:
             echo 'configured=false' >> "$GITHUB_OUTPUT"
             echo '### BLOCKED: AIRLINERRA_SCHEMA_READONLY_URL not configured' >> "$GITHUB_STEP_SUMMARY"
             echo 'Only script safety tests ran. No schema dump, live database connection or local restore was performed.' >> "$GITHUB_STEP_SUMMARY"
+            if [[ "$AIRLINERRA_STORAGE_SCHEMA_REHEARSAL" == '1' ]]; then
+              echo 'BLOCKED: requested storage rehearsal cannot execute without the configured private source connection.' >&2
+              exit 2
+            fi
           else
             echo 'configured=true' >> "$GITHUB_OUTPUT"
           fi
