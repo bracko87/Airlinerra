@@ -334,6 +334,30 @@ BEGIN
  h:=airlinerra_game.storage_rolling_crew_coverage_v1(s.airline_id,dep+interval '7 days');
  IF h->>'coveredStorageDepartures' IS DISTINCT FROM '1' OR h->>'unboundDeparturesLast7Days' IS DISTINCT FROM '0' OR h->>'coverageVerified' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'exact rolling manifest coverage failed: %',h;END IF;
  RAISE NOTICE 'Signed storage manifest coverage acceptance passed; legacy unbound movements remain blocked';
+ -- The real coverage function must block the fixture's old unbound movement.
+ PERFORM set_config('test.storage_hour',new_dep::text,true);
+ h:=airlinerra_game.storage_commercial_crew_departure_readiness_v1(s.airline_id,flight_key::text||':'||(new_dep AT TIME ZONE 'UTC')::date::text||':1');
+ IF h->>'passed' IS DISTINCT FROM 'false' OR h->>'status' IS DISTINCT FROM 'commercial_handoff_history_coverage_blocked' THEN RAISE EXCEPTION 'commercial readiness bypassed incomplete coverage: %',h;END IF;
+ -- Isolate the downstream revalidation from the legacy fixture. The real
+ -- signed manifest, combined per-employee history and duty fit stay in use.
+ BEGIN
+  EXECUTE $mock$CREATE OR REPLACE FUNCTION airlinerra_game.storage_rolling_crew_coverage_v1(p_airline uuid,p_at timestamptz)
+  RETURNS jsonb LANGUAGE sql STABLE AS $body$ SELECT jsonb_build_object('coverageVerified',true) $body$ $mock$;
+  h:=airlinerra_game.storage_commercial_crew_departure_readiness_v1(s.airline_id,flight_key::text||':'||(new_dep AT TIME ZONE 'UTC')::date::text||':1');
+  IF h->>'passed' IS DISTINCT FROM 'true' OR h->>'crewCount' IS DISTINCT FROM '2' OR h->>'dispatchAuthorized' IS DISTINCT FROM 'false' OR h->>'crewReleased' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'commercial readiness failed with reviewed combined history: %',h;END IF;
+  PERFORM set_config('test.storage_weekly_input',jsonb_set(current_setting('test.storage_weekly_input')::jsonb,'{pilots,0,permissions,0,active}','false'::jsonb)::text,true);
+  h:=airlinerra_game.storage_commercial_crew_departure_readiness_v1(s.airline_id,flight_key::text||':'||(new_dep AT TIME ZONE 'UTC')::date::text||':1');
+  IF h->>'passed' IS DISTINCT FROM 'false' OR h->>'status' IS DISTINCT FROM 'commercial_handoff_current_duty_fit_failed' THEN RAISE EXCEPTION 'revoked commercial qualification accepted: %',h;END IF;
+  PERFORM set_config('test.storage_weekly_input',jsonb_set(current_setting('test.storage_weekly_input')::jsonb,'{pilots,0,permissions,0,active}','true'::jsonb)::text,true);
+  PERFORM set_config('test.storage_weekly_input',jsonb_set(current_setting('test.storage_weekly_input')::jsonb,'{pilots,0,initialAirport}',to_jsonb('WRONG'::text))::text,true);
+  h:=airlinerra_game.storage_commercial_crew_departure_readiness_v1(s.airline_id,flight_key::text||':'||(new_dep AT TIME ZONE 'UTC')::date::text||':1');
+  IF h->>'passed' IS DISTINCT FROM 'false' OR h->>'status' IS DISTINCT FROM 'commercial_handoff_current_duty_fit_failed' THEN RAISE EXCEPTION 'incorrect commercial location accepted: %',h;END IF;
+  RAISE EXCEPTION USING ERRCODE='PZ009',MESSAGE='rollback test coverage double';
+ EXCEPTION WHEN SQLSTATE 'PZ009' THEN NULL;END;
+ h:=airlinerra_game.storage_commercial_handoff_dispatch_check_v1(s.airline_id,flight_key::text||':'||(new_dep AT TIME ZONE 'UTC')::date::text||':1');
+ IF h->>'allowed' IS DISTINCT FROM 'false' OR (SELECT count(*) FROM airlinerra_game.aircraft_storage_crew_reservations_v1 WHERE request_id=rid AND status='awaiting_history_handoff')<>2 THEN RAISE EXCEPTION 'readiness lifted commercial guard or custody';END IF;
+ RAISE NOTICE 'Single-leg commercial departure readiness acceptance passed (synthetic roster and controlled coverage double; actual signed storage history and duty fit)';
+
 
 
 
