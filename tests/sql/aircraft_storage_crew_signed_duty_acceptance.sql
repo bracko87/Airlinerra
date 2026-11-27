@@ -120,8 +120,10 @@ ALTER TABLE airlinerra_game.section9_planned_crew_duties_v1 ADD COLUMN duty_id u
 CREATE TABLE airlinerra_game.section9_dated_flight_occurrences_v1(id uuid PRIMARY KEY,airline_id uuid,world_id smallint,schedule_id uuid,schedule_version int,aircraft_inventory_id uuid,booking_status text,departure_utc timestamptz,arrival_utc timestamptz,origin_airport_key text,destination_airport_key text,flight_local_date date,weekly_entry int,verified_passenger_seats int);
 CREATE TABLE airlinerra_game.section9_planned_flight_crews_v1(plan_id uuid,airline_id uuid,occurrence_id uuid,schedule_version int,aircraft_inventory_id uuid,physical_flight_id text,qualification_group text,departure_utc timestamptz,arrival_utc timestamptz,origin_airport_key text,destination_airport_key text,captain_count int,first_officer_count int,cabin_count int,PRIMARY KEY(plan_id,occurrence_id));
 CREATE TABLE airlinerra_game.section9_planned_crew_seats_v1(plan_id uuid,airline_id uuid,occurrence_id uuid,duty_id uuid,employee_id uuid,seat_role text,PRIMARY KEY(plan_id,occurrence_id,employee_id));
+CREATE FUNCTION airlinerra_game.section9_owned_rolling_crew_input_v1(p_player uuid,p_airline uuid,p_start timestamptz)
+RETURNS jsonb LANGUAGE sql STABLE AS $$SELECT current_setting('test.storage_departure_roster')::jsonb$$;
 DO $test$
-DECLARE s record; r record; owner_id uuid; rid uuid; dep timestamptz; j jsonb; cash_held numeric; cap uuid:=gen_random_uuid();fo uuid:=gen_random_uuid();h jsonb; review_snapshot jsonb; assignments jsonb; pilot jsonb; new_dep timestamptz; new_arr timestamptz; plan_key uuid:=gen_random_uuid(); flight_key uuid:=gen_random_uuid();
+DECLARE s record; r record; owner_id uuid; rid uuid; dep timestamptz; j jsonb; cash_held numeric; cap uuid:=gen_random_uuid();fo uuid:=gen_random_uuid();h jsonb; review_snapshot jsonb; departure_roster jsonb; assignments jsonb; pilot jsonb; new_dep timestamptz; new_arr timestamptz; plan_key uuid:=gen_random_uuid(); flight_key uuid:=gen_random_uuid();
 BEGIN
  SELECT * INTO s FROM airlinerra_game.aircraft_storage_sessions_v1 WHERE storage_ended_utc IS NULL;
  SELECT owner_player_id INTO owner_id FROM airlinerra_game.aircraft_storage_relocation_requests_v1 WHERE id=s.request_id;
@@ -155,6 +157,30 @@ BEGIN
  j:=airlinerra_game.execute_aircraft_storage_leg_v1(rid,'departed');
  IF j->>'status' IS DISTINCT FROM 'storage_maintenance_blocked' THEN RAISE EXCEPTION 'maintenance bypass: %',j;END IF;
  PERFORM set_config('test.storage_maintenance','clear',true);
+ UPDATE airlinerra_game.storage_crew_departure_validation_release_v1 SET enabled=true;
+ pilot:=jsonb_build_object('id',cap,'initialAirport',r.origin_airport_key,'locationEffectiveUtc',dep-interval '10 days','baseTimezone','UTC','employmentFrom',(dep-interval '10 days')::date,'history','[]'::jsonb,'absences','[]'::jsonb,'permissions',jsonb_build_array(jsonb_build_object('group','fixture','issued',(dep-interval '10 days')::date,'expires',(dep+interval '30 days')::date,'active',true,'captain',true,'firstOfficer',true)));
+ departure_roster:=jsonb_build_object('status','rolling_crew_input_preview','unboundDeparturesLast7Days',0,'unresolvedCaptureIssues',0,'invalidOccurrenceCount',0,'alreadyReportedFutureFlights',0,'cabinHeadcountReconciled',true,'pilots',jsonb_build_array(pilot,pilot||jsonb_build_object('id',fo)),'cabinMembers','[]'::jsonb);
+ PERFORM set_config('test.storage_departure_roster',jsonb_set(departure_roster,'{pilots,0,permissions,0,active}','false'::jsonb)::text,true);
+ h:=airlinerra_game.storage_crew_departure_check_v1(rid);
+ IF h->>'passed' IS DISTINCT FROM 'false' OR h->>'status' IS DISTINCT FROM 'storage_crew_duty_or_qualification_changed' THEN RAISE EXCEPTION 'revoked qualification accepted: %',h;END IF;
+ j:=airlinerra_game.advance_aircraft_storage_relocations_v1(10);
+ IF j#>>'{results,0,status}' IS DISTINCT FROM 'storage_leg_rolled_back' OR EXISTS(SELECT 1 FROM airlinerra_game.section9_operated_flight_movements_v1 WHERE storage_request_id=rid AND phase='departed') OR EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_crew_duty_receipts_v1 WHERE request_id=rid) THEN RAISE EXCEPTION 'invalid crew signed departure was not rolled back: %',j;END IF;
+ PERFORM set_config('test.storage_departure_roster',jsonb_set(departure_roster,'{pilots,0,absences}',jsonb_build_array(jsonb_build_object('startUtc',dep-interval '1 hour','endUtc',dep+interval '1 hour')))::text,true);
+ h:=airlinerra_game.storage_crew_departure_check_v1(rid);
+ IF h->>'passed' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'absent pilot accepted: %',h;END IF;
+ PERFORM set_config('test.storage_departure_roster',jsonb_set(departure_roster,'{pilots,0,initialAirport}',to_jsonb('WRONG'::text))::text,true);
+ h:=airlinerra_game.storage_crew_departure_check_v1(rid);
+ IF h->>'passed' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'wrong airport accepted: %',h;END IF;
+ PERFORM set_config('test.storage_departure_roster',(departure_roster||jsonb_build_object('pilots',jsonb_build_array(pilot)))::text,true);
+ h:=airlinerra_game.storage_crew_departure_check_v1(rid);
+ IF h->>'status' IS DISTINCT FROM 'storage_crew_employment_changed' THEN RAISE EXCEPTION 'missing employee accepted: %',h;END IF;
+ PERFORM set_config('test.storage_departure_roster',(departure_roster||jsonb_build_object('unboundDeparturesLast7Days',1))::text,true);
+ h:=airlinerra_game.storage_crew_departure_check_v1(rid);
+ IF h->>'status' IS DISTINCT FROM 'storage_crew_current_history_unverified' THEN RAISE EXCEPTION 'unverified history accepted: %',h;END IF;
+ PERFORM set_config('test.storage_departure_roster',departure_roster::text,true);
+ h:=airlinerra_game.storage_crew_departure_check_v1(rid);
+ IF h->>'passed' IS DISTINCT FROM 'true' OR h->>'crewCount' IS DISTINCT FROM '2' THEN RAISE EXCEPTION 'qualified reserved crew rejected: %',h;END IF;
+ RAISE NOTICE 'Storage departure crew revalidation acceptance passed (synthetic current roster, actual duty fit and signed movement guard)';
  j:=airlinerra_game.advance_aircraft_storage_relocations_v1(10);
  IF j#>>'{results,0,movementRecorded}' IS DISTINCT FROM 'true' OR j#>>'{results,0,settlement,billingStopped}' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'automatic outbound departure: %',j;END IF;
  IF (SELECT count(*) FROM airlinerra_game.aircraft_storage_crew_duty_receipts_v1 WHERE request_id=rid AND arrival_engine_event_id IS NULL)<>2 THEN RAISE EXCEPTION 'signed crew departure receipts missing';END IF;
