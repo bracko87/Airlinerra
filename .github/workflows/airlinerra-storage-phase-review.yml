@@ -14,6 +14,7 @@ on:
       - 'tests/test_airline_workspace.mjs'
       - 'tests/sql/aircraft_storage*'
       - 'tests/e2e/browser-aircraft-storage.mjs'
+      - 'tests/e2e/browser-aircraft-storage-database.mjs'
       - 'tests/e2e/package.json'
       - '.github/workflows/airlinerra-storage-phase-review.yml'
 jobs:
@@ -232,3 +233,33 @@ jobs:
             ./tests/e2e/node_modules/.bin/playwright install --with-deps chromium
           fi
           node tests/e2e/browser-aircraft-storage.mjs
+
+      - name: Prepare isolated stored aircraft for browser database acceptance
+        shell: bash
+        run: |
+          set -euo pipefail
+          # The disposable review service is destroyed by Actions; never use a hosted DB.
+          test "$(psql -h localhost -U postgres -d review -Atqc 'SELECT current_database()')" = review
+          {
+            sed '/^ROLLBACK;$/d' server/sql/aircraft_storage_signed_movement_schema_review.sql
+            echo "UPDATE airlinerra_game.airlines SET id='00000000-0000-4000-8000-000000000001',owner_player_id='00000000-0000-4000-8000-000000000002'; UPDATE airlinerra_game.world_memberships SET player_id='00000000-0000-4000-8000-000000000002'; UPDATE airlinerra_game.airline_aircraft_inventory SET id='00000000-0000-4000-8000-000000000003',airline_id='00000000-0000-4000-8000-000000000001'; UPDATE airlinerra_game.airline_ledger SET airline_id='00000000-0000-4000-8000-000000000001';"
+            sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_funds_review.sql
+            sed -e '/^ROLLBACK;$/d' -e 's/00000000-0000-0000-0000-00000000000/00000000-0000-4000-8000-00000000000/g' tests/sql/aircraft_storage_signed_movement_acceptance.sql
+            sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_arrival_completion_review.sql
+            sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_monthly_billing_review.sql
+            echo "INSERT INTO airlinerra_game.aircraft_storage_billing_classes_v1 VALUES(1,'narrowbody','fixture'); UPDATE airlinerra_game.aircraft_storage_facilities_v1 SET monthly_regional_usd=4000,monthly_narrowbody_usd=8000,monthly_widebody_usd=15000 WHERE airport_key='OURAIRPORTS:316427';"
+            sed '/^ROLLBACK;$/d' tests/sql/aircraft_storage_arrival_completion_acceptance.sql
+            sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_reactivation_request_review.sql
+            sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_owner_overview_review.sql
+            sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_player_booking_review.sql
+            echo "UPDATE airlinerra_game.aircraft_storage_signed_movement_release_v1 SET enabled=false; COMMIT;"
+          } | psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1
+      - name: Run Chromium storage database acceptance
+        shell: bash
+        env:
+          AIRLINERRA_STORAGE_DB_REVIEW: '1'
+        run: |
+          set -euo pipefail
+          BROWSER="$(command -v google-chrome || command -v google-chrome-stable || true)"
+          if [ -n "$BROWSER" ]; then export AIRLINERRA_CHROME_PATH="$BROWSER"; fi
+          node tests/e2e/browser-aircraft-storage-database.mjs
