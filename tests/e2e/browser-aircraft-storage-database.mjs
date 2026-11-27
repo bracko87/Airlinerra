@@ -44,7 +44,7 @@ try{
     const chunks=[];for await(const chunk of req)chunks.push(chunk);
     const body=Buffer.concat(chunks);
     const action=JSON.parse(body.toString()).action;
-    assert.ok(['storage-overview','storage-destinations','storage-cost-preview'].includes(action),'Only reviewed read actions are routed');
+    assert.ok(['storage-overview','storage-destinations','storage-cost-preview','storage-book-confirm','storage-book-cancel'].includes(action),'Only reviewed storage actions are routed');
     const reply=await handler(new Request('https://airlinerra.com'+pathname,{method:'POST',headers:{origin:'https://airlinerra.com','x-airlinerra-route':pathname,'content-type':'application/json',authorization:req.headers.authorization||''},body}));
     calls.push(reply.status);
     res.writeHead(reply.status,{'Content-Type':'application/json'});res.end(await reply.text());return;
@@ -70,7 +70,7 @@ try{
    if(target!=='https://airlinerra.com'+FLEET_ACQUISITION_API_ROUTE)throw Error('Unexpected fleet target');
    return fetch(location.origin+FLEET_ACQUISITION_API_ROUTE,options);
   }});
-  const client={storageOverview:real.storageOverview,storageDestinations:real.storageDestinations,storageCostPreview:real.storageCostPreview,confirmStorageBooking:real.confirmStorageBooking,crewCapacity:async()=>({airlineId,status:'fixture_unavailable'}),managementResponsibilities:async()=>({airlineId,status:'fixture_unavailable'}),list:async()=>({airlineId,offers:[],fleet:[{id:aircraftId,ownershipType:fixture.ownership_type,fleetStatus:fixture.fleet_status,manufacturer:'Airbus',model:'A319',registration:'CI-001',locationStatus:'grounded',locationAirportKey:fixture.airport_key}]})};
+  const client={storageOverview:real.storageOverview,storageDestinations:real.storageDestinations,storageCostPreview:real.storageCostPreview,confirmStorageBooking:real.confirmStorageBooking,cancelStorageBooking:real.cancelStorageBooking,crewCapacity:async()=>({airlineId,status:'fixture_unavailable'}),managementResponsibilities:async()=>({airlineId,status:'fixture_unavailable'}),list:async()=>({airlineId,offers:[],fleet:[{id:aircraftId,ownershipType:fixture.ownership_type,fleetStatus:fixture.fleet_status,manufacturer:'Airbus',model:'A319',registration:'CI-001',locationStatus:'grounded',locationAirportKey:fixture.airport_key}]})};
   const workspace=createAirlineWorkspace({doc:document,identity:'database-review',storage:sessionStorage,session:null,goTo:()=>{}});
   const refresh=()=>workspace.updateData({connected:true,airline:{id:airlineId,name:'CI airline',worldId:1},worlds:[],fleetClient:client});
   window.databaseReview={deny:()=>{currentToken=otherToken;refresh()},restore:()=>{currentToken=token;refresh()}};
@@ -105,6 +105,39 @@ try{
  await page.evaluate(()=>window.databaseReview.restore());
  await waitText('fleet-storage-monthly','$8,000.00');
  assert.deepEqual(await snapshot(),before,'Read-only requests must not alter cash, ledger or requests');
+ // Enable synthetic review switches only after the closed-gate read checks.
+ await db.query("UPDATE airlinerra_game.storage_player_automatic_booking_release_v1 SET enabled=true; UPDATE airlinerra_game.storage_facility_admission_release_v1 SET enabled=true; UPDATE airlinerra_game.aircraft_storage_automatic_booking_release_v1 SET enabled=true; UPDATE airlinerra_game.storage_operational_departure_release_v1 SET enabled=true; UPDATE airlinerra_game.storage_crew_departure_validation_release_v1 SET enabled=true; UPDATE airlinerra_game.aircraft_storage_crew_booking_release_v1 SET enabled=true; UPDATE airlinerra_game.aircraft_storage_booking_release_v1 SET enabled=true; UPDATE airlinerra_game.aircraft_storage_execution_release_v1 SET execution_enabled=true,fuel_adapter_enabled=true; UPDATE airlinerra_game.aircraft_storage_signed_movement_release_v1 SET enabled=true; UPDATE airlinerra_game.aircraft_storage_reactivation_release_v1 SET enabled=true;");
+ await page.waitForFunction(()=>!document.getElementById('fleet-storage-plan').disabled);
+ await page.locator('#fleet-storage-plan').click();
+ await waitText('fleet-storage-planning-feedback','Enter at least two characters');
+ await page.locator('#fleet-storage-search').fill('TEST');
+ await page.locator('#fleet-storage-search-button').click();
+ await page.locator('#fleet-storage-destination').locator('option[value="OURAIRPORTS:999"]').waitFor({state:'attached'});
+ await page.locator('#fleet-storage-destination').selectOption('OURAIRPORTS:999');
+ const departure=new Date(Math.ceil((Date.parse(fixture.now)+3*3600000)/60000)*60000).toISOString().slice(0,16);
+ await page.locator('#fleet-storage-departure').fill(departure);
+ await page.locator('#fleet-storage-quote').click();
+ await page.waitForFunction(()=>!document.getElementById('fleet-storage-book').disabled);
+ const bookingResponse=page.waitForResponse(r=>r.url().endsWith(FLEET_ACQUISITION_API_ROUTE)&&r.request().postDataJSON()?.action==='storage-book-confirm');
+ await page.locator('#fleet-storage-book').click();
+ const booking=await (await bookingResponse).json();
+ assert.equal(booking.booked,true,JSON.stringify(booking));
+ assert.equal(booking.crewReserved,true);
+ assert.equal(booking.slotsReserved,2);
+ assert.equal(booking.dispatchAuthorized,false);
+ await waitText('fleet-storage-state','Reactivation requested');
+ const record=async()=> (await db.query("SELECT (SELECT status FROM airlinerra_game.aircraft_storage_funds_v1 WHERE request_id=$1) AS funds,(SELECT count(*)::int FROM airlinerra_game.aircraft_storage_flight_slots_v1 WHERE request_id=$1) AS slots,(SELECT count(*)::int FROM airlinerra_game.aircraft_storage_crew_reservations_v1 WHERE request_id=$1 AND status='reserved') AS crew,(SELECT count(*)::int FROM airlinerra_game.section9_operated_flight_movements_v1 WHERE storage_request_id=$1) AS movements",[booking.requestId])).rows[0];
+ assert.deepEqual(await record(),{funds:'held',slots:2,crew:2,movements:0});
+ assert.equal(Math.round((Number(before.cash)-Number((await snapshot()).cash))*100),268813);
+ page.once('dialog',d=>d.accept());
+ const cancelResponse=page.waitForResponse(r=>r.url().endsWith(FLEET_ACQUISITION_API_ROUTE)&&r.request().postDataJSON()?.action==='storage-book-cancel');
+ await page.locator('#fleet-storage-cancel').click();
+ const cancelled=await (await cancelResponse).json();
+ assert.equal(cancelled.cancelled,true,JSON.stringify(cancelled));
+ await waitText('fleet-storage-state','Stored');
+ assert.deepEqual(await record(),{funds:'refunded',slots:0,crew:0,movements:0});
+ assert.equal(Number((await snapshot()).cash),Number(before.cash));
+ console.log('PASS connected browser booking and cancellation: actual held funds, two slots, two crew reservations, full refund, no movements');
  assert.deepEqual(errors,[]);
  console.log('PASS Chromium -> actual fleet client -> authenticated storage handler -> PostgreSQL overview, return airport search and exact server quote; booking gate enforced, foreign owner denied, no financial mutations');
 }finally{
