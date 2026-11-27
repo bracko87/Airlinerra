@@ -333,3 +333,21 @@ jobs:
           node tests/e2e/browser-aircraft-storage-database.mjs
       - name: Verify persisted browser game permission receipts
         run: psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1 -f tests/sql/aircraft_storage_browser_permission_receipts_acceptance.sql
+
+      - name: Verify actual minute scheduler billing and idempotence
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(psql -h localhost -U postgres -d review -Atqc 'SELECT current_database()')" = review
+          cleanup() {
+            psql -h localhost -U postgres -d review -q -c "SELECT cron.unschedule(jobid) FROM cron.job WHERE jobname='airlinerra-world1-storage-background-v1'; UPDATE airlinerra_game.storage_background_worker_release_v1 SET billing_enabled=false,movement_enabled=false,expiry_enabled=false WHERE world_id=1;" >/dev/null || true
+          }
+          trap cleanup EXIT
+          psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1 -f tests/sql/aircraft_storage_cron_execution_fixture.sql
+          for i in $(seq 1 40); do
+            runs="$(psql -h localhost -U postgres -d review -Atqc "SELECT count(*) FROM cron.job_run_details d JOIN cron.job j USING(jobid) WHERE j.jobname='airlinerra-world1-storage-background-v1' AND d.status='succeeded'")"
+            if [[ "$runs" -ge 2 ]]; then break; fi
+            sleep 5
+          done
+          psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1 -f tests/sql/aircraft_storage_cron_execution_acceptance.sql
+          test "$(psql -h localhost -U postgres -d review -Atqc "SELECT count(*) FROM cron.job WHERE jobname='airlinerra-world1-storage-background-v1'")" = 0
