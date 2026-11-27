@@ -4,7 +4,11 @@ BEGIN;
 DO $prices$
 DECLARE n integer;
 BEGIN
- IF (SELECT count(*) FROM airlinerra_game.aircraft_storage_airport_candidate_data_v1 WHERE world_id=1)<>9
+ LOCK TABLE airlinerra_game.aircraft_storage_facilities_v1 IN SHARE ROW EXCLUSIVE MODE;
+ LOCK TABLE airlinerra_game.aircraft_storage_airport_candidate_data_v1 IN SHARE MODE;
+ IF (SELECT count(*) FROM airlinerra_game.aircraft_storage_facilities_v1 WHERE world_id=1)<>9
+ OR EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_facilities_v1 f LEFT JOIN airlinerra_game.aircraft_storage_airport_candidate_data_v1 c USING(world_id,airport_key) WHERE c.airport_key IS NULL)
+ OR (SELECT count(*) FROM airlinerra_game.aircraft_storage_airport_candidate_data_v1 WHERE world_id=1)<>9
  OR EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_airport_candidate_data_v1 c
  WHERE c.world_id<>1 OR c.airport_key='OURAIRPORTS:19330' OR c.proposed_monthly_regional_usd IS DISTINCT FROM 4000::numeric
  OR c.proposed_monthly_narrowbody_usd IS DISTINCT FROM 8000::numeric OR c.proposed_monthly_widebody_usd IS DISTINCT FROM 15000::numeric)
