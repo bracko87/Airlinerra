@@ -422,6 +422,19 @@ if [[ "${AIRLINERRA_STORAGE_SCHEMA_REHEARSAL:-0}" == 1 ]]; then
   fi
   echo "PASS: all seven original schema categories exactly restored after rollback."
   echo "PASS: integrated storage schema-only transaction rolled back; no storage schema persisted on clone."
+  # Repeat on the exact same restored clone with nine minimal registry
+  # identities and all deferred candidate-only data. No live table data copied.
+  node scripts/ci/assemble_storage_schema_rehearsal.mjs "$tmp/storage-candidate-data-rehearsal.sql" --include-candidate-data
+  if ! local_psql -q -v VERBOSITY=verbose -f "$tmp/storage-candidate-data-rehearsal.sql" >"$tmp/storage-data-rehearsal.log" 2>&1; then
+    awk '/^STORAGE_SCHEMA_REHEARSAL [a-z_]+\.sql$/ { component=$2 } END { print "Blocked candidate-data component: " component }' "$tmp/storage-data-rehearsal.log"
+    grep -Eo 'ERROR: +[0-9A-Z]{5}:' "$tmp/storage-data-rehearsal.log" | sort -u || true
+    echo "BLOCKED: candidate-data rehearsal failed; private diagnostics withheld." >&2
+    exit 2
+  fi
+  local_psql -Atqc "SELECT (to_regclass('airlinerra_game.aircraft_storage_facilities_v1') IS NULL AND NOT EXISTS(SELECT 1 FROM airlinerra.airport_registry))::int" | grep -qx 1
+  local_psql -At -f tests/sql/airlinerra_private_schema_fingerprint.sql >"$tmp/storage-data-rollback.hashes" 2>"$tmp/storage-data-rollback.stderr"
+  cmp -s "$tmp/clone-structure.hashes" "$tmp/storage-data-rollback.hashes"
+  echo "PASS: integrated candidate-data rehearsal; nine priced inactive facilities, six service proposals and 271 billing proposals; all rolled back."
   exit 0
 fi
 
