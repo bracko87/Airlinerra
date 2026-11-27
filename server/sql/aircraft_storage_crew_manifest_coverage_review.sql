@@ -60,12 +60,9 @@ BEGIN
  SELECT * INTO d FROM airlinerra_game.section9_operated_flight_movements_v1 WHERE engine_event_id=p_event AND phase='departed' AND storage_request_id=r.id AND airline_id=p_airline AND aircraft_inventory_id=r.aircraft_inventory_id AND flight_occurrence_id=m.physical_flight_id AND origin_airport_key=r.origin_airport_key AND destination_airport_key=r.destination_airport_key AND actual_event_utc=r.departure_utc AND scheduled_departure_utc=r.departure_utc AND scheduled_arrival_utc=r.arrival_utc;
  IF NOT FOUND THEN RETURN false;END IF;
  completed:=r.status='completed';
- IF completed THEN
-  SELECT * INTO a FROM airlinerra_game.section9_operated_flight_movements_v1 WHERE storage_request_id=r.id AND phase='arrived' AND airline_id=p_airline AND aircraft_inventory_id=r.aircraft_inventory_id AND flight_occurrence_id=m.physical_flight_id AND origin_airport_key=r.origin_airport_key AND destination_airport_key=r.destination_airport_key AND actual_event_utc=r.arrival_utc AND scheduled_departure_utc=r.departure_utc AND scheduled_arrival_utc=r.arrival_utc;
-  IF NOT FOUND THEN RETURN false;END IF;
- ELSE
-  IF EXISTS(SELECT 1 FROM airlinerra_game.section9_operated_flight_movements_v1 WHERE storage_request_id=r.id AND phase='arrived') THEN RETURN false;END IF;
- END IF;
+ SELECT * INTO a FROM airlinerra_game.section9_operated_flight_movements_v1 WHERE storage_request_id=r.id AND phase='arrived' AND airline_id=p_airline AND aircraft_inventory_id=r.aircraft_inventory_id AND flight_occurrence_id=m.physical_flight_id AND origin_airport_key=r.origin_airport_key AND destination_airport_key=r.destination_airport_key AND actual_event_utc=r.arrival_utc AND scheduled_departure_utc=r.departure_utc AND scheduled_arrival_utc=r.arrival_utc;
+ IF completed AND NOT FOUND THEN RETURN false;END IF;
+ IF NOT completed AND EXISTS(SELECT 1 FROM airlinerra_game.section9_operated_flight_movements_v1 WHERE storage_request_id=r.id AND phase='arrived') THEN RETURN false;END IF;
  SELECT coalesce(jsonb_agg(jsonb_build_object('employeeId',s.employee_id,'role',s.seat_role,'reportUtc',s.duty_start_utc,'endUtc',s.duty_end_utc) ORDER BY s.employee_id),'[]'::jsonb) INTO actual_seats
  FROM airlinerra_game.aircraft_storage_crew_reservations_v1 s
  JOIN airlinerra_game.aircraft_storage_crew_duty_receipts_v1 c ON c.request_id=s.request_id AND c.employee_id=s.employee_id AND c.airline_id=s.airline_id
