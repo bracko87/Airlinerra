@@ -176,6 +176,16 @@ try{
  assert.notEqual(next.requestId,booking.requestId);
  await waitText('fleet-storage-state','Reactivation requested');
  const flight=(await db.query("SELECT departure_utc::text AS dep,arrival_utc::text AS arr,storage_session_id FROM airlinerra_game.aircraft_storage_relocation_requests_v1 WHERE id=$1",[next.requestId])).rows[0];
+ // Run a rollback-only permission revocation test on the real pending booking.
+ const permissionProbe=await db.connect();
+ try{
+  await permissionProbe.query('BEGIN');
+  await permissionProbe.query(await readFile('tests/sql/aircraft_storage_browser_permission_revocation_acceptance.sql','utf8'));
+  console.log('PASS connected revoked permission departure and replay, with no movement or financial side effects');
+ }finally{
+  await permissionProbe.query('ROLLBACK');
+  permissionProbe.release();
+ }
  const early=await tick(new Date(Date.parse(flight.dep)-1000).toISOString());
  assert.ok(!early.results.some(x=>x.requestId===next.requestId&&x.movementRecorded===true));
  const departed=await tick(flight.dep);
