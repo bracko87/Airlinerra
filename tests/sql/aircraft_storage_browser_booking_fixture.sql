@@ -10,7 +10,7 @@ RETURNS jsonb LANGUAGE sql STABLE AS $$
 $$;
 CREATE FUNCTION airlinerra_game.owned_aircraft_storage_crew_candidates_v1(p_player uuid,p_airline uuid,p_aircraft uuid,p_purpose text,p_destination text,p_departure timestamptz)
 RETURNS jsonb LANGUAGE sql STABLE AS $$
- SELECT jsonb_build_object('status','storage_crew_candidates_found','captainsRequired',1,'firstOfficersRequired',1,'minimumCabinCrew',0,'qualificationGroup','fixture','candidateCaptains',jsonb_build_array('00000000-0000-4000-8000-000000000005'),'candidateFirstOfficers',jsonb_build_array('00000000-0000-4000-8000-000000000006'),'candidateCabinCrew','[]'::jsonb,'rotation',jsonb_build_object('startingAirport',q->>'originAirportKey','endingAirport',p_destination,'dutyStartUtc',p_departure-interval '1 hour','dutyEndUtc',(q->>'arrivalUtc')::timestamptz+interval '30 minutes'))
+ SELECT jsonb_build_object('status','storage_crew_candidates_found','captainsRequired',1,'firstOfficersRequired',1,'minimumCabinCrew',0,'qualificationGroup','fixture','candidateCaptains',jsonb_build_array(CASE WHEN p_purpose='storage_inbound' THEN '00000000-0000-4000-8000-000000000007' ELSE '00000000-0000-4000-8000-000000000005' END),'candidateFirstOfficers',jsonb_build_array(CASE WHEN p_purpose='storage_inbound' THEN '00000000-0000-4000-8000-000000000008' ELSE '00000000-0000-4000-8000-000000000006' END),'candidateCabinCrew','[]'::jsonb,'rotation',jsonb_build_object('startingAirport',q->>'originAirportKey','endingAirport',p_destination,'dutyStartUtc',p_departure-interval '1 hour','dutyEndUtc',(q->>'arrivalUtc')::timestamptz+interval '30 minutes'))
  FROM (SELECT airlinerra_game.owned_aircraft_storage_cost_preview_v1(p_player,p_airline,p_aircraft,p_purpose,p_destination,p_departure) q) x
 $$;
 CREATE FUNCTION airlinerra_game.storage_reactivation_maintenance_window_v1(uuid,uuid,uuid,timestamptz,timestamptz) RETURNS jsonb LANGUAGE sql AS $$SELECT jsonb_build_object('gameMaintenanceClear',true)$$;
@@ -47,4 +47,5 @@ BEGIN
  RETURN jsonb_build_object('fuelBurnRecorded',FOUND);
 END $$;
 
+CREATE FUNCTION airlinerra_game.section9_verified_game_maintenance_dispatch_window_v1(uuid,uuid,uuid,timestamptz,timestamptz) RETURNS jsonb LANGUAGE sql AS $$SELECT jsonb_build_object('gameMaintenanceClear',true)$$;
 COMMIT;
