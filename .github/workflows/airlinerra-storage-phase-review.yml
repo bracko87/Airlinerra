@@ -105,7 +105,8 @@ jobs:
           BEGIN
            IF (SELECT count(*) FROM airlinerra_game.aircraft_storage_facilities_v1 WHERE review_state='candidate' AND monthly_regional_usd=4000 AND monthly_narrowbody_usd=8000 AND monthly_widebody_usd=15000)<>9
            OR EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_facilities_v1 WHERE review_state<>'candidate' OR reactivation_allowed OR dismantling_allowed)
-           OR EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_facilities_v1 WHERE airport_key='OURAIRPORTS:19330' AND monthly_narrowbody_usd IS NOT NULL)
+           OR (SELECT count(*) FROM airlinerra_game.aircraft_storage_facilities_v1)<>9
+           OR EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_facilities_v1 WHERE airport_key='OURAIRPORTS:19330')
            OR airlinerra_game.aircraft_storage_airport_admission_v1('OURAIRPORTS:316427','storage_inbound')->>'eligible' IS DISTINCT FROM 'false'
            THEN RAISE EXCEPTION 'approved storage tariff staging altered admission or scope';END IF;
            RAISE NOTICE 'Approved monthly storage prices staged for nine candidates; all admission states unchanged';
