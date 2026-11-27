@@ -101,4 +101,43 @@ BEGIN
  RAISE NOTICE 'Automatic storage booking composition acceptance passed (synthetic screens and fuel writes)';
 END $auto$;
 
+-- The player wrapper requires the release records from the final admission and
+-- departure reviews. These two switches are test doubles in this savepoint.
+CREATE TABLE airlinerra_game.storage_facility_admission_release_v1(world_id smallint PRIMARY KEY,enabled boolean NOT NULL);
+INSERT INTO airlinerra_game.storage_facility_admission_release_v1 VALUES(1,true);
+CREATE TABLE airlinerra_game.storage_operational_departure_release_v1(world_id smallint PRIMARY KEY,enabled boolean NOT NULL);
+INSERT INTO airlinerra_game.storage_operational_departure_release_v1 VALUES(1,false);
+DO $player$
+DECLARE s record;owner_id uuid;dep timestamptz;j jsonb;rid uuid;k uuid:=gen_random_uuid();n bigint;bal numeric;
+BEGIN
+ SELECT * INTO STRICT s FROM airlinerra_game.aircraft_storage_sessions_v1 WHERE storage_ended_utc IS NULL;
+ SELECT owner_player_id INTO STRICT owner_id FROM airlinerra_game.aircraft_storage_relocation_requests_v1 WHERE id=s.request_id;
+ PERFORM set_config('test.storage_hour',s.storage_started_utc::text,true);
+ dep:=date_trunc('second',s.storage_started_utc+interval '3 hours');
+ SELECT count(*) INTO n FROM airlinerra_game.aircraft_storage_relocation_requests_v1;
+ SELECT cash_usd INTO bal FROM airlinerra_game.airlines WHERE id=s.airline_id;
+ j:=airlinerra_game.owned_aircraft_storage_automatic_booking_preview_v1(owner_id,s.airline_id,s.aircraft_inventory_id,'storage_reactivation','OURAIRPORTS:999',dep);
+ IF j->>'bookingEligible' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'disabled player preview: %',j;END IF;
+ UPDATE airlinerra_game.storage_player_automatic_booking_release_v1 SET enabled=true;
+ j:=airlinerra_game.confirm_player_automatic_storage_booking_v1(owner_id,s.airline_id,s.aircraft_inventory_id,'storage_reactivation','OURAIRPORTS:999',dep,2688.13,k);
+ IF j->>'status' IS DISTINCT FROM 'storage_player_automatic_booking_not_released' THEN RAISE EXCEPTION 'departure gate bypass: %',j;END IF;
+ UPDATE airlinerra_game.storage_operational_departure_release_v1 SET enabled=true;
+ PERFORM set_config('test.auto_airport','blocked',true);
+ j:=airlinerra_game.owned_aircraft_storage_automatic_booking_preview_v1(owner_id,s.airline_id,s.aircraft_inventory_id,'storage_reactivation','OURAIRPORTS:999',dep);
+ IF j->>'bookingEligible' IS DISTINCT FROM 'false' OR j->>'bookingReadiness' IS DISTINCT FROM 'storage_airport_screen_blocked' THEN RAISE EXCEPTION 'blocked airport preview: %',j;END IF;
+ PERFORM set_config('test.auto_airport','clear',true);
+ j:=airlinerra_game.owned_aircraft_storage_automatic_booking_preview_v1(owner_id,s.airline_id,s.aircraft_inventory_id,'storage_reactivation','OURAIRPORTS:999',dep);
+ IF j->>'bookingEligible' IS DISTINCT FROM 'true' OR j->>'bookingRequiresFinalChecks' IS DISTINCT FROM 'true' OR j ? 'candidateCaptains' OR j ? 'candidateFirstOfficers' OR j ? 'candidateCabinCrew' OR j->>'readOnly' IS DISTINCT FROM 'true' OR j->>'bookable' IS DISTINCT FROM 'false'
+ OR (SELECT count(*) FROM airlinerra_game.aircraft_storage_relocation_requests_v1)<>n OR (SELECT cash_usd FROM airlinerra_game.airlines WHERE id=s.airline_id)<>bal THEN RAISE EXCEPTION 'unsafe player preview: %',j;END IF;
+ j:=airlinerra_game.confirm_player_automatic_storage_booking_v1(owner_id,s.airline_id,s.aircraft_inventory_id,'storage_reactivation','OURAIRPORTS:999',dep,2688.13,k);
+ IF j->>'booked' IS DISTINCT FROM 'true' OR j->>'crewReserved' IS DISTINCT FROM 'true' OR j->>'automaticClearanceGenerated' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'player automatic booking failed: %',j;END IF;
+ rid:=(j->>'requestId')::uuid;
+ UPDATE airlinerra_game.storage_player_automatic_booking_release_v1 SET enabled=false;
+ j:=airlinerra_game.confirm_player_automatic_storage_booking_v1(owner_id,s.airline_id,s.aircraft_inventory_id,'storage_reactivation','OURAIRPORTS:999',dep,2688.13,k);
+ IF j->>'replayed' IS DISTINCT FROM 'true' OR j->>'requestId' IS DISTINCT FROM rid::text THEN RAISE EXCEPTION 'player automatic replay failed: %',j;END IF;
+ j:=airlinerra_game.cancel_owned_aircraft_storage_booking_v1(owner_id,s.airline_id,s.aircraft_inventory_id,rid);
+ IF j->>'cancelled' IS DISTINCT FROM 'true' OR (SELECT cash_usd FROM airlinerra_game.airlines WHERE id=s.airline_id)<>bal THEN RAISE EXCEPTION 'player automatic cancellation failed: %',j;END IF;
+ RAISE NOTICE 'Player automatic booking gateway acceptance passed (synthetic operational inputs and release switches)';
+END $player$;
+
 ROLLBACK TO SAVEPOINT storage_crew_guard;
