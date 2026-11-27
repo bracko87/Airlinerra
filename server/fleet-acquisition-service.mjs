@@ -132,10 +132,10 @@ export function validateFleetAcquisitionRequest(body){
  return false;
 }
 export const FLEET_SQL=Object.freeze({
- storageBookConfirm:"SELECT airlinerra_game.confirm_owned_aircraft_storage_booking_v1($1::uuid,$2::uuid,$3::uuid,$4::text,$5::text,$6::timestamptz,$7::numeric,$8::uuid) AS result",
+ storageBookConfirm:"SELECT airlinerra_game.confirm_player_automatic_storage_booking_v1($1::uuid,$2::uuid,$3::uuid,$4::text,$5::text,$6::timestamptz,$7::numeric,$8::uuid) AS result",
  storageBookCancel:"SELECT airlinerra_game.cancel_owned_aircraft_storage_booking_v1($1::uuid,$2::uuid,$3::uuid,$4::uuid) AS result",
  storageDestinations:"SELECT airlinerra_game.owned_aircraft_storage_destinations_v1($1::uuid,$2::uuid,$3::uuid,$4::text,$5::text) AS result",
- storageCostPreview:"SELECT airlinerra_game.owned_aircraft_storage_booking_preview_v1($1::uuid,$2::uuid,$3::uuid,$4::text,$5::text,$6::timestamptz) AS result",
+ storageCostPreview:"SELECT airlinerra_game.owned_aircraft_storage_automatic_booking_preview_v1($1::uuid,$2::uuid,$3::uuid,$4::text,$5::text,$6::timestamptz) AS result",
  storageOverview:"SELECT airlinerra_game.owned_aircraft_storage_player_overview_v1($1::uuid,$2::uuid,$3::uuid) AS result",
  owner:"SELECT a.id,a.cash_usd::text AS \"cashUsd\" FROM airlinerra_game.airlines a "+
   "JOIN airlinerra_game.world_memberships w ON w.world_id=a.world_id AND w.player_id=a.owner_player_id "+
