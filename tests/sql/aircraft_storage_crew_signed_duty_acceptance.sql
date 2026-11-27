@@ -216,12 +216,26 @@ BEGIN
   PERFORM set_config('test.storage_weekly_input',(departure_roster||jsonb_build_object('status','weekly_crew_bootstrap_input_preview','flights','[]'::jsonb,'cabinHeadcountReconciled',true))::text,true);
   h:=airlinerra_game.owned_storage_crew_history_input_review_v1(owner_id,s.airline_id,dep,rid);
   IF h->>'status' IS DISTINCT FROM 'storage_history_input_unverified' THEN RAISE EXCEPTION 'unbound movement coverage ignored: %',h;END IF;
+  IF airlinerra_game.storage_crew_selected_history_input_v1(owner_id,s.airline_id,dep,rid) IS DISTINCT FROM departure_roster THEN RAISE EXCEPTION 'disabled history selector changed legacy input';END IF;
+  UPDATE airlinerra_game.storage_combined_booking_history_release_v1 SET enabled=true;
+  h:=airlinerra_game.storage_crew_departure_check_v1(rid);
+  IF h->>'status' IS DISTINCT FROM 'storage_crew_current_history_unverified' THEN RAISE EXCEPTION 'combined departure silently fell back to legacy history: %',h;END IF;
+
   EXECUTE $mock$CREATE OR REPLACE FUNCTION airlinerra_game.storage_rolling_crew_coverage_v1(p_airline uuid,p_at timestamptz)
   RETURNS jsonb LANGUAGE sql STABLE AS $body$ SELECT jsonb_build_object('coverageVerified',true,'unboundDeparturesLast7Days',0,'unresolvedCaptureIssues',0) $body$ $mock$;
   h:=airlinerra_game.owned_storage_crew_history_input_review_v1(owner_id,s.airline_id,dep,NULL);
   IF h->>'status' IS DISTINCT FROM 'storage_crew_history_input_review' OR jsonb_array_length(h->'pilots')<>0 THEN RAISE EXCEPTION 'candidate input ignored reserved custody: %',h;END IF;
   h:=airlinerra_game.owned_storage_crew_history_input_review_v1(owner_id,s.airline_id,dep,rid);
   IF h->>'status' IS DISTINCT FROM 'storage_crew_history_input_review' OR jsonb_array_length(h->'pilots')<>2 OR h->>'crewReleased' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'reserved crew departure input failed: %',h;END IF;
+  h:=airlinerra_game.storage_crew_selected_history_input_v1(owner_id,s.airline_id,dep,NULL);
+  IF h->>'status' IS DISTINCT FROM 'rolling_crew_input_preview' OR h->>'historyIncluded' IS DISTINCT FROM 'true' OR jsonb_array_length(h->'pilots')<>0 THEN RAISE EXCEPTION 'booking consumer input ignored custody: %',h;END IF;
+  h:=airlinerra_game.storage_crew_departure_check_v1(rid);
+  IF h->>'passed' IS DISTINCT FROM 'true' OR h->>'crewCount' IS DISTINCT FROM '2' THEN RAISE EXCEPTION 'combined history departure rejected exact reserved crew: %',h;END IF;
+  PERFORM set_config('test.storage_weekly_input',jsonb_set(current_setting('test.storage_weekly_input')::jsonb,'{pilots,0,permissions,0,active}','false'::jsonb)::text,true);
+  h:=airlinerra_game.storage_crew_departure_check_v1(rid);
+  IF h->>'status' IS DISTINCT FROM 'storage_crew_duty_or_qualification_changed' THEN RAISE EXCEPTION 'combined history departure ignored current qualification: %',h;END IF;
+  RAISE NOTICE 'Gated storage booking history consumer integration passed (synthetic roster and controlled coverage; actual departure duty fit)';
+
   RAISE EXCEPTION USING ERRCODE='PZ009',MESSAGE='rollback history input fixture';
  EXCEPTION WHEN SQLSTATE 'PZ009' THEN NULL;END;
 
