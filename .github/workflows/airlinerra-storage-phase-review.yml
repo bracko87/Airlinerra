@@ -244,7 +244,7 @@ jobs:
             sed '/^ROLLBACK;$/d' server/sql/aircraft_storage_signed_movement_schema_review.sql
             echo "INSERT INTO airlinerra_game.airlines VALUES('00000000-0000-4000-8000-000000000001',1,'00000000-0000-4000-8000-000000000002',5000000); INSERT INTO airlinerra_game.world_memberships VALUES(1,'00000000-0000-4000-8000-000000000002','active'); INSERT INTO airlinerra_game.airline_aircraft_inventory(id,airline_id,configuration_id,ownership_type,fleet_status) VALUES('00000000-0000-4000-8000-000000000003','00000000-0000-4000-8000-000000000001',1,'owned','in_service'); INSERT INTO airlinerra_game.airline_ledger(airline_id,amount_usd) VALUES('00000000-0000-4000-8000-000000000001',5000000);"
             sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_funds_review.sql
-            sed -e '/^ROLLBACK;$/d' -e 's/00000000-0000-0000-0000-00000000000/00000000-0000-4000-8000-00000000000/g' tests/sql/aircraft_storage_signed_movement_acceptance.sql
+            sed -e '/^ROLLBACK;$/d' -e 's/00000000-0000-0000-0000-00000000000/00000000-0000-4000-8000-00000000000/g' -e "s/interval '4 hours'/interval '12 hours'/g" tests/sql/aircraft_storage_signed_movement_acceptance.sql
             sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_arrival_completion_review.sql
             sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_monthly_billing_review.sql
             echo "INSERT INTO airlinerra_game.aircraft_storage_billing_classes_v1 VALUES(1,'narrowbody','fixture'); UPDATE airlinerra_game.aircraft_storage_facilities_v1 SET monthly_regional_usd=4000,monthly_narrowbody_usd=8000,monthly_widebody_usd=15000 WHERE airport_key='OURAIRPORTS:316427';"
@@ -265,8 +265,9 @@ jobs:
           set -euo pipefail
           psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1 -f tests/sql/aircraft_storage_browser_booking_fixture.sql
           {
-            echo "BEGIN; DROP TABLE airlinerra_game.aircraft_storage_booking_release_v1,airlinerra_game.aircraft_storage_crew_booking_release_v1,airlinerra_game.aircraft_storage_automatic_booking_release_v1;"
-            for file in aircraft_storage_reactivation_reservation_review aircraft_storage_execution_worker_review aircraft_storage_booking_confirmation_review aircraft_storage_crew_reservation_guard_review aircraft_storage_crew_bound_booking_review aircraft_storage_automatic_booking_review; do
+            echo "BEGIN; DROP TABLE airlinerra_game.aircraft_storage_booking_release_v1,airlinerra_game.aircraft_storage_crew_booking_release_v1,airlinerra_game.aircraft_storage_automatic_booking_release_v1,airlinerra_game.aircraft_storage_reactivation_release_v1;"
+            sed -n '/^CREATE OR REPLACE FUNCTION airlinerra_game.section9_aircraft_movement_decision_v1(/,/^END \$f\$;/p' supabase/migrations/20261109111043_section9_operated_aircraft_movement_schema.sql
+            for file in aircraft_storage_reactivation_reservation_review aircraft_storage_reactivation_movement_review aircraft_storage_reactivation_lifecycle_review aircraft_storage_execution_worker_review aircraft_storage_booking_confirmation_review aircraft_storage_crew_reservation_guard_review aircraft_storage_crew_bound_booking_review aircraft_storage_automatic_booking_review aircraft_storage_background_tick_review; do
               sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' "server/sql/$file.sql"
             done
             echo "COMMIT;"
