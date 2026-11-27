@@ -261,6 +261,7 @@ jobs:
         run: |
           node tests/aircraft-storage-release-inventory.mjs
           node scripts/ci/assemble_storage_schema_rehearsal.mjs --validate-only
+          node scripts/ci/assemble_storage_schema_rehearsal.mjs --validate-only --include-candidate-data
           bash -n scripts/ci/airlinerra_private_schema_baseline.sh
       - name: Storage interface and authenticated API acceptance
         run: node --test --test-name-pattern='storage panel|storage overview|storage planning preview|storage booking actions' tests/test_airline_workspace.mjs tests/test_fleet_acquisition_api.mjs
