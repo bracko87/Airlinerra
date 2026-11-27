@@ -297,15 +297,18 @@ BEGIN
  LOCK TABLE airlinerra_game.aircraft_storage_billing_classes_v1 IN SHARE ROW EXCLUSIVE MODE;
  -- All identities must match one statement snapshot. Unknown, missing,
  -- duplicate or reassigned configurations require a new explicit review.
- SELECT count(*) INTO actual_count FROM airlinerra.aircraft_catalog_configuration_inventory;
- IF actual_count<>271 OR (SELECT count(*) FROM airlinerra_game.storage_billing_class_candidates_v1)<>271
- OR EXISTS(
+ WITH live_catalogue AS MATERIALIZED (
  SELECT configuration_id,family_id,variant_id,configuration_code FROM airlinerra.aircraft_catalog_configuration_inventory
- EXCEPT SELECT configuration_id,family_id,variant_id,configuration_code FROM airlinerra_game.storage_billing_class_candidates_v1
- ) OR EXISTS(
+ ), candidate_catalogue AS MATERIALIZED (
  SELECT configuration_id,family_id,variant_id,configuration_code FROM airlinerra_game.storage_billing_class_candidates_v1
- EXCEPT SELECT configuration_id,family_id,variant_id,configuration_code FROM airlinerra.aircraft_catalog_configuration_inventory
- ) THEN RETURN jsonb_build_object('staged',false,'status','storage_billing_catalogue_changed');END IF;
+ )
+ SELECT CASE WHEN (SELECT count(*) FROM live_catalogue)=271
+ AND (SELECT count(DISTINCT configuration_id) FROM live_catalogue)=271
+ AND (SELECT count(*) FROM candidate_catalogue)=271
+ AND NOT EXISTS(SELECT * FROM live_catalogue EXCEPT SELECT * FROM candidate_catalogue)
+ AND NOT EXISTS(SELECT * FROM candidate_catalogue EXCEPT SELECT * FROM live_catalogue)
+ THEN 271 ELSE 0 END INTO actual_count;
+ IF actual_count<>271 THEN RETURN jsonb_build_object('staged',false,'status','storage_billing_catalogue_changed');END IF;
  IF EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_billing_classes_v1 a LEFT JOIN airlinerra_game.storage_billing_class_candidates_v1 c USING(configuration_id)
  WHERE c.configuration_id IS NULL OR a.billing_class IS DISTINCT FROM c.billing_class OR a.approval_reference IS DISTINCT FROM ref)
  THEN RETURN jsonb_build_object('staged',false,'status','storage_billing_existing_class_conflict');END IF;
