@@ -1,0 +1,300 @@
+{
+  "schemaVersion": 1,
+  "status": "candidate_order_unverified",
+  "baselineCommit": "56f82763cca0f8c6674d337f2b3c68a664d02b5a",
+  "baselineRegressionRun": 46030749735,
+  "productionAuthorized": false,
+  "executionMode": "inventory_only",
+  "groups": [
+    {
+      "name": "catalogue_and_route",
+      "components": [
+        {
+          "path": "server/sql/aircraft_storage_facilities_review.sql",
+          "gitBlobSha": "d4cbf1ef2c7e2bb214ab6fd0f6617b84ba2f344b"
+        },
+        {
+          "path": "server/sql/aircraft_storage_airport_admission_review.sql",
+          "gitBlobSha": "0fa82a463ccf5f972619dd5a0b6f0e020f607940"
+        },
+        {
+          "path": "server/sql/aircraft_storage_airport_geography_review.sql",
+          "gitBlobSha": "bd92ebf961bb860fa0e9389c7cde78afe3f03d58"
+        },
+        {
+          "path": "server/sql/aircraft_storage_route_phase_review.sql",
+          "gitBlobSha": "762651bd83f896701f8be4a6b1eff8a2e38d0748"
+        },
+        {
+          "path": "server/sql/aircraft_storage_relocation_cost_review.sql",
+          "gitBlobSha": "4a89bee9abdfdb7637845baa4af51eade048f347"
+        },
+        {
+          "path": "server/sql/aircraft_storage_relocation_quote_review.sql",
+          "gitBlobSha": "64d04057aee184f7ef9bda429ee5cbafc373761c"
+        },
+        {
+          "path": "server/sql/aircraft_storage_relocation_request_review.sql",
+          "gitBlobSha": "d9e489421733b2efc7b86a4487eef875eb36b2a4"
+        },
+        {
+          "path": "server/sql/aircraft_storage_flight_slots_review.sql",
+          "gitBlobSha": "fb4327c0c21325dccf1982556f9340d8ae2e8b63"
+        },
+        {
+          "path": "server/sql/aircraft_storage_leg_evidence_review.sql",
+          "gitBlobSha": "037169643b293ca9070e57abac8d3217d6e2aa9f"
+        },
+        {
+          "path": "server/sql/aircraft_storage_airport_candidate_data_review.sql",
+          "gitBlobSha": "39859a40b86553df0019780a4f0aadc16e669b2c"
+        },
+        {
+          "path": "server/sql/aircraft_storage_approved_game_prices_review.sql",
+          "gitBlobSha": "0920ce989fd35286e3594d98bf7a944816f42848"
+        }
+      ]
+    },
+    {
+      "name": "signed_lifecycle",
+      "components": [
+        {
+          "path": "server/sql/aircraft_storage_signed_movement_schema_review.sql",
+          "gitBlobSha": "8e8d7d6e54c7a6021675f72007338774368b7267"
+        },
+        {
+          "path": "server/sql/aircraft_storage_funds_review.sql",
+          "gitBlobSha": "529fbe9372ad124217782c00e64beaa1d4503fdc"
+        },
+        {
+          "path": "server/sql/aircraft_storage_arrival_completion_review.sql",
+          "gitBlobSha": "dc624a324b53d26b65d0fcd5e798b0c4b41f97e8"
+        },
+        {
+          "path": "server/sql/aircraft_storage_monthly_billing_review.sql",
+          "gitBlobSha": "d3632ce6459135f69d856cf8d10b99d84bc2d347"
+        },
+        {
+          "path": "server/sql/aircraft_storage_reactivation_request_review.sql",
+          "gitBlobSha": "1edfb1335cb1c52eb06a14ecdf22aa3294575f22"
+        },
+        {
+          "path": "server/sql/aircraft_storage_inbound_arrival_continuity_review.sql",
+          "gitBlobSha": "8dcf7bc3bbf752241db4740798a0ee61aa542ffb"
+        },
+        {
+          "path": "server/sql/aircraft_storage_reactivation_reservation_review.sql",
+          "gitBlobSha": "49914084aaa06757b09cd94691ef99d12c94514f"
+        },
+        {
+          "path": "server/sql/aircraft_storage_reactivation_movement_review.sql",
+          "gitBlobSha": "247a14e0e68d51d1a9c2c315cedabebb32e05699"
+        },
+        {
+          "path": "server/sql/aircraft_storage_reactivation_lifecycle_review.sql",
+          "gitBlobSha": "232a5686f86116b9a4e44622348910185267f8ec"
+        },
+        {
+          "path": "server/sql/aircraft_storage_fuel_execution_adapter_review.sql",
+          "gitBlobSha": "94812f71c446e8ce45bd318b01b546add98fd37a"
+        },
+        {
+          "path": "server/sql/aircraft_storage_reactivation_maintenance_review.sql",
+          "gitBlobSha": "82ae0f45ff37657cc61ca9a9093b15a41fecbadc"
+        },
+        {
+          "path": "server/sql/aircraft_storage_execution_worker_review.sql",
+          "gitBlobSha": "88ab2bfed3c3ebc4db8e9969e60743ae1d2d5285"
+        }
+      ]
+    },
+    {
+      "name": "facility_admission",
+      "components": [
+        {
+          "path": "server/sql/aircraft_storage_existing_commercial_profiles_review.sql",
+          "gitBlobSha": "cf0c8b2a6a357ff82f177a9a638cd1dd86d9a3c4"
+        },
+        {
+          "path": "server/sql/aircraft_storage_ferry_permission_crew_review.sql",
+          "gitBlobSha": "9e149ba18047962d1ac04e4af29f0405019a3a96"
+        },
+        {
+          "path": "server/sql/aircraft_storage_operational_screen_review.sql",
+          "gitBlobSha": "d2d68cbe6ea49a9e883eac5714ebc0923130e7b1"
+        },
+        {
+          "path": "server/sql/aircraft_storage_only_service_profiles_review.sql",
+          "gitBlobSha": "fb0f77e59f664975765be454ea66a6199a0ea437"
+        },
+        {
+          "path": "server/sql/aircraft_storage_facility_final_approval_review.sql",
+          "gitBlobSha": "9b0074e3b0a39e95aa64f74d6cd4568e0af51fc0"
+        },
+        {
+          "path": "server/sql/aircraft_storage_facility_current_admission_review.sql",
+          "gitBlobSha": "922745e78d3eaa4878049b15300af783f90f3fee"
+        },
+        {
+          "path": "server/sql/aircraft_storage_service_availability_review.sql",
+          "gitBlobSha": "c438e29bc2f96d555deebae2b3551af54f94d372"
+        },
+        {
+          "path": "server/sql/aircraft_storage_game_permission_policy_review.sql",
+          "gitBlobSha": "d8c04bf30625ecac9d8ea2270ec2e1a7aa50d647"
+        },
+        {
+          "path": "server/sql/aircraft_storage_dual_use_runway_review.sql",
+          "gitBlobSha": "0a078cde995dba9a39988f2727df8d72023aa31e"
+        }
+      ]
+    },
+    {
+      "name": "booking",
+      "components": [
+        {
+          "path": "server/sql/aircraft_storage_owner_overview_review.sql",
+          "gitBlobSha": "1a24a40a48985d5fda50c5e7e12f763743634711"
+        },
+        {
+          "path": "server/sql/aircraft_storage_planning_preview_review.sql",
+          "gitBlobSha": "e73fccef13bbed244be5d9d760840d19035fb316"
+        },
+        {
+          "path": "server/sql/aircraft_storage_booking_confirmation_review.sql",
+          "gitBlobSha": "f02bcfd1ac299d0e64669f996d52410051877965"
+        },
+        {
+          "path": "server/sql/aircraft_storage_player_booking_review.sql",
+          "gitBlobSha": "3380c1faf88bfbdee56e773f7668a5e146982d46"
+        },
+        {
+          "path": "server/sql/aircraft_storage_crew_candidate_review.sql",
+          "gitBlobSha": "218b1e44c6eccf46d087e3b3f4f4ea604ce82e18"
+        },
+        {
+          "path": "server/sql/aircraft_storage_crew_reservation_guard_review.sql",
+          "gitBlobSha": "0277b39b43a0c823d133f870601b57c79f1cad80"
+        },
+        {
+          "path": "server/sql/aircraft_storage_crew_bound_booking_review.sql",
+          "gitBlobSha": "8218678170c5bcfc724dfccbf501e19f50bb5300"
+        },
+        {
+          "path": "server/sql/aircraft_storage_crew_departure_validation_review.sql",
+          "gitBlobSha": "eea5526e2487977f1405d88f9ed586da5ccb1dcb"
+        },
+        {
+          "path": "server/sql/aircraft_storage_automatic_booking_review.sql",
+          "gitBlobSha": "200e4ea0d8fbc4037466e2810b5c4f5915a88ee8"
+        },
+        {
+          "path": "server/sql/aircraft_storage_player_automatic_booking_review.sql",
+          "gitBlobSha": "a8e548cb8c86a5f6667c7517d213ef0e602d666b"
+        },
+        {
+          "path": "server/sql/aircraft_storage_game_permission_booking_review.sql",
+          "gitBlobSha": "17ff593ce9455733d052f75e143a931e8d07bc6c"
+        }
+      ]
+    },
+    {
+      "name": "crew_and_worker",
+      "components": [
+        {
+          "path": "server/sql/aircraft_storage_background_tick_review.sql",
+          "gitBlobSha": "39bc2fde172ef66bcebde549bf6cd35451b8086a"
+        },
+        {
+          "path": "server/sql/aircraft_storage_crew_signed_duty_review.sql",
+          "gitBlobSha": "65d6dd8a70895072c0c41a85e3a5416e38a6027f"
+        },
+        {
+          "path": "server/sql/aircraft_storage_crew_combined_history_review.sql",
+          "gitBlobSha": "cdbb7fc7de158664d0fc87e2a22068eb1d6901c6"
+        },
+        {
+          "path": "server/sql/aircraft_storage_crew_planning_input_review.sql",
+          "gitBlobSha": "07fbee66b46f663dfccaaf02ff385d767d704cd0"
+        },
+        {
+          "path": "server/sql/aircraft_storage_crew_persistent_plan_review.sql",
+          "gitBlobSha": "77d785e569a3889a0f5a1c5ac387577c8968122e"
+        },
+        {
+          "path": "server/sql/aircraft_storage_crew_plan_handoff_review.sql",
+          "gitBlobSha": "58299bc0d7d289be866087b7ef95356575441bc8"
+        },
+        {
+          "path": "server/sql/aircraft_storage_operational_departure_review.sql",
+          "gitBlobSha": "fd48c39dc8b6bf7410716e4bfa48273a20d795b9"
+        },
+        {
+          "path": "server/sql/aircraft_storage_crew_handoff_dispatch_guard_review.sql",
+          "gitBlobSha": "f8597bd2dc7a3c2a41c1c5a253a19c86ece71b84"
+        },
+        {
+          "path": "server/sql/aircraft_storage_crew_manifest_coverage_review.sql",
+          "gitBlobSha": "26fdd94c80adbaf9edefbf5aabd32aba0c0e5ada"
+        },
+        {
+          "path": "server/sql/aircraft_storage_commercial_rotation_prefix_review.sql",
+          "gitBlobSha": "22c5e9291a5692c8a45a51166c724be3ecefbda8"
+        },
+        {
+          "path": "server/sql/aircraft_storage_commercial_departure_readiness_review.sql",
+          "gitBlobSha": "407b3361f23d8619992b7ff7972ad0fd9f54f419"
+        },
+        {
+          "path": "server/sql/aircraft_storage_commercial_binding_review.sql",
+          "gitBlobSha": "e4ec1d3f2a62df73b39937cc20d35e92c0712a69"
+        },
+        {
+          "path": "server/sql/aircraft_storage_commercial_plan_retirement_review.sql",
+          "gitBlobSha": "6844928b1d85f41b92cf00a8bb49a8aaf3791ae3"
+        },
+        {
+          "path": "server/sql/aircraft_storage_commercial_history_guards_review.sql",
+          "gitBlobSha": "0e0c9cf7d25cbdf2d33fa64499ceb387a13f6909"
+        },
+        {
+          "path": "server/sql/aircraft_storage_crew_booking_history_input_review.sql",
+          "gitBlobSha": "f64fa4bf150ae9fce515c4a98022d8d095b54857"
+        },
+        {
+          "path": "server/sql/aircraft_storage_crew_history_consumer_integration_review.sql",
+          "gitBlobSha": "2a6206f936dfbdf94cdff1edd61f8a728054ccb1"
+        },
+        {
+          "path": "server/sql/aircraft_storage_crew_custody_release_review.sql",
+          "gitBlobSha": "7a6372bbc734a8d7d1f797aa9a7ae80861882320"
+        }
+      ]
+    }
+  ],
+  "separateReview": [
+    {
+      "path": "server/sql/aircraft_storage_phase1_release_preflight.sql",
+      "gitBlobSha": "c8bfaf2cda0b550acdf80346154aa830b60ff861",
+      "purpose": "read_only_preflight"
+    },
+    {
+      "path": "server/sql/aircraft_storage_background_cron_review.sql",
+      "gitBlobSha": "b1336f62d00113ec84a8d49b90d876905db51c87",
+      "purpose": "separate_scheduler_review_do_not_install"
+    },
+    {
+      "path": "server/sql/aircraft_storage_commercial_dispatcher_integration_review.sql",
+      "gitBlobSha": "073cf49fac7c086176261fc9f0ae103570971ef2",
+      "purpose": "historical_dispatcher_replacement_requires_current_source_merge_not_direct_install"
+    }
+  ],
+  "requiredBeforeRelease": [
+    "Validate complete ordered composition on current schema clone, including existing source fingerprints for fuel, maintenance and crew patches.",
+    "Reconcile ledger entry-kind constraints with current leasing migration and preserve existing kinds.",
+    "Map every eligible owned aircraft configuration to reviewed monthly billing class; do not seed fixture IDs.",
+    "Merge dispatcher hooks into current source without replacing unrelated updates; verify commercial history guard triggers.",
+    "Verify disabled gates, zero activated facilities, no scheduler job, no synthetic test data and no commercial changes.",
+    "Verify actual scheduler execution on isolated database, then obtain explicit release authorization."
+  ]
+}
