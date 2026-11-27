@@ -246,6 +246,7 @@ jobs:
             cat tests/sql/aircraft_storage_dispatcher_patch_acceptance.sql
             cat tests/sql/aircraft_storage_dispatcher_runtime_fixture.sql
             cat tests/sql/aircraft_storage_dispatcher_runtime_acceptance.sql
+            cat tests/sql/aircraft_storage_dispatcher_arrival_acceptance.sql
             echo "ROLLBACK;"
           } | psql -h localhost -U postgres -d airlinerra_disposable -v ON_ERROR_STOP=1
           dropdb -h localhost -U postgres airlinerra_disposable
