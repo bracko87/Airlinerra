@@ -315,6 +315,41 @@ BEGIN
  new_dep:=r.arrival_utc+interval '16 hours';new_arr:=new_dep+interval '2 hours';
  pilot:=jsonb_build_object('id',cap,'initialAirport',r.origin_airport_key,'locationEffectiveUtc',dep-interval '10 days','baseTimezone','UTC','employmentFrom',(dep-interval '10 days')::date,'absences','[]'::jsonb,'permissions',jsonb_build_array(jsonb_build_object('group','fixture','issued',(dep-interval '10 days')::date,'expires',(dep+interval '30 days')::date,'active',true,'captain',true,'firstOfficer',true)));
  PERFORM set_config('test.storage_weekly_input',jsonb_build_object('status','weekly_crew_bootstrap_input_preview','invalidOccurrenceCount',0,'cabinHeadcountReconciled',true,'flights',jsonb_build_array(jsonb_build_object('id',flight_key,'aircraftId',r.aircraft_inventory_id,'group','fixture','origin',r.destination_airport_key,'destination',r.origin_airport_key,'departureUtc',new_dep,'arrivalUtc',new_arr,'cabinRequired',0)),'cabinMembers','[]'::jsonb,'pilots',jsonb_build_array(pilot,pilot||jsonb_build_object('id',fo)))::text,true);
+ -- Test custody release in its own disposable subtransaction, keeping all
+ -- subsequent original handoff tests unchanged.
+ BEGIN
+  h:=airlinerra_game.release_completed_storage_crew_custody_v1(owner_id,s.airline_id,rid);
+  IF h->>'status' IS DISTINCT FROM 'storage_custody_release_disabled' THEN RAISE EXCEPTION 'release gate bypass: %',h;END IF;
+  UPDATE airlinerra_game.storage_crew_custody_release_policy_v1 SET enabled=true;
+  UPDATE airlinerra_game.storage_combined_booking_history_release_v1 SET enabled=true;
+  UPDATE airlinerra_game.storage_crew_plan_handoff_release_v1 SET enabled=true;
+  UPDATE airlinerra_game.storage_commercial_binding_release_v1 SET enabled=true;
+  UPDATE airlinerra_game.section9_crew_movement_capture_release_v1 SET capture_enabled=true;
+  h:=airlinerra_game.release_completed_storage_crew_custody_v1(owner_id,s.airline_id,rid);
+  IF h->>'status' IS DISTINCT FROM 'storage_custody_history_unverified' THEN RAISE EXCEPTION 'missing rolling coverage bypass: %',h;END IF;
+  EXECUTE $mock$CREATE OR REPLACE FUNCTION airlinerra_game.storage_rolling_crew_coverage_v1(p_airline uuid,p_at timestamptz)
+  RETURNS jsonb LANGUAGE sql STABLE AS $body$ SELECT jsonb_build_object('coverageVerified',true,'unboundDeparturesLast7Days',0,'unresolvedCaptureIssues',0) $body$ $mock$;
+  PERFORM set_config('test.storage_hour',(r.arrival_utc+interval '12 hours 29 minutes')::text,true);
+  h:=airlinerra_game.release_completed_storage_crew_custody_v1(owner_id,s.airline_id,rid);
+  IF h->>'status' IS DISTINCT FROM 'storage_custody_rest_or_duty_pending' THEN RAISE EXCEPTION 'premature custody release: %',h;END IF;
+  PERFORM set_config('test.storage_hour',(r.arrival_utc+interval '12 hours 30 minutes')::text,true);
+  h:=airlinerra_game.release_completed_storage_crew_custody_v1(owner_id,s.airline_id,rid);
+  IF h->>'released' IS DISTINCT FROM 'true' OR h->>'crewCount' IS DISTINCT FROM '2' OR (SELECT count(*) FROM airlinerra_game.aircraft_storage_crew_reservations_v1 WHERE request_id=rid AND status='history_released')<>2 OR (SELECT count(*) FROM airlinerra_game.storage_crew_custody_releases_v1 WHERE request_id=rid AND last_airport=r.destination_airport_key)<>2 THEN RAISE EXCEPTION 'custody release failed: %',h;END IF;
+  IF NOT EXISTS(SELECT 1 FROM airlinerra_game.storage_signed_crew_manifests_v1 m WHERE m.request_id=rid AND airlinerra_game.storage_signed_crew_departure_covered_v1(s.airline_id,m.departure_event_id)) THEN RAISE EXCEPTION 'released crew lost signed coverage';END IF;
+  h:=airlinerra_game.storage_crew_selected_history_input_v1(owner_id,s.airline_id,airlinerra_game.section9_verified_world_instant_v1(),NULL);
+  IF h->>'status' IS DISTINCT FROM 'rolling_crew_input_preview' OR jsonb_array_length(h->'pilots')<>2 OR h#>>'{pilots,0,history,0,destination}' IS DISTINCT FROM r.destination_airport_key THEN RAISE EXCEPTION 'released crew unavailable or history lost: %',h;END IF;
+  UPDATE airlinerra_game.storage_combined_booking_history_release_v1 SET enabled=false;
+  h:=airlinerra_game.storage_crew_selected_history_input_v1(owner_id,s.airline_id,airlinerra_game.section9_verified_world_instant_v1(),NULL);
+  IF h->>'status' IS DISTINCT FROM 'storage_combined_history_required' THEN RAISE EXCEPTION 'legacy fallback after custody release: %',h;END IF;
+  BEGIN
+   INSERT INTO airlinerra_game.section9_planned_crew_duties_v1(plan_id,airline_id,pilot_id,duty_start_utc,duty_end_utc,starting_airport,ending_airport) VALUES(gen_random_uuid(),s.airline_id,cap,new_dep-interval '2 hours',new_arr+interval '30 minutes',r.destination_airport_key,r.origin_airport_key);
+   RAISE EXCEPTION 'legacy commercial duty accepted released crew';
+  EXCEPTION WHEN check_violation THEN IF SQLERRM<>'CREW_RESERVED_FOR_STORAGE_OR_HISTORY_HANDOFF' THEN RAISE;END IF;END;
+  h:=airlinerra_game.release_completed_storage_crew_custody_v1(owner_id,s.airline_id,rid);
+  IF h->>'replayed' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'release replay failed: %',h;END IF;
+  RAISE NOTICE 'Permanent storage crew custody release and no legacy fallback acceptance passed (synthetic roster and controlled rolling coverage)';
+  RAISE EXCEPTION USING ERRCODE='PZ009',MESSAGE='rollback custody release fixture';
+ EXCEPTION WHEN SQLSTATE 'PZ009' THEN NULL;END;
  review_snapshot:=airlinerra_game.owned_storage_aware_crew_input_preview_v1(owner_id,s.airline_id,r.arrival_utc+interval '13 hours');
  assignments:=jsonb_build_array(jsonb_build_object('flightId',flight_key,'aircraftId',r.aircraft_inventory_id,'departureUtc',new_dep,'arrivalUtc',new_arr,'captains',jsonb_build_array(cap),'firstOfficers',jsonb_build_array(fo),'cabinCrew','[]'::jsonb,'duties',jsonb_build_array(jsonb_build_object('employeeId',cap,'role','captain','dutyStartUtc',new_dep-interval '2 hours','dutyEndUtc',new_arr+interval '30 minutes'),jsonb_build_object('employeeId',fo,'role','firstOfficer','dutyStartUtc',new_dep-interval '2 hours','dutyEndUtc',new_arr+interval '30 minutes'))));
  h:=airlinerra_game.save_storage_aware_crew_plan_review_v1(owner_id,s.airline_id,plan_key,r.arrival_utc+interval '13 hours',review_snapshot||jsonb_build_object('saveAllowed',true),assignments);
