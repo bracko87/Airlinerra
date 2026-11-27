@@ -37,6 +37,7 @@ RETURNS trigger LANGUAGE plpgsql SET search_path=pg_catalog AS $fn$
 BEGIN
  IF NOT EXISTS(SELECT 1 FROM airlinerra_game.storage_inbound_departure_evidence_v1 WHERE request_id=OLD.id) THEN IF TG_OP='DELETE' THEN RETURN OLD;END IF;RETURN NEW;END IF;
  IF TG_OP='DELETE' THEN RAISE EXCEPTION 'STORAGE_INBOUND_DEPARTURE_FROZEN';END IF;
+ IF NEW.status='cancelled' AND OLD.status IS DISTINCT FROM NEW.status THEN RAISE EXCEPTION 'STORAGE_FLIGHT_ALREADY_DEPARTED';END IF;
  IF (to_jsonb(NEW)-'status') IS DISTINCT FROM (to_jsonb(OLD)-'status') OR (NEW.status IS DISTINCT FROM OLD.status AND NOT(OLD.status='awaiting_slot_and_dispatch_release' AND NEW.status='completed')) THEN RAISE EXCEPTION 'STORAGE_INBOUND_DEPARTURE_FROZEN';END IF;
  RETURN NEW;
 END $fn$;
