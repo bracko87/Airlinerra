@@ -46,6 +46,13 @@ BEGIN
    IF leg.departure_utc<=f.departure_utc OR EXISTS(SELECT 1 FROM airlinerra_game.section9_operated_flight_movements_v1 m WHERE m.airline_id=p_airline AND m.flight_occurrence_id=leg.physical_flight_id) THEN RETURN jsonb_build_object('passed',false,'status','commercial_rotation_future_leg_invalid');END IF;
   END IF;
  END LOOP;
+ -- Do not discard a separately operated duty that occurred since report.
+ IF EXISTS(SELECT 1 FROM airlinerra_game.section9_operated_crew_bindings_v1 b
+ JOIN airlinerra_game.section9_planned_crew_seats_v1 s ON s.plan_id=b.plan_id AND s.airline_id=b.airline_id AND s.occurrence_id=b.occurrence_id AND s.employee_id=p_employee
+ JOIN airlinerra_game.section9_operated_flight_movements_v1 m ON m.engine_event_id=b.departure_event_id AND m.airline_id=b.airline_id AND m.phase='departed'
+ WHERE b.airline_id=p_airline AND m.actual_event_utc>=d.duty_start_utc AND m.actual_event_utc<=f.departure_utc
+ AND (s.plan_id<>p_plan OR s.duty_id<>p_duty OR s.occurrence_id=p_occurrence))
+ THEN RETURN jsonb_build_object('passed',false,'status','commercial_rotation_unexpected_duty');END IF;
  IF current_count<>1 OR total_count<>(SELECT count(*) FROM airlinerra_game.section9_planned_crew_seats_v1 WHERE plan_id=p_plan AND airline_id=p_airline AND duty_id=p_duty AND employee_id=p_employee) THEN RETURN jsonb_build_object('passed',false,'status','commercial_rotation_coverage_incomplete');END IF;
  rot:=airlinerra_game.section9_crew_rotation_window_v2(legs);
  IF rot->>'status' IS DISTINCT FROM 'rotation_preview' OR (rot->>'dutyStartUtc')::timestamptz IS DISTINCT FROM d.duty_start_utc OR (rot->>'dutyEndUtc')::timestamptz IS DISTINCT FROM d.duty_end_utc OR rot->>'startingAirport' IS DISTINCT FROM d.starting_airport OR rot->>'endingAirport' IS DISTINCT FROM d.ending_airport
