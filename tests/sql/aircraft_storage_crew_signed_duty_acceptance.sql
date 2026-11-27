@@ -121,7 +121,25 @@ CREATE TABLE airlinerra_game.section9_dated_flight_occurrences_v1(id uuid PRIMAR
 CREATE TABLE airlinerra_game.section9_planned_flight_crews_v1(plan_id uuid,airline_id uuid,occurrence_id uuid,schedule_version int,aircraft_inventory_id uuid,physical_flight_id text,qualification_group text,departure_utc timestamptz,arrival_utc timestamptz,origin_airport_key text,destination_airport_key text,captain_count int,first_officer_count int,cabin_count int,PRIMARY KEY(plan_id,occurrence_id));
 CREATE TABLE airlinerra_game.section9_planned_crew_seats_v1(plan_id uuid,airline_id uuid,occurrence_id uuid,duty_id uuid,employee_id uuid,seat_role text,PRIMARY KEY(plan_id,occurrence_id,employee_id));
 -- Minimal binding/issue tables for exercising exact rolling coverage.
-CREATE TABLE airlinerra_game.section9_operated_crew_bindings_v1(physical_flight_id text PRIMARY KEY,airline_id uuid,departure_event_id text,plan_id uuid,occurrence_id uuid);
+CREATE TABLE airlinerra_game.section9_operated_crew_bindings_v1(physical_flight_id text PRIMARY KEY,airline_id uuid,departure_event_id text,plan_id uuid,occurrence_id uuid,cabin_member_ids uuid[] NOT NULL DEFAULT '{}');
+ALTER TABLE airlinerra_game.section9_operated_flight_movements_v1 ADD COLUMN IF NOT EXISTS source_kind text NOT NULL DEFAULT 'signed_operated_game_flight_v1';
+ALTER TABLE airlinerra_game.section9_game_flight_fuel_departure_receipts_v1 ADD COLUMN configuration_id bigint NOT NULL DEFAULT 1;
+CREATE TABLE airlinerra_game.section9_crew_movement_capture_release_v1(world_id smallint PRIMARY KEY,capture_enabled boolean NOT NULL);
+INSERT INTO airlinerra_game.section9_crew_movement_capture_release_v1 VALUES(1,false);
+CREATE TABLE airlinerra_game.section9_pilot_departure_manifests_v1(physical_flight_id text PRIMARY KEY,airline_id uuid,departure_event_id text,configuration_id bigint,qualification_group text,captain_ids uuid[],first_officer_ids uuid[]);
+-- Synthetic pilot manifest writer, not the production pilot qualification
+-- tables. The adapter itself, its exact evidence checks and duty fit are real.
+CREATE FUNCTION airlinerra_game.section9_record_pilot_departure_manifest_v1(p_airline uuid,p_physical text,p_captains uuid[],p_officers uuid[])
+RETURNS jsonb LANGUAGE plpgsql AS $mock$
+BEGIN
+ IF current_setting('test.fail_commercial_manifest',true)='yes' THEN RETURN jsonb_build_object('status','pilot_manifest_qualification_failed');END IF;
+ INSERT INTO airlinerra_game.section9_pilot_departure_manifests_v1
+ SELECT f.physical_flight_id,f.airline_id,f.departure_engine_event_id,f.configuration_id,p.qualification_group,p_captains,p_officers
+ FROM airlinerra_game.section9_game_flight_fuel_departure_receipts_v1 f JOIN airlinerra_game.section9_flight_crew_model_policy_v1 p USING(configuration_id)
+ WHERE f.airline_id=p_airline AND f.physical_flight_id=p_physical;
+ RETURN jsonb_build_object('status','pilot_manifest_recorded');
+END $mock$;
+
 CREATE TABLE airlinerra_game.section9_operated_crew_capture_issues_v1(engine_event_id text PRIMARY KEY,airline_id uuid,physical_flight_id text);
 CREATE FUNCTION airlinerra_game.section9_owned_rolling_crew_input_v1(p_player uuid,p_airline uuid,p_start timestamptz)
 RETURNS jsonb LANGUAGE sql STABLE AS $$SELECT current_setting('test.storage_departure_roster')::jsonb$$;
@@ -392,7 +410,9 @@ BEGIN
   INSERT INTO airlinerra_game.section9_operated_flight_movements_v1(world_id,engine_event_id,event_hmac_sha256,airline_id,aircraft_inventory_id,schedule_id,schedule_version,weekly_entry,flight_local_date,flight_occurrence_id,phase,origin_airport_key,destination_airport_key,scheduled_departure_utc,scheduled_arrival_utc,actual_event_utc)
   VALUES(1,'synthetic-prefix-dep',repeat('a',64),s.airline_id,r.aircraft_inventory_id,flight_key,1,1,(new_dep AT TIME ZONE 'UTC')::date,first_physical,'departed',r.destination_airport_key,commercial_stop,new_dep,new_arr,new_dep),
         (1,'synthetic-prefix-arr',repeat('b',64),s.airline_id,r.aircraft_inventory_id,flight_key,1,1,(new_dep AT TIME ZONE 'UTC')::date,first_physical,'arrived',r.destination_airport_key,commercial_stop,new_dep,new_arr,new_arr);
+  SET CONSTRAINTS ALL IMMEDIATE;
   ALTER TABLE airlinerra_game.section9_operated_flight_movements_v1 ENABLE TRIGGER guard_commercial_departure_storage_handoff_v1;
+  SET CONSTRAINTS ALL DEFERRED;
   INSERT INTO airlinerra_game.section9_operated_crew_bindings_v1(physical_flight_id,airline_id,departure_event_id,plan_id,occurrence_id) VALUES(first_physical,s.airline_id,'synthetic-prefix-dep',plan_key,second_id);
   h:=airlinerra_game.storage_commercial_crew_departure_readiness_v1(s.airline_id,second_physical);
   IF h->>'status' IS DISTINCT FROM 'commercial_rotation_prior_leg_unverified' THEN RAISE EXCEPTION 'wrong occurrence binding accepted: %',h;END IF;
@@ -401,6 +421,42 @@ BEGIN
   IF h->>'passed' IS DISTINCT FROM 'true' OR h->>'status' IS DISTINCT FROM 'commercial_handoff_multileg_revalidated' OR h->>'dispatchAuthorized' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'completed prefix continuation failed: %',h;END IF;
   h:=airlinerra_game.storage_commercial_handoff_dispatch_check_v1(s.airline_id,second_physical);
   IF h->>'allowed' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'continuation review released dispatch';END IF;
+  UPDATE airlinerra_game.storage_commercial_binding_release_v1 SET enabled=true;
+  -- Capture release is a separate dependency.
+  BEGIN
+   INSERT INTO airlinerra_game.section9_operated_flight_movements_v1(world_id,engine_event_id,event_hmac_sha256,airline_id,aircraft_inventory_id,schedule_id,schedule_version,weekly_entry,flight_local_date,flight_occurrence_id,phase,origin_airport_key,destination_airport_key,scheduled_departure_utc,scheduled_arrival_utc,actual_event_utc)
+  VALUES(1,'atomic-commercial-dep',repeat('c',64),s.airline_id,r.aircraft_inventory_id,flight_key,1,2,(second_dep AT TIME ZONE 'UTC')::date,second_physical,'departed',commercial_stop,r.destination_airport_key,second_dep,second_arr,second_dep);
+   RAISE EXCEPTION 'capture gate bypassed';
+  EXCEPTION WHEN check_violation THEN IF SQLERRM<>'STORAGE_COMMERCIAL_HANDOFF_DISPATCH_BLOCKED' THEN RAISE;END IF;END;
+  UPDATE airlinerra_game.section9_crew_movement_capture_release_v1 SET capture_enabled=true;
+  BEGIN
+   INSERT INTO airlinerra_game.section9_operated_flight_movements_v1(world_id,engine_event_id,event_hmac_sha256,airline_id,aircraft_inventory_id,schedule_id,schedule_version,weekly_entry,flight_local_date,flight_occurrence_id,phase,origin_airport_key,destination_airport_key,scheduled_departure_utc,scheduled_arrival_utc,actual_event_utc)
+  VALUES(1,'atomic-commercial-dep',repeat('c',64),s.airline_id,r.aircraft_inventory_id,flight_key,1,2,(second_dep AT TIME ZONE 'UTC')::date,second_physical,'departed',commercial_stop,r.destination_airport_key,second_dep,second_arr,second_dep);
+   SET CONSTRAINTS ALL IMMEDIATE;
+   RAISE EXCEPTION 'unbound commercial departure accepted';
+  EXCEPTION WHEN check_violation THEN IF SQLERRM<>'STORAGE_COMMERCIAL_DEPARTURE_NOT_BOUND' THEN RAISE;END IF;END;
+  IF EXISTS(SELECT 1 FROM airlinerra_game.section9_operated_flight_movements_v1 WHERE engine_event_id='atomic-commercial-dep') OR EXISTS(SELECT 1 FROM airlinerra_game.storage_commercial_departure_crew_evidence_v1 WHERE departure_event_id='atomic-commercial-dep') THEN RAISE EXCEPTION 'missing binding rollback failed';END IF;
+  INSERT INTO airlinerra_game.section9_operated_flight_movements_v1(world_id,engine_event_id,event_hmac_sha256,airline_id,aircraft_inventory_id,schedule_id,schedule_version,weekly_entry,flight_local_date,flight_occurrence_id,phase,origin_airport_key,destination_airport_key,scheduled_departure_utc,scheduled_arrival_utc,actual_event_utc)
+  VALUES(1,'atomic-commercial-dep',repeat('c',64),s.airline_id,r.aircraft_inventory_id,flight_key,1,2,(second_dep AT TIME ZONE 'UTC')::date,second_physical,'departed',commercial_stop,r.destination_airport_key,second_dep,second_arr,second_dep);
+  BEGIN
+   h:=airlinerra_game.bind_storage_aware_commercial_departure_v1(s.airline_id,second_physical,'atomic-commercial-dep');
+   RAISE EXCEPTION 'missing fuel receipt accepted';
+  EXCEPTION WHEN check_violation THEN IF SQLERRM<>'STORAGE_COMMERCIAL_BINDING_EVIDENCE_INVALID' THEN RAISE;END IF;END;
+  INSERT INTO airlinerra_game.section9_game_flight_fuel_departure_receipts_v1(physical_flight_id,airline_id,aircraft_inventory_id,departure_engine_event_id,planned_trip_burn_kg,configuration_id)
+  VALUES(second_physical,s.airline_id,r.aircraft_inventory_id,'atomic-commercial-dep',1000,1);
+  PERFORM set_config('test.fail_commercial_manifest','yes',true);
+  BEGIN
+   h:=airlinerra_game.bind_storage_aware_commercial_departure_v1(s.airline_id,second_physical,'atomic-commercial-dep');
+   RAISE EXCEPTION 'failed pilot manifest accepted';
+  EXCEPTION WHEN check_violation THEN IF SQLERRM<>'STORAGE_COMMERCIAL_PILOT_MANIFEST_FAILED' THEN RAISE;END IF;END;
+  PERFORM set_config('test.fail_commercial_manifest','no',true);
+  h:=airlinerra_game.bind_storage_aware_commercial_departure_v1(s.airline_id,second_physical,'atomic-commercial-dep');
+  IF h->>'status' IS DISTINCT FROM 'crew_departure_bound' OR airlinerra_game.storage_commercial_departure_binding_exact_v1('atomic-commercial-dep') IS DISTINCT FROM true THEN RAISE EXCEPTION 'atomic commercial binding failed: %',h;END IF;
+  SET CONSTRAINTS ALL IMMEDIATE;
+  h:=airlinerra_game.bind_storage_aware_commercial_departure_v1(s.airline_id,second_physical,'atomic-commercial-dep');
+  IF h->>'replayed' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'binding replay failed: %',h;END IF;
+  RAISE NOTICE 'Atomic commercial handoff binding and deferred commit backstop acceptance passed (synthetic pilot manifest writer and commercial movements)';
+
   RAISE EXCEPTION USING ERRCODE='PZ009',MESSAGE='rollback synthetic multi-leg review';
  EXCEPTION WHEN SQLSTATE 'PZ009' THEN NULL;END;
  RAISE NOTICE 'Multi-leg commercial rotation readiness acceptance passed (synthetic signed commercial prefix and roster; real combined storage history and duty fit)';
