@@ -205,6 +205,26 @@ BEGIN
  h:=airlinerra_game.storage_crew_departure_check_v1(rid);
  IF h->>'passed' IS DISTINCT FROM 'true' OR h->>'crewCount' IS DISTINCT FROM '2' THEN RAISE EXCEPTION 'qualified reserved crew rejected: %',h;END IF;
  RAISE NOTICE 'Storage departure crew revalidation acceptance passed (synthetic current roster, actual duty fit and signed movement guard)';
+ -- Verify the exact reservation exemption without switching the live input.
+ h:=airlinerra_game.storage_crew_history_for_booking_review_v1(s.airline_id,cap,dep,r.origin_airport_key,dep-interval '10 days',NULL);
+ IF h->>'status' IS DISTINCT FROM 'combined_storage_duty_pending' THEN RAISE EXCEPTION 'booking history ignored pending duty: %',h;END IF;
+ h:=airlinerra_game.storage_crew_history_for_booking_review_v1(s.airline_id,cap,dep,r.origin_airport_key,dep-interval '10 days',gen_random_uuid());
+ IF h->>'status' IS DISTINCT FROM 'storage_history_request_exemption_invalid' THEN RAISE EXCEPTION 'unrelated request exemption accepted: %',h;END IF;
+ h:=airlinerra_game.storage_crew_history_for_booking_review_v1(s.airline_id,cap,dep,r.origin_airport_key,dep-interval '10 days',rid);
+ IF h->>'status' IS DISTINCT FROM 'combined_crew_history_preview' OR h->>'eligibleByHistory' IS DISTINCT FROM 'true' OR h->>'lastAirport' IS DISTINCT FROM r.origin_airport_key THEN RAISE EXCEPTION 'own pending reservation exemption failed: %',h;END IF;
+ BEGIN
+  PERFORM set_config('test.storage_weekly_input',(departure_roster||jsonb_build_object('status','weekly_crew_bootstrap_input_preview','flights','[]'::jsonb,'cabinHeadcountReconciled',true))::text,true);
+  h:=airlinerra_game.owned_storage_crew_history_input_review_v1(owner_id,s.airline_id,dep,rid);
+  IF h->>'status' IS DISTINCT FROM 'storage_history_input_unverified' THEN RAISE EXCEPTION 'unbound movement coverage ignored: %',h;END IF;
+  EXECUTE $mock$CREATE OR REPLACE FUNCTION airlinerra_game.storage_rolling_crew_coverage_v1(p_airline uuid,p_at timestamptz)
+  RETURNS jsonb LANGUAGE sql STABLE AS $body$ SELECT jsonb_build_object('coverageVerified',true,'unboundDeparturesLast7Days',0,'unresolvedCaptureIssues',0) $body$ $mock$;
+  h:=airlinerra_game.owned_storage_crew_history_input_review_v1(owner_id,s.airline_id,dep,NULL);
+  IF h->>'status' IS DISTINCT FROM 'storage_crew_history_input_review' OR jsonb_array_length(h->'pilots')<>0 THEN RAISE EXCEPTION 'candidate input ignored reserved custody: %',h;END IF;
+  h:=airlinerra_game.owned_storage_crew_history_input_review_v1(owner_id,s.airline_id,dep,rid);
+  IF h->>'status' IS DISTINCT FROM 'storage_crew_history_input_review' OR jsonb_array_length(h->'pilots')<>2 OR h->>'crewReleased' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'reserved crew departure input failed: %',h;END IF;
+  RAISE EXCEPTION USING ERRCODE='PZ009',MESSAGE='rollback history input fixture';
+ EXCEPTION WHEN SQLSTATE 'PZ009' THEN NULL;END;
+
  UPDATE airlinerra_game.storage_operational_departure_release_v1 SET enabled=true;
  PERFORM set_config('test.final_airport','blocked',true);
  PERFORM set_config('test.final_licence','clear',true);
@@ -224,6 +244,9 @@ BEGIN
  j:=airlinerra_game.advance_aircraft_storage_relocations_v1(10);
  IF j#>>'{results,0,movementRecorded}' IS DISTINCT FROM 'true' OR j#>>'{results,0,settlement,billingStopped}' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'automatic outbound departure: %',j;END IF;
  IF (SELECT count(*) FROM airlinerra_game.aircraft_storage_crew_duty_receipts_v1 WHERE request_id=rid AND arrival_engine_event_id IS NULL)<>2 THEN RAISE EXCEPTION 'signed crew departure receipts missing';END IF;
+ h:=airlinerra_game.storage_crew_history_for_booking_review_v1(s.airline_id,cap,dep,r.origin_airport_key,dep-interval '10 days',rid);
+ IF h->>'status' IS DISTINCT FROM 'storage_history_request_exemption_invalid' THEN RAISE EXCEPTION 'signed departure exemption accepted: %',h;END IF;
+
  IF NOT EXISTS(SELECT 1 FROM airlinerra_game.storage_signed_crew_manifests_v1 m WHERE m.request_id=rid AND m.captain_count=1 AND m.first_officer_count=1 AND m.cabin_count=0 AND jsonb_array_length(m.seats)=2 AND airlinerra_game.storage_signed_crew_departure_covered_v1(s.airline_id,m.departure_event_id))
  THEN RAISE EXCEPTION 'in-flight signed manifest missing or uncovered';END IF;
  IF airlinerra_game.storage_signed_crew_departure_covered_v1(s.airline_id,'nonexistent-event') IS DISTINCT FROM false THEN RAISE EXCEPTION 'missing manifest accepted';END IF;
@@ -353,6 +376,10 @@ BEGIN
  h:=airlinerra_game.storage_rolling_crew_coverage_v1(s.airline_id,dep+interval '7 days');
  IF h->>'coveredStorageDepartures' IS DISTINCT FROM '1' OR h->>'unboundDeparturesLast7Days' IS DISTINCT FROM '0' OR h->>'coverageVerified' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'exact rolling manifest coverage failed: %',h;END IF;
  RAISE NOTICE 'Signed storage manifest coverage acceptance passed; legacy unbound movements remain blocked';
+ h:=airlinerra_game.storage_crew_history_for_booking_review_v1(s.airline_id,cap,r.arrival_utc+interval '12 hours 30 minutes',r.origin_airport_key,dep-interval '10 days',NULL);
+ IF h->>'eligibleByHistory' IS DISTINCT FROM 'true' OR h->>'lastAirport' IS DISTINCT FROM r.destination_airport_key OR h->>'storageDutyCount' IS DISTINCT FROM '1' THEN RAISE EXCEPTION 'completed storage booking history missing: %',h;END IF;
+ RAISE NOTICE 'Shared storage booking history and exact pending reservation exemption acceptance passed (synthetic roster and controlled coverage)';
+
  -- The real coverage function must block the fixture's old unbound movement.
  PERFORM set_config('test.storage_hour',new_dep::text,true);
  h:=airlinerra_game.storage_commercial_crew_departure_readiness_v1(s.airline_id,flight_key::text||':'||(new_dep AT TIME ZONE 'UTC')::date::text||':1');
