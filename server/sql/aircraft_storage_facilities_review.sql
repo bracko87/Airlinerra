@@ -30,7 +30,6 @@ VALUES
 (1,'OURAIRPORTS:4073','existing_commercial'),
 (1,'OURAIRPORTS:3856','existing_commercial'),
 (1,'OURAIRPORTS:316427','relocation_only'),
-(1,'OURAIRPORTS:19330','relocation_only'),
 (1,'OURAIRPORTS:2409','relocation_only'),
 (1,'OURAIRPORTS:2395','relocation_only'),
 (1,'OURAIRPORTS:21315','relocation_only'),
