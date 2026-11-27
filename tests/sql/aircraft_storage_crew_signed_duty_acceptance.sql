@@ -320,21 +320,33 @@ BEGIN
  BEGIN
   h:=airlinerra_game.release_completed_storage_crew_custody_v1(owner_id,s.airline_id,rid);
   IF h->>'status' IS DISTINCT FROM 'storage_custody_release_disabled' THEN RAISE EXCEPTION 'release gate bypass: %',h;END IF;
+  h:=airlinerra_game.run_storage_background_tick_v1(25);
+  IF EXISTS(SELECT 1 FROM jsonb_array_elements(h->'results') e WHERE e->>'phase'='custody') THEN RAISE EXCEPTION 'disabled custody worker attempted release: %',h;END IF;
   UPDATE airlinerra_game.storage_crew_custody_release_policy_v1 SET enabled=true;
+  UPDATE airlinerra_game.storage_background_worker_release_v1 SET custody_enabled=true,movement_enabled=false,billing_enabled=false,expiry_enabled=false;
   UPDATE airlinerra_game.storage_combined_booking_history_release_v1 SET enabled=true;
   UPDATE airlinerra_game.storage_crew_plan_handoff_release_v1 SET enabled=true;
   UPDATE airlinerra_game.storage_commercial_binding_release_v1 SET enabled=true;
   UPDATE airlinerra_game.section9_crew_movement_capture_release_v1 SET capture_enabled=true;
   h:=airlinerra_game.release_completed_storage_crew_custody_v1(owner_id,s.airline_id,rid);
   IF h->>'status' IS DISTINCT FROM 'storage_custody_history_unverified' THEN RAISE EXCEPTION 'missing rolling coverage bypass: %',h;END IF;
+  h:=airlinerra_game.run_storage_background_tick_v1(25);
+  IF NOT EXISTS(SELECT 1 FROM jsonb_array_elements(h->'results') e WHERE e->>'phase'='custody' AND e->>'requestId'=rid::text AND e->>'status'='storage_custody_history_unverified') THEN RAISE EXCEPTION 'automatic release did not preserve missing coverage block: %',h;END IF;
+  DELETE FROM airlinerra_game.storage_background_attempts_v1 WHERE request_id=rid AND phase='custody';
   EXECUTE $mock$CREATE OR REPLACE FUNCTION airlinerra_game.storage_rolling_crew_coverage_v1(p_airline uuid,p_at timestamptz)
   RETURNS jsonb LANGUAGE sql STABLE AS $body$ SELECT jsonb_build_object('coverageVerified',true,'unboundDeparturesLast7Days',0,'unresolvedCaptureIssues',0) $body$ $mock$;
   PERFORM set_config('test.storage_hour',(r.arrival_utc+interval '12 hours 29 minutes')::text,true);
   h:=airlinerra_game.release_completed_storage_crew_custody_v1(owner_id,s.airline_id,rid);
   IF h->>'status' IS DISTINCT FROM 'storage_custody_rest_or_duty_pending' THEN RAISE EXCEPTION 'premature custody release: %',h;END IF;
+  h:=airlinerra_game.run_storage_background_tick_v1(25);
+  IF EXISTS(SELECT 1 FROM jsonb_array_elements(h->'results') e WHERE e->>'phase'='custody' AND e->>'requestId'=rid::text) THEN RAISE EXCEPTION 'premature automatic release attempted: %',h;END IF;
   PERFORM set_config('test.storage_hour',(r.arrival_utc+interval '12 hours 30 minutes')::text,true);
-  h:=airlinerra_game.release_completed_storage_crew_custody_v1(owner_id,s.airline_id,rid);
+  h:=airlinerra_game.run_storage_background_tick_v1(25);
+  SELECT e INTO h FROM jsonb_array_elements(h->'results') e WHERE e->>'phase'='custody' AND e->>'requestId'=rid::text;
   IF h->>'released' IS DISTINCT FROM 'true' OR h->>'crewCount' IS DISTINCT FROM '2' OR (SELECT count(*) FROM airlinerra_game.aircraft_storage_crew_reservations_v1 WHERE request_id=rid AND status='history_released')<>2 OR (SELECT count(*) FROM airlinerra_game.storage_crew_custody_releases_v1 WHERE request_id=rid AND last_airport=r.destination_airport_key)<>2 THEN RAISE EXCEPTION 'custody release failed: %',h;END IF;
+  h:=airlinerra_game.run_storage_background_tick_v1(25);
+  IF EXISTS(SELECT 1 FROM jsonb_array_elements(h->'results') e WHERE e->>'phase'='custody' AND e->>'requestId'=rid::text) THEN RAISE EXCEPTION 'automatic release repeated: %',h;END IF;
+  RAISE NOTICE 'Automatic custody worker gate, history rejection, rest boundary and repeat prevention passed';
   IF NOT EXISTS(SELECT 1 FROM airlinerra_game.storage_signed_crew_manifests_v1 m WHERE m.request_id=rid AND airlinerra_game.storage_signed_crew_departure_covered_v1(s.airline_id,m.departure_event_id)) THEN RAISE EXCEPTION 'released crew lost signed coverage';END IF;
   h:=airlinerra_game.storage_crew_selected_history_input_v1(owner_id,s.airline_id,airlinerra_game.section9_verified_world_instant_v1(),NULL);
   IF h->>'status' IS DISTINCT FROM 'rolling_crew_input_preview' OR jsonb_array_length(h->'pilots')<>2 OR h#>>'{pilots,0,history,0,destination}' IS DISTINCT FROM r.destination_airport_key THEN RAISE EXCEPTION 'released crew unavailable or history lost: %',h;END IF;
