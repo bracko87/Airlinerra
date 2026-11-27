@@ -282,6 +282,8 @@ jobs:
             done
             echo "COMMIT;"
           } | psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1
+      - name: Seed synthetic game permission calendar for disposable browser acceptance
+        run: psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1 -f tests/sql/aircraft_storage_browser_permission_fixture.sql
       - name: Run Chromium storage database acceptance
         shell: bash
         env:
