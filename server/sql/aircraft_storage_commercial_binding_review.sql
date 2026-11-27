@@ -125,5 +125,5 @@ BEGIN
  RETURN NEW;
 END $fn$;
 REVOKE ALL ON FUNCTION airlinerra_game.require_storage_commercial_binding_at_commit_v1() FROM PUBLIC,anon,authenticated,service_role;
-CREATE CONSTRAINT TRIGGER require_storage_commercial_binding_at_commit_v1 AFTER INSERT ON airlinerra_game.section9_operated_flight_movements_v1 DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION airlinerra_game.require_storage_commercial_binding_at_commit_v1();
+CREATE CONSTRAINT TRIGGER require_storage_commercial_binding_at_commit_v1 AFTER INSERT ON airlinerra_game.section9_operated_flight_movements_v1 DEFERRABLE INITIALLY DEFERRED FOR EACH ROW WHEN (NEW.storage_request_id IS NULL AND NEW.schedule_id IS NOT NULL AND NEW.phase='departed') EXECUTE FUNCTION airlinerra_game.require_storage_commercial_binding_at_commit_v1();
 ROLLBACK;
