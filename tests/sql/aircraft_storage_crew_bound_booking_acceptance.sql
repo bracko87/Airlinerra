@@ -140,4 +140,55 @@ BEGIN
  RAISE NOTICE 'Player automatic booking gateway acceptance passed (synthetic operational inputs and release switches)';
 END $player$;
 
+-- Background tick uses the real expiry, cancellation/refund and billing
+-- paths. The earlier automatic booking screen doubles remain in scope.
+DO $background$
+DECLARE s record;owner_id uuid;dep timestamptz;j jsonb;q jsonb;crew jsonb;rid uuid;k uuid:=gen_random_uuid();bal numeric;paid_before int;rate numeric;anchor date;
+BEGIN
+ SELECT * INTO STRICT s FROM airlinerra_game.aircraft_storage_sessions_v1 WHERE storage_ended_utc IS NULL;
+ SELECT owner_player_id INTO STRICT owner_id FROM airlinerra_game.aircraft_storage_relocation_requests_v1 WHERE id=s.request_id;
+ PERFORM set_config('test.storage_hour',s.storage_started_utc::text,true);
+ j:=airlinerra_game.run_storage_background_tick_v1(10);
+ IF j->>'status' IS DISTINCT FROM 'storage_background_not_released' OR j->'results' IS DISTINCT FROM '[]'::jsonb THEN RAISE EXCEPTION 'background release bypass: %',j;END IF;
+ -- Build an actual held booking at the earliest valid report time.
+ dep:=date_trunc('second',s.storage_started_utc+interval '2 hours 1 minute');
+ IF dep>clock_timestamp() THEN RAISE EXCEPTION 'expiry fixture must be historical';END IF;
+ q:=airlinerra_game.owned_aircraft_storage_cost_preview_v1(owner_id,s.airline_id,s.aircraft_inventory_id,'storage_reactivation','OURAIRPORTS:999',dep);
+ crew:=current_setting('test.crew_bound_candidates')::jsonb;
+ crew:=jsonb_set(crew,'{rotation,dutyStartUtc}',to_jsonb(dep-interval '2 hours'));
+ crew:=jsonb_set(crew,'{rotation,dutyEndUtc}',to_jsonb((q->>'arrivalUtc')::timestamptz+interval '30 minutes'));
+ PERFORM set_config('test.crew_bound_candidates',crew::text,true);
+ SELECT cash_usd INTO bal FROM airlinerra_game.airlines WHERE id=s.airline_id;
+ UPDATE airlinerra_game.storage_player_automatic_booking_release_v1 SET enabled=true;
+ j:=airlinerra_game.confirm_player_automatic_storage_booking_v1(owner_id,s.airline_id,s.aircraft_inventory_id,'storage_reactivation','OURAIRPORTS:999',dep,2688.13,k);
+ IF j->>'booked' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'expiry booking fixture: %',j;END IF;
+ rid:=(j->>'requestId')::uuid;
+ UPDATE airlinerra_game.storage_background_worker_release_v1 SET expiry_enabled=true;
+ PERFORM set_config('test.storage_hour',(dep+interval '9 minutes 59 seconds')::text,true);
+ j:=airlinerra_game.run_storage_background_tick_v1(10);
+ IF j->'results' IS DISTINCT FROM '[]'::jsonb THEN RAISE EXCEPTION 'expired too soon: %',j;END IF;
+ PERFORM set_config('test.storage_hour',(dep+interval '10 minutes')::text,true);
+ j:=airlinerra_game.run_storage_background_tick_v1(10);
+ IF j#>>'{results,0,status}' IS DISTINCT FROM 'storage_missed_departure_cancelled' OR j#>>'{results,0,requestId}' IS DISTINCT FROM rid::text
+ OR EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_flight_slots_v1 WHERE request_id=rid)
+ OR NOT EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_funds_v1 WHERE request_id=rid AND status='refunded')
+ OR EXISTS(SELECT 1 FROM airlinerra_game.section9_operated_flight_movements_v1 WHERE storage_request_id=rid)
+ OR (SELECT cash_usd FROM airlinerra_game.airlines WHERE id=s.airline_id) IS DISTINCT FROM bal
+ OR (SELECT count(*) FROM airlinerra_game.aircraft_storage_crew_reservations_v1 WHERE request_id=rid AND status='awaiting_history_handoff')<>2
+ OR NOT EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_sessions_v1 WHERE request_id=s.request_id AND storage_ended_utc IS NULL)
+ THEN RAISE EXCEPTION 'expiry settlement or crew custody: %',j;END IF;
+ j:=airlinerra_game.run_storage_background_tick_v1(10);
+ IF j->'results' IS DISTINCT FROM '[]'::jsonb THEN RAISE EXCEPTION 'expiry replay produced work: %',j;END IF;
+ SELECT count(*) INTO paid_before FROM airlinerra_game.aircraft_storage_monthly_receipts_v1 WHERE request_id=s.request_id;
+ SELECT monthly_usd,anchor_game_date INTO rate,anchor FROM airlinerra_game.aircraft_storage_billing_terms_v1 WHERE request_id=s.request_id;
+ PERFORM set_config('test.storage_hour',((airlinerra_game.storage_month_anniversary_v1(anchor,paid_before)+time '12:00') AT TIME ZONE 'Europe/Berlin')::text,true);
+ UPDATE airlinerra_game.storage_background_worker_release_v1 SET billing_enabled=true;
+ j:=airlinerra_game.run_storage_background_tick_v1(10);
+ IF j#>>'{results,0,status}' IS DISTINCT FROM 'paid' OR (j#>>'{results,0,amountUsd}')::numeric IS DISTINCT FROM rate
+ OR (SELECT cash_usd FROM airlinerra_game.airlines WHERE id=s.airline_id) IS DISTINCT FROM bal-rate THEN RAISE EXCEPTION 'background billing failed: %',j;END IF;
+ j:=airlinerra_game.run_storage_background_tick_v1(10);
+ IF j->'results' IS DISTINCT FROM '[]'::jsonb THEN RAISE EXCEPTION 'same instant duplicate billing: %',j;END IF;
+ RAISE NOTICE 'Storage background tick expiry, refund, protected crew custody and monthly billing acceptance passed';
+END $background$;
+
 ROLLBACK TO SAVEPOINT storage_crew_guard;
