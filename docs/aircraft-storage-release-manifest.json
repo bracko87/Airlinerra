@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "status": "candidate_order_unverified",
   "baselineCommit": "56f82763cca0f8c6674d337f2b3c68a664d02b5a",
-  "baselineRegressionRun": 46030749735,
+  "baselineRegressionRun": 46032320133,
   "productionAuthorized": false,
   "executionMode": "inventory_only",
   "groups": [
@@ -73,6 +73,10 @@
         {
           "path": "server/sql/aircraft_storage_monthly_billing_review.sql",
           "gitBlobSha": "d3632ce6459135f69d856cf8d10b99d84bc2d347"
+        },
+        {
+          "path": "server/sql/aircraft_storage_billing_class_staging_review.sql",
+          "gitBlobSha": "c703ca04ce5262ad7611fe650d611eb1c074a841"
         },
         {
           "path": "server/sql/aircraft_storage_reactivation_request_review.sql",
