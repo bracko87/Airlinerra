@@ -166,3 +166,52 @@ BEGIN
  RAISE NOTICE 'Phase 2 both dedicated storage airports passed; no commercial rights or capacity quotas';
 END $phase2$;
 ROLLBACK TO SAVEPOINT phase2_facility_review;
+
+-- Phase 3: independently exercise the remaining four candidates. Synthetic
+-- runway/restriction inputs are exclusively test data, not release evidence.
+SAVEPOINT phase3_facility_review;
+DO $phase3$
+DECLARE k text; j jsonb; a jsonb; t timestamptz; n integer:=0; ref text; c record;
+BEGIN
+ t:=airlinerra_game.section9_verified_world_instant_v1();
+ UPDATE airlinerra_game.storage_facility_admission_release_v1 SET enabled=true;
+ FOREACH k IN ARRAY ARRAY['OURAIRPORTS:20594','OURAIRPORTS:20507','OURAIRPORTS:2395','OURAIRPORTS:2409'] LOOP
+  j:=airlinerra_game.stage_storage_only_operational_profile_v1(k);
+  IF j->>'status' IS DISTINCT FROM 'storage_profile_review_required' THEN RAISE EXCEPTION 'phase3 unreviewed staging %: %',k,j;END IF;
+  j:=airlinerra_game.approve_storage_facility_review_v1(k);
+  IF j->>'status' IS DISTINCT FROM 'storage_facility_final_review_missing' THEN RAISE EXCEPTION 'phase3 unreviewed approval %: %',k,j;END IF;
+  SELECT * INTO STRICT c FROM airlinerra_game.aircraft_storage_airport_candidate_data_v1 WHERE world_id=1 AND airport_key=k;
+  INSERT INTO airlinerra_game.aircraft_storage_only_profile_reviews_v1 VALUES(1,k,c.physical_runway_m+1,c.physical_width_m,'ASP',1.2,30,false,NULL,NULL,false,NULL,true,'synthetic runway only','synthetic restrictions only','synthetic access only',t);
+  j:=airlinerra_game.stage_storage_only_operational_profile_v1(k);
+  IF j->>'status' IS DISTINCT FROM 'storage_profile_review_mismatch' THEN RAISE EXCEPTION 'phase3 overstated runway %: %',k,j;END IF;
+  UPDATE airlinerra_game.aircraft_storage_only_profile_reviews_v1 SET reviewed_runway_length_m=coalesce(c.conservative_game_runway_m,c.physical_runway_m) WHERE airport_key=k;
+  j:=airlinerra_game.stage_storage_only_operational_profile_v1(k);
+  IF j->>'staged' IS DISTINCT FROM 'true' OR j->>'storageAdmissionChanged' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'phase3 staging %: %',k,j;END IF;
+  j:=airlinerra_game.storage_facility_readiness_snapshot_v1(k);
+  IF k='OURAIRPORTS:2409' THEN
+   IF c.icao_observed IS DISTINCT FROM 'EGSY' OR j->>'status' IS DISTINCT FROM 'storage_facility_fuel_evidence_unverified' OR j->>'ready' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'St Athan unresolved evidence bypass: %',j;END IF;
+   IF airlinerra_game.aircraft_storage_airport_admission_v1(k,'storage_inbound')->>'eligible' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'St Athan prematurely admitted';END IF;
+   RAISE NOTICE 'Phase 3 St Athan provisional fuel correctly blocks admission; registry identity review still required';
+   -- Simulate later evidence resolution, solely to exercise the approval path.
+   UPDATE airlinerra_game.aircraft_storage_only_service_candidates_v1 SET fuel_evidence_status='listed',fuel_evidence_reference='synthetic confirmed fuel' WHERE airport_key=k;
+   j:=airlinerra_game.storage_facility_readiness_snapshot_v1(k);
+  END IF;
+  IF j->>'ready' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'phase3 readiness %: %',k,j;END IF;
+  ref:='synthetic phase3 '||k;
+  INSERT INTO airlinerra_game.storage_facility_final_reviews_v1 VALUES(1,k,j,ref,ref||' fuel',t,NULL);
+  j:=airlinerra_game.approve_storage_facility_review_v1(k);
+  IF j->>'approved' IS DISTINCT FROM 'true' OR j->>'commercialAuthorityGranted' IS DISTINCT FROM 'false' OR j->>'dispatchAuthorized' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'phase3 approval %: %',k,j;END IF;
+  FOREACH a IN ARRAY ARRAY[airlinerra_game.aircraft_storage_airport_admission_v1(k,'storage_inbound'),airlinerra_game.aircraft_storage_airport_admission_v1(k,'storage_reactivation')] LOOP
+   IF a->>'eligible' IS DISTINCT FROM 'true' OR a->>'scope' IS DISTINCT FROM 'relocation_only' OR a->>'storageCapacityUnlimited' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'phase3 admission %: %',k,a;END IF;
+  END LOOP;
+  IF airlinerra_game.aircraft_storage_airport_admission_v1(k,'commercial')->>'eligible' IS DISTINCT FROM 'false'
+  OR EXISTS(SELECT 1 FROM airlinerra_game.airport_unified_operations_v1 WHERE airport_key=k AND operationally_authorized)
+  OR NOT EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_fuel_services_v1 WHERE airport_key=k AND fuel_game_family='TURBINE_KEROSENE_ASSUMED' AND approval_reference=ref||' fuel') THEN RAISE EXCEPTION 'phase3 scope/fuel %',k;END IF;
+  n:=n+1;
+  IF (SELECT count(*) FROM airlinerra_game.aircraft_storage_facilities_v1 WHERE review_state='approved')<>n THEN RAISE EXCEPTION 'phase3 unrelated facility approved';END IF;
+  RAISE NOTICE 'Phase 3 individual storage-only admission passed: % (synthetic operational review)',k;
+ END LOOP;
+ IF (SELECT count(*) FROM airlinerra_game.aircraft_storage_fuel_services_v1)<>4 OR airlinerra_game.aircraft_storage_airport_admission_v1('OURAIRPORTS:19330','storage_inbound')->>'eligible' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'phase3 unexpected fuel or Marana admission';END IF;
+ RAISE NOTICE 'Phase 3 four conditional storage-only approvals passed; no commercial rights or capacity quotas';
+END $phase3$;
+ROLLBACK TO SAVEPOINT phase3_facility_review;
