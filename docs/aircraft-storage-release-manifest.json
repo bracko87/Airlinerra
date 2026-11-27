@@ -11,7 +11,7 @@
       "components": [
         {
           "path": "server/sql/aircraft_storage_facilities_review.sql",
-          "gitBlobSha": "d4cbf1ef2c7e2bb214ab6fd0f6617b84ba2f344b"
+          "gitBlobSha": "db266e27c99cf4322acd24b7d98fb5a97f53f177"
         },
         {
           "path": "server/sql/aircraft_storage_airport_admission_review.sql",
@@ -51,7 +51,7 @@
         },
         {
           "path": "server/sql/aircraft_storage_approved_game_prices_review.sql",
-          "gitBlobSha": "0920ce989fd35286e3594d98bf7a944816f42848"
+          "gitBlobSha": "b62f1c4c49ad8c6fc3d053bb95e565007c6503cc"
         }
       ]
     },
@@ -299,5 +299,14 @@
     "Verify fingerprint-guarded dispatcher patch on current source clone and run full commercial acceptance including delayed/downstream conflict and arrival continuity.",
     "Verify disabled gates, zero activated facilities, no scheduler job, no synthetic test data and no commercial changes.",
     "Verify actual scheduler execution on isolated database, then obtain explicit release authorization."
-  ]
+  ],
+  "lastSuccessfulSchemaRehearsal": {
+    "runId": 46062469511,
+    "commit": "7d5865a616784f4e83302959fcf319536919aa66",
+    "structuralComponents": 61,
+    "sourceFingerprints": 5,
+    "restoredSchemaCategories": 7,
+    "scope": "schema_only_four_data_blocks_deferred",
+    "note": "Subsequent facility seed and price-data checks require renewed acceptance; production remains unauthorized."
+  }
 }
