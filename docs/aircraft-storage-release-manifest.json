@@ -272,6 +272,10 @@
         {
           "path": "server/sql/aircraft_storage_crew_custody_release_review.sql",
           "gitBlobSha": "7a6372bbc734a8d7d1f797aa9a7ae80861882320"
+        },
+        {
+          "path": "server/sql/aircraft_storage_commercial_dispatcher_integration_review.sql",
+          "gitBlobSha": "066e42682beb7813b792556ac843e309327443f4"
         }
       ]
     }
@@ -286,18 +290,13 @@
       "path": "server/sql/aircraft_storage_background_cron_review.sql",
       "gitBlobSha": "b1336f62d00113ec84a8d49b90d876905db51c87",
       "purpose": "separate_scheduler_review_do_not_install"
-    },
-    {
-      "path": "server/sql/aircraft_storage_commercial_dispatcher_integration_review.sql",
-      "gitBlobSha": "073cf49fac7c086176261fc9f0ae103570971ef2",
-      "purpose": "historical_dispatcher_replacement_requires_current_source_merge_not_direct_install"
     }
   ],
   "requiredBeforeRelease": [
     "Validate complete ordered composition on current schema clone, including existing source fingerprints for fuel, maintenance and crew patches.",
     "Reconcile ledger entry-kind constraints with current leasing migration and preserve existing kinds.",
     "Map every eligible owned aircraft configuration to reviewed monthly billing class; do not seed fixture IDs.",
-    "Merge dispatcher hooks into current source without replacing unrelated updates; verify commercial history guard triggers.",
+    "Verify fingerprint-guarded dispatcher patch on current source clone and run full commercial acceptance including delayed/downstream conflict and arrival continuity.",
     "Verify disabled gates, zero activated facilities, no scheduler job, no synthetic test data and no commercial changes.",
     "Verify actual scheduler execution on isolated database, then obtain explicit release authorization."
   ]
