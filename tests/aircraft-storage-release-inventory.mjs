@@ -32,3 +32,33 @@ assert.deepEqual(totals,{regional:129,narrowbody:75,widebody:67});
 assert.deepEqual(counts,{regional:46,narrowbody:19,widebody:16});
 console.log('PASS pinned '+paths.length+' storage SQL components; complete inventory and exact Git blob revisions');
 console.log('PASS proposed pricing classification: 81 families, 271 configurations; production not authorized');
+
+const familyBytes=readFileSync('docs/aircraft-storage-billing-class-candidates.json');
+const configurationReview=JSON.parse(readFileSync('docs/aircraft-storage-billing-configuration-candidates.json','utf8'));
+assert.equal(configurationReview.status,'proposed_game_balance_review_not_approved');
+assert.equal(configurationReview.catalogueDate,billing.catalogueDate);
+assert.equal(configurationReview.familyMappingBlob,createHash('sha1').update('blob '+familyBytes.length+'\0').update(familyBytes).digest('hex'),'Family review drift');
+const configurationIds=new Set(),familyCounts=new Map(),families=new Map(billing.families.map(f=>[f.family_id,f]));
+for(const c of configurationReview.configurations){
+ assert.ok(Number.isSafeInteger(c.configuration_id)&&c.configuration_id>0);
+ assert.ok(Number.isSafeInteger(c.variant_id)&&c.variant_id>0);
+ assert.ok(typeof c.configuration_code==='string'&&c.configuration_code.length>0);
+ assert.ok(!configurationIds.has(c.configuration_id),'Duplicate configuration ID');
+ configurationIds.add(c.configuration_id);
+ assert.ok(families.has(c.family_id),'Unknown aircraft family');
+ assert.equal(c.billingClass,families.get(c.family_id).billingClass,'Family/class mismatch: '+c.configuration_id);
+ familyCounts.set(c.family_id,(familyCounts.get(c.family_id)||0)+1);
+}
+assert.equal(configurationIds.size,271);
+for(const f of billing.families) assert.equal(familyCounts.get(f.family_id),f.configurations,'Family configuration count mismatch');
+const seedSql=readFileSync('server/sql/aircraft_storage_billing_class_staging_review.sql','utf8');
+const seedBlock=seedSql.split('INSERT INTO airlinerra_game.storage_billing_class_candidates_v1 VALUES\n');
+assert.equal(seedBlock.length,2);
+const lines=seedBlock[1].slice(0,seedBlock[1].indexOf(';')+1).trim().split('\n');
+const sqlRows=lines.map(line=>{
+ const match=line.match(/^\((\d+),(\d+),(\d+),'([^']+)','(regional|narrowbody|widebody)'\)[,;]$/);
+ assert.ok(match,'Unrecognized configuration seed row');
+ return {configuration_id:Number(match[1]),family_id:Number(match[2]),variant_id:Number(match[3]),configuration_code:match[4],billingClass:match[5]};
+});
+assert.deepEqual(sqlRows.sort((a,b)=>a.configuration_id-b.configuration_id),[...configurationReview.configurations].sort((a,b)=>a.configuration_id-b.configuration_id),'SQL seed differs from reviewed configuration inventory');
+console.log('PASS exact 271-row billing seed matches all 81 reviewed families and configuration identities');
