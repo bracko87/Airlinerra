@@ -219,6 +219,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Verify pinned release component and billing classification inventory
+        run: node tests/aircraft-storage-release-inventory.mjs
       - name: Storage interface and authenticated API acceptance
         run: node --test --test-name-pattern='storage panel|storage overview|storage planning preview|storage booking actions' tests/test_airline_workspace.mjs tests/test_fleet_acquisition_api.mjs
 
