@@ -308,5 +308,22 @@
     "restoredSchemaCategories": 7,
     "scope": "schema_only_four_data_blocks_deferred",
     "note": "Subsequent facility seed and price-data checks require renewed acceptance; production remains unauthorized."
+  },
+  "lastSuccessfulCandidateDataRehearsal": {
+    "runId": 46066000877,
+    "commit": "6ca40a133a8984b1a26229550206db2bef6acc02",
+    "integratedComponents": 62,
+    "airportCandidates": 9,
+    "storageOnlyServiceCandidates": 6,
+    "billingProposals": 271,
+    "sourceFingerprints": 5,
+    "restoredSchemaCategories": 7,
+    "scope": "minimal_registry_fixture_candidate_data_only_rollback",
+    "productionAuthorized": false,
+    "limitations": "No operational approval, live airline data, actual billing-class activation or cron deployment verified by this rehearsal."
+  },
+  "lastSuccessfulRegression": {
+    "runId": 46065390936,
+    "commit": "6ca40a133a8984b1a26229550206db2bef6acc02"
   }
 }
