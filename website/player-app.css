@@ -3187,3 +3187,9 @@ section[data-player-view="aircraft-market"]:has(#workspace-aircraft-market.is-sh
 /* Never flash the creation wizard or setup links while ownership is unknown or owned. */
 #player-app:not([data-airline-ownership="none"]) [data-player-view="onboarding"],
 #player-app:not([data-airline-ownership="none"]) [data-setup-only]{display:none!important}
+
+/* Lease estimates are planning-only, using the existing compact market layout. */
+#workspace-aircraft-new-orders .factory-lease-budget h3{margin:0 0 8px;font-size:15px}
+#workspace-aircraft-new-orders .factory-lease-budget label{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+#workspace-aircraft-new-orders #factory-lease-quantity{max-width:100px}
+#workspace-aircraft-new-orders .factory-lease-budget .detail-row{padding:6px 0}

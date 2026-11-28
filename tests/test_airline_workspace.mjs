@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {AIRLINE_UI_DEFAULTS,AIRLINE_UI_VIEWS,cleanUiPreferences,financialScenario,validateRouteIdea,aircraftStoragePanelState} from '../website/airline-workspace.mjs';
+import {AIRLINE_UI_DEFAULTS,AIRLINE_UI_VIEWS,cleanUiPreferences,financialScenario,validateRouteIdea,aircraftStoragePanelState,factoryLeaseBudget} from '../website/airline-workspace.mjs';
 import {PLAYER_VIEWS} from '../website/player-app-model.mjs';
 const read=path=>readFile(new URL(path,import.meta.url),'utf8');
 
@@ -326,6 +326,30 @@ test('aircraft picture disclosure starts collapsed and resets only on profile se
  assert.match(workspace,/selectedFleetAircraftId=aircraftId;collapseAircraftPicture\(\);/);
  assert.match(css,/\.fleet-aircraft-picture-disclosure:not\(\[open\]\)>\.fleet-aircraft-picture-content\{display:none\}/);
  assert.match(css,/\.fleet-aircraft-picture-disclosure\[open\] \.fleet-aircraft-picture-chevron::before/);
+});
+
+test('factory lease budget uses exact server cents and cash for one or multiple aircraft',()=>{
+ const atr={transactionType:'lease',upfrontPriceUsd:'266000.00',recurringMonthlyUsd:'133000.00',contractMonths:60};
+ assert.deepEqual(factoryLeaseBudget(atr,'4992927.81',2),{quantity:2,months:60,upfrontUsd:532000,monthlyUsd:266000,firstMonthUsd:798000,cashAfterOrderUsd:4460927.81,cashAfterFirstRentUsd:4194927.81,totalRentUsd:15960000,affordableUpfront:true,affordableFirstMonth:true});
+ const short=factoryLeaseBudget(atr,'600000',2);
+ assert.equal(short.affordableUpfront,true);
+ assert.equal(short.affordableFirstMonth,false);
+ assert.equal(short.cashAfterFirstRentUsd,-198000);
+ for(const quantity of [0,11,1.5,NaN])assert.equal(factoryLeaseBudget(atr,'5000000',quantity),null);
+ for(const cash of [null,'',-1,'NaN','1e5'])assert.equal(factoryLeaseBudget(atr,cash,1),null);
+ assert.equal(factoryLeaseBudget({...atr,transactionType:'purchase'},'5000000',1),null);
+ assert.equal(factoryLeaseBudget({...atr,contractMonths:null},'5000000',1),null);
+ assert.equal(factoryLeaseBudget({...atr,recurringMonthlyUsd:'1.005'},'5000000',1),null);
+ assert.equal(factoryLeaseBudget({...atr,upfrontPriceUsd:'0.01',recurringMonthlyUsd:'0.02'},'0.09',3).cashAfterFirstRentUsd,0);
+});
+test('lease budget is a non-binding preview and cannot bypass order release',async()=>{
+ const app=await read('../website/airline-workspace.mjs');
+ assert.ok(app.includes('id=\\"factory-lease-budget\\"'));
+ assert.match(app,/Planning only\. No reservation, order or payment is created/);
+ assert.match(app,/factoryLeaseBudget\(offer,marketSnapshot\?\.cashUsd,quantity\)/);
+ assert.match(app,/marketIsOpen\(\)&&payment==='cash'&&isReleasedFactoryOffer\(offer\)/);
+ assert.match(app,/newAircraftChoice\.payment!=='cash'/);
+ assert.match(app,/Lease order not available/);
 });
 
 test('storage panel shows verified owner-scoped details and never releases actions',async()=>{
