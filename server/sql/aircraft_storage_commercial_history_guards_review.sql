@@ -1,0 +1,9 @@
+-- Install within the caller's rollback-only review transaction after all commercial tables exist.
+CREATE TRIGGER guard_operated_storage_commercial_review_v1 BEFORE UPDATE OR DELETE ON airlinerra_game.storage_aware_crew_plan_reviews_v1 FOR EACH ROW EXECUTE FUNCTION airlinerra_game.guard_operated_storage_commercial_history_v1();
+CREATE TRIGGER guard_operated_storage_commercial_handoff_v1 BEFORE UPDATE OR DELETE ON airlinerra_game.storage_crew_plan_handoffs_v1 FOR EACH ROW EXECUTE FUNCTION airlinerra_game.guard_operated_storage_commercial_history_v1();
+CREATE TRIGGER guard_operated_storage_commercial_batch_v1 BEFORE UPDATE OR DELETE ON airlinerra_game.section9_crew_plan_batches_v1 FOR EACH ROW EXECUTE FUNCTION airlinerra_game.guard_operated_storage_commercial_history_v1();
+CREATE TRIGGER guard_operated_storage_commercial_flight_v1 BEFORE INSERT OR UPDATE OR DELETE ON airlinerra_game.section9_planned_flight_crews_v1 FOR EACH ROW EXECUTE FUNCTION airlinerra_game.guard_operated_storage_commercial_history_v1();
+CREATE TRIGGER guard_operated_storage_commercial_duty_v1 BEFORE INSERT OR UPDATE OR DELETE ON airlinerra_game.section9_planned_crew_duties_v1 FOR EACH ROW EXECUTE FUNCTION airlinerra_game.guard_operated_storage_commercial_history_v1();
+CREATE TRIGGER guard_operated_storage_commercial_seat_v1 BEFORE INSERT OR UPDATE OR DELETE ON airlinerra_game.section9_planned_crew_seats_v1 FOR EACH ROW EXECUTE FUNCTION airlinerra_game.guard_operated_storage_commercial_history_v1();
+CREATE TRIGGER guard_operated_storage_commercial_binding_v1 BEFORE UPDATE OR DELETE ON airlinerra_game.section9_operated_crew_bindings_v1 FOR EACH ROW EXECUTE FUNCTION airlinerra_game.guard_operated_storage_commercial_history_v1();
+CREATE TRIGGER guard_operated_storage_commercial_manifest_v1 BEFORE UPDATE OR DELETE ON airlinerra_game.section9_pilot_departure_manifests_v1 FOR EACH ROW EXECUTE FUNCTION airlinerra_game.guard_operated_storage_commercial_history_v1();

@@ -1,0 +1,62 @@
+name: Aircraft lease monthly billing (disposable)
+on:
+  pull_request:
+    paths:
+      - 'server/sql/aircraft_lease_monthly_billing_review.sql'
+      - 'server/sql/aircraft_factory_delivery_compatibility_review.sql'
+      - 'server/sql/aircraft_lease_dispatch_coverage_review.sql'
+      - 'tests/sql/aircraft_factory_delivery_compatibility_*'
+      - 'tests/sql/aircraft_lease_monthly_billing_*'
+      - '.github/workflows/airlinerra-lease-billing-review.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  lease-billing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable-ci-only
+          POSTGRES_DB: airlinerra_disposable
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d airlinerra_disposable"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: disposable-ci-only
+      PGDATABASE: airlinerra_disposable
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install client if needed
+        run: |
+          if ! command -v psql >/dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y postgresql-client
+          fi
+      - name: Test actual proposed billing SQL in disposable fixture
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = 127.0.0.1
+          test "$PGDATABASE" = airlinerra_disposable
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/disposable_database_preflight.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/aircraft_lease_monthly_billing_fixture.sql
+          psql -X -v ON_ERROR_STOP=1 -f server/sql/aircraft_lease_monthly_billing_review.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/aircraft_lease_monthly_billing_acceptance.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/aircraft_factory_delivery_compatibility_fixture.sql
+          psql -X -v ON_ERROR_STOP=1 -v factory_delivery_fixture=1 -f server/sql/aircraft_factory_delivery_compatibility_review.sql
+          psql -X -v ON_ERROR_STOP=1 -c "DO \$\$ BEGIN IF airlinerra_game.section9_sync_approved_delivery_positions_v1(10) IS DISTINCT FROM ARRAY[1] THEN RAISE EXCEPTION 'Rollback failed'; END IF; END \$\$;"
+          # Compile the real captured bodies without executing their external dependencies.
+          PGOPTIONS='-c check_function_bodies=off' psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_current_live_dispatch_source_20261124.sql
+          PGOPTIONS='-c check_function_bodies=off' psql -X -v ON_ERROR_STOP=1 -f tests/sql/section9_current_live_signed_movement_source_20261124.sql
+          psql -X -v ON_ERROR_STOP=1 -f server/sql/aircraft_lease_dispatch_coverage_review.sql
+          psql -XAt -v ON_ERROR_STOP=1 -c "SELECT position('AIRCRAFT_LEASE_PAYMENT_COVERAGE_REQUIRED' in pg_get_functiondef('airlinerra_game.section9_auto_dispatch_due_flight_events_v1(integer)'::regprocedure))=0" | grep -qx t

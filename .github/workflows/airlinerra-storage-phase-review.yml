@@ -1,0 +1,391 @@
+name: Aircraft storage phase review
+on:
+  pull_request:
+  push:
+    branches: [feature/aircraft-leasing-billing-review]
+    paths:
+      - 'server/sql/aircraft_storage*'
+      - 'scripts/ci/assemble_storage_schema_rehearsal.mjs'
+      - 'scripts/ci/prepare_storage_local_commit_rehearsal.mjs'
+      - 'scripts/ci/prepare_storage_disabled_release_candidate.mjs'
+      - 'scripts/ci/airlinerra_private_schema_baseline.sh'
+      - 'tests/sql/storage_release_source_compatibility_readonly.sql'
+      - 'tests/sql/storage_candidate_*'
+      - 'docs/aircraft-storage-release-manifest.json'
+      - 'docs/aircraft-storage-billing-*-candidates.json'
+      - 'tests/aircraft-storage-release-inventory.mjs'
+      - 'server/fleet-acquisition-service.mjs'
+      - 'website/airline-workspace.mjs'
+      - 'website/fleet-acquisition-client.mjs'
+      - 'website/local-owner-fleet-reader.mjs'
+      - 'website/dev-scripts/real-player-read-gateway.mjs'
+      - 'tests/test_fleet_acquisition_api.mjs'
+      - 'tests/test_airline_workspace.mjs'
+      - 'tests/sql/aircraft_storage*'
+      - 'tests/e2e/browser-aircraft-storage.mjs'
+      - 'tests/e2e/browser-aircraft-storage-database.mjs'
+      - 'tests/e2e/package.json'
+      - '.github/workflows/airlinerra-storage-phase-review.yml'
+jobs:
+  storage-phase:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: review
+          POSTGRES_DB: review
+        ports: ['5432:5432']
+        options: --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGPASSWORD: review
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install real pg_cron in disposable PostgreSQL service
+        shell: bash
+        env:
+          REVIEW_POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          set -euo pipefail
+          docker exec -u root "$REVIEW_POSTGRES_CONTAINER" sh -ec 'apt-get update && apt-get install -y --no-install-recommends postgresql-17-cron'
+          docker exec -u postgres "$REVIEW_POSTGRES_CONTAINER" sh -ec 'printf "\nshared_preload_libraries = '\''pg_cron'\''\ncron.database_name = '\''review'\''\n" >> "$PGDATA/postgresql.conf"'
+          docker restart "$REVIEW_POSTGRES_CONTAINER"
+          for i in $(seq 1 30); do
+            if psql -h localhost -U postgres -d review -Atqc 'SELECT 1' >/dev/null 2>&1; then break; fi
+            sleep 1
+          done
+          psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1 -c 'CREATE EXTENSION pg_cron'
+      - name: Run isolated storage phase acceptance
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1 <<'SQL'
+          -- Disposable test DB only.
+          CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;
+          CREATE SCHEMA airlinerra; CREATE SCHEMA airlinerra_game;
+          CREATE TABLE airlinerra.airport_registry(airport_key text PRIMARY KEY);
+          INSERT INTO airlinerra.airport_registry SELECT 'OURAIRPORTS:'||n FROM unnest(ARRAY[26900,4073,3856,316427,19330,2409,2395,21315,20507,20594,999]) n;
+          CREATE TABLE airlinerra_game.airport_reference_profiles(world_id smallint,airport_key text,latitude_deg numeric,longitude_deg numeric,timezone_iana text);
+          CREATE TABLE airlinerra_game.airport_unified_operations_v1(world_id smallint,airport_key text,game_category text,operationally_authorized boolean,dispatch_eligible_by_airport_admission boolean);
+          INSERT INTO airlinerra_game.airport_reference_profiles VALUES(1,'OURAIRPORTS:999',48,2,'Europe/Paris');
+          INSERT INTO airlinerra_game.airport_unified_operations_v1 VALUES(1,'OURAIRPORTS:999','Large',true,true);
+          CREATE TABLE airlinerra_game.section9_game_fuel_model_snapshot_v1(configuration_id bigint,cruise_speed_kmh numeric,game_calculation_ready boolean);
+          CREATE TABLE airlinerra.aircraft_catalog_configuration_inventory(configuration_id bigint,mtow_kg numeric);
+          INSERT INTO airlinerra_game.section9_game_fuel_model_snapshot_v1 VALUES(1,800,true);
+          INSERT INTO airlinerra.aircraft_catalog_configuration_inventory VALUES(1,70000);
+          CREATE FUNCTION airlinerra_game.section9_route_timing_pick_v1(text,int,int) RETURNS int LANGUAGE sql IMMUTABLE AS 'SELECT ($2+$3)/2';
+          CREATE TABLE airlinerra_game.section8_airport_operating_tariffs_v1(world_id smallint,airport_key text,landing_base_for_reference_aircraft_usd numeric,departure_movement_fraction numeric,ground_handling_fraction numeric,remote_stand_multiplier numeric,remote_parking_reference_per_day_usd numeric,terminal_navigation_unit_usd numeric,price_model_version text,evidence_class text);
+          INSERT INTO airlinerra_game.section8_airport_operating_tariffs_v1 VALUES(1,'OURAIRPORTS:999',1000,0.16,0.2,1,100,50,'fixture','GAME_ESTIMATE_NOT_REAL_AERONAUTICAL_TARIFF');
+          CREATE TABLE airlinerra.aircraft_expansion_group3_economics_v1(fuel_price_assumption_usd_per_kg numeric);
+          INSERT INTO airlinerra.aircraft_expansion_group3_economics_v1 VALUES(1.2);
+          CREATE FUNCTION airlinerra_game.section9_game_reserve_aware_fuel_quote_v1(bigint,numeric,integer,integer,integer,integer,integer) RETURNS jsonb LANGUAGE sql AS 'SELECT jsonb_build_object(''status'',''game_reserve_aware_fuel_estimate_only'',''tripBurnKg'',1000,''withinGameTankIncludingReserve'',true)';
+          CREATE TABLE airlinerra_game.airlines(id uuid PRIMARY KEY,world_id smallint,owner_player_id uuid,cash_usd numeric);
+          CREATE TABLE airlinerra_game.world_memberships(world_id smallint,player_id uuid,state text);
+          CREATE TABLE airlinerra_game.airline_aircraft_inventory(id uuid PRIMARY KEY,airline_id uuid,configuration_id bigint,ownership_type text,fleet_status text);
+          CREATE TABLE airlinerra_game.airline_flight_schedule_drafts_v1(airline_id uuid,aircraft_inventory_id uuid,status text);
+          CREATE TABLE airlinerra_game.section9_game_maintenance_jobs_v1(airline_id uuid,aircraft_inventory_id uuid,status text,quoted_cost_usd numeric);
+          CREATE TABLE airlinerra_game.section9_maintenance_relocation_trips_v1(airline_id uuid,aircraft_inventory_id uuid,status text,quoted_total_usd numeric);
+          CREATE TABLE airlinerra_game.airline_ledger(airline_id uuid,amount_usd numeric);
+          CREATE TABLE airlinerra_game.section6_airport_slot_capacity_v1(world_id smallint,airport_key text,remote_stands integer,remote_per_direction_10m integer,PRIMARY KEY(world_id,airport_key));
+          CREATE TABLE airlinerra_game.section5_airport_operating_policy_v1(world_id smallint,airport_key text,timezone_iana text);
+          CREATE TABLE airlinerra_game.section6_weekly_airport_slot_reservations_v1(world_id smallint,airport_key text,stand_type text,direction text,weekday smallint,minute_of_day smallint);
+          CREATE TABLE airlinerra_game.section6_dated_relocation_slots_v1(world_id smallint,airport_key text,stand_type text,direction text,local_date date,weekday smallint,minute_of_day smallint);
+          CREATE TABLE airlinerra_game.section9_dated_replacement_slots_v1(LIKE airlinerra_game.section6_dated_relocation_slots_v1);
+          CREATE FUNCTION airlinerra_game.section9_verified_world_instant_v1() RETURNS timestamptz LANGUAGE sql STABLE AS 'SELECT ''2026-11-26 10:00+00''::timestamptz';
+          CREATE FUNCTION airlinerra_game.section9_owned_aircraft_operational_position_v1(uuid,uuid,uuid,date) RETURNS jsonb LANGUAGE sql STABLE AS 'SELECT jsonb_build_object(''verified'',true,''atGroundAirport'',true,''airportKey'',''OURAIRPORTS:999'')';
+          INSERT INTO airlinerra_game.airlines VALUES('00000000-0000-0000-0000-000000000001',1,'00000000-0000-0000-0000-000000000002',5000000);
+          INSERT INTO airlinerra_game.world_memberships VALUES(1,'00000000-0000-0000-0000-000000000002','active');
+          INSERT INTO airlinerra_game.airline_aircraft_inventory VALUES('00000000-0000-0000-0000-000000000003','00000000-0000-0000-0000-000000000001',1,'owned','in_service');
+          INSERT INTO airlinerra_game.airline_ledger VALUES('00000000-0000-0000-0000-000000000001',5000000);
+          INSERT INTO airlinerra_game.section6_airport_slot_capacity_v1 VALUES(1,'OURAIRPORTS:999',1,1);
+          INSERT INTO airlinerra_game.section5_airport_operating_policy_v1 VALUES(1,'OURAIRPORTS:999','Europe/Paris');
+          SQL
+          for file in aircraft_storage_facilities_review aircraft_storage_airport_admission_review aircraft_storage_route_phase_review aircraft_storage_relocation_cost_review aircraft_storage_relocation_request_review aircraft_storage_flight_slots_review aircraft_storage_leg_evidence_review; do
+            psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1 -f "server/sql/$file.sql"
+          done
+          { sed '/^ROLLBACK;$/d' server/sql/aircraft_storage_airport_candidate_data_review.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_approved_game_prices_review.sql; cat <<'SQL'
+          DO $prices$
+          BEGIN
+           IF (SELECT count(*) FROM airlinerra_game.aircraft_storage_facilities_v1 WHERE review_state='candidate' AND monthly_regional_usd=4000 AND monthly_narrowbody_usd=8000 AND monthly_widebody_usd=15000)<>9
+           OR EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_facilities_v1 WHERE review_state<>'candidate' OR reactivation_allowed OR dismantling_allowed)
+           OR (SELECT count(*) FROM airlinerra_game.aircraft_storage_facilities_v1)<>9
+           OR EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_facilities_v1 WHERE airport_key='OURAIRPORTS:19330')
+           OR airlinerra_game.aircraft_storage_airport_admission_v1('OURAIRPORTS:316427','storage_inbound')->>'eligible' IS DISTINCT FROM 'false'
+           THEN RAISE EXCEPTION 'approved storage tariff staging altered admission or scope';END IF;
+           RAISE NOTICE 'Approved monthly storage prices staged for nine candidates; all admission states unchanged';
+          END $prices$;
+          SQL
+          sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_existing_commercial_profiles_review.sql
+          cat tests/sql/aircraft_storage_existing_commercial_profiles_acceptance.sql
+          sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_operational_screen_review.sql
+          sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_only_service_profiles_review.sql
+          cat tests/sql/aircraft_storage_only_service_profiles_acceptance.sql
+          sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_facility_final_approval_review.sql
+          sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_facility_current_admission_review.sql
+          cat tests/sql/aircraft_storage_facility_final_approval_acceptance.sql
+          sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_service_availability_review.sql
+          cat tests/sql/aircraft_storage_service_availability_acceptance.sql
+          sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_game_permission_policy_review.sql
+          cat tests/sql/aircraft_storage_game_permission_policy_acceptance.sql
+          sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_dual_use_runway_review.sql
+          cat tests/sql/aircraft_storage_dual_use_runway_acceptance.sql
+          echo "ROLLBACK;"
+          } | psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1
+          psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1 <<'SQL'
+          DO $test$
+          DECLARE j jsonb; a jsonb;
+          BEGIN
+           IF airlinerra_game.aircraft_storage_route_phase_profile_v1(1,'OURAIRPORTS:999','OURAIRPORTS:316427','storage_inbound') IS NOT NULL THEN RAISE EXCEPTION 'unapproved candidate accepted';END IF;
+           UPDATE airlinerra_game.aircraft_storage_facilities_v1 SET review_state='approved',monthly_regional_usd=2000,monthly_narrowbody_usd=5000,monthly_widebody_usd=10000,reactivation_allowed=true,evidence_reference='synthetic',relocation_release_reference='synthetic',reviewed_at=now() WHERE airport_key='OURAIRPORTS:316427';
+           INSERT INTO airlinerra_game.aircraft_storage_airport_operational_profiles_v1 VALUES(1,'OURAIRPORTS:316427',40,-1,'Europe/Madrid',2800,45,'asphalt',1000,150,'synthetic','synthetic',now());
+           j:=airlinerra_game.aircraft_storage_route_phase_profile_v1(1,'OURAIRPORTS:999','OURAIRPORTS:316427','storage_inbound');
+           IF j IS NULL OR (j->>'distanceKm')::numeric<=0 OR (j->>'totalMinutes')::integer<=0 THEN RAISE EXCEPTION 'inbound quote missing';END IF;
+           IF (j->>'totalMinutes')::integer <> (j->>'taxiOutMinutes')::integer+(j->>'taxiInMinutes')::integer+(j->>'climbMinutes')::integer+(j->>'cruiseMinutes')::integer+(j->>'descentMinutes')::integer THEN RAISE EXCEPTION 'phase sum mismatch';END IF;
+           IF airlinerra_game.aircraft_storage_route_phase_profile_v1(1,'OURAIRPORTS:316427','OURAIRPORTS:999','storage_reactivation') IS NULL THEN RAISE EXCEPTION 'reactivation quote missing';END IF;
+           IF airlinerra_game.aircraft_storage_route_phase_profile_v1(1,'OURAIRPORTS:999','OURAIRPORTS:316427','commercial') IS NOT NULL THEN RAISE EXCEPTION 'commercial accepted';END IF;
+           IF EXISTS(SELECT 1 FROM airlinerra_game.airport_unified_operations_v1 WHERE airport_key='OURAIRPORTS:316427') THEN RAISE EXCEPTION 'commercial catalogue changed';END IF;
+           a:=airlinerra_game.aircraft_storage_airport_admission_v1('OURAIRPORTS:316427','storage_inbound');
+           IF a->>'dispatchAuthorized' IS DISTINCT FROM 'false' OR a->>'storageCapacityUnlimited' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'incorrect release flags';END IF;
+           j:=airlinerra_game.aircraft_storage_relocation_cost_v1(1,'OURAIRPORTS:999','OURAIRPORTS:316427','storage_inbound');
+           IF j->>'status' IS DISTINCT FROM 'storage_tariff_unavailable' THEN RAISE EXCEPTION 'missing tariff not rejected';END IF;
+           INSERT INTO airlinerra_game.aircraft_storage_relocation_tariffs_v1 VALUES(1,'OURAIRPORTS:316427',100,200,50,'fixture');
+           j:=airlinerra_game.aircraft_storage_relocation_cost_v1(1,'OURAIRPORTS:999','OURAIRPORTS:316427','storage_inbound');
+           IF j->>'status' IS DISTINCT FROM 'storage_relocation_cost_estimate' OR (j->>'fuelCostUsd')::numeric IS DISTINCT FROM 1200::numeric OR (j->>'airportFeesUsd')::numeric IS DISTINCT FROM 1498.13::numeric OR (j->>'directOperatingCostUsd')::numeric IS DISTINCT FROM 2698.13::numeric THEN RAISE EXCEPTION 'inbound cost mismatch: %',j;END IF;
+           IF j->>'passengers' IS DISTINCT FROM '0' OR j->>'cargoTonnes' IS DISTINCT FROM '0' OR j->>'dispatchAuthorized' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'unsafe release flags';END IF;
+           j:=airlinerra_game.aircraft_storage_relocation_cost_v1(1,'OURAIRPORTS:316427','OURAIRPORTS:999','storage_reactivation');
+           IF j->>'status' IS DISTINCT FROM 'storage_relocation_cost_estimate' OR (j->>'airportFeesUsd')::numeric IS DISTINCT FROM 1488.13::numeric THEN RAISE EXCEPTION 'return cost mismatch: %',j;END IF;
+           UPDATE airlinerra_game.aircraft_storage_facilities_v1 SET review_state='suspended' WHERE airport_key='OURAIRPORTS:316427';
+           IF airlinerra_game.aircraft_storage_route_phase_profile_v1(1,'OURAIRPORTS:999','OURAIRPORTS:316427','storage_inbound') IS NOT NULL THEN RAISE EXCEPTION 'suspended facility accepted';END IF;
+           RAISE NOTICE 'Storage phase acceptance passed';
+          END $test$;
+          DO $slots$
+          DECLARE physical text; payload text; a uuid:='00000000-0000-0000-0000-000000000001';p uuid:='00000000-0000-0000-0000-000000000002';f uuid:='00000000-0000-0000-0000-000000000003';k uuid:='00000000-0000-0000-0000-000000000004';r uuid;j jsonb;
+          BEGIN
+           UPDATE airlinerra_game.aircraft_storage_facilities_v1 SET review_state='approved' WHERE airport_key='OURAIRPORTS:316427';
+           INSERT INTO airlinerra_game.aircraft_storage_only_movement_limits_v1 VALUES(1,'OURAIRPORTS:316427',1,1,'fixture');
+           j:=airlinerra_game.request_aircraft_storage_relocation_v1(p,a,f,'OURAIRPORTS:316427','2026-11-26 12:00+00',2698.13,k);
+           IF j->>'created' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'request creation: %',j;END IF;
+           r:=(j->>'requestId')::uuid;
+           physical:=r::text||':2026-11-26:1';
+           IF EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_leg_evidence_v1(physical)) THEN RAISE EXCEPTION 'unreserved evidence accepted';END IF;
+           j:=airlinerra_game.request_aircraft_storage_relocation_v1(p,a,f,'OURAIRPORTS:316427','2026-11-26 12:00+00',2698.13,k);
+           IF j->>'replayed' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'request replay: %',j;END IF;
+           INSERT INTO airlinerra_game.section6_weekly_airport_slot_reservations_v1 VALUES(1,'OURAIRPORTS:999','remote','departure',3,780);
+           j:=airlinerra_game.reserve_aircraft_storage_slots_v1(p,a,r);
+           IF j->>'status' IS DISTINCT FROM 'STORAGE_FLIGHT_SLOT_UNAVAILABLE' OR EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_flight_slots_v1 WHERE request_id=r) THEN RAISE EXCEPTION 'atomic slot failure: %',j;END IF;
+           DELETE FROM airlinerra_game.section6_weekly_airport_slot_reservations_v1;
+           j:=airlinerra_game.reserve_aircraft_storage_slots_v1(p,a,r);
+           IF j->>'slotsReserved' IS DISTINCT FROM '2' OR j->>'flightScheduled' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'slot reservation: %',j;END IF;
+           j:=airlinerra_game.reserve_aircraft_storage_slots_v1(p,a,r);
+           IF j->>'replayed' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'slot replay: %',j;END IF;
+           BEGIN
+           INSERT INTO airlinerra_game.section6_weekly_airport_slot_reservations_v1 VALUES(1,'OURAIRPORTS:999','remote','departure',3,780);
+           RAISE EXCEPTION 'unexpected commercial slot';
+           EXCEPTION WHEN raise_exception THEN IF SQLERRM<>'STORAGE_FLIGHT_SLOT_UNAVAILABLE' THEN RAISE;END IF;END;
+           BEGIN
+           INSERT INTO airlinerra_game.section9_dated_replacement_slots_v1 VALUES(1,'OURAIRPORTS:999','remote','departure','2026-11-26',3,780);
+           RAISE EXCEPTION 'unexpected replacement slot';
+           EXCEPTION WHEN raise_exception THEN IF SQLERRM<>'STORAGE_FLIGHT_SLOT_UNAVAILABLE' THEN RAISE;END IF;END;
+           IF NOT EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_leg_evidence_v1(physical)) THEN RAISE EXCEPTION 'reserved evidence missing';END IF;
+           payload:=airlinerra_game.aircraft_storage_event_signing_payload_v1(physical,'departed');
+           IF payload IS NULL OR split_part(payload,E'\n',1)<>'airlinerra-storage-event-v1' OR split_part(payload,E'\n',5)<>'departed' OR airlinerra_game.aircraft_storage_event_signing_payload_v1(physical,'arrived') IS NOT DISTINCT FROM payload THEN RAISE EXCEPTION 'signing payload mismatch';END IF;
+           IF airlinerra_game.aircraft_storage_event_signing_payload_v1(physical,'invalid') IS NOT NULL THEN RAISE EXCEPTION 'invalid phase accepted';END IF;
+           UPDATE airlinerra_game.airline_aircraft_inventory SET configuration_id=2 WHERE id=f;
+           IF EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_leg_evidence_v1(physical)) THEN RAISE EXCEPTION 'changed configuration accepted';END IF;
+           UPDATE airlinerra_game.airline_aircraft_inventory SET configuration_id=1 WHERE id=f;
+           j:=airlinerra_game.cancel_aircraft_storage_relocation_request_v1(p,a,r);
+           IF EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_leg_evidence_v1(physical)) THEN RAISE EXCEPTION 'cancelled evidence accepted';END IF;
+           IF j->>'status' IS DISTINCT FROM 'cancelled' OR EXISTS(SELECT 1 FROM airlinerra_game.aircraft_storage_flight_slots_v1 WHERE request_id=r) THEN RAISE EXCEPTION 'slot release failed';END IF;
+           INSERT INTO airlinerra_game.section6_weekly_airport_slot_reservations_v1 VALUES(1,'OURAIRPORTS:999','remote','departure',3,780);
+           IF (SELECT cash_usd FROM airlinerra_game.airlines WHERE id=a)<>5000000 OR (SELECT fleet_status FROM airlinerra_game.airline_aircraft_inventory WHERE id=f)<>'in_service' THEN RAISE EXCEPTION 'unexpected financial or fleet mutation';END IF;
+           RAISE NOTICE 'Storage request and slot acceptance passed';
+          END $slots$;
+          SQL
+          psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1 -f tests/sql/aircraft_storage_signed_movement_fixture.sql
+          # Run acceptance inside the review transaction, then roll back.
+          { sed '/^ROLLBACK;$/d' server/sql/aircraft_storage_signed_movement_schema_review.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_funds_review.sql; sed '/^ROLLBACK;$/d' tests/sql/aircraft_storage_signed_movement_acceptance.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_arrival_completion_review.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_monthly_billing_review.sql; echo "INSERT INTO airlinerra_game.aircraft_storage_billing_classes_v1 VALUES(1,'narrowbody','fixture');"; echo "SAVEPOINT approved_price_billing; UPDATE airlinerra_game.aircraft_storage_facilities_v1 SET monthly_regional_usd=4000,monthly_narrowbody_usd=8000,monthly_widebody_usd=15000 WHERE airport_key='OURAIRPORTS:316427';"; sed '/^ROLLBACK;$/d' tests/sql/aircraft_storage_arrival_completion_acceptance.sql; cat tests/sql/aircraft_storage_approved_price_billing_acceptance.sql; echo "ROLLBACK TO SAVEPOINT approved_price_billing;"; sed '/^ROLLBACK;$/d' tests/sql/aircraft_storage_arrival_completion_acceptance.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_reactivation_request_review.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_reactivation_reservation_review.sql; cat tests/sql/aircraft_storage_reactivation_request_acceptance.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_reactivation_movement_review.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_reactivation_lifecycle_review.sql; cat tests/sql/aircraft_storage_live_fuel_source_20261126.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_fuel_execution_adapter_review.sql; cat tests/sql/aircraft_storage_reactivation_lifecycle_acceptance.sql; cat tests/sql/aircraft_storage_live_maintenance_source_20261126.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_reactivation_maintenance_review.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_execution_worker_review.sql; cat tests/sql/aircraft_storage_automatic_outbound_acceptance.sql; cat tests/sql/aircraft_storage_actual_fuel_outbound_acceptance.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_owner_overview_review.sql; cat tests/sql/aircraft_storage_owner_overview_acceptance.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_planning_preview_review.sql; cat tests/sql/aircraft_storage_planning_preview_acceptance.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_booking_confirmation_review.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_player_booking_review.sql; cat tests/sql/aircraft_storage_booking_confirmation_acceptance.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_ferry_permission_crew_review.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_operational_screen_review.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_crew_candidate_review.sql; cat tests/sql/aircraft_storage_operational_screen_acceptance.sql; cat tests/sql/aircraft_storage_crew_reservation_guard_fixture.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_crew_reservation_guard_review.sql; cat tests/sql/aircraft_storage_crew_reservation_guard_acceptance.sql; cat tests/sql/aircraft_storage_crew_reservation_guard_fixture.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_crew_reservation_guard_review.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_crew_bound_booking_review.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_crew_departure_validation_review.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_automatic_booking_review.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_player_automatic_booking_review.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_background_tick_review.sql; cat tests/sql/aircraft_storage_crew_bound_booking_acceptance.sql; cat tests/sql/aircraft_storage_crew_reservation_guard_fixture.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_background_tick_review.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_crew_reservation_guard_review.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_crew_signed_duty_review.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_crew_combined_history_review.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_crew_planning_input_review.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_crew_persistent_plan_review.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_crew_plan_handoff_review.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_crew_departure_validation_review.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_operational_departure_review.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_crew_handoff_dispatch_guard_review.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_crew_manifest_coverage_review.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_commercial_rotation_prefix_review.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_commercial_departure_readiness_review.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_commercial_binding_review.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_commercial_plan_retirement_review.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_crew_booking_history_input_review.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_crew_history_consumer_integration_review.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_crew_custody_release_review.sql; echo "SAVEPOINT cron_review;"; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_background_cron_review.sql; echo "ROLLBACK TO SAVEPOINT cron_review; DO \$croncheck\$ BEGIN IF EXISTS(SELECT 1 FROM cron.job WHERE jobname='airlinerra-world1-storage-background-v1') THEN RAISE EXCEPTION 'cron review persisted job'; END IF; RAISE NOTICE 'Storage cron registration rolled back successfully'; END \$croncheck\$;"; cat tests/sql/aircraft_storage_crew_signed_duty_acceptance.sql; cat tests/sql/aircraft_storage_monthly_billing_acceptance.sql; } | psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1
+          # Independent inbound continuity review with the original signed movement fixture.
+          { sed '/^ROLLBACK;$/d' server/sql/aircraft_storage_signed_movement_schema_review.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_funds_review.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_arrival_completion_review.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_monthly_billing_review.sql; echo "INSERT INTO airlinerra_game.aircraft_storage_billing_classes_v1 VALUES(1,'narrowbody','fixture'); UPDATE airlinerra_game.aircraft_storage_facilities_v1 SET monthly_regional_usd=4000,monthly_narrowbody_usd=8000,monthly_widebody_usd=15000 WHERE airport_key='OURAIRPORTS:316427';"; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_inbound_arrival_continuity_review.sql; cat tests/sql/aircraft_storage_inbound_arrival_continuity_acceptance.sql; sed '/^ROLLBACK;$/d' tests/sql/aircraft_storage_arrival_completion_acceptance.sql; cat tests/sql/aircraft_storage_approved_price_billing_acceptance.sql; echo "ROLLBACK;"; } | psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1
+          # Compile worker with the same storage schemas and a disabled synthetic fuel release.
+          { sed '/^ROLLBACK;$/d' server/sql/aircraft_storage_signed_movement_schema_review.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_funds_review.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_arrival_completion_review.sql; sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_monthly_billing_review.sql; cat <<'SQL'
+          CREATE TABLE airlinerra_game.aircraft_storage_execution_release_v1(world_id smallint PRIMARY KEY,fuel_adapter_enabled boolean NOT NULL DEFAULT false,execution_enabled boolean NOT NULL DEFAULT false);
+          INSERT INTO airlinerra_game.aircraft_storage_execution_release_v1(world_id) VALUES(1);
+          SQL
+          sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_execution_worker_review.sql; cat <<'SQL'
+          DO $worker$
+          DECLARE j jsonb;
+          BEGIN
+           j:=airlinerra_game.advance_aircraft_storage_relocations_v1(10);
+           IF j->>'status' IS DISTINCT FROM 'storage_execution_not_released' OR j->'results' IS DISTINCT FROM '[]'::jsonb THEN RAISE EXCEPTION 'worker release bypass: %',j;END IF;
+           j:=airlinerra_game.execute_aircraft_storage_leg_v1(gen_random_uuid(),'departed');
+           IF j->>'status' IS DISTINCT FROM 'storage_execution_not_released' OR j->>'movementRecorded' IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'direct execution release bypass: %',j;END IF;
+           IF EXISTS(SELECT 1 FROM airlinerra_game.section9_operated_flight_movements_v1) THEN RAISE EXCEPTION 'disabled worker wrote movements';END IF;
+           RAISE NOTICE 'Storage worker disabled release acceptance passed';
+          END $worker$;
+          ROLLBACK;
+          SQL
+          } | psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify exact aircraft billing classification staging in separate disposable database
+        shell: bash
+        run: |
+          set -euo pipefail
+          createdb -h localhost -U postgres storage_billing_review
+          {
+            echo "BEGIN; CREATE SCHEMA airlinerra; CREATE SCHEMA airlinerra_game;"
+            echo "CREATE TABLE airlinerra.aircraft_catalog_configuration_inventory(configuration_id bigint PRIMARY KEY,family_id bigint,variant_id bigint,configuration_code text);"
+            sed -n '/^CREATE TABLE airlinerra_game.aircraft_storage_billing_classes_v1(/,/^);/p' server/sql/aircraft_storage_monthly_billing_review.sql
+            sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_billing_class_staging_review.sql
+            cat tests/sql/aircraft_storage_billing_class_staging_acceptance.sql
+            echo "ROLLBACK;"
+          } | psql -h localhost -U postgres -d storage_billing_review -v ON_ERROR_STOP=1
+          dropdb -h localhost -U postgres storage_billing_review
+      - name: Verify exact dispatcher patch on isolated source snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          createdb -h localhost -U postgres airlinerra_disposable
+          {
+            echo "BEGIN; CREATE SCHEMA airlinerra; CREATE SCHEMA airlinerra_game; SET LOCAL check_function_bodies=off;"
+            cat tests/sql/section9_current_live_dispatch_source_20261124.sql
+            echo "REVOKE ALL ON FUNCTION airlinerra_game.section9_auto_dispatch_due_flight_events_v1(integer) FROM PUBLIC,anon,authenticated,service_role;"
+            sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_commercial_dispatcher_integration_review.sql
+            cat tests/sql/aircraft_storage_dispatcher_patch_acceptance.sql
+            cat tests/sql/aircraft_storage_dispatcher_runtime_fixture.sql
+            cat tests/sql/aircraft_storage_dispatcher_runtime_acceptance.sql
+            cat tests/sql/aircraft_storage_dispatcher_arrival_acceptance.sql
+            echo "ROLLBACK;"
+          } | psql -h localhost -U postgres -d airlinerra_disposable -v ON_ERROR_STOP=1
+          dropdb -h localhost -U postgres airlinerra_disposable
+      - name: Verify pinned release component and billing classification inventory
+        run: |
+          node tests/aircraft-storage-release-inventory.mjs
+          node scripts/ci/assemble_storage_schema_rehearsal.mjs --validate-only
+          node scripts/ci/assemble_storage_schema_rehearsal.mjs --validate-only --include-candidate-data
+          node scripts/ci/assemble_storage_schema_rehearsal.mjs --validate-only --existing-registry-data
+          preview_tmp="$(mktemp -d)"
+          trap 'rm -rf "$preview_tmp"' EXIT
+          node scripts/ci/assemble_storage_schema_rehearsal.mjs "$preview_tmp/preview.sql" --existing-registry-data
+          node scripts/ci/prepare_storage_local_commit_rehearsal.mjs "$preview_tmp/preview.sql" "$preview_tmp/body.sql" "$preview_tmp/assertions.sql"
+          grep -q 'STORAGE_DISPOSABLE_COMMIT_SESSION_REQUIRED' "$preview_tmp/body.sql"
+          if grep -Eq '^(COMMIT|ROLLBACK);$' "$preview_tmp/body.sql"; then exit 1; fi
+          cp "$preview_tmp/preview.sql" "$preview_tmp/changed.sql"
+          printf '\n-- changed preview\n' >> "$preview_tmp/changed.sql"
+          if node scripts/ci/prepare_storage_local_commit_rehearsal.mjs "$preview_tmp/changed.sql" "$preview_tmp/rejected.sql" "$preview_tmp/rejected-assertions.sql"; then
+            echo 'BLOCKED: modified preview accepted'; exit 1
+          fi
+          test ! -e "$preview_tmp/rejected.sql"
+          echo 'PASS exact verified preview preparation and modified input rejection'
+          node scripts/ci/prepare_storage_disabled_release_candidate.mjs "$preview_tmp/preview.sql" "$preview_tmp/candidate.sql" "$preview_tmp/candidate.json"
+          if node scripts/ci/prepare_storage_disabled_release_candidate.mjs "$preview_tmp/changed.sql" "$preview_tmp/rejected-candidate.sql" "$preview_tmp/rejected-candidate.json"; then
+            echo 'BLOCKED: changed production candidate input accepted'; exit 1
+          fi
+          test ! -e "$preview_tmp/rejected-candidate.sql"
+          if psql -h localhost -U postgres -d review -X -v ON_ERROR_STOP=1 -f "$preview_tmp/candidate.sql" >"$preview_tmp/blocked-candidate.log" 2>&1; then
+            echo 'BLOCKED: unauthorized candidate executed'; exit 1
+          fi
+          grep -q 'STORAGE_PRODUCTION_INSTALLATION_NOT_AUTHORIZED' "$preview_tmp/blocked-candidate.log"
+          echo 'PASS blocked production candidate rejects execution before installation'
+
+          rm -rf "$preview_tmp"
+          trap - EXIT
+          bash -n scripts/ci/airlinerra_private_schema_baseline.sh
+      - name: Storage interface and authenticated API acceptance
+        run: node --test --test-name-pattern='storage panel|storage overview|storage planning preview|storage booking actions' tests/test_airline_workspace.mjs tests/test_fleet_acquisition_api.mjs
+
+      - name: Storage-aware crew allocation preview tests
+        run: node --test tests/test_storage_aware_crew_plan.mjs
+
+      - name: Install isolated browser test dependencies
+        working-directory: tests/e2e
+        run: npm install --ignore-scripts --no-audit --no-fund --no-package-lock
+      - name: Run Chromium storage workspace acceptance
+        shell: bash
+        run: |
+          set -euo pipefail
+          BROWSER="$(command -v google-chrome || command -v google-chrome-stable || true)"
+          if [ -n "$BROWSER" ]; then
+            export AIRLINERRA_CHROME_PATH="$BROWSER"
+          else
+            ./tests/e2e/node_modules/.bin/playwright install --with-deps chromium
+          fi
+          node tests/e2e/browser-aircraft-storage.mjs
+
+      - name: Prepare isolated stored aircraft for browser database acceptance
+        shell: bash
+        run: |
+          set -euo pipefail
+          # The disposable review service is destroyed by Actions; never use a hosted DB.
+          test "$(psql -h localhost -U postgres -d review -Atqc 'SELECT current_database()')" = review
+          {
+            sed '/^ROLLBACK;$/d' server/sql/aircraft_storage_signed_movement_schema_review.sql
+            echo "INSERT INTO airlinerra_game.airlines VALUES('00000000-0000-4000-8000-000000000001',1,'00000000-0000-4000-8000-000000000002',5000000); INSERT INTO airlinerra_game.world_memberships VALUES(1,'00000000-0000-4000-8000-000000000002','active'); INSERT INTO airlinerra_game.airline_aircraft_inventory(id,airline_id,configuration_id,ownership_type,fleet_status) VALUES('00000000-0000-4000-8000-000000000003','00000000-0000-4000-8000-000000000001',1,'owned','in_service'); INSERT INTO airlinerra_game.airline_ledger(airline_id,amount_usd) VALUES('00000000-0000-4000-8000-000000000001',5000000);"
+            sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_funds_review.sql
+            sed -e '/^ROLLBACK;$/d' -e 's/00000000-0000-0000-0000-00000000000/00000000-0000-4000-8000-00000000000/g' -e "s/interval '4 hours'/interval '12 hours'/g" tests/sql/aircraft_storage_signed_movement_acceptance.sql
+            sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_arrival_completion_review.sql
+            sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_monthly_billing_review.sql
+            echo "INSERT INTO airlinerra_game.aircraft_storage_billing_classes_v1 VALUES(1,'narrowbody','fixture'); UPDATE airlinerra_game.aircraft_storage_facilities_v1 SET monthly_regional_usd=4000,monthly_narrowbody_usd=8000,monthly_widebody_usd=15000 WHERE airport_key='OURAIRPORTS:316427';"
+            sed '/^ROLLBACK;$/d' tests/sql/aircraft_storage_arrival_completion_acceptance.sql
+            sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_reactivation_request_review.sql
+            sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_owner_overview_review.sql
+            sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_planning_preview_review.sql
+            sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_player_booking_review.sql
+            sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' server/sql/aircraft_storage_player_automatic_booking_review.sql
+            echo "ALTER TABLE airlinerra.airport_registry ADD COLUMN airport_name text, ADD COLUMN source_gps_code text, ADD COLUMN source_ident text, ADD COLUMN country_iso text; UPDATE airlinerra.airport_registry SET airport_name=CASE airport_key WHEN 'OURAIRPORTS:316427' THEN 'Teruel' WHEN 'OURAIRPORTS:999' THEN 'Test commercial airport' ELSE airport_key END, source_gps_code=CASE airport_key WHEN 'OURAIRPORTS:316427' THEN 'LETL' WHEN 'OURAIRPORTS:999' THEN 'TEST' ELSE NULL END,country_iso='XX';"
+            echo "CREATE TABLE airlinerra_game.storage_facility_admission_release_v1(world_id smallint PRIMARY KEY,enabled boolean NOT NULL DEFAULT false); INSERT INTO airlinerra_game.storage_facility_admission_release_v1(world_id) VALUES(1);"
+            echo "CREATE TABLE airlinerra_game.aircraft_storage_automatic_booking_release_v1(world_id smallint PRIMARY KEY,enabled boolean NOT NULL DEFAULT false); INSERT INTO airlinerra_game.aircraft_storage_automatic_booking_release_v1(world_id) VALUES(1); CREATE TABLE airlinerra_game.storage_operational_departure_release_v1(world_id smallint PRIMARY KEY,enabled boolean NOT NULL DEFAULT false); INSERT INTO airlinerra_game.storage_operational_departure_release_v1(world_id) VALUES(1); CREATE TABLE airlinerra_game.storage_crew_departure_validation_release_v1(world_id smallint PRIMARY KEY,enabled boolean NOT NULL DEFAULT false); INSERT INTO airlinerra_game.storage_crew_departure_validation_release_v1(world_id) VALUES(1); CREATE TABLE airlinerra_game.aircraft_storage_crew_booking_release_v1(world_id smallint PRIMARY KEY,enabled boolean NOT NULL DEFAULT false); INSERT INTO airlinerra_game.aircraft_storage_crew_booking_release_v1(world_id) VALUES(1); CREATE TABLE airlinerra_game.aircraft_storage_booking_release_v1(world_id smallint PRIMARY KEY,enabled boolean NOT NULL DEFAULT false); INSERT INTO airlinerra_game.aircraft_storage_booking_release_v1(world_id) VALUES(1); CREATE TABLE airlinerra_game.aircraft_storage_execution_release_v1(world_id smallint PRIMARY KEY,execution_enabled boolean NOT NULL DEFAULT false,fuel_adapter_enabled boolean NOT NULL DEFAULT false); INSERT INTO airlinerra_game.aircraft_storage_execution_release_v1(world_id) VALUES(1); CREATE TABLE airlinerra_game.aircraft_storage_reactivation_release_v1(world_id smallint PRIMARY KEY,enabled boolean NOT NULL DEFAULT false); INSERT INTO airlinerra_game.aircraft_storage_reactivation_release_v1(world_id) VALUES(1);"
+            echo "UPDATE airlinerra_game.aircraft_storage_signed_movement_release_v1 SET enabled=false; COMMIT;"
+          } | psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1
+      - name: Prepare real booking transaction functions for browser acceptance
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1 -f tests/sql/aircraft_storage_browser_booking_fixture.sql
+          {
+            echo "BEGIN; DROP TABLE airlinerra_game.aircraft_storage_booking_release_v1,airlinerra_game.aircraft_storage_crew_booking_release_v1,airlinerra_game.aircraft_storage_automatic_booking_release_v1,airlinerra_game.aircraft_storage_reactivation_release_v1;"
+            sed -n '/^CREATE OR REPLACE FUNCTION airlinerra_game.section9_aircraft_movement_decision_v1(/,/^END \$f\$;/p' supabase/migrations/20261109111043_section9_operated_aircraft_movement_schema.sql
+            for file in aircraft_storage_inbound_arrival_continuity_review aircraft_storage_reactivation_reservation_review aircraft_storage_reactivation_movement_review aircraft_storage_reactivation_lifecycle_review aircraft_storage_execution_worker_review aircraft_storage_booking_confirmation_review aircraft_storage_crew_reservation_guard_review aircraft_storage_crew_bound_booking_review aircraft_storage_automatic_booking_review aircraft_storage_background_tick_review; do
+              sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' "server/sql/$file.sql"
+            done
+            # Install the actual service-calendar definitions; the browser fixture
+            # supplies the unrelated operational screen and admission inputs.
+            sed '/^-- Keep existing screens intact/,$d' server/sql/aircraft_storage_service_availability_review.sql | sed '/^BEGIN;$/d'
+            for file in aircraft_storage_game_permission_policy_review aircraft_storage_game_permission_booking_review; do
+              sed -e '/^BEGIN;$/d' -e '/^ROLLBACK;$/d' "server/sql/$file.sql"
+            done
+            echo "COMMIT;"
+          } | psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1
+      - name: Seed synthetic game permission calendar for disposable browser acceptance
+        run: psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1 -f tests/sql/aircraft_storage_browser_permission_fixture.sql
+      - name: Run Chromium storage database acceptance
+        shell: bash
+        env:
+          AIRLINERRA_STORAGE_DB_REVIEW: '1'
+        run: |
+          set -euo pipefail
+          BROWSER="$(command -v google-chrome || command -v google-chrome-stable || true)"
+          if [ -n "$BROWSER" ]; then export AIRLINERRA_CHROME_PATH="$BROWSER"; fi
+          node tests/e2e/browser-aircraft-storage-database.mjs
+      - name: Verify persisted browser game permission receipts
+        run: psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1 -f tests/sql/aircraft_storage_browser_permission_receipts_acceptance.sql
+
+      - name: Verify actual minute scheduler billing and idempotence
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(psql -h localhost -U postgres -d review -Atqc 'SELECT current_database()')" = review
+          cleanup() {
+            psql -h localhost -U postgres -d review -q -c "SELECT cron.unschedule(jobid) FROM cron.job WHERE jobname='airlinerra-world1-storage-background-v1'; UPDATE airlinerra_game.storage_background_worker_release_v1 SET billing_enabled=false,movement_enabled=false,expiry_enabled=false WHERE world_id=1;" >/dev/null || true
+          }
+          trap cleanup EXIT
+          psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1 -f tests/sql/aircraft_storage_cron_execution_fixture.sql
+          for i in $(seq 1 40); do
+            runs="$(psql -h localhost -U postgres -d review -Atqc "SELECT count(*) FROM cron.job_run_details d JOIN cron.job j USING(jobid) WHERE j.jobname='airlinerra-world1-storage-background-v1' AND d.status='succeeded'")"
+            if [[ "$runs" -ge 2 ]]; then break; fi
+            sleep 5
+          done
+          psql -h localhost -U postgres -d review -v ON_ERROR_STOP=1 -f tests/sql/aircraft_storage_cron_execution_acceptance.sql
+          test "$(psql -h localhost -U postgres -d review -Atqc "SELECT count(*) FROM cron.job WHERE jobname='airlinerra-world1-storage-background-v1'")" = 0

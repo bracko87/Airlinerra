@@ -397,6 +397,116 @@ REVOKE EXECUTE ON FUNCTION airlinerra_game.section9_game_route_restrictions_vali
 REVOKE SELECT ON airlinerra_game.airport_unified_operations_v1 FROM PUBLIC,anon,authenticated,service_role;
 SQL
 
+# Explicit manual storage schema rehearsal, never executed against the source.
+if [[ "${AIRLINERRA_STORAGE_SCHEMA_REHEARSAL:-0}" == 1 ]]; then
+  # Validate the exact reviewed live-source signatures on the verified clone.
+  local_psql -At -f tests/sql/storage_release_source_compatibility_readonly.sql >"$tmp/storage-source-check.log" 2>&1
+  if ! grep -q 'SOURCE_MATCHED' "$tmp/storage-source-check.log" || grep -q 'BLOCKED_SOURCE_DRIFT' "$tmp/storage-source-check.log" || [[ "$(grep -c 'SOURCE_MATCHED' "$tmp/storage-source-check.log")" != 5 ]]; then
+    echo "BLOCKED: storage fuel, maintenance, ledger or dispatcher source compatibility differs." >&2
+    exit 2
+  fi
+  echo "PASS: five storage source fingerprints matched on the private clone."
+  node scripts/ci/assemble_storage_schema_rehearsal.mjs "$tmp/storage-schema-rehearsal.sql"
+  if ! local_psql -q -v VERBOSITY=verbose -f "$tmp/storage-schema-rehearsal.sql" >"$tmp/storage-rehearsal.log" 2>&1; then
+    # Only public repository file markers and SQLSTATE are emitted.
+    awk '/^STORAGE_SCHEMA_REHEARSAL aircraft_storage_[a-z_]+\.sql$/ { component=$2 } END { print "Blocked component: " component }' "$tmp/storage-rehearsal.log"
+    grep -Eo 'ERROR: +[0-9A-Z]{5}:' "$tmp/storage-rehearsal.log" | sort -u || true
+    echo "BLOCKED: storage schema composition failed; private SQL diagnostics withheld." >&2
+    exit 2
+  fi
+  local_psql -Atqc "SELECT (to_regclass('airlinerra_game.aircraft_storage_facilities_v1') IS NULL)::int" | grep -qx 1
+  local_psql -At -f tests/sql/airlinerra_private_schema_fingerprint.sql >"$tmp/storage-rollback-structure.hashes" 2>"$tmp/storage-rollback-fingerprint.stderr"
+  if ! cmp -s "$tmp/clone-structure.hashes" "$tmp/storage-rollback-structure.hashes"; then
+    echo "BLOCKED: isolated schema differs after storage transaction rollback." >&2
+    exit 2
+  fi
+  echo "PASS: all seven original schema categories exactly restored after rollback."
+  echo "PASS: integrated storage schema-only transaction rolled back; no storage schema persisted on clone."
+  # Repeat on the exact same restored clone with nine minimal registry
+  # identities and all deferred candidate-only data. No live table data copied.
+  node scripts/ci/assemble_storage_schema_rehearsal.mjs "$tmp/storage-candidate-data-rehearsal.sql" --include-candidate-data
+  if ! local_psql -q -v VERBOSITY=verbose -f "$tmp/storage-candidate-data-rehearsal.sql" >"$tmp/storage-data-rehearsal.log" 2>&1; then
+    awk '/^STORAGE_SCHEMA_REHEARSAL [a-z_]+\.sql$/ { component=$2 } END { print "Blocked candidate-data component: " component }' "$tmp/storage-data-rehearsal.log"
+    grep -Eo 'ERROR: +[0-9A-Z]{5}:' "$tmp/storage-data-rehearsal.log" | sort -u || true
+    echo "BLOCKED: candidate-data rehearsal failed; private diagnostics withheld." >&2
+    exit 2
+  fi
+  local_psql -Atqc "SELECT (to_regclass('airlinerra_game.aircraft_storage_facilities_v1') IS NULL AND NOT EXISTS(SELECT 1 FROM airlinerra.airport_registry))::int" | grep -qx 1
+  local_psql -At -f tests/sql/airlinerra_private_schema_fingerprint.sql >"$tmp/storage-data-rollback.hashes" 2>"$tmp/storage-data-rollback.stderr"
+  cmp -s "$tmp/clone-structure.hashes" "$tmp/storage-data-rollback.hashes"
+  echo "PASS: integrated candidate-data rehearsal; nine priced inactive facilities, six service proposals and 271 billing proposals; all rolled back."
+
+  # Exact installation preview, with registry prerequisites already present
+  # on the disposable clone. No production rows or writes. First verify the
+  # package refuses the empty clone before installing anything.
+  node scripts/ci/assemble_storage_schema_rehearsal.mjs "$tmp/storage-installation-preview.sql" --existing-registry-data
+  echo "Rollback-only installation preview SHA-256: $(sha256sum "$tmp/storage-installation-preview.sql" | cut -d' ' -f1)"
+  if local_psql -q -f "$tmp/storage-installation-preview.sql" >"$tmp/storage-preview-missing.log" 2>&1; then
+    echo "BLOCKED: preview accepted missing airport registry." >&2; exit 2
+  fi
+  grep -q 'STORAGE_EXISTING_REGISTRY_IDENTITY_MISMATCH' "$tmp/storage-preview-missing.log"
+  local_psql -Atqc "SELECT (to_regclass('airlinerra_game.aircraft_storage_facilities_v1') IS NULL AND NOT EXISTS(SELECT 1 FROM airlinerra.airport_registry))::int" | grep -qx 1
+
+  # Seed only the nine known public airport identities into the local clone.
+  # Deliberately alter one identity and require a specific rejection.
+  local_psql -q -c 'BEGIN;' -f tests/sql/storage_candidate_registry_fixture.sql -c 'COMMIT;' >"$tmp/storage-preview-fixture.log" 2>&1
+  local_psql -q -c "UPDATE airlinerra.airport_registry SET source_gps_code='TEST' WHERE airport_key='OURAIRPORTS:2409';" >"$tmp/storage-preview-drift.log" 2>&1
+  if local_psql -q -f "$tmp/storage-installation-preview.sql" >"$tmp/storage-preview-rejected.log" 2>&1; then
+    echo "BLOCKED: preview accepted a changed airport identity." >&2; exit 2
+  fi
+  grep -q 'STORAGE_EXISTING_REGISTRY_IDENTITY_MISMATCH' "$tmp/storage-preview-rejected.log"
+  local_psql -q -c "UPDATE airlinerra.airport_registry SET source_gps_code='EGSY' WHERE airport_key='OURAIRPORTS:2409';" >"$tmp/storage-preview-repair.log" 2>&1
+  local_psql -Atqc "SELECT md5(jsonb_agg(to_jsonb(r) ORDER BY airport_key)::text) FROM airlinerra.airport_registry r" >"$tmp/storage-registry-before.hash"
+  if ! local_psql -q -v VERBOSITY=verbose -f "$tmp/storage-installation-preview.sql" >"$tmp/storage-preview.log" 2>&1; then
+    awk '/^STORAGE_SCHEMA_REHEARSAL [a-z_]+\.sql$/ { component=$2 } END { print "Blocked installation-preview component: " component }' "$tmp/storage-preview.log"
+    grep -Eo 'ERROR: +[0-9A-Z]{5}:' "$tmp/storage-preview.log" | sort -u || true
+    echo "BLOCKED: existing-registry installation preview failed; private diagnostics withheld." >&2
+    exit 2
+  fi
+  local_psql -Atqc "SELECT md5(jsonb_agg(to_jsonb(r) ORDER BY airport_key)::text) FROM airlinerra.airport_registry r" >"$tmp/storage-registry-after.hash"
+  cmp -s "$tmp/storage-registry-before.hash" "$tmp/storage-registry-after.hash"
+  local_psql -Atqc "SELECT (to_regclass('airlinerra_game.aircraft_storage_facilities_v1') IS NULL AND (SELECT count(*) FROM airlinerra.airport_registry)=9)::int" | grep -qx 1
+  local_psql -At -f tests/sql/airlinerra_private_schema_fingerprint.sql >"$tmp/storage-preview-rollback.hashes" 2>"$tmp/storage-preview-rollback.stderr"
+  cmp -s "$tmp/clone-structure.hashes" "$tmp/storage-preview-rollback.hashes"
+  echo "PASS: exact existing-registry installation preview rejected missing and changed identities, accepted nine local fixture identities, preserved registry rows and restored all seven schema categories."
+
+  # Commit test is deliberately bound to local_psql (127.0.0.1:54322).
+  # The verified input has no COMMIT; a disposable session witness is required.
+  node scripts/ci/prepare_storage_local_commit_rehearsal.mjs "$tmp/storage-installation-preview.sql" "$tmp/storage-local-commit-body.sql" "$tmp/storage-local-persisted-assertions.sql"
+  if local_psql -q -f "$tmp/storage-local-commit-body.sql" >"$tmp/storage-commit-no-witness.log" 2>&1; then
+    echo "BLOCKED: commit body accepted a session without disposable witness." >&2; exit 2
+  fi
+  grep -q 'STORAGE_DISPOSABLE_COMMIT_SESSION_REQUIRED' "$tmp/storage-commit-no-witness.log"
+  local_psql -Atqc "SELECT (to_regclass('airlinerra_game.aircraft_storage_facilities_v1') IS NULL)::int" | grep -qx 1
+  witness_sql='CREATE TEMP TABLE storage_disposable_commit_witness(backend_pid integer PRIMARY KEY); INSERT INTO storage_disposable_commit_witness VALUES(pg_backend_pid());'
+  if ! local_psql -q -v VERBOSITY=verbose -c "$witness_sql" -f "$tmp/storage-local-commit-body.sql" -c 'COMMIT;' >"$tmp/storage-commit.log" 2>&1; then
+    awk '/^STORAGE_SCHEMA_REHEARSAL [a-z_]+\.sql$/ { component=$2 } END { print "Blocked local commit component: " component }' "$tmp/storage-commit.log"
+    grep -Eo 'ERROR: +[0-9A-Z]{5}:' "$tmp/storage-commit.log" | sort -u || true
+    echo "BLOCKED: disposable commit rehearsal failed; private diagnostics withheld." >&2; exit 2
+  fi
+  # New connection proves persistence rather than in-transaction visibility.
+  local_psql -q -c 'BEGIN TRANSACTION READ ONLY;' -f "$tmp/storage-local-persisted-assertions.sql" -c 'ROLLBACK;' >"$tmp/storage-persisted.log" 2>&1
+  local_psql -Atqc "SELECT md5(jsonb_agg(to_jsonb(r) ORDER BY airport_key)::text) FROM airlinerra.airport_registry r" >"$tmp/storage-registry-committed.hash"
+  cmp -s "$tmp/storage-registry-before.hash" "$tmp/storage-registry-committed.hash"
+  local_psql -At -f tests/sql/airlinerra_private_schema_fingerprint.sql >"$tmp/storage-committed.hashes" 2>"$tmp/storage-committed.stderr"
+  if cmp -s "$tmp/clone-structure.hashes" "$tmp/storage-committed.hashes"; then
+    echo "BLOCKED: commit did not persist structural changes." >&2; exit 2
+  fi
+  # A second installation must refuse the changed dispatcher/source or existing objects.
+  if local_psql -q -c "$witness_sql" -f "$tmp/storage-local-commit-body.sql" -c 'COMMIT;' >"$tmp/storage-commit-replay.log" 2>&1; then
+    echo "BLOCKED: unexpected second installation success." >&2; exit 2
+  fi
+  grep -q 'STORAGE_INSTALLATION_SOURCE_DRIFT' "$tmp/storage-commit-replay.log"
+  local_psql -At -f tests/sql/airlinerra_private_schema_fingerprint.sql >"$tmp/storage-committed-replay.hashes" 2>"$tmp/storage-replay.stderr"
+  cmp -s "$tmp/storage-committed.hashes" "$tmp/storage-committed-replay.hashes"
+  local_psql -q -c 'BEGIN TRANSACTION READ ONLY;' -f "$tmp/storage-local-persisted-assertions.sql" -c 'ROLLBACK;' >"$tmp/storage-persisted-replay.log" 2>&1
+  local_psql -Atqc "SELECT md5(jsonb_agg(to_jsonb(r) ORDER BY airport_key)::text) FROM airlinerra.airport_registry r" >"$tmp/storage-registry-replay.hash"
+  cmp -s "$tmp/storage-registry-before.hash" "$tmp/storage-registry-replay.hash"
+  echo "PASS: verified disabled installation committed on disposable clone, persisted across connections, all release controls disabled, registry preserved, repeat installation rejected without structural drift."
+  echo "Disposable local database including fixture rows will be destroyed by the existing cleanup trap; no production migration generated."
+  exit 0
+fi
+
 # Preserve existing column order/types and the modern dispatcher definition.
 # The dump intentionally excludes ACLs. Check live access separately and
 # compare restored-clone behavior before and after; do not claim ACL parity.

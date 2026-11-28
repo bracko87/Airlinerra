@@ -532,3 +532,76 @@ test('single used-airframe profile is a fresh protected, read-only DB lookup by 
  });
  assert.equal((await missing.handler(request(detail))).status,404);
 });
+
+test('storage overview verifies session owner and tail; rejects writes and spoofed player identity',async()=>{
+ const body={action:'storage-overview',airlineId:airline,aircraftInventoryId:aircraft};
+ const value={status:'storage_overview_verified',airlineId:airline,aircraftId:aircraft,ownershipType:'owned',fleetStatus:'stored',readOnly:true,actionsReleased:false,history:[],session:null,pendingRequest:null};
+ assert.equal(validateFleetAcquisitionRequest(body),true);
+ for(const extra of [{playerId:user},{actionsReleased:true},{aircraftInventoryId:'invalid'},{action:'storage-book'},{action:'storage-reactivate'}])
+  assert.equal(validateFleetAcquisitionRequest({...body,...extra}),false);
+ const ok=setup((sql,args)=>{
+  if(sql===FLEET_SQL.owner){assert.deepEqual(args,[airline,user]);return {rowCount:1,rows:[{id:airline}]};}
+  assert.equal(sql,FLEET_SQL.storageOverview);assert.deepEqual(args,[user,airline,aircraft]);
+  return {rowCount:1,rows:[{result:value}]};
+ });
+ const response=await ok.handler(request(body));assert.equal(response.status,200);assert.deepEqual(await response.json(),value);
+ assert.equal(ok.statements.length,2);assert.equal(ok.releases(),1);
+ const denied=setup(sql=>{assert.equal(sql,FLEET_SQL.owner);return {rowCount:0,rows:[]};});
+ assert.equal((await denied.handler(request(body))).status,403);assert.equal(denied.statements.length,1);
+ const foreignTail=setup(sql=>{if(sql===FLEET_SQL.owner)return {rowCount:1,rows:[{id:airline}]};throw Object.assign(Error('not owned'),{code:'42501'});});
+ assert.equal((await foreignTail.handler(request(body))).status,403);
+ for(const invalid of [{...value,aircraftId:offer},{...value,actionsReleased:true},{...value,readOnly:false}]){
+  const bad=setup(sql=>sql===FLEET_SQL.owner?{rowCount:1,rows:[{id:airline}]}:{rowCount:1,rows:[{result:invalid}]});
+  assert.equal((await bad.handler(request(body))).status,503);
+ }
+ const client=createFleetAcquisitionClient({auth:{getAccessToken:async()=>TOKEN},origin:'https://airlinerra.com',fetchImpl:async(url,options)=>{
+  assert.equal(url,'https://airlinerra.com'+FLEET_ACQUISITION_API_ROUTE);
+  assert.equal(options.headers.authorization,'Bearer '+TOKEN);
+  assert.deepEqual(JSON.parse(options.body),body);
+  return Response.json(value);
+ }});
+ assert.deepEqual(await client.storageOverview(airline,aircraft),value);
+});
+
+test('storage planning preview accepts only read requests and verifies response scope',async()=>{
+ const body={action:'storage-cost-preview',airlineId:airline,aircraftInventoryId:aircraft,purpose:'storage_reactivation',destinationAirportKey:'OURAIRPORTS:999',departureUtc:'2026-11-27T10:00:00Z'};
+ const search={action:'storage-destinations',airlineId:airline,aircraftInventoryId:aircraft,purpose:'storage_reactivation',search:'TEST'};
+ assert.equal(validateFleetAcquisitionRequest(body),true);
+ assert.equal(validateFleetAcquisitionRequest(search),true);
+ for(const extra of [{playerId:user},{priceUsd:0},{departureUtc:'2026-11-31T10:00:00Z'},{purpose:'commercial'},{action:'storage-book'}])assert.equal(validateFleetAcquisitionRequest({...body,...extra}),false);
+ const quote={status:'storage_cost_preview_verified',airlineId:airline,aircraftId:aircraft,purpose:body.purpose,destinationAirportKey:body.destinationAirportKey,departureUtc:body.departureUtc,readOnly:true,actionsReleased:false,bookable:false,relocationUsd:2688.13};
+ const ok=setup((sql,args)=>{
+  if(sql===FLEET_SQL.owner)return {rowCount:1,rows:[{id:airline}]};
+  assert.equal(sql,FLEET_SQL.storageCostPreview);assert.deepEqual(args,[user,airline,aircraft,body.purpose,body.destinationAirportKey,body.departureUtc]);return {rowCount:1,rows:[{result:quote}]};
+ });
+ const response=await ok.handler(request(body));assert.equal(response.status,200);assert.deepEqual(await response.json(),quote);
+ const denied=setup(sql=>{assert.equal(sql,FLEET_SQL.owner);return {rowCount:0,rows:[]};});assert.equal((await denied.handler(request(search))).status,403);
+ for(const value of [{...quote,bookable:true},{...quote,aircraftId:offer},{...quote,departureUtc:'2026-11-28T10:00:00Z'}]){
+  const bad=setup(sql=>sql===FLEET_SQL.owner?{rowCount:1,rows:[{id:airline}]}:{rowCount:1,rows:[{result:value}]});assert.equal((await bad.handler(request(body))).status,503);
+ }
+ const client=createFleetAcquisitionClient({auth:{getAccessToken:async()=>TOKEN},origin:'https://airlinerra.com',fetchImpl:async(url,options)=>{assert.deepEqual(JSON.parse(options.body),body);return Response.json(quote);}});
+ assert.deepEqual(await client.storageCostPreview(body),quote);
+});
+
+test('storage booking actions verify owner and use exact request key and quote amount',async()=>{
+ assert.match(FLEET_SQL.storageBookConfirm,/airlinerra_game\.confirm_player_automatic_storage_booking_v1\(/u);
+ assert.match(FLEET_SQL.storageCostPreview,/airlinerra_game\.owned_aircraft_storage_automatic_booking_preview_v1\(/u);
+ const booking={action:'storage-book-confirm',airlineId:airline,aircraftInventoryId:aircraft,purpose:'storage_inbound',destinationAirportKey:'OURAIRPORTS:316427',departureUtc:'2026-11-27T10:00:00Z',expectedCostUsd:'2698.13',requestId};
+ const cancel={action:'storage-book-cancel',airlineId:airline,aircraftInventoryId:aircraft,requestId};
+ assert.equal(validateFleetAcquisitionRequest(booking),true);
+ assert.equal(validateFleetAcquisitionRequest(cancel),true);
+ for(const extra of [{expectedCostUsd:'0.00'},{expectedCostUsd:2698.13},{expectedCostUsd:'1.234'},{requestId:'bad'},{playerId:user},{approved:true}])assert.equal(validateFleetAcquisitionRequest({...booking,...extra}),false);
+ const reserved={status:'storage_booking_reserved',booked:true,requestId,slotsReserved:2,fundsHeld:true};
+ const ok=setup((sql,args)=>{
+  if(sql===FLEET_SQL.owner)return {rowCount:1,rows:[{id:airline}]};
+  if(sql===FLEET_SQL.storageBookConfirm){assert.deepEqual(args,[user,airline,aircraft,booking.purpose,booking.destinationAirportKey,booking.departureUtc,booking.expectedCostUsd,requestId]);return {rowCount:1,rows:[{result:reserved}]};}
+  assert.equal(sql,FLEET_SQL.storageBookCancel);assert.deepEqual(args,[user,airline,aircraft,requestId]);return {rowCount:1,rows:[{result:{status:'cancelled',cancelled:true,requestId}}]};
+ });
+ const a=await ok.handler(request(booking));assert.equal(a.status,200);assert.deepEqual(await a.json(),{...reserved,airlineId:airline,aircraftId:aircraft});
+ const b=await ok.handler(request(cancel));assert.equal(b.status,200);assert.equal((await b.json()).cancelled,true);
+ const foreign=setup(sql=>{assert.equal(sql,FLEET_SQL.owner);return {rowCount:0,rows:[]};});assert.equal((await foreign.handler(request(booking))).status,403);
+ const blocked=setup(sql=>sql===FLEET_SQL.owner?{rowCount:1,rows:[{id:airline}]}:{rowCount:1,rows:[{result:{status:'storage_booking_not_released',booked:false}}]});
+ const c=await blocked.handler(request(booking));assert.equal(c.status,200);assert.equal((await c.json()).booked,false);
+ const client=createFleetAcquisitionClient({auth:{getAccessToken:async()=>TOKEN},origin:'https://airlinerra.com',fetchImpl:async(url,options)=>{assert.deepEqual(JSON.parse(options.body),booking);return Response.json(reserved);}});
+ assert.deepEqual(await client.confirmStorageBooking(booking),reserved);
+});

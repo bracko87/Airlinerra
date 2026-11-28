@@ -1,0 +1,574 @@
+{
+  "status": "proposed_game_balance_review_not_approved",
+  "catalogueDate": "2026-11-27",
+  "rules": "Family-based game pricing, freighters inherit airframe class. Large non-widebody cargo types An-12, L-100, DC-6 and L-188 treated as narrowbody equivalents; Il-76 and An-124 widebody equivalents. A220 narrowbody; E-Jets/E2 regional. Classification does not change acquisition or dispatch eligibility. Future families require explicit review.",
+  "families": [
+    {
+      "family_id": 1,
+      "family_name": "787",
+      "manufacturer_name": "Boeing",
+      "configurations": 3,
+      "billingClass": "widebody"
+    },
+    {
+      "family_id": 2,
+      "family_name": "777",
+      "manufacturer_name": "Boeing",
+      "configurations": 9,
+      "billingClass": "widebody"
+    },
+    {
+      "family_id": 3,
+      "family_name": "767",
+      "manufacturer_name": "Boeing",
+      "configurations": 9,
+      "billingClass": "widebody"
+    },
+    {
+      "family_id": 4,
+      "family_name": "757",
+      "manufacturer_name": "Boeing",
+      "configurations": 4,
+      "billingClass": "narrowbody"
+    },
+    {
+      "family_id": 5,
+      "family_name": "747",
+      "manufacturer_name": "Boeing",
+      "configurations": 13,
+      "billingClass": "widebody"
+    },
+    {
+      "family_id": 6,
+      "family_name": "737",
+      "manufacturer_name": "Boeing",
+      "configurations": 30,
+      "billingClass": "narrowbody"
+    },
+    {
+      "family_id": 7,
+      "family_name": "717",
+      "manufacturer_name": "Boeing",
+      "configurations": 1,
+      "billingClass": "narrowbody"
+    },
+    {
+      "family_id": 8,
+      "family_name": "A380",
+      "manufacturer_name": "Airbus",
+      "configurations": 1,
+      "billingClass": "widebody"
+    },
+    {
+      "family_id": 9,
+      "family_name": "A350",
+      "manufacturer_name": "Airbus",
+      "configurations": 5,
+      "billingClass": "widebody"
+    },
+    {
+      "family_id": 10,
+      "family_name": "A340",
+      "manufacturer_name": "Airbus",
+      "configurations": 4,
+      "billingClass": "widebody"
+    },
+    {
+      "family_id": 11,
+      "family_name": "A330",
+      "manufacturer_name": "Airbus",
+      "configurations": 8,
+      "billingClass": "widebody"
+    },
+    {
+      "family_id": 12,
+      "family_name": "A320",
+      "manufacturer_name": "Airbus",
+      "configurations": 13,
+      "billingClass": "narrowbody"
+    },
+    {
+      "family_id": 13,
+      "family_name": "A300",
+      "manufacturer_name": "Airbus",
+      "configurations": 2,
+      "billingClass": "widebody"
+    },
+    {
+      "family_id": 14,
+      "family_name": "A220",
+      "manufacturer_name": "Airbus Canada",
+      "configurations": 2,
+      "billingClass": "narrowbody"
+    },
+    {
+      "family_id": 15,
+      "family_name": "ATR 72",
+      "manufacturer_name": "ATR",
+      "configurations": 8,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 16,
+      "family_name": "ATR 42",
+      "manufacturer_name": "ATR",
+      "configurations": 7,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 17,
+      "family_name": "E-Jets E2",
+      "manufacturer_name": "Embraer",
+      "configurations": 2,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 18,
+      "family_name": "E-Jets",
+      "manufacturer_name": "Embraer",
+      "configurations": 6,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 19,
+      "family_name": "ERJ 135/140/145",
+      "manufacturer_name": "Embraer",
+      "configurations": 3,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 20,
+      "family_name": "EMB 120",
+      "manufacturer_name": "Embraer",
+      "configurations": 2,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 21,
+      "family_name": "C919",
+      "manufacturer_name": "COMAC",
+      "configurations": 1,
+      "billingClass": "narrowbody"
+    },
+    {
+      "family_id": 22,
+      "family_name": "C909",
+      "manufacturer_name": "COMAC",
+      "configurations": 2,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 23,
+      "family_name": "An-124",
+      "manufacturer_name": "Antonov",
+      "configurations": 1,
+      "billingClass": "widebody"
+    },
+    {
+      "family_id": 24,
+      "family_name": "An-72/74",
+      "manufacturer_name": "Antonov",
+      "configurations": 4,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 25,
+      "family_name": "An-32",
+      "manufacturer_name": "Antonov",
+      "configurations": 1,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 26,
+      "family_name": "An-26",
+      "manufacturer_name": "Antonov",
+      "configurations": 2,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 27,
+      "family_name": "An-24",
+      "manufacturer_name": "Antonov",
+      "configurations": 1,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 28,
+      "family_name": "Il-96",
+      "manufacturer_name": "Ilyushin",
+      "configurations": 2,
+      "billingClass": "widebody"
+    },
+    {
+      "family_id": 29,
+      "family_name": "Il-76",
+      "manufacturer_name": "Ilyushin",
+      "configurations": 1,
+      "billingClass": "widebody"
+    },
+    {
+      "family_id": 30,
+      "family_name": "Tu-204/214",
+      "manufacturer_name": "Tupolev",
+      "configurations": 4,
+      "billingClass": "narrowbody"
+    },
+    {
+      "family_id": 31,
+      "family_name": "Superjet 100",
+      "manufacturer_name": "Sukhoi Civil Aircraft",
+      "configurations": 2,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 32,
+      "family_name": "MA60/MA600",
+      "manufacturer_name": "Xian Aircraft",
+      "configurations": 2,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 33,
+      "family_name": "Y-12",
+      "manufacturer_name": "Harbin Aircraft",
+      "configurations": 3,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 35,
+      "family_name": "L-410",
+      "manufacturer_name": "Let Aircraft Industries",
+      "configurations": 3,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 36,
+      "family_name": "Dash 8",
+      "manufacturer_name": "De Havilland Canada",
+      "configurations": 12,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 37,
+      "family_name": "DHC-6 Twin Otter",
+      "manufacturer_name": "De Havilland Canada",
+      "configurations": 5,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 38,
+      "family_name": "CRJ",
+      "manufacturer_name": "Bombardier",
+      "configurations": 7,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 39,
+      "family_name": "Saab 2000",
+      "manufacturer_name": "Saab",
+      "configurations": 1,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 40,
+      "family_name": "Saab 340",
+      "manufacturer_name": "Saab",
+      "configurations": 7,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 41,
+      "family_name": "Fokker 100",
+      "manufacturer_name": "Fokker",
+      "configurations": 1,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 42,
+      "family_name": "Fokker 70",
+      "manufacturer_name": "Fokker",
+      "configurations": 1,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 43,
+      "family_name": "Fokker 50",
+      "manufacturer_name": "Fokker",
+      "configurations": 2,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 44,
+      "family_name": "MD-80",
+      "manufacturer_name": "McDonnell Douglas",
+      "configurations": 6,
+      "billingClass": "narrowbody"
+    },
+    {
+      "family_id": 45,
+      "family_name": "MD-11",
+      "manufacturer_name": "McDonnell Douglas",
+      "configurations": 3,
+      "billingClass": "widebody"
+    },
+    {
+      "family_id": 46,
+      "family_name": "L-100",
+      "manufacturer_name": "Lockheed",
+      "configurations": 2,
+      "billingClass": "narrowbody"
+    },
+    {
+      "family_id": 47,
+      "family_name": "Cessna 408 SkyCourier",
+      "manufacturer_name": "Textron Aviation",
+      "configurations": 2,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 48,
+      "family_name": "1900",
+      "manufacturer_name": "Beechcraft",
+      "configurations": 4,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 49,
+      "family_name": "Dornier 328",
+      "manufacturer_name": "Dornier",
+      "configurations": 2,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 50,
+      "family_name": "Dornier 228",
+      "manufacturer_name": "Dornier",
+      "configurations": 2,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 51,
+      "family_name": "Jetstream 41",
+      "manufacturer_name": "British Aerospace",
+      "configurations": 1,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 52,
+      "family_name": "Jetstream 31/32",
+      "manufacturer_name": "British Aerospace",
+      "configurations": 2,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 53,
+      "family_name": "BAe 146",
+      "manufacturer_name": "British Aerospace",
+      "configurations": 6,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 54,
+      "family_name": "Avro RJ",
+      "manufacturer_name": "Avro",
+      "configurations": 3,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 57,
+      "family_name": "Metro",
+      "manufacturer_name": "Fairchild Swearingen",
+      "configurations": 2,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 58,
+      "family_name": "Short 360",
+      "manufacturer_name": "Short Brothers",
+      "configurations": 2,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 59,
+      "family_name": "99",
+      "manufacturer_name": "Beechcraft",
+      "configurations": 1,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 60,
+      "family_name": "Dash 7",
+      "manufacturer_name": "De Havilland Canada",
+      "configurations": 1,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 61,
+      "family_name": "Short 330",
+      "manufacturer_name": "Short Brothers",
+      "configurations": 2,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 62,
+      "family_name": "Cessna 208 Caravan",
+      "manufacturer_name": "Textron Aviation",
+      "configurations": 3,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 63,
+      "family_name": "DC-6",
+      "manufacturer_name": "Douglas Aircraft Company",
+      "configurations": 1,
+      "billingClass": "narrowbody"
+    },
+    {
+      "family_id": 65,
+      "family_name": "L-188 Electra",
+      "manufacturer_name": "Lockheed",
+      "configurations": 1,
+      "billingClass": "narrowbody"
+    },
+    {
+      "family_id": 66,
+      "family_name": "727",
+      "manufacturer_name": "Boeing",
+      "configurations": 2,
+      "billingClass": "narrowbody"
+    },
+    {
+      "family_id": 67,
+      "family_name": "C-212 Aviocar",
+      "manufacturer_name": "CASA",
+      "configurations": 1,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 69,
+      "family_name": "Yak-42",
+      "manufacturer_name": "Yakovlev",
+      "configurations": 1,
+      "billingClass": "narrowbody"
+    },
+    {
+      "family_id": 70,
+      "family_name": "An-12",
+      "manufacturer_name": "Antonov",
+      "configurations": 2,
+      "billingClass": "narrowbody"
+    },
+    {
+      "family_id": 71,
+      "family_name": "A310",
+      "manufacturer_name": "Airbus",
+      "configurations": 2,
+      "billingClass": "widebody"
+    },
+    {
+      "family_id": 72,
+      "family_name": "F28 Fellowship",
+      "manufacturer_name": "Fokker",
+      "configurations": 2,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 73,
+      "family_name": "DC-9",
+      "manufacturer_name": "McDonnell Douglas",
+      "configurations": 1,
+      "billingClass": "narrowbody"
+    },
+    {
+      "family_id": 74,
+      "family_name": "EMB 110",
+      "manufacturer_name": "Embraer",
+      "configurations": 2,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 75,
+      "family_name": "F27",
+      "manufacturer_name": "Fokker",
+      "configurations": 2,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 76,
+      "family_name": "An-148",
+      "manufacturer_name": "Antonov",
+      "configurations": 1,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 77,
+      "family_name": "Tu-154",
+      "manufacturer_name": "Tupolev",
+      "configurations": 1,
+      "billingClass": "narrowbody"
+    },
+    {
+      "family_id": 78,
+      "family_name": "Yak-40",
+      "manufacturer_name": "Yakovlev",
+      "configurations": 1,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 79,
+      "family_name": "Il-62",
+      "manufacturer_name": "Ilyushin",
+      "configurations": 1,
+      "billingClass": "narrowbody"
+    },
+    {
+      "family_id": 80,
+      "family_name": "MC-21",
+      "manufacturer_name": "Yakovlev",
+      "configurations": 1,
+      "billingClass": "narrowbody"
+    },
+    {
+      "family_id": 81,
+      "family_name": "Il-114",
+      "manufacturer_name": "Ilyushin",
+      "configurations": 1,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 82,
+      "family_name": "SJ-100",
+      "manufacturer_name": "Yakovlev",
+      "configurations": 1,
+      "billingClass": "regional"
+    },
+    {
+      "family_id": 110,
+      "family_name": "DC-10",
+      "manufacturer_name": "McDonnell Douglas",
+      "configurations": 2,
+      "billingClass": "widebody"
+    },
+    {
+      "family_id": 115,
+      "family_name": "MD-90",
+      "manufacturer_name": "McDonnell Douglas",
+      "configurations": 1,
+      "billingClass": "narrowbody"
+    },
+    {
+      "family_id": 121,
+      "family_name": "L-1011 TriStar",
+      "manufacturer_name": "Lockheed",
+      "configurations": 2,
+      "billingClass": "widebody"
+    },
+    {
+      "family_id": 129,
+      "family_name": "D328eco",
+      "manufacturer_name": "Deutsche Aircraft",
+      "configurations": 1,
+      "billingClass": "regional"
+    }
+  ]
+}
