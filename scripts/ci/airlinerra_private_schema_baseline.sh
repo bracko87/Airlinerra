@@ -468,9 +468,42 @@ if [[ "${AIRLINERRA_STORAGE_SCHEMA_REHEARSAL:-0}" == 1 ]]; then
   local_psql -Atqc "SELECT (to_regclass('airlinerra_game.aircraft_storage_facilities_v1') IS NULL AND (SELECT count(*) FROM airlinerra.airport_registry)=9)::int" | grep -qx 1
   local_psql -At -f tests/sql/airlinerra_private_schema_fingerprint.sql >"$tmp/storage-preview-rollback.hashes" 2>"$tmp/storage-preview-rollback.stderr"
   cmp -s "$tmp/clone-structure.hashes" "$tmp/storage-preview-rollback.hashes"
-  local_psql -q -c "DELETE FROM airlinerra.airport_registry;" >"$tmp/storage-preview-cleanup.log" 2>&1
-  local_psql -Atqc "SELECT (NOT EXISTS(SELECT 1 FROM airlinerra.airport_registry))::int" | grep -qx 1
-  echo "PASS: exact existing-registry installation preview rejected missing and changed identities, accepted nine local fixture identities, preserved registry rows, restored all seven schema categories and removed fixture rows."
+  echo "PASS: exact existing-registry installation preview rejected missing and changed identities, accepted nine local fixture identities, preserved registry rows and restored all seven schema categories."
+
+  # Commit test is deliberately bound to local_psql (127.0.0.1:54322).
+  # The verified input has no COMMIT; a disposable session witness is required.
+  node scripts/ci/prepare_storage_local_commit_rehearsal.mjs "$tmp/storage-installation-preview.sql" "$tmp/storage-local-commit-body.sql" "$tmp/storage-local-persisted-assertions.sql"
+  if local_psql -q -f "$tmp/storage-local-commit-body.sql" >"$tmp/storage-commit-no-witness.log" 2>&1; then
+    echo "BLOCKED: commit body accepted a session without disposable witness." >&2; exit 2
+  fi
+  grep -q 'STORAGE_DISPOSABLE_COMMIT_SESSION_REQUIRED' "$tmp/storage-commit-no-witness.log"
+  local_psql -Atqc "SELECT (to_regclass('airlinerra_game.aircraft_storage_facilities_v1') IS NULL)::int" | grep -qx 1
+  witness_sql='CREATE TEMP TABLE storage_disposable_commit_witness(backend_pid integer PRIMARY KEY); INSERT INTO storage_disposable_commit_witness VALUES(pg_backend_pid());'
+  if ! local_psql -q -v VERBOSITY=verbose -c "$witness_sql" -f "$tmp/storage-local-commit-body.sql" -c 'COMMIT;' >"$tmp/storage-commit.log" 2>&1; then
+    awk '/^STORAGE_SCHEMA_REHEARSAL [a-z_]+\.sql$/ { component=$2 } END { print "Blocked local commit component: " component }' "$tmp/storage-commit.log"
+    grep -Eo 'ERROR: +[0-9A-Z]{5}:' "$tmp/storage-commit.log" | sort -u || true
+    echo "BLOCKED: disposable commit rehearsal failed; private diagnostics withheld." >&2; exit 2
+  fi
+  # New connection proves persistence rather than in-transaction visibility.
+  local_psql -q -c 'BEGIN TRANSACTION READ ONLY;' -f "$tmp/storage-local-persisted-assertions.sql" -c 'ROLLBACK;' >"$tmp/storage-persisted.log" 2>&1
+  local_psql -Atqc "SELECT md5(jsonb_agg(to_jsonb(r) ORDER BY airport_key)::text) FROM airlinerra.airport_registry r" >"$tmp/storage-registry-committed.hash"
+  cmp -s "$tmp/storage-registry-before.hash" "$tmp/storage-registry-committed.hash"
+  local_psql -At -f tests/sql/airlinerra_private_schema_fingerprint.sql >"$tmp/storage-committed.hashes" 2>"$tmp/storage-committed.stderr"
+  if cmp -s "$tmp/clone-structure.hashes" "$tmp/storage-committed.hashes"; then
+    echo "BLOCKED: commit did not persist structural changes." >&2; exit 2
+  fi
+  # A second installation must refuse the changed dispatcher/source or existing objects.
+  if local_psql -q -c "$witness_sql" -f "$tmp/storage-local-commit-body.sql" -c 'COMMIT;' >"$tmp/storage-commit-replay.log" 2>&1; then
+    echo "BLOCKED: unexpected second installation success." >&2; exit 2
+  fi
+  grep -q 'STORAGE_INSTALLATION_SOURCE_DRIFT' "$tmp/storage-commit-replay.log"
+  local_psql -At -f tests/sql/airlinerra_private_schema_fingerprint.sql >"$tmp/storage-committed-replay.hashes" 2>"$tmp/storage-replay.stderr"
+  cmp -s "$tmp/storage-committed.hashes" "$tmp/storage-committed-replay.hashes"
+  local_psql -q -c 'BEGIN TRANSACTION READ ONLY;' -f "$tmp/storage-local-persisted-assertions.sql" -c 'ROLLBACK;' >"$tmp/storage-persisted-replay.log" 2>&1
+  local_psql -Atqc "SELECT md5(jsonb_agg(to_jsonb(r) ORDER BY airport_key)::text) FROM airlinerra.airport_registry r" >"$tmp/storage-registry-replay.hash"
+  cmp -s "$tmp/storage-registry-before.hash" "$tmp/storage-registry-replay.hash"
+  echo "PASS: verified disabled installation committed on disposable clone, persisted across connections, all release controls disabled, registry preserved, repeat installation rejected without structural drift."
+  echo "Disposable local database including fixture rows will be destroyed by the existing cleanup trap; no production migration generated."
   exit 0
 fi
 
