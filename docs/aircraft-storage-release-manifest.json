@@ -323,8 +323,8 @@
     "limitations": "No operational approval, live airline data, actual billing-class activation or cron deployment verified by this rehearsal."
   },
   "lastSuccessfulRegression": {
-    "runId": 46128781415,
-    "commit": "b50721fbca7361801c06352fc45c44486817a558"
+    "runId": 46154422547,
+    "commit": "84f7d9c84147f136cb13e34ad6d45624aac7c1d1"
   },
   "lastSuccessfulInstallationPreview": {
     "runId": 46127961768,
@@ -361,5 +361,32 @@
     "productionAuthorized": false,
     "scope": "disposable_schema_clone_minimal_local_registry_fixture",
     "limitations": "No production migration generated or live-data installation verified. No airport operational approvals, billing class activation, scheduler installation, application deployment or production writes authorized."
+  },
+  "blockedInstallationCandidateEvidence": {
+    "runId": 46154422547,
+    "commit": "84f7d9c84147f136cb13e34ad6d45624aac7c1d1",
+    "sha256": "3e9e6fa6e17f0036f3e2beb5ce1eb9d5683d2d9447d4241018386c554e40edec",
+    "executionRejected": true,
+    "productionAuthorized": false
+  },
+  "combinedApplicationReview": {
+    "mainCommit": "63a904b329e56094f7c5424ae8dde10a8a3f51a0",
+    "reviewCommit": "84f7d9c84147f136cb13e34ad6d45624aac7c1d1",
+    "workflowRuns": [
+      46154422548,
+      46154422589,
+      46154422568,
+      46154422590,
+      46154422640,
+      46154422572,
+      46154422547,
+      46154419157
+    ],
+    "allSucceeded": true,
+    "routePlannerSuiteTests": 661,
+    "routePlannerSuiteFailures": 0,
+    "applicationBuildSucceeded": true,
+    "productionAuthorized": false,
+    "scope": "automated_regression_and_build_not_live_deployment"
   }
 }
