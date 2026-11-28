@@ -7,6 +7,7 @@ on:
       - 'server/sql/aircraft_storage*'
       - 'scripts/ci/assemble_storage_schema_rehearsal.mjs'
       - 'scripts/ci/prepare_storage_local_commit_rehearsal.mjs'
+      - 'scripts/ci/prepare_storage_disabled_release_candidate.mjs'
       - 'scripts/ci/airlinerra_private_schema_baseline.sh'
       - 'tests/sql/storage_release_source_compatibility_readonly.sql'
       - 'tests/sql/storage_candidate_*'
@@ -278,6 +279,17 @@ jobs:
           fi
           test ! -e "$preview_tmp/rejected.sql"
           echo 'PASS exact verified preview preparation and modified input rejection'
+          node scripts/ci/prepare_storage_disabled_release_candidate.mjs "$preview_tmp/preview.sql" "$preview_tmp/candidate.sql" "$preview_tmp/candidate.json"
+          if node scripts/ci/prepare_storage_disabled_release_candidate.mjs "$preview_tmp/changed.sql" "$preview_tmp/rejected-candidate.sql" "$preview_tmp/rejected-candidate.json"; then
+            echo 'BLOCKED: changed production candidate input accepted'; exit 1
+          fi
+          test ! -e "$preview_tmp/rejected-candidate.sql"
+          if psql -h localhost -U postgres -d review -X -v ON_ERROR_STOP=1 -f "$preview_tmp/candidate.sql" >"$preview_tmp/blocked-candidate.log" 2>&1; then
+            echo 'BLOCKED: unauthorized candidate executed'; exit 1
+          fi
+          grep -q 'STORAGE_PRODUCTION_INSTALLATION_NOT_AUTHORIZED' "$preview_tmp/blocked-candidate.log"
+          echo 'PASS blocked production candidate rejects execution before installation'
+
           rm -rf "$preview_tmp"
           trap - EXIT
           bash -n scripts/ci/airlinerra_private_schema_baseline.sh
