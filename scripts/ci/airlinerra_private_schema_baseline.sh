@@ -435,6 +435,42 @@ if [[ "${AIRLINERRA_STORAGE_SCHEMA_REHEARSAL:-0}" == 1 ]]; then
   local_psql -At -f tests/sql/airlinerra_private_schema_fingerprint.sql >"$tmp/storage-data-rollback.hashes" 2>"$tmp/storage-data-rollback.stderr"
   cmp -s "$tmp/clone-structure.hashes" "$tmp/storage-data-rollback.hashes"
   echo "PASS: integrated candidate-data rehearsal; nine priced inactive facilities, six service proposals and 271 billing proposals; all rolled back."
+
+  # Exact installation preview, with registry prerequisites already present
+  # on the disposable clone. No production rows or writes. First verify the
+  # package refuses the empty clone before installing anything.
+  node scripts/ci/assemble_storage_schema_rehearsal.mjs "$tmp/storage-installation-preview.sql" --existing-registry-data
+  echo "Rollback-only installation preview SHA-256: $(sha256sum "$tmp/storage-installation-preview.sql" | cut -d' ' -f1)"
+  if local_psql -q -f "$tmp/storage-installation-preview.sql" >"$tmp/storage-preview-missing.log" 2>&1; then
+    echo "BLOCKED: preview accepted missing airport registry." >&2; exit 2
+  fi
+  grep -q 'STORAGE_EXISTING_REGISTRY_IDENTITY_MISMATCH' "$tmp/storage-preview-missing.log"
+  local_psql -Atqc "SELECT (to_regclass('airlinerra_game.aircraft_storage_facilities_v1') IS NULL AND NOT EXISTS(SELECT 1 FROM airlinerra.airport_registry))::int" | grep -qx 1
+
+  # Seed only the nine known public airport identities into the local clone.
+  # Deliberately alter one identity and require a specific rejection.
+  local_psql -q -c 'BEGIN;' -f tests/sql/storage_candidate_registry_fixture.sql -c 'COMMIT;' >"$tmp/storage-preview-fixture.log" 2>&1
+  local_psql -q -c "UPDATE airlinerra.airport_registry SET source_gps_code='TEST' WHERE airport_key='OURAIRPORTS:2409';" >"$tmp/storage-preview-drift.log" 2>&1
+  if local_psql -q -f "$tmp/storage-installation-preview.sql" >"$tmp/storage-preview-rejected.log" 2>&1; then
+    echo "BLOCKED: preview accepted a changed airport identity." >&2; exit 2
+  fi
+  grep -q 'STORAGE_EXISTING_REGISTRY_IDENTITY_MISMATCH' "$tmp/storage-preview-rejected.log"
+  local_psql -q -c "UPDATE airlinerra.airport_registry SET source_gps_code='EGSY' WHERE airport_key='OURAIRPORTS:2409';" >"$tmp/storage-preview-repair.log" 2>&1
+  local_psql -Atqc "SELECT md5(jsonb_agg(to_jsonb(r) ORDER BY airport_key)::text) FROM airlinerra.airport_registry r" >"$tmp/storage-registry-before.hash"
+  if ! local_psql -q -v VERBOSITY=verbose -f "$tmp/storage-installation-preview.sql" >"$tmp/storage-preview.log" 2>&1; then
+    awk '/^STORAGE_SCHEMA_REHEARSAL [a-z_]+\.sql$/ { component=$2 } END { print "Blocked installation-preview component: " component }' "$tmp/storage-preview.log"
+    grep -Eo 'ERROR: +[0-9A-Z]{5}:' "$tmp/storage-preview.log" | sort -u || true
+    echo "BLOCKED: existing-registry installation preview failed; private diagnostics withheld." >&2
+    exit 2
+  fi
+  local_psql -Atqc "SELECT md5(jsonb_agg(to_jsonb(r) ORDER BY airport_key)::text) FROM airlinerra.airport_registry r" >"$tmp/storage-registry-after.hash"
+  cmp -s "$tmp/storage-registry-before.hash" "$tmp/storage-registry-after.hash"
+  local_psql -Atqc "SELECT (to_regclass('airlinerra_game.aircraft_storage_facilities_v1') IS NULL AND (SELECT count(*) FROM airlinerra.airport_registry)=9)::int" | grep -qx 1
+  local_psql -At -f tests/sql/airlinerra_private_schema_fingerprint.sql >"$tmp/storage-preview-rollback.hashes" 2>"$tmp/storage-preview-rollback.stderr"
+  cmp -s "$tmp/clone-structure.hashes" "$tmp/storage-preview-rollback.hashes"
+  local_psql -q -c "DELETE FROM airlinerra.airport_registry;" >"$tmp/storage-preview-cleanup.log" 2>&1
+  local_psql -Atqc "SELECT (NOT EXISTS(SELECT 1 FROM airlinerra.airport_registry))::int" | grep -qx 1
+  echo "PASS: exact existing-registry installation preview rejected missing and changed identities, accepted nine local fixture identities, preserved registry rows, restored all seven schema categories and removed fixture rows."
   exit 0
 fi
 
