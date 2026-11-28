@@ -6,6 +6,7 @@ on:
     paths:
       - 'server/sql/aircraft_storage*'
       - 'scripts/ci/assemble_storage_schema_rehearsal.mjs'
+      - 'scripts/ci/prepare_storage_local_commit_rehearsal.mjs'
       - 'scripts/ci/airlinerra_private_schema_baseline.sh'
       - 'tests/sql/storage_release_source_compatibility_readonly.sql'
       - 'tests/sql/storage_candidate_*'
@@ -264,6 +265,21 @@ jobs:
           node scripts/ci/assemble_storage_schema_rehearsal.mjs --validate-only
           node scripts/ci/assemble_storage_schema_rehearsal.mjs --validate-only --include-candidate-data
           node scripts/ci/assemble_storage_schema_rehearsal.mjs --validate-only --existing-registry-data
+          preview_tmp="$(mktemp -d)"
+          trap 'rm -rf "$preview_tmp"' EXIT
+          node scripts/ci/assemble_storage_schema_rehearsal.mjs "$preview_tmp/preview.sql" --existing-registry-data
+          node scripts/ci/prepare_storage_local_commit_rehearsal.mjs "$preview_tmp/preview.sql" "$preview_tmp/body.sql" "$preview_tmp/assertions.sql"
+          grep -q 'STORAGE_DISPOSABLE_COMMIT_SESSION_REQUIRED' "$preview_tmp/body.sql"
+          if grep -Eq '^(COMMIT|ROLLBACK);$' "$preview_tmp/body.sql"; then exit 1; fi
+          cp "$preview_tmp/preview.sql" "$preview_tmp/changed.sql"
+          printf '\n-- changed preview\n' >> "$preview_tmp/changed.sql"
+          if node scripts/ci/prepare_storage_local_commit_rehearsal.mjs "$preview_tmp/changed.sql" "$preview_tmp/rejected.sql" "$preview_tmp/rejected-assertions.sql"; then
+            echo 'BLOCKED: modified preview accepted'; exit 1
+          fi
+          test ! -e "$preview_tmp/rejected.sql"
+          echo 'PASS exact verified preview preparation and modified input rejection'
+          rm -rf "$preview_tmp"
+          trap - EXIT
           bash -n scripts/ci/airlinerra_private_schema_baseline.sh
       - name: Storage interface and authenticated API acceptance
         run: node --test --test-name-pattern='storage panel|storage overview|storage planning preview|storage booking actions' tests/test_airline_workspace.mjs tests/test_fleet_acquisition_api.mjs
