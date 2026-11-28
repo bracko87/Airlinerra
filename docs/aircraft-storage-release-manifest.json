@@ -323,7 +323,26 @@
     "limitations": "No operational approval, live airline data, actual billing-class activation or cron deployment verified by this rehearsal."
   },
   "lastSuccessfulRegression": {
-    "runId": 46065390936,
-    "commit": "6ca40a133a8984b1a26229550206db2bef6acc02"
+    "runId": 46127065282,
+    "commit": "f28aa09d92b1e36c9dc146620adbb6f67deae8ac"
+  },
+  "lastSuccessfulInstallationPreview": {
+    "runId": 46127961768,
+    "commit": "f28aa09d92b1e36c9dc146620adbb6f67deae8ac",
+    "sha256": "5f49d38e1485c01fa7cfa74819b12a25bdc3b1c8ff089955d3a5ce287a94e706",
+    "components": 62,
+    "airportCandidates": 9,
+    "serviceCandidates": 6,
+    "billingProposals": 271,
+    "sourceFingerprints": 5,
+    "disabledControlRecords": 18,
+    "restoredSchemaCategories": 7,
+    "missingIdentityRejected": true,
+    "changedIdentityRejected": true,
+    "registryPreserved": true,
+    "fixturesRemoved": true,
+    "productionAuthorized": false,
+    "scope": "rollback_only_existing_registry_preview_on_private_schema_clone_with_minimal_local_fixture",
+    "limitations": "No commit-mode installation or live-data migration verified. No facility or billing class activation, commercial runway correction, application deployment or production scheduler authorized."
   }
 }
