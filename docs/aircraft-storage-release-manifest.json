@@ -323,8 +323,8 @@
     "limitations": "No operational approval, live airline data, actual billing-class activation or cron deployment verified by this rehearsal."
   },
   "lastSuccessfulRegression": {
-    "runId": 46127065282,
-    "commit": "f28aa09d92b1e36c9dc146620adbb6f67deae8ac"
+    "runId": 46128781415,
+    "commit": "b50721fbca7361801c06352fc45c44486817a558"
   },
   "lastSuccessfulInstallationPreview": {
     "runId": 46127961768,
@@ -344,5 +344,22 @@
     "productionAuthorized": false,
     "scope": "rollback_only_existing_registry_preview_on_private_schema_clone_with_minimal_local_fixture",
     "limitations": "No commit-mode installation or live-data migration verified. No facility or billing class activation, commercial runway correction, application deployment or production scheduler authorized."
+  },
+  "lastSuccessfulPersistentInstallation": {
+    "runId": 46151229346,
+    "commit": "b50721fbca7361801c06352fc45c44486817a558",
+    "verifiedPreviewSha256": "5f49d38e1485c01fa7cfa74819b12a25bdc3b1c8ff089955d3a5ce287a94e706",
+    "components": 62,
+    "airportCandidates": 9,
+    "billingProposals": 271,
+    "disabledControlRecords": 18,
+    "committedOnDisposableClone": true,
+    "persistedAcrossConnections": true,
+    "registryPreserved": true,
+    "repeatInstallationRejected": true,
+    "repeatStructuralFingerprintUnchanged": true,
+    "productionAuthorized": false,
+    "scope": "disposable_schema_clone_minimal_local_registry_fixture",
+    "limitations": "No production migration generated or live-data installation verified. No airport operational approvals, billing class activation, scheduler installation, application deployment or production writes authorized."
   }
 }
